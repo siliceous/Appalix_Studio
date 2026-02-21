@@ -2,13 +2,17 @@ import Stripe from 'stripe'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+// Lazy-initialised so Next.js build doesn't crash when env vars are absent
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!)
+}
 
-// Service-role client — bypasses RLS for provisioning operations
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  )
+}
 
 /**
  * Stripe webhook handler.
@@ -20,6 +24,7 @@ const supabase = createClient(
  *   invoice.payment_failed          → mark past_due
  */
 export async function POST(request: NextRequest) {
+  const stripe    = getStripe()
   const body      = await request.text()
   const signature = request.headers.get('stripe-signature')
 
@@ -75,6 +80,7 @@ export async function POST(request: NextRequest) {
 // ---------------------------------------------------------------
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  const supabase = getSupabase()
   const metadata   = session.metadata ?? {}
   const email      = session.customer_details?.email ?? metadata.email
   const workspaceName = metadata.workspace_name ?? email?.split('@')[0] ?? 'My Workspace'
@@ -91,7 +97,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   // 1. Get or create Supabase auth user
   const { data: existingUser } = await supabase.auth.admin.listUsers()
-  const authUser = existingUser.users.find((u) => u.email === email)
+  const authUser = existingUser.users.find((u: { email?: string }) => u.email === email)
 
   let userId: string
   if (authUser) {
@@ -142,6 +148,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 }
 
 async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
+  const supabase = getSupabase()
   const plan   = getPlanFromPrice(sub.items.data[0]?.price)
   const status = stripeStatusToInternal(sub.status)
 
@@ -152,6 +159,7 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
 }
 
 async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
+  const supabase = getSupabase()
   await supabase
     .from('workspaces')
     .update({ subscription_status: 'cancelled' })
@@ -159,6 +167,7 @@ async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
+  const supabase = getSupabase()
   const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id
   if (!customerId) return
 
