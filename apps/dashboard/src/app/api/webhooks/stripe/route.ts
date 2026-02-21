@@ -2,6 +2,9 @@ import Stripe from 'stripe'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+// Never statically render — webhook handlers are always dynamic
+export const dynamic = 'force-dynamic'
+
 // Lazy-initialised so Next.js build doesn't crash when env vars are absent
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!)

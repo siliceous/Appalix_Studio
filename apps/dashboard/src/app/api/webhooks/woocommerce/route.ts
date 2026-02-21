@@ -2,11 +2,15 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createHmac, timingSafeEqual } from 'crypto'
 
-// Service-role client — bypasses RLS for provisioning operations
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-)
+// Never statically render — webhook handlers are always dynamic
+export const dynamic = 'force-dynamic'
+
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  )
+}
 
 /**
  * WooCommerce webhook handler.
@@ -72,7 +76,7 @@ async function handleOrderEvent(order: WooOrder) {
 }
 
 async function provisionWorkspace(email: string, orderId: string, order: WooOrder) {
-  // Determine plan from order line items or custom meta
+  const supabase = getSupabase()
   const plan = extractPlanFromOrder(order)
 
   // Check if workspace already exists for this order (idempotent)
@@ -94,7 +98,7 @@ async function provisionWorkspace(email: string, orderId: string, order: WooOrde
 
   // Get or create Supabase auth user
   const { data: userList } = await supabase.auth.admin.listUsers()
-  const existingUser = userList.users.find((u) => u.email === email)
+  const existingUser = userList.users.find((u: { email?: string }) => u.email === email)
 
   let userId: string
   if (existingUser) {
@@ -149,6 +153,7 @@ async function provisionWorkspace(email: string, orderId: string, order: WooOrde
 }
 
 async function cancelWorkspace(orderId: string, reason: string) {
+  const supabase = getSupabase()
   const { error } = await supabase
     .from('workspaces')
     .update({ subscription_status: 'cancelled' })
