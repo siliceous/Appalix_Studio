@@ -6,7 +6,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 text-center">
-          <Image src="/logo.png" alt="Appalix" width={160} height={48} className="object-contain mx-auto" priority />
+          <Image src="/logo.png" alt="Appalix" width={160} height={48} className="object-contain mx-auto mix-blend-multiply" priority />
         </div>
         {children}
       </div>

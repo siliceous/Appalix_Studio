@@ -45,7 +45,7 @@ export function Sidebar({ workspace }: SidebarProps) {
       {/* Logo + workspace */}
       <div className="px-4 py-5 border-b">
         <div className="flex items-center mb-4">
-          <Image src="/logo.png" alt="Appalix" width={120} height={36} className="object-contain" priority />
+          <Image src="/logo.png" alt="Appalix" width={120} height={36} className="object-contain mix-blend-multiply" priority />
         </div>
 
         {/* Workspace badge */}
