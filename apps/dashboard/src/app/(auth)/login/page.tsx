@@ -2,33 +2,129 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import type { Provider } from '@supabase/supabase-js'
+
+const SOCIAL_PROVIDERS: {
+  provider: Provider
+  label: string
+  icon: React.ReactNode
+  bg: string
+  text: string
+  border: string
+}[] = [
+  {
+    provider: 'google',
+    label: 'Google',
+    bg: 'bg-white hover:bg-gray-50',
+    text: 'text-gray-700',
+    border: 'border border-gray-300',
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-5 h-5">
+        <path fill="#4285F4" d="M23.745 12.27c0-.79-.07-1.54-.19-2.27h-11.3v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"/>
+        <path fill="#34A853" d="M12.255 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96h-3.98v3.09C3.515 21.3 7.615 24 12.255 24z"/>
+        <path fill="#FBBC05" d="M5.525 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62h-3.98a11.86 11.86 0 000 10.76l3.98-3.09z"/>
+        <path fill="#EA4335" d="M12.255 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C18.205 1.19 15.495 0 12.255 0c-4.64 0-8.74 2.7-10.71 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z"/>
+      </svg>
+    ),
+  },
+  {
+    provider: 'github',
+    label: 'GitHub',
+    bg: 'bg-gray-900 hover:bg-gray-800',
+    text: 'text-white',
+    border: 'border border-gray-900',
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-5 h-5" fill="white">
+        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+      </svg>
+    ),
+  },
+  {
+    provider: 'azure',
+    label: 'Microsoft',
+    bg: 'bg-white hover:bg-gray-50',
+    text: 'text-gray-700',
+    border: 'border border-gray-300',
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-5 h-5">
+        <path fill="#f25022" d="M1 1h10v10H1z"/>
+        <path fill="#00a4ef" d="M13 1h10v10H13z"/>
+        <path fill="#7fba00" d="M1 13h10v10H1z"/>
+        <path fill="#ffb900" d="M13 13h10v10H13z"/>
+      </svg>
+    ),
+  },
+  {
+    provider: 'twitter',
+    label: 'X',
+    bg: 'bg-black hover:bg-gray-900',
+    text: 'text-white',
+    border: 'border border-black',
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-5 h-5" fill="white">
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.259 5.631 5.905-5.631zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+      </svg>
+    ),
+  },
+  {
+    provider: 'facebook',
+    label: 'Facebook',
+    bg: 'bg-[#1877F2] hover:bg-[#166FE5]',
+    text: 'text-white',
+    border: 'border border-[#1877F2]',
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-5 h-5" fill="white">
+        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+      </svg>
+    ),
+  },
+  {
+    provider: 'discord',
+    label: 'Discord',
+    bg: 'bg-[#5865F2] hover:bg-[#4752C4]',
+    text: 'text-white',
+    border: 'border border-[#5865F2]',
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-5 h-5" fill="white">
+        <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028 14.09 14.09 0 001.226-1.994.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+      </svg>
+    ),
+  },
+]
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [sent, setSent] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [email, setEmail]     = useState('')
+  const [loading, setLoading] = useState<string | null>(null)
+  const [sent, setSent]       = useState(false)
+  const [error, setError]     = useState<string | null>(null)
 
   const supabase = createClient()
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
+  async function handleSocial(provider: Provider) {
+    setLoading(provider)
     setError(null)
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: `${location.origin}/api/auth/callback` },
+    })
+    if (error) setError(error.message)
+    setLoading(null)
+  }
 
+  async function handleEmail(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setLoading('email')
+    setError(null)
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: {
-        emailRedirectTo: `${location.origin}/api/auth/callback`,
-      },
+      options: { emailRedirectTo: `${location.origin}/api/auth/callback` },
     })
-
     if (error) {
       setError(error.message)
     } else {
       setSent(true)
     }
-    setLoading(false)
+    setLoading(null)
   }
 
   if (sent) {
@@ -56,11 +152,35 @@ export default function LoginPage() {
   return (
     <div className="bg-white rounded-2xl shadow-sm border p-8">
       <h1 className="text-2xl font-semibold text-gray-900 mb-1">Sign in</h1>
-      <p className="text-sm text-gray-500 mb-6">
-        Enter your email to receive a magic link.
-      </p>
+      <p className="text-sm text-gray-500 mb-6">Choose how you'd like to continue.</p>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Social buttons */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        {SOCIAL_PROVIDERS.map(({ provider, label, icon, bg, text, border }) => (
+          <button
+            key={provider}
+            onClick={() => handleSocial(provider)}
+            disabled={loading !== null}
+            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${bg} ${text} ${border}`}
+          >
+            {icon}
+            {loading === provider ? '…' : label}
+          </button>
+        ))}
+      </div>
+
+      {/* Divider */}
+      <div className="relative mb-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-200" />
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="px-3 bg-white text-gray-400">or continue with email</span>
+        </div>
+      </div>
+
+      {/* Magic link form */}
+      <form onSubmit={handleEmail} className="space-y-4">
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
             Email address
@@ -82,10 +202,10 @@ export default function LoginPage() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading !== null}
           className="w-full py-2 px-4 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
         >
-          {loading ? 'Sending…' : 'Send magic link'}
+          {loading === 'email' ? 'Sending…' : 'Send magic link'}
         </button>
       </form>
     </div>
