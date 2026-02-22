@@ -14,7 +14,7 @@ const SOCIAL_PROVIDERS: {
 }[] = [
   {
     provider: 'google',
-    label: 'Google',
+    label: 'Continue with Google',
     bg: 'bg-white hover:bg-gray-50',
     text: 'text-gray-700',
     border: 'border border-gray-300',
@@ -28,20 +28,20 @@ const SOCIAL_PROVIDERS: {
     ),
   },
   {
-    provider: 'github',
-    label: 'GitHub',
-    bg: 'bg-gray-900 hover:bg-gray-800',
+    provider: 'facebook',
+    label: 'Continue with Facebook',
+    bg: 'bg-[#1877F2] hover:bg-[#166FE5]',
     text: 'text-white',
-    border: 'border border-gray-900',
+    border: 'border border-[#1877F2]',
     icon: (
       <svg viewBox="0 0 24 24" className="w-5 h-5" fill="white">
-        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
       </svg>
     ),
   },
   {
     provider: 'azure',
-    label: 'Microsoft',
+    label: 'Continue with Microsoft',
     bg: 'bg-white hover:bg-gray-50',
     text: 'text-gray-700',
     border: 'border border-gray-300',
@@ -56,7 +56,7 @@ const SOCIAL_PROVIDERS: {
   },
   {
     provider: 'twitter',
-    label: 'X',
+    label: 'Continue with X',
     bg: 'bg-black hover:bg-gray-900',
     text: 'text-white',
     border: 'border border-black',
@@ -67,20 +67,20 @@ const SOCIAL_PROVIDERS: {
     ),
   },
   {
-    provider: 'facebook',
-    label: 'Facebook',
-    bg: 'bg-[#1877F2] hover:bg-[#166FE5]',
+    provider: 'github',
+    label: 'Continue with GitHub',
+    bg: 'bg-gray-900 hover:bg-gray-800',
     text: 'text-white',
-    border: 'border border-[#1877F2]',
+    border: 'border border-gray-900',
     icon: (
       <svg viewBox="0 0 24 24" className="w-5 h-5" fill="white">
-        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
       </svg>
     ),
   },
   {
     provider: 'discord',
-    label: 'Discord',
+    label: 'Continue with Discord',
     bg: 'bg-[#5865F2] hover:bg-[#4752C4]',
     text: 'text-white',
     border: 'border border-[#5865F2]',
@@ -154,33 +154,8 @@ export default function LoginPage() {
       <h1 className="text-2xl font-semibold text-gray-900 mb-1">Sign in</h1>
       <p className="text-sm text-gray-500 mb-6">Choose how you'd like to continue.</p>
 
-      {/* Social buttons */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        {SOCIAL_PROVIDERS.map(({ provider, label, icon, bg, text, border }) => (
-          <button
-            key={provider}
-            onClick={() => handleSocial(provider)}
-            disabled={loading !== null}
-            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${bg} ${text} ${border}`}
-          >
-            {icon}
-            {loading === provider ? '…' : label}
-          </button>
-        ))}
-      </div>
-
-      {/* Divider */}
-      <div className="relative mb-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200" />
-        </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="px-3 bg-white text-gray-400">or continue with email</span>
-        </div>
-      </div>
-
       {/* Magic link form */}
-      <form onSubmit={handleEmail} className="space-y-4">
+      <form onSubmit={handleEmail} className="space-y-3 mb-6">
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
             Email address
@@ -208,6 +183,31 @@ export default function LoginPage() {
           {loading === 'email' ? 'Sending…' : 'Send magic link'}
         </button>
       </form>
+
+      {/* Divider */}
+      <div className="relative mb-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-200" />
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="px-3 bg-white text-gray-400">or continue with</span>
+        </div>
+      </div>
+
+      {/* Social buttons — stacked vertically */}
+      <div className="flex flex-col gap-3">
+        {SOCIAL_PROVIDERS.map(({ provider, label, icon, bg, text, border }) => (
+          <button
+            key={provider}
+            onClick={() => handleSocial(provider)}
+            disabled={loading !== null}
+            className={`flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${bg} ${text} ${border}`}
+          >
+            {icon}
+            {loading === provider ? '…' : label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
