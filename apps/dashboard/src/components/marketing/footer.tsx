@@ -34,10 +34,10 @@ export function MarketingFooter() {
               alt="Appalix"
               width={110}
               height={32}
-              className="object-contain mix-blend-screen brightness-200 mb-4"
+              className="object-contain invert mb-4"
             />
             <p className="text-sm text-gray-500 leading-relaxed">
-              AI sales agents that work 24/7 — trained on your content, deployed everywhere.
+              Turn visitors into loyal, long term paying clients 24X7 while you focus on your core competencies.
             </p>
           </div>
 
