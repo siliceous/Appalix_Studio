@@ -1,0 +1,154 @@
+import Link from 'next/link'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Resources — Appalix' }
+
+const POSTS = [
+  {
+    category: 'Guide',
+    title: 'How to train your AI agent on your product docs in under 10 minutes',
+    excerpt: 'A step-by-step walkthrough of syncing your knowledge base, PDFs, and website content to build an expert AI agent fast.',
+    readTime: '5 min read',
+    date: 'Feb 18, 2026',
+    emoji: '📚',
+  },
+  {
+    category: 'Strategy',
+    title: '7 ways AI sales agents increase conversion rates on landing pages',
+    excerpt: 'Real tactics used by high-growth SaaS companies to turn passive visitors into qualified leads using conversational AI.',
+    readTime: '7 min read',
+    date: 'Feb 14, 2026',
+    emoji: '📈',
+  },
+  {
+    category: 'Tutorial',
+    title: 'Setting up your Appalix web widget: a complete guide',
+    excerpt: 'Everything you need to know about embedding, customising, and optimising the Appalix chat widget on your website.',
+    readTime: '6 min read',
+    date: 'Feb 10, 2026',
+    emoji: '🔌',
+  },
+  {
+    category: 'Case Study',
+    title: 'How GrowthCo reduced support tickets by 68% in 30 days',
+    excerpt: 'Discover how one B2B SaaS company deployed an AI agent to handle tier-1 support and free their team for complex issues.',
+    readTime: '4 min read',
+    date: 'Feb 6, 2026',
+    emoji: '🏆',
+  },
+  {
+    category: 'Product',
+    title: 'Introducing multilingual AI agents: 95 languages, zero setup',
+    excerpt: 'Your Appalix agent now automatically detects and responds in your visitor\'s language — enabling truly global customer conversations.',
+    readTime: '3 min read',
+    date: 'Jan 30, 2026',
+    emoji: '🌍',
+  },
+  {
+    category: 'Guide',
+    title: 'Human handoff done right: when and how to escalate AI conversations',
+    excerpt: 'The best AI agents know their limits. Learn how to configure smart escalation rules so no customer ever feels stuck.',
+    readTime: '6 min read',
+    date: 'Jan 24, 2026',
+    emoji: '🤝',
+  },
+]
+
+const CATEGORIES = ['All', 'Guide', 'Strategy', 'Tutorial', 'Case Study', 'Product']
+
+export default function ResourcesPage() {
+  return (
+    <div className="pt-24">
+      {/* Hero */}
+      <section className="relative py-20 px-6 text-center overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-brand-600/15 rounded-full blur-[100px] pointer-events-none" />
+        <div className="relative max-w-3xl mx-auto">
+          <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Resources</p>
+          <h1 className="text-4xl sm:text-5xl font-bold mb-5">Insights for AI-first teams</h1>
+          <p className="text-gray-400 text-lg leading-relaxed">
+            Guides, tutorials, and strategies to help you get more from your AI sales agents.
+          </p>
+        </div>
+      </section>
+
+      {/* Category filter */}
+      <section className="px-6 pb-8">
+        <div className="max-w-7xl mx-auto flex flex-wrap gap-2 justify-center">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                cat === 'All'
+                  ? 'bg-brand-600/20 border-brand-600/40 text-brand-300'
+                  : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20 hover:text-white'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Posts grid */}
+      <section className="py-8 px-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {POSTS.map((post) => (
+            <article
+              key={post.title}
+              className="group flex flex-col rounded-2xl bg-white/5 border border-white/10 hover:border-brand-600/30 transition-colors overflow-hidden cursor-pointer"
+            >
+              {/* Thumbnail placeholder */}
+              <div className="h-36 bg-gradient-to-br from-brand-600/10 to-transparent flex items-center justify-center border-b border-white/5">
+                <span className="text-5xl">{post.emoji}</span>
+              </div>
+
+              <div className="p-5 flex flex-col flex-1">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">
+                    {post.category}
+                  </span>
+                  <span className="text-xs text-gray-600">{post.readTime}</span>
+                </div>
+
+                <h2 className="font-semibold text-white leading-snug mb-2 group-hover:text-brand-300 transition-colors">
+                  {post.title}
+                </h2>
+                <p className="text-sm text-gray-400 leading-relaxed flex-1">{post.excerpt}</p>
+
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
+                  <span className="text-xs text-gray-600">{post.date}</span>
+                  <span className="text-xs text-brand-400 font-medium group-hover:text-brand-300 transition-colors">
+                    Read more →
+                  </span>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      {/* Newsletter CTA */}
+      <section className="py-20 px-6 border-t border-white/5">
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="text-3xl mb-4">📬</div>
+          <h2 className="text-2xl font-bold mb-3">Stay ahead of the curve</h2>
+          <p className="text-gray-400 mb-8 text-sm">
+            Get new guides, case studies, and product updates delivered to your inbox every two weeks.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+            <input
+              type="email"
+              placeholder="you@company.com"
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-300 placeholder-gray-600 outline-none focus:border-brand-600/50"
+              readOnly
+            />
+            <button className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors whitespace-nowrap">
+              Subscribe
+            </button>
+          </div>
+          <p className="text-xs text-gray-600 mt-3">No spam. Unsubscribe any time.</p>
+        </div>
+      </section>
+    </div>
+  )
+}
