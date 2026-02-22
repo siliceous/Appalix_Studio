@@ -34,6 +34,11 @@ export async function middleware(request: NextRequest) {
 
   // Public paths that never require auth
   const isPublic =
+    pathname === '/' ||
+    pathname.startsWith('/features') ||
+    pathname.startsWith('/platforms') ||
+    pathname.startsWith('/pricing') ||
+    pathname.startsWith('/resources') ||
     pathname.startsWith('/login') ||
     pathname.startsWith('/api/auth') ||
     pathname.startsWith('/api/webhooks')
