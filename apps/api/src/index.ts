@@ -62,6 +62,23 @@ server.get('/health', async () => ({
   env:    config.NODE_ENV,
 }))
 
+// Temporary debug — remove after diagnosing integration lookup
+server.get<{ Params: { id: string } }>('/debug/integration/:id', async (request) => {
+  const { supabase } = await import('./lib/supabase.js')
+  const { data, error } = await supabase
+    .from('integrations')
+    .select('id, status, bot_id, platform')
+    .eq('id', request.params.id)
+    .single()
+  return {
+    supabaseUrl: config.SUPABASE_URL,
+    keyPrefix:   config.SUPABASE_SERVICE_ROLE_KEY.slice(0, 20),
+    data,
+    errorCode:   error?.code ?? null,
+    errorMsg:    error?.message ?? null,
+  }
+})
+
 // Platform webhooks — all mounted under /webhooks
 await server.register(slackRoutes,      { prefix: '/webhooks' })
 await server.register(facebookRoutes,   { prefix: '/webhooks' })
