@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
-import { Plug, Plus, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { Plug, Plus, CheckCircle, XCircle, AlertCircle, Pencil } from 'lucide-react'
 import { PLATFORM_META, formatDate } from '@/lib/utils'
 import type { Metadata } from 'next'
 import type { Platform, Integration } from '@/lib/types'
@@ -82,6 +82,13 @@ export default async function IntegrationsPage() {
                   )}
                 </div>
                 {STATUS_ICON[int.status]}
+                <a
+                  href={`/integrations/${int.id}/edit`}
+                  className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+                  title="Edit"
+                >
+                  <Pencil className="w-4 h-4" />
+                </a>
               </div>
             ))}
           </div>

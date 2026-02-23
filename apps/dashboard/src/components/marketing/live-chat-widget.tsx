@@ -12,11 +12,22 @@ interface LiveChatWidgetProps {
 }
 
 export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', text: 'Hi there! How can I help you today?' },
-  ])
-  const [input, setInput] = useState('')
+  const [messages, setMessages] = useState<Message[]>([])
+  const [input, setInput]   = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Fetch welcome message from integration config on mount
+  useEffect(() => {
+    fetch(`/api/widget-config?id=${integrationId}`)
+      .then((r) => r.json())
+      .then((d: { welcome_message?: string }) => {
+        setMessages([{ role: 'assistant', text: d.welcome_message ?? 'Hi there! How can I help you today?' }])
+      })
+      .catch(() => {
+        setMessages([{ role: 'assistant', text: 'Hi there! How can I help you today?' }])
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [sessionId] = useState<string>(() =>
     typeof crypto !== 'undefined' ? crypto.randomUUID() : Math.random().toString(36).slice(2),
   )

@@ -81,3 +81,60 @@ export async function createIntegration(formData: FormData) {
 
   redirect('/integrations')
 }
+
+export async function updateIntegration(integrationId: string, formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  // Verify the integration belongs to the user's workspace
+  const { data: membershipRaw } = await supabase
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('user_id', user.id)
+    .limit(1)
+    .single()
+  const membership = membershipRaw as { workspace_id: string } | null
+  if (!membership) redirect('/login')
+
+  const { data: intRaw } = await supabase
+    .from('integrations')
+    .select('id, config')
+    .eq('id', integrationId)
+    .eq('workspace_id', membership.workspace_id)
+    .single()
+  if (!intRaw) throw new Error('Integration not found')
+
+  const name          = (formData.get('name') as string | null)?.trim()
+  const botId         = formData.get('bot_id') as string | null
+  const welcomeMsg    = (formData.get('welcome_message') as string | null)?.trim()
+  const allowedOrigins = (formData.get('allowed_origins') as string | null)?.trim()
+
+  // Merge welcome_message into existing config
+  const existingConfig = (intRaw as { config: Record<string, unknown> }).config ?? {}
+  const newConfig: Record<string, unknown> = { ...existingConfig }
+
+  if (welcomeMsg !== null && welcomeMsg !== undefined) {
+    newConfig.welcome_message = welcomeMsg
+  }
+  if (allowedOrigins !== null && allowedOrigins !== undefined) {
+    newConfig.allowed_origins =
+      allowedOrigins === '*'
+        ? ['*']
+        : allowedOrigins.split(',').map((o) => o.trim()).filter(Boolean)
+  }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('integrations')
+    .update({
+      ...(name ? { name } : {}),
+      ...(botId !== null ? { bot_id: botId || null } : {}),
+      config: newConfig,
+    })
+    .eq('id', integrationId)
+
+  if (error) throw new Error(error.message)
+
+  redirect('/integrations')
+}

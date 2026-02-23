@@ -6,6 +6,24 @@ import { ingestSource } from '../../services/rag/ingestion.js'
 
 export async function chatRoutes(fastify: FastifyInstance) {
   /**
+   * GET /chat/config/:integrationId
+   * Returns public widget configuration (welcome_message, bot name).
+   * Safe to call unauthenticated — integration ID is the public token.
+   */
+  fastify.get<{ Params: { integrationId: string } }>(
+    '/config/:integrationId',
+    async (request, reply) => {
+      const integration = await resolveIntegration(request.params.integrationId)
+      if (!integration) return reply.status(404).send({ error: 'Integration not found' })
+
+      const cfg            = integration.config as Record<string, unknown>
+      const welcomeMessage = (cfg.welcome_message as string | undefined) ?? 'Hi there! How can I help you today?'
+
+      return reply.send({ welcome_message: welcomeMessage })
+    },
+  )
+
+  /**
    * POST /chat/:integrationId
    * Web widget direct chat endpoint.
    * Used by the embeddable JS widget (CORS-enabled per allowed_origins).
