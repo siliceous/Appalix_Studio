@@ -65,17 +65,25 @@ server.get('/health', async () => ({
 // Temporary debug — remove after diagnosing integration lookup
 server.get<{ Params: { id: string } }>('/debug/integration/:id', async (request) => {
   const { supabase } = await import('./lib/supabase.js')
-  const { data, error } = await supabase
+
+  // Query without .single() to see raw rows
+  const { data: rows, error: rowsError } = await supabase
     .from('integrations')
     .select('id, status, bot_id, platform')
     .eq('id', request.params.id)
-    .single()
+
+  // Get total row count to confirm table access
+  const { count, error: countError } = await supabase
+    .from('integrations')
+    .select('*', { count: 'exact', head: true })
+
   return {
-    supabaseUrl: config.SUPABASE_URL,
-    keyPrefix:   config.SUPABASE_SERVICE_ROLE_KEY.slice(0, 20),
-    data,
-    errorCode:   error?.code ?? null,
-    errorMsg:    error?.message ?? null,
+    supabaseUrl:    config.SUPABASE_URL,
+    keyPrefix:      config.SUPABASE_SERVICE_ROLE_KEY.slice(0, 20),
+    totalCount:     count,
+    countError:     countError?.message ?? null,
+    matchedRows:    rows,
+    rowsError:      rowsError?.message ?? null,
   }
 })
 
