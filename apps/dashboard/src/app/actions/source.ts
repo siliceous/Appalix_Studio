@@ -38,8 +38,40 @@ export async function createSource(formData: FormData) {
 
   const type = (formData.get('type') as string) || 'url'
   const name = (formData.get('name') as string)?.trim() || 'Untitled source'
-  const url  = (formData.get('url') as string)?.trim() || null
-  const text = (formData.get('text') as string)?.trim() || null
+
+  let url:      string | null = null
+  let filePath: string | null = null
+  let metadata: Record<string, unknown> = {}
+
+  if (type === 'url') {
+    url = (formData.get('url') as string)?.trim() || null
+  } else if (type === 'text') {
+    const text = (formData.get('text') as string)?.trim()
+    if (text) metadata = { raw_text: text }
+  } else if (type === 'file') {
+    const file = formData.get('file') as File | null
+    if (!file || file.size === 0) throw new Error('No file provided')
+
+    // Ensure the storage bucket exists (idempotent)
+    await admin.storage.createBucket('sources', {
+      public:           false,
+      fileSizeLimit:    50 * 1024 * 1024,
+      allowedMimeTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+    }).catch(() => { /* already exists */ })
+
+    const ext         = file.name.split('.').pop() ?? 'bin'
+    const storagePath = `${workspaceId}/${crypto.randomUUID()}.${ext}`
+    const buffer      = await file.arrayBuffer()
+
+    const { error: uploadError } = await admin.storage
+      .from('sources')
+      .upload(storagePath, buffer, { contentType: file.type })
+
+    if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`)
+
+    filePath = storagePath
+    metadata = { mime_type: file.type, original_name: file.name }
+  }
 
   const { data, error } = await admin
     .from('sources')
@@ -47,9 +79,10 @@ export async function createSource(formData: FormData) {
       workspace_id: workspaceId,
       type,
       name,
-      url:    type === 'url' ? url : null,
-      status: 'pending',
-      metadata: type === 'text' && text ? { raw_text: text } : {},
+      url,
+      file_path: filePath,
+      status:    'pending',
+      metadata,
     })
     .select('id')
     .single()

@@ -1,85 +1,143 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useState, useRef } from 'react'
 import { Header } from '@/components/layout/header'
 import { createSource } from '@/app/actions/source'
-import type { Metadata } from 'next'
+import { Link2, FileText, AlignLeft, Upload, X } from 'lucide-react'
 
-export const metadata: Metadata = { title: 'Add source' }
+type SourceType = 'url' | 'text' | 'file'
 
-export default async function NewSourcePage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+const TYPES: { value: SourceType; label: string; desc: string; icon: React.ReactNode }[] = [
+  { value: 'url',  label: 'Website URL', desc: 'Scrape and index any webpage',              icon: <Link2 className="w-4 h-4" /> },
+  { value: 'text', label: 'Plain text',  desc: 'Paste FAQs, docs, or custom knowledge',     icon: <AlignLeft className="w-4 h-4" /> },
+  { value: 'file', label: 'PDF / Image', desc: 'Upload a PDF or image file (up to 50 MB)', icon: <FileText className="w-4 h-4" /> },
+]
+
+export default function NewSourcePage() {
+  const [type, setType]         = useState<SourceType>('url')
+  const [fileName, setFileName] = useState<string | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    setFileName(e.target.files?.[0]?.name ?? null)
+  }
+
+  function clearFile() {
+    setFileName(null)
+    if (fileRef.current) fileRef.current.value = ''
+  }
 
   return (
     <div className="max-w-2xl">
       <Header
         title="Add source"
-        description="Train your bot with a website URL or custom text"
+        description="Train your bot with a website, document, or custom text"
       />
 
       <form action={createSource} className="space-y-6">
+        {/* Hidden type — kept in sync with state */}
+        <input type="hidden" name="type" value={type} />
+
         {/* Type selector */}
         <div className="bg-white rounded-xl border p-5">
-          <label className="block text-sm font-semibold text-gray-900 mb-3">Source type</label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 hover:bg-gray-50 transition-colors">
-              <input type="radio" name="type" value="url" defaultChecked className="mt-0.5 accent-brand-600" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">Website URL</p>
-                <p className="text-xs text-gray-500 mt-0.5">Scrape and index a webpage or document</p>
-              </div>
-            </label>
-            <label className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 hover:bg-gray-50 transition-colors">
-              <input type="radio" name="type" value="text" className="mt-0.5 accent-brand-600" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">Plain text</p>
-                <p className="text-xs text-gray-500 mt-0.5">Paste in FAQs, docs, or custom knowledge</p>
-              </div>
-            </label>
+          <p className="text-sm font-semibold text-gray-900 mb-3">Source type</p>
+          <div className="grid grid-cols-3 gap-3">
+            {TYPES.map(({ value, label, desc, icon }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => { setType(value); clearFile() }}
+                className={`flex flex-col items-start gap-2 p-3 rounded-lg border text-left transition-colors ${
+                  type === value
+                    ? 'border-brand-500 bg-brand-50'
+                    : 'border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <span className={type === value ? 'text-brand-600' : 'text-gray-400'}>{icon}</span>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{label}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Fields */}
         <div className="bg-white rounded-xl border p-5 space-y-4">
+          {/* Common: name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Source name</label>
             <input
               type="text"
               name="name"
               required
-              placeholder="e.g. Appalix homepage, Product FAQ"
+              placeholder="e.g. Appalix homepage, Product FAQ, Pricing guide"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              URL <span className="text-gray-400 font-normal">(for website type)</span>
-            </label>
-            <input
-              type="url"
-              name="url"
-              placeholder="https://yoursite.com/page"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
-          </div>
+          {/* URL */}
+          {type === 'url' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Page URL</label>
+              <input
+                type="url"
+                name="url"
+                required
+                placeholder="https://yoursite.com/about"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+          )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Text content <span className="text-gray-400 font-normal">(for plain text type)</span>
-            </label>
-            <textarea
-              name="text"
-              rows={8}
-              placeholder="Paste your FAQs, product documentation, or any custom knowledge here..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-y"
-            />
-          </div>
+          {/* Text */}
+          {type === 'text' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Content</label>
+              <textarea
+                name="text"
+                required
+                rows={10}
+                placeholder="Paste your FAQs, product documentation, pricing info, or any knowledge you want the bot to use..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-y"
+              />
+            </div>
+          )}
+
+          {/* File upload */}
+          {type === 'file' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">File</label>
+              {fileName ? (
+                <div className="flex items-center gap-3 px-3 py-2.5 border border-brand-300 bg-brand-50 rounded-lg">
+                  <FileText className="w-4 h-4 text-brand-600 shrink-0" />
+                  <span className="text-sm text-gray-800 truncate flex-1">{fileName}</span>
+                  <button type="button" onClick={clearFile} className="text-gray-400 hover:text-gray-600">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center gap-2 px-4 py-8 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-brand-400 hover:bg-brand-50 transition-colors">
+                  <Upload className="w-6 h-6 text-gray-400" />
+                  <span className="text-sm text-gray-600">Click to upload a PDF or image</span>
+                  <span className="text-xs text-gray-400">PDF, JPG, PNG, WebP — up to 50 MB</span>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    name="file"
+                    accept=".pdf,image/jpeg,image/png,image/webp,image/gif"
+                    onChange={handleFile}
+                    className="sr-only"
+                  />
+                </label>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700">
-          After adding, your source will be processed and indexed automatically.
+          After adding, your source is processed and indexed automatically.
           Once <strong>Ready</strong>, bots with RAG enabled will use it to answer questions.
         </div>
 

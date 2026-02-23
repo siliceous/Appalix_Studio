@@ -93,34 +93,36 @@ export async function ingestSource(sourceId: string): Promise<void> {
 
 /**
  * Fetch raw text content from a source.
- * Currently handles: url, text types.
- * Extend with pdf/docx parsers as needed.
+ * Handles: url, sitemap, text, file (PDF + images via Claude vision).
  */
 async function fetchSourceContent(source: {
-  type: string; url?: string | null; file_path?: string | null; name: string
+  type: string
+  url?: string | null
+  file_path?: string | null
+  name: string
+  metadata?: Record<string, unknown> | null
 }): Promise<string> {
   switch (source.type) {
     case 'text': {
-      // For 'text' type the content was passed during creation and stored elsewhere;
-      // here we just return the name as a stub. In production store content in Supabase Storage.
-      return source.name
+      // Content stored in metadata.raw_text at creation time
+      const raw = (source.metadata as Record<string, string> | null)?.raw_text
+      if (!raw) throw new Error('Text source has no content in metadata.raw_text')
+      return raw
     }
 
     case 'url': {
       if (!source.url) throw new Error('URL source has no URL')
       const res = await fetch(source.url, {
-        headers: { 'User-Agent': 'SaaS-Platform-Ingestion/1.0' },
+        headers: { 'User-Agent': 'Appalix-Ingestion/1.0' },
         signal: AbortSignal.timeout(30_000),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${source.url}`)
       const html = await res.text()
-      // Strip HTML tags for a basic text extraction
       return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
     }
 
     case 'sitemap': {
       if (!source.url) throw new Error('Sitemap source has no URL')
-      // Fetch sitemap.xml and extract URLs, then fetch each page
       const res   = await fetch(source.url, { signal: AbortSignal.timeout(30_000) })
       const xml   = await res.text()
       const urls  = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]).slice(0, 50)
@@ -133,6 +135,63 @@ async function fetchSourceContent(source: {
         .filter((p): p is PromiseFulfilledResult<string> => p.status === 'fulfilled')
         .map((p) => p.value)
         .join('\n\n---\n\n')
+    }
+
+    case 'file': {
+      if (!source.file_path) throw new Error('File source has no file_path')
+      const mimeType = (source.metadata as Record<string, string> | null)?.mime_type ?? ''
+
+      // Download from Supabase Storage
+      const { data: blob, error: dlErr } = await supabase.storage
+        .from('sources')
+        .download(source.file_path)
+      if (dlErr || !blob) throw new Error(`Storage download failed: ${dlErr?.message ?? 'unknown'}`)
+
+      const arrayBuffer = await blob.arrayBuffer()
+      const base64      = Buffer.from(arrayBuffer).toString('base64')
+
+      const isPdf   = mimeType === 'application/pdf'
+      const isImage = mimeType.startsWith('image/')
+      if (!isPdf && !isImage) throw new Error(`Unsupported file MIME type: ${mimeType}`)
+
+      // Use Claude to extract text — document API for PDFs, vision for images
+      const { anthropic } = await import('../ai/claude.js')
+
+      type ImageMediaType = 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'
+
+      // Cast as `never` because DocumentBlockParam is absent from SDK ^0.32 types
+      // but is supported by the API at runtime.
+      const fileBlock = (isPdf
+        ? {
+            type:   'document',
+            source: { type: 'base64', media_type: 'application/pdf', data: base64 },
+          }
+        : {
+            type:   'image',
+            source: { type: 'base64', media_type: mimeType as ImageMediaType, data: base64 },
+          }) as never
+
+      const extraction = await anthropic.messages.create({
+        model:      'claude-haiku-4-5-20251001',
+        max_tokens: 4096,
+        messages: [{
+          role:    'user',
+          content: [
+            fileBlock,
+            {
+              type: 'text' as const,
+              text: isPdf
+                ? 'Extract all text content from this PDF. Return the full raw text preserving headings and structure. Do not summarize.'
+                : 'Transcribe all visible text in this image. Also briefly describe any diagrams, charts, or non-text visuals.',
+            },
+          ],
+        }],
+      })
+
+      const textBlock = extraction.content.find(
+        (b): b is { type: 'text'; text: string } => b.type === 'text',
+      )
+      return textBlock?.text ?? ''
     }
 
     default:
