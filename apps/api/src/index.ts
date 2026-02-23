@@ -66,6 +66,19 @@ server.get('/health', async () => ({
 server.get<{ Params: { id: string } }>('/debug/integration/:id', async (request) => {
   const { supabase } = await import('./lib/supabase.js')
 
+  // Decode JWT payload to verify role claim
+  const key    = config.SUPABASE_SERVICE_ROLE_KEY
+  const parts  = key.split('.')
+  let jwtRole  = 'not-a-jwt'
+  let jwtRef   = 'unknown'
+  if (parts.length === 3) {
+    try {
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString())
+      jwtRole = payload.role ?? 'no-role-claim'
+      jwtRef  = payload.ref  ?? 'no-ref-claim'
+    } catch { /* ignore */ }
+  }
+
   // Query without .single() to see raw rows
   const { data: rows, error: rowsError } = await supabase
     .from('integrations')
@@ -79,7 +92,9 @@ server.get<{ Params: { id: string } }>('/debug/integration/:id', async (request)
 
   return {
     supabaseUrl:    config.SUPABASE_URL,
-    keyPrefix:      config.SUPABASE_SERVICE_ROLE_KEY.slice(0, 20),
+    keyLength:      key.length,
+    jwtRole,
+    jwtRef,
     totalCount:     count,
     countError:     countError?.message ?? null,
     matchedRows:    rows,
