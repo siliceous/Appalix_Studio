@@ -22,7 +22,7 @@ export default function NewBotPage() {
     system_prompt: '',
     max_tokens: 1024,
     temperature: 0.70,
-    enable_rag: false,
+    enable_rag: true,
     enable_tools: false,
     enable_memory: true,
   })
