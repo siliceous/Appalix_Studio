@@ -41,7 +41,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/resources') ||
     pathname.startsWith('/login') ||
     pathname.startsWith('/api/auth') ||
-    pathname.startsWith('/api/webhooks')
+    pathname.startsWith('/api/webhooks') ||
+    pathname.startsWith('/api/widget-chat')
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone()
