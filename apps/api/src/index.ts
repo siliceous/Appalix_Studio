@@ -62,46 +62,6 @@ server.get('/health', async () => ({
   env:    config.NODE_ENV,
 }))
 
-// Temporary debug — remove after diagnosing integration lookup
-server.get<{ Params: { id: string } }>('/debug/integration/:id', async (request) => {
-  const { supabase } = await import('./lib/supabase.js')
-
-  // Decode JWT payload to verify role claim
-  const key    = config.SUPABASE_SERVICE_ROLE_KEY
-  const parts  = key.split('.')
-  let jwtRole  = 'not-a-jwt'
-  let jwtRef   = 'unknown'
-  if (parts.length === 3) {
-    try {
-      const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString())
-      jwtRole = payload.role ?? 'no-role-claim'
-      jwtRef  = payload.ref  ?? 'no-ref-claim'
-    } catch { /* ignore */ }
-  }
-
-  // Query without .single() to see raw rows
-  const { data: rows, error: rowsError } = await supabase
-    .from('integrations')
-    .select('id, status, bot_id, platform')
-    .eq('id', request.params.id)
-
-  // Get total row count to confirm table access
-  const { count, error: countError } = await supabase
-    .from('integrations')
-    .select('*', { count: 'exact', head: true })
-
-  return {
-    supabaseUrl:    config.SUPABASE_URL,
-    keyLength:      key.length,
-    jwtRole,
-    jwtRef,
-    totalCount:     count,
-    countError:     countError?.message ?? null,
-    matchedRows:    rows,
-    rowsError:      rowsError?.message ?? null,
-  }
-})
-
 // Platform webhooks — all mounted under /webhooks
 await server.register(slackRoutes,      { prefix: '/webhooks' })
 await server.register(facebookRoutes,   { prefix: '/webhooks' })
