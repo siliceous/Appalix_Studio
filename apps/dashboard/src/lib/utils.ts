@@ -16,6 +16,17 @@ export function formatDate(iso: string) {
   }).format(new Date(iso))
 }
 
+/** Format a UTC ISO string as date + time (e.g. "Feb 23, 2026, 11:42 AM") */
+export function formatDateTime(iso: string) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(iso))
+}
+
 /** Format a UTC ISO string as relative time (e.g. "3 minutes ago") */
 export function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()

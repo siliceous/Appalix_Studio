@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { deleteSource, resyncSource } from '@/app/actions/source'
-import { formatDate } from '@/lib/utils'
+import { formatDateTime } from '@/lib/utils'
 import { BookOpen, Plus, RefreshCw, Trash2, CheckCircle2, Clock, AlertCircle, Loader2, Link } from 'lucide-react'
 import type { Metadata } from 'next'
 import type { Source } from '@/lib/types'
@@ -81,10 +81,11 @@ export default async function SourcesPage() {
                     {source.chunk_count != null && (
                       <span className="ml-2">{source.chunk_count} chunks</span>
                     )}
-                    {source.last_synced_at && (
+                    {(source.last_synced_at ?? source.created_at) && (
                       <>
                         <span className="mx-1 text-gray-300">·</span>
-                        synced {formatDate(source.last_synced_at)}
+                        {source.last_synced_at ? 'indexed' : 'added'}{' '}
+                        {formatDateTime(source.last_synced_at ?? source.created_at)}
                       </>
                     )}
                   </p>

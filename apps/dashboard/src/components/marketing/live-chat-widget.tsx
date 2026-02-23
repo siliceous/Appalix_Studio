@@ -20,11 +20,13 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
   const [sessionId] = useState<string>(() =>
     typeof crypto !== 'undefined' ? crypto.randomUUID() : Math.random().toString(36).slice(2),
   )
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const messagesRef = useRef<HTMLDivElement>(null)
+  const inputRef    = useRef<HTMLInputElement>(null)
 
+  // Scroll the messages box (not the whole page) to the bottom
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = messagesRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [messages, loading])
 
   const sendMessage = useCallback(async () => {
@@ -72,7 +74,7 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
       </div>
 
       {/* Messages */}
-      <div className="p-4 space-y-3 h-64 overflow-y-auto scrollbar-none">
+      <div ref={messagesRef} className="p-4 space-y-3 h-64 overflow-y-auto scrollbar-none">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
@@ -98,7 +100,6 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
           </div>
         )}
 
-        <div ref={bottomRef} />
       </div>
 
       {/* Input */}
