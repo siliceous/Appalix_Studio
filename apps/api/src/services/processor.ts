@@ -74,6 +74,8 @@ export async function processMessage(
   // ---------------------------------------------------------------
   let ragContext: string | undefined
 
+  console.log(`[processor] bot=${botId} enable_rag=${bot.enable_rag}`)
+
   if (bot.enable_rag) {
     const chunks = await retrieveContext({
       workspaceId,
@@ -82,6 +84,7 @@ export async function processMessage(
       conversationId,
     })
     ragContext = buildRagContext(chunks)
+    console.log(`[processor] ragContext ${ragContext ? `${ragContext.length} chars` : 'EMPTY — no chunks matched'}`)
   }
 
   const systemPrompt = buildSystemPrompt(bot.system_prompt, ragContext)

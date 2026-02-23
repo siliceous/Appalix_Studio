@@ -26,11 +26,13 @@ export async function retrieveContext(params: RetrievalParams): Promise<Retrieve
   const {
     workspaceId,
     query,
-    matchThreshold = 0.70,
+    matchThreshold = 0.50,
     matchCount     = 5,
     sourceIds,
     conversationId,
   } = params
+
+  console.log(`[rag/retrieval] query="${query.slice(0, 80)}" threshold=${matchThreshold} workspace=${workspaceId}`)
 
   // Embed the query
   const queryEmbedding = await embedText(query)
@@ -69,7 +71,10 @@ export async function retrieveContext(params: RetrievalParams): Promise<Retrieve
     return []
   }
 
-  return (result.data ?? []).map((row: {
+  const rows = result.data ?? []
+  console.log(`[rag/retrieval] found ${rows.length} chunks` + (rows.length > 0 ? ` (top similarity: ${(rows[0]?.similarity ?? 0).toFixed(3)})` : ''))
+
+  return rows.map((row: {
     id: string; source_id: string; content: string; similarity: number; metadata: Record<string, unknown>
   }) => ({
     id:         row.id,
