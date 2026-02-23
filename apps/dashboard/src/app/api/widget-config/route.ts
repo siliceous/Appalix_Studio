@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// Never cache this route — welcome_message can be updated at any time
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/widget-config?id=:integrationId
  * Proxies to GET /chat/config/:id on the Render API.
@@ -13,7 +16,7 @@ export async function GET(req: NextRequest) {
   if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
 
   try {
-    const upstream = await fetch(`${apiBase}/chat/config/${id}`)
+    const upstream = await fetch(`${apiBase}/chat/config/${id}`, { cache: 'no-store' })
     const data = await upstream.json() as unknown
     return NextResponse.json(data, { status: upstream.status })
   } catch {
