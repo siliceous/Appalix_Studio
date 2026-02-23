@@ -11,7 +11,7 @@ const NAV_LINKS = [
 
 export function MarketingNavbar() {
   return (
-    <header className="fixed top-0 inset-x-0 z-50 border-b border-white/10 bg-[#050505]/80 backdrop-blur-md">
+    <header className="fixed top-0 inset-x-0 z-50 border-b border-white/10 bg-[#111111]/80 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center">
@@ -48,7 +48,7 @@ export function MarketingNavbar() {
           </Link>
           <Link
             href="/login"
-            className="text-sm font-medium bg-brand-600 hover:bg-brand-700 text-white px-4 py-1.5 rounded-lg transition-colors"
+            className="text-sm font-medium bg-[#3873BB] hover:bg-[#1a4073] text-white px-4 py-1.5 rounded-lg transition-colors"
           >
             Get started free
           </Link>

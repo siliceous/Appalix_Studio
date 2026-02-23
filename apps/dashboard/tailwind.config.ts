@@ -6,12 +6,20 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          50:  '#eff6ff',
-          100: '#dbeafe',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          900: '#1e3a8a',
+          50:  '#e8f6f4',
+          100: '#c8ece8',
+          300: '#7dcfc3',
+          400: '#61c2ad',
+          500: '#4aaa97',
+          600: '#3d9585',
+          700: '#2f7a6c',
+          900: '#1a4740',
+        },
+        accent: {
+          orange:      '#ec732e',
+          'orange-light': '#f19e38',
+          blue:        '#3873BB',
+          'blue-dark': '#1a4073',
         },
       },
       fontFamily: {

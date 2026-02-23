@@ -1,7 +1,19 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ScrollReveal } from '@/components/marketing/animate'
 
-export const metadata: Metadata = { title: 'Features — Appalix' }
+export const metadata: Metadata = {
+  title: 'Features — AI Agent Training, Lead Capture & Analytics | Appalix',
+  description:
+    'Multi-source training, 7-platform deployment, automated lead capture, human handoff, and advanced analytics. Deploy AI sales agents at scale.',
+  keywords: [
+    'AI chatbot features',
+    'lead capture chatbot',
+    'multi-platform AI agent',
+    'human handoff chatbot',
+    'AI agent analytics',
+  ],
+}
 
 const FEATURES = [
   {
@@ -74,24 +86,39 @@ export default function FeaturesPage() {
       <section className="relative py-20 px-6 text-center overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-brand-600/15 rounded-full blur-[100px] pointer-events-none" />
         <div className="relative max-w-3xl mx-auto">
-          <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Features</p>
-          <h1 className="text-4xl sm:text-5xl font-bold mb-5">Built to convert, built to scale</h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
-            Everything you need to deploy, manage, and optimise AI sales agents across every channel your customers use.
-          </p>
+          <ScrollReveal>
+            <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Features</p>
+            <h1 className="text-4xl sm:text-5xl font-bold mb-5">Built to convert, built to scale</h1>
+            <p className="text-gray-400 text-lg leading-relaxed">
+              Everything you need to deploy, manage, and optimise AI sales agents across every channel your customers use.
+            </p>
+          </ScrollReveal>
+          <ScrollReveal delay={0.15}>
+            <div className="flex flex-wrap justify-center gap-3 mt-8">
+              <Link href="/platforms" className="text-sm text-brand-400 hover:text-brand-300 transition-colors">
+                View integrations →
+              </Link>
+              <span className="text-gray-700">·</span>
+              <Link href="/pricing" className="text-sm text-brand-400 hover:text-brand-300 transition-colors">
+                See pricing →
+              </Link>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
       {/* Feature grid */}
       <section className="py-16 px-6">
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {FEATURES.map((f) => (
-            <div key={f.title} className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-brand-600/30 transition-colors flex flex-col">
-              <div className="text-3xl mb-4">{f.icon}</div>
-              <span className="text-xs text-brand-400 font-semibold uppercase tracking-widest mb-2">{f.tag}</span>
-              <h3 className="font-semibold text-white mb-2">{f.title}</h3>
-              <p className="text-sm text-gray-400 leading-relaxed flex-1">{f.desc}</p>
-            </div>
+          {FEATURES.map((f, i) => (
+            <ScrollReveal key={f.title} delay={i * 0.06}>
+              <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-brand-600/30 transition-colors flex flex-col h-full">
+                <div className="text-3xl mb-4">{f.icon}</div>
+                <span className="text-xs text-brand-400 font-semibold uppercase tracking-widest mb-2">{f.tag}</span>
+                <h3 className="font-semibold text-white mb-2">{f.title}</h3>
+                <p className="text-sm text-gray-400 leading-relaxed flex-1">{f.desc}</p>
+              </div>
+            </ScrollReveal>
           ))}
         </div>
       </section>
@@ -99,46 +126,52 @@ export default function FeaturesPage() {
       {/* Comparison table */}
       <section className="py-16 px-6 border-t border-white/5">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-2xl font-bold text-center mb-10">Feature comparison</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left py-3 pr-6 text-gray-500 font-medium">Feature</th>
-                  {['Starter', 'Core', 'Pro', 'Scale'].map((p) => (
-                    <th key={p} className={`py-3 px-4 text-center font-semibold ${p === 'Pro' ? 'text-brand-400' : 'text-gray-300'}`}>
-                      {p}
-                      {p === 'Pro' && <span className="ml-1 text-xs bg-brand-600 text-white px-1.5 py-0.5 rounded-full align-middle">Popular</span>}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {COMPARISON.map((row, i) => (
-                  <tr key={row.feature} className={`border-b border-white/5 ${i % 2 === 0 ? '' : 'bg-white/[0.02]'}`}>
-                    <td className="py-3 pr-6 text-gray-400">{row.feature}</td>
-                    <td className="py-3 px-4 text-center text-gray-400">{row.starter}</td>
-                    <td className="py-3 px-4 text-center text-gray-400">{row.core}</td>
-                    <td className="py-3 px-4 text-center text-brand-300 font-medium">{row.pro}</td>
-                    <td className="py-3 px-4 text-center text-gray-400">{row.scale}</td>
+          <ScrollReveal>
+            <h2 className="text-2xl font-bold text-center mb-10">Feature comparison</h2>
+          </ScrollReveal>
+          <ScrollReveal delay={0.1}>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="text-left py-3 pr-6 text-gray-500 font-medium">Feature</th>
+                    {['Starter', 'Core', 'Pro', 'Scale'].map((p) => (
+                      <th key={p} className={`py-3 px-4 text-center font-semibold ${p === 'Pro' ? 'text-brand-400' : 'text-gray-300'}`}>
+                        {p}
+                        {p === 'Pro' && <span className="ml-1 text-xs bg-brand-600 text-white px-1.5 py-0.5 rounded-full align-middle">Popular</span>}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {COMPARISON.map((row, i) => (
+                    <tr key={row.feature} className={`border-b border-white/5 ${i % 2 === 0 ? '' : 'bg-white/[0.02]'}`}>
+                      <td className="py-3 pr-6 text-gray-400">{row.feature}</td>
+                      <td className="py-3 px-4 text-center text-gray-400">{row.starter}</td>
+                      <td className="py-3 px-4 text-center text-gray-400">{row.core}</td>
+                      <td className="py-3 px-4 text-center text-brand-300 font-medium">{row.pro}</td>
+                      <td className="py-3 px-4 text-center text-gray-400">{row.scale}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
       {/* CTA */}
       <section className="py-20 px-6 border-t border-white/5 text-center">
-        <h2 className="text-2xl font-bold mb-4">Ready to get started?</h2>
-        <p className="text-gray-400 mb-8 text-sm">7-day free trial on every plan. No credit card required.</p>
-        <Link
-          href="/login"
-          className="inline-flex items-center gap-2 px-8 py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors"
-        >
-          Start free trial
-        </Link>
+        <ScrollReveal>
+          <h2 className="text-2xl font-bold mb-4">Ready to get started?</h2>
+          <p className="text-gray-400 mb-8 text-sm">7-day free trial on every plan. No credit card required.</p>
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#3873BB] hover:bg-[#1a4073] text-white font-medium rounded-xl transition-colors"
+          >
+            Start free trial
+          </Link>
+        </ScrollReveal>
       </section>
     </div>
   )
