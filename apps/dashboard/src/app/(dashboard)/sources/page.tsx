@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/header'
 import { deleteSource, resyncSource } from '@/app/actions/source'
 import { formatDateTime } from '@/lib/utils'
 import { BookOpen, Plus, RefreshCw, Trash2, CheckCircle2, Clock, AlertCircle, Loader2, Link } from 'lucide-react'
+import { SourcesPoller } from './sources-poller'
 import type { Metadata } from 'next'
 import type { Source } from '@/lib/types'
 
@@ -33,9 +34,11 @@ export default async function SourcesPage() {
     .eq('workspace_id', membership.workspace_id)
     .order('created_at', { ascending: false })
   const sources = (rawSources ?? []) as Source[]
+  const hasActiveJobs = sources.some((s) => s.status === 'pending' || s.status === 'processing')
 
   return (
     <div>
+      {hasActiveJobs && <SourcesPoller />}
       <Header
         title="Knowledge Base"
         description="Add website URLs or text to train your bots with custom knowledge"
