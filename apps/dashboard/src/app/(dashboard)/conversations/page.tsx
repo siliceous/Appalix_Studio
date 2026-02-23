@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { MessageSquare } from 'lucide-react'
 import { PLATFORM_META, timeAgo } from '@/lib/utils'
+import { ConversationActions } from './conversation-actions'
 import type { Metadata } from 'next'
 import type { Conversation } from '@/lib/types'
 
@@ -79,6 +80,7 @@ export default async function ConversationsPage({
                 <th className="text-left px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">Bot</th>
                 <th className="text-right px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">Messages</th>
                 <th className="text-right px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">Last active</th>
+                <th className="text-right px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -104,6 +106,9 @@ export default async function ConversationsPage({
                   </td>
                   <td className="px-5 py-3.5 text-right text-gray-500">{c.message_count}</td>
                   <td className="px-5 py-3.5 text-right text-gray-400">{timeAgo(c.last_activity_at)}</td>
+                  <td className="px-5 py-3.5">
+                    <ConversationActions id={c.id} />
+                  </td>
                 </tr>
               ))}
             </tbody>

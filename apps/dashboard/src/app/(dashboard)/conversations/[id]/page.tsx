@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import { PLATFORM_META, formatDate } from '@/lib/utils'
+import { Download } from 'lucide-react'
+import { DeleteConversationButton } from './delete-button'
 import type { Metadata } from 'next'
 import type { Conversation, Message } from '@/lib/types'
 
@@ -57,6 +59,17 @@ export default async function ConversationDetailPage({
               <span className="text-xs text-gray-400">Bot: {conversation.bots.name}</span>
             )}
           </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <a
+            href={`/api/conversations/${id}/export`}
+            download
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 border text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Download
+          </a>
+          <DeleteConversationButton id={id} />
         </div>
       </div>
 
