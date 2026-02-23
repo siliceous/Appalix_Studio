@@ -4,6 +4,7 @@ import { MarketingNavbar } from '@/components/marketing/navbar'
 import { MarketingFooter } from '@/components/marketing/footer'
 import { FadeUp, ScrollReveal } from '@/components/marketing/animate'
 import { LiveChatWidget } from '@/components/marketing/live-chat-widget'
+import { createAdminClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
   title: 'Appalix — AI Sales Agent | Convert Visitors to Clients 24/7',
@@ -58,7 +59,17 @@ const STEPS = [
 ]
 
 
-export default function HomePage() {
+export default async function HomePage() {
+  const admin = createAdminClient()
+  const { data: integrationRow } = await admin
+    .from('integrations')
+    .select('id')
+    .eq('platform', 'web_widget')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+  const widgetIntegrationId = integrationRow?.id as string | undefined
   return (
     <div className="bg-[#111111] min-h-screen text-white">
       <MarketingNavbar />
@@ -131,9 +142,9 @@ export default function HomePage() {
 
           {/* Live chat widget — Support Bot */}
           <FadeUp delay={0.4}>
-            <LiveChatWidget
-              integrationId={process.env.NEXT_PUBLIC_WIDGET_INTEGRATION_ID ?? 'b002681e-ede8-4592-8792-14981f6327ef'}
-            />
+            {widgetIntegrationId && (
+              <LiveChatWidget integrationId={widgetIntegrationId} />
+            )}
           </FadeUp>
         </div>
       </section>
