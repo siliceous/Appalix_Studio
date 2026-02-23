@@ -27,10 +27,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'integrationId and message are required' }, { status: 400 })
   }
 
+  // Forward the origin so the API's allowed_origins check passes.
+  // Same-origin requests from the browser don't include an Origin header,
+  // so we derive it from the request URL.
+  const origin = req.headers.get('origin') ?? req.nextUrl.origin
+
   try {
     const upstream = await fetch(`${apiBase}/chat/${integrationId}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Origin: origin },
       body: JSON.stringify({ message, session_id }),
     })
 
