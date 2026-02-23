@@ -82,6 +82,57 @@ export async function createIntegration(formData: FormData) {
   redirect('/integrations')
 }
 
+export async function setIntegrationStatus(
+  integrationId: string,
+  newStatus: 'active' | 'inactive',
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { data: membershipRaw } = await supabase
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('user_id', user.id)
+    .limit(1)
+    .single()
+  const membership = membershipRaw as { workspace_id: string } | null
+  if (!membership) throw new Error('Unauthorized')
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('integrations')
+    .update({ status: newStatus })
+    .eq('id', integrationId)
+    .eq('workspace_id', membership.workspace_id)
+
+  if (error) throw new Error(error.message)
+}
+
+export async function deleteIntegration(integrationId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { data: membershipRaw } = await supabase
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('user_id', user.id)
+    .limit(1)
+    .single()
+  const membership = membershipRaw as { workspace_id: string } | null
+  if (!membership) throw new Error('Unauthorized')
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('integrations')
+    .delete()
+    .eq('id', integrationId)
+    .eq('workspace_id', membership.workspace_id)
+
+  if (error) throw new Error(error.message)
+}
+
 export async function updateIntegration(integrationId: string, formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

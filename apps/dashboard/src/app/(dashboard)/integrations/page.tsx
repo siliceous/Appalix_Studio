@@ -1,20 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
-import { Plug, Plus, CheckCircle, XCircle, AlertCircle, Pencil } from 'lucide-react'
+import { Plug, Plus } from 'lucide-react'
 import { PLATFORM_META, formatDate } from '@/lib/utils'
+import { IntegrationActions } from './integration-actions'
 import type { Metadata } from 'next'
 import type { Platform, Integration } from '@/lib/types'
 
 type IntegrationRow = Integration & { bots?: { name: string } | null }
 
 export const metadata: Metadata = { title: 'Integrations' }
-
-const STATUS_ICON = {
-  active:   <CheckCircle className="w-4 h-4 text-green-500" />,
-  inactive: <XCircle    className="w-4 h-4 text-gray-400" />,
-  error:    <AlertCircle className="w-4 h-4 text-red-500" />,
-}
 
 // All supported platforms shown in the "add" grid
 const AVAILABLE_PLATFORMS: { platform: Platform; desc: string }[] = [
@@ -81,14 +76,7 @@ export default async function IntegrationsPage() {
                     <p className="text-xs text-red-500 mt-0.5">{int.last_error}</p>
                   )}
                 </div>
-                {STATUS_ICON[int.status]}
-                <a
-                  href={`/integrations/${int.id}/edit`}
-                  className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
-                  title="Edit"
-                >
-                  <Pencil className="w-4 h-4" />
-                </a>
+                <IntegrationActions id={int.id} status={int.status} />
               </div>
             ))}
           </div>
