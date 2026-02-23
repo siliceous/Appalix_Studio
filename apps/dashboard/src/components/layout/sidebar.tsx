@@ -11,6 +11,7 @@ import {
   BarChart2,
   Settings,
   LogOut,
+  BookOpen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -18,12 +19,13 @@ import { useRouter } from 'next/navigation'
 import type { Workspace } from '@/lib/types'
 
 const NAV_ITEMS = [
-  { href: '/dashboard',        label: 'Overview',       icon: LayoutDashboard },
-  { href: '/bots',             label: 'Bots',           icon: Bot },
-  { href: '/conversations',    label: 'Conversations',  icon: MessageSquare },
-  { href: '/integrations',     label: 'Integrations',   icon: Plug },
-  { href: '/analytics',        label: 'Analytics',      icon: BarChart2 },
-  { href: '/settings',         label: 'Settings',       icon: Settings },
+  { href: '/dashboard',        label: 'Overview',        icon: LayoutDashboard },
+  { href: '/bots',             label: 'Bots',            icon: Bot },
+  { href: '/conversations',    label: 'Conversations',   icon: MessageSquare },
+  { href: '/integrations',     label: 'Integrations',    icon: Plug },
+  { href: '/sources',          label: 'Knowledge Base',  icon: BookOpen },
+  { href: '/analytics',        label: 'Analytics',       icon: BarChart2 },
+  { href: '/settings',         label: 'Settings',        icon: Settings },
 ]
 
 interface SidebarProps {
