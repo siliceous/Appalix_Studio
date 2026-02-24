@@ -17,6 +17,15 @@ export const metadata: Metadata = {
 
 const POSTS = [
   {
+    category: 'Tutorial',
+    title: 'Connecting Webhook URLs to CRMs and Human Handover',
+    excerpt: 'Step-by-step: capture leads into HubSpot or Salesforce automatically, and alert your team on Slack, Discord, Telegram, or WhatsApp the moment a visitor requests a human.',
+    readTime: '10 min read',
+    date: 'Feb 24, 2026',
+    emoji: '🔗',
+    slug: 'connecting-webhooks-crm-handover',
+  },
+  {
     category: 'Guide',
     title: 'How to train your AI agent on your product docs in under 10 minutes',
     excerpt: 'A step-by-step walkthrough of syncing your knowledge base, PDFs, and website content to build an expert AI agent fast.',
@@ -121,6 +130,7 @@ export default function ResourcesPage() {
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {POSTS.map((post, i) => (
             <ScrollReveal key={post.title} delay={i * 0.07}>
+              <Link href={'slug' in post ? `/resources/${post.slug}` : '#'} className="block h-full">
               <article className="group flex flex-col rounded-2xl bg-white/5 border border-white/10 hover:border-brand-600/30 transition-colors overflow-hidden cursor-pointer h-full">
                 {/* Thumbnail placeholder */}
                 <div className="h-36 bg-gradient-to-br from-brand-600/10 to-transparent flex items-center justify-center border-b border-white/5">
@@ -148,6 +158,7 @@ export default function ResourcesPage() {
                   </div>
                 </div>
               </article>
+              </Link>
             </ScrollReveal>
           ))}
         </div>
