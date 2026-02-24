@@ -5,32 +5,33 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 interface Message {
   role: 'user' | 'assistant'
   text: string
+  link?: { text: string; href: string }
 }
 
-const FAQS = [
+const FAQS: { q: string; a: string; link?: { text: string; href: string } }[] = [
   {
-    q: 'What can this AI agent actually do for my business?',
-    a: 'Think of it as a digital team member that can handle repetitive work, support customers, automate tasks, and keep things moving even when your team is offline.',
+    q: 'What can this AI agent do for my business?',
+    a: 'Think of it as a digital team member that handles repetitive work, supports customers, automates tasks, and keeps things moving even when your team is offline.',
   },
   {
     q: 'How quickly can we get up and running?',
-    a: "Faster than you'd expect. Most teams can launch their first agent within a few minutes to a few hours using ready-made templates and simple integrations.",
+    a: "Faster than you'd expect. Most teams launch their first agent within minutes using ready-made templates and simple integrations.",
   },
   {
     q: 'Is our data safe and under our control?',
-    a: 'Absolutely. You stay in control with secure access, permissions, and guardrails so the AI only sees and uses what you allow.',
+    a: 'Absolutely. You stay in control with secure access, permissions, and guardrails — the AI only sees and uses what you allow.',
   },
   {
     q: 'Will it work with the tools we already use?',
-    a: "Yes, it's built to plug into your existing stack — your CRM, marketing tools, helpdesk, or internal docs. It also has the ability to hand over to a real person if available!",
+    a: "Yes, it plugs into your existing stack — CRM, marketing tools, helpdesk, or internal docs. It can also hand over to a real person if available!",
   },
   {
-    q: "What if we try it and it's not the right fit?",
-    a: "Start with our 7-day free trial, move small, test real use cases, and scale only when you see value. No pressure to commit before you're confident it's working for you.",
+    q: "What if it's not the right fit?",
+    a: "Start with our 7-day free trial, test real use cases, and scale only when you see value. No pressure to commit before you're confident.",
   },
   {
     q: 'How does pricing work?',
-    a: 'Plans are designed to grow with you — start with what you need today, and expand as your workflows, teams, and usage increase. No complicated setup or surprise costs.',
+    a: 'Plans grow with you — start with what you need today and expand as your usage increases. No complicated setup or surprise costs.',
     link: { text: 'Check our pricing →', href: '/pricing' },
   },
 ]
@@ -43,11 +44,8 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
-  // Once the user starts a real conversation, hide the FAQ section
-  const [showFaqs, setShowFaqs] = useState(true)
+  const [showSuggestions, setShowSuggestions] = useState(true)
 
-  // Fetch welcome message from integration config on mount
   useEffect(() => {
     fetch(`/api/widget-config?id=${integrationId}`)
       .then((r) => r.json())
@@ -66,7 +64,6 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
   const messagesRef = useRef<HTMLDivElement>(null)
   const inputRef    = useRef<HTMLInputElement>(null)
 
-  // Scroll the messages box to the bottom
   useEffect(() => {
     const el = messagesRef.current
     if (el) el.scrollTop = el.scrollHeight
@@ -77,7 +74,7 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
     if (!text || loading) return
 
     setInput('')
-    setShowFaqs(false)
+    setShowSuggestions(false)
     setMessages((prev) => [...prev, { role: 'user', text }])
     setLoading(true)
 
@@ -87,7 +84,6 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ integrationId, message: text, session_id: sessionId }),
       })
-
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json() as { reply: string; conversation_id: string }
       setMessages((prev) => [...prev, { role: 'assistant', text: data.reply }])
@@ -101,6 +97,15 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
       inputRef.current?.focus()
     }
   }, [input, loading, integrationId, sessionId])
+
+  function handleFaqClick(faq: typeof FAQS[number]) {
+    setShowSuggestions(false)
+    setMessages((prev) => [
+      ...prev,
+      { role: 'user', text: faq.q },
+      { role: 'assistant', text: faq.a, link: faq.link },
+    ])
+  }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -133,52 +138,32 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
               }`}
             >
               {m.text}
+              {m.link && (
+                <>
+                  {' '}
+                  <button
+                    onClick={openPricing}
+                    className="text-brand-400 hover:text-brand-300 underline underline-offset-2 transition-colors"
+                  >
+                    {m.link.text}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         ))}
 
-        {/* FAQ accordion — shown until user starts typing */}
-        {showFaqs && (
-          <div className="space-y-2 pt-1">
-            <p className="text-xs text-gray-500 px-1">Frequently asked questions — or type your own below</p>
+        {/* Suggestion chips — visible until user interacts */}
+        {showSuggestions && messages.length > 0 && (
+          <div className="space-y-1.5 pt-1">
             {FAQS.map((faq, i) => (
-              <div
+              <button
                 key={i}
-                className="rounded-xl border border-white/10 bg-white/5 overflow-hidden"
+                onClick={() => handleFaqClick(faq)}
+                className="w-full text-left px-3.5 py-2 rounded-xl border border-brand-600/25 bg-brand-600/5 text-sm text-gray-300 hover:bg-brand-600/15 hover:border-brand-600/50 hover:text-white transition-colors"
               >
-                <button
-                  onClick={() => setExpandedFaq(expandedFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 text-left text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
-                >
-                  <span className="leading-snug">{faq.q}</span>
-                  <svg
-                    viewBox="0 0 24 24"
-                    className={`w-3.5 h-3.5 shrink-0 text-gray-500 transition-transform duration-200 ${expandedFaq === i ? 'rotate-180' : ''}`}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-
-                {expandedFaq === i && (
-                  <div className="px-3.5 pb-3 text-sm text-gray-400 leading-relaxed border-t border-white/5 pt-2.5">
-                    {faq.a}
-                    {faq.link && (
-                      <>
-                        {' '}
-                        <button
-                          onClick={openPricing}
-                          className="text-brand-400 hover:text-brand-300 underline underline-offset-2 transition-colors"
-                        >
-                          {faq.link.text}
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
+                {faq.q}
+              </button>
             ))}
           </div>
         )}
