@@ -144,18 +144,18 @@ export default async function HomePage() {
       </section>
 
       {/* ── Live demo ──────────────────────────────────────────────── */}
-      <section className="py-24 px-6 border-t border-white/5">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-12 lg:gap-20 items-center">
+      <section className="pt-12 pb-24 px-6 border-t border-white/5">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-14 items-center">
 
-          {/* Left — 3/5 */}
-          <ScrollReveal className="lg:col-span-3 space-y-8">
+          {/* Left — 1/3 */}
+          <ScrollReveal className="lg:col-span-1 space-y-8">
             <div>
               <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Live demo</p>
               <h2 className="text-3xl sm:text-4xl font-bold leading-snug mb-4">
-                Your AI agent — trained,<br />deployed, converting.
+                Your AI Agent: Trained, Deployed &amp; Converting.
               </h2>
               <p className="text-gray-400 text-base leading-relaxed">
-                Ask it anything about Appalix. This is a real agent running live on our own platform — the same one you can deploy on your website in minutes.
+                Ask anything about Appalix. This is a real agent running live on our own platform — the same one you can deploy on your website in minutes.
               </p>
             </div>
             <ul className="space-y-4">
@@ -181,7 +181,7 @@ export default async function HomePage() {
             </div>
           </ScrollReveal>
 
-          {/* Right — 2/5 */}
+          {/* Right — 2/3 */}
           <ScrollReveal delay={0.15} className="lg:col-span-2">
             {widgetIntegrationId && (
               <LiveChatWidget integrationId={widgetIntegrationId} />
