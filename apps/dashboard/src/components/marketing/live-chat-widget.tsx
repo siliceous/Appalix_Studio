@@ -175,10 +175,16 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
         {/* Typing indicator */}
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-white/10 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1 items-center">
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:0ms]" />
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:150ms]" />
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:300ms]" />
+            <div className="bg-white/10 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1.5 items-center">
+              <style>{`
+                @keyframes dot-flash {
+                  0%, 60%, 100% { opacity: 0.2; }
+                  30% { opacity: 1; }
+                }
+              `}</style>
+              <span className="w-2 h-2 rounded-full bg-[#61c2ad]" style={{ animation: 'dot-flash 1.4s infinite', animationDelay: '0ms' }} />
+              <span className="w-2 h-2 rounded-full bg-[#61c2ad]" style={{ animation: 'dot-flash 1.4s infinite', animationDelay: '280ms' }} />
+              <span className="w-2 h-2 rounded-full bg-[#61c2ad]" style={{ animation: 'dot-flash 1.4s infinite', animationDelay: '560ms' }} />
             </div>
           </div>
         )}
@@ -194,7 +200,7 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
           onKeyDown={handleKeyDown}
           placeholder="Ask anything…"
           disabled={loading}
-          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300 placeholder-gray-600 outline-none focus:border-brand-600/50 disabled:opacity-50 transition-colors"
+          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300 placeholder-white outline-none focus:border-brand-600/50 disabled:opacity-50 transition-colors"
         />
         <button
           onClick={sendMessage}
