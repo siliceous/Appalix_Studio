@@ -147,8 +147,8 @@ export default async function HomePage() {
       <section className="pt-12 pb-24 px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-14 items-center">
 
-          {/* Left — 1/3 */}
-          <ScrollReveal className="lg:col-span-1 space-y-8">
+          {/* Left — 2/3 */}
+          <ScrollReveal className="lg:col-span-2 space-y-8">
             <div>
               <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Live demo</p>
               <h2 className="text-3xl sm:text-4xl font-bold leading-snug mb-4">
@@ -181,8 +181,8 @@ export default async function HomePage() {
             </div>
           </ScrollReveal>
 
-          {/* Right — 2/3 */}
-          <ScrollReveal delay={0.15} className="lg:col-span-2">
+          {/* Right — 1/3 */}
+          <ScrollReveal delay={0.15} className="lg:col-span-1">
             {widgetIntegrationId && (
               <LiveChatWidget integrationId={widgetIntegrationId} />
             )}
