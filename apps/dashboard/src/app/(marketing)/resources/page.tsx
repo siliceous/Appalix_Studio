@@ -17,6 +17,15 @@ export const metadata: Metadata = {
 
 const POSTS = [
   {
+    category: 'Guide',
+    title: 'Multiple Bots on Multiple Platforms',
+    excerpt: 'Train one AI agent and deploy it across unlimited websites, Slack, WhatsApp, Telegram, and more — each channel with its own settings, branding, and CRM integration.',
+    readTime: '6 min read',
+    date: 'Mar 5, 2026',
+    emoji: '🌐',
+    slug: 'multiple-bots-multiple-platforms',
+  },
+  {
     category: 'Tutorial',
     title: 'Connecting Webhook URLs to CRMs and Human Handover',
     excerpt: 'Step-by-step: capture leads into HubSpot or Salesforce automatically, and alert your team on Slack, Discord, Telegram, or WhatsApp the moment a visitor requests a human.',

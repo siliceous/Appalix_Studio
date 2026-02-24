@@ -20,6 +20,7 @@ const FAQS: { q: string; a: string; link?: { text: string; href: string } }[] = 
   {
     q: 'Is our data safe and under our control?',
     a: 'Absolutely. You stay in control with secure access, permissions, and guardrails — the AI only sees and uses what you allow.',
+    link: { text: 'See our security & privacy page →', href: '/security' },
   },
   {
     q: 'Will it work with the tools we already use?',
@@ -115,8 +116,9 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
     }
   }
 
-  function openPricing() {
-    window.open('/pricing', 'pricing', 'width=960,height=700,scrollbars=yes,resizable=yes')
+  function openPopup(href: string) {
+    const name = href.replace(/\//g, '')
+    window.open(href, name, 'width=960,height=700,scrollbars=yes,resizable=yes')
   }
 
   return (
@@ -136,7 +138,7 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
               className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
                 m.role === 'user'
                   ? 'bg-[#1a1a1a] border border-white/10 text-gray-200 rounded-br-sm'
-                  : 'bg-[#61c2ad]/15 border border-[#61c2ad]/30 text-[#d4f5ee] rounded-bl-sm'
+                  : 'bg-[#2a2a2a] border border-white/10 text-[#61c2ad] rounded-bl-sm'
               }`}
             >
               {m.text}
@@ -144,7 +146,7 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
                 <>
                   {' '}
                   <button
-                    onClick={openPricing}
+                    onClick={() => openPopup(m.link!.href)}
                     className="text-brand-400 hover:text-brand-300 underline underline-offset-2 transition-colors"
                   >
                     {m.link.text}
@@ -162,7 +164,7 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
               <button
                 key={i}
                 onClick={() => handleFaqClick(faq, i)}
-                className="w-full text-left px-3.5 py-2 rounded-xl border border-white/10 bg-[#1a1a1a] text-sm text-gray-300 hover:bg-[#222] hover:border-white/20 hover:text-white transition-colors"
+                className="w-full text-left px-3.5 py-2 rounded-xl border border-[#3873BB]/50 bg-[#3873BB]/20 text-sm text-white hover:bg-[#3873BB]/30 hover:border-[#3873BB]/70 transition-colors"
               >
                 {faq.q}
               </button>
