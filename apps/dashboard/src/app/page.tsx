@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 import { MarketingNavbar } from '@/components/marketing/navbar'
 import { MarketingFooter } from '@/components/marketing/footer'
 import { FadeUp, ScrollReveal } from '@/components/marketing/animate'
@@ -20,12 +21,12 @@ export const metadata: Metadata = {
 }
 
 const PLATFORMS = [
-  { name: 'Slack',               emoji: '💬' },
-  { name: 'Google Chat',         emoji: '💙' },
-  { name: 'Facebook Messenger',  emoji: '📘' },
-  { name: 'WhatsApp',            emoji: '📱' },
+  { name: 'Slack',               logo: '/integrations/slack.png' },
+  { name: 'Google Chat',         logo: '/integrations/google-chat.png' },
+  { name: 'Facebook Messenger',  logo: '/integrations/messenger.jpg' },
+  { name: 'WhatsApp',            logo: '/integrations/whatsapp.jpg' },
   { name: 'WordPress',           emoji: '🌐' },
-  { name: 'Web Widget',          emoji: '🔌' },
+  { name: 'Web Widget',          emoji: '🌐' },
   { name: 'Custom API',          emoji: '⚡' },
 ]
 
@@ -275,7 +276,13 @@ export default async function HomePage() {
             <div className="flex flex-wrap justify-center gap-3">
               {PLATFORMS.map((p) => (
                 <div key={p.name} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-brand-600/30 transition-colors">
-                  <span className="text-lg">{p.emoji}</span>
+                  <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                    {'logo' in p && p.logo ? (
+                      <Image src={p.logo as string} alt={p.name} width={20} height={20} className="object-contain w-5 h-5" />
+                    ) : (
+                      <span className="text-lg">{'emoji' in p ? p.emoji : ''}</span>
+                    )}
+                  </div>
                   <span className="text-sm text-gray-300 font-medium">{p.name}</span>
                 </div>
               ))}
