@@ -120,12 +120,8 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
   }
 
   return (
-    <div className="relative">
-      {/* Green backlight — stays strictly behind the widget */}
-      <div className="absolute -inset-4 -z-10 rounded-3xl bg-[#61c2ad]/25 blur-3xl pointer-events-none" />
-      <div className="absolute -inset-1 -z-10 rounded-2xl bg-[#61c2ad]/10 blur-xl pointer-events-none" />
-
-    <div className="relative w-full bg-[#111111] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+    <div className="rounded-2xl shadow-[0_0_55px_12px_rgba(97,194,173,0.28),0_0_110px_30px_rgba(97,194,173,0.13)]">
+    <div className="w-full bg-[#111111] border border-white/10 rounded-2xl overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-white/5">
         <div className="w-2.5 h-2.5 rounded-full bg-[#61c2ad] animate-pulse" />
@@ -139,8 +135,8 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
             <div
               className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
                 m.role === 'user'
-                  ? 'bg-brand-600 text-white rounded-br-sm'
-                  : 'bg-white/10 text-gray-200 rounded-bl-sm'
+                  ? 'bg-[#1a1a1a] border border-white/10 text-gray-200 rounded-br-sm'
+                  : 'bg-[#61c2ad]/15 border border-[#61c2ad]/30 text-[#d4f5ee] rounded-bl-sm'
               }`}
             >
               {m.text}
@@ -166,7 +162,7 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
               <button
                 key={i}
                 onClick={() => handleFaqClick(faq, i)}
-                className="w-full text-left px-3.5 py-2 rounded-xl border border-brand-600/25 bg-brand-600/5 text-sm text-gray-300 hover:bg-brand-600/15 hover:border-brand-600/50 hover:text-white transition-colors"
+                className="w-full text-left px-3.5 py-2 rounded-xl border border-white/10 bg-[#1a1a1a] text-sm text-gray-300 hover:bg-[#222] hover:border-white/20 hover:text-white transition-colors"
               >
                 {faq.q}
               </button>
