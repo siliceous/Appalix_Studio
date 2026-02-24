@@ -140,12 +140,54 @@ export default async function HomePage() {
             </FadeUp>
           </div>
 
-          {/* Live chat widget — Support Bot */}
-          <FadeUp delay={0.4}>
+        </div>
+      </section>
+
+      {/* ── Live demo ──────────────────────────────────────────────── */}
+      <section className="py-24 px-6 border-t border-white/5">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-12 lg:gap-20 items-center">
+
+          {/* Left — 3/5 */}
+          <ScrollReveal className="lg:col-span-3 space-y-8">
+            <div>
+              <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Live demo</p>
+              <h2 className="text-3xl sm:text-4xl font-bold leading-snug mb-4">
+                Your AI agent — trained,<br />deployed, converting.
+              </h2>
+              <p className="text-gray-400 text-base leading-relaxed">
+                Ask it anything about Appalix. This is a real agent running live on our own platform — the same one you can deploy on your website in minutes.
+              </p>
+            </div>
+            <ul className="space-y-4">
+              {[
+                { icon: '🧠', title: 'Knows your product inside-out', desc: 'Trained on your docs, URLs, PDFs, and FAQs. Always accurate, never makes things up.' },
+                { icon: '🎯', title: 'Captures leads automatically', desc: 'Collects name, email, and phone during natural conversation — no forms needed.' },
+                { icon: '🤝', title: 'Hands off to humans seamlessly', desc: 'Detects when a visitor wants a real person and alerts your team instantly on Slack, WhatsApp, or Discord.' },
+                { icon: '⚡', title: 'Live in under 10 minutes', desc: 'Paste a URL, train, embed one line of code. Your agent is live before the coffee gets cold.' },
+              ].map((item) => (
+                <li key={item.title} className="flex gap-4">
+                  <span className="text-2xl mt-0.5 shrink-0">{item.icon}</span>
+                  <div>
+                    <p className="font-semibold text-white text-sm mb-0.5">{item.title}</p>
+                    <p className="text-sm text-gray-400 leading-relaxed">{item.desc}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="flex gap-3">
+              <Link href="/login" className="px-5 py-2.5 bg-[#3873BB] hover:bg-[#1a4073] text-white text-sm font-medium rounded-xl transition-colors">
+                Build your agent free →
+              </Link>
+            </div>
+          </ScrollReveal>
+
+          {/* Right — 2/5 */}
+          <ScrollReveal delay={0.15} className="lg:col-span-2">
             {widgetIntegrationId && (
               <LiveChatWidget integrationId={widgetIntegrationId} />
             )}
-          </FadeUp>
+          </ScrollReveal>
+
         </div>
       </section>
 
