@@ -45,6 +45,7 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(true)
+  const [usedFaqs, setUsedFaqs] = useState<Set<number>>(new Set())
 
   useEffect(() => {
     fetch(`/api/widget-config?id=${integrationId}`)
@@ -98,8 +99,8 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
     }
   }, [input, loading, integrationId, sessionId])
 
-  function handleFaqClick(faq: typeof FAQS[number]) {
-    setShowSuggestions(false)
+  function handleFaqClick(faq: typeof FAQS[number], index: number) {
+    setUsedFaqs((prev) => new Set(prev).add(index))
     setMessages((prev) => [
       ...prev,
       { role: 'user', text: faq.q },
@@ -156,10 +157,10 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
         {/* Suggestion chips — visible until user interacts */}
         {showSuggestions && messages.length > 0 && (
           <div className="space-y-1.5 pt-1">
-            {FAQS.map((faq, i) => (
+            {FAQS.map((faq, i) => !usedFaqs.has(i) && (
               <button
                 key={i}
-                onClick={() => handleFaqClick(faq)}
+                onClick={() => handleFaqClick(faq, i)}
                 className="w-full text-left px-3.5 py-2 rounded-xl border border-brand-600/25 bg-brand-600/5 text-sm text-gray-300 hover:bg-brand-600/15 hover:border-brand-600/50 hover:text-white transition-colors"
               >
                 {faq.q}
