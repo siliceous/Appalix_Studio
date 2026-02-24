@@ -278,7 +278,9 @@ export default async function HomePage() {
                 <div key={p.name} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-brand-600/30 transition-colors">
                   <div className="w-5 h-5 flex items-center justify-center shrink-0">
                     {'logo' in p && p.logo ? (
-                      <Image src={p.logo as string} alt={p.name} width={20} height={20} className="object-contain w-5 h-5" />
+                      <div className="w-5 h-5 rounded bg-white p-0.5 flex items-center justify-center">
+                        <Image src={p.logo as string} alt={p.name} width={16} height={16} className="object-contain w-4 h-4" />
+                      </div>
                     ) : (
                       <span className="text-lg">{'emoji' in p ? p.emoji : ''}</span>
                     )}

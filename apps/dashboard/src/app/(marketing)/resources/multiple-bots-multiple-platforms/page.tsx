@@ -82,9 +82,9 @@ export default function MultipleBotsPage() {
                 { emoji: '⚡',                           label: 'Custom API',         desc: 'POST messages to the Appalix API from any backend system or custom application and get AI-generated replies in return.' },
               ].map((p) => (
                 <li key={p.label} className="flex gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
-                  <div className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-white/10 overflow-hidden">
+                  <div className={`w-8 h-8 shrink-0 flex items-center justify-center rounded-lg overflow-hidden ${'logo' in p && p.logo ? 'bg-white p-1' : 'bg-white/10'}`}>
                     {'logo' in p && p.logo ? (
-                      <Image src={p.logo as string} alt={p.label} width={28} height={28} className="object-contain w-7 h-7" />
+                      <Image src={p.logo as string} alt={p.label} width={28} height={28} className="object-contain w-6 h-6" />
                     ) : (
                       <span className="text-xl">{'emoji' in p ? p.emoji : ''}</span>
                     )}

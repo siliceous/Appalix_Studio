@@ -125,7 +125,7 @@ export default function IntegrationsPage() {
                 <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-brand-600/30 transition-colors h-full">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden ${'logo' in integration && integration.logo ? 'bg-white p-1' : 'bg-white/10'}`}>
                         {'logo' in integration && integration.logo ? (
                           <Image src={integration.logo} alt={integration.name} width={32} height={32} className="object-contain w-8 h-8" />
                         ) : (
@@ -167,7 +167,7 @@ export default function IntegrationsPage() {
                 <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 opacity-70 h-full">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden ${'logo' in integration && integration.logo ? 'bg-white p-1' : 'bg-white/5'}`}>
                         {'logo' in integration && integration.logo ? (
                           <Image src={integration.logo} alt={integration.name} width={32} height={32} className="object-contain w-8 h-8" />
                         ) : (
