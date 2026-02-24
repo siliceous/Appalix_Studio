@@ -85,7 +85,7 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
       </div>
 
       {/* Messages */}
-      <div ref={messagesRef} className="p-4 space-y-3 h-64 overflow-y-auto scrollbar-none">
+      <div ref={messagesRef} className="p-4 space-y-3 h-[480px] overflow-y-auto scrollbar-none">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
