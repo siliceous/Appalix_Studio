@@ -4,7 +4,15 @@ import { recordUsage } from '../lib/usage.js'
 import { callClaude, buildSystemPrompt } from './ai/claude.js'
 import { retrieveContext, buildRagContext } from './rag/retrieval.js'
 import { runAgent } from './agent/runner.js'
-import type { IncomingMessage, OutgoingMessage } from '../adapters/types.js'
+import { extractLeadData, postLeadToWebhook } from './lead-capture.js'
+import {
+  detectHandoffIntent,
+  sendHandoffNotification,
+  isHandoffConfigured,
+  HANDOFF_SYSTEM_INJECTION,
+  type HandoffChannelConfig,
+} from './handoff.js'
+import type { IncomingMessage } from '../adapters/types.js'
 
 /**
  * Core message processor — platform-agnostic.
@@ -28,7 +36,7 @@ export async function processMessage(
   } = msg
 
   // ---------------------------------------------------------------
-  // 1. Load bot config
+  // 1. Load bot config + integration config (CRM / handoff webhooks)
   // ---------------------------------------------------------------
   const { data: bot, error: botError } = await supabase
     .from('bots')
@@ -38,6 +46,29 @@ export async function processMessage(
 
   if (botError || !bot) {
     throw new Error(`Bot not found: ${botId}`)
+  }
+
+  let integrationConfig: Record<string, unknown> = {}
+  if (integrationId) {
+    const { data: intData } = await supabase
+      .from('integrations')
+      .select('config')
+      .eq('id', integrationId)
+      .single()
+    integrationConfig = (intData?.config ?? {}) as Record<string, unknown>
+  }
+
+  const crmWebhookUrl = integrationConfig.crm_webhook_url as string | undefined
+
+  const handoffCfg: HandoffChannelConfig = {
+    channel:           (integrationConfig.handoff_channel as string ?? 'generic') as HandoffChannelConfig['channel'],
+    webhook_url:       integrationConfig.handoff_webhook_url as string | undefined,
+    telegram_token:    integrationConfig.handoff_telegram_token as string | undefined,
+    telegram_chat_id:  integrationConfig.handoff_telegram_chat_id as string | undefined,
+    twilio_sid:        integrationConfig.handoff_twilio_sid as string | undefined,
+    twilio_token:      integrationConfig.handoff_twilio_token as string | undefined,
+    twilio_from:       integrationConfig.handoff_twilio_from as string | undefined,
+    twilio_to:         integrationConfig.handoff_twilio_to as string | undefined,
   }
 
   // ---------------------------------------------------------------
@@ -63,14 +94,50 @@ export async function processMessage(
   })
 
   // ---------------------------------------------------------------
-  // 4. Load conversation history (for memory-enabled bots)
+  // 4. CRM lead capture (fire-and-forget, runs in parallel)
+  // ---------------------------------------------------------------
+  if (crmWebhookUrl) {
+    const lead = extractLeadData(text)
+    if (lead.email || lead.phone) {
+      void postLeadToWebhook(crmWebhookUrl, {
+        event:          'lead_captured',
+        conversationId,
+        integrationId:  integrationId ?? '',
+        workspaceId,
+        email:          lead.email,
+        phone:          lead.phone,
+        message:        text,
+        timestamp:      new Date().toISOString(),
+      })
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // 4b. Human handoff detection
+  // ---------------------------------------------------------------
+  const handoffTriggered = isHandoffConfigured(handoffCfg) && detectHandoffIntent(text)
+
+  if (handoffTriggered) {
+    void sendHandoffNotification(handoffCfg, {
+      event:          'handoff_requested',
+      conversationId,
+      integrationId:  integrationId ?? '',
+      workspaceId,
+      userMessage:    text,
+      timestamp:      new Date().toISOString(),
+    })
+    console.log(`[handoff] triggered via ${handoffCfg.channel} for conversation=${conversationId}`)
+  }
+
+  // ---------------------------------------------------------------
+  // 5. Load conversation history (for memory-enabled bots)
   // ---------------------------------------------------------------
   const history = bot.enable_memory
     ? await getRecentMessages(conversationId, 20)
     : []
 
   // ---------------------------------------------------------------
-  // 5. RAG retrieval (if enabled)
+  // 6. RAG retrieval (if enabled)
   // ---------------------------------------------------------------
   let ragContext: string | undefined
 
@@ -87,10 +154,14 @@ export async function processMessage(
     console.log(`[processor] ragContext ${ragContext ? `${ragContext.length} chars` : 'EMPTY — no chunks matched'}`)
   }
 
-  const systemPrompt = buildSystemPrompt(bot.system_prompt, ragContext)
+  // Inject handoff instruction if triggered (overrides normal behaviour)
+  const basePrompt   = handoffTriggered
+    ? `${bot.system_prompt ?? ''}\n\n${HANDOFF_SYSTEM_INJECTION}`.trim()
+    : bot.system_prompt
+  const systemPrompt = buildSystemPrompt(basePrompt, ragContext)
 
   // ---------------------------------------------------------------
-  // 6. Generate AI response
+  // 7. Generate AI response
   // ---------------------------------------------------------------
   const startTime = Date.now()
   let reply: string
@@ -134,7 +205,7 @@ export async function processMessage(
   const responseTimeMs = Date.now() - startTime
 
   // ---------------------------------------------------------------
-  // 7. Save assistant message
+  // 8. Save assistant message
   // ---------------------------------------------------------------
   const msgId = await appendMessage({
     conversationId,
@@ -148,7 +219,7 @@ export async function processMessage(
   })
 
   // ---------------------------------------------------------------
-  // 8. Record usage (only for single-turn; agent loop records its own)
+  // 9. Record usage (only for single-turn; agent loop records its own)
   // ---------------------------------------------------------------
   if (!bot.enable_tools) {
     await recordUsage({

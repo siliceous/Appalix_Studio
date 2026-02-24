@@ -156,12 +156,21 @@ export async function updateIntegration(integrationId: string, formData: FormDat
     .single()
   if (!intRaw) throw new Error('Integration not found')
 
-  const name          = (formData.get('name') as string | null)?.trim()
-  const botId         = formData.get('bot_id') as string | null
-  const welcomeMsg    = (formData.get('welcome_message') as string | null)?.trim()
-  const allowedOrigins = (formData.get('allowed_origins') as string | null)?.trim()
+  const name              = (formData.get('name') as string | null)?.trim()
+  const botId             = formData.get('bot_id') as string | null
+  const welcomeMsg        = (formData.get('welcome_message') as string | null)?.trim()
+  const allowedOrigins    = (formData.get('allowed_origins') as string | null)?.trim()
+  const crmWebhookUrl          = (formData.get('crm_webhook_url')          as string | null)?.trim()
+  const handoffChannel         = (formData.get('handoff_channel')           as string | null)?.trim()
+  const handoffWebhookUrl      = (formData.get('handoff_webhook_url')       as string | null)?.trim()
+  const handoffTelegramToken   = (formData.get('handoff_telegram_token')    as string | null)?.trim()
+  const handoffTelegramChatId  = (formData.get('handoff_telegram_chat_id')  as string | null)?.trim()
+  const handoffTwilioSid       = (formData.get('handoff_twilio_sid')        as string | null)?.trim()
+  const handoffTwilioToken     = (formData.get('handoff_twilio_token')      as string | null)?.trim()
+  const handoffTwilioFrom      = (formData.get('handoff_twilio_from')       as string | null)?.trim()
+  const handoffTwilioTo        = (formData.get('handoff_twilio_to')         as string | null)?.trim()
 
-  // Merge welcome_message into existing config
+  // Merge all config fields into existing JSONB config
   const existingConfig = (intRaw as { config: Record<string, unknown> }).config ?? {}
   const newConfig: Record<string, unknown> = { ...existingConfig }
 
@@ -174,6 +183,30 @@ export async function updateIntegration(integrationId: string, formData: FormDat
         ? ['*']
         : allowedOrigins.split(',').map((o) => o.trim()).filter(Boolean)
   }
+
+  // CRM webhook (empty = disable)
+  if (crmWebhookUrl !== null && crmWebhookUrl !== undefined) {
+    if (crmWebhookUrl) newConfig.crm_webhook_url = crmWebhookUrl
+    else delete newConfig.crm_webhook_url
+  }
+
+  // Handoff channel type
+  if (handoffChannel) newConfig.handoff_channel = handoffChannel
+
+  // Helper: set or delete a config key based on value presence
+  const setOrDel = (key: string, val: string | null | undefined) => {
+    if (val === null || val === undefined) return
+    if (val) newConfig[key] = val
+    else delete newConfig[key]
+  }
+
+  setOrDel('handoff_webhook_url',      handoffWebhookUrl)
+  setOrDel('handoff_telegram_token',   handoffTelegramToken)
+  setOrDel('handoff_telegram_chat_id', handoffTelegramChatId)
+  setOrDel('handoff_twilio_sid',       handoffTwilioSid)
+  setOrDel('handoff_twilio_token',     handoffTwilioToken)
+  setOrDel('handoff_twilio_from',      handoffTwilioFrom)
+  setOrDel('handoff_twilio_to',        handoffTwilioTo)
 
   const admin = createAdminClient()
   const { error } = await admin

@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { PLATFORM_META } from '@/lib/utils'
 import { updateIntegration } from '@/app/actions/integration'
+import { HandoffConfig } from '../handoff-config'
 import type { Metadata } from 'next'
 import type { Integration } from '@/lib/types'
 
@@ -48,6 +49,7 @@ export default async function EditIntegrationPage({
   const allowedOrigins = Array.isArray(cfg.allowed_origins)
     ? (cfg.allowed_origins as string[]).join(', ')
     : '*'
+  const crmWebhookUrl = (cfg.crm_webhook_url as string | undefined) ?? ''
 
   const isWebWidget = integration.platform === 'web_widget' || integration.platform === 'wordpress'
 
@@ -125,6 +127,56 @@ export default async function EditIntegrationPage({
             </div>
           </div>
         )}
+
+        {/* CRM integration */}
+        <div className="bg-white rounded-xl border p-5 space-y-4">
+          <div>
+            <p className="text-sm font-semibold text-gray-900">CRM integration</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              When a visitor shares an email or phone number, we POST the lead to this URL.
+              Works with HubSpot, Salesforce, Zapier, Make.com, or any HTTP endpoint.
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              CRM webhook URL
+            </label>
+            <input
+              type="url"
+              name="crm_webhook_url"
+              defaultValue={crmWebhookUrl}
+              placeholder="https://hooks.zapier.com/hooks/catch/…"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Leave empty to disable. Payload includes{' '}
+              <code className="font-mono bg-gray-100 px-1 rounded">email</code>,{' '}
+              <code className="font-mono bg-gray-100 px-1 rounded">phone</code>, and{' '}
+              <code className="font-mono bg-gray-100 px-1 rounded">conversationId</code>.
+            </p>
+          </div>
+        </div>
+
+        {/* Human handoff */}
+        <div className="bg-white rounded-xl border p-5 space-y-4">
+          <div>
+            <p className="text-sm font-semibold text-gray-900">Human handoff</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              When a visitor asks to speak to a human, the bot acknowledges gracefully and
+              notifies your team via the channel below.
+            </p>
+          </div>
+          <HandoffConfig
+            channel={           (cfg.handoff_channel          as string) ?? ''}
+            webhookUrl={        (cfg.handoff_webhook_url       as string) ?? ''}
+            telegramToken={     (cfg.handoff_telegram_token    as string) ?? ''}
+            telegramChatId={    (cfg.handoff_telegram_chat_id  as string) ?? ''}
+            twilioSid={         (cfg.handoff_twilio_sid        as string) ?? ''}
+            twilioToken={       (cfg.handoff_twilio_token      as string) ?? ''}
+            twilioFrom={        (cfg.handoff_twilio_from       as string) ?? ''}
+            twilioTo={          (cfg.handoff_twilio_to         as string) ?? ''}
+          />
+        </div>
 
         <div className="flex items-center gap-3">
           <button
