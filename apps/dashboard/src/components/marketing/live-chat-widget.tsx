@@ -120,7 +120,12 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
   }
 
   return (
-    <div className="w-full bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+    <div className="relative">
+      {/* Green glow halo */}
+      <div className="absolute -inset-3 rounded-3xl bg-[#61c2ad]/20 blur-2xl pointer-events-none" />
+      <div className="absolute -inset-1 rounded-2xl bg-[#61c2ad]/10 blur-lg pointer-events-none" />
+
+    <div className="relative w-full bg-white/5 border border-[#61c2ad]/25 rounded-2xl overflow-hidden shadow-2xl">
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-white/5">
         <div className="w-2.5 h-2.5 rounded-full bg-[#61c2ad] animate-pulse" />
@@ -203,6 +208,7 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
           </svg>
         </button>
       </div>
+    </div>
     </div>
   )
 }
