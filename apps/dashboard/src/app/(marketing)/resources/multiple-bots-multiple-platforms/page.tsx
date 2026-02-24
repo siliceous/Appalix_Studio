@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -72,16 +73,22 @@ export default function MultipleBotsPage() {
             </p>
             <ul className="space-y-3 mt-4">
               {[
-                { icon: '🌐', label: 'Web widget', desc: 'Embed the chat widget on any website — your homepage, docs site, landing pages, or all of the above.' },
-                { icon: '💬', label: 'Slack', desc: 'Deploy the agent inside your Slack workspace for internal Q&A, employee support, or customer-facing Slack communities.' },
-                { icon: '📱', label: 'WhatsApp', desc: 'Connect a WhatsApp Business number and let customers chat with your AI agent directly from their phone.' },
-                { icon: '✈️', label: 'Telegram', desc: 'Create a Telegram bot token and point it at your Appalix integration — your agent goes live on Telegram in minutes.' },
-                { icon: '📘', label: 'Facebook Messenger', desc: 'Link a Facebook Page to handle Messenger conversations automatically, 24/7.' },
-                { icon: '🔧', label: 'Custom API', desc: 'POST messages to the Appalix API from any backend system or custom application and get AI-generated replies in return.' },
-                { icon: '🖥️', label: 'WordPress', desc: 'Install the Appalix WordPress plugin and your agent appears as a chat widget on every page of your site, no code required.' },
+                { logo: '/integrations/slack.png',       label: 'Slack',              desc: 'Deploy the agent inside your Slack workspace for internal Q&A, employee support, or customer-facing Slack communities.' },
+                { logo: '/integrations/google-chat.png', label: 'Google Chat',        desc: 'Connect your agent to Google Workspace and respond to customer and team queries in Google Chat spaces and DMs.' },
+                { logo: '/integrations/messenger.jpg',   label: 'Facebook Messenger', desc: 'Link a Facebook Page to handle Messenger conversations automatically, 24/7.' },
+                { logo: '/integrations/whatsapp.jpg',    label: 'WhatsApp',           desc: 'Connect a WhatsApp Business number and let customers chat with your AI agent directly from their phone.' },
+                { emoji: '🌐',                           label: 'WordPress',          desc: 'Install the Appalix WordPress plugin and your agent appears as a chat widget on every page of your site, no code required.' },
+                { emoji: '🌐',                           label: 'Web Widget',         desc: 'Embed a fully branded chat widget on any website with a single line of JavaScript — works with React, Vue, plain HTML, everything.' },
+                { emoji: '⚡',                           label: 'Custom API',         desc: 'POST messages to the Appalix API from any backend system or custom application and get AI-generated replies in return.' },
               ].map((p) => (
                 <li key={p.label} className="flex gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
-                  <span className="text-2xl shrink-0">{p.icon}</span>
+                  <div className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-white/10 overflow-hidden">
+                    {'logo' in p && p.logo ? (
+                      <Image src={p.logo as string} alt={p.label} width={28} height={28} className="object-contain w-7 h-7" />
+                    ) : (
+                      <span className="text-xl">{'emoji' in p ? p.emoji : ''}</span>
+                    )}
+                  </div>
                   <div>
                     <p className="font-semibold text-white text-sm">{p.label}</p>
                     <p className="text-sm text-gray-400 mt-0.5">{p.desc}</p>
@@ -144,9 +151,9 @@ export default function MultipleBotsPage() {
               </div>
 
               <div className="p-5 rounded-xl border border-white/10 bg-white/5">
-                <p className="font-semibold text-white mb-2">📱 Mobile-first brand on WhatsApp & Telegram</p>
+                <p className="font-semibold text-white mb-2">📱 Mobile-first brand on WhatsApp & Google Chat</p>
                 <p className="text-sm text-gray-400 leading-relaxed">
-                  Create a WhatsApp integration for your main customer support number and a Telegram integration for a niche community channel. Leads from WhatsApp go to Salesforce; Telegram leads fire a Slack alert to your community manager. One bot, two channels, two workflows.
+                  Create a WhatsApp integration for your main customer support number and a Google Chat integration for your internal team workspace. Leads from WhatsApp go to Salesforce; Google Chat conversations fire a Slack alert to your team manager. One bot, two channels, two workflows.
                 </p>
               </div>
             </div>
