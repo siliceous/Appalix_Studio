@@ -9,7 +9,9 @@ const MESSAGES = [
   { role: 'user' as const, text: "I've been waiting 3 days — where's my order?" },
   { role: 'ai'   as const, text: 'Order #8302 arriving tomorrow 📦' },
   { role: 'user' as const, text: 'I received the wrong order, can I get a refund?' },
-  { role: 'ai'   as const, text: 'I\'ve raised a replacement and a full refund — you\'ll see it in 3–5 days.' },
+  { role: 'ai'   as const, text: 'Sorry for the inconvenience. We are arranging a pickup of the wrong product delivered to you. Would you like a replacement or a refund?' },
+  { role: 'user' as const, text: 'How do I add a team member?' },
+  { role: 'ai'   as const, text: "Go to Settings → Team → Invite Member, and you're all set. Want me to guide you through it step by step?" },
   { role: 'user' as const, text: 'How can I upload a PDF as a resource for my agent?' },
   { role: 'ai'   as const, text: 'Go to Bots → Knowledge → Add Source → Upload PDF — the system will retrain automatically.' },
 ]
