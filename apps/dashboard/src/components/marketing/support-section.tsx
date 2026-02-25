@@ -24,19 +24,19 @@ const METRICS = [
 
 function OrbitGraphic({ active }: { active: boolean }) {
   const cx = 150, cy = 150
-  const primary   = '#61c2ad'
-  const secondary = '#9de0d2'
-  const dim       = 'rgba(97,194,173,0.13)'
+  const primary   = 'rgba(97,194,173,0.55)'
+  const secondary = 'rgba(157,224,210,0.4)'
+  const dim       = 'rgba(97,194,173,0.07)'
 
-  const r1 = 116, sw1 = 3, count1 = 24
+  const r1 = 116, sw1 = 1, count1 = 24
   const C1 = TAU * r1, pitch1 = C1 / count1, seg1 = pitch1 * 0.76
   const outerBright = [1, 5, 10, 15, 21]
 
-  const r2 = 96, sw2 = 13
+  const r2 = 96, sw2 = 2
   const C2 = TAU * r2, pitch2 = C2 / 12, seg2 = pitch2 * 0.80
   const midBright = [2, 5, 10]
 
-  const r3 = 74, sw3 = 5
+  const r3 = 74, sw3 = 1.5
   const C3 = TAU * r3, pitch3 = C3 / 8, seg3 = pitch3 * 0.72
   const innerBright = [1, 5]
 
@@ -59,13 +59,13 @@ function OrbitGraphic({ active }: { active: boolean }) {
             y1={cy + (long ? 127 : 130) * Math.sin(a)}
             x2={cx + 134 * Math.cos(a)}
             y2={cy + 134 * Math.sin(a)}
-            stroke={long ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.08)'}
-            strokeWidth={long ? 1.5 : 0.5}
+            stroke={long ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)'}
+            strokeWidth={long ? 1 : 0.5}
           />
         )
       })}
 
-      <circle cx={cx} cy={cy} r={126} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={1} />
+      <circle cx={cx} cy={cy} r={126} fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth={0.5} />
 
       {/* Ring 1 — slow clockwise */}
       <motion.g
@@ -128,18 +128,18 @@ function OrbitGraphic({ active }: { active: boolean }) {
       </motion.g>
 
       {/* Inner separator */}
-      <circle cx={cx} cy={cy} r={58} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={1} />
+      <circle cx={cx} cy={cy} r={58} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />
 
       {/* Two overlapping circles */}
       <motion.circle cx={cx - 12} cy={cy} r={33} fill="none"
-        stroke="rgba(255,255,255,0.18)" strokeWidth={1.5}
+        stroke="rgba(255,255,255,0.08)" strokeWidth={1}
         initial={{ opacity: 0, scale: 0 }}
         animate={active ? { opacity: 1, scale: 1 } : {}}
         transition={{ delay: 0.6, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         style={{ transformOrigin: `${cx - 12}px ${cy}px` }}
       />
       <motion.circle cx={cx + 12} cy={cy} r={33} fill="none"
-        stroke="rgba(255,255,255,0.18)" strokeWidth={1.5}
+        stroke="rgba(255,255,255,0.08)" strokeWidth={1}
         initial={{ opacity: 0, scale: 0 }}
         animate={active ? { opacity: 1, scale: 1 } : {}}
         transition={{ delay: 0.68, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -148,14 +148,14 @@ function OrbitGraphic({ active }: { active: boolean }) {
 
       {/* Glow + orb */}
       <motion.circle cx={cx} cy={cy} r={18} fill="url(#supp-glow)"
-        animate={active ? { r: [15, 22, 15], opacity: [0.7, 1, 0.7] } : {}}
+        animate={active ? { r: [14, 19, 14], opacity: [0.3, 0.5, 0.3] } : {}}
         transition={{ repeat: Infinity, duration: 2.6, ease: 'easeInOut' }}
       />
-      <motion.circle cx={cx} cy={cy} r={9} fill={primary}
-        animate={active ? { r: [8, 11, 8] } : {}}
+      <motion.circle cx={cx} cy={cy} r={6} fill="rgba(97,194,173,0.7)"
+        animate={active ? { r: [5, 7, 5] } : {}}
         transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
       />
-      <circle cx={cx} cy={cy} r={3.5} fill="white" opacity={0.95} />
+      <circle cx={cx} cy={cy} r={2.5} fill="white" opacity={0.8} />
     </svg>
   )
 }
