@@ -22,13 +22,13 @@ const METRICS = [
   { value: '90%',    label: 'less manual data entry' },
 ]
 
-// ── Orbit graphic — orange theme ────────────────────────────────
+// ── Orbit graphic — teal theme ───────────────────────────────────
 
 function OrbitGraphic({ active }: { active: boolean }) {
   const cx = 150, cy = 150
-  const primary   = 'rgba(236,115,46,0.55)'
-  const secondary = 'rgba(248,196,144,0.4)'
-  const dim       = 'rgba(236,115,46,0.07)'
+  const primary   = 'rgba(97,194,173,0.55)'
+  const secondary = 'rgba(157,224,210,0.4)'
+  const dim       = 'rgba(97,194,173,0.07)'
 
   const r1 = 116, sw1 = 1, count1 = 24
   const C1 = TAU * r1, pitch1 = C1 / count1, seg1 = pitch1 * 0.76
@@ -45,7 +45,7 @@ function OrbitGraphic({ active }: { active: boolean }) {
   return (
     <svg viewBox="0 0 300 300" className="w-full h-full">
       <defs>
-        <radialGradient id="auto-glow" cx="50%" cy="50%" r="50%">
+        <radialGradient id="auto-glow2" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor={primary} stopOpacity={0.5} />
           <stop offset="100%" stopColor={primary} stopOpacity={0} />
         </radialGradient>
@@ -149,11 +149,11 @@ function OrbitGraphic({ active }: { active: boolean }) {
       />
 
       {/* Glow + orb */}
-      <motion.circle cx={cx} cy={cy} r={18} fill="url(#auto-glow)"
+      <motion.circle cx={cx} cy={cy} r={18} fill="url(#auto-glow2)"
         animate={active ? { r: [14, 19, 14], opacity: [0.3, 0.5, 0.3] } : {}}
         transition={{ repeat: Infinity, duration: 2.6, ease: 'easeInOut' }}
       />
-      <motion.circle cx={cx} cy={cy} r={6} fill="rgba(236,115,46,0.7)"
+      <motion.circle cx={cx} cy={cy} r={6} fill="rgba(97,194,173,0.7)"
         animate={active ? { r: [5, 7, 5] } : {}}
         transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
       />
@@ -173,15 +173,15 @@ export function AutomationSection() {
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-20 items-center">
 
-          {/* ── Left: text + metrics ── */}
-          <div className="lg:col-span-2 order-2 lg:order-1">
+          {/* ── Right: text + metrics ── */}
+          <div className="lg:col-span-2 order-2 lg:order-2">
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6 }}
             >
-              <span className="inline-block text-xs px-3 py-1 rounded-full bg-[#ec732e]/10 border border-[#ec732e]/20 text-[#ec732e] font-semibold uppercase tracking-widest mb-5">
+              <span className="inline-block text-xs px-3 py-1 rounded-full bg-[#61c2ad]/10 border border-[#61c2ad]/20 text-[#61c2ad] font-semibold uppercase tracking-widest mb-5">
                 Internal task automation
               </span>
               <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
@@ -213,9 +213,9 @@ export function AutomationSection() {
 
           </div>
 
-          {/* ── Right: orbit graphic + chips overlaid ── */}
+          {/* ── Left: orbit graphic + chips overlaid ── */}
           <motion.div
-            className="lg:col-span-1 order-1 lg:order-2 relative"
+            className="lg:col-span-1 order-1 lg:order-1 relative"
             style={{ minHeight: '420px' }}
             initial={{ opacity: 0 }}
             animate={isInView ? { opacity: 1 } : {}}
@@ -239,7 +239,7 @@ export function AutomationSection() {
                   <div className={`max-w-[88%] px-3 py-2 rounded-2xl text-xs leading-relaxed backdrop-blur-sm ${
                     msg.role === 'user'
                       ? 'bg-white/[0.12] border border-white/15 text-gray-100 rounded-br-sm'
-                      : 'bg-[#ec732e]/[0.12] border border-[#ec732e]/25 text-[#ec732e] rounded-bl-sm'
+                      : 'bg-[#61c2ad]/[0.12] border border-[#61c2ad]/25 text-[#61c2ad] rounded-bl-sm'
                   }`}>
                     {msg.text.split('\n').map((line, j) => (
                       <span key={j}>{line}{j < msg.text.split('\n').length - 1 && <br />}</span>
