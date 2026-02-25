@@ -164,7 +164,7 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
               <button
                 key={i}
                 onClick={() => handleFaqClick(faq, i)}
-                className="w-full text-left px-3.5 py-2 rounded-xl border border-[#3873BB]/50 bg-[#3873BB]/20 text-sm text-white hover:bg-[#3873BB]/30 hover:border-[#3873BB]/70 transition-colors"
+                className="w-full text-left px-3.5 py-2 rounded-xl border border-[#61c2ad]/50 bg-[#61c2ad]/10 text-sm text-[#61c2ad] hover:bg-[#61c2ad]/20 hover:border-[#61c2ad]/70 transition-colors"
               >
                 {faq.q}
               </button>
