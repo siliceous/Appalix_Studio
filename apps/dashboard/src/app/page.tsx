@@ -5,7 +5,6 @@ import { MarketingNavbar } from '@/components/marketing/navbar'
 import { MarketingFooter } from '@/components/marketing/footer'
 import { FadeUp, ScrollReveal } from '@/components/marketing/animate'
 import { LiveChatWidget } from '@/components/marketing/live-chat-widget'
-import { OrbitSection } from '@/components/marketing/orbit-section'
 import { createAdminClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
@@ -29,6 +28,12 @@ const PLATFORMS = [
   { name: 'WordPress',           emoji: '🌐' },
   { name: 'Web Widget',          emoji: '🌐' },
   { name: 'Custom API',          emoji: '⚡' },
+]
+
+const STEPS = [
+  { step: '01', title: 'Train',   desc: 'Connect your website, upload documents, or paste content. Your agent is ready in minutes.' },
+  { step: '02', title: 'Deploy',  desc: 'Embed on your site or connect to Slack, WhatsApp, Facebook Messenger and more.' },
+  { step: '03', title: 'Convert', desc: 'Engage every visitor 24/7, capture leads, and hand off hot prospects to your sales team.' },
 ]
 
 const FEATURES = [
@@ -203,7 +208,32 @@ export default async function HomePage() {
       </section>
 
       {/* ── How it works ───────────────────────────────────────────── */}
-      <OrbitSection />
+      <section className="py-24 px-6">
+        <div className="max-w-7xl mx-auto">
+          <ScrollReveal>
+            <div className="text-center mb-16">
+              <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">How it works</p>
+              <h2 className="text-3xl sm:text-4xl font-bold">Up and running in minutes</h2>
+            </div>
+          </ScrollReveal>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {STEPS.map((s, i) => (
+              <ScrollReveal key={s.step} delay={i * 0.1}>
+                <div className="relative p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-brand-600/40 transition-colors group h-full">
+                  <span className="text-5xl font-black text-white/20 group-hover:text-brand-600/40 transition-colors absolute top-4 right-5 select-none">
+                    {s.step}
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-brand-600/20 border border-brand-600/30 flex items-center justify-center mb-4">
+                    <span className="text-brand-400 text-xs font-bold">{s.step}</span>
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">{s.title}</h3>
+                  <p className="text-sm text-gray-400 leading-relaxed">{s.desc}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ── Features ───────────────────────────────────────────────── */}
       <section className="py-24 px-6 border-t border-white/5">
