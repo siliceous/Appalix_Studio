@@ -185,7 +185,7 @@ export function AutomationSection() {
               <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
                 Give your highest-paid people<br className="hidden sm:block" /> back their most valuable hours
               </h2>
-              <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-2xl">
+              <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-2xl ml-auto">
                 AI drafts proposals, generates reports, processes documents, summarises meetings, routes approvals, and extracts data from forms, emails, and PDFs — eliminating the admin that drains your senior team.
               </p>
             </motion.div>
