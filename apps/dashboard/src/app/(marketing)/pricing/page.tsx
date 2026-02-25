@@ -239,7 +239,7 @@ export default function PricingPage() {
           <h2 className="text-xl font-bold mb-3">Need something bigger?</h2>
           <p className="text-gray-400 mb-6 text-sm">Talk to us about custom volume, SSO, dedicated infrastructure, and SLAs.</p>
           <Link
-            href="mailto:hello@appalix.ai"
+            href="mailto:sales@appalix.ai"
             className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 hover:border-white/40 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm"
           >
             Contact Enterprise sales

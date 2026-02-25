@@ -14,7 +14,8 @@ export async function saveProfile(formData: FormData) {
 
   if (!firstName) return
 
-  await supabase.from('user_profiles').upsert({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any).from('user_profiles').upsert({
     user_id:    user.id,
     first_name: firstName,
     last_name:  lastName,

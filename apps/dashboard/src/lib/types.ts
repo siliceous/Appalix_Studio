@@ -15,7 +15,7 @@ export type Platform =
   | 'web_widget'
   | 'custom_api'
 
-export type WorkspacePlan = 'starter' | 'pro' | 'enterprise'
+export type WorkspacePlan = 'starter' | 'core' | 'pro' | 'scale' | 'enterprise'
 export type SubscriptionStatus =
   | 'active' | 'inactive' | 'trialing' | 'past_due' | 'cancelled' | 'paused'
 

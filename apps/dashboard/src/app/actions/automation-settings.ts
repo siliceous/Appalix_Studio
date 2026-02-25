@@ -8,12 +8,14 @@ export async function saveAutomationSettings(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: membership } = await supabase
+  const { data: membershipRaw } = await supabase
     .from('workspace_members')
     .select('workspace_id, role')
     .eq('user_id', user.id)
     .limit(1)
     .single()
+
+  const membership = membershipRaw as { workspace_id: string; role: string } | null
 
   if (!membership || !['owner', 'admin'].includes(membership.role)) {
     throw new Error('Unauthorised')
@@ -34,16 +36,18 @@ export async function saveAutomationSettings(formData: FormData) {
   }
 
   // Merge with existing config (preserve keys not in this form)
-  const { data: ws } = await supabase
+  const { data: wsRaw } = await supabase
     .from('workspaces')
     .select('automation_config')
     .eq('id', membership.workspace_id)
     .single()
 
+  const ws       = wsRaw as { automation_config: Record<string, string> } | null
   const existing = (ws?.automation_config ?? {}) as Record<string, string>
   const merged   = { ...existing, ...config }
 
-  await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any)
     .from('workspaces')
     .update({ automation_config: merged })
     .eq('id', membership.workspace_id)

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
+import { DeleteWorkspaceButton } from '@/components/settings/delete-workspace-button'
 import { STATUS_COLORS, formatDate } from '@/lib/utils'
 import type { Metadata } from 'next'
 import type { Workspace, WorkspaceMember } from '@/lib/types'
@@ -157,9 +158,7 @@ export default async function SettingsPage() {
               Deleting your workspace is permanent and cannot be undone. All bots,
               conversations, and knowledge base data will be removed.
             </p>
-            <button className="px-4 py-2 border border-red-300 text-red-600 text-sm rounded-lg hover:bg-red-50 transition-colors">
-              Delete workspace
-            </button>
+            <DeleteWorkspaceButton />
           </div>
         </section>
       )}

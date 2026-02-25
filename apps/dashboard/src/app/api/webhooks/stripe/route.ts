@@ -87,7 +87,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const metadata   = session.metadata ?? {}
   const email      = session.customer_details?.email ?? metadata.email
   const workspaceName = metadata.workspace_name ?? email?.split('@')[0] ?? 'My Workspace'
-  const plan       = (metadata.plan ?? 'starter') as 'starter' | 'pro' | 'enterprise'
+  const plan       = (metadata.plan ?? 'starter') as 'starter' | 'core' | 'pro' | 'scale' | 'enterprise'
   const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id
   const subscriptionId = typeof session.subscription === 'string'
     ? session.subscription
@@ -95,6 +95,22 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   if (!email) {
     console.error('[stripe] checkout.session.completed — no email in session')
+    return
+  }
+
+  // If this is an upgrade for an existing workspace, update it instead of creating a new one
+  if (metadata.workspace_id) {
+    await supabase
+      .from('workspaces')
+      .update({
+        plan,
+        subscription_status:    'active',
+        stripe_customer_id:     customerId ?? null,
+        stripe_subscription_id: subscriptionId ?? null,
+        billing_email:          email,
+      })
+      .eq('id', metadata.workspace_id)
+    console.log(`[stripe] Workspace ${metadata.workspace_id} upgraded to ${plan}`)
     return
   }
 
@@ -184,11 +200,13 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 // Helpers
 // ---------------------------------------------------------------
 
-function getPlanFromPrice(price?: Stripe.Price): 'starter' | 'pro' | 'enterprise' {
+function getPlanFromPrice(price?: Stripe.Price): 'starter' | 'core' | 'pro' | 'scale' | 'enterprise' {
   if (!price) return 'starter'
   const nickname = (price.nickname ?? '').toLowerCase()
   if (nickname.includes('enterprise')) return 'enterprise'
+  if (nickname.includes('scale'))      return 'scale'
   if (nickname.includes('pro'))        return 'pro'
+  if (nickname.includes('core'))       return 'core'
   return 'starter'
 }
 
