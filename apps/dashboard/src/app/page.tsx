@@ -8,6 +8,8 @@ import { LiveChatWidget } from '@/components/marketing/live-chat-widget'
 import { SupportSection } from '@/components/marketing/support-section'
 import { AutomationSection } from '@/components/marketing/automation-section'
 import { LeadGenSection } from '@/components/marketing/leadgen-section'
+import { ProductivitySection } from '@/components/marketing/productivity-section'
+import { WorkflowSection } from '@/components/marketing/workflow-section'
 import { createAdminClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
@@ -266,14 +268,20 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── Support cost reduction ─────────────────────────────────── */}
-      <SupportSection />
+      {/* ── Lead generation & revenue growth ───────────────────────── */}
+      <LeadGenSection />
 
       {/* ── Internal task automation ───────────────────────────────── */}
       <AutomationSection />
 
-      {/* ── Lead generation & revenue growth ───────────────────────── */}
-      <LeadGenSection />
+      {/* ── Support cost reduction ─────────────────────────────────── */}
+      <SupportSection />
+
+      {/* ── Productivity lift ──────────────────────────────────────── */}
+      <ProductivitySection />
+
+      {/* ── Workflow replacement ────────────────────────────────────── */}
+      <WorkflowSection />
 
       {/* ── Integrations ───────────────────────────────────────────── */}
       <section className="py-24 px-6 border-t border-white/5">
