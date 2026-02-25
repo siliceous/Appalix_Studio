@@ -183,7 +183,7 @@ export function SupportSection() {
                 Support cost reduction
               </span>
               <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
-                Resolve queries instantly —<br className="hidden sm:block" /> without adding headcount
+                Resolve queries instantly,<br className="hidden sm:block" /> without adding headcount
               </h2>
               <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-2xl">
                 AI handles repetitive queries, automates ticket triage, drafts agent responses, and gives customers instant self-service access — so your team focuses on the work that actually needs a human.
