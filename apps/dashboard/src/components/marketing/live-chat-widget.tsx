@@ -122,8 +122,8 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
   }
 
   return (
-    <div className="rounded-2xl shadow-[0_0_55px_12px_rgba(97,194,173,0.28),0_0_110px_30px_rgba(97,194,173,0.13)]">
-    <div className="w-full bg-[#111111] border border-white/10 rounded-2xl overflow-hidden">
+    <div className="rounded-2xl shadow-[0_0_55px_12px_rgba(255,255,255,0.06),0_0_110px_30px_rgba(255,255,255,0.03)]">
+    <div className="w-full bg-white/[0.04] border border-white/10 rounded-2xl overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-white/5">
         <div className="w-2.5 h-2.5 rounded-full bg-[#61c2ad] animate-pulse" />
