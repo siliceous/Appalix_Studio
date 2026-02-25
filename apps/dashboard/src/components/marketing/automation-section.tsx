@@ -172,7 +172,7 @@ export function AutomationSection() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-20 items-center">
 
           {/* ── Right: text + metrics ── */}
-          <div className="lg:col-span-2 order-2 lg:order-2">
+          <div className="lg:col-span-2 order-2 lg:order-2 text-right">
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -198,7 +198,7 @@ export function AutomationSection() {
               transition={{ delay: 0.5, duration: 0.6 }}
             >
               {METRICS.map((m) => (
-                <div key={m.label} className="text-center sm:text-left">
+                <div key={m.label} className="text-center sm:text-right">
                   <p className="text-2xl font-bold text-white">{m.value}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{m.label}</p>
                 </div>
