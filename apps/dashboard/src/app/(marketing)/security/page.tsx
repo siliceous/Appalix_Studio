@@ -202,7 +202,7 @@ export default function SecurityPage() {
             >
               Report a vulnerability →
             </a>
-            <p className="text-xs text-gray-600 mt-4">security@appalix.ai</p>
+            <a href="mailto:security@appalix.ai?subject=URGENT%20-%20Security%20Vulnerability%20Report&body=Please%20describe%20the%20vulnerability%20you%20have%20discovered%3A%0A%0A%5BDescription%5D%0A%0ASteps%20to%20reproduce%3A%0A%0A%5BSteps%5D%0A%0APotential%20impact%3A%0A%0A%5BImpact%5D" className="text-xs text-gray-500 hover:text-gray-300 mt-4 block transition-colors">security@appalix.ai</a>
           </div>
         </ScrollReveal>
       </section>
