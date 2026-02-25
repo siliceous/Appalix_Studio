@@ -1,6 +1,10 @@
 import type Anthropic from '@anthropic-ai/sdk'
 import { retrieveContext, buildRagContext } from '../rag/retrieval.js'
 import { supabase } from '../../lib/supabase.js'
+import { sendEmailTool }       from '../email-sender.js'
+import { generateDocumentTool } from '../document-generator.js'
+import { exportCsvTool }        from '../csv-exporter.js'
+import { requestApprovalTool }  from '../approval-routing.js'
 
 // ---------------------------------------------------------------
 // Tool definitions (declared to Claude)
@@ -89,6 +93,102 @@ export const BUILT_IN_TOOLS: Anthropic.Tool[] = [
       required: ['subject', 'description'],
     },
   },
+  // ── Pro+ automation tools ────────────────────────────────────────
+  {
+    name:        'send_email',
+    description: 'Send an email to one or more recipients. Use when the user explicitly asks to email something — a summary, report, recap, or notification — to a specific address.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        to: {
+          type:        'string',
+          description: 'Recipient email address.',
+        },
+        subject: {
+          type:        'string',
+          description: 'Email subject line.',
+        },
+        body: {
+          type:        'string',
+          description: 'Email body text. Use plain text unless html is true.',
+        },
+        html: {
+          type:        'boolean',
+          description: 'Set to true if body contains HTML markup.',
+        },
+      },
+      required: ['to', 'subject', 'body'],
+    },
+  },
+  {
+    name:        'generate_document',
+    description: 'Generate a formatted document (proposal, report, summary, or custom) from provided content. Uploads it and returns a shareable download link.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        type: {
+          type:        'string',
+          enum:        ['proposal', 'report', 'summary', 'custom'],
+          description: 'Document type.',
+        },
+        title: {
+          type:        'string',
+          description: 'Document title.',
+        },
+        content: {
+          type:        'string',
+          description: 'Document body in Markdown or plain text.',
+        },
+      },
+      required: ['type', 'title', 'content'],
+    },
+  },
+  {
+    name:        'export_csv',
+    description: 'Export conversation messages or captured lead data to CSV. Optionally POST the CSV to a webhook URL.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        data_type: {
+          type:        'string',
+          enum:        ['leads', 'conversations'],
+          description: 'What to export.',
+        },
+        webhook_url: {
+          type:        'string',
+          description: 'Optional — POST the CSV to this URL (e.g. a Zapier or Make webhook).',
+        },
+      },
+      required: ['data_type'],
+    },
+  },
+  {
+    name:        'request_approval',
+    description: 'Create an approval request and notify the designated approver via email or Slack. Use when the user needs a manager or admin to review and approve something.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        title: {
+          type:        'string',
+          description: 'Short title for the approval request.',
+        },
+        description: {
+          type:        'string',
+          description: 'What needs to be approved and why.',
+        },
+        channel: {
+          type:        'string',
+          enum:        ['email', 'slack'],
+          description: 'How to notify the approver.',
+        },
+        metadata: {
+          type:        'object',
+          description: 'Optional extra data (e.g. order_id, amount, requester name).',
+        },
+      },
+      required: ['title', 'description', 'channel'],
+    },
+  },
 ]
 
 // ---------------------------------------------------------------
@@ -99,19 +199,34 @@ export interface ToolExecutionContext {
   workspaceId:    string
   conversationId: string
   botId:          string
+  workspacePlan?: string
 }
 
 export interface ToolInput {
+  // existing tools
   query?:        string
   max_results?:  number
   url?:          string
   method?:       string
-  body?:         Record<string, unknown>
+  body?:         Record<string, unknown> | string
   headers?:      Record<string, string>
   limit?:        number
   subject?:      string
   description?:  string
   priority?:     string
+  // send_email
+  to?:           string
+  html?:         boolean
+  // generate_document
+  type?:         string
+  title?:        string
+  content?:      string
+  // export_csv
+  data_type?:    string
+  webhook_url?:  string
+  // request_approval
+  channel?:      string
+  metadata?:     Record<string, unknown>
 }
 
 export async function executeTool(
@@ -166,6 +281,28 @@ export async function executeTool(
       const ticketId = `TKT-${Date.now().toString(36).toUpperCase()}`
       console.log(`[tool:create_support_ticket] workspace=${ctx.workspaceId} subject="${input.subject}" priority=${input.priority ?? 'medium'}`)
       return `Support ticket created successfully. Ticket ID: ${ticketId}. A human agent will follow up shortly.`
+    }
+
+    // ── Pro+ automation tools ──────────────────────────────────────
+
+    case 'send_email': {
+      if (!input.to || !input.subject || !input.body) return 'Error: to, subject, and body are required.'
+      return sendEmailTool({ to: input.to, subject: input.subject, body: input.body as string, html: input.html }, ctx)
+    }
+
+    case 'generate_document': {
+      if (!input.type || !input.title || !input.content) return 'Error: type, title, and content are required.'
+      return generateDocumentTool({ type: input.type, title: input.title, content: input.content }, ctx)
+    }
+
+    case 'export_csv': {
+      if (!input.data_type) return 'Error: data_type is required.'
+      return exportCsvTool({ data_type: input.data_type as 'leads' | 'conversations', webhook_url: input.webhook_url }, ctx)
+    }
+
+    case 'request_approval': {
+      if (!input.title || !input.description || !input.channel) return 'Error: title, description, and channel are required.'
+      return requestApprovalTool({ title: input.title, description: input.description, channel: input.channel as 'email' | 'slack', metadata: input.metadata }, ctx)
     }
 
     default:

@@ -33,14 +33,32 @@ export async function GET(request: NextRequest) {
     },
   )
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code)
+  const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(code)
 
   if (error) {
     console.error('[auth/callback] exchangeCodeForSession error:', error.message)
     return NextResponse.redirect(`${origin}/login?error=auth_failed`)
   }
 
-  // Redirect to the intended destination (or dashboard)
-  const redirectTo = next.startsWith('/') ? `${origin}${next}` : origin
-  return NextResponse.redirect(redirectTo)
+  // If a specific destination was requested, honour it
+  if (next !== '/dashboard') {
+    const redirectTo = next.startsWith('/') ? `${origin}${next}` : origin
+    return NextResponse.redirect(redirectTo)
+  }
+
+  // Check whether this user has completed the onboarding profile form
+  const userId = sessionData.user?.id
+  if (userId) {
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (!profile) {
+      return NextResponse.redirect(`${origin}/onboarding`)
+    }
+  }
+
+  return NextResponse.redirect(`${origin}/dashboard`)
 }

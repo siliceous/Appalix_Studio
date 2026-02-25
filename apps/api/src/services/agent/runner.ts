@@ -6,6 +6,8 @@ import { recordUsage } from '../../lib/usage.js'
 
 const MAX_STEPS = 10  // hard cap on tool call iterations
 
+const PRO_TOOLS = new Set(['send_email', 'generate_document', 'export_csv', 'request_approval'])
+
 export interface AgentRunParams {
   workspaceId:    string
   conversationId: string
@@ -15,6 +17,7 @@ export interface AgentRunParams {
   messages:       ChatMessage[]
   maxTokens?:     number
   temperature?:   number
+  workspacePlan?: string
 }
 
 export interface AgentRunResult {
@@ -39,7 +42,13 @@ export async function runAgent(params: AgentRunParams): Promise<AgentRunResult> 
     workspaceId, conversationId, botId,
     model, systemPrompt, messages,
     maxTokens = 1024, temperature = 0.7,
+    workspacePlan = 'starter',
   } = params
+
+  const planAllowsAutomation = ['pro', 'scale', 'enterprise'].includes(workspacePlan)
+  const enabledTools = planAllowsAutomation
+    ? BUILT_IN_TOOLS
+    : BUILT_IN_TOOLS.filter((t) => !PRO_TOOLS.has(t.name))
 
   const startedAt = Date.now()
 
@@ -59,7 +68,7 @@ export async function runAgent(params: AgentRunParams): Promise<AgentRunResult> 
   if (runError) throw new Error(`Failed to create agent_run: ${runError.message}`)
   const agentRunId = runRecord.id
 
-  const toolCtx: ToolExecutionContext = { workspaceId, conversationId, botId }
+  const toolCtx: ToolExecutionContext = { workspaceId, conversationId, botId, workspacePlan }
 
   // Working copy of message history — will grow with tool results
   const workingMessages: Anthropic.MessageParam[] = messages.map((m) => ({
@@ -82,7 +91,7 @@ export async function runAgent(params: AgentRunParams): Promise<AgentRunResult> 
         messages: workingMessages as never,
         maxTokens,
         temperature,
-        tools: BUILT_IN_TOOLS,
+        tools: enabledTools,
       })
 
       totalIn  += result.tokensInput

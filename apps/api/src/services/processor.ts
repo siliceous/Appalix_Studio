@@ -48,6 +48,14 @@ export async function processMessage(
     throw new Error(`Bot not found: ${botId}`)
   }
 
+  // Load workspace plan for tool gating
+  const { data: workspace } = await supabase
+    .from('workspaces')
+    .select('plan')
+    .eq('id', workspaceId)
+    .single()
+  const workspacePlan = workspace?.plan ?? 'starter'
+
   let integrationConfig: Record<string, unknown> = {}
   if (integrationId) {
     const { data: intData } = await supabase
@@ -179,11 +187,12 @@ export async function processMessage(
       workspaceId,
       conversationId,
       botId,
-      model:        bot.model,
+      model:         bot.model,
       systemPrompt,
-      messages:     history,
-      maxTokens:    bot.max_tokens,
-      temperature:  bot.temperature,
+      messages:      history,
+      maxTokens:     bot.max_tokens,
+      temperature:   bot.temperature,
+      workspacePlan,
     })
     reply     = result.reply
     tokensIn  = result.tokensInput
