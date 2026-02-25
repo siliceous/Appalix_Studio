@@ -189,7 +189,7 @@ export default function ResourcesPage() {
                 className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-300 placeholder-gray-600 outline-none focus:border-brand-600/50"
                 readOnly
               />
-              <button className="px-5 py-2.5 bg-[#3873BB] hover:bg-[#1a4073] text-white text-sm font-medium rounded-xl transition-colors whitespace-nowrap">
+              <button className="px-5 py-2.5 bg-[#61c2ad] hover:bg-[#4aab99] text-white text-sm font-medium rounded-xl transition-colors whitespace-nowrap">
                 Subscribe
               </button>
             </div>

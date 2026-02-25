@@ -133,7 +133,7 @@ export default async function HomePage() {
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
                   href="/login"
-                  className="px-6 py-3 bg-[#3873BB] hover:bg-[#1a4073] text-white font-medium rounded-xl transition-colors text-sm"
+                  className="px-6 py-3 bg-[#61c2ad] hover:bg-[#4aab99] text-white font-medium rounded-xl transition-colors text-sm"
                 >
                   Start free — no card required
                 </Link>
@@ -182,7 +182,7 @@ export default async function HomePage() {
               ))}
             </ul>
             <div className="flex gap-3">
-              <Link href="/login" className="px-5 py-2.5 bg-[#3873BB] hover:bg-[#1a4073] text-white text-sm font-medium rounded-xl transition-colors">
+              <Link href="/login" className="px-5 py-2.5 bg-[#61c2ad] hover:bg-[#4aab99] text-white text-sm font-medium rounded-xl transition-colors">
                 Build your agent free →
               </Link>
             </div>
@@ -369,7 +369,7 @@ export default async function HomePage() {
               </p>
               <Link
                 href="/login"
-                className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#3873BB] hover:bg-[#1a4073] text-white font-medium rounded-xl transition-colors"
+                className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#61c2ad] hover:bg-[#4aab99] text-white font-medium rounded-xl transition-colors"
               >
                 Start your free trial
               </Link>

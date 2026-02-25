@@ -215,7 +215,7 @@ export function PricingCards() {
                   href="/login"
                   className={`block text-center text-sm font-medium py-2.5 rounded-xl transition-colors ${
                     plan.popular
-                      ? 'bg-[#3873BB] hover:bg-[#1a4073] text-white'
+                      ? 'bg-[#61c2ad] hover:bg-[#4aab99] text-white'
                       : 'border border-white/20 hover:border-white/40 text-gray-300 hover:text-white'
                   }`}
                 >

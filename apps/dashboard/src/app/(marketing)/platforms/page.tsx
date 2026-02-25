@@ -202,7 +202,7 @@ export default function IntegrationsPage() {
             </p>
             <Link
               href="/pricing"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#3873BB] hover:bg-[#1a4073] text-white font-medium rounded-xl transition-colors text-sm"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#61c2ad] hover:bg-[#4aab99] text-white font-medium rounded-xl transition-colors text-sm"
             >
               View Enterprise plan
             </Link>

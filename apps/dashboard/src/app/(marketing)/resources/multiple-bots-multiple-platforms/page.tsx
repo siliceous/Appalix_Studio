@@ -246,7 +246,7 @@ export default function MultipleBotsPage() {
           <div className="flex flex-wrap justify-center gap-4">
             <Link
               href="/login"
-              className="px-6 py-2.5 bg-[#3873BB] hover:bg-[#1a4073] text-white text-sm font-medium rounded-xl transition-colors"
+              className="px-6 py-2.5 bg-[#61c2ad] hover:bg-[#4aab99] text-white text-sm font-medium rounded-xl transition-colors"
             >
               Start your free trial →
             </Link>

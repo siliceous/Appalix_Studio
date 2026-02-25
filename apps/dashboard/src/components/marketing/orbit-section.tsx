@@ -23,7 +23,7 @@ const STEPS = [
     title: 'Deploy',
     subtitle: 'Go live everywhere',
     desc: 'One agent, seven platforms. Slack, WhatsApp, your website — all live from one dashboard.',
-    primary: '#3873BB',
+    primary: '#61c2ad',
     secondary: '#6fa8e0',
     dim: 'rgba(56,115,187,0.13)',
     outerBright: [2, 6, 11, 16, 22],

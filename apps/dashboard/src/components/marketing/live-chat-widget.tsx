@@ -205,7 +205,7 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
         <button
           onClick={sendMessage}
           disabled={loading || !input.trim()}
-          className="p-2 bg-[#3873BB] hover:bg-[#1a4073] disabled:opacity-40 rounded-lg transition-colors"
+          className="p-2 bg-[#61c2ad] hover:bg-[#4aab99] disabled:opacity-40 rounded-lg transition-colors"
         >
           <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2}>
             <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round" />
