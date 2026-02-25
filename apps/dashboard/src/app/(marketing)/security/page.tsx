@@ -197,7 +197,7 @@ export default function SecurityPage() {
               We take security reports seriously. If you discover a vulnerability, please contact us responsibly before disclosure and we will work with you to address it promptly.
             </p>
             <a
-              href="mailto:security@appalix.ai"
+              href="mailto:security@appalix.ai?subject=URGENT%20-%20Security%20Vulnerability%20Report&body=Please%20describe%20the%20vulnerability%20you%20have%20discovered%3A%0A%0A%5BDescription%5D%0A%0ASteps%20to%20reproduce%3A%0A%0A%5BSteps%5D%0A%0APotential%20impact%3A%0A%0A%5BImpact%5D"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
             >
               Report a vulnerability →
