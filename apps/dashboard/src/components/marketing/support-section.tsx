@@ -6,12 +6,10 @@ import { useRef } from 'react'
 const TAU = 2 * Math.PI
 
 const MESSAGES = [
-  { role: 'user' as const, text: "I've been waiting 3 days — where's my order?" },
-  { role: 'ai'   as const, text: 'Your order #8302 shipped yesterday and arrives tomorrow by 6 pm 📦' },
-  { role: 'user' as const, text: 'How do I add a team member to my account?' },
-  { role: 'ai'   as const, text: "Settings → Team → Invite Member. Enter their email and they're in instantly." },
+  { role: 'user' as const, text: 'How do I add a team member?' },
+  { role: 'ai'   as const, text: 'Go to Settings → Team → Invite Member, and you\'re all set.\nWant me to guide you through it step by step?' },
   { role: 'user' as const, text: 'How can I upload a PDF as a resource for my agent?' },
-  { role: 'ai'   as const, text: "Easy! Go to Bots → select your bot → Knowledge → Add Source → Upload PDF. Your agent will be retrained automatically once the upload completes." },
+  { role: 'ai'   as const, text: 'Go to Bots → Knowledge → Add Source → Upload PDF — the system will retrain automatically.' },
 ]
 
 const METRICS = [
@@ -238,7 +236,9 @@ export function SupportSection() {
                       ? 'bg-white/[0.12] border border-white/15 text-gray-100 rounded-br-sm'
                       : 'bg-[#61c2ad]/[0.12] border border-[#61c2ad]/25 text-[#61c2ad] rounded-bl-sm'
                   }`}>
-                    {msg.text}
+                    {msg.text.split('\n').map((line, j) => (
+                      <span key={j}>{line}{j < msg.text.split('\n').length - 1 && <br />}</span>
+                    ))}
                   </div>
                 </motion.div>
               ))}
