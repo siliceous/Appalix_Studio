@@ -9,11 +9,11 @@ const MESSAGES = [
   { role: 'user' as const, text: "I've been waiting 3 days — where's my order?" },
   { role: 'ai'   as const, text: 'Order #8302 arriving tomorrow 📦' },
   { role: 'user' as const, text: 'I received the wrong order, can I get a refund?' },
-  { role: 'ai'   as const, text: 'Sorry for the inconvenience. We are arranging a pickup of the wrong product delivered to you. Would you like a replacement or a refund?' },
+  { role: 'ai'   as const, text: 'Sorry for the inconvenience. Kindly arrange to drop off the incorrect product delivered to you in line with our return policy. Would you prefer a replacement or a refund?' },
   { role: 'user' as const, text: 'How do I add a team member?' },
   { role: 'ai'   as const, text: "Go to Settings → Team → Invite Member, and you're all set. Want me to guide you through it step by step?" },
-  { role: 'user' as const, text: 'How can I upload a PDF as a resource for my agent?' },
-  { role: 'ai'   as const, text: 'Go to Bots → Knowledge → Add Source → Upload PDF — the system will retrain automatically.' },
+  { role: 'user' as const, text: 'I need some customised answers, can I talk to a person?' },
+  { role: 'ai'   as const, text: "Certainly, I completely understand. I'll connect you with a team member right away. Please hold on for a moment while I arrange the handover." },
 ]
 
 const METRICS = [
