@@ -167,7 +167,7 @@ export default function FeaturesPage() {
           <p className="text-gray-400 mb-8 text-sm">7-day free trial on every plan. No credit card required.</p>
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#61c2ad] hover:bg-[#4aab99] text-white font-medium rounded-xl transition-colors"
+            className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors"
           >
             Start free trial
           </Link>

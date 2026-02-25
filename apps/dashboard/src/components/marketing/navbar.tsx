@@ -49,7 +49,7 @@ export function MarketingNavbar() {
           </Link>
           <Link
             href="/login"
-            className="text-sm font-medium bg-[#61c2ad] hover:bg-[#4aab99] text-white px-4 py-1.5 rounded-lg transition-colors"
+            className="text-sm font-medium bg-[#1a8c76] hover:bg-[#14705d] text-white px-4 py-1.5 rounded-lg transition-colors"
           >
             Get started free
           </Link>
