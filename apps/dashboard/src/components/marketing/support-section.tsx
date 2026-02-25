@@ -211,18 +211,19 @@ export function SupportSection() {
 
           {/* ── Right: orbit graphic + chips overlaid ── */}
           <motion.div
-            className="lg:col-span-1 order-1 lg:order-2 relative flex items-center justify-center"
+            className="lg:col-span-1 order-1 lg:order-2 relative"
+            style={{ minHeight: '420px' }}
             initial={{ opacity: 0 }}
             animate={isInView ? { opacity: 1 } : {}}
             transition={{ delay: 0.15, duration: 0.9 }}
           >
-            {/* Orbit graphic — background */}
-            <div className="w-72 lg:w-[360px] aspect-square pointer-events-none">
+            {/* Orbit graphic — large, bleeds beyond column */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[360px] lg:w-[540px] aspect-square pointer-events-none">
               <OrbitGraphic active={isInView} />
             </div>
 
-            {/* Conversation chips — foreground, centred over the graphic */}
-            <div className="absolute inset-0 flex flex-col justify-center gap-2 px-4 py-6">
+            {/* Conversation chips — centred within column height */}
+            <div className="absolute inset-0 flex flex-col justify-center gap-2.5 px-4">
               {MESSAGES.map((msg, i) => (
                 <motion.div
                   key={i}
