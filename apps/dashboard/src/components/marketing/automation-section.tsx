@@ -10,8 +10,6 @@ const MESSAGES = [
   { role: 'ai'   as const, text: 'Done. Key points: budget approved at $42k, launch target Q3, Sarah to lead onboarding. Want me to email the recap to the team?' },
   { role: 'user' as const, text: 'Draft a proposal for the Henderson account' },
   { role: 'ai'   as const, text: 'Proposal ready — exec summary, scope, pricing table, and timeline included. Shall I send it for review?' },
-  { role: 'user' as const, text: 'Extract the line items from the attached invoice' },
-  { role: 'ai'   as const, text: 'Extracted 7 line items. Total: $18,450. Exporting to spreadsheet now.' },
   { role: 'user' as const, text: 'Route Marcus\'s leave request to HR for approval' },
   { role: 'ai'   as const, text: 'Approval request sent to HR. Marcus has been notified. Expected response within 2 business days.' },
 ]

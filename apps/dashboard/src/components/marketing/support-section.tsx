@@ -10,8 +10,6 @@ const MESSAGES = [
   { role: 'ai'   as const, text: 'Order #8302 arriving tomorrow 📦' },
   { role: 'user' as const, text: 'I received the wrong order, can I get a refund?' },
   { role: 'ai'   as const, text: 'Sorry for the inconvenience. Kindly arrange to drop off the incorrect product delivered to you in line with our return policy. Would you prefer a replacement or a refund?' },
-  { role: 'user' as const, text: 'How do I add a team member?' },
-  { role: 'ai'   as const, text: "Go to Settings → Team → Invite Member, and you're all set. Want me to guide you through it step by step?" },
   { role: 'user' as const, text: 'I need to speak to a human, can I talk to someone from your team?' },
   { role: 'ai'   as const, text: "Of course. I understand you'd prefer a more personalised conversation. I'll connect you with a member of our team right away. Please allow a moment while I arrange the handover." },
 ]
