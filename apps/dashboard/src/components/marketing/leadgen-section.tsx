@@ -184,7 +184,7 @@ export function LeadGenSection() {
                 Lead generation & revenue growth
               </span>
               <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
-                More pipeline — without<br className="hidden sm:block" /> increasing ad spend
+                More pipeline, without<br className="hidden sm:block" /> increasing ad spend
               </h2>
               <p className="text-gray-400 text-base leading-relaxed mb-6 max-w-2xl">
                 AI works your top of funnel around the clock — qualifying leads, personalising journeys, and making sure no enquiry ever goes unanswered.
