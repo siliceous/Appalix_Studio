@@ -6,6 +6,7 @@ import { MarketingFooter } from '@/components/marketing/footer'
 import { FadeUp, ScrollReveal } from '@/components/marketing/animate'
 import { LiveChatWidget } from '@/components/marketing/live-chat-widget'
 import { SupportSection } from '@/components/marketing/support-section'
+import { AutomationSection } from '@/components/marketing/automation-section'
 import { createAdminClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
@@ -266,6 +267,9 @@ export default async function HomePage() {
 
       {/* ── Support cost reduction ─────────────────────────────────── */}
       <SupportSection />
+
+      {/* ── Internal task automation ───────────────────────────────── */}
+      <AutomationSection />
 
       {/* ── Integrations ───────────────────────────────────────────── */}
       <section className="py-24 px-6 border-t border-white/5">
