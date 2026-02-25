@@ -336,17 +336,18 @@ export default async function HomePage() {
                 { name: 'Scale',   price: '$249' },
                 { name: 'Enterprise', price: 'Custom' },
               ].map((p) => (
-                <div
+                <Link
                   key={p.name}
-                  className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${
+                  href="/pricing"
+                  className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors cursor-pointer ${
                     p.popular
-                      ? 'bg-brand-600/20 border-brand-600/50 text-brand-300'
-                      : 'bg-white/5 border-white/10 text-gray-400'
+                      ? 'bg-brand-600/20 border-brand-600/50 text-brand-300 hover:bg-brand-600/30 hover:border-brand-600/70'
+                      : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20 hover:text-gray-200'
                   }`}
                 >
                   {p.name} <span className={p.popular ? 'text-white' : 'text-gray-300'}>{p.price}</span>
                   {p.popular && <span className="ml-2 text-xs bg-brand-600 text-white px-1.5 py-0.5 rounded-full">Popular</span>}
-                </div>
+                </Link>
               ))}
             </div>
           </ScrollReveal>
