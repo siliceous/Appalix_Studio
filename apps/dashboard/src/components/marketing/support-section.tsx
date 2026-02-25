@@ -8,12 +8,10 @@ const TAU = 2 * Math.PI
 const MESSAGES = [
   { role: 'user' as const, text: "I've been waiting 3 days — where's my order?" },
   { role: 'ai'   as const, text: 'Your order #8302 shipped yesterday and arrives tomorrow by 6 pm 📦' },
-  { role: 'user' as const, text: 'I received the wrong item — can I get a refund?' },
-  { role: 'ai'   as const, text: "Done. I've raised a replacement and a full refund — you'll see it in 3–5 days." },
   { role: 'user' as const, text: 'How do I add a team member to my account?' },
   { role: 'ai'   as const, text: "Settings → Team → Invite Member. Enter their email and they're in instantly." },
-  { role: 'user' as const, text: 'The app keeps crashing on iOS 18 after login.' },
-  { role: 'ai'   as const, text: "Known fix: clear the app cache under Settings → Storage. Takes 10 seconds — want me to walk you through it?" },
+  { role: 'user' as const, text: 'How can I upload a PDF as a resource for my agent?' },
+  { role: 'ai'   as const, text: "Easy! Go to Bots → select your bot → Knowledge → Add Source → Upload PDF. Your agent will be retrained automatically once the upload completes." },
 ]
 
 const METRICS = [
