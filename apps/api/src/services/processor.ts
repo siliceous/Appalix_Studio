@@ -12,6 +12,8 @@ import {
   HANDOFF_SYSTEM_INJECTION,
   type HandoffChannelConfig,
 } from './handoff.js'
+import { getConversationVerification, type ConversationVerification } from './identity-verifier.js'
+import { isInternalPlatform, buildSensitivityInjection } from './sensitive-query.js'
 import type { IncomingMessage } from '../adapters/types.js'
 
 /**
@@ -92,6 +94,12 @@ export async function processMessage(
   })
 
   // ---------------------------------------------------------------
+  // 2b. Load identity verification status for this conversation
+  // ---------------------------------------------------------------
+  const verification: ConversationVerification | null = await getConversationVerification(conversationId)
+  const internalPlatform = isInternalPlatform(platform)
+
+  // ---------------------------------------------------------------
   // 3. Save user message
   // ---------------------------------------------------------------
   await appendMessage({
@@ -162,10 +170,17 @@ export async function processMessage(
     console.log(`[processor] ragContext ${ragContext ? `${ragContext.length} chars` : 'EMPTY — no chunks matched'}`)
   }
 
-  // Inject handoff instruction if triggered (overrides normal behaviour)
-  const basePrompt   = handoffTriggered
+  // Build layered system prompt: base → sensitivity policy → handoff override
+  const sensitivityInjection = buildSensitivityInjection(
+    verification?.email  ?? null,
+    verification?.name   ?? null,
+    internalPlatform,
+  )
+
+  const basePrompt = handoffTriggered
     ? `${bot.system_prompt ?? ''}\n\n${HANDOFF_SYSTEM_INJECTION}`.trim()
-    : bot.system_prompt
+    : `${bot.system_prompt ?? ''}\n\n${sensitivityInjection}`.trim()
+
   const systemPrompt = buildSystemPrompt(basePrompt, ragContext)
 
   // ---------------------------------------------------------------

@@ -1,10 +1,11 @@
 import type Anthropic from '@anthropic-ai/sdk'
 import { retrieveContext, buildRagContext } from '../rag/retrieval.js'
 import { supabase } from '../../lib/supabase.js'
-import { sendEmailTool }       from '../email-sender.js'
-import { generateDocumentTool } from '../document-generator.js'
-import { exportCsvTool }        from '../csv-exporter.js'
-import { requestApprovalTool }  from '../approval-routing.js'
+import { sendEmailTool }         from '../email-sender.js'
+import { generateDocumentTool }   from '../document-generator.js'
+import { exportCsvTool }          from '../csv-exporter.js'
+import { requestApprovalTool }    from '../approval-routing.js'
+import { verifyWorkspaceMember }  from '../identity-verifier.js'
 
 // ---------------------------------------------------------------
 // Tool definitions (declared to Claude)
@@ -91,6 +92,21 @@ export const BUILT_IN_TOOLS: Anthropic.Tool[] = [
         },
       },
       required: ['subject', 'description'],
+    },
+  },
+  // ── Identity verification (all plans — security feature) ─────────
+  {
+    name:        'verify_identity',
+    description: 'Verify that the current user is a registered workspace member by checking their email address against the team roster. Call this immediately when the user provides an email for identity verification purposes.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        email: {
+          type:        'string',
+          description: 'The email address provided by the user.',
+        },
+      },
+      required: ['email'],
     },
   },
   // ── Pro+ automation tools ────────────────────────────────────────
@@ -214,6 +230,8 @@ export interface ToolInput {
   subject?:      string
   description?:  string
   priority?:     string
+  // verify_identity
+  email?:        string
   // send_email
   to?:           string
   html?:         boolean
@@ -303,6 +321,15 @@ export async function executeTool(
     case 'request_approval': {
       if (!input.title || !input.description || !input.channel) return 'Error: title, description, and channel are required.'
       return requestApprovalTool({ title: input.title, description: input.description, channel: input.channel as 'email' | 'slack', metadata: input.metadata }, ctx)
+    }
+
+    case 'verify_identity': {
+      if (!input.email) return 'Error: email is required.'
+      const result = await verifyWorkspaceMember(input.email, ctx.workspaceId, ctx.conversationId)
+      if (result.success) {
+        return `Identity verified. Welcome, ${result.name} (${result.email}). You can now access sensitive information and share it with registered contacts via email.`
+      }
+      return `Verification failed: ${result.reason} Please check the email address and try again, or contact your administrator.`
     }
 
     default:
