@@ -221,11 +221,11 @@ export default async function HomePage() {
       {/* ── Sage feature section ────────────────────────────────────── */}
       <section className="py-24 px-6 border-t border-white/5">
         <ScrollReveal>
-          <div className="max-w-4xl mx-auto relative overflow-hidden rounded-3xl border border-[#61c2ad]/30 bg-gradient-to-br from-[#61c2ad]/[0.07] via-transparent to-[#3873BB]/[0.05] p-10 sm:p-16 text-center">
+          <div className="max-w-4xl mx-auto relative overflow-hidden text-center">
             {/* Animated glow orbs */}
-            <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[480px] h-48 bg-[#61c2ad]/20 rounded-full blur-[90px] animate-pulse pointer-events-none" />
-            <div className="absolute -bottom-24 -left-16 w-72 h-72 bg-[#3873BB]/15 rounded-full blur-[100px] animate-pulse pointer-events-none" style={{ animationDelay: '1.2s' }} />
-            <div className="absolute -bottom-16 -right-16 w-56 h-56 bg-[#61c2ad]/10 rounded-full blur-[80px] animate-pulse pointer-events-none" style={{ animationDelay: '2.4s' }} />
+            <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[480px] h-48 bg-[#61c2ad]/15 rounded-full blur-[100px] animate-pulse pointer-events-none" />
+            <div className="absolute -bottom-24 -left-16 w-72 h-72 bg-[#3873BB]/10 rounded-full blur-[120px] animate-pulse pointer-events-none" style={{ animationDelay: '1.2s' }} />
+            <div className="absolute -bottom-16 -right-16 w-56 h-56 bg-[#61c2ad]/08 rounded-full blur-[100px] animate-pulse pointer-events-none" style={{ animationDelay: '2.4s' }} />
 
             <div className="relative">
               {/* Badge row */}
