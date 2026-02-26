@@ -58,17 +58,17 @@ export default function SageBlogPage() {
         {/* Article body */}
         <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
 
-          {/* What is Copilot */}
+          {/* What is Sage */}
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">What is Appalix Sage?</h2>
             <p>
-              Appalix already powers AI chatbots that handle your <em>customer</em> conversations across your website, Slack, WhatsApp, and more. Copilot is the other side of that coin — an AI assistant designed for your <strong className="text-white">internal team</strong>.
+              Appalix already powers AI chatbots that handle your <em>customer</em> conversations across your website, Slack, WhatsApp, and more. Sage is the other side of that coin — an AI assistant designed for your <strong className="text-white">internal team</strong>.
             </p>
             <p className="mt-4">
               Instead of a customer typing a question into your website widget, it&apos;s your marketing manager asking for a first draft of a campaign brief. Or your sales lead requesting a proposal for a new account. Or your operations team searching your internal SOPs without digging through folders.
             </p>
             <p className="mt-4">
-              Copilot lives inside the Appalix dashboard under its own dedicated section. It is tied to your workspace and its knowledge base, so every answer it gives draws on <strong className="text-white">your</strong> company&apos;s actual content — not the generic internet.
+              Sage lives inside the Appalix dashboard under its own dedicated section. It is tied to your workspace and its knowledge base, so every answer it gives draws on <strong className="text-white">your</strong> company&apos;s actual content — not the generic internet.
             </p>
             <div className="mt-6 p-5 rounded-xl bg-white/5 border border-white/10">
               <p className="text-sm font-semibold text-white mb-2">Two modes, two audiences</p>
@@ -78,7 +78,7 @@ export default function SageBlogPage() {
                   <p className="text-sm text-gray-400">Your customer-facing chatbot. Deployed on your website, Slack, WhatsApp, and more. Serves visitors and customers.</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-brand-400 uppercase tracking-wide mb-1">Copilot</p>
+                  <p className="text-xs font-semibold text-brand-400 uppercase tracking-wide mb-1">Sage</p>
                   <p className="text-sm text-gray-400">Your internal AI assistant. Lives in the Appalix dashboard. Serves your authenticated team members only.</p>
                 </div>
               </div>
@@ -87,9 +87,9 @@ export default function SageBlogPage() {
 
           {/* Key features */}
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">What Copilot can do</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">What Sage can do</h2>
             <p>
-              Copilot is not a generic AI chatbot. It is purpose-built for internal team productivity, with four core capabilities:
+              Sage is not a generic AI chatbot. It is purpose-built for internal team productivity, with four core capabilities:
             </p>
 
             <div className="mt-6 space-y-4">
@@ -97,22 +97,22 @@ export default function SageBlogPage() {
                 {
                   icon: '🔍',
                   title: 'Knowledge base search',
-                  desc: 'Copilot searches your workspace knowledge base — the same one that powers your customer chatbot — and surfaces the most relevant content in plain language. Ask "What does our return policy say about software licences?" and get a direct answer with the source passage, not a list of documents to scroll through.',
+                  desc: 'Sage searches your workspace knowledge base — the same one that powers your customer chatbot — and surfaces the most relevant content in plain language. Ask "What does our return policy say about software licences?" and get a direct answer with the source passage, not a list of documents to scroll through.',
                 },
                 {
                   icon: '📄',
                   title: 'Document drafting',
-                  desc: 'Need a proposal for a new client? A project status report? A job description? An investor update? Describe what you need and Copilot produces a complete, ready-to-use draft. Not a bullet-point skeleton — a full document you can copy, edit, and send.',
+                  desc: 'Need a proposal for a new client? A project status report? A job description? An investor update? Describe what you need and Sage produces a complete, ready-to-use draft. Not a bullet-point skeleton — a full document you can copy, edit, and send.',
                 },
                 {
                   icon: '📊',
                   title: 'Summaries and analysis',
-                  desc: 'Feed Copilot a brief and it will summarise, extract key points, reformat, translate, or turn it into a slide outline. Paste a long meeting transcript and ask for the action items. Describe your quarterly results and ask for a crisp executive summary.',
+                  desc: 'Feed Sage a brief and it will summarise, extract key points, reformat, translate, or turn it into a slide outline. Paste a long meeting transcript and ask for the action items. Describe your quarterly results and ask for a crisp executive summary.',
                 },
                 {
                   icon: '📧',
                   title: 'Content sharing with colleagues',
-                  desc: 'When Copilot drafts a document, it can also help you share it. Ask it to email the draft to a colleague and it will use your configured Resend email settings to send it directly. You can also copy a hosted link to the document for quick sharing in Slack or any other tool.',
+                  desc: 'When Sage drafts a document, it can also help you share it. Ask it to email the draft to a colleague and it will use your configured Resend email settings to send it directly. You can also copy a hosted link to the document for quick sharing in Slack or any other tool.',
                 },
               ].map((f) => (
                 <div key={f.title} className="flex gap-4 p-5 rounded-xl bg-white/5 border border-white/10">
@@ -128,9 +128,9 @@ export default function SageBlogPage() {
 
           {/* Who is it for */}
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">Who benefits most from Copilot?</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">Who benefits most from Sage?</h2>
             <p>
-              Copilot is most valuable for companies where multiple team members regularly need to find information, produce written content, or share knowledge quickly. Here is how different roles use it:
+              Sage is most valuable for companies where multiple team members regularly need to find information, produce written content, or share knowledge quickly. Here is how different roles use it:
             </p>
             <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
@@ -149,50 +149,50 @@ export default function SageBlogPage() {
 
           {/* How the knowledge base works */}
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">How Copilot uses your knowledge base</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">How Sage uses your knowledge base</h2>
             <p>
-              Copilot uses the same knowledge base that powers your customer chatbot. That means every document, URL, FAQ, and training file you have already uploaded is instantly available to your team through Copilot — with no extra configuration.
+              Sage uses the same knowledge base that powers your customer chatbot. That means every document, URL, FAQ, and training file you have already uploaded is instantly available to your team through Sage — with no extra configuration.
             </p>
             <p className="mt-4">
-              When you send a message, Copilot automatically retrieves the most relevant passages from your knowledge base using semantic search. Those passages are injected into its context before it generates a reply, so answers are grounded in your actual company content rather than general AI knowledge.
+              When you send a message, Sage automatically retrieves the most relevant passages from your knowledge base using semantic search. Those passages are injected into its context before it generates a reply, so answers are grounded in your actual company content rather than general AI knowledge.
             </p>
             <div className="mt-5 p-5 rounded-xl bg-white/5 border border-white/10">
               <p className="text-sm font-semibold text-white mb-2">Example</p>
               <p className="text-sm text-gray-400 leading-relaxed">
-                You upload your company&apos;s 60-page product handbook to the knowledge base (for your customer chatbot). Your sales team can now ask Copilot: <em>&quot;What are the key differentiators in our Enterprise tier?&quot;</em> — and get a concise, accurate answer drawn directly from the handbook. No hunting, no page numbers, no manual reading.
+                You upload your company&apos;s 60-page product handbook to the knowledge base (for your customer chatbot). Your sales team can now ask Sage: <em>&quot;What are the key differentiators in our Enterprise tier?&quot;</em> — and get a concise, accurate answer drawn directly from the handbook. No hunting, no page numbers, no manual reading.
               </p>
             </div>
           </section>
 
           {/* Step by step activation */}
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">How to activate Copilot — step by step</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">How to activate Sage — step by step</h2>
             <ol className="space-y-6 mt-4">
               {[
                 {
                   step: '1',
                   title: 'Upgrade to a Pro plan',
-                  desc: 'Copilot is available on Pro, Scale, and Enterprise plans. If you are on Starter, navigate to Settings → Upgrade in your dashboard. Pro plans start with a 7-day free trial — no card required at signup.',
+                  desc: 'Sage is available on Pro, Scale, and Enterprise plans. If you are on Starter, navigate to Settings → Upgrade in your dashboard. Pro plans start with a 7-day free trial — no card required at signup.',
                 },
                 {
                   step: '2',
-                  title: 'Open the Copilot section in your sidebar',
-                  desc: 'Once your workspace is on a Pro plan, a "Copilot" link with a sparkle icon appears in the left sidebar of your dashboard. Click it to open the Copilot chat interface.',
+                  title: 'Open the Sage section in your sidebar',
+                  desc: 'Once your workspace is on a Pro plan, a "Sage" link with a sparkle icon appears in the left sidebar of your dashboard. Click it to open the Sage chat interface.',
                 },
                 {
                   step: '3',
                   title: 'Make sure your knowledge base is populated',
-                  desc: 'Go to Sources → Add Source and upload your internal documents, website URLs, PDFs, and FAQs. The more you train your knowledge base, the more useful Copilot becomes. Sources you have already added for your customer chatbot are immediately available to Copilot — no duplication needed.',
+                  desc: 'Go to Sources → Add Source and upload your internal documents, website URLs, PDFs, and FAQs. The more you train your knowledge base, the more useful Sage becomes. Sources you have already added for your customer chatbot are immediately available to Sage — no duplication needed.',
                 },
                 {
                   step: '4',
                   title: '(Optional) Configure email sharing',
-                  desc: 'If you want Copilot to send documents to colleagues by email, go to Settings → Automation and add your Resend API key and a from-address. This takes about two minutes and unlocks the email sharing capability.',
+                  desc: 'If you want Sage to send documents to colleagues by email, go to Settings → Automation and add your Resend API key and a from-address. This takes about two minutes and unlocks the email sharing capability.',
                 },
                 {
                   step: '5',
                   title: 'Start a conversation',
-                  desc: 'Type your first message in the chat box. You can use one of the four starter prompts to get going — "Summarise our knowledge base", "Draft a proposal for a new client", "What are our most common support queries?", or "Help me write a project status report". Copilot will respond using your workspace content.',
+                  desc: 'Type your first message in the chat box. You can use one of the four starter prompts to get going — "Summarise our knowledge base", "Draft a proposal for a new client", "What are our most common support queries?", or "Help me write a project status report". Sage will respond using your workspace content.',
                 },
               ].map((item) => (
                 <li key={item.step} className="flex gap-4">
@@ -210,24 +210,24 @@ export default function SageBlogPage() {
 
           {/* Conversation examples */}
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">Real conversations you can have with Copilot</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">Real conversations you can have with Sage</h2>
             <div className="space-y-4">
               {[
                 {
                   prompt: '"Draft a proposal for Henderson & Co. They are a 200-person logistics company looking to automate their customer support."',
-                  response: 'Copilot produces a full proposal — executive summary, problem statement, proposed solution, pricing overview, and next steps — in under 10 seconds. You edit it, copy it, or ask Copilot to email it directly to the account owner.',
+                  response: 'Sage produces a full proposal — executive summary, problem statement, proposed solution, pricing overview, and next steps — in under 10 seconds. You edit it, copy it, or ask Sage to email it directly to the account owner.',
                 },
                 {
                   prompt: '"What does our standard SLA say about response times for P1 issues?"',
-                  response: 'Copilot searches your knowledge base for the SLA document, extracts the relevant clause, and quotes it verbatim with context. No digging through shared drives.',
+                  response: 'Sage searches your knowledge base for the SLA document, extracts the relevant clause, and quotes it verbatim with context. No digging through shared drives.',
                 },
                 {
                   prompt: '"Write a project status update for the Henderson implementation. We are 60% done, on schedule, and blocked on getting their API credentials."',
-                  response: 'Copilot formats a professional status update email including a progress summary, the current blocker, and a proposed next step — ready to send to the client in one click.',
+                  response: 'Sage formats a professional status update email including a progress summary, the current blocker, and a proposed next step — ready to send to the client in one click.',
                 },
                 {
                   prompt: '"Summarise the last 3 months of our knowledge base updates into a team briefing I can share in Slack."',
-                  response: 'Copilot reads through your knowledge base, identifies recently updated content, and produces a concise team briefing. You copy it straight into Slack.',
+                  response: 'Sage reads through your knowledge base, identifies recently updated content, and produces a concise team briefing. You copy it straight into Slack.',
                 },
               ].map((ex, i) => (
                 <div key={i} className="p-5 rounded-xl bg-white/5 border border-white/10">
@@ -242,14 +242,14 @@ export default function SageBlogPage() {
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">Security and access control</h2>
             <p>
-              Copilot is built with team security in mind from the ground up:
+              Sage is built with team security in mind from the ground up:
             </p>
             <ul className="space-y-3 mt-4">
               {[
-                'Only authenticated workspace members can access Copilot. It is never exposed publicly.',
-                'Every Copilot request is validated against your Supabase session — unauthenticated requests are rejected at both the dashboard and API layers.',
-                'The Fastify API that powers Copilot uses a service-key-only authentication pattern — it is never directly callable from the browser.',
-                'Copilot conversations are session-only (held in browser memory) by default, so no conversation data is stored in your database.',
+                'Only authenticated workspace members can access Sage. It is never exposed publicly.',
+                'Every Sage request is validated against your Supabase session — unauthenticated requests are rejected at both the dashboard and API layers.',
+                'The Fastify API that powers Sage uses a service-key-only authentication pattern — it is never directly callable from the browser.',
+                'Sage conversations are session-only (held in browser memory) by default, so no conversation data is stored in your database.',
                 'The plan gate is enforced server-side: even if a Starter-plan user somehow navigated to /sage, the API route would return a 403 before any AI call is made.',
               ].map((point, i) => (
                 <li key={i} className="flex gap-3">
@@ -266,14 +266,14 @@ export default function SageBlogPage() {
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">What&apos;s coming next</h2>
             <p>
-              The current Copilot release is the foundation. Here is what is on the roadmap:
+              The current Sage release is the foundation. Here is what is on the roadmap:
             </p>
             <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
                 { icon: '💾', label: 'Persistent conversation history', desc: 'Saved sessions so you can pick up where you left off across browser tabs and days.' },
-                { icon: '🔔', label: 'Approval routing', desc: 'Ask Copilot to "route this proposal for sign-off" and it creates an approval request and notifies the right person via email or Slack.' },
-                { icon: '📤', label: 'CSV data exports', desc: 'Ask Copilot for a CSV of your leads or conversations and download it instantly.' },
-                { icon: '👥', label: 'Team channels', desc: 'Bring Copilot into your Slack or Microsoft Teams workspace so your whole team can query it without logging into the dashboard.' },
+                { icon: '🔔', label: 'Approval routing', desc: 'Ask Sage to "route this proposal for sign-off" and it creates an approval request and notifies the right person via email or Slack.' },
+                { icon: '📤', label: 'CSV data exports', desc: 'Ask Sage for a CSV of your leads or conversations and download it instantly.' },
+                { icon: '👥', label: 'Team channels', desc: 'Bring Sage into your Slack or Microsoft Teams workspace so your whole team can query it without logging into the dashboard.' },
               ].map((item) => (
                 <div key={item.label} className="flex gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
                   <span className="text-xl shrink-0">{item.icon}</span>
