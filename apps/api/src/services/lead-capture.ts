@@ -138,6 +138,34 @@ async function postLeadToZoho(token: string, lead: LeadData, payload: LeadWebhoo
 }
 
 // ---------------------------------------------------------------------------
+// Salesforce — Access Token + Instance URL → Leads API
+// ---------------------------------------------------------------------------
+
+async function postLeadToSalesforce(token: string, instanceUrl: string, lead: LeadData, payload: LeadWebhookPayload): Promise<void> {
+  try {
+    const record: Record<string, string> = { LeadSource: 'Web' }
+    if (lead.email) record.Email = lead.email
+    if (lead.phone) record.Phone = lead.phone
+    // Salesforce requires LastName
+    record.LastName = lead.email?.split('@')[0] ?? 'Unknown'
+
+    const base = instanceUrl.replace(/\/$/, '')
+    const res = await fetch(`${base}/services/data/v59.0/sobjects/Lead/`, {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body:   JSON.stringify(record),
+      signal: AbortSignal.timeout(10_000),
+    })
+    console.log(`[lead-capture] Salesforce responded ${res.status} for conversation=${payload.conversationId}`)
+  } catch (err) {
+    console.error(`[lead-capture] Salesforce failed: ${err instanceof Error ? err.message : String(err)}`)
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Dispatcher — routes to the correct provider based on integration config
 // ---------------------------------------------------------------------------
 
@@ -162,6 +190,12 @@ export async function routeLeadToProvider(
     case 'zoho': {
       const token = config.crm_zoho_token as string | undefined
       if (token) await postLeadToZoho(token, lead, payload)
+      break
+    }
+    case 'salesforce': {
+      const token       = config.crm_salesforce_token        as string | undefined
+      const instanceUrl = config.crm_salesforce_instance_url as string | undefined
+      if (token && instanceUrl) await postLeadToSalesforce(token, instanceUrl, lead, payload)
       break
     }
     case 'zapier':

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-type CrmProvider = 'none' | 'webhook' | 'zapier' | 'hubspot' | 'intercom' | 'zoho'
+type CrmProvider = 'none' | 'webhook' | 'zapier' | 'hubspot' | 'intercom' | 'zoho' | 'salesforce'
 
 const PROVIDERS: {
   value:  CrmProvider
@@ -41,10 +41,16 @@ const PROVIDERS: {
     desc:  'Create leads in Zoho CRM using an OAuth access token.',
   },
   {
+    value: 'salesforce',
+    label: 'Salesforce',
+    logo:  '☁️',
+    desc:  'Create leads directly in Salesforce CRM using an OAuth access token and your instance URL.',
+  },
+  {
     value: 'webhook',
     label: 'Generic webhook',
     logo:  '🔗',
-    desc:  'POST lead data to any HTTP endpoint — Make.com, Salesforce, or your own server.',
+    desc:  'POST lead data to any HTTP endpoint — Make.com, or your own server.',
   },
 ]
 
@@ -52,8 +58,10 @@ interface Props {
   provider:      string
   webhookUrl:    string
   hubspotToken:  string
-  intercomToken: string
-  zohoToken:     string
+  intercomToken:          string
+  zohoToken:              string
+  salesforceToken:        string
+  salesforceInstanceUrl:  string
 }
 
 export function CrmConfig(props: Props) {
@@ -156,6 +164,37 @@ export function CrmConfig(props: Props) {
             <span className="font-mono bg-gray-100 px-1 rounded">ZohoCRM.modules.leads.CREATE</span>.
           </p>
         </div>
+      )}
+
+      {/* Salesforce */}
+      {provider === 'salesforce' && (
+        <>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">OAuth access token</label>
+            <input
+              type="password"
+              name="crm_salesforce_token"
+              defaultValue={props.salesforceToken}
+              placeholder="00D…"
+              className={monoInputCls}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Instance URL</label>
+            <input
+              type="url"
+              name="crm_salesforce_instance_url"
+              defaultValue={props.salesforceInstanceUrl}
+              placeholder="https://yourorg.my.salesforce.com"
+              className={inputCls}
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              In Salesforce: <span className="font-medium">Setup → My Domain</span> or use the{' '}
+              <span className="font-mono bg-gray-100 px-1 rounded">instance_url</span> from your OAuth token response.
+              Requires <span className="font-mono bg-gray-100 px-1 rounded">api</span> scope.
+            </p>
+          </div>
+        </>
       )}
 
       {/* Generic webhook */}
