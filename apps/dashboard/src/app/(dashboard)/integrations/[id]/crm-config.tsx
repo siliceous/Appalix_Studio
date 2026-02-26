@@ -116,7 +116,7 @@ export function CrmConfig(props: Props) {
       {/* HubSpot */}
       {provider === 'hubspot' && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Private App token</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Access token</label>
           <input
             type="password"
             name="crm_hubspot_token"
@@ -126,6 +126,7 @@ export function CrmConfig(props: Props) {
           />
           <p className="text-xs text-gray-400 mt-1">
             In HubSpot: <span className="font-medium">Settings → Integrations → Private Apps → Create a private app</span>.
+            Copy the <span className="font-medium">Access token</span> from the app page.
             Requires <span className="font-mono bg-gray-100 px-1 rounded">crm.objects.contacts.write</span> scope.
           </p>
         </div>
