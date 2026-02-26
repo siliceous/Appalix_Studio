@@ -44,6 +44,51 @@ const POSTS = [
     slug: 'connecting-webhooks-crm-handover',
   },
   {
+    category: 'Tutorial',
+    title: 'How to Connect HubSpot CRM to Appalix',
+    excerpt: 'Native HubSpot integration — no Zapier needed. Create a Private App token in HubSpot and Appalix will push captured leads straight into your contacts automatically.',
+    readTime: '8 min read',
+    date: 'Feb 26, 2026',
+    emoji: '🟠',
+    slug: 'connect-hubspot',
+  },
+  {
+    category: 'Tutorial',
+    title: 'How to Connect Zapier to Appalix for CRM Lead Capture',
+    excerpt: 'Route Appalix leads to HubSpot, Salesforce, Google Sheets, Pipedrive, or 6,000+ apps via a Zapier Catch Hook. Available on Core plan and above — zero code required.',
+    readTime: '7 min read',
+    date: 'Feb 26, 2026',
+    emoji: '🔗',
+    slug: 'connect-zapier',
+  },
+  {
+    category: 'Tutorial',
+    title: 'How to Connect Intercom to Appalix',
+    excerpt: 'Automatically create Intercom leads the moment a visitor shares contact details in your AI chat. Get your Access Token from the Intercom Developer Hub in under 5 minutes.',
+    readTime: '7 min read',
+    date: 'Feb 26, 2026',
+    emoji: '💬',
+    slug: 'connect-intercom',
+  },
+  {
+    category: 'Tutorial',
+    title: 'How to Connect Zoho CRM to Appalix',
+    excerpt: 'Push leads directly into the Zoho CRM Leads module using an OAuth access token. Covers both the quick Self Client method and the production OAuth app approach.',
+    readTime: '9 min read',
+    date: 'Feb 26, 2026',
+    emoji: '🔵',
+    slug: 'connect-zoho-crm',
+  },
+  {
+    category: 'Tutorial',
+    title: 'How to Connect Salesforce to Appalix',
+    excerpt: 'Create Salesforce Lead records automatically when visitors share contact details in chat. Step-by-step: get an OAuth access token via Workbench or a Connected App.',
+    readTime: '10 min read',
+    date: 'Feb 26, 2026',
+    emoji: '☁️',
+    slug: 'connect-salesforce',
+  },
+  {
     category: 'Guide',
     title: 'How to train your AI agent on your product docs in under 10 minutes',
     excerpt: 'A step-by-step walkthrough of syncing your knowledge base, PDFs, and website content to build an expert AI agent fast.',
@@ -93,7 +138,7 @@ const POSTS = [
   },
 ]
 
-const CATEGORIES = ['All', 'Guide', 'Strategy', 'Tutorial', 'Case Study', 'Product']
+const CATEGORIES = ['All', 'Guide', 'Tutorial', 'Strategy', 'Case Study', 'Product']
 
 export default function ResourcesPage() {
   return (

@@ -31,7 +31,7 @@ const FEATURES = [
   {
     icon: '🎯',
     title: 'Automated lead capture',
-    desc: 'Collect visitor names, email addresses, and phone numbers mid-conversation. Leads are stored in your dashboard and can be exported or sent to your CRM.',
+    desc: 'Collect visitor emails and phone numbers mid-conversation. Leads are stored in your dashboard and routed to your CRM — Zapier on Core, or native HubSpot, Salesforce, Zoho, and Intercom on Pro+.',
     tag: 'Sales',
   },
   {
@@ -77,10 +77,12 @@ const COMPARISON = [
   { feature: 'Conversations / month',   starter: '500',        core: '1,500',      pro: '5,000',       scale: '25,000' },
   { feature: 'Integrations',            starter: '2',          core: '5',          pro: 'All',         scale: 'All' },
   { feature: 'Lead capture',            starter: '✓',          core: '✓',          pro: '✓',           scale: '✓' },
+  { feature: 'CRM integration',         starter: '—',          core: 'Zapier',     pro: 'All CRMs',    scale: 'All CRMs' },
   { feature: 'Human handoff',           starter: '—',          core: '✓',          pro: '✓',           scale: '✓' },
   { feature: 'Sage AI assistant',       starter: '—',          core: '—',          pro: '✓',           scale: '✓',  sage: true },
   { feature: 'Analytics dashboard',     starter: 'Basic',      core: 'Basic',      pro: 'Advanced',    scale: 'Advanced' },
   { feature: 'Multilingual',            starter: '✓',          core: '✓',          pro: '✓',           scale: '✓' },
+  { feature: 'Cloud source connectors',  starter: '—',          core: '—',          pro: '✓',           scale: '✓' },
   { feature: 'Custom branding',         starter: '—',          core: '—',          pro: '✓',           scale: '✓' },
   { feature: 'API access',              starter: '—',          core: '—',          pro: '✓',           scale: '✓' },
   { feature: 'White-label',             starter: '—',          core: '—',          pro: '—',           scale: '✓' },
