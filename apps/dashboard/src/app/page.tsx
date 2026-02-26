@@ -212,8 +212,23 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ── Lead generation & revenue growth ───────────────────────── */}
+      <LeadGenSection />
+
+      {/* ── Internal task automation ───────────────────────────────── */}
+      <AutomationSection />
+
+      {/* ── Support cost reduction ─────────────────────────────────── */}
+      <SupportSection />
+
+      {/* ── Productivity lift ──────────────────────────────────────── */}
+      <ProductivitySection />
+
+      {/* ── Workflow replacement ────────────────────────────────────── */}
+      <WorkflowSection />
+
       {/* ── How it works ───────────────────────────────────────────── */}
-      <section className="py-24 px-6">
+      <section className="py-24 px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto">
           <ScrollReveal>
             <div className="text-center mb-16">
@@ -267,21 +282,6 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* ── Lead generation & revenue growth ───────────────────────── */}
-      <LeadGenSection />
-
-      {/* ── Internal task automation ───────────────────────────────── */}
-      <AutomationSection />
-
-      {/* ── Support cost reduction ─────────────────────────────────── */}
-      <SupportSection />
-
-      {/* ── Productivity lift ──────────────────────────────────────── */}
-      <ProductivitySection />
-
-      {/* ── Workflow replacement ────────────────────────────────────── */}
-      <WorkflowSection />
 
       {/* ── Integrations ───────────────────────────────────────────── */}
       <section className="py-24 px-6 border-t border-white/5">
