@@ -26,7 +26,7 @@ const NAV_ITEMS: { href: string; label: string; icon: React.ElementType; pro?: b
   { href: '/conversations',    label: 'Conversations',   icon: MessageSquare },
   { href: '/integrations',     label: 'Integrations',    icon: Plug },
   { href: '/sources',          label: 'Knowledge Base',  icon: BookOpen },
-  { href: '/copilot',          label: 'Copilot',         icon: Sparkles, pro: true },
+  { href: '/sage',             label: 'Sage',             icon: Sparkles, pro: true },
   { href: '/analytics',        label: 'Analytics',       icon: BarChart2 },
   { href: '/settings',         label: 'Settings',        icon: Settings },
 ]

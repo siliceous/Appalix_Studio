@@ -5,7 +5,7 @@ import type { Workspace } from '@/lib/types'
 import Link from 'next/link'
 import { Sparkles, Zap } from 'lucide-react'
 
-export default async function CopilotPage() {
+export default async function SagePage() {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -35,7 +35,7 @@ export default async function CopilotPage() {
         <div className="w-16 h-16 rounded-2xl bg-brand-50 border border-brand-200 flex items-center justify-center mb-6">
           <Sparkles className="w-7 h-7 text-brand-600" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-3">Internal AI Copilot</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-3">Appalix Sage</h1>
         <p className="text-gray-500 text-sm max-w-md mb-8 leading-relaxed">
           Give your team an AI assistant that knows your business — searches your knowledge base, drafts documents, and helps everyone work faster.
           Available on <strong>Pro</strong> plans and above.
@@ -60,11 +60,13 @@ export default async function CopilotPage() {
   }
 
   // Load user profile for greeting
-  const { data: profile } = await supabase
+  const { data: profileRaw } = await supabase
     .from('user_profiles')
     .select('first_name, last_name')
     .eq('user_id', user.id)
     .single()
+
+  const profile = profileRaw as { first_name: string | null; last_name: string | null } | null
 
   const userName = profile
     ? [profile.first_name, profile.last_name].filter(Boolean).join(' ')
@@ -78,7 +80,7 @@ export default async function CopilotPage() {
           <Sparkles className="w-4 h-4 text-brand-600" />
         </div>
         <div>
-          <h1 className="text-sm font-semibold text-gray-900">Internal Copilot</h1>
+          <h1 className="text-sm font-semibold text-gray-900">Sage</h1>
           <p className="text-xs text-gray-400">{workspace.name} · AI assistant for your team</p>
         </div>
       </div>

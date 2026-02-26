@@ -4,6 +4,7 @@ import Image from 'next/image'
 const NAV_LINKS = [
   { label: 'AI Agent',      href: '/'              },
   { label: 'Features',      href: '/features'      },
+  { label: 'Sage',          href: '/sage',   badge: true },
   { label: 'Integrations',  href: '/platforms'     },
   { label: 'Pricing',       href: '/pricing'       },
   { label: 'Security',      href: '/security'      },
@@ -32,9 +33,14 @@ export function MarketingNavbar() {
             <Link
               key={l.href}
               href={l.href}
-              className="text-sm text-gray-400 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors"
             >
               {l.label}
+              {'badge' in l && l.badge && (
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-brand-600/20 text-brand-400 border border-brand-600/30 leading-none">
+                  Pro
+                </span>
+              )}
             </Link>
           ))}
         </nav>

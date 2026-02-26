@@ -2,22 +2,22 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Meet Appalix Copilot — Your Team\'s Internal AI Assistant | Appalix Resources',
+  title: 'Meet Appalix Sage — Your Team\'s Internal AI Assistant | Appalix Resources',
   description:
-    'Appalix Copilot is a Pro-exclusive AI assistant built for your internal team. Search your knowledge base, draft proposals, generate reports, and share content with colleagues — all from inside your dashboard.',
+    'Appalix Sage is a Pro-exclusive AI assistant built for your internal team. Search your knowledge base, draft proposals, generate reports, and share content with colleagues — all from inside your dashboard.',
   keywords: [
     'internal AI assistant',
-    'team AI copilot',
+    'team AI sage',
     'AI for internal teams',
     'knowledge base AI',
     'AI document generation',
     'AI proposal drafting',
     'internal chatbot',
-    'Appalix Copilot',
+    'Appalix Sage',
   ],
 }
 
-export default function CopilotBlogPage() {
+export default function SageBlogPage() {
   return (
     <div className="pt-24 pb-24 px-6">
       <div className="max-w-3xl mx-auto">
@@ -26,7 +26,7 @@ export default function CopilotBlogPage() {
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Meet Appalix Copilot</span>
+          <span className="text-gray-400">Meet Appalix Sage</span>
         </div>
 
         {/* Header */}
@@ -36,10 +36,11 @@ export default function CopilotBlogPage() {
             <span className="text-xs text-gray-500">8 min read · Feb 26, 2026</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
-            Meet Appalix Copilot: Your Team&apos;s Internal AI Assistant
+
+            Meet Appalix Sage: Your Team&apos;s Internal AI Assistant
           </h1>
           <p className="text-gray-400 text-lg leading-relaxed">
-            You already have an AI chatbot serving your customers. Now Appalix Copilot puts that same intelligence to work <em>inside</em> your team — searching your knowledge base, drafting documents, and helping everyone move faster.
+            You already have an AI chatbot serving your customers. Now Appalix Sage puts that same intelligence to work <em>inside</em> your team — searching your knowledge base, drafting documents, and helping everyone move faster.
           </p>
         </div>
 
@@ -47,7 +48,7 @@ export default function CopilotBlogPage() {
         <div className="mb-10 p-6 rounded-2xl bg-gradient-to-br from-brand-600/15 to-transparent border border-brand-600/20">
           <p className="text-sm font-semibold text-brand-300 mb-2">✦ Available on Pro and above</p>
           <p className="text-sm text-gray-400 leading-relaxed">
-            Appalix Copilot is included with every <strong className="text-white">Pro, Scale, and Enterprise</strong> plan at no extra charge. Starter plan users can access it after upgrading.
+            Appalix Sage is included with every <strong className="text-white">Pro, Scale, and Enterprise</strong> plan at no extra charge. Starter plan users can access it after upgrading.
           </p>
         </div>
 
@@ -59,7 +60,7 @@ export default function CopilotBlogPage() {
 
           {/* What is Copilot */}
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">What is Appalix Copilot?</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">What is Appalix Sage?</h2>
             <p>
               Appalix already powers AI chatbots that handle your <em>customer</em> conversations across your website, Slack, WhatsApp, and more. Copilot is the other side of that coin — an AI assistant designed for your <strong className="text-white">internal team</strong>.
             </p>
@@ -249,7 +250,7 @@ export default function CopilotBlogPage() {
                 'Every Copilot request is validated against your Supabase session — unauthenticated requests are rejected at both the dashboard and API layers.',
                 'The Fastify API that powers Copilot uses a service-key-only authentication pattern — it is never directly callable from the browser.',
                 'Copilot conversations are session-only (held in browser memory) by default, so no conversation data is stored in your database.',
-                'The plan gate is enforced server-side: even if a Starter-plan user somehow navigated to /copilot, the API route would return a 403 before any AI call is made.',
+                'The plan gate is enforced server-side: even if a Starter-plan user somehow navigated to /sage, the API route would return a 403 before any AI call is made.',
               ].map((point, i) => (
                 <li key={i} className="flex gap-3">
                   <svg className="w-5 h-5 text-brand-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -289,7 +290,7 @@ export default function CopilotBlogPage() {
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">Summary</h2>
             <p>
-              Appalix Copilot turns your existing knowledge base into a team-wide AI assistant. The same content that answers your customers&apos; questions can now draft proposals for your sales team, write reports for your managers, and surface policy details for your operations team — all in a single conversation.
+              Appalix Sage turns your existing knowledge base into a team-wide AI assistant. The same content that answers your customers&apos; questions can now draft proposals for your sales team, write reports for your managers, and surface policy details for your operations team — all in a single conversation.
             </p>
             <p className="mt-4">
               It is not a separate product, a separate subscription, or a separate system to maintain. It is built into your Appalix workspace, available the moment you upgrade to Pro, and ready to use in under five minutes.

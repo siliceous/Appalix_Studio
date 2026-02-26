@@ -94,7 +94,7 @@ export function CopilotChat({ workspaceId, workspaceName, userName }: CopilotCha
             Hi {userName.split(' ')[0]}, how can I help?
           </h2>
           <p className="text-sm text-gray-500 max-w-sm mb-8">
-            I&apos;m your internal AI assistant for {workspaceName}. Ask me anything — I can search your knowledge base, draft documents, and help your team move faster.
+            I&apos;m Sage, your internal AI assistant for {workspaceName}. Ask me anything — I can search your knowledge base, draft documents, and help your team move faster.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
             {STARTERS.map((s) => (

@@ -14,7 +14,7 @@ interface CopilotBody {
 }
 
 function buildInternalSystemPrompt(workspaceName: string, userName: string): string {
-  return `You are an internal AI assistant for ${workspaceName}. You are helping ${userName}, a verified team member.
+  return `You are Sage, the internal AI assistant for ${workspaceName}. You are helping ${userName}, a verified team member.
 
 Your role is to help the team work faster and smarter. You can:
 - Answer questions using the workspace knowledge base

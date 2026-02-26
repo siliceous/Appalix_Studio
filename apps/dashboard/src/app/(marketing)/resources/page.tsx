@@ -18,8 +18,8 @@ export const metadata: Metadata = {
 const POSTS = [
   {
     category: 'Product',
-    title: 'Meet Appalix Copilot: Your Team\'s Internal AI Assistant',
-    excerpt: 'Appalix Copilot puts AI to work inside your team — searching your knowledge base, drafting proposals and reports, and sharing content with colleagues. Available on Pro and above.',
+    title: 'Meet Appalix Sage: Your Team\'s Internal AI Assistant',
+    excerpt: 'Appalix Sage puts AI to work inside your team — searching your knowledge base, drafting proposals and reports, and sharing content with colleagues. Available on Pro and above.',
     readTime: '8 min read',
     date: 'Feb 26, 2026',
     emoji: '✦',
