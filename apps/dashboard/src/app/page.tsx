@@ -218,34 +218,63 @@ export default async function HomePage() {
       {/* ── Support cost reduction ─────────────────────────────────── */}
       <SupportSection />
 
-      {/* ── Sage intro strip ───────────────────────────────────────── */}
-      <section className="py-16 px-6 border-t border-white/5">
+      {/* ── Sage feature section ────────────────────────────────────── */}
+      <section className="py-24 px-6 border-t border-white/5">
         <ScrollReveal>
-          <div className="max-w-5xl mx-auto relative overflow-hidden rounded-2xl border border-[#61c2ad]/20 bg-[#61c2ad]/[0.04] p-8 sm:p-10">
-            <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#61c2ad]/10 rounded-full blur-[80px] pointer-events-none" />
-            <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-6">
-              <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[#61c2ad]/15 border border-[#61c2ad]/25 flex items-center justify-center">
-                <span className="text-[#61c2ad] text-xl font-bold">✦</span>
+          <div className="max-w-4xl mx-auto relative overflow-hidden rounded-3xl border border-[#61c2ad]/30 bg-gradient-to-br from-[#61c2ad]/[0.07] via-transparent to-[#3873BB]/[0.05] p-10 sm:p-16 text-center">
+            {/* Animated glow orbs */}
+            <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[480px] h-48 bg-[#61c2ad]/20 rounded-full blur-[90px] animate-pulse pointer-events-none" />
+            <div className="absolute -bottom-24 -left-16 w-72 h-72 bg-[#3873BB]/15 rounded-full blur-[100px] animate-pulse pointer-events-none" style={{ animationDelay: '1.2s' }} />
+            <div className="absolute -bottom-16 -right-16 w-56 h-56 bg-[#61c2ad]/10 rounded-full blur-[80px] animate-pulse pointer-events-none" style={{ animationDelay: '2.4s' }} />
+
+            <div className="relative">
+              {/* Badge row */}
+              <div className="inline-flex items-center gap-2.5 mb-7 px-3.5 py-1.5 rounded-full border border-[#61c2ad]/25 bg-[#61c2ad]/[0.08]">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#61c2ad] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#61c2ad]" />
+                </span>
+                <span className="text-[11px] font-semibold tracking-widest uppercase text-[#61c2ad]">New</span>
+                <span className="w-px h-3 bg-[#61c2ad]/30" />
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#61c2ad]/15 border border-[#61c2ad]/25 text-[#61c2ad] uppercase tracking-wide">Pro+</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                  <h3 className="text-lg font-bold text-white">Introducing Appalix Sage</h3>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#61c2ad]/15 border border-[#61c2ad]/25 text-[#61c2ad] uppercase tracking-wide">Pro+</span>
-                </div>
-                <p className="text-sm text-gray-400 leading-relaxed max-w-xl">
-                  Your team&apos;s internal AI assistant. Draft proposals, generate documents, search your knowledge base, and share work with colleagues — all from inside your dashboard.
-                </p>
+
+              {/* Icon */}
+              <div className="w-20 h-20 rounded-2xl bg-[#61c2ad]/15 border border-[#61c2ad]/30 flex items-center justify-center mx-auto mb-7 shadow-lg shadow-[#61c2ad]/10">
+                <span className="text-[#61c2ad] text-4xl animate-pulse">✦</span>
               </div>
-              <div className="flex flex-col sm:flex-row gap-2.5 shrink-0">
+
+              {/* Headline */}
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-5 leading-tight tracking-tight">
+                Introducing{' '}
+                <span className="text-[#61c2ad]">Appalix Sage</span>
+              </h2>
+
+              {/* Description */}
+              <p className="text-gray-400 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto mb-8">
+                Your team&apos;s internal AI assistant. Draft proposals, generate documents, search your knowledge base, and share work with colleagues — all from inside your dashboard.
+              </p>
+
+              {/* Feature chips */}
+              <div className="flex flex-wrap justify-center gap-2 mb-10">
+                {['Draft proposals', 'Generate documents', 'Search knowledge base', 'Collaborate with team'].map((f) => (
+                  <span key={f} className="text-xs px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/10 text-gray-300">
+                    {f}
+                  </span>
+                ))}
+              </div>
+
+              {/* Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
                   href="/ai-assistant"
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#61c2ad]/10 border border-[#61c2ad]/30 hover:bg-[#61c2ad]/20 hover:border-[#61c2ad]/50 text-[#61c2ad] text-sm font-medium transition-all whitespace-nowrap"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-[#61c2ad] hover:bg-[#4eada0] text-white text-sm font-semibold transition-all shadow-lg shadow-[#61c2ad]/25"
                 >
                   Explore Sage →
                 </Link>
                 <Link
                   href="/pricing"
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 hover:border-white/20 text-gray-400 hover:text-white text-sm font-medium transition-all whitespace-nowrap"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl border border-white/15 hover:border-white/30 text-gray-300 hover:text-white text-sm font-medium transition-all"
                 >
                   View plans
                 </Link>
