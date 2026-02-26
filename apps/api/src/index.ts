@@ -8,6 +8,7 @@ import { whatsappRoutes }    from './routes/webhooks/whatsapp.js'
 import { googleChatRoutes }  from './routes/webhooks/google-chat.js'
 import { wordpressRoutes }   from './routes/webhooks/wordpress.js'
 import { chatRoutes }        from './routes/chat/index.js'
+import { copilotRoutes }     from './routes/copilot/index.js'
 
 const server = Fastify({
   logger: {
@@ -71,6 +72,9 @@ await server.register(wordpressRoutes,  { prefix: '/webhooks' })
 
 // Chat + ingestion endpoints
 await server.register(chatRoutes, { prefix: '/chat' })
+
+// Internal copilot endpoint (server-to-server, service-key auth)
+await server.register(copilotRoutes, { prefix: '/copilot' })
 
 // ---------------------------------------------------------------
 // Error handler

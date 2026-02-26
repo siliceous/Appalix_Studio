@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -12,18 +13,20 @@ import {
   Settings,
   LogOut,
   BookOpen,
+  Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Workspace } from '@/lib/types'
 
-const NAV_ITEMS = [
+const NAV_ITEMS: { href: string; label: string; icon: React.ElementType; pro?: boolean }[] = [
   { href: '/dashboard',        label: 'Overview',        icon: LayoutDashboard },
   { href: '/bots',             label: 'Bots',            icon: Bot },
   { href: '/conversations',    label: 'Conversations',   icon: MessageSquare },
   { href: '/integrations',     label: 'Integrations',    icon: Plug },
   { href: '/sources',          label: 'Knowledge Base',  icon: BookOpen },
+  { href: '/copilot',          label: 'Copilot',         icon: Sparkles, pro: true },
   { href: '/analytics',        label: 'Analytics',       icon: BarChart2 },
   { href: '/settings',         label: 'Settings',        icon: Settings },
 ]
@@ -67,8 +70,9 @@ export function Sidebar({ workspace }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+        {NAV_ITEMS.map(({ href, label, icon: Icon, pro }) => {
           const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
+          const isProPlan = ['pro', 'scale', 'enterprise'].includes(workspace.plan)
           return (
             <Link
               key={href}
@@ -82,6 +86,11 @@ export function Sidebar({ workspace }: SidebarProps) {
             >
               <Icon className="w-4 h-4 shrink-0" />
               {label}
+              {pro && !isProPlan && (
+                <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-600 font-semibold">
+                  Pro
+                </span>
+              )}
             </Link>
           )
         })}
