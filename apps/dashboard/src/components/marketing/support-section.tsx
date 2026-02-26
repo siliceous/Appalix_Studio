@@ -171,49 +171,9 @@ export function SupportSection() {
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-20 items-center">
 
-          {/* ── Left: text + metrics ── */}
-          <div className="lg:col-span-2 order-2 lg:order-1">
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.6 }}
-            >
-              <span className="inline-block text-xs px-3 py-1 rounded-full bg-[#61c2ad]/10 border border-[#61c2ad]/20 text-[#61c2ad] font-semibold uppercase tracking-widest mb-5">
-                Support cost reduction
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
-                Resolve queries instantly,<br className="hidden sm:block" /> without adding headcount
-              </h2>
-              <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-2xl">
-                AI handles repetitive queries, automates ticket triage, drafts agent responses, and gives customers instant self-service access — so your team focuses on the work that actually needs a human.
-              </p>
-            </motion.div>
-
-            {/* Metrics + business result — directly under the text */}
-            <motion.div
-              className="flex flex-wrap items-center gap-6 p-5 rounded-xl bg-white/[0.04] border border-white/10"
-              initial={{ opacity: 0 }}
-              animate={isInView ? { opacity: 1 } : {}}
-              transition={{ delay: 0.5, duration: 0.6 }}
-            >
-              {METRICS.map((m) => (
-                <div key={m.label} className="text-center sm:text-left">
-                  <p className="text-2xl font-bold text-white">{m.value}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{m.label}</p>
-                </div>
-              ))}
-              <div className="hidden sm:block w-px self-stretch bg-white/10" />
-              <p className="text-xs text-gray-400 leading-relaxed flex-1 min-w-[180px]">
-                <span className="text-white font-medium">Business result:</span> Lower headcount pressure, faster response SLAs, and agents free to handle complex issues that truly need a human.
-              </p>
-            </motion.div>
-
-          </div>
-
-          {/* ── Right: orbit graphic + chips overlaid ── */}
+          {/* ── Left: orbit graphic + chips overlaid ── */}
           <motion.div
-            className="lg:col-span-1 order-1 lg:order-2 relative"
+            className="lg:col-span-1 order-1 lg:order-1 relative"
             style={{ minHeight: '420px' }}
             initial={{ opacity: 0 }}
             animate={isInView ? { opacity: 1 } : {}}
@@ -248,6 +208,46 @@ export function SupportSection() {
             </div>
 
           </motion.div>
+
+          {/* ── Right: text + metrics ── */}
+          <div className="lg:col-span-2 order-2 lg:order-2 text-right">
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.6 }}
+            >
+              <span className="inline-block text-xs px-3 py-1 rounded-full bg-[#61c2ad]/10 border border-[#61c2ad]/20 text-[#61c2ad] font-semibold uppercase tracking-widest mb-5">
+                Support cost reduction
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
+                Resolve queries instantly,<br className="hidden sm:block" /> without adding headcount
+              </h2>
+              <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-2xl ml-auto">
+                AI handles repetitive queries, automates ticket triage, drafts agent responses, and gives customers instant self-service access — so your team focuses on the work that actually needs a human.
+              </p>
+            </motion.div>
+
+            {/* Metrics + business result */}
+            <motion.div
+              className="flex flex-wrap items-center gap-6 p-5 rounded-xl bg-white/[0.04] border border-white/10"
+              initial={{ opacity: 0 }}
+              animate={isInView ? { opacity: 1 } : {}}
+              transition={{ delay: 0.5, duration: 0.6 }}
+            >
+              {METRICS.map((m) => (
+                <div key={m.label} className="text-center sm:text-right">
+                  <p className="text-2xl font-bold text-white">{m.value}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{m.label}</p>
+                </div>
+              ))}
+              <div className="hidden sm:block w-px self-stretch bg-white/10" />
+              <p className="text-xs text-gray-400 leading-relaxed flex-1 min-w-[180px]">
+                <span className="text-white font-medium">Business result:</span> Lower headcount pressure, faster response SLAs, and agents free to handle complex issues that truly need a human.
+              </p>
+            </motion.div>
+
+          </div>
 
         </div>
       </div>

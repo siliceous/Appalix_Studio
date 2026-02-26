@@ -171,8 +171,8 @@ export function AutomationSection() {
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-20 items-center">
 
-          {/* ── Right: text + metrics ── */}
-          <div className="lg:col-span-2 order-2 lg:order-2 text-right">
+          {/* ── Left: text + metrics ── */}
+          <div className="lg:col-span-2 order-2 lg:order-1">
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -185,7 +185,7 @@ export function AutomationSection() {
               <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
                 Give your highest-paid people<br className="hidden sm:block" /> back their most valuable hours
               </h2>
-              <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-2xl ml-auto">
+              <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-2xl">
                 AI drafts proposals, generates reports, processes documents, summarises meetings, routes approvals, and extracts data from forms, emails, and PDFs — eliminating the admin that drains your senior team.
               </p>
             </motion.div>
@@ -198,7 +198,7 @@ export function AutomationSection() {
               transition={{ delay: 0.5, duration: 0.6 }}
             >
               {METRICS.map((m) => (
-                <div key={m.label} className="text-center sm:text-right">
+                <div key={m.label} className="text-center sm:text-left">
                   <p className="text-2xl font-bold text-white">{m.value}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{m.label}</p>
                 </div>
@@ -211,9 +211,9 @@ export function AutomationSection() {
 
           </div>
 
-          {/* ── Left: orbit graphic + chips overlaid ── */}
+          {/* ── Right: orbit graphic + chips overlaid ── */}
           <motion.div
-            className="lg:col-span-1 order-1 lg:order-1 relative"
+            className="lg:col-span-1 order-1 lg:order-2 relative"
             style={{ minHeight: '420px' }}
             initial={{ opacity: 0 }}
             animate={isInView ? { opacity: 1 } : {}}

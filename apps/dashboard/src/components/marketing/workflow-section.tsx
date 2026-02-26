@@ -184,7 +184,7 @@ export function WorkflowSection() {
                 Workflow replacement
               </span>
               <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
-                This is the<br className="hidden sm:block" /> highest-impact tier
+                Automate repetitive workflows —<br className="hidden sm:block" /> from data entry to CRM routing
               </h2>
               <p className="text-gray-400 text-base leading-relaxed mb-6 max-w-2xl">
                 AI steps in and eliminates the processes that slow your business down — not just doing them faster, but removing them from your team&apos;s plate entirely.

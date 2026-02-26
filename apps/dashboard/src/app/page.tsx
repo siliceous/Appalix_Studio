@@ -215,17 +215,8 @@ export default async function HomePage() {
       {/* ── Lead generation & revenue growth ───────────────────────── */}
       <LeadGenSection />
 
-      {/* ── Internal task automation ───────────────────────────────── */}
-      <AutomationSection />
-
       {/* ── Support cost reduction ─────────────────────────────────── */}
       <SupportSection />
-
-      {/* ── Productivity lift ──────────────────────────────────────── */}
-      <ProductivitySection />
-
-      {/* ── Workflow replacement ────────────────────────────────────── */}
-      <WorkflowSection />
 
       {/* ── Sage intro strip ───────────────────────────────────────── */}
       <section className="py-16 px-6 border-t border-white/5">
@@ -263,6 +254,15 @@ export default async function HomePage() {
           </div>
         </ScrollReveal>
       </section>
+
+      {/* ── Internal task automation ───────────────────────────────── */}
+      <AutomationSection />
+
+      {/* ── Productivity lift ──────────────────────────────────────── */}
+      <ProductivitySection />
+
+      {/* ── Workflow replacement ────────────────────────────────────── */}
+      <WorkflowSection />
 
       {/* ── How it works ───────────────────────────────────────────── */}
       <section className="py-24 px-6 border-t border-white/5">
