@@ -77,7 +77,7 @@ export default function MultipleBotsPage() {
                 { logo: '/integrations/google-chat.png', label: 'Google Chat',        desc: 'Connect your agent to Google Workspace and respond to customer and team queries in Google Chat spaces and DMs.' },
                 { logo: '/integrations/messenger.jpg',   label: 'Facebook Messenger', desc: 'Link a Facebook Page to handle Messenger conversations automatically, 24/7.' },
                 { logo: '/integrations/whatsapp.jpg',    label: 'WhatsApp',           desc: 'Connect a WhatsApp Business number and let customers chat with your AI agent directly from their phone.' },
-                { emoji: '🌐',                           label: 'WordPress',          desc: 'Install the Appalix WordPress plugin and your agent appears as a chat widget on every page of your site, no code required.' },
+                { logo: '/integrations/wordpress.jpg',   label: 'WordPress',          desc: 'Install the Appalix WordPress plugin and your agent appears as a chat widget on every page of your site, no code required.' },
                 { emoji: '🌐',                           label: 'Web Widget',         desc: 'Embed a fully branded chat widget on any website with a single line of JavaScript — works with React, Vue, plain HTML, everything.' },
                 { emoji: '⚡',                           label: 'Custom API',         desc: 'POST messages to the Appalix API from any backend system or custom application and get AI-generated replies in return.' },
               ].map((p) => (

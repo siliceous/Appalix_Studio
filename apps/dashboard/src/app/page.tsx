@@ -30,7 +30,7 @@ const PLATFORMS = [
   { name: 'Google Chat',         logo: '/integrations/google-chat.png' },
   { name: 'Facebook Messenger',  logo: '/integrations/messenger.jpg' },
   { name: 'WhatsApp',            logo: '/integrations/whatsapp.jpg' },
-  { name: 'WordPress',           emoji: '🌐' },
+  { name: 'WordPress',           logo: '/integrations/wordpress.jpg' },
   { name: 'Web Widget',          emoji: '🌐' },
   { name: 'Custom API',          emoji: '⚡' },
 ]

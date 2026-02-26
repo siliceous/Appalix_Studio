@@ -46,7 +46,7 @@ const INTEGRATIONS = [
     status: 'Available',
   },
   {
-    emoji: '🌐',
+    logo: '/integrations/wordpress.jpg',
     name: 'WordPress',
     category: 'Website',
     desc: 'Install the Appalix plugin with one click. Your AI agent appears as a chat widget on any WordPress site — no coding required.',
