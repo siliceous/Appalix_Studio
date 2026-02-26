@@ -56,11 +56,13 @@ export async function POST(req: NextRequest) {
   }
 
   // Get the user's name from user_profiles (if exists), fallback to email
-  const { data: profile } = await supabase
+  const { data: profileRaw } = await supabase
     .from('user_profiles')
     .select('first_name, last_name')
     .eq('user_id', user.id)
     .single()
+
+  const profile = profileRaw as { first_name: string | null; last_name: string | null } | null
 
   const userName = profile
     ? [profile.first_name, profile.last_name].filter(Boolean).join(' ')
