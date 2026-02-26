@@ -199,8 +199,6 @@ export default function SecurityPage() {
             </p>
             <ContactSalesButton
               email="security@appalix.ai"
-              subject="Security Vulnerability Report"
-              body="Please describe the vulnerability you have discovered:\n\n[Description]\n\nSteps to reproduce:\n\n[Steps]\n\nPotential impact:\n\n[Impact]"
               label="Report a vulnerability →"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1a8c76] hover:bg-[#14705d] text-white text-sm font-medium rounded-xl transition-colors"
             />
