@@ -217,7 +217,7 @@ export function PricingCards() {
 
               {isEnterprise ? (
                 <a
-                  href="mailto:sales@appalix.ai"
+                  href="mailto:sales@appalix.ai?subject=Enterprise%20Plan%20Enquiry&body=Hi%2C%0A%0AI%27m%20interested%20in%20the%20Enterprise%20plan%20for%20Appalix.%20Please%20get%20in%20touch%20to%20discuss%20our%20requirements.%0A%0AThanks"
                   className="block text-center text-sm font-medium py-2.5 rounded-xl transition-colors border border-white/20 hover:border-white/40 text-gray-300 hover:text-white"
                 >
                   {plan.cta}

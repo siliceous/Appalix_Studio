@@ -42,7 +42,7 @@ export default async function UpgradePage() {
 
       <p className="text-xs text-center text-gray-400">
         Need more?{' '}
-        <a href="mailto:sales@appalix.ai" className="text-brand-600 hover:underline">
+        <a href="mailto:sales@appalix.ai?subject=Enterprise%20Plan%20Enquiry&body=Hi%2C%0A%0AI%27m%20interested%20in%20the%20Enterprise%20plan%20for%20Appalix.%20Please%20get%20in%20touch%20to%20discuss%20our%20requirements.%0A%0AThanks" className="text-brand-600 hover:underline">
           Contact us about Enterprise
         </a>
         {' '}for unlimited scale, SSO, and dedicated support.

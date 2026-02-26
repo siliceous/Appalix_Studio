@@ -90,12 +90,12 @@ export default function PricingPage() {
         <ScrollReveal>
           <h2 className="text-xl font-bold mb-3">Need something bigger?</h2>
           <p className="text-gray-400 mb-6 text-sm">Talk to us about custom volume, SSO, dedicated infrastructure, and SLAs.</p>
-          <Link
-            href="mailto:sales@appalix.ai"
+          <a
+            href="mailto:sales@appalix.ai?subject=Enterprise%20Plan%20Enquiry&body=Hi%2C%0A%0AI%27m%20interested%20in%20the%20Enterprise%20plan%20for%20Appalix.%20Please%20get%20in%20touch%20to%20discuss%20our%20requirements.%0A%0AThanks"
             className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 hover:border-white/40 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm"
           >
             Contact Enterprise sales
-          </Link>
+          </a>
         </ScrollReveal>
       </section>
     </div>
