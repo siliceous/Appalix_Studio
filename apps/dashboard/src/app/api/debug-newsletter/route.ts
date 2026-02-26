@@ -1,14 +1,21 @@
 import { NextResponse } from 'next/server'
 
 export async function GET() {
+  // Check exact names AND common variations
   return NextResponse.json({
-    hasApiKey:     !!process.env.MAILCHIMP_API_KEY,
-    hasAudienceId: !!process.env.MAILCHIMP_AUDIENCE_ID,
-    hasDc:         !!process.env.MAILCHIMP_DATA_CENTER,
-    dc:            process.env.MAILCHIMP_DATA_CENTER ?? 'NOT SET',
-    // Vercel system vars — should always be set if running on Vercel
-    vercelEnv:     process.env.VERCEL_ENV ?? 'NOT SET',
-    vercelRegion:  process.env.VERCEL_REGION ?? 'NOT SET',
-    nodeEnv:       process.env.NODE_ENV ?? 'NOT SET',
+    exact: {
+      MAILCHIMP_API_KEY:     !!process.env.MAILCHIMP_API_KEY,
+      MAILCHIMP_AUDIENCE_ID: !!process.env.MAILCHIMP_AUDIENCE_ID,
+      MAILCHIMP_DATA_CENTER: !!process.env.MAILCHIMP_DATA_CENTER,
+    },
+    variations: {
+      mailchimp_api_key:       !!process.env.mailchimp_api_key,
+      MAILCHIMP_APIKEY:        !!process.env.MAILCHIMP_APIKEY,
+      MAILCHIMP_API:           !!process.env.MAILCHIMP_API,
+      MAILCHIMP_LIST_ID:       !!process.env.MAILCHIMP_LIST_ID,
+      MAILCHIMP_SERVER_PREFIX: !!process.env.MAILCHIMP_SERVER_PREFIX,
+      MAILCHIMP_DC:            !!process.env.MAILCHIMP_DC,
+    },
+    vercelEnv: process.env.VERCEL_ENV ?? 'NOT SET',
   })
 }
