@@ -1,19 +1,42 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Header } from '@/components/layout/header'
 
-const MODELS = [
-  { value: 'claude-sonnet-4-6',       label: 'Claude Sonnet 4.6  (recommended)' },
-  { value: 'claude-opus-4-6',         label: 'Claude Opus 4.6  (most capable)' },
-  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5  (fastest)' },
+const ALL_MODELS = [
+  { value: 'claude-sonnet-4-6',         label: 'Claude Sonnet 4.6 (recommended)' },
+  { value: 'claude-opus-4-6',           label: 'Claude Opus 4.6 (most capable)'  },
+  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (fastest)'      },
+]
+const HAIKU_ONLY = [
+  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
 ]
 
 export default function NewBotPage() {
   const router = useRouter()
   const supabase = createClient()
+  const [planLocksModel, setPlanLocksModel] = useState(false)
+  const availableModels = planLocksModel ? HAIKU_ONLY : ALL_MODELS
+
+  useEffect(() => {
+    async function fetchPlan() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: membership } = await supabase
+        .from('workspace_members').select('workspace_id').eq('user_id', user.id).limit(1).single()
+      if (!membership) return
+      const { data: ws } = await supabase
+        .from('workspaces').select('plan').eq('id', (membership as { workspace_id: string }).workspace_id).single()
+      const plan = (ws as { plan: string } | null)?.plan ?? 'starter'
+      if (plan === 'starter' || plan === 'core') {
+        setPlanLocksModel(true)
+        setForm((prev) => ({ ...prev, model: 'claude-haiku-4-5-20251001' }))
+      }
+    }
+    void fetchPlan()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const [form, setForm] = useState({
     name: '',
@@ -98,8 +121,11 @@ export default function NewBotPage() {
               onChange={(e) => set('model', e.target.value)}
               className="w-full px-3 py-2 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
-              {MODELS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+              {availableModels.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
             </select>
+            {planLocksModel && (
+              <p className="text-xs text-gray-500 mt-1">Upgrade to Pro to access Sonnet and Opus.</p>
+            )}
           </div>
 
           <div>

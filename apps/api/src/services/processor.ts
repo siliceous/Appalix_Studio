@@ -58,6 +58,13 @@ export async function processMessage(
     .single()
   const workspacePlan = workspace?.plan ?? 'starter'
 
+  // Starter and Core are locked to Haiku regardless of bot.model.
+  // Pro and above use the model the bot owner configured.
+  const HAIKU = 'claude-haiku-4-5-20251001'
+  const effectiveModel = (workspacePlan === 'starter' || workspacePlan === 'core')
+    ? HAIKU
+    : (bot.model ?? HAIKU)
+
   let integrationConfig: Record<string, unknown> = {}
   if (integrationId) {
     const { data: intData } = await supabase
@@ -201,7 +208,7 @@ export async function processMessage(
       workspaceId,
       conversationId,
       botId,
-      model:         bot.model,
+      model:         effectiveModel,
       systemPrompt,
       messages:      history,
       maxTokens:     bot.max_tokens,
@@ -214,7 +221,7 @@ export async function processMessage(
   } else {
     // Single-turn Claude call
     const result = await callClaude({
-      model:        bot.model,
+      model:        effectiveModel,
       systemPrompt,
       messages,
       maxTokens:    bot.max_tokens,
@@ -235,7 +242,7 @@ export async function processMessage(
     workspaceId,
     role:           'assistant',
     content:        reply,
-    model:          bot.model,
+    model:          effectiveModel,
     tokensInput:    tokensIn,
     tokensOutput:   tokensOut,
     responseTimeMs,
@@ -248,7 +255,7 @@ export async function processMessage(
     await recordUsage({
       workspaceId,
       eventType:     'message',
-      model:         bot.model,
+      model:         effectiveModel,
       tokensInput:   tokensIn,
       tokensOutput:  tokensOut,
       conversationId,

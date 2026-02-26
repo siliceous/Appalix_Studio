@@ -108,6 +108,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         stripe_customer_id:     customerId ?? null,
         stripe_subscription_id: subscriptionId ?? null,
         billing_email:          email,
+        ...PLAN_LIMITS[plan],
       })
       .eq('id', metadata.workspace_id)
     console.log(`[stripe] Workspace ${metadata.workspace_id} upgraded to ${plan}`)
@@ -142,6 +143,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       stripe_customer_id:     customerId ?? null,
       stripe_subscription_id: subscriptionId ?? null,
       billing_email:          email,
+      ...PLAN_LIMITS[plan],
     })
     .select('id')
     .single()
@@ -173,7 +175,7 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
 
   await supabase
     .from('workspaces')
-    .update({ plan, subscription_status: status, stripe_subscription_id: sub.id })
+    .update({ plan, subscription_status: status, stripe_subscription_id: sub.id, ...PLAN_LIMITS[plan] })
     .eq('stripe_subscription_id', sub.id)
 }
 
@@ -200,7 +202,17 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 // Helpers
 // ---------------------------------------------------------------
 
-function getPlanFromPrice(price?: Stripe.Price): 'starter' | 'core' | 'pro' | 'scale' | 'enterprise' {
+type Plan = 'starter' | 'core' | 'pro' | 'scale' | 'enterprise'
+
+const PLAN_LIMITS: Record<Plan, { monthly_message_limit: number; monthly_agent_run_limit: number }> = {
+  starter:    { monthly_message_limit:    500, monthly_agent_run_limit:     0 },
+  core:       { monthly_message_limit:  1_500, monthly_agent_run_limit:     0 },
+  pro:        { monthly_message_limit:  5_000, monthly_agent_run_limit:   100 },
+  scale:      { monthly_message_limit: 25_000, monthly_agent_run_limit:   500 },
+  enterprise: { monthly_message_limit: 999_999, monthly_agent_run_limit: 9_999 },
+}
+
+function getPlanFromPrice(price?: Stripe.Price): Plan {
   if (!price) return 'starter'
   const nickname = (price.nickname ?? '').toLowerCase()
   if (nickname.includes('enterprise')) return 'enterprise'
