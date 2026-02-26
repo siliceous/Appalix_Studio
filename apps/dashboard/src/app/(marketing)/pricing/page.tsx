@@ -96,6 +96,12 @@ export default function PricingPage() {
           >
             Contact Enterprise sales
           </a>
+          <p className="text-xs text-gray-600 mt-3">
+            Or email us directly at{' '}
+            <a href="mailto:sales@appalix.ai" className="text-gray-400 hover:text-white transition-colors underline underline-offset-2">
+              sales@appalix.ai
+            </a>
+          </p>
         </ScrollReveal>
       </section>
     </div>

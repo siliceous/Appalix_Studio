@@ -41,11 +41,10 @@ export default async function UpgradePage() {
       <UpgradePlanCards currentPlan={currentPlan} hasSubscription={hasSubscription} />
 
       <p className="text-xs text-center text-gray-400">
-        Need more?{' '}
+        Need more? Contact us about Enterprise for unlimited scale, SSO, and dedicated support.{' '}
         <a href="mailto:sales@appalix.ai?subject=Enterprise%20Plan%20Enquiry&body=Hi%2C%0A%0AI%27m%20interested%20in%20the%20Enterprise%20plan%20for%20Appalix.%20Please%20get%20in%20touch%20to%20discuss%20our%20requirements.%0A%0AThanks" className="text-brand-600 hover:underline">
-          Contact us about Enterprise
+          sales@appalix.ai
         </a>
-        {' '}for unlimited scale, SSO, and dedicated support.
       </p>
     </div>
   )
