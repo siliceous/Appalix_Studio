@@ -4,7 +4,7 @@ import Image from 'next/image'
 const NAV_LINKS = [
   { label: 'AI Agent',      href: '/'              },
   { label: 'Features',      href: '/features'      },
-  { label: 'Sage',          href: '/sage',   badge: true },
+  { label: 'Sage',          href: '/ai-assistant',   badge: true },
   { label: 'Integrations',  href: '/platforms'     },
   { label: 'Pricing',       href: '/pricing'       },
   { label: 'Security',      href: '/security'      },
