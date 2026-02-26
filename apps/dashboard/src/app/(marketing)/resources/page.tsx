@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ScrollReveal } from '@/components/marketing/animate'
+import { NewsletterSignup } from '@/components/marketing/newsletter-signup'
 
 export const metadata: Metadata = {
   title: 'Resources — AI Sales Agent Guides, Tutorials & Case Studies | Appalix',
@@ -227,30 +228,7 @@ export default function ResourcesPage() {
         </div>
       </section>
 
-      {/* Newsletter CTA */}
-      <section className="py-20 px-6 border-t border-white/5">
-        <ScrollReveal>
-          <div className="max-w-2xl mx-auto text-center">
-            <div className="text-3xl mb-4">📬</div>
-            <h2 className="text-2xl font-bold mb-3">Stay ahead of the curve</h2>
-            <p className="text-gray-400 mb-8 text-sm">
-              Get new guides, case studies, and product updates delivered to your inbox every two weeks.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="you@company.com"
-                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-300 placeholder-gray-600 outline-none focus:border-brand-600/50"
-                readOnly
-              />
-              <button className="px-5 py-2.5 bg-[#1a8c76] hover:bg-[#14705d] text-white text-sm font-medium rounded-xl transition-colors whitespace-nowrap">
-                Subscribe
-              </button>
-            </div>
-            <p className="text-xs text-gray-600 mt-3">No spam. Unsubscribe any time.</p>
-          </div>
-        </ScrollReveal>
-      </section>
+      <NewsletterSignup />
     </div>
   )
 }

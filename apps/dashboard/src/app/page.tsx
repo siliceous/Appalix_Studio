@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { MarketingNavbar } from '@/components/marketing/navbar'
 import { MarketingFooter } from '@/components/marketing/footer'
 import { FadeUp, ScrollReveal } from '@/components/marketing/animate'
+import { NewsletterSignup } from '@/components/marketing/newsletter-signup'
 import { LiveChatWidget } from '@/components/marketing/live-chat-widget'
 import { SupportSection } from '@/components/marketing/support-section'
 import { AutomationSection } from '@/components/marketing/automation-section'
@@ -440,6 +441,7 @@ export default async function HomePage() {
         </ScrollReveal>
       </section>
 
+      <NewsletterSignup />
       <MarketingFooter />
     </div>
   )
