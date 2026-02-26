@@ -51,6 +51,7 @@ const PLANS = [
       'Lead capture & CRM export',
       'Human handoff',
       'AI task automation',
+      'Sage AI assistant',
       'Advanced analytics',
       'Custom branding',
       'API access',
@@ -71,6 +72,7 @@ const PLANS = [
       'Lead capture & CRM export',
       'Human handoff',
       'AI task automation',
+      'Sage AI assistant',
       'Advanced analytics',
       'White-label branding',
       'API access',
@@ -86,6 +88,7 @@ const PLANS = [
     popular: false,
     features: [
       'Unlimited everything',
+      'Sage AI assistant',
       'SSO / SAML login',
       'Custom integrations',
       'Dedicated infrastructure',

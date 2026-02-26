@@ -2,6 +2,7 @@
 
 import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
+import Link from 'next/link'
 
 const TAU = 2 * Math.PI
 
@@ -235,6 +236,23 @@ export function WorkflowSection() {
               <p className="text-xs text-gray-400 leading-relaxed flex-1 min-w-[180px]">
                 <span className="text-white font-medium">Business result:</span> Fewer bottlenecks, fewer errors, faster cycle times.
               </p>
+            </motion.div>
+
+            {/* Sage CTA */}
+            <motion.div
+              className="mt-6"
+              initial={{ opacity: 0 }}
+              animate={isInView ? { opacity: 1 } : {}}
+              transition={{ delay: 0.75, duration: 0.5 }}
+            >
+              <Link
+                href="/ai-assistant"
+                className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-[#61c2ad]/8 border border-[#61c2ad]/20 hover:bg-[#61c2ad]/15 hover:border-[#61c2ad]/40 transition-all group"
+              >
+                <span className="text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full bg-[#61c2ad]/15 border border-[#61c2ad]/25 text-[#61c2ad]">✦</span>
+                <span className="text-sm text-[#61c2ad] font-medium">Powered by Appalix Sage</span>
+                <span className="text-xs text-gray-500 group-hover:text-[#61c2ad] transition-colors">→</span>
+              </Link>
             </motion.div>
 
           </div>

@@ -64,6 +64,12 @@ const FEATURES = [
     desc: 'Full REST API access on Pro and above. Send messages, retrieve conversations, and trigger agent runs from any external system.',
     tag: 'Developer',
   },
+  {
+    icon: '✦',
+    title: 'Sage AI assistant',
+    desc: 'An internal AI assistant for your team — draft proposals, generate documents, search your knowledge base, and send content to colleagues. Available on Pro and above.',
+    tag: 'Pro',
+  },
 ]
 
 const COMPARISON = [
@@ -77,6 +83,7 @@ const COMPARISON = [
   { feature: 'Custom branding',         starter: '—',          core: '—',          pro: '✓',           scale: '✓' },
   { feature: 'API access',              starter: '—',          core: '—',          pro: '✓',           scale: '✓' },
   { feature: 'White-label',             starter: '—',          core: '—',          pro: '—',           scale: '✓' },
+  { feature: 'Sage AI assistant',       starter: '—',          core: '—',          pro: '✓',           scale: '✓' },
 ]
 
 export default function FeaturesPage() {

@@ -227,6 +227,43 @@ export default async function HomePage() {
       {/* ── Workflow replacement ────────────────────────────────────── */}
       <WorkflowSection />
 
+      {/* ── Sage intro strip ───────────────────────────────────────── */}
+      <section className="py-16 px-6 border-t border-white/5">
+        <ScrollReveal>
+          <div className="max-w-5xl mx-auto relative overflow-hidden rounded-2xl border border-[#61c2ad]/20 bg-[#61c2ad]/[0.04] p-8 sm:p-10">
+            <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#61c2ad]/10 rounded-full blur-[80px] pointer-events-none" />
+            <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-6">
+              <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[#61c2ad]/15 border border-[#61c2ad]/25 flex items-center justify-center">
+                <span className="text-[#61c2ad] text-xl font-bold">✦</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                  <h3 className="text-lg font-bold text-white">Introducing Appalix Sage</h3>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#61c2ad]/15 border border-[#61c2ad]/25 text-[#61c2ad] uppercase tracking-wide">Pro+</span>
+                </div>
+                <p className="text-sm text-gray-400 leading-relaxed max-w-xl">
+                  Your team&apos;s internal AI assistant. Draft proposals, generate documents, search your knowledge base, and share work with colleagues — all from inside your dashboard.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2.5 shrink-0">
+                <Link
+                  href="/ai-assistant"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#61c2ad]/10 border border-[#61c2ad]/30 hover:bg-[#61c2ad]/20 hover:border-[#61c2ad]/50 text-[#61c2ad] text-sm font-medium transition-all whitespace-nowrap"
+                >
+                  Explore Sage →
+                </Link>
+                <Link
+                  href="/pricing"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 hover:border-white/20 text-gray-400 hover:text-white text-sm font-medium transition-all whitespace-nowrap"
+                >
+                  View plans
+                </Link>
+              </div>
+            </div>
+          </div>
+        </ScrollReveal>
+      </section>
+
       {/* ── How it works ───────────────────────────────────────────── */}
       <section className="py-24 px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto">
