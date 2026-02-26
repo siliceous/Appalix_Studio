@@ -239,11 +239,6 @@ export default async function HomePage() {
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#61c2ad]/15 border border-[#61c2ad]/25 text-[#61c2ad] uppercase tracking-wide">Pro+</span>
               </div>
 
-              {/* Icon */}
-              <div className="w-20 h-20 rounded-2xl bg-[#61c2ad]/15 border border-[#61c2ad]/30 flex items-center justify-center mx-auto mb-7 shadow-lg shadow-[#61c2ad]/10">
-                <span className="text-[#61c2ad] text-4xl animate-pulse">✦</span>
-              </div>
-
               {/* Headline */}
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-5 leading-tight tracking-tight">
                 Introducing{' '}
