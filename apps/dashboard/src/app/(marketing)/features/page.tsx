@@ -70,6 +70,24 @@ const FEATURES = [
     desc: 'An internal AI assistant for your team — draft proposals, generate documents, search your knowledge base, and send content to colleagues. Available on Pro and above.',
     tag: 'Pro',
   },
+  {
+    icon: '💬',
+    title: 'Chat & messaging channels',
+    desc: 'Deploy across Slack, Google Chat, WhatsApp, Facebook Messenger, WordPress, Web Widget, and Custom API — all from one bot, each channel with its own settings.',
+    tag: 'Channels',
+  },
+  {
+    icon: '🔗',
+    title: 'CRM lead capture',
+    desc: 'Automatically push captured leads to HubSpot, Salesforce, Zoho CRM, or Intercom the moment a visitor shares their email or phone number. Zapier on Core, native APIs on Pro+.',
+    tag: 'CRM',
+  },
+  {
+    icon: '📂',
+    title: 'Knowledge source connectors',
+    desc: 'Train your bot from Google Drive, Dropbox, OneDrive, SharePoint, Notion, and GitBook — in addition to URLs, PDFs, and text. Available on Pro and above.',
+    tag: 'Pro',
+  },
 ]
 
 const COMPARISON = [
