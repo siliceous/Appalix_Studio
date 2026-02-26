@@ -48,10 +48,10 @@ const PLANS = [
       '10 AI agents',
       '5,000 conversations / month',
       'All platform integrations',
+      'Sage AI assistant',
       'Lead capture & CRM export',
       'Human handoff',
       'AI task automation',
-      'Sage AI assistant',
       'Advanced analytics',
       'Custom branding',
       'API access',
@@ -69,10 +69,10 @@ const PLANS = [
       'Unlimited AI agents',
       '25,000 conversations / month',
       'All platform integrations',
+      'Sage AI assistant',
       'Lead capture & CRM export',
       'Human handoff',
       'AI task automation',
-      'Sage AI assistant',
       'Advanced analytics',
       'White-label branding',
       'API access',
@@ -190,20 +190,29 @@ export function PricingCards() {
               </div>
 
               <ul className="space-y-2.5 mb-8 flex-1">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm">
-                    <svg
-                      className={`w-4 h-4 mt-0.5 shrink-0 ${plan.popular ? 'text-brand-400' : 'text-gray-500'}`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2.5}
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="text-gray-400">{f}</span>
-                  </li>
-                ))}
+                {plan.features.map((f) =>
+                  f === 'Sage AI assistant' ? (
+                    <li key={f}>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#61c2ad]/10 border border-[#61c2ad]/30 text-[#61c2ad] text-xs font-semibold">
+                        <span className="text-[10px]">✦</span>
+                        Sage AI assistant
+                      </span>
+                    </li>
+                  ) : (
+                    <li key={f} className="flex items-start gap-2 text-sm">
+                      <svg
+                        className={`w-4 h-4 mt-0.5 shrink-0 ${plan.popular ? 'text-brand-400' : 'text-gray-500'}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-gray-400">{f}</span>
+                    </li>
+                  )
+                )}
               </ul>
 
               {isEnterprise ? (

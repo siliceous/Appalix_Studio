@@ -78,12 +78,12 @@ const COMPARISON = [
   { feature: 'Integrations',            starter: '2',          core: '5',          pro: 'All',         scale: 'All' },
   { feature: 'Lead capture',            starter: '✓',          core: '✓',          pro: '✓',           scale: '✓' },
   { feature: 'Human handoff',           starter: '—',          core: '✓',          pro: '✓',           scale: '✓' },
+  { feature: 'Sage AI assistant',       starter: '—',          core: '—',          pro: '✓',           scale: '✓',  sage: true },
   { feature: 'Analytics dashboard',     starter: 'Basic',      core: 'Basic',      pro: 'Advanced',    scale: 'Advanced' },
   { feature: 'Multilingual',            starter: '✓',          core: '✓',          pro: '✓',           scale: '✓' },
   { feature: 'Custom branding',         starter: '—',          core: '—',          pro: '✓',           scale: '✓' },
   { feature: 'API access',              starter: '—',          core: '—',          pro: '✓',           scale: '✓' },
   { feature: 'White-label',             starter: '—',          core: '—',          pro: '—',           scale: '✓' },
-  { feature: 'Sage AI assistant',       starter: '—',          core: '—',          pro: '✓',           scale: '✓' },
 ]
 
 export default function FeaturesPage() {
@@ -151,15 +151,30 @@ export default function FeaturesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {COMPARISON.map((row, i) => (
-                    <tr key={row.feature} className={`border-b border-white/5 ${i % 2 === 0 ? '' : 'bg-white/[0.02]'}`}>
-                      <td className="py-3 pr-6 text-gray-400">{row.feature}</td>
-                      <td className="py-3 px-4 text-center text-gray-400">{row.starter}</td>
-                      <td className="py-3 px-4 text-center text-gray-400">{row.core}</td>
-                      <td className="py-3 px-4 text-center text-brand-300 font-medium">{row.pro}</td>
-                      <td className="py-3 px-4 text-center text-gray-400">{row.scale}</td>
-                    </tr>
-                  ))}
+                  {COMPARISON.map((row, i) =>
+                    'sage' in row && row.sage ? (
+                      <tr key={row.feature} className="border-b border-[#61c2ad]/20 bg-[#61c2ad]/[0.04]">
+                        <td className="py-3 pr-6">
+                          <span className="inline-flex items-center gap-1.5 text-[#61c2ad] font-semibold text-sm">
+                            <span className="text-[10px]">✦</span>
+                            {row.feature}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center text-gray-500">{row.starter}</td>
+                        <td className="py-3 px-4 text-center text-gray-500">{row.core}</td>
+                        <td className="py-3 px-4 text-center text-[#61c2ad] font-semibold">{row.pro}</td>
+                        <td className="py-3 px-4 text-center text-[#61c2ad] font-semibold">{row.scale}</td>
+                      </tr>
+                    ) : (
+                      <tr key={row.feature} className={`border-b border-white/5 ${i % 2 === 0 ? '' : 'bg-white/[0.02]'}`}>
+                        <td className="py-3 pr-6 text-gray-400">{row.feature}</td>
+                        <td className="py-3 px-4 text-center text-gray-400">{row.starter}</td>
+                        <td className="py-3 px-4 text-center text-gray-400">{row.core}</td>
+                        <td className="py-3 px-4 text-center text-brand-300 font-medium">{row.pro}</td>
+                        <td className="py-3 px-4 text-center text-gray-400">{row.scale}</td>
+                      </tr>
+                    )
+                  )}
                 </tbody>
               </table>
             </div>
