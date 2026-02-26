@@ -17,6 +17,15 @@ export const metadata: Metadata = {
 
 const POSTS = [
   {
+    category: 'Product',
+    title: 'Meet Appalix Copilot: Your Team\'s Internal AI Assistant',
+    excerpt: 'Appalix Copilot puts AI to work inside your team — searching your knowledge base, drafting proposals and reports, and sharing content with colleagues. Available on Pro and above.',
+    readTime: '8 min read',
+    date: 'Feb 26, 2026',
+    emoji: '✦',
+    slug: 'meet-appalix-copilot',
+  },
+  {
     category: 'Guide',
     title: 'Multiple Bots on Multiple Platforms',
     excerpt: 'Train one AI agent and deploy it across unlimited websites, Slack, WhatsApp, Telegram, and more — each channel with its own settings, branding, and CRM integration.',
