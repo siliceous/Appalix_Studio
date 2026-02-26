@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ScrollReveal } from '@/components/marketing/animate'
 import { PricingCards } from '@/components/marketing/pricing-cards'
+import { ContactSalesButton } from '@/components/marketing/contact-sales-button'
 
 export const metadata: Metadata = {
   title: 'Pricing — Plans from $29/mo | No Credit Card Required | Appalix',
@@ -90,18 +91,7 @@ export default function PricingPage() {
         <ScrollReveal>
           <h2 className="text-xl font-bold mb-3">Need something bigger?</h2>
           <p className="text-gray-400 mb-6 text-sm">Talk to us about custom volume, SSO, dedicated infrastructure, and SLAs.</p>
-          <a
-            href="mailto:sales@appalix.ai?subject=Enterprise%20Plan%20Enquiry&body=Hi%2C%0A%0AI%27m%20interested%20in%20the%20Enterprise%20plan%20for%20Appalix.%20Please%20get%20in%20touch%20to%20discuss%20our%20requirements.%0A%0AThanks"
-            className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 hover:border-white/40 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm"
-          >
-            Contact Enterprise sales
-          </a>
-          <p className="text-xs text-gray-600 mt-3">
-            Or email us directly at{' '}
-            <a href="mailto:sales@appalix.ai" className="text-gray-400 hover:text-white transition-colors underline underline-offset-2">
-              sales@appalix.ai
-            </a>
-          </p>
+          <ContactSalesButton />
         </ScrollReveal>
       </section>
     </div>
