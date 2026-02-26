@@ -183,7 +183,7 @@ export default async function HomePage() {
             </ul>
             <div className="flex gap-3">
               <Link href="/login" className="px-5 py-2.5 bg-[#1a8c76] hover:bg-[#14705d] text-white text-sm font-medium rounded-xl transition-colors">
-                Build your agent free →
+                Start Your Free Trial →
               </Link>
             </div>
           </ScrollReveal>
