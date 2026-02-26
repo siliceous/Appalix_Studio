@@ -169,7 +169,7 @@ export default function FeaturesPage() {
             href="/login"
             className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors"
           >
-            Start free trial
+            Start a 7 Day Free Trial
           </Link>
         </ScrollReveal>
       </section>

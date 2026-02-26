@@ -248,7 +248,7 @@ export default function MultipleBotsPage() {
               href="/login"
               className="px-6 py-2.5 bg-[#1a8c76] hover:bg-[#14705d] text-white text-sm font-medium rounded-xl transition-colors"
             >
-              Start your free trial →
+              Start a 7 Day Free Trial →
             </Link>
             <Link
               href="/platforms"

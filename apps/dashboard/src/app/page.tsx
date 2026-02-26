@@ -135,7 +135,7 @@ export default async function HomePage() {
                   href="/login"
                   className="px-6 py-3 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors text-sm"
                 >
-                  Start free — no card required
+                  Start a 7 Day Free Trial
                 </Link>
                 <Link
                   href="/features"
@@ -371,7 +371,7 @@ export default async function HomePage() {
                 href="/login"
                 className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors"
               >
-                Start your free trial
+                Start a 7 Day Free Trial
               </Link>
               <p className="text-xs text-gray-400 mt-4">7-day free trial · No credit card required · Cancel anytime</p>
             </div>

@@ -19,7 +19,7 @@ const PLANS = [
       'Basic analytics',
       'Email support',
     ],
-    cta: 'Start free trial',
+    cta: 'Start a 7 Day Free Trial',
   },
   {
     name: 'Core',
@@ -36,7 +36,7 @@ const PLANS = [
       'Basic analytics',
       'Email support',
     ],
-    cta: 'Start free trial',
+    cta: 'Start a 7 Day Free Trial',
   },
   {
     name: 'Pro',
@@ -56,7 +56,7 @@ const PLANS = [
       'API access',
       'Priority support',
     ],
-    cta: 'Start free trial',
+    cta: 'Start a 7 Day Free Trial',
   },
   {
     name: 'Scale',
@@ -76,7 +76,7 @@ const PLANS = [
       'API access',
       'Dedicated account manager',
     ],
-    cta: 'Start free trial',
+    cta: 'Start a 7 Day Free Trial',
   },
   {
     name: 'Enterprise',
