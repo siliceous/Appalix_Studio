@@ -42,7 +42,7 @@ const FAQS = [
   },
   {
     q: 'Can I book a live demo?',
-    a: 'Absolutely. Select "Sales" as your inquiry type and mention you'd like a demo — we'll send you a calendar link.',
+    a: "Absolutely. Select \"Sales\" as your inquiry type and mention you'd like a demo — we'll send you a calendar link.",
   },
   {
     q: 'I have a technical issue with my account.',
