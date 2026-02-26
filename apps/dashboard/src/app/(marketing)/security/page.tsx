@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ScrollReveal } from '@/components/marketing/animate'
+import { ContactSalesButton } from '@/components/marketing/contact-sales-button'
 
 export const metadata: Metadata = {
   title: 'Security & Privacy — How Appalix Protects Your Data | Appalix',
@@ -196,13 +197,13 @@ export default function SecurityPage() {
             <p className="text-gray-400 mb-6 text-sm leading-relaxed">
               We take security reports seriously. If you discover a vulnerability, please contact us responsibly before disclosure and we will work with you to address it promptly.
             </p>
-            <a
-              href="mailto:security@appalix.ai?subject=URGENT%20-%20Security%20Vulnerability%20Report&body=Please%20describe%20the%20vulnerability%20you%20have%20discovered%3A%0A%0A%5BDescription%5D%0A%0ASteps%20to%20reproduce%3A%0A%0A%5BSteps%5D%0A%0APotential%20impact%3A%0A%0A%5BImpact%5D"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
-            >
-              Report a vulnerability →
-            </a>
-            <a href="mailto:security@appalix.ai?subject=URGENT%20-%20Security%20Vulnerability%20Report&body=Please%20describe%20the%20vulnerability%20you%20have%20discovered%3A%0A%0A%5BDescription%5D%0A%0ASteps%20to%20reproduce%3A%0A%0A%5BSteps%5D%0A%0APotential%20impact%3A%0A%0A%5BImpact%5D" className="text-xs text-gray-500 hover:text-gray-300 mt-4 block transition-colors">security@appalix.ai</a>
+            <ContactSalesButton
+              email="security@appalix.ai"
+              subject="Security Vulnerability Report"
+              body="Please describe the vulnerability you have discovered:\n\n[Description]\n\nSteps to reproduce:\n\n[Steps]\n\nPotential impact:\n\n[Impact]"
+              label="Report a vulnerability →"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1a8c76] hover:bg-[#14705d] text-white text-sm font-medium rounded-xl transition-colors"
+            />
           </div>
         </ScrollReveal>
       </section>

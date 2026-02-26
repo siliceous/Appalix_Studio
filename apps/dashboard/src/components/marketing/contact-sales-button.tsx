@@ -2,19 +2,27 @@
 
 import { useState } from 'react'
 
-const EMAIL = 'sales@appalix.ai'
-const MAILTO = `mailto:${EMAIL}?subject=Enterprise%20Plan%20Enquiry&body=Hi%2C%0A%0AI%27m%20interested%20in%20the%20Enterprise%20plan%20for%20Appalix.%20Please%20get%20in%20touch%20to%20discuss%20our%20requirements.%0A%0AThanks`
-
 interface Props {
+  email?: string
+  subject?: string
+  body?: string
   label?: string
   className?: string
 }
 
-export function ContactSalesButton({ label = 'Contact Enterprise sales', className }: Props) {
+export function ContactSalesButton({
+  email = 'sales@appalix.ai',
+  subject = 'Enterprise Plan Enquiry',
+  body = 'Hi,\n\nI\'m interested in the Enterprise plan for Appalix. Please get in touch to discuss our requirements.\n\nThanks',
+  label = 'Contact Enterprise sales',
+  className,
+}: Props) {
   const [copied, setCopied] = useState(false)
 
+  const mailto = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(EMAIL).then(() => {
+    navigator.clipboard.writeText(email).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2500)
     })
@@ -23,7 +31,7 @@ export function ContactSalesButton({ label = 'Contact Enterprise sales', classNa
   return (
     <div className="flex flex-col items-center gap-3">
       <a
-        href={MAILTO}
+        href={mailto}
         className={className ?? 'inline-flex items-center gap-2 px-6 py-3 border border-white/20 hover:border-white/40 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm'}
       >
         {label}
@@ -47,7 +55,7 @@ export function ContactSalesButton({ label = 'Contact Enterprise sales', classNa
               <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
-              {EMAIL}
+              {email}
             </>
           )}
         </button>
