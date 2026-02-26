@@ -48,6 +48,31 @@ export async function createSource(formData: FormData) {
   } else if (type === 'text') {
     const text = (formData.get('text') as string)?.trim()
     if (text) metadata = { raw_text: text }
+  } else if (type === 'notion') {
+    url = (formData.get('url') as string)?.trim() || null
+    const token = (formData.get('notion_token') as string)?.trim()
+    if (token) metadata = { notion_token: token }
+  } else if (type === 'gitbook') {
+    url = (formData.get('url') as string)?.trim() || null
+    const token = (formData.get('gitbook_token') as string)?.trim()
+    if (token) metadata = { gitbook_token: token }
+  } else if (type === 'google_drive') {
+    url = (formData.get('url') as string)?.trim() || null
+    const token = (formData.get('google_access_token') as string)?.trim()
+    if (token) metadata = { google_access_token: token }
+  } else if (type === 'dropbox') {
+    url = (formData.get('url') as string)?.trim() || null
+    const token = (formData.get('dropbox_token') as string)?.trim()
+    if (token) metadata = { dropbox_token: token }
+  } else if (type === 'onedrive') {
+    url = (formData.get('url') as string)?.trim() || null
+    const token = (formData.get('ms_access_token') as string)?.trim()
+    if (token) metadata = { ms_access_token: token }
+  } else if (type === 'sharepoint') {
+    url = (formData.get('url') as string)?.trim() || null
+    const token  = (formData.get('ms_access_token') as string)?.trim()
+    const siteId = (formData.get('sharepoint_site_id') as string)?.trim()
+    if (token) metadata = { ms_access_token: token, ...(siteId ? { sharepoint_site_id: siteId } : {}) }
   } else if (type === 'file') {
     const file = formData.get('file') as File | null
     if (!file || file.size === 0) throw new Error('No file provided')

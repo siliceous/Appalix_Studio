@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/header'
 import { PLATFORM_META } from '@/lib/utils'
 import { updateIntegration } from '@/app/actions/integration'
 import { HandoffConfig } from '../handoff-config'
+import { CrmConfig } from '../crm-config'
 import type { Metadata } from 'next'
 import type { Integration } from '@/lib/types'
 
@@ -49,7 +50,11 @@ export default async function EditIntegrationPage({
   const allowedOrigins = Array.isArray(cfg.allowed_origins)
     ? (cfg.allowed_origins as string[]).join(', ')
     : '*'
-  const crmWebhookUrl = (cfg.crm_webhook_url as string | undefined) ?? ''
+  const crmProvider      = (cfg.crm_provider       as string | undefined) ?? 'none'
+  const crmWebhookUrl    = (cfg.crm_webhook_url    as string | undefined) ?? ''
+  const crmHubspotToken  = (cfg.crm_hubspot_token  as string | undefined) ?? ''
+  const crmIntercomToken = (cfg.crm_intercom_token as string | undefined) ?? ''
+  const crmZohoToken     = (cfg.crm_zoho_token     as string | undefined) ?? ''
 
   const isWebWidget = integration.platform === 'web_widget' || integration.platform === 'wordpress'
 
@@ -133,28 +138,16 @@ export default async function EditIntegrationPage({
           <div>
             <p className="text-sm font-semibold text-gray-900">CRM integration</p>
             <p className="text-xs text-gray-500 mt-0.5">
-              When a visitor shares an email or phone number, we POST the lead to this URL.
-              Works with HubSpot, Salesforce, Zapier, Make.com, or any HTTP endpoint.
+              When a visitor shares an email or phone number, we send the lead to your CRM automatically.
             </p>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              CRM webhook URL
-            </label>
-            <input
-              type="url"
-              name="crm_webhook_url"
-              defaultValue={crmWebhookUrl}
-              placeholder="https://hooks.zapier.com/hooks/catch/…"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
-            <p className="text-xs text-gray-400 mt-1">
-              Leave empty to disable. Payload includes{' '}
-              <code className="font-mono bg-gray-100 px-1 rounded">email</code>,{' '}
-              <code className="font-mono bg-gray-100 px-1 rounded">phone</code>, and{' '}
-              <code className="font-mono bg-gray-100 px-1 rounded">conversationId</code>.
-            </p>
-          </div>
+          <CrmConfig
+            provider={crmProvider}
+            webhookUrl={crmWebhookUrl}
+            hubspotToken={crmHubspotToken}
+            intercomToken={crmIntercomToken}
+            zohoToken={crmZohoToken}
+          />
         </div>
 
         {/* Human handoff */}

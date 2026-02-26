@@ -194,6 +194,206 @@ async function fetchSourceContent(source: {
       return textBlock?.text ?? ''
     }
 
+    // ----------------------------------------------------------------
+    // Notion — Internal Integration Token + page URL
+    // ----------------------------------------------------------------
+    case 'notion': {
+      const token = (source.metadata as Record<string, string> | null)?.notion_token
+      if (!token) throw new Error('Notion source missing notion_token in metadata')
+      if (!source.url) throw new Error('Notion source has no URL')
+
+      // Extract page ID from URL (last segment, strip dashes)
+      const pageId = source.url.split('/').pop()?.split('?')[0]?.replace(/-/g, '') ?? ''
+      if (!pageId) throw new Error('Could not extract Notion page ID from URL')
+
+      const blocksRes = await fetch(
+        `https://api.notion.com/v1/blocks/${pageId}/children?page_size=100`,
+        {
+          headers: {
+            'Authorization':    `Bearer ${token}`,
+            'Notion-Version':   '2022-06-28',
+            'Content-Type':     'application/json',
+          },
+          signal: AbortSignal.timeout(30_000),
+        },
+      )
+      if (!blocksRes.ok) throw new Error(`Notion API error: ${blocksRes.status}`)
+      const blocksJson = await blocksRes.json() as {
+        results: Array<{ type: string; [key: string]: unknown }>
+      }
+
+      const lines: string[] = []
+      for (const block of blocksJson.results) {
+        const richTexts =
+          (block[block.type] as { rich_text?: Array<{ plain_text: string }> } | undefined)
+            ?.rich_text ?? []
+        const text = richTexts.map((rt) => rt.plain_text).join('')
+        if (text) lines.push(text)
+      }
+      return lines.join('\n')
+    }
+
+    // ----------------------------------------------------------------
+    // GitBook — Personal API Token + space URL
+    // ----------------------------------------------------------------
+    case 'gitbook': {
+      const token = (source.metadata as Record<string, string> | null)?.gitbook_token
+      if (!token) throw new Error('GitBook source missing gitbook_token in metadata')
+      if (!source.url) throw new Error('GitBook source has no URL')
+
+      // Extract space ID from URL: https://app.gitbook.com/o/{org}/s/{spaceId}
+      const spaceMatch = source.url.match(/\/s\/([^/?#]+)/)
+      const spaceId = spaceMatch?.[1]
+      if (!spaceId) throw new Error('Could not extract GitBook space ID from URL')
+
+      const pagesRes = await fetch(
+        `https://api.gitbook.com/v1/spaces/${spaceId}/content`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` },
+          signal: AbortSignal.timeout(30_000),
+        },
+      )
+      if (!pagesRes.ok) throw new Error(`GitBook API error: ${pagesRes.status}`)
+      const pagesJson = await pagesRes.json() as {
+        pages?: Array<{ title?: string; document?: { nodes?: Array<{ nodes?: Array<{ leaves?: Array<{ text?: string }> }> }> } }>
+      }
+
+      const texts: string[] = []
+      for (const page of pagesJson.pages ?? []) {
+        if (page.title) texts.push(`# ${page.title}`)
+        for (const node of page.document?.nodes ?? []) {
+          for (const child of node.nodes ?? []) {
+            const text = child.leaves?.map((l) => l.text ?? '').join('') ?? ''
+            if (text.trim()) texts.push(text)
+          }
+        }
+      }
+      return texts.join('\n\n')
+    }
+
+    // ----------------------------------------------------------------
+    // Google Drive — access token + file/folder URL
+    // ----------------------------------------------------------------
+    case 'google_drive': {
+      const token = (source.metadata as Record<string, string> | null)?.google_access_token
+      if (!token) throw new Error('Google Drive source missing google_access_token in metadata')
+      if (!source.url) throw new Error('Google Drive source has no URL')
+
+      // Extract file ID from URL
+      const fileMatch = source.url.match(/\/d\/([^/?#]+)/) ?? source.url.match(/id=([^&]+)/)
+      const fileId = fileMatch?.[1]
+      if (!fileId) throw new Error('Could not extract Google Drive file ID from URL')
+
+      // Export as plain text (works for Docs, Sheets, Slides)
+      const exportRes = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/plain`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` },
+          signal: AbortSignal.timeout(30_000),
+        },
+      )
+      if (!exportRes.ok) {
+        // Fallback: try downloading directly (for plain text files)
+        const dlRes = await fetch(
+          `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+          {
+            headers: { 'Authorization': `Bearer ${token}` },
+            signal: AbortSignal.timeout(30_000),
+          },
+        )
+        if (!dlRes.ok) throw new Error(`Google Drive API error: ${dlRes.status}`)
+        return await dlRes.text()
+      }
+      return await exportRes.text()
+    }
+
+    // ----------------------------------------------------------------
+    // Dropbox — long-lived access token + file path or shared URL
+    // ----------------------------------------------------------------
+    case 'dropbox': {
+      const token = (source.metadata as Record<string, string> | null)?.dropbox_token
+      if (!token) throw new Error('Dropbox source missing dropbox_token in metadata')
+      if (!source.url) throw new Error('Dropbox source has no URL')
+
+      // source.url should be a Dropbox file path like /Documents/file.txt
+      // or a shared link https://www.dropbox.com/s/...
+      const isSharedLink = source.url.startsWith('https://')
+
+      if (isSharedLink) {
+        const dlRes = await fetch('https://content.dropboxapi.com/2/sharing/get_shared_link_file', {
+          method:  'POST',
+          headers: {
+            'Authorization':   `Bearer ${token}`,
+            'Dropbox-API-Arg': JSON.stringify({ url: source.url }),
+            'Content-Type':    'text/plain',
+          },
+          signal: AbortSignal.timeout(30_000),
+        })
+        if (!dlRes.ok) throw new Error(`Dropbox API error: ${dlRes.status}`)
+        return await dlRes.text()
+      } else {
+        const dlRes = await fetch('https://content.dropboxapi.com/2/files/download', {
+          method:  'POST',
+          headers: {
+            'Authorization':   `Bearer ${token}`,
+            'Dropbox-API-Arg': JSON.stringify({ path: source.url }),
+          },
+          signal: AbortSignal.timeout(30_000),
+        })
+        if (!dlRes.ok) throw new Error(`Dropbox API error: ${dlRes.status}`)
+        return await dlRes.text()
+      }
+    }
+
+    // ----------------------------------------------------------------
+    // OneDrive — Microsoft Graph access token + file URL
+    // ----------------------------------------------------------------
+    case 'onedrive': {
+      const token = (source.metadata as Record<string, string> | null)?.ms_access_token
+      if (!token) throw new Error('OneDrive source missing ms_access_token in metadata')
+      if (!source.url) throw new Error('OneDrive source has no URL')
+
+      // Extract item ID from URL or use the URL as a share URL
+      const itemMatch = source.url.match(/items\/([^/?#]+)/)
+      const itemId = itemMatch?.[1]
+
+      const endpoint = itemId
+        ? `https://graph.microsoft.com/v1.0/me/drive/items/${itemId}/content`
+        : `https://graph.microsoft.com/v1.0/me/drive/root:/${encodeURIComponent(source.url)}:/content`
+
+      const dlRes = await fetch(endpoint, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        signal: AbortSignal.timeout(30_000),
+      })
+      if (!dlRes.ok) throw new Error(`OneDrive API error: ${dlRes.status}`)
+      return await dlRes.text()
+    }
+
+    // ----------------------------------------------------------------
+    // SharePoint — Microsoft Graph access token + site/file URL
+    // ----------------------------------------------------------------
+    case 'sharepoint': {
+      const token  = (source.metadata as Record<string, string> | null)?.ms_access_token
+      const siteId = (source.metadata as Record<string, string> | null)?.sharepoint_site_id
+      if (!token) throw new Error('SharePoint source missing ms_access_token in metadata')
+      if (!source.url) throw new Error('SharePoint source has no URL')
+
+      const itemMatch = source.url.match(/items\/([^/?#]+)/)
+      const itemId = itemMatch?.[1]
+
+      if (!itemId || !siteId) throw new Error('SharePoint source requires sharepoint_site_id and item ID in URL')
+
+      const dlRes = await fetch(
+        `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/content`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` },
+          signal: AbortSignal.timeout(30_000),
+        },
+      )
+      if (!dlRes.ok) throw new Error(`SharePoint API error: ${dlRes.status}`)
+      return await dlRes.text()
+    }
+
     default:
       throw new Error(`Unsupported source type for ingestion: ${source.type}`)
   }

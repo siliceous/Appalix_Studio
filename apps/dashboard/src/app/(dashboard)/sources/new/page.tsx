@@ -1,20 +1,18 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
-import { NewSourceForm } from './new-source-form'
+import { NewSourceForm, type SourceType } from './new-source-form'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Add source' }
-
-type SourceType = 'url' | 'text' | 'file'
 
 // Which source types each plan tier unlocks (cumulative)
 const PLAN_ALLOWED: Record<string, SourceType[]> = {
   starter:    ['url'],
   core:       ['url', 'text'],
-  pro:        ['url', 'text', 'file'],
-  scale:      ['url', 'text', 'file'],
-  enterprise: ['url', 'text', 'file'],
+  pro:        ['url', 'text', 'file', 'notion', 'gitbook', 'google_drive', 'dropbox', 'onedrive', 'sharepoint'],
+  scale:      ['url', 'text', 'file', 'notion', 'gitbook', 'google_drive', 'dropbox', 'onedrive', 'sharepoint'],
+  enterprise: ['url', 'text', 'file', 'notion', 'gitbook', 'google_drive', 'dropbox', 'onedrive', 'sharepoint'],
 }
 
 export default async function NewSourcePage() {

@@ -4,7 +4,7 @@ import { recordUsage } from '../lib/usage.js'
 import { callClaude, buildSystemPrompt } from './ai/claude.js'
 import { retrieveContext, buildRagContext } from './rag/retrieval.js'
 import { runAgent } from './agent/runner.js'
-import { extractLeadData, postLeadToWebhook } from './lead-capture.js'
+import { extractLeadData, routeLeadToProvider } from './lead-capture.js'
 import {
   detectHandoffIntent,
   sendHandoffNotification,
@@ -68,7 +68,6 @@ export async function processMessage(
     integrationConfig = (intData?.config ?? {}) as Record<string, unknown>
   }
 
-  const crmWebhookUrl = integrationConfig.crm_webhook_url as string | undefined
 
   const handoffCfg: HandoffChannelConfig = {
     channel:           (integrationConfig.handoff_channel as string ?? 'generic') as HandoffChannelConfig['channel'],
@@ -112,10 +111,10 @@ export async function processMessage(
   // ---------------------------------------------------------------
   // 4. CRM lead capture (fire-and-forget, runs in parallel)
   // ---------------------------------------------------------------
-  if (crmWebhookUrl) {
+  if (integrationConfig.crm_provider || integrationConfig.crm_webhook_url) {
     const lead = extractLeadData(text)
     if (lead.email || lead.phone) {
-      void postLeadToWebhook(crmWebhookUrl, {
+      void routeLeadToProvider(integrationConfig, lead, {
         event:          'lead_captured',
         conversationId,
         integrationId:  integrationId ?? '',

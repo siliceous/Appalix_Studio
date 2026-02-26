@@ -60,12 +60,13 @@ function OrbitGraphic({ active }: { active: boolean }) {
       {Array.from({ length: 60 }).map((_, i) => {
         const a = (i / 60) * TAU - Math.PI / 2
         const long = i % 5 === 0
+        const r = (n: number) => Math.round(n * 1e4) / 1e4
         return (
           <line key={i}
-            x1={cx + (long ? 127 : 130) * Math.cos(a)}
-            y1={cy + (long ? 127 : 130) * Math.sin(a)}
-            x2={cx + 134 * Math.cos(a)}
-            y2={cy + 134 * Math.sin(a)}
+            x1={r(cx + (long ? 127 : 130) * Math.cos(a))}
+            y1={r(cy + (long ? 127 : 130) * Math.sin(a))}
+            x2={r(cx + 134 * Math.cos(a))}
+            y2={r(cy + 134 * Math.sin(a))}
             stroke={long ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)'}
             strokeWidth={long ? 1 : 0.5}
           />

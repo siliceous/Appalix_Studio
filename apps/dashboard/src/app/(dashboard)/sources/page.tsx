@@ -3,12 +3,25 @@ import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { deleteSource, resyncSource } from '@/app/actions/source'
 import { formatDateTime } from '@/lib/utils'
-import { BookOpen, Plus, RefreshCw, Trash2, CheckCircle2, Clock, AlertCircle, Loader2, Link } from 'lucide-react'
+import { BookOpen, Plus, RefreshCw, Trash2, CheckCircle2, Clock, AlertCircle, Loader2, Link, FileText, AlignLeft, Cloud, HardDrive } from 'lucide-react'
 import { SourcesPoller } from './sources-poller'
 import type { Metadata } from 'next'
 import type { Source } from '@/lib/types'
 
 export const metadata: Metadata = { title: 'Knowledge Base' }
+
+const TYPE_ICON: Record<string, React.ReactNode> = {
+  url:          <Link className="w-4 h-4 text-brand-600" />,
+  sitemap:      <Link className="w-4 h-4 text-brand-600" />,
+  text:         <AlignLeft className="w-4 h-4 text-brand-600" />,
+  file:         <FileText className="w-4 h-4 text-brand-600" />,
+  notion:       <BookOpen className="w-4 h-4 text-brand-600" />,
+  gitbook:      <BookOpen className="w-4 h-4 text-brand-600" />,
+  google_drive: <Cloud className="w-4 h-4 text-brand-600" />,
+  dropbox:      <Cloud className="w-4 h-4 text-brand-600" />,
+  onedrive:     <HardDrive className="w-4 h-4 text-brand-600" />,
+  sharepoint:   <HardDrive className="w-4 h-4 text-brand-600" />,
+}
 
 const STATUS_META: Record<string, { label: string; className: string; icon: React.ReactNode }> = {
   pending:    { label: 'Pending',    className: 'bg-gray-100 text-gray-600',   icon: <Clock className="w-3 h-3" /> },
@@ -70,7 +83,7 @@ export default async function SourcesPage() {
               <div key={source.id} className="flex items-center gap-4 px-5 py-4">
                 {/* Icon */}
                 <div className="w-9 h-9 rounded-lg bg-brand-50 flex items-center justify-center shrink-0">
-                  <Link className="w-4 h-4 text-brand-600" />
+                  {TYPE_ICON[source.type] ?? <Link className="w-4 h-4 text-brand-600" />}
                 </div>
 
                 {/* Info */}

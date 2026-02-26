@@ -160,7 +160,11 @@ export async function updateIntegration(integrationId: string, formData: FormDat
   const botId             = formData.get('bot_id') as string | null
   const welcomeMsg        = (formData.get('welcome_message') as string | null)?.trim()
   const allowedOrigins    = (formData.get('allowed_origins') as string | null)?.trim()
+  const crmProvider            = (formData.get('crm_provider')             as string | null)?.trim()
   const crmWebhookUrl          = (formData.get('crm_webhook_url')          as string | null)?.trim()
+  const crmHubspotToken        = (formData.get('crm_hubspot_token')        as string | null)?.trim()
+  const crmIntercomToken       = (formData.get('crm_intercom_token')       as string | null)?.trim()
+  const crmZohoToken           = (formData.get('crm_zoho_token')           as string | null)?.trim()
   const handoffChannel         = (formData.get('handoff_channel')           as string | null)?.trim()
   const handoffWebhookUrl      = (formData.get('handoff_webhook_url')       as string | null)?.trim()
   const handoffTelegramToken   = (formData.get('handoff_telegram_token')    as string | null)?.trim()
@@ -184,12 +188,6 @@ export async function updateIntegration(integrationId: string, formData: FormDat
         : allowedOrigins.split(',').map((o) => o.trim()).filter(Boolean)
   }
 
-  // CRM webhook (empty = disable)
-  if (crmWebhookUrl !== null && crmWebhookUrl !== undefined) {
-    if (crmWebhookUrl) newConfig.crm_webhook_url = crmWebhookUrl
-    else delete newConfig.crm_webhook_url
-  }
-
   // Handoff channel type
   if (handoffChannel) newConfig.handoff_channel = handoffChannel
 
@@ -199,6 +197,16 @@ export async function updateIntegration(integrationId: string, formData: FormDat
     if (val) newConfig[key] = val
     else delete newConfig[key]
   }
+
+  // CRM provider + credentials
+  if (crmProvider !== null && crmProvider !== undefined) {
+    if (crmProvider && crmProvider !== 'none') newConfig.crm_provider = crmProvider
+    else delete newConfig.crm_provider
+  }
+  setOrDel('crm_webhook_url',    crmWebhookUrl)
+  setOrDel('crm_hubspot_token',  crmHubspotToken)
+  setOrDel('crm_intercom_token', crmIntercomToken)
+  setOrDel('crm_zoho_token',     crmZohoToken)
 
   setOrDel('handoff_webhook_url',      handoffWebhookUrl)
   setOrDel('handoff_telegram_token',   handoffTelegramToken)

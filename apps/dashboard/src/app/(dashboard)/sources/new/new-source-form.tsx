@@ -2,40 +2,91 @@
 
 import { useState, useRef } from 'react'
 import { createSource } from '@/app/actions/source'
-import { Link2, FileText, AlignLeft, Upload, X, Lock } from 'lucide-react'
+import { Link2, FileText, AlignLeft, Upload, X, Lock, BookOpen, Cloud, HardDrive } from 'lucide-react'
 
-type SourceType = 'url' | 'text' | 'file'
+export type SourceType =
+  | 'url' | 'text' | 'file'
+  | 'notion' | 'gitbook'
+  | 'google_drive' | 'dropbox' | 'onedrive' | 'sharepoint'
 
 const ALL_TYPES: {
-  value: SourceType
-  label: string
-  desc: string
-  icon: React.ReactNode
-  minPlan: string
+  value:     SourceType
+  label:     string
+  desc:      string
+  icon:      React.ReactNode
+  minPlan:   string
   planLabel: string
 }[] = [
   {
-    value: 'url',
-    label: 'Website URL',
-    desc: 'Scrape and index any webpage',
-    icon: <Link2 className="w-4 h-4" />,
-    minPlan: 'starter',
+    value:     'url',
+    label:     'Website URL',
+    desc:      'Scrape and index any webpage',
+    icon:      <Link2 className="w-4 h-4" />,
+    minPlan:   'starter',
     planLabel: '',
   },
   {
-    value: 'text',
-    label: 'Plain text',
-    desc: 'Paste FAQs, docs, or custom knowledge',
-    icon: <AlignLeft className="w-4 h-4" />,
-    minPlan: 'core',
+    value:     'text',
+    label:     'Plain text',
+    desc:      'Paste FAQs, docs, or custom knowledge',
+    icon:      <AlignLeft className="w-4 h-4" />,
+    minPlan:   'core',
     planLabel: 'Core+',
   },
   {
-    value: 'file',
-    label: 'PDF / Image',
-    desc: 'Upload a PDF or image file (up to 50 MB)',
-    icon: <FileText className="w-4 h-4" />,
-    minPlan: 'pro',
+    value:     'file',
+    label:     'PDF / Image',
+    desc:      'Upload a PDF or image file (up to 50 MB)',
+    icon:      <FileText className="w-4 h-4" />,
+    minPlan:   'pro',
+    planLabel: 'Pro+',
+  },
+  {
+    value:     'notion',
+    label:     'Notion',
+    desc:      'Index a Notion page via integration token',
+    icon:      <BookOpen className="w-4 h-4" />,
+    minPlan:   'pro',
+    planLabel: 'Pro+',
+  },
+  {
+    value:     'gitbook',
+    label:     'GitBook',
+    desc:      'Index a GitBook space via API token',
+    icon:      <BookOpen className="w-4 h-4" />,
+    minPlan:   'pro',
+    planLabel: 'Pro+',
+  },
+  {
+    value:     'google_drive',
+    label:     'Google Drive',
+    desc:      'Index a Google Doc or Drive file',
+    icon:      <Cloud className="w-4 h-4" />,
+    minPlan:   'pro',
+    planLabel: 'Pro+',
+  },
+  {
+    value:     'dropbox',
+    label:     'Dropbox',
+    desc:      'Index a file or shared link from Dropbox',
+    icon:      <Cloud className="w-4 h-4" />,
+    minPlan:   'pro',
+    planLabel: 'Pro+',
+  },
+  {
+    value:     'onedrive',
+    label:     'OneDrive',
+    desc:      'Index a file from Microsoft OneDrive',
+    icon:      <HardDrive className="w-4 h-4" />,
+    minPlan:   'pro',
+    planLabel: 'Pro+',
+  },
+  {
+    value:     'sharepoint',
+    label:     'SharePoint',
+    desc:      'Index a file from SharePoint via Graph API',
+    icon:      <HardDrive className="w-4 h-4" />,
+    minPlan:   'pro',
     planLabel: 'Pro+',
   },
 ]
@@ -43,6 +94,9 @@ const ALL_TYPES: {
 interface Props {
   allowedTypes: SourceType[]
 }
+
+const inputCls = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500'
+const monoInputCls = `${inputCls} font-mono`
 
 export function NewSourceForm({ allowedTypes }: Props) {
   const firstAllowed = allowedTypes[0] ?? 'url'
@@ -58,6 +112,8 @@ export function NewSourceForm({ allowedTypes }: Props) {
     setFileName(null)
     if (fileRef.current) fileRef.current.value = ''
   }
+
+  const isCloudType = ['notion', 'gitbook', 'google_drive', 'dropbox', 'onedrive', 'sharepoint'].includes(type)
 
   return (
     <form action={createSource} className="space-y-6">
@@ -101,10 +157,9 @@ export function NewSourceForm({ allowedTypes }: Props) {
           })}
         </div>
 
-        {/* Upgrade nudge when locked types are present */}
         {!allowedTypes.includes('file') && (
           <p className="mt-3 text-xs text-gray-400">
-            Unlock PDF &amp; image upload on the <span className="font-medium text-brand-600">Pro</span> plan.{' '}
+            Unlock PDF, cloud drives &amp; more on the <span className="font-medium text-brand-600">Pro</span> plan.{' '}
             <a href="/billing" className="underline hover:text-brand-700">Upgrade →</a>
           </p>
         )}
@@ -125,20 +180,14 @@ export function NewSourceForm({ allowedTypes }: Props) {
             name="name"
             required
             placeholder="e.g. Appalix homepage, Product FAQ, Pricing guide"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className={inputCls}
           />
         </div>
 
         {type === 'url' && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Page URL</label>
-            <input
-              type="url"
-              name="url"
-              required
-              placeholder="https://yoursite.com/about"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
+            <input type="url" name="url" required placeholder="https://yoursite.com/about" className={inputCls} />
           </div>
         )}
 
@@ -150,7 +199,7 @@ export function NewSourceForm({ allowedTypes }: Props) {
               required
               rows={10}
               placeholder="Paste your FAQs, product documentation, pricing info, or any knowledge you want the bot to use..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-y"
+              className={`${inputCls} resize-y`}
             />
           </div>
         )}
@@ -183,7 +232,119 @@ export function NewSourceForm({ allowedTypes }: Props) {
             )}
           </div>
         )}
+
+        {/* ── Notion ── */}
+        {type === 'notion' && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Notion page URL</label>
+              <input type="url" name="url" required placeholder="https://www.notion.so/your-page-title-abc123" className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Integration token</label>
+              <input type="password" name="notion_token" required placeholder="secret_…" className={monoInputCls} />
+              <p className="text-xs text-gray-400 mt-1">
+                In Notion: <span className="font-medium">Settings → Integrations → Develop your own integrations</span>. Share the page with your integration.
+              </p>
+            </div>
+          </>
+        )}
+
+        {/* ── GitBook ── */}
+        {type === 'gitbook' && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">GitBook space URL</label>
+              <input type="url" name="url" required placeholder="https://app.gitbook.com/o/orgId/s/spaceId" className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Personal API token</label>
+              <input type="password" name="gitbook_token" required placeholder="gb-…" className={monoInputCls} />
+              <p className="text-xs text-gray-400 mt-1">
+                In GitBook: <span className="font-medium">Account settings → Developer → Personal access tokens → Create token</span>.
+              </p>
+            </div>
+          </>
+        )}
+
+        {/* ── Google Drive ── */}
+        {type === 'google_drive' && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Google Drive file URL</label>
+              <input type="url" name="url" required placeholder="https://docs.google.com/document/d/FILE_ID/edit" className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">OAuth access token</label>
+              <input type="password" name="google_access_token" required placeholder="ya29.…" className={monoInputCls} />
+              <p className="text-xs text-gray-400 mt-1">
+                Generate via <span className="font-medium">Google OAuth Playground</span> (scope: <span className="font-mono bg-gray-100 px-1 rounded">drive.readonly</span>) or a service account with domain-wide delegation.
+              </p>
+            </div>
+          </>
+        )}
+
+        {/* ── Dropbox ── */}
+        {type === 'dropbox' && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Dropbox file path or shared link</label>
+              <input type="text" name="url" required placeholder="/Documents/file.txt or https://www.dropbox.com/s/…" className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Access token</label>
+              <input type="password" name="dropbox_token" required placeholder="sl.…" className={monoInputCls} />
+              <p className="text-xs text-gray-400 mt-1">
+                In Dropbox: <span className="font-medium">App Console → Create app → Generate access token</span> (long-lived token).
+              </p>
+            </div>
+          </>
+        )}
+
+        {/* ── OneDrive ── */}
+        {type === 'onedrive' && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">OneDrive file URL</label>
+              <input type="url" name="url" required placeholder="https://onedrive.live.com/…" className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Microsoft Graph access token</label>
+              <input type="password" name="ms_access_token" required placeholder="eyJ0…" className={monoInputCls} />
+              <p className="text-xs text-gray-400 mt-1">
+                Generate via <span className="font-medium">Microsoft Graph Explorer</span> (scope: <span className="font-mono bg-gray-100 px-1 rounded">Files.Read</span>).
+              </p>
+            </div>
+          </>
+        )}
+
+        {/* ── SharePoint ── */}
+        {type === 'sharepoint' && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">SharePoint file URL</label>
+              <input type="url" name="url" required placeholder="https://tenant.sharepoint.com/sites/…" className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Microsoft Graph access token</label>
+              <input type="password" name="ms_access_token" required placeholder="eyJ0…" className={monoInputCls} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">SharePoint site ID</label>
+              <input type="text" name="sharepoint_site_id" required placeholder="tenant.sharepoint.com,site-guid,web-guid" className={monoInputCls} />
+              <p className="text-xs text-gray-400 mt-1">
+                Find via <span className="font-mono bg-gray-100 px-1 rounded">GET https://graph.microsoft.com/v1.0/sites?search=your-site-name</span>.
+              </p>
+            </div>
+          </>
+        )}
       </div>
+
+      {isCloudType && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-700">
+          <strong>Tokens are stored securely</strong> and used only to fetch your document content for indexing. We recommend using read-only scopes.
+        </div>
+      )}
 
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700">
         After adding, your source is processed and indexed automatically.
