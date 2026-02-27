@@ -94,9 +94,9 @@ export function UpgradePlanCards({ currentPlan, hasSubscription }: Props) {
   // Already subscribed — send them to the Stripe portal to switch plan
   if (hasSubscription) {
     return (
-      <div className="bg-white rounded-xl border p-8 text-center">
-        <p className="text-sm text-gray-700 mb-2 font-medium">You already have an active subscription.</p>
-        <p className="text-sm text-gray-500 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 p-8 text-center">
+        <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 font-medium">You already have an active subscription.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
           To upgrade or downgrade, use the Stripe billing portal — changes take effect immediately.
         </p>
         <a
@@ -116,13 +116,13 @@ export function UpgradePlanCards({ currentPlan, hasSubscription }: Props) {
       {/* Billing toggle */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-3">
-          <span className={`text-sm font-medium transition-colors ${!isAnnual ? 'text-gray-900' : 'text-gray-400'}`}>
+          <span className={`text-sm font-medium transition-colors ${!isAnnual ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}`}>
             Monthly
           </span>
           <button
             onClick={() => setIsAnnual(!isAnnual)}
             aria-label="Toggle billing period"
-            className={`relative w-11 h-6 rounded-full transition-colors ${isAnnual ? 'bg-brand-600' : 'bg-gray-300'}`}
+            className={`relative w-11 h-6 rounded-full transition-colors ${isAnnual ? 'bg-brand-600' : 'bg-gray-300 dark:bg-gray-600'}`}
           >
             <span
               className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
@@ -130,22 +130,22 @@ export function UpgradePlanCards({ currentPlan, hasSubscription }: Props) {
               }`}
             />
           </button>
-          <span className={`text-sm font-medium transition-colors ${isAnnual ? 'text-gray-900' : 'text-gray-400'}`}>
+          <span className={`text-sm font-medium transition-colors ${isAnnual ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}`}>
             Annual
           </span>
-          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
+          <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full font-semibold">
             Save ~35%
           </span>
         </div>
         {!isAnnual && (
-          <p className="text-xs text-gray-400 ml-0.5">
-            Switch to annual and save <span className="text-green-600 font-semibold">~35% on average</span>
+          <p className="text-xs text-gray-400 dark:text-gray-500 ml-0.5">
+            Switch to annual and save <span className="text-green-600 dark:text-green-400 font-semibold">~35% on average</span>
           </p>
         )}
       </div>
 
       {error && (
-        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        <div className="px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">
           {error}
         </div>
       )}
@@ -161,8 +161,10 @@ export function UpgradePlanCards({ currentPlan, hasSubscription }: Props) {
           return (
             <div
               key={plan.id}
-              className={`relative bg-white rounded-xl border flex flex-col p-6 ${
-                plan.popular ? 'border-brand-300 ring-1 ring-brand-300' : 'border-gray-200'
+              className={`relative bg-white dark:bg-gray-800 rounded-xl border flex flex-col p-6 ${
+                plan.popular
+                  ? 'border-brand-300 dark:border-brand-600 ring-1 ring-brand-300 dark:ring-brand-600'
+                  : 'border-gray-200 dark:border-gray-700'
               }`}
             >
               {plan.popular && (
@@ -174,20 +176,20 @@ export function UpgradePlanCards({ currentPlan, hasSubscription }: Props) {
               )}
 
               <div className="mb-5">
-                <h3 className="text-base font-semibold text-gray-900">{plan.name}</h3>
-                <p className="text-xs text-gray-500 mt-0.5">{plan.description}</p>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{plan.name}</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{plan.description}</p>
                 <p className="mt-3">
-                  <span className="text-2xl font-bold text-gray-900">${price}</span>
-                  <span className="text-sm text-gray-500"> / month</span>
+                  <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">${price}</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400"> / month</span>
                 </p>
                 {isAnnual && (
-                  <p className="text-xs text-gray-400 mt-0.5">Billed ${price * 12}/year</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Billed ${price * 12}/year</p>
                 )}
               </div>
 
               <ul className="space-y-2.5 flex-1 mb-6">
                 {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-xs text-gray-600">
+                  <li key={f} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400">
                     <svg className="w-4 h-4 text-brand-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
@@ -201,9 +203,9 @@ export function UpgradePlanCards({ currentPlan, hasSubscription }: Props) {
                 disabled={isDisabled || loading === plan.id}
                 className={`w-full py-2.5 text-sm font-medium rounded-lg transition-colors ${
                   isCurrentPlan
-                    ? 'bg-gray-100 text-gray-500 cursor-default'
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-default'
                     : isLowerTier
-                      ? 'bg-gray-50 text-gray-400 cursor-not-allowed border border-gray-200'
+                      ? 'bg-gray-50 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500 cursor-not-allowed border border-gray-200 dark:border-gray-600'
                       : loading === plan.id
                         ? 'bg-brand-400 text-white cursor-not-allowed'
                         : 'bg-brand-600 text-white hover:bg-brand-700'

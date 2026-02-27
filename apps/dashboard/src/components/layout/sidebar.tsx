@@ -46,22 +46,29 @@ export function Sidebar({ workspace }: SidebarProps) {
   }
 
   return (
-    <aside className="w-60 shrink-0 flex flex-col bg-white border-r min-h-screen">
+    <aside className="w-60 shrink-0 flex flex-col bg-white dark:bg-gray-800 border-r dark:border-gray-700 min-h-screen">
       {/* Logo + workspace */}
-      <div className="px-4 py-5 border-b">
+      <div className="px-4 py-5 border-b dark:border-gray-700">
         <div className="flex items-center mb-4">
-          <Image src="/logo.png" alt="Appalix" width={120} height={36} className="object-contain mix-blend-multiply" priority />
+          <Image
+            src="/logo.png"
+            alt="Appalix"
+            width={120}
+            height={36}
+            className="object-contain mix-blend-multiply dark:mix-blend-normal dark:brightness-0 dark:invert"
+            priority
+          />
         </div>
 
         {/* Workspace badge */}
-        <div className="bg-gray-50 rounded-lg px-3 py-2">
-          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-0.5">Workspace</p>
-          <p className="text-sm font-medium text-gray-900 truncate">{workspace.name}</p>
+        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+          <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium mb-0.5">Workspace</p>
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{workspace.name}</p>
           <span className={cn(
             'inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium',
-            workspace.plan === 'enterprise' ? 'bg-purple-100 text-purple-700' :
-            workspace.plan === 'pro'        ? 'bg-brand-100 text-brand-700' :
-                                             'bg-gray-100 text-gray-600',
+            workspace.plan === 'enterprise' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
+            workspace.plan === 'pro'        ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300' :
+                                             'bg-gray-100 text-gray-600 dark:bg-gray-600 dark:text-gray-300',
           )}>
             {workspace.plan}
           </span>
@@ -80,14 +87,14 @@ export function Sidebar({ workspace }: SidebarProps) {
               className={cn(
                 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                 active
-                  ? 'bg-brand-50 text-brand-700 font-medium'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
+                  ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 font-medium'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-gray-100',
               )}
             >
               <Icon className="w-4 h-4 shrink-0" />
               {label}
               {pro && !isProPlan && (
-                <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-600 font-semibold">
+                <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 font-semibold">
                   Pro
                 </span>
               )}
@@ -97,10 +104,10 @@ export function Sidebar({ workspace }: SidebarProps) {
       </nav>
 
       {/* Sign out */}
-      <div className="px-3 pb-4 border-t pt-4">
+      <div className="px-3 pb-4 border-t dark:border-gray-700 pt-4">
         <button
           onClick={signOut}
-          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
         >
           <LogOut className="w-4 h-4 shrink-0" />
           Sign out

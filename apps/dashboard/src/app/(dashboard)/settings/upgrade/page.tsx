@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Header } from '@/components/layout/header'
 import { UpgradePlanCards } from '@/components/settings/upgrade-plan-cards'
+import { TopupSection } from '@/components/settings/topup-section'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Upgrade Plan' }
@@ -39,6 +40,8 @@ export default async function UpgradePage() {
       />
 
       <UpgradePlanCards currentPlan={currentPlan} hasSubscription={hasSubscription} />
+
+      <TopupSection />
 
       <p className="text-xs text-center text-gray-400">
         Need more? Contact us about Enterprise for unlimited scale, SSO, and dedicated support.{' '}

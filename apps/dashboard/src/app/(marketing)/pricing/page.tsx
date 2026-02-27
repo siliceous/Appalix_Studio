@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ScrollReveal } from '@/components/marketing/animate'
 import { PricingCards } from '@/components/marketing/pricing-cards'
+import { TopupCards } from '@/components/marketing/topup-cards'
 import { ContactSalesButton } from '@/components/marketing/contact-sales-button'
 
 export const metadata: Metadata = {
@@ -80,48 +81,7 @@ export default function PricingPage() {
               <p className="text-gray-400 text-sm">One-time top-ups — no subscription change required. Credits are added instantly to your workspace.</p>
             </div>
           </ScrollReveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <ScrollReveal delay={0}>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-6 flex flex-col gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-white mb-1">2k Add-on Pack</p>
-                  <p className="text-xs text-gray-400 leading-relaxed">A quick boost for lighter months.</p>
-                </div>
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2 text-sm text-gray-300">
-                    <span className="text-brand-400">✦</span> +2,000 conversations
-                  </li>
-                  <li className="flex items-center gap-2 text-sm text-gray-300">
-                    <span className="text-brand-400">✦</span> +50 agent runs
-                  </li>
-                </ul>
-                <div className="mt-auto">
-                  <span className="text-3xl font-black text-white">$29</span>
-                  <span className="text-gray-500 text-sm"> one-time</span>
-                </div>
-              </div>
-            </ScrollReveal>
-            <ScrollReveal delay={0.1}>
-              <div className="rounded-2xl border border-brand-600/40 bg-brand-600/5 p-6 flex flex-col gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-white mb-1">5k Add-on Pack</p>
-                  <p className="text-xs text-gray-400 leading-relaxed">Best value for high-demand periods.</p>
-                </div>
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2 text-sm text-gray-300">
-                    <span className="text-brand-400">✦</span> +5,000 conversations
-                  </li>
-                  <li className="flex items-center gap-2 text-sm text-gray-300">
-                    <span className="text-brand-400">✦</span> +75 agent runs
-                  </li>
-                </ul>
-                <div className="mt-auto">
-                  <span className="text-3xl font-black text-white">$39</span>
-                  <span className="text-gray-500 text-sm"> one-time</span>
-                </div>
-              </div>
-            </ScrollReveal>
-          </div>
+          <TopupCards />
           <ScrollReveal delay={0.15}>
             <p className="text-xs text-gray-600 text-center mt-5">Top-ups are available on all paid plans. Credits do not roll over to the next billing period.</p>
           </ScrollReveal>
