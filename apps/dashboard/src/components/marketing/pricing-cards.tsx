@@ -111,28 +111,33 @@ export function PricingCards() {
   return (
     <section className="py-12 px-6">
       {/* Billing toggle */}
-      <div className="flex items-center justify-center gap-3 mb-10">
-        <span className={`text-sm font-medium transition-colors ${!isAnnual ? 'text-white' : 'text-gray-500'}`}>
-          Monthly
-        </span>
-        <button
-          onClick={() => setIsAnnual(!isAnnual)}
-          aria-label="Toggle billing period"
-          className={`relative w-12 h-6 rounded-full transition-colors ${isAnnual ? 'bg-brand-600' : 'bg-gray-600'}`}
-        >
-          <span
-            className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-              isAnnual ? 'translate-x-6' : 'translate-x-0'
-            }`}
-          />
-        </button>
-        <span className={`text-sm font-medium transition-colors ${isAnnual ? 'text-white' : 'text-gray-500'}`}>
-          Annual
-        </span>
-        {isAnnual && (
-          <span className="text-xs bg-green-500/20 text-green-400 px-2.5 py-1 rounded-full font-semibold">
-            Best value
+      <div className="flex flex-col items-center gap-2 mb-10">
+        <div className="flex items-center gap-3">
+          <span className={`text-sm font-medium transition-colors ${!isAnnual ? 'text-white' : 'text-gray-500'}`}>
+            Monthly
           </span>
+          <button
+            onClick={() => setIsAnnual(!isAnnual)}
+            aria-label="Toggle billing period"
+            className={`relative w-12 h-6 rounded-full transition-colors ${isAnnual ? 'bg-brand-600' : 'bg-gray-600'}`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                isAnnual ? 'translate-x-6' : 'translate-x-0'
+              }`}
+            />
+          </button>
+          <span className={`text-sm font-medium transition-colors ${isAnnual ? 'text-white' : 'text-gray-500'}`}>
+            Annual
+          </span>
+          <span className="text-xs bg-green-500/20 text-green-400 px-2.5 py-1 rounded-full font-semibold">
+            Save ~35%
+          </span>
+        </div>
+        {!isAnnual && (
+          <p className="text-xs text-gray-500">
+            Switch to annual billing and save <span className="text-green-400 font-semibold">~35% on average</span>
+          </p>
         )}
       </div>
 

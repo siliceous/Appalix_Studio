@@ -10,8 +10,8 @@ const PLANS = [
     monthlyPrice: 59,
     description:  'Growing teams getting started with AI',
     features: [
-      '3 AI agents',
-      '1,500 conversations / month',
+      '2 AI agents',
+      '5,000 conversations / month',
       '5 platform integrations',
       'Lead capture & CRM export',
       'Human handoff',
@@ -27,8 +27,9 @@ const PLANS = [
     popular:      true,
     description:  'Teams that need full automation power',
     features: [
-      '10 AI agents',
-      '5,000 conversations / month',
+      '5 AI agents',
+      '12,000 conversations / month',
+      '150 agent runs / month',
       'All platform integrations',
       'AI task automation',
       'Advanced analytics',
@@ -39,12 +40,13 @@ const PLANS = [
   {
     id:           'scale',
     name:         'Scale',
-    annualPrice:  249,
-    monthlyPrice: 429,
+    annualPrice:  299,
+    monthlyPrice: 469,
     description:  'High-volume businesses',
     features: [
-      'Unlimited AI agents',
-      '25,000 conversations / month',
+      '10 AI agents',
+      '50,000 conversations / month',
+      '500 agent runs / month',
       'All platform integrations',
       'AI task automation',
       'White-label branding',
@@ -112,28 +114,33 @@ export function UpgradePlanCards({ currentPlan, hasSubscription }: Props) {
   return (
     <div className="space-y-4">
       {/* Billing toggle */}
-      <div className="flex items-center gap-3">
-        <span className={`text-sm font-medium transition-colors ${!isAnnual ? 'text-gray-900' : 'text-gray-400'}`}>
-          Monthly
-        </span>
-        <button
-          onClick={() => setIsAnnual(!isAnnual)}
-          aria-label="Toggle billing period"
-          className={`relative w-11 h-6 rounded-full transition-colors ${isAnnual ? 'bg-brand-600' : 'bg-gray-300'}`}
-        >
-          <span
-            className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-              isAnnual ? 'translate-x-5' : 'translate-x-0'
-            }`}
-          />
-        </button>
-        <span className={`text-sm font-medium transition-colors ${isAnnual ? 'text-gray-900' : 'text-gray-400'}`}>
-          Annual
-        </span>
-        {isAnnual && (
-          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
-            Best value
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-3">
+          <span className={`text-sm font-medium transition-colors ${!isAnnual ? 'text-gray-900' : 'text-gray-400'}`}>
+            Monthly
           </span>
+          <button
+            onClick={() => setIsAnnual(!isAnnual)}
+            aria-label="Toggle billing period"
+            className={`relative w-11 h-6 rounded-full transition-colors ${isAnnual ? 'bg-brand-600' : 'bg-gray-300'}`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                isAnnual ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
+          </button>
+          <span className={`text-sm font-medium transition-colors ${isAnnual ? 'text-gray-900' : 'text-gray-400'}`}>
+            Annual
+          </span>
+          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
+            Save ~35%
+          </span>
+        </div>
+        {!isAnnual && (
+          <p className="text-xs text-gray-400 ml-0.5">
+            Switch to annual and save <span className="text-green-600 font-semibold">~35% on average</span>
+          </p>
         )}
       </div>
 
