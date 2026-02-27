@@ -41,6 +41,8 @@ export async function updateBot(botId: string, formData: FormData) {
     fallback_message:    (formData.get('fallback_message') as string)?.trim() || null,
     language_preference: (formData.get('language_preference') as string)?.trim() || 'auto',
     widget_skin:         (formData.get('widget_skin') as string) || 'light',
+    widget_accent_color: (formData.get('widget_accent_color') as string) || null,
+    widget_header_color:  (formData.get('widget_header_color') as string) || null,
   }).eq('id', botId)
 
   if (error) throw new Error(error.message)

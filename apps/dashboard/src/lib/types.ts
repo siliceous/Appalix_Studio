@@ -90,6 +90,8 @@ export interface Bot {
   fallback_message: string | null
   language_preference: string
   widget_skin: string
+  widget_accent_color: string | null
+  widget_header_color:  string | null
   created_at: string
   updated_at: string
 }

@@ -20,17 +20,22 @@ export async function chatRoutes(fastify: FastifyInstance) {
       const cfg            = integration.config as Record<string, unknown>
       const welcomeMessage = (cfg.welcome_message as string | undefined) ?? 'Hi there! How can I help you today?'
 
-      let skin = 'light'
+      let skin         = 'light'
+      let accentColor: string | null = null
+      let headerColor: string | null = null
       if (integration.bot_id) {
         const { data: bot } = await supabase
           .from('bots')
-          .select('widget_skin')
+          .select('widget_skin, widget_accent_color, widget_header_color')
           .eq('id', integration.bot_id)
           .single()
-        skin = (bot as { widget_skin: string } | null)?.widget_skin ?? 'light'
+        const b = bot as { widget_skin: string; widget_accent_color: string | null; widget_header_color: string | null } | null
+        skin        = b?.widget_skin        ?? 'light'
+        accentColor = b?.widget_accent_color ?? null
+        headerColor = b?.widget_header_color  ?? null
       }
 
-      return reply.send({ welcome_message: welcomeMessage, skin })
+      return reply.send({ welcome_message: welcomeMessage, skin, accent_color: accentColor, header_color: headerColor })
     },
   )
 

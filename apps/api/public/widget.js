@@ -591,7 +591,19 @@
       .then(function (r) { return r.json() })
       .then(function (d) {
         var skinId = d.skin || 'light'
-        skinVars = SKINS[skinId] || SKINS.light
+        if (skinId === 'custom') {
+          skinVars = Object.assign({}, SKINS.light)
+          if (d.accent_color) {
+            skinVars['--apx-accent']       = d.accent_color
+            skinVars['--apx-user-bubble']  = d.accent_color
+            skinVars['--apx-launcher-bg']  = d.accent_color
+          }
+          if (d.header_color) {
+            skinVars['--apx-header-bg'] = d.header_color
+          }
+        } else {
+          skinVars = SKINS[skinId] || SKINS.light
+        }
         var welcome = d.welcome_message || 'Hi there! How can I help you today?'
         buildWidget(welcome)
       })
