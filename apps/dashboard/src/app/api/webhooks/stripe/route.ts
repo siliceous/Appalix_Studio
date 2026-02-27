@@ -205,10 +205,10 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 type Plan = 'starter' | 'core' | 'pro' | 'scale' | 'enterprise'
 
 const PLAN_LIMITS: Record<Plan, { monthly_message_limit: number; monthly_agent_run_limit: number }> = {
-  starter:    { monthly_message_limit:    500, monthly_agent_run_limit:     0 },
-  core:       { monthly_message_limit:  1_500, monthly_agent_run_limit:     0 },
-  pro:        { monthly_message_limit:  5_000, monthly_agent_run_limit:   100 },
-  scale:      { monthly_message_limit: 25_000, monthly_agent_run_limit:   500 },
+  starter:    { monthly_message_limit:  2_000, monthly_agent_run_limit:     0 },
+  core:       { monthly_message_limit:  5_000, monthly_agent_run_limit:     0 },
+  pro:        { monthly_message_limit: 12_000, monthly_agent_run_limit:   150 },
+  scale:      { monthly_message_limit: 50_000, monthly_agent_run_limit:   500 },
   enterprise: { monthly_message_limit: 999_999, monthly_agent_run_limit: 9_999 },
 }
 

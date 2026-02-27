@@ -7,13 +7,13 @@ import { ContactSalesButton } from '@/components/marketing/contact-sales-button'
 const PLANS = [
   {
     name: 'Starter',
-    annualPrice: 29,
-    monthlyPrice: 45,
+    annualPrice: 15,
+    monthlyPrice: 19,
     desc: 'Perfect for small businesses getting started with AI.',
     popular: false,
     features: [
       '1 AI agent',
-      '500 conversations / month',
+      '2,000 conversations / month',
       '2 platform integrations',
       'Lead capture',
       'Email magic link login',
@@ -25,12 +25,12 @@ const PLANS = [
   {
     name: 'Core',
     annualPrice: 39,
-    monthlyPrice: 59,
+    monthlyPrice: 49,
     desc: 'More bots and integrations for growing teams.',
     popular: false,
     features: [
       '3 AI agents',
-      '1,500 conversations / month',
+      '5,000 conversations / month',
       '5 platform integrations',
       'Lead capture',
       'Human handoff',
@@ -42,12 +42,13 @@ const PLANS = [
   {
     name: 'Pro',
     annualPrice: 79,
-    monthlyPrice: 119,
+    monthlyPrice: 99,
     desc: 'The complete toolkit for high-growth teams.',
     popular: true,
     features: [
       '10 AI agents',
-      '5,000 conversations / month',
+      '12,000 conversations / month',
+      '150 agent runs / month',
       'All platform integrations',
       'Sage AI assistant',
       'Lead capture & CRM export',
@@ -63,12 +64,13 @@ const PLANS = [
   {
     name: 'Scale',
     annualPrice: 249,
-    monthlyPrice: 429,
+    monthlyPrice: 299,
     desc: 'High-volume operations with white-label options.',
     popular: false,
     features: [
       'Unlimited AI agents',
-      '25,000 conversations / month',
+      '50,000 conversations / month',
+      '500 agent runs / month',
       'All platform integrations',
       'Sage AI assistant',
       'Lead capture & CRM export',
