@@ -224,7 +224,7 @@ export default function IntegrationsPage() {
                   </div>
                   <p className="text-sm text-gray-400 leading-relaxed">{item.desc}</p>
                   <Link
-                    href="/login"
+                    href="/dashboard/integrations/new"
                     className="inline-block mt-4 text-xs text-brand-400 hover:text-brand-300 font-medium transition-colors"
                   >
                     Connect →
@@ -266,7 +266,7 @@ export default function IntegrationsPage() {
                   <p className="text-sm text-gray-400 leading-relaxed flex-1">{item.desc}</p>
                   <div className="flex items-center gap-4 mt-4">
                     <Link
-                      href="/login"
+                      href="/dashboard/integrations/new"
                       className="text-xs text-brand-400 hover:text-brand-300 font-medium transition-colors"
                     >
                       Connect →
@@ -316,7 +316,7 @@ export default function IntegrationsPage() {
                   </div>
                   <p className="text-sm text-gray-400 leading-relaxed">{item.desc}</p>
                   <Link
-                    href="/login"
+                    href="/dashboard/sources/new"
                     className="inline-block mt-4 text-xs text-[#61c2ad] hover:text-[#4aaa96] font-medium transition-colors"
                   >
                     Add source →

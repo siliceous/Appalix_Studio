@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ScrollReveal } from '@/components/marketing/animate'
-import { NewsletterSignup } from '@/components/marketing/newsletter-signup'
 
 export const metadata: Metadata = {
   title: 'Resources — AI Sales Agent Guides, Tutorials & Case Studies | Appalix',
@@ -285,7 +284,6 @@ export default function ResourcesPage() {
         </div>
       </section>
 
-      <NewsletterSignup />
     </div>
   )
 }
