@@ -29,7 +29,7 @@ const PLANS = [
     desc: 'More bots and integrations for growing teams.',
     popular: false,
     features: [
-      '3 AI agents',
+      '2 AI agents',
       '5,000 conversations / month',
       '5 platform integrations',
       'Lead capture',
@@ -46,7 +46,7 @@ const PLANS = [
     desc: 'The complete toolkit for high-growth teams.',
     popular: true,
     features: [
-      '10 AI agents',
+      '5 AI agents',
       '12,000 conversations / month',
       '150 agent runs / month',
       'All platform integrations',
@@ -68,7 +68,7 @@ const PLANS = [
     desc: 'High-volume operations with white-label options.',
     popular: false,
     features: [
-      'Unlimited AI agents',
+      '10 AI agents',
       '50,000 conversations / month',
       '500 agent runs / month',
       'All platform integrations',
