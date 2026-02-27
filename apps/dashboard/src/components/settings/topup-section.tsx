@@ -47,8 +47,8 @@ export function TopupSection() {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700">
-      <div className="px-6 py-5 border-b dark:border-gray-700">
+    <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10">
+      <div className="px-6 py-5 border-b dark:border-white/10">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Top-ups</h2>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
           One-time credit top-ups — no subscription change needed. Credits are added instantly.
@@ -69,7 +69,7 @@ export function TopupSection() {
               className={`rounded-xl border p-5 flex flex-col gap-3 ${
                 pack.popular
                   ? 'border-brand-300 dark:border-brand-600 ring-1 ring-brand-300 dark:ring-brand-600'
-                  : 'border-gray-200 dark:border-gray-700'
+                  : 'border-gray-200 dark:border-white/10'
               }`}
             >
               {pack.popular && (

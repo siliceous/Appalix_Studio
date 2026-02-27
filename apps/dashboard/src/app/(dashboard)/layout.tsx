@@ -52,9 +52,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex min-h-screen bg-gray-50 dark:bg-[#111111] relative">
+      {/* Subtle green ambient glow in dark mode */}
+      <div className="pointer-events-none fixed top-0 left-60 right-0 h-[300px] dark:bg-[#61c2ad]/[0.03] blur-[80px] hidden dark:block" />
       <Sidebar workspace={workspace} />
-      <main className="flex-1 p-8 overflow-auto bg-gray-50 dark:bg-gray-900">
+      <main className="flex-1 p-8 overflow-auto bg-gray-50 dark:bg-[#111111]">
         {children}
       </main>
     </div>

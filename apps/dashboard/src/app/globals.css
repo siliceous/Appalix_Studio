@@ -9,10 +9,64 @@
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100;
+    @apply bg-gray-50 text-gray-900;
   }
 
   * {
-    @apply border-gray-200 dark:border-gray-700;
+    @apply border-gray-200;
+  }
+
+  /* ── Dark mode — matches the marketing site palette ── */
+  .dark body {
+    background-color: #111111;
+    color: #f9fafb;
+  }
+
+  .dark * {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  /* Surface: any white card across ALL dashboard pages */
+  .dark .bg-white {
+    background-color: #1a1a1a;
+  }
+
+  /* Hover backgrounds */
+  .dark .hover\:bg-gray-50:hover,
+  .dark .hover\:bg-gray-100:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+  }
+
+  /* Dividers */
+  .dark .divide-y > * + * {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  /* Text */
+  .dark .text-gray-900 { color: #f9fafb; }
+  .dark .text-gray-800 { color: #e5e7eb; }
+  .dark .text-gray-700 { color: #d1d5db; }
+  .dark .text-gray-600 { color: #9ca3af; }
+  .dark .text-gray-500 { color: #6b7280; }
+
+  /* Form inputs — cover every page without touching each one */
+  .dark input:not([type="checkbox"]):not([type="radio"]),
+  .dark select,
+  .dark textarea {
+    background-color: #1a1a1a;
+    color: #f9fafb;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: #6b7280;
+  }
+
+  /* Focus ring colour consistent with brand */
+  .dark input:focus,
+  .dark select:focus,
+  .dark textarea:focus {
+    outline-color: #61c2ad;
   }
 }

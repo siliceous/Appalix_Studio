@@ -24,11 +24,11 @@ export default function InvitePage() {
         description="They'll receive an email with a link to join your workspace."
       />
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 p-6">
+      <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10 p-6">
         {state.success ? (
           <div className="text-center py-4">
-            <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-3">
-              <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-[#61c2ad]/10 flex items-center justify-center mx-auto mb-3">
+              <svg className="w-5 h-5 text-green-600 dark:text-[#61c2ad]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
@@ -39,7 +39,7 @@ export default function InvitePage() {
             <div className="flex justify-center gap-3">
               <a
                 href="/settings"
-                className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
               >
                 Back to settings
               </a>
@@ -69,7 +69,7 @@ export default function InvitePage() {
                 type="email"
                 required
                 placeholder="colleague@company.com"
-                className="w-full px-3 py-2.5 text-sm border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-brand-400"
+                className="w-full px-3 py-2.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-brand-400"
               />
             </div>
 
@@ -81,7 +81,7 @@ export default function InvitePage() {
                 id="role"
                 name="role"
                 defaultValue="member"
-                className="w-full px-3 py-2.5 text-sm border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-brand-400"
+                className="w-full px-3 py-2.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-brand-400"
               >
                 <option value="member">Member — can view and use all features</option>
                 <option value="admin">Admin — can manage integrations and invite members</option>
@@ -92,7 +92,7 @@ export default function InvitePage() {
             <div className="flex gap-3 pt-2">
               <a
                 href="/settings"
-                className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 border dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 border dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
               >
                 Cancel
               </a>

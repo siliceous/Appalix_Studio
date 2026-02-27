@@ -94,7 +94,7 @@ export function UpgradePlanCards({ currentPlan, hasSubscription }: Props) {
   // Already subscribed — send them to the Stripe portal to switch plan
   if (hasSubscription) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 p-8 text-center">
+      <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10 p-8 text-center">
         <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 font-medium">You already have an active subscription.</p>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
           To upgrade or downgrade, use the Stripe billing portal — changes take effect immediately.
@@ -133,13 +133,13 @@ export function UpgradePlanCards({ currentPlan, hasSubscription }: Props) {
           <span className={`text-sm font-medium transition-colors ${isAnnual ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}`}>
             Annual
           </span>
-          <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full font-semibold">
+          <span className="text-xs bg-green-100 dark:bg-[#61c2ad]/10 text-green-700 dark:text-[#61c2ad] px-2 py-0.5 rounded-full font-semibold">
             Save ~35%
           </span>
         </div>
         {!isAnnual && (
           <p className="text-xs text-gray-400 dark:text-gray-500 ml-0.5">
-            Switch to annual and save <span className="text-green-600 dark:text-green-400 font-semibold">~35% on average</span>
+            Switch to annual and save <span className="text-green-600 dark:text-[#61c2ad] font-semibold">~35% on average</span>
           </p>
         )}
       </div>
@@ -161,10 +161,10 @@ export function UpgradePlanCards({ currentPlan, hasSubscription }: Props) {
           return (
             <div
               key={plan.id}
-              className={`relative bg-white dark:bg-gray-800 rounded-xl border flex flex-col p-6 ${
+              className={`relative bg-white dark:bg-[#1a1a1a] rounded-xl border flex flex-col p-6 ${
                 plan.popular
                   ? 'border-brand-300 dark:border-brand-600 ring-1 ring-brand-300 dark:ring-brand-600'
-                  : 'border-gray-200 dark:border-gray-700'
+                  : 'border-gray-200 dark:border-white/10'
               }`}
             >
               {plan.popular && (
@@ -203,9 +203,9 @@ export function UpgradePlanCards({ currentPlan, hasSubscription }: Props) {
                 disabled={isDisabled || loading === plan.id}
                 className={`w-full py-2.5 text-sm font-medium rounded-lg transition-colors ${
                   isCurrentPlan
-                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-default'
+                    ? 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 cursor-default'
                     : isLowerTier
-                      ? 'bg-gray-50 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500 cursor-not-allowed border border-gray-200 dark:border-gray-600'
+                      ? 'bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-gray-500 cursor-not-allowed border border-gray-200 dark:border-white/10'
                       : loading === plan.id
                         ? 'bg-brand-400 text-white cursor-not-allowed'
                         : 'bg-brand-600 text-white hover:bg-brand-700'

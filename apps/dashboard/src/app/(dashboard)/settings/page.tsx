@@ -39,7 +39,7 @@ export default async function SettingsPage() {
       <Header title="Settings" description="Workspace configuration and billing" />
 
       {/* Workspace info */}
-      <section className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 divide-y dark:divide-gray-700">
+      <section className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10 divide-y dark:divide-white/10">
         <div className="px-6 py-5">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Workspace</h2>
           <dl className="space-y-3 text-sm">
@@ -60,7 +60,7 @@ export default async function SettingsPage() {
       </section>
 
       {/* Billing */}
-      <section className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 divide-y dark:divide-gray-700">
+      <section className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10 divide-y dark:divide-white/10">
         <div className="px-6 py-5">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Billing</h2>
           <dl className="space-y-3 text-sm">
@@ -103,12 +103,12 @@ export default async function SettingsPage() {
           </dl>
 
           {isAdmin && (
-            <div className="mt-5 pt-5 border-t dark:border-gray-700 flex gap-3">
+            <div className="mt-5 pt-5 border-t dark:border-white/10 flex gap-3">
               <a
                 href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL ?? '#'}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-2 border dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="px-4 py-2 border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
               >
                 Manage billing →
               </a>
@@ -124,7 +124,7 @@ export default async function SettingsPage() {
       </section>
 
       {/* Appearance */}
-      <section className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700">
+      <section className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10">
         <div className="px-6 py-5">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Appearance</h2>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Choose your preferred dashboard theme.</p>
@@ -133,8 +133,8 @@ export default async function SettingsPage() {
       </section>
 
       {/* Team members */}
-      <section className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700">
-        <div className="px-6 py-5 border-b dark:border-gray-700 flex items-center justify-between">
+      <section className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10">
+        <div className="px-6 py-5 border-b dark:border-white/10 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Team members</h2>
           {isAdmin && (
             <a href="/settings/invite" className="text-xs text-brand-600 hover:underline">
@@ -142,7 +142,7 @@ export default async function SettingsPage() {
             </a>
           )}
         </div>
-        <div className="divide-y dark:divide-gray-700">
+        <div className="divide-y dark:divide-white/10">
           {members?.map((m) => (
             <div key={m.id} className="flex items-center gap-4 px-6 py-3.5">
               <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-brand-700 dark:text-brand-300 text-xs font-medium">
@@ -161,7 +161,7 @@ export default async function SettingsPage() {
 
       {/* Danger zone */}
       {membership.role === 'owner' && (
-        <section className="bg-white dark:bg-gray-800 rounded-xl border border-red-100 dark:border-red-900/30">
+        <section className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-red-100 dark:border-red-900/30">
           <div className="px-6 py-5">
             <h2 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-3">Danger zone</h2>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
