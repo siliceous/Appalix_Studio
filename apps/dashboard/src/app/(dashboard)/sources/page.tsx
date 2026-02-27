@@ -90,7 +90,9 @@ export default async function SourcesPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{source.name}</p>
                   <p className="text-xs text-gray-400 truncate mt-0.5">
-                    {source.url ?? source.type}
+                    {source.type === 'text'
+                      ? ((source.metadata as Record<string, string>)?.raw_text ?? '').slice(0, 120) || '(no content)'
+                      : (source.url ?? source.type)}
                     {source.chunk_count != null && (
                       <span className="ml-2 text-gray-300">·</span>
                     )}

@@ -113,12 +113,32 @@ async function fetchSourceContent(source: {
     case 'url': {
       if (!source.url) throw new Error('URL source has no URL')
       const res = await fetch(source.url, {
-        headers: { 'User-Agent': 'Appalix-Ingestion/1.0' },
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; AppalixBot/1.0; +https://appalix.ai)',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+        },
         signal: AbortSignal.timeout(30_000),
+        redirect: 'follow',
       })
       if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${source.url}`)
       const html = await res.text()
-      return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+      // Strip script/style/head blocks first, then all remaining tags
+      const text = html
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
+        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')
+        .replace(/<head\b[^<]*(?:(?!<\/head>)<[^<]*)*<\/head>/gi, ' ')
+        .replace(/<!--[\s\S]*?-->/g, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/\s+/g, ' ')
+        .trim()
+      if (!text) throw new Error(`No readable text found at ${source.url}. The page may require JavaScript to render, or may be blocking automated access.`)
+      return text
     }
 
     case 'sitemap': {
@@ -126,10 +146,21 @@ async function fetchSourceContent(source: {
       const res   = await fetch(source.url, { signal: AbortSignal.timeout(30_000) })
       const xml   = await res.text()
       const urls  = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]).slice(0, 50)
+      const FETCH_HEADERS = {
+        'User-Agent': 'Mozilla/5.0 (compatible; AppalixBot/1.0; +https://appalix.ai)',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      }
       const pages = await Promise.allSettled(urls.map(async (url) => {
-        const r = await fetch(url, { signal: AbortSignal.timeout(15_000) })
+        const r = await fetch(url, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(15_000), redirect: 'follow' })
         const h = await r.text()
-        return `## ${url}\n\n${h.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}`
+        const t = h
+          .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
+          .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')
+          .replace(/<head\b[^<]*(?:(?!<\/head>)<[^<]*)*<\/head>/gi, ' ')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+        return `## ${url}\n\n${t}`
       }))
       return pages
         .filter((p): p is PromiseFulfilledResult<string> => p.status === 'fulfilled')
