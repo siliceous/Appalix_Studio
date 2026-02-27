@@ -44,7 +44,7 @@ export function IntegrationActions({ id, status }: Props) {
         onClick={handleToggle}
         disabled={isPending}
         title="Click to deactivate"
-        className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition-colors disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-brand-100 text-brand-700 hover:bg-brand-300/40 transition-colors disabled:opacity-50"
       >
         <CheckCircle2 className="w-3 h-3" />
         Active
