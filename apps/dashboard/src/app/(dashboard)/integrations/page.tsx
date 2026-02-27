@@ -11,6 +11,14 @@ type IntegrationRow = Integration & { bots?: { name: string } | null }
 
 export const metadata: Metadata = { title: 'Integrations' }
 
+const CRM_PROVIDERS: { emoji: string; name: string; desc: string; guide: string }[] = [
+  { emoji: '🔗', name: 'Zapier',     desc: 'Route leads to HubSpot, Salesforce, Google Sheets, and 6,000+ apps via a Catch Hook.',        guide: '/resources/connect-zapier' },
+  { emoji: '🟠', name: 'HubSpot',    desc: 'Push captured leads directly into HubSpot contacts using a Private App token.',                 guide: '/resources/connect-hubspot' },
+  { emoji: '💬', name: 'Intercom',   desc: 'Create Intercom leads instantly when a visitor shares contact details in chat.',                guide: '/resources/connect-intercom' },
+  { emoji: '🔵', name: 'Zoho CRM',   desc: 'Automatically add leads to Zoho CRM using an OAuth access token.',                             guide: '/resources/connect-zoho-crm' },
+  { emoji: '☁️', name: 'Salesforce', desc: 'Create Salesforce Lead records via the REST API the moment a lead is captured.',               guide: '/resources/connect-salesforce' },
+]
+
 // All supported platforms shown in the "add" grid
 const AVAILABLE_PLATFORMS: { platform: Platform; desc: string }[] = [
   { platform: 'slack',              desc: 'Respond to messages in Slack channels and DMs' },
@@ -84,7 +92,7 @@ export default async function IntegrationsPage() {
       )}
 
       {/* Available platforms */}
-      <section>
+      <section className="mb-8">
         <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
           Available platforms
         </h2>
@@ -95,7 +103,7 @@ export default async function IntegrationsPage() {
               <a
                 key={platform}
                 href={`/integrations/new?platform=${platform}`}
-                className="bg-white rounded-xl border p-4 hover:shadow-sm transition-shadow group flex items-start gap-3"
+                className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-4 hover:shadow-sm transition-shadow group flex items-start gap-3"
               >
                 <div className={`mt-0.5 px-2 py-1 rounded-md text-xs font-medium ${PLATFORM_META[platform]?.color}`}>
                   {PLATFORM_META[platform]?.label}
@@ -111,6 +119,28 @@ export default async function IntegrationsPage() {
               </a>
             )
           })}
+        </div>
+      </section>
+
+      {/* CRM & lead capture */}
+      <section>
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">CRM &amp; lead capture</h2>
+        <p className="text-xs text-gray-400 mb-3">Configure lead routing on any integration's settings page. Select a provider below to view the setup guide.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          {CRM_PROVIDERS.map((crm) => (
+            <div key={crm.name} className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-4 flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center text-base shrink-0">
+                {crm.emoji}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{crm.name}</p>
+                <p className="text-xs text-gray-500 leading-relaxed mt-0.5">{crm.desc}</p>
+                <a href={crm.guide} className="text-xs text-brand-600 hover:text-brand-700 font-medium mt-1.5 inline-block">
+                  Setup guide →
+                </a>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
     </div>
