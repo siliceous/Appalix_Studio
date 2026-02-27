@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { deleteSource, resyncSource } from '@/app/actions/source'
 import { formatDateTime } from '@/lib/utils'
-import { BookOpen, Plus, RefreshCw, Trash2, CheckCircle2, Clock, AlertCircle, Loader2, Link, FileText, AlignLeft, Cloud, HardDrive } from 'lucide-react'
+import { BookOpen, Plus, RefreshCw, Trash2, Pencil, CheckCircle2, Clock, AlertCircle, Loader2, Link, FileText, AlignLeft, Cloud, HardDrive } from 'lucide-react'
 import { SourcesPoller } from './sources-poller'
 import type { Metadata } from 'next'
 import type { Source } from '@/lib/types'
@@ -118,6 +118,13 @@ export default async function SourcesPage() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 shrink-0">
+                  <a
+                    href={`/sources/${source.id}/edit`}
+                    title="Edit"
+                    className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </a>
                   <form action={resyncSource.bind(null, source.id)}>
                     <button
                       type="submit"

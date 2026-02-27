@@ -118,6 +118,68 @@ export async function createSource(formData: FormData) {
   redirect('/sources')
 }
 
+export async function updateSource(sourceId: string, formData: FormData) {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+
+  // Verify ownership
+  const { data: existing } = await admin
+    .from('sources')
+    .select('type, metadata')
+    .eq('id', sourceId)
+    .eq('workspace_id', workspaceId)
+    .single()
+  if (!existing) throw new Error('Source not found')
+
+  const type     = (existing as { type: string; metadata: Record<string, unknown> }).type
+  const prevMeta = (existing as { type: string; metadata: Record<string, unknown> }).metadata ?? {}
+
+  const name = (formData.get('name') as string)?.trim() || undefined
+  let url:      string | null | undefined = undefined
+  let metadata: Record<string, unknown> | undefined = undefined
+
+  if (type === 'url' || type === 'sitemap') {
+    url = (formData.get('url') as string)?.trim() || null
+  } else if (type === 'text') {
+    const text = (formData.get('text') as string)?.trim()
+    metadata = { ...prevMeta, ...(text ? { raw_text: text } : {}) }
+  } else if (type === 'notion') {
+    url = (formData.get('url') as string)?.trim() || null
+    const token = (formData.get('notion_token') as string)?.trim()
+    metadata = { ...prevMeta, ...(token ? { notion_token: token } : {}) }
+  } else if (type === 'gitbook') {
+    url = (formData.get('url') as string)?.trim() || null
+    const token = (formData.get('gitbook_token') as string)?.trim()
+    metadata = { ...prevMeta, ...(token ? { gitbook_token: token } : {}) }
+  } else if (type === 'google_drive') {
+    url = (formData.get('url') as string)?.trim() || null
+    const token = (formData.get('google_access_token') as string)?.trim()
+    metadata = { ...prevMeta, ...(token ? { google_access_token: token } : {}) }
+  } else if (type === 'dropbox') {
+    url = (formData.get('url') as string)?.trim() || null
+    const token = (formData.get('dropbox_token') as string)?.trim()
+    metadata = { ...prevMeta, ...(token ? { dropbox_token: token } : {}) }
+  } else if (type === 'onedrive') {
+    url = (formData.get('url') as string)?.trim() || null
+    const token = (formData.get('ms_access_token') as string)?.trim()
+    metadata = { ...prevMeta, ...(token ? { ms_access_token: token } : {}) }
+  } else if (type === 'sharepoint') {
+    url = (formData.get('url') as string)?.trim() || null
+    const token  = (formData.get('ms_access_token') as string)?.trim()
+    const siteId = (formData.get('sharepoint_site_id') as string)?.trim()
+    metadata = { ...prevMeta, ...(token ? { ms_access_token: token } : {}), ...(siteId ? { sharepoint_site_id: siteId } : {}) }
+  }
+
+  const patch: Record<string, unknown> = { status: 'pending', error_message: null }
+  if (name)            patch.name     = name
+  if (url !== undefined) patch.url    = url
+  if (metadata)        patch.metadata = metadata
+
+  await admin.from('sources').update(patch).eq('id', sourceId).eq('workspace_id', workspaceId)
+  await triggerIngest(sourceId)
+  redirect('/sources')
+}
+
 export async function deleteSource(sourceId: string) {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
