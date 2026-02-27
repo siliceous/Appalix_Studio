@@ -35,10 +35,11 @@ export async function updateBot(botId: string, formData: FormData) {
     system_prompt:    (formData.get('system_prompt') as string)?.trim() || null,
     max_tokens:       parseInt(formData.get('max_tokens') as string) || undefined,
     temperature:      parseFloat(formData.get('temperature') as string) ?? undefined,
-    enable_rag:       formData.get('enable_rag') === 'on',
-    enable_memory:    formData.get('enable_memory') === 'on',
-    enable_tools:     formData.get('enable_tools') === 'on',
-    fallback_message: (formData.get('fallback_message') as string)?.trim() || null,
+    enable_rag:          formData.get('enable_rag') === 'on',
+    enable_memory:       formData.get('enable_memory') === 'on',
+    enable_tools:        formData.get('enable_tools') === 'on',
+    fallback_message:    (formData.get('fallback_message') as string)?.trim() || null,
+    language_preference: (formData.get('language_preference') as string)?.trim() || 'auto',
   }).eq('id', botId)
 
   if (error) throw new Error(error.message)

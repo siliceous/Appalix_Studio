@@ -130,7 +130,7 @@ export function CopilotChat({ workspaceId, workspaceName, userName }: CopilotCha
                 <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
                   m.role === 'user'
                     ? 'bg-gray-900 dark:bg-white/10 text-white rounded-tr-sm'
-                    : 'bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-800 dark:text-gray-200 rounded-tl-sm'
+                    : 'bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/10 text-gray-800 dark:text-gray-200 rounded-tl-sm'
                 }`}>
                   {m.content}
                 </div>
@@ -151,7 +151,7 @@ export function CopilotChat({ workspaceId, workspaceName, userName }: CopilotCha
           {loading && (
             <div className="flex gap-3">
               <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad] shrink-0 flex items-center justify-center text-xs font-semibold">AI</div>
-              <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 rounded-2xl rounded-tl-sm px-4 py-3 flex gap-1.5 items-center">
+              <div className="bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/10 rounded-2xl rounded-tl-sm px-4 py-3 flex gap-1.5 items-center">
                 <style>{`
                   @keyframes copilot-dot { 0%,60%,100%{opacity:0.2} 30%{opacity:1} }
                 `}</style>
@@ -168,8 +168,8 @@ export function CopilotChat({ workspaceId, workspaceName, userName }: CopilotCha
       )}
 
       {/* Input */}
-      <div className="px-6 pb-6 pt-3 border-t bg-white dark:bg-[#161616] dark:border-white/8">
-        <div className="flex items-end gap-3 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 rounded-2xl px-4 py-3 focus-within:border-brand-400 dark:focus-within:border-[#61c2ad]/50 focus-within:ring-2 focus-within:ring-brand-100 dark:focus-within:ring-[#61c2ad]/10 transition-all">
+      <div className="px-6 pb-6 pt-3 border-t bg-white dark:bg-[#232323] dark:border-white/8">
+        <div className="flex items-end gap-3 bg-gray-50 dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/10 rounded-2xl px-4 py-3 focus-within:border-brand-400 dark:focus-within:border-[#61c2ad]/50 focus-within:ring-2 focus-within:ring-brand-100 dark:focus-within:ring-[#61c2ad]/10 transition-all">
           <textarea
             ref={textareaRef}
             rows={1}

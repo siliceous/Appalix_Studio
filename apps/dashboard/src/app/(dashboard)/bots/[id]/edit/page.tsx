@@ -5,6 +5,7 @@ import { updateBot } from '@/app/actions/bot'
 import type { Metadata } from 'next'
 import type { Bot } from '@/lib/types'
 import { Globe, Sparkles } from 'lucide-react'
+import { LANGUAGE_GROUPS } from '@/lib/languages'
 
 export const metadata: Metadata = { title: 'Edit bot' }
 
@@ -30,7 +31,7 @@ export default async function EditBotPage({ params }: { params: Promise<{ id: st
       <form action={action} className="space-y-5">
 
         {/* Bot type */}
-        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10 p-5 space-y-3">
+        <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5 space-y-3">
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Bot type</p>
           <div className="grid grid-cols-2 gap-3">
             {([
@@ -58,7 +59,7 @@ export default async function EditBotPage({ params }: { params: Promise<{ id: st
         </div>
 
         {/* Basic info */}
-        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10 p-5 space-y-4">
+        <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5 space-y-4">
           <p className="text-sm font-semibold text-gray-900">Basic info</p>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Name</label>
@@ -78,7 +79,7 @@ export default async function EditBotPage({ params }: { params: Promise<{ id: st
         </div>
 
         {/* AI settings */}
-        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10 p-5 space-y-4">
+        <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5 space-y-4">
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">AI settings</p>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -96,10 +97,28 @@ export default async function EditBotPage({ params }: { params: Promise<{ id: st
               />
             </div>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Response language</label>
+            <select
+              name="language_preference"
+              defaultValue={bot.language_preference ?? 'auto'}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            >
+              {LANGUAGE_GROUPS.map(({ group, options }) => (
+                <optgroup key={group} label={group}>
+                  {options.map(({ value, label }) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            <p className="text-xs text-gray-400 mt-1">Auto lets the bot match whatever language the user writes in.</p>
+          </div>
         </div>
 
         {/* Features */}
-        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10 p-5">
+        <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5">
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Features</p>
           <div className="space-y-3">
             {[
@@ -122,7 +141,7 @@ export default async function EditBotPage({ params }: { params: Promise<{ id: st
         </div>
 
         {/* System prompt */}
-        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10 p-5 space-y-3">
+        <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5 space-y-3">
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">System prompt</p>
           <textarea
             name="system_prompt" rows={8} defaultValue={bot.system_prompt ?? ''}
@@ -132,7 +151,7 @@ export default async function EditBotPage({ params }: { params: Promise<{ id: st
         </div>
 
         {/* Fallback message */}
-        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10 p-5 space-y-3">
+        <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5 space-y-3">
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Fallback message</p>
           <input
             type="text" name="fallback_message" defaultValue={bot.fallback_message ?? ''}

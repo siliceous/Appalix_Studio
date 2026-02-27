@@ -39,7 +39,7 @@ export default async function SettingsPage() {
       <Header title="Settings" description="Workspace configuration and billing" />
 
       {/* Workspace info */}
-      <section className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10 divide-y dark:divide-white/10">
+      <section className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 divide-y dark:divide-white/10">
         <div className="px-6 py-5">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Workspace</h2>
           <dl className="space-y-3 text-sm">
@@ -60,7 +60,7 @@ export default async function SettingsPage() {
       </section>
 
       {/* Billing */}
-      <section className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10 divide-y dark:divide-white/10">
+      <section className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 divide-y dark:divide-white/10">
         <div className="px-6 py-5">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Billing</h2>
           <dl className="space-y-3 text-sm">
@@ -124,7 +124,7 @@ export default async function SettingsPage() {
       </section>
 
       {/* Appearance */}
-      <section className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10">
+      <section className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10">
         <div className="px-6 py-5">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Appearance</h2>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Choose your preferred dashboard theme.</p>
@@ -133,7 +133,7 @@ export default async function SettingsPage() {
       </section>
 
       {/* Team members */}
-      <section className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10">
+      <section className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10">
         <div className="px-6 py-5 border-b dark:border-white/10 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Team members</h2>
           {isAdmin && (
@@ -161,7 +161,7 @@ export default async function SettingsPage() {
 
       {/* Danger zone */}
       {membership.role === 'owner' && (
-        <section className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-red-100 dark:border-red-900/30">
+        <section className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-red-100 dark:border-red-900/30">
           <div className="px-6 py-5">
             <h2 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-3">Danger zone</h2>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">

@@ -13,7 +13,7 @@ const NAV_LINKS = [
 
 export function MarketingNavbar() {
   return (
-    <header className="fixed top-0 inset-x-0 z-50 border-b border-white/10 bg-[#111111]/80 backdrop-blur-md">
+    <header className="fixed top-0 inset-x-0 z-50 border-b border-white/10 bg-[#1c1c1c]/80 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center">

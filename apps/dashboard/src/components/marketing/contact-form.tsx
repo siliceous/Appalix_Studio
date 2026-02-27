@@ -67,7 +67,7 @@ export function ContactForm() {
           <label className="block text-sm font-medium text-gray-300 mb-1.5">Country</label>
           <select
             name="country"
-            className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-300 outline-none focus:border-brand-600/50 transition-colors"
+            className="w-full bg-[#2a2a2a] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-300 outline-none focus:border-brand-600/50 transition-colors"
           >
             <option value="">Select your country</option>
             {COUNTRIES.map((c) => (

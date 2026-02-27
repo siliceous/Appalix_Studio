@@ -24,7 +24,7 @@ export default function InvitePage() {
         description="They'll receive an email with a link to join your workspace."
       />
 
-      <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10 p-6">
+      <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-6">
         {state.success ? (
           <div className="text-center py-4">
             <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-[#61c2ad]/10 flex items-center justify-center mx-auto mb-3">

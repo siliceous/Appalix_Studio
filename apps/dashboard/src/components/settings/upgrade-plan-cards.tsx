@@ -94,7 +94,7 @@ export function UpgradePlanCards({ currentPlan, hasSubscription }: Props) {
   // Already subscribed — send them to the Stripe portal to switch plan
   if (hasSubscription) {
     return (
-      <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10 p-8 text-center">
+      <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-8 text-center">
         <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 font-medium">You already have an active subscription.</p>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
           To upgrade or downgrade, use the Stripe billing portal — changes take effect immediately.
@@ -161,7 +161,7 @@ export function UpgradePlanCards({ currentPlan, hasSubscription }: Props) {
           return (
             <div
               key={plan.id}
-              className={`relative bg-white dark:bg-[#1a1a1a] rounded-xl border flex flex-col p-6 ${
+              className={`relative bg-white dark:bg-[#2a2a2a] rounded-xl border flex flex-col p-6 ${
                 plan.popular
                   ? 'border-brand-300 dark:border-brand-600 ring-1 ring-brand-300 dark:ring-brand-600'
                   : 'border-gray-200 dark:border-white/10'

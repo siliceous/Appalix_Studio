@@ -183,9 +183,13 @@ export async function processMessage(
     internalPlatform,
   )
 
+  const languageInjection = (bot.language_preference && bot.language_preference !== 'auto')
+    ? `\n\nLANGUAGE: Always respond in ${bot.language_preference}, regardless of the language the user writes in.`
+    : ''
+
   const basePrompt = handoffTriggered
-    ? `${bot.system_prompt ?? ''}\n\n${HANDOFF_SYSTEM_INJECTION}`.trim()
-    : `${bot.system_prompt ?? ''}\n\n${sensitivityInjection}`.trim()
+    ? `${bot.system_prompt ?? ''}\n\n${HANDOFF_SYSTEM_INJECTION}${languageInjection}`.trim()
+    : `${bot.system_prompt ?? ''}\n\n${sensitivityInjection}${languageInjection}`.trim()
 
   const systemPrompt = buildSystemPrompt(basePrompt, ragContext)
 

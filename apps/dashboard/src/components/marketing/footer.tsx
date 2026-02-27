@@ -25,7 +25,7 @@ const FOOTER_LINKS = {
 
 export function MarketingFooter() {
   return (
-    <footer className="border-t border-white/10 bg-[#111111]">
+    <footer className="border-t border-white/10 bg-[#1c1c1c]">
       <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
           {/* Brand */}

@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Header } from '@/components/layout/header'
 import { Globe, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { LANGUAGE_GROUPS } from '@/lib/languages'
 
 export default function NewBotPage() {
   const router = useRouter()
@@ -41,6 +42,7 @@ export default function NewBotPage() {
     enable_rag: true,
     enable_tools: false,
     enable_memory: true,
+    language_preference: 'auto',
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -76,7 +78,7 @@ export default function NewBotPage() {
     <div className="max-w-2xl">
       <Header title="New bot" description="Configure your AI agent" />
 
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10 divide-y dark:divide-white/10">
+      <form onSubmit={handleSubmit} className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 divide-y dark:divide-white/10">
 
         {/* Bot type */}
         <section className="p-6 space-y-3">
@@ -171,6 +173,24 @@ export default function NewBotPage() {
               placeholder="You are a helpful support agent for Acme Inc. Answer questions about our products and escalate complex issues to a human agent."
               className="w-full px-3 py-2 border dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Response language</label>
+            <select
+              value={form.language_preference}
+              onChange={(e) => set('language_preference', e.target.value)}
+              className="w-full px-3 py-2 border dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            >
+              {LANGUAGE_GROUPS.map(({ group, options }) => (
+                <optgroup key={group} label={group}>
+                  {options.map(({ value, label }) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            <p className="text-xs text-gray-400 mt-1">Auto lets the bot match whatever language the user writes in.</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

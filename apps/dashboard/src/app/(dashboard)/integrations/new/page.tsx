@@ -1,22 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
-import { PLATFORM_META } from '@/lib/utils'
 import { createIntegration } from '@/app/actions/integration'
+import { PlatformSelector } from './platform-selector'
 import type { Metadata } from 'next'
 import type { Platform } from '@/lib/types'
 
 export const metadata: Metadata = { title: 'Add integration' }
-
-const PLATFORMS: { platform: Platform; desc: string }[] = [
-  { platform: 'web_widget',         desc: 'Embed a chat widget on any website' },
-  { platform: 'custom_api',        desc: 'Connect via REST API with an API key' },
-  { platform: 'slack',             desc: 'Respond to messages in Slack' },
-  { platform: 'wordpress',         desc: 'Embed on a WordPress site' },
-  { platform: 'facebook_messenger',desc: 'Handle Messenger conversations' },
-  { platform: 'whatsapp',          desc: 'Chat on WhatsApp Business' },
-  { platform: 'google_chat',       desc: 'Answer questions in Google Chat' },
-]
 
 export default async function NewIntegrationPage({
   searchParams,
@@ -40,7 +30,8 @@ export default async function NewIntegrationPage({
     .order('created_at', { ascending: false })
   const bots = (rawBots ?? []) as { id: string; name: string }[]
 
-  const selected = (PLATFORMS.find((p) => p.platform === qp)?.platform ?? 'web_widget') as Platform
+  const validPlatforms = ['web_widget','custom_api','slack','wordpress','facebook_messenger','whatsapp','google_chat']
+  const selected = (validPlatforms.includes(qp ?? '') ? qp : 'web_widget') as Platform
 
   return (
     <div className="max-w-2xl">
@@ -48,34 +39,13 @@ export default async function NewIntegrationPage({
 
       <form action={createIntegration} className="space-y-6">
         {/* Platform selector */}
-        <div className="bg-white rounded-xl border p-5">
+        <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5">
           <label className="block text-sm font-semibold text-gray-900 mb-3">Platform</label>
-          <div className="grid grid-cols-2 gap-2">
-            {PLATFORMS.map(({ platform, desc }) => (
-              <label
-                key={platform}
-                className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 hover:bg-gray-50 transition-colors"
-              >
-                <input
-                  type="radio"
-                  name="platform"
-                  value={platform}
-                  defaultChecked={platform === selected}
-                  className="mt-0.5 accent-brand-600"
-                />
-                <div>
-                  <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full mb-1 ${PLATFORM_META[platform]?.color}`}>
-                    {PLATFORM_META[platform]?.label}
-                  </span>
-                  <p className="text-xs text-gray-500">{desc}</p>
-                </div>
-              </label>
-            ))}
-          </div>
+          <PlatformSelector defaultPlatform={selected} />
         </div>
 
         {/* Common fields */}
-        <div className="bg-white rounded-xl border p-5 space-y-4">
+        <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Integration name</label>
             <input
@@ -101,7 +71,7 @@ export default async function NewIntegrationPage({
         </div>
 
         {/* Web widget config */}
-        <div className="bg-white rounded-xl border p-5">
+        <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5">
           <p className="text-sm font-semibold text-gray-900 mb-3">Platform config</p>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">

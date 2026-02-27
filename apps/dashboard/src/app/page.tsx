@@ -79,7 +79,7 @@ export default async function HomePage() {
     .single()
   const widgetIntegrationId = integrationRow?.id as string | undefined
   return (
-    <div className="bg-[#111111] min-h-screen text-white">
+    <div className="bg-[#1c1c1c] min-h-screen text-white">
       <MarketingNavbar />
 
       {/* ── Hero ───────────────────────────────────────────────────── */}

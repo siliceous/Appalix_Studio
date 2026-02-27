@@ -125,7 +125,7 @@ const CHAT_DEMO = [
 
 export default function SagePage() {
   return (
-    <div className="bg-[#111111] min-h-screen text-white">
+    <div className="bg-[#1c1c1c] min-h-screen text-white">
 
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <section className="relative pt-36 pb-24 px-6 overflow-hidden">
@@ -203,9 +203,9 @@ export default function SagePage() {
 
           {/* Right — mock chat */}
           <ScrollReveal delay={0.15}>
-            <div className="rounded-2xl bg-[#1a1a1a] border border-white/10 overflow-hidden shadow-2xl">
+            <div className="rounded-2xl bg-[#2a2a2a] border border-white/10 overflow-hidden shadow-2xl">
               {/* Window chrome */}
-              <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/10 bg-[#161616]">
+              <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/10 bg-[#232323]">
                 <div className="w-7 h-7 rounded-lg bg-brand-600/20 border border-brand-600/30 flex items-center justify-center">
                   <span className="text-brand-400 text-xs font-bold">✦</span>
                 </div>
@@ -349,7 +349,7 @@ export default function SagePage() {
 
           <ScrollReveal>
             {/* Visual: knowledge base flow */}
-            <div className="rounded-2xl bg-[#1a1a1a] border border-white/10 p-6 space-y-3">
+            <div className="rounded-2xl bg-[#2a2a2a] border border-white/10 p-6 space-y-3">
               <p className="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-4">Your knowledge base</p>
               {[
                 { icon: '🌐', label: 'Website pages',        count: '47 pages synced' },

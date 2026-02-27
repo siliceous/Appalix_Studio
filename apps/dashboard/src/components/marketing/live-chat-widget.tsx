@@ -137,7 +137,7 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
             <div
               className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
                 m.role === 'user'
-                  ? 'bg-[#1a1a1a] border border-white/10 text-gray-200 rounded-br-sm'
+                  ? 'bg-[#2a2a2a] border border-white/10 text-gray-200 rounded-br-sm'
                   : 'bg-[#2a2a2a] border border-white/10 text-[#61c2ad] rounded-bl-sm'
               }`}
             >

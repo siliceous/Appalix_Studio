@@ -83,7 +83,7 @@ export default async function SagePage() {
       <div className="pointer-events-none absolute bottom-20 left-0 w-[400px] h-[300px] rounded-full bg-[#61c2ad]/[0.04] blur-[120px] dark:block hidden" />
 
       {/* Header */}
-      <div className="flex items-center gap-3 px-6 py-4 border-b bg-white dark:bg-[#161616] dark:border-white/8 shrink-0 relative z-10">
+      <div className="flex items-center gap-3 px-6 py-4 border-b bg-white dark:bg-[#232323] dark:border-white/8 shrink-0 relative z-10">
         <div className="w-8 h-8 rounded-lg bg-brand-50 dark:bg-[#61c2ad]/10 border border-brand-200 dark:border-[#61c2ad]/20 flex items-center justify-center">
           <Sparkles className="w-4 h-4 text-brand-600 dark:text-[#61c2ad]" />
         </div>
@@ -94,7 +94,7 @@ export default async function SagePage() {
       </div>
 
       {/* Chat */}
-      <div className="flex-1 overflow-hidden bg-gray-50 dark:bg-[#111111] relative z-10">
+      <div className="flex-1 overflow-hidden bg-gray-50 dark:bg-[#1c1c1c] relative z-10">
         <CopilotChat
           workspaceId={workspace.id}
           workspaceName={workspace.name}

@@ -17,6 +17,71 @@ export const metadata: Metadata = {
 }
 
 const POSTS = [
+  // ── Platform tutorials ──────────────────────────────────────────────────────
+  {
+    category: 'Tutorial',
+    title: 'How to Add an AI Chatbot to WordPress with Appalix',
+    excerpt: 'Install the Appalix plugin, enter your API endpoint and key in Settings → Appalix Chat, and your AI bot is live on every page of your WordPress site in minutes.',
+    readTime: '8 min read',
+    date: 'Feb 27, 2026',
+    emoji: '🔌',
+    slug: 'add-wordpress-chatbot',
+  },
+  {
+    category: 'Tutorial',
+    title: 'How to Embed the Appalix Chat Widget on Any Website',
+    excerpt: 'Two lines of code add a floating AI chat bubble to any site — HTML, Next.js, Webflow, Squarespace, Framer, Shopify, and more. Step-by-step with platform-specific instructions.',
+    readTime: '5 min read',
+    date: 'Feb 27, 2026',
+    emoji: '💬',
+    slug: 'embed-web-widget',
+  },
+  {
+    category: 'Tutorial',
+    title: 'How to Connect Appalix to Slack',
+    excerpt: 'Deploy your AI bot inside Slack so it answers questions in channels and DMs automatically. Create a Slack app, subscribe to events, and paste the credentials into Appalix.',
+    readTime: '9 min read',
+    date: 'Feb 27, 2026',
+    emoji: '💜',
+    slug: 'connect-slack',
+  },
+  {
+    category: 'Tutorial',
+    title: 'How to Connect Appalix to Facebook Messenger',
+    excerpt: 'Automatically respond to every Messenger message on your Facebook Page with your AI bot. Set up a Meta app, configure the webhook, and go live — no manual monitoring needed.',
+    readTime: '10 min read',
+    date: 'Feb 27, 2026',
+    emoji: '📘',
+    slug: 'connect-facebook-messenger',
+  },
+  {
+    category: 'Tutorial',
+    title: 'How to Connect Appalix to WhatsApp Business',
+    excerpt: 'Put your AI bot on WhatsApp so it replies to customer messages 24/7. Uses Meta\'s WhatsApp Business API — step-by-step from creating a Meta app to sending your first test message.',
+    readTime: '11 min read',
+    date: 'Feb 27, 2026',
+    emoji: '💚',
+    slug: 'connect-whatsapp',
+  },
+  {
+    category: 'Tutorial',
+    title: 'How to Connect Appalix to Google Chat',
+    excerpt: 'Add your Appalix AI bot to Google Chat Spaces and DMs as a native Google Chat app. Ideal for internal teams on Google Workspace — train it on your docs and SOPs.',
+    readTime: '9 min read',
+    date: 'Feb 27, 2026',
+    emoji: '🔵',
+    slug: 'connect-google-chat',
+  },
+  {
+    category: 'Developer Guide',
+    title: 'Custom API Integration — Connect Appalix to Any Platform',
+    excerpt: 'Full REST API reference for the Appalix Custom API. One POST request gets you an AI reply. Includes auth, request/response format, error codes, and code examples in JS and Python.',
+    readTime: '10 min read',
+    date: 'Feb 27, 2026',
+    emoji: '⚙️',
+    slug: 'custom-api-integration',
+  },
+  // ── Existing posts ──────────────────────────────────────────────────────────
   {
     category: 'Product',
     title: 'Meet Appalix Sage: Your Team\'s Internal AI Assistant',
@@ -106,14 +171,6 @@ const POSTS = [
     emoji: '📈',
   },
   {
-    category: 'Tutorial',
-    title: 'Setting up your Appalix web widget: a complete guide',
-    excerpt: 'Everything you need to know about embedding, customising, and optimising the Appalix chat widget on your website.',
-    readTime: '6 min read',
-    date: 'Feb 10, 2026',
-    emoji: '🔌',
-  },
-  {
     category: 'Case Study',
     title: 'How GrowthCo reduced support tickets by 68% in 30 days',
     excerpt: 'Discover how one B2B SaaS company deployed an AI agent to handle tier-1 support and free their team for complex issues.',
@@ -139,7 +196,7 @@ const POSTS = [
   },
 ]
 
-const CATEGORIES = ['All', 'Guide', 'Tutorial', 'Strategy', 'Case Study', 'Product']
+const CATEGORIES = ['All', 'Guide', 'Tutorial', 'Developer Guide', 'Strategy', 'Case Study', 'Product']
 
 export default function ResourcesPage() {
   return (

@@ -46,7 +46,7 @@ export function Sidebar({ workspace }: SidebarProps) {
   }
 
   return (
-    <aside className="w-60 shrink-0 flex flex-col bg-white dark:bg-[#161616] border-r dark:border-white/8 min-h-screen">
+    <aside className="w-60 shrink-0 flex flex-col bg-white dark:bg-[#232323] border-r dark:border-white/8 min-h-screen">
       {/* Logo + workspace */}
       <div className="px-4 py-5 border-b dark:border-white/8">
         <div className="flex items-center mb-4">

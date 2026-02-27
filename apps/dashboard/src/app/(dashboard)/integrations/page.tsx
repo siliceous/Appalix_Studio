@@ -68,7 +68,7 @@ export default async function IntegrationsPage() {
                   {PLATFORM_META[int.platform]?.label}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">{int.name}</p>
+                  <a href={`/integrations/${int.id}`} className="text-sm font-medium text-gray-900 hover:text-brand-700 transition-colors">{int.name}</a>
                   <p className="text-xs text-gray-400">
                     Bot: {int.bots?.name ?? '—'} · Added {formatDate(int.created_at)}
                   </p>

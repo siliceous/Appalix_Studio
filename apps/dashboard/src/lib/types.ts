@@ -88,6 +88,7 @@ export interface Bot {
   enable_tools: boolean
   enable_memory: boolean
   fallback_message: string | null
+  language_preference: string
   created_at: string
   updated_at: string
 }

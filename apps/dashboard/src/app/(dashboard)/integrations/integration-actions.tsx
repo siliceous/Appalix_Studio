@@ -2,7 +2,7 @@
 
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle2, XCircle, AlertCircle, Trash2, Pencil } from 'lucide-react'
+import { CheckCircle2, XCircle, AlertCircle, Trash2, Pencil, Eye } from 'lucide-react'
 import { setIntegrationStatus, deleteIntegration } from '@/app/actions/integration'
 import type { IntegrationStatus } from '@/lib/types'
 
@@ -69,6 +69,13 @@ export function IntegrationActions({ id, status }: Props) {
   return (
     <div className="flex items-center gap-1.5 shrink-0">
       {statusBadge}
+      <a
+        href={`/integrations/${id}`}
+        className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+        title="Setup guide"
+      >
+        <Eye className="w-4 h-4" />
+      </a>
       <a
         href={`/integrations/${id}/edit`}
         className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"

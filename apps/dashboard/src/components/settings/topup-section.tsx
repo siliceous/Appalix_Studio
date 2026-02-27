@@ -47,7 +47,7 @@ export function TopupSection() {
   }
 
   return (
-    <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10">
+    <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10">
       <div className="px-6 py-5 border-b dark:border-white/10">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Top-ups</h2>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
