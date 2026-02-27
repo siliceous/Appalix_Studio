@@ -8,15 +8,6 @@ import { Globe, Sparkles } from 'lucide-react'
 
 export const metadata: Metadata = { title: 'Edit bot' }
 
-const ALL_MODELS = [
-  { value: 'claude-sonnet-4-6',         label: 'Claude Sonnet 4.6 (recommended)' },
-  { value: 'claude-opus-4-6',           label: 'Claude Opus 4.6 (most capable)'  },
-  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (fastest)'      },
-]
-const HAIKU_ONLY = [
-  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
-]
-
 export default async function EditBotPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
@@ -26,12 +17,6 @@ export default async function EditBotPage({ params }: { params: Promise<{ id: st
   const { data: botRaw } = await supabase.from('bots').select('*').eq('id', id).single()
   const bot = botRaw as Bot | null
   if (!bot) notFound()
-
-  const { data: wsRaw } = await supabase
-    .from('workspaces').select('plan').eq('id', bot.workspace_id).single()
-  const workspacePlan = (wsRaw as { plan: string } | null)?.plan ?? 'starter'
-  const planLocksModel = workspacePlan === 'starter' || workspacePlan === 'core'
-  const availableModels = planLocksModel ? HAIKU_ONLY : ALL_MODELS
 
   const action = updateBot.bind(null, id)
 
@@ -92,24 +77,10 @@ export default async function EditBotPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
 
-        {/* Model settings */}
+        {/* AI settings */}
         <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10 p-5 space-y-4">
-          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Model settings</p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">AI settings</p>
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Model</label>
-              <select
-                name="model" defaultValue={planLocksModel ? 'claude-haiku-4-5-20251001' : bot.model}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-              >
-                {availableModels.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-              </select>
-              {planLocksModel && (
-                <p className="text-xs text-gray-400 mt-1">
-                  Upgrade to Pro to access Sonnet and Opus.
-                </p>
-              )}
-            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Max tokens</label>
               <input

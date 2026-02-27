@@ -69,16 +69,11 @@ export default async function BotsPage() {
                     : <Bot className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                   }
                 </div>
-                <div className="flex items-center gap-1.5">
-                  {bot.bot_type === 'internal' && (
-                    <span className="text-xs bg-[#61c2ad]/10 text-[#61c2ad] px-2 py-0.5 rounded-full font-medium">
-                      Sage
-                    </span>
-                  )}
-                  <span className="text-xs bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full font-mono">
-                    {bot.model.split('-').slice(-2).join('-')}
+                {bot.bot_type === 'internal' && (
+                  <span className="text-xs bg-[#61c2ad]/10 text-[#61c2ad] px-2 py-0.5 rounded-full font-medium">
+                    Sage
                   </span>
-                </div>
+                )}
               </div>
 
               <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-brand-700 transition-colors">

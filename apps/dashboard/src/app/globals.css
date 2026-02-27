@@ -42,12 +42,14 @@
     border-color: rgba(255, 255, 255, 0.08);
   }
 
-  /* Text */
-  .dark .text-gray-900 { color: #f9fafb; }
-  .dark .text-gray-800 { color: #e5e7eb; }
-  .dark .text-gray-700 { color: #d1d5db; }
-  .dark .text-gray-600 { color: #9ca3af; }
-  .dark .text-gray-500 { color: #6b7280; }
+  /* Text — all grey shades mapped to clearly-readable light values */
+  .dark .text-gray-900 { color: #f8fafc; }
+  .dark .text-gray-800 { color: #f1f5f9; }
+  .dark .text-gray-700 { color: #e2e8f0; }
+  .dark .text-gray-600 { color: #cbd5e1; }
+  .dark .text-gray-500 { color: #94a3b8; }
+  .dark .text-gray-400 { color: #94a3b8; }
+  .dark .text-gray-300 { color: #cbd5e1; }
 
   /* Coloured badge backgrounds — replace light tints with dark transparent versions */
   .dark .bg-orange-100  { background-color: rgba(251,146,60,0.12); }

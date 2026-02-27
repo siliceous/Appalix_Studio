@@ -7,20 +7,9 @@ import { Header } from '@/components/layout/header'
 import { Globe, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const ALL_MODELS = [
-  { value: 'claude-sonnet-4-6',         label: 'Claude Sonnet 4.6 (recommended)' },
-  { value: 'claude-opus-4-6',           label: 'Claude Opus 4.6 (most capable)'  },
-  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (fastest)'      },
-]
-const HAIKU_ONLY = [
-  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
-]
-
 export default function NewBotPage() {
   const router = useRouter()
   const supabase = createClient()
-  const [planLocksModel, setPlanLocksModel] = useState(false)
-  const availableModels = planLocksModel ? HAIKU_ONLY : ALL_MODELS
 
   useEffect(() => {
     async function fetchPlan() {
@@ -32,10 +21,11 @@ export default function NewBotPage() {
       const { data: ws } = await supabase
         .from('workspaces').select('plan').eq('id', (membership as { workspace_id: string }).workspace_id).single()
       const plan = (ws as { plan: string } | null)?.plan ?? 'starter'
-      if (plan === 'starter' || plan === 'core') {
-        setPlanLocksModel(true)
-        setForm((prev) => ({ ...prev, model: 'claude-haiku-4-5-20251001' }))
-      }
+      // Auto-select model based on plan — not exposed to the user
+      const model = (plan === 'starter' || plan === 'core')
+        ? 'claude-haiku-4-5-20251001'
+        : 'claude-sonnet-4-6'
+      setForm((prev) => ({ ...prev, model }))
     }
     void fetchPlan()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -168,21 +158,7 @@ export default function NewBotPage() {
 
         {/* Model config */}
         <section className="p-6 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Model</h2>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Claude model</label>
-            <select
-              value={form.model}
-              onChange={(e) => set('model', e.target.value)}
-              className="w-full px-3 py-2 border dark:border-white/10 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-            >
-              {availableModels.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-            </select>
-            {planLocksModel && (
-              <p className="text-xs text-gray-500 mt-1">Upgrade to Pro to access Sonnet and Opus.</p>
-            )}
-          </div>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">AI settings</h2>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
