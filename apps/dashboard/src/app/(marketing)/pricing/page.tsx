@@ -51,8 +51,7 @@ export default function PricingPage() {
               7-day free trial on all plans. No credit card required. Cancel any time.
             </p>
             <div className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20">
-              <span className="text-green-400 text-sm font-semibold">Save ~35% on average</span>
-              <span className="text-gray-600 text-sm">when you choose annual billing</span>
+              <span className="text-green-400 text-sm font-semibold">Save about 35% when you choose annual billing</span>
             </div>
           </ScrollReveal>
           <ScrollReveal delay={0.15}>
