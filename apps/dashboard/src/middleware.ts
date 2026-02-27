@@ -39,6 +39,9 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/platforms') ||
     pathname.startsWith('/pricing') ||
     pathname.startsWith('/resources') ||
+    pathname.startsWith('/security') ||
+    pathname.startsWith('/contact') ||
+    pathname.startsWith('/ai-assistant') ||
     pathname.startsWith('/login') ||
     pathname.startsWith('/api/auth') ||
     pathname.startsWith('/api/webhooks') ||
