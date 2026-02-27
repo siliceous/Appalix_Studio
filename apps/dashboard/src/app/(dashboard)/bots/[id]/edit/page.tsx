@@ -6,6 +6,7 @@ import type { Metadata } from 'next'
 import type { Bot } from '@/lib/types'
 import { Globe, Sparkles } from 'lucide-react'
 import { LANGUAGE_GROUPS } from '@/lib/languages'
+import { SKINS } from '@/lib/skins'
 
 export const metadata: Metadata = { title: 'Edit bot' }
 
@@ -135,6 +136,49 @@ export default async function EditBotPage({ params }: { params: Promise<{ id: st
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{label}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{desc}</p>
                 </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Widget appearance */}
+        <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5 space-y-4">
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Widget appearance</p>
+            <p className="text-xs text-gray-400 mt-0.5">Choose the colour skin for your embedded chat widget.</p>
+          </div>
+          <div className="grid grid-cols-4 gap-3">
+            {SKINS.map((skin) => (
+              <label key={skin.id} className="cursor-pointer group">
+                <input
+                  type="radio"
+                  name="widget_skin"
+                  value={skin.id}
+                  defaultChecked={(bot.widget_skin ?? 'light') === skin.id}
+                  className="peer sr-only"
+                />
+                <div className="rounded-xl border-2 border-gray-200 dark:border-white/10 peer-checked:border-brand-500 dark:peer-checked:border-brand-400 overflow-hidden transition-all">
+                  {/* Header colour strip */}
+                  <div className="h-5 w-full" style={{ background: skin.preview.headerBg }} />
+                  {/* Chat preview */}
+                  <div className="p-2 space-y-1.5" style={{ background: skin.preview.chatBg }}>
+                    {/* Bot bubble */}
+                    <div className="flex gap-1 items-end">
+                      <div className="w-5 h-5 rounded-full flex-shrink-0" style={{ background: skin.preview.accent }} />
+                      <div className="h-2.5 rounded-full flex-1" style={{ background: skin.preview.botBubble }} />
+                    </div>
+                    {/* User bubble */}
+                    <div className="flex justify-end">
+                      <div className="h-2.5 w-3/4 rounded-full" style={{ background: skin.preview.userBubble }} />
+                    </div>
+                    {/* Bot bubble 2 */}
+                    <div className="flex gap-1 items-end">
+                      <div className="w-5 h-5 rounded-full flex-shrink-0" style={{ background: skin.preview.accent }} />
+                      <div className="h-2 rounded-full w-1/2" style={{ background: skin.preview.botBubble }} />
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-center mt-1.5 text-gray-600 dark:text-gray-400 peer-checked:text-brand-600 dark:peer-checked:text-brand-400 font-medium transition-colors">{skin.name}</p>
               </label>
             ))}
           </div>

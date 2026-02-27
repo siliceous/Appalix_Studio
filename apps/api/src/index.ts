@@ -1,7 +1,12 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
+import fastifyStatic from '@fastify/static'
+import { fileURLToPath } from 'url'
+import path from 'path'
 import { config } from './config.js'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 import { slackRoutes }       from './routes/webhooks/slack.js'
 import { facebookRoutes }    from './routes/webhooks/facebook.js'
 import { whatsappRoutes }    from './routes/webhooks/whatsapp.js'
@@ -28,6 +33,13 @@ const server = Fastify({
 
 await server.register(helmet, {
   contentSecurityPolicy: false,  // handled by Next.js dashboard
+})
+
+// Serve static files from /public (widget.js lives here)
+await server.register(fastifyStatic, {
+  root:           path.join(__dirname, '..', 'public'),
+  prefix:         '/',
+  decorateReply:  false,
 })
 
 await server.register(cors, {

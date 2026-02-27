@@ -40,6 +40,7 @@ export async function updateBot(botId: string, formData: FormData) {
     enable_tools:        formData.get('enable_tools') === 'on',
     fallback_message:    (formData.get('fallback_message') as string)?.trim() || null,
     language_preference: (formData.get('language_preference') as string)?.trim() || 'auto',
+    widget_skin:         (formData.get('widget_skin') as string) || 'light',
   }).eq('id', botId)
 
   if (error) throw new Error(error.message)

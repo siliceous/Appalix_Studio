@@ -89,6 +89,7 @@ export interface Bot {
   enable_memory: boolean
   fallback_message: string | null
   language_preference: string
+  widget_skin: string
   created_at: string
   updated_at: string
 }

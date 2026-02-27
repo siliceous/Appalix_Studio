@@ -3,6 +3,7 @@ import { parseWebWidgetRequest, formatWebWidgetReply, isOriginAllowed } from '..
 import { verifyCustomApiKey, parseCustomApiRequest, formatCustomApiReply } from '../../adapters/custom-api.js'
 import { processMessage, resolveIntegration } from '../../services/processor.js'
 import { ingestSource } from '../../services/rag/ingestion.js'
+import { supabase } from '../../lib/supabase.js'
 
 export async function chatRoutes(fastify: FastifyInstance) {
   /**
@@ -19,7 +20,17 @@ export async function chatRoutes(fastify: FastifyInstance) {
       const cfg            = integration.config as Record<string, unknown>
       const welcomeMessage = (cfg.welcome_message as string | undefined) ?? 'Hi there! How can I help you today?'
 
-      return reply.send({ welcome_message: welcomeMessage })
+      let skin = 'light'
+      if (integration.bot_id) {
+        const { data: bot } = await supabase
+          .from('bots')
+          .select('widget_skin')
+          .eq('id', integration.bot_id)
+          .single()
+        skin = (bot as { widget_skin: string } | null)?.widget_skin ?? 'light'
+      }
+
+      return reply.send({ welcome_message: welcomeMessage, skin })
     },
   )
 
