@@ -112,33 +112,53 @@ async function fetchSourceContent(source: {
 
     case 'url': {
       if (!source.url) throw new Error('URL source has no URL')
-      const res = await fetch(source.url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; AppalixBot/1.0; +https://appalix.ai)',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5',
-        },
-        signal: AbortSignal.timeout(30_000),
-        redirect: 'follow',
+
+      function htmlToText(html: string): string {
+        return html
+          .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
+          .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')
+          .replace(/<head\b[^<]*(?:(?!<\/head>)<[^<]*)*<\/head>/gi, ' ')
+          .replace(/<!--[\s\S]*?-->/g, ' ')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/\s+/g, ' ')
+          .trim()
+      }
+
+      // 1. Try plain fetch (fast, works for server-rendered pages)
+      try {
+        const res = await fetch(source.url, {
+          headers: {
+            'User-Agent':      'Mozilla/5.0 (compatible; AppalixBot/1.0; +https://appalix.ai)',
+            'Accept':          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+          },
+          signal: AbortSignal.timeout(30_000),
+          redirect: 'follow',
+        })
+        if (res.ok) {
+          const text = htmlToText(await res.text())
+          if (text) return text
+        }
+      } catch {
+        // fall through to Jina Reader
+      }
+
+      // 2. Fallback: Jina Reader (handles JS-rendered / bot-blocking pages)
+      const jinaRes = await fetch(`https://r.jina.ai/${source.url}`, {
+        headers: { 'Accept': 'text/plain', 'X-Return-Format': 'text' },
+        signal: AbortSignal.timeout(60_000),
       })
-      if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${source.url}`)
-      const html = await res.text()
-      // Strip script/style/head blocks first, then all remaining tags
-      const text = html
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
-        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')
-        .replace(/<head\b[^<]*(?:(?!<\/head>)<[^<]*)*<\/head>/gi, ' ')
-        .replace(/<!--[\s\S]*?-->/g, ' ')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/&nbsp;/g, ' ')
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/\s+/g, ' ')
-        .trim()
-      if (!text) throw new Error(`No readable text found at ${source.url}. The page may require JavaScript to render, or may be blocking automated access.`)
-      return text
+      if (jinaRes.ok) {
+        const jinaText = (await jinaRes.text()).trim()
+        if (jinaText) return jinaText
+      }
+
+      throw new Error(`No readable text found at ${source.url}. The page may require JavaScript to render, or may be blocking automated access.`)
     }
 
     case 'sitemap': {
