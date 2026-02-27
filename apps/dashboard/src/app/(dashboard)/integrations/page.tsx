@@ -20,14 +20,14 @@ const CRM_PROVIDERS: { emoji: string; name: string; desc: string; guide: string 
 ]
 
 // All supported platforms shown in the "add" grid
-const AVAILABLE_PLATFORMS: { platform: Platform; desc: string }[] = [
-  { platform: 'slack',              desc: 'Respond to messages in Slack channels and DMs' },
-  { platform: 'google_chat',        desc: 'Answer questions in Google Chat spaces' },
-  { platform: 'facebook_messenger', desc: 'Handle Messenger conversations on your Facebook page' },
-  { platform: 'whatsapp',           desc: 'Chat with customers on WhatsApp Business' },
-  { platform: 'wordpress',          desc: 'Embed a widget on any WordPress site' },
-  { platform: 'web_widget',         desc: 'Add a chat widget to any website via script tag' },
-  { platform: 'custom_api',         desc: 'Connect via REST API — build any custom integration' },
+const AVAILABLE_PLATFORMS: { platform: Platform; desc: string; guide: string }[] = [
+  { platform: 'slack',              desc: 'Respond to messages in Slack channels and DMs',         guide: '/resources/connect-slack' },
+  { platform: 'google_chat',        desc: 'Answer questions in Google Chat spaces',                 guide: '/resources/connect-google-chat' },
+  { platform: 'facebook_messenger', desc: 'Handle Messenger conversations on your Facebook page',  guide: '/resources/connect-facebook-messenger' },
+  { platform: 'whatsapp',           desc: 'Chat with customers on WhatsApp Business',              guide: '/resources/connect-whatsapp' },
+  { platform: 'wordpress',          desc: 'Embed a widget on any WordPress site',                  guide: '/resources/add-wordpress-chatbot' },
+  { platform: 'web_widget',         desc: 'Add a chat widget to any website via script tag',       guide: '/resources/embed-web-widget' },
+  { platform: 'custom_api',         desc: 'Connect via REST API — build any custom integration',   guide: '/resources/custom-api-integration' },
 ]
 
 export default async function IntegrationsPage() {
@@ -97,26 +97,35 @@ export default async function IntegrationsPage() {
           Available platforms
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-          {AVAILABLE_PLATFORMS.map(({ platform, desc }) => {
+          {AVAILABLE_PLATFORMS.map(({ platform, desc, guide }) => {
             const connected = connectedPlatforms.has(platform)
             return (
-              <a
+              <div
                 key={platform}
-                href={`/integrations/new?platform=${platform}`}
-                className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-4 hover:shadow-sm transition-shadow group flex items-start gap-3"
+                className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-4 flex flex-col gap-2"
               >
-                <div className={`mt-0.5 px-2 py-1 rounded-md text-xs font-medium ${PLATFORM_META[platform]?.color}`}>
-                  {PLATFORM_META[platform]?.label}
+                <div className="flex items-start gap-3">
+                  <div className={`mt-0.5 px-2 py-1 rounded-md text-xs font-medium shrink-0 ${PLATFORM_META[platform]?.color}`}>
+                    {PLATFORM_META[platform]?.label}
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed flex-1">{desc}</p>
+                  {connected && (
+                    <span className="text-xs text-green-600 font-medium shrink-0">Connected</span>
+                  )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
+                <div className="flex items-center gap-4 pt-1">
+                  <a
+                    href={`/integrations/new?platform=${platform}`}
+                    className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 font-medium transition-colors"
+                  >
+                    <Plug className="w-3 h-3" />
+                    Connect
+                  </a>
+                  <a href={guide} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                    Setup guide →
+                  </a>
                 </div>
-                {connected ? (
-                  <span className="text-xs text-green-600 font-medium shrink-0">Connected</span>
-                ) : (
-                  <Plug className="w-4 h-4 text-gray-300 group-hover:text-brand-500 shrink-0 transition-colors" />
-                )}
-              </a>
+              </div>
             )
           })}
         </div>
