@@ -99,18 +99,30 @@ interface Props {
 const inputCls = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500'
 const monoInputCls = `${inputCls} font-mono`
 
+const MAX_FILE_BYTES = 50 * 1024 * 1024 // 50 MB
+
 export function NewSourceForm({ allowedTypes }: Props) {
   const firstAllowed = allowedTypes[0] ?? 'url'
   const [type, setType]         = useState<SourceType>(firstAllowed)
   const [fileName, setFileName] = useState<string | null>(null)
+  const [fileError, setFileError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    setFileName(e.target.files?.[0]?.name ?? null)
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > MAX_FILE_BYTES) {
+      setFileError(`File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 50 MB.`)
+      e.target.value = ''
+      return
+    }
+    setFileError(null)
+    setFileName(file.name)
   }
 
   function clearFile() {
     setFileName(null)
+    setFileError(null)
     if (fileRef.current) fileRef.current.value = ''
   }
 
@@ -231,7 +243,10 @@ export function NewSourceForm({ allowedTypes }: Props) {
                 />
               </label>
             )}
-            <p className="mt-1.5 text-xs text-gray-400">Accepted: PDF, JPG, PNG, WebP &mdash; maximum file size 50 MB</p>
+            {fileError
+              ? <p className="mt-1.5 text-xs text-red-500">{fileError}</p>
+              : <p className="mt-1.5 text-xs text-gray-400">Accepted: PDF, JPG, PNG, WebP &mdash; maximum file size 50 MB</p>
+            }
           </div>
         )}
 
