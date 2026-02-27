@@ -84,7 +84,7 @@ export default function PricingPage() {
             <ScrollReveal delay={0}>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-6 flex flex-col gap-4">
                 <div>
-                  <p className="text-sm font-semibold text-white mb-1">Starter Pack</p>
+                  <p className="text-sm font-semibold text-white mb-1">2k Add-on Pack</p>
                   <p className="text-xs text-gray-400 leading-relaxed">A quick boost for lighter months.</p>
                 </div>
                 <ul className="space-y-2">
@@ -104,7 +104,7 @@ export default function PricingPage() {
             <ScrollReveal delay={0.1}>
               <div className="rounded-2xl border border-brand-600/40 bg-brand-600/5 p-6 flex flex-col gap-4">
                 <div>
-                  <p className="text-sm font-semibold text-white mb-1">Growth Pack</p>
+                  <p className="text-sm font-semibold text-white mb-1">5k Add-on Pack</p>
                   <p className="text-xs text-gray-400 leading-relaxed">Best value for high-demand periods.</p>
                 </div>
                 <ul className="space-y-2">
