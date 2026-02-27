@@ -7,7 +7,7 @@ import { ContactSalesButton } from '@/components/marketing/contact-sales-button'
 const PLANS = [
   {
     name: 'Starter',
-    annualPrice: 19,
+    annualPrice: 29,
     monthlyPrice: 45,
     desc: 'Perfect for small businesses getting started with AI.',
     popular: false,
