@@ -180,7 +180,7 @@ export function PricingCards() {
                 <h3 className={`font-bold text-lg mb-1 ${plan.popular ? 'text-brand-300' : 'text-white'}`}>
                   {plan.name}
                 </h3>
-                <p className="text-xs text-gray-500 leading-relaxed">{plan.desc}</p>
+                <p className="text-xs text-gray-300 leading-relaxed">{plan.desc}</p>
               </div>
 
               <div className="mb-6">
@@ -189,7 +189,7 @@ export function PricingCards() {
                     <span className="text-3xl font-black text-white">${price}</span>
                     <span className="text-gray-500 text-sm">/mo</span>
                     {isAnnual && (
-                      <p className="text-xs text-gray-600 mt-1">Billed ${price * 12}/year</p>
+                      <p className="text-xs text-gray-300 mt-1">Billed ${price * 12}/year</p>
                     )}
                   </>
                 ) : (
