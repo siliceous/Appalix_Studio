@@ -31,6 +31,7 @@ export async function updateBot(botId: string, formData: FormData) {
   const { error } = await admin.from('bots').update({
     name:             (formData.get('name') as string)?.trim() || undefined,
     description:      (formData.get('description') as string)?.trim() || null,
+    bot_type:         (formData.get('bot_type') as string) === 'internal' ? 'internal' : 'widget',
     system_prompt:    (formData.get('system_prompt') as string)?.trim() || null,
     model:            (formData.get('model') as string) || undefined,
     max_tokens:       parseInt(formData.get('max_tokens') as string) || undefined,

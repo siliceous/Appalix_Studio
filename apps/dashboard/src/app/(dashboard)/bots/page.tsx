@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
-import { Bot, Plus, Plug } from 'lucide-react'
+import { Bot, Plus, Plug, Sparkles } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import type { Metadata } from 'next'
 import type { Bot as BotRow } from '@/lib/types'
@@ -59,12 +59,26 @@ export default async function BotsPage() {
               className="bg-white rounded-xl border p-5 hover:shadow-sm transition-shadow group"
             >
               <div className="flex items-start justify-between mb-3">
-                <div className="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center">
-                  <Bot className="w-5 h-5 text-purple-600" />
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+                  bot.bot_type === 'internal'
+                    ? 'bg-[#61c2ad]/10 dark:bg-[#61c2ad]/10'
+                    : 'bg-purple-100 dark:bg-purple-500/10'
+                }`}>
+                  {bot.bot_type === 'internal'
+                    ? <Sparkles className="w-5 h-5 text-[#61c2ad]" />
+                    : <Bot className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  }
                 </div>
-                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-mono">
-                  {bot.model.split('-').slice(-2).join('-')}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  {bot.bot_type === 'internal' && (
+                    <span className="text-xs bg-[#61c2ad]/10 text-[#61c2ad] px-2 py-0.5 rounded-full font-medium">
+                      Sage
+                    </span>
+                  )}
+                  <span className="text-xs bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full font-mono">
+                    {bot.model.split('-').slice(-2).join('-')}
+                  </span>
+                </div>
               </div>
 
               <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-brand-700 transition-colors">

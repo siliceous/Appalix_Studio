@@ -79,6 +79,7 @@ export interface Bot {
   workspace_id: string
   name: string
   description: string | null
+  bot_type: 'widget' | 'internal'
   model: string
   system_prompt: string | null
   max_tokens: number

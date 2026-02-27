@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Header } from '@/components/layout/header'
+import { Globe, Sparkles } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const ALL_MODELS = [
   { value: 'claude-sonnet-4-6',         label: 'Claude Sonnet 4.6 (recommended)' },
@@ -41,6 +43,7 @@ export default function NewBotPage() {
   const [form, setForm] = useState({
     name: '',
     description: '',
+    bot_type: 'widget' as 'widget' | 'internal',
     model: 'claude-sonnet-4-6',
     system_prompt: '',
     max_tokens: 1024,
@@ -83,43 +86,96 @@ export default function NewBotPage() {
     <div className="max-w-2xl">
       <Header title="New bot" description="Configure your AI agent" />
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border divide-y">
+      <form onSubmit={handleSubmit} className="bg-white dark:bg-[#1a1a1a] rounded-xl border dark:border-white/10 divide-y dark:divide-white/10">
+
+        {/* Bot type */}
+        <section className="p-6 space-y-3">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Bot type</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {([
+              {
+                value: 'widget',
+                icon: Globe,
+                label: 'Customer chatbot',
+                desc: 'Embedded on websites and chat platforms for customer support',
+              },
+              {
+                value: 'internal',
+                icon: Sparkles,
+                label: 'Internal assistant',
+                desc: 'Powers your Sage workspace AI — for your team only (Pro+)',
+              },
+            ] as const).map(({ value, icon: Icon, label, desc }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => set('bot_type', value)}
+                className={cn(
+                  'text-left p-4 rounded-xl border-2 transition-colors',
+                  form.bot_type === value
+                    ? 'border-brand-500 bg-brand-50 dark:border-[#61c2ad]/60 dark:bg-[#61c2ad]/5'
+                    : 'border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20',
+                )}
+              >
+                <div className={cn(
+                  'w-8 h-8 rounded-lg flex items-center justify-center mb-2',
+                  form.bot_type === value
+                    ? 'bg-brand-100 dark:bg-[#61c2ad]/10'
+                    : 'bg-gray-100 dark:bg-white/5',
+                )}>
+                  <Icon className={cn(
+                    'w-4 h-4',
+                    form.bot_type === value
+                      ? 'text-brand-600 dark:text-[#61c2ad]'
+                      : 'text-gray-500 dark:text-gray-400',
+                  )} />
+                </div>
+                <p className={cn(
+                  'text-sm font-medium mb-0.5',
+                  form.bot_type === value ? 'text-brand-700 dark:text-[#61c2ad]' : 'text-gray-900 dark:text-gray-100',
+                )}>{label}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{desc}</p>
+              </button>
+            ))}
+          </div>
+        </section>
+
         {/* Basic info */}
         <section className="p-6 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-900">Basic info</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Basic info</h2>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bot name *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bot name *</label>
             <input
               required
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
               placeholder="e.g. Support Bot"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full px-3 py-2 border dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
             <input
               value={form.description}
               onChange={(e) => set('description', e.target.value)}
               placeholder="What does this bot do?"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full px-3 py-2 border dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
         </section>
 
         {/* Model config */}
         <section className="p-6 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-900">Model</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Model</h2>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Claude model</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Claude model</label>
             <select
               value={form.model}
               onChange={(e) => set('model', e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full px-3 py-2 border dark:border-white/10 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               {availableModels.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
             </select>
@@ -129,7 +185,7 @@ export default function NewBotPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               System prompt
             </label>
             <textarea
@@ -137,22 +193,22 @@ export default function NewBotPage() {
               value={form.system_prompt}
               onChange={(e) => set('system_prompt', e.target.value)}
               placeholder="You are a helpful support agent for Acme Inc. Answer questions about our products and escalate complex issues to a human agent."
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+              className="w-full px-3 py-2 border dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Max tokens</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Max tokens</label>
               <input
                 type="number" min={1} max={32000}
                 value={form.max_tokens}
                 onChange={(e) => set('max_tokens', parseInt(e.target.value))}
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full px-3 py-2 border dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Temperature ({form.temperature})
               </label>
               <input
@@ -167,7 +223,7 @@ export default function NewBotPage() {
 
         {/* Feature flags */}
         <section className="p-6 space-y-3">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3">Features</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Features</h2>
           {(
             [
               { key: 'enable_rag',    label: 'Enable RAG',    desc: 'Search knowledge base before responding' },
@@ -183,8 +239,8 @@ export default function NewBotPage() {
                 className="mt-0.5 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
               />
               <span>
-                <span className="text-sm font-medium text-gray-900">{label}</span>
-                <span className="block text-xs text-gray-500">{desc}</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{label}</span>
+                <span className="block text-xs text-gray-500 dark:text-gray-400">{desc}</span>
               </span>
             </label>
           ))}
@@ -197,7 +253,7 @@ export default function NewBotPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="px-4 py-2 text-sm text-gray-700 border rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
             >
               Cancel
             </button>
