@@ -87,13 +87,13 @@ export function CopilotChat({ workspaceId, workspaceName, userName }: CopilotCha
       {/* Empty state */}
       {messages.length === 0 && (
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-brand-50 border border-brand-200 flex items-center justify-center mb-5">
-            <Sparkles className="w-6 h-6 text-brand-600" />
+          <div className="w-14 h-14 rounded-2xl bg-brand-50 dark:bg-[#61c2ad]/10 border border-brand-200 dark:border-[#61c2ad]/20 flex items-center justify-center mb-5">
+            <Sparkles className="w-6 h-6 text-brand-600 dark:text-[#61c2ad]" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
             Hi {userName.split(' ')[0]}, how can I help?
           </h2>
-          <p className="text-sm text-gray-500 max-w-sm mb-8">
+          <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mb-8">
             I&apos;m Sage, your internal AI assistant for {workspaceName}. Ask me anything — I can search your knowledge base, draft documents, and help your team move faster.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
@@ -101,7 +101,7 @@ export function CopilotChat({ workspaceId, workspaceName, userName }: CopilotCha
               <button
                 key={s}
                 onClick={() => send(s)}
-                className="text-left px-4 py-3 rounded-xl border border-gray-200 bg-white hover:border-brand-300 hover:bg-brand-50 text-sm text-gray-700 transition-colors"
+                className="text-left px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:border-brand-300 dark:hover:border-[#61c2ad]/40 hover:bg-brand-50 dark:hover:bg-[#61c2ad]/5 text-sm text-gray-700 dark:text-gray-300 transition-colors"
               >
                 {s}
               </button>
@@ -119,8 +119,8 @@ export function CopilotChat({ workspaceId, workspaceName, userName }: CopilotCha
               {/* Avatar */}
               <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-xs font-semibold ${
                 m.role === 'user'
-                  ? 'bg-gray-200 text-gray-700'
-                  : 'bg-brand-100 text-brand-700'
+                  ? 'bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-gray-300'
+                  : 'bg-brand-100 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad]'
               }`}>
                 {m.role === 'user' ? userName.charAt(0).toUpperCase() : 'AI'}
               </div>
@@ -129,15 +129,15 @@ export function CopilotChat({ workspaceId, workspaceName, userName }: CopilotCha
               <div className={`group relative max-w-[75%] ${m.role === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
                 <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
                   m.role === 'user'
-                    ? 'bg-gray-900 text-white rounded-tr-sm'
-                    : 'bg-white border border-gray-200 text-gray-800 rounded-tl-sm'
+                    ? 'bg-gray-900 dark:bg-white/10 text-white rounded-tr-sm'
+                    : 'bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 text-gray-800 dark:text-gray-200 rounded-tl-sm'
                 }`}>
                   {m.content}
                 </div>
                 {m.role === 'assistant' && (
                   <button
                     onClick={() => copyMessage(m.content, i)}
-                    className="mt-1.5 flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="mt-1.5 flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     {copied === i ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                     {copied === i ? 'Copied' : 'Copy'}
@@ -150,8 +150,8 @@ export function CopilotChat({ workspaceId, workspaceName, userName }: CopilotCha
           {/* Typing indicator */}
           {loading && (
             <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand-100 text-brand-700 shrink-0 flex items-center justify-center text-xs font-semibold">AI</div>
-              <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 py-3 flex gap-1.5 items-center">
+              <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad] shrink-0 flex items-center justify-center text-xs font-semibold">AI</div>
+              <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 rounded-2xl rounded-tl-sm px-4 py-3 flex gap-1.5 items-center">
                 <style>{`
                   @keyframes copilot-dot { 0%,60%,100%{opacity:0.2} 30%{opacity:1} }
                 `}</style>
@@ -168,8 +168,8 @@ export function CopilotChat({ workspaceId, workspaceName, userName }: CopilotCha
       )}
 
       {/* Input */}
-      <div className="px-6 pb-6 pt-3 border-t bg-white">
-        <div className="flex items-end gap-3 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-100 transition-all">
+      <div className="px-6 pb-6 pt-3 border-t bg-white dark:bg-[#161616] dark:border-white/8">
+        <div className="flex items-end gap-3 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 rounded-2xl px-4 py-3 focus-within:border-brand-400 dark:focus-within:border-[#61c2ad]/50 focus-within:ring-2 focus-within:ring-brand-100 dark:focus-within:ring-[#61c2ad]/10 transition-all">
           <textarea
             ref={textareaRef}
             rows={1}
@@ -178,7 +178,7 @@ export function CopilotChat({ workspaceId, workspaceName, userName }: CopilotCha
             onKeyDown={handleKeyDown}
             placeholder="Ask anything — search knowledge base, draft documents, get answers…"
             disabled={loading}
-            className="flex-1 bg-transparent text-sm text-gray-800 placeholder-gray-400 resize-none outline-none disabled:opacity-50 min-h-[24px]"
+            className="flex-1 bg-transparent text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 resize-none outline-none disabled:opacity-50 min-h-[24px]"
           />
           <button
             onClick={() => send(input)}
@@ -188,7 +188,7 @@ export function CopilotChat({ workspaceId, workspaceName, userName }: CopilotCha
             <Send className="w-3.5 h-3.5 text-white" />
           </button>
         </div>
-        <p className="text-xs text-gray-400 text-center mt-2">
+        <p className="text-xs text-gray-400 dark:text-gray-600 text-center mt-2">
           Shift+Enter for new line · Enter to send
         </p>
       </div>
