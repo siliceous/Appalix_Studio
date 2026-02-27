@@ -36,7 +36,7 @@ export default async function EditBotPage({ params }: { params: Promise<{ id: st
           <div className="grid grid-cols-2 gap-3">
             {([
               { value: 'widget',   Icon: Globe,     label: 'Customer chatbot',     desc: 'Embedded on websites and chat platforms for customer support' },
-              { value: 'internal', Icon: Sparkles,  label: 'Internal assistant',   desc: 'Powers your Sage workspace AI — for your team only (Pro+)' },
+              { value: 'internal', Icon: Sparkles,  label: 'Internal assistant',   desc: 'Powers your Appalix workspace AI — for your team only (Pro+)' },
             ] as const).map(({ value, Icon, label, desc }) => (
               <label key={value} className="relative cursor-pointer">
                 <input

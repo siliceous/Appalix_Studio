@@ -95,7 +95,7 @@ export default function NewBotPage() {
                 value: 'internal',
                 icon: Sparkles,
                 label: 'Internal assistant',
-                desc: 'Powers your Sage workspace AI — for your team only (Pro+)',
+                desc: 'Powers your Appalix workspace AI — for your team only (Pro+)',
               },
             ] as const).map(({ value, icon: Icon, label, desc }) => (
               <button
