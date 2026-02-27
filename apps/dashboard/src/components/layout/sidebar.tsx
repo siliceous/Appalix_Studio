@@ -50,22 +50,12 @@ export function Sidebar({ workspace }: SidebarProps) {
       {/* Logo + workspace */}
       <div className="px-4 py-5 border-b dark:border-white/8">
         <div className="flex items-center mb-4">
-          {/* Light mode logo */}
           <Image
             src="/logo.png"
             alt="Appalix"
             width={120}
             height={36}
-            className="object-contain mix-blend-multiply dark:hidden"
-            priority
-          />
-          {/* Dark mode logo — orange replaced with brand green */}
-          <Image
-            src="/logo-dark.png"
-            alt="Appalix"
-            width={120}
-            height={36}
-            className="object-contain mix-blend-screen hidden dark:block"
+            className="object-contain mix-blend-multiply dark:mix-blend-normal dark:invert"
             priority
           />
         </div>
