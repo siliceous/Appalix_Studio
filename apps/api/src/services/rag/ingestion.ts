@@ -149,16 +149,21 @@ async function fetchSourceContent(source: {
       }
 
       // 2. Fallback: Jina Reader (handles JS-rendered / bot-blocking pages)
-      const jinaRes = await fetch(`https://r.jina.ai/${source.url}`, {
-        headers: { 'Accept': 'text/plain', 'X-Return-Format': 'text' },
-        signal: AbortSignal.timeout(60_000),
-      })
-      if (jinaRes.ok) {
-        const jinaText = (await jinaRes.text()).trim()
-        if (jinaText) return jinaText
+      try {
+        const jinaRes = await fetch(`https://r.jina.ai/${source.url}`, {
+          headers: { 'Accept': 'text/plain' },
+          signal: AbortSignal.timeout(60_000),
+        })
+        if (jinaRes.ok) {
+          const jinaText = (await jinaRes.text()).trim()
+          if (jinaText) return jinaText
+          throw new Error(`Jina returned empty content for ${source.url}`)
+        }
+        throw new Error(`Jina Reader returned HTTP ${jinaRes.status} for ${source.url}`)
+      } catch (jinaErr) {
+        const jinaMsg = jinaErr instanceof Error ? jinaErr.message : String(jinaErr)
+        throw new Error(`No readable text found at ${source.url}. ${jinaMsg}`)
       }
-
-      throw new Error(`No readable text found at ${source.url}. The page may require JavaScript to render, or may be blocking automated access.`)
     }
 
     case 'sitemap': {
