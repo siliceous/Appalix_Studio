@@ -7,6 +7,7 @@ import type { Bot } from '@/lib/types'
 import { Globe, Sparkles } from 'lucide-react'
 import { LANGUAGE_GROUPS } from '@/lib/languages'
 import { SkinPicker } from '@/components/bots/skin-picker'
+import { SubmitButton } from '@/components/ui/submit-button'
 
 export const metadata: Metadata = { title: 'Edit bot' }
 
@@ -176,12 +177,12 @@ export default async function EditBotPage({ params }: { params: Promise<{ id: st
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            type="submit"
-            className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors"
+          <SubmitButton
+            pendingText="Saving…"
+            className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors"
           >
             Save changes
-          </button>
+          </SubmitButton>
           <a href={`/bots/${id}`} className="px-5 py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
             Cancel
           </a>

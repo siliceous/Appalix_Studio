@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { createSource } from '@/app/actions/source'
 import { Link2, FileText, AlignLeft, Upload, X, Lock, BookOpen, Cloud, HardDrive } from 'lucide-react'
+import { SubmitButton } from '@/components/ui/submit-button'
 
 export type SourceType =
   | 'url' | 'text' | 'file'
@@ -352,12 +353,12 @@ export function NewSourceForm({ allowedTypes }: Props) {
       </div>
 
       <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors"
+        <SubmitButton
+          pendingText="Adding…"
+          className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors"
         >
           Add &amp; index source
-        </button>
+        </SubmitButton>
         <a href="/sources" className="px-5 py-2.5 text-sm text-gray-600 hover:text-gray-900 transition-colors">
           Cancel
         </a>

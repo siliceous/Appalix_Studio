@@ -5,6 +5,7 @@ import { deleteSource, resyncSource } from '@/app/actions/source'
 import { formatDateTime } from '@/lib/utils'
 import { BookOpen, Plus, RefreshCw, Trash2, Pencil, CheckCircle2, Clock, AlertCircle, Loader2, Link, FileText, AlignLeft, Cloud, HardDrive } from 'lucide-react'
 import { SourcesPoller } from './sources-poller'
+import { IconSubmitButton } from '@/components/ui/submit-button'
 import type { Metadata } from 'next'
 import type { Source } from '@/lib/types'
 
@@ -128,22 +129,20 @@ export default async function SourcesPage() {
                     <Pencil className="w-4 h-4" />
                   </a>
                   <form action={resyncSource.bind(null, source.id)}>
-                    <button
-                      type="submit"
+                    <IconSubmitButton
                       title="Re-sync"
-                      className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+                      className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors disabled:opacity-40"
                     >
                       <RefreshCw className="w-4 h-4" />
-                    </button>
+                    </IconSubmitButton>
                   </form>
                   <form action={deleteSource.bind(null, source.id)}>
-                    <button
-                      type="submit"
+                    <IconSubmitButton
                       title="Delete"
-                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40"
                     >
                       <Trash2 className="w-4 h-4" />
-                    </button>
+                    </IconSubmitButton>
                   </form>
                 </div>
               </div>

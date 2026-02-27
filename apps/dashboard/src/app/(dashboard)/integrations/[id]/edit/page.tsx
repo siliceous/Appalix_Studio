@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { PLATFORM_META } from '@/lib/utils'
 import { updateIntegration } from '@/app/actions/integration'
+import { SubmitButton } from '@/components/ui/submit-button'
 import { HandoffConfig } from '../handoff-config'
 import { CrmConfig } from '../crm-config'
 import type { Metadata } from 'next'
@@ -176,12 +177,12 @@ export default async function EditIntegrationPage({
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            type="submit"
-            className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors"
+          <SubmitButton
+            pendingText="Saving…"
+            className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors"
           >
             Save changes
-          </button>
+          </SubmitButton>
           <a href="/integrations" className="px-5 py-2.5 text-sm text-gray-600 hover:text-gray-900 transition-colors">
             Cancel
           </a>

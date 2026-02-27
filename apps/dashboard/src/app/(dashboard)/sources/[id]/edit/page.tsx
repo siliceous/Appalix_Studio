@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { updateSource } from '@/app/actions/source'
+import { SubmitButton } from '@/components/ui/submit-button'
 import type { Metadata } from 'next'
 import type { Source } from '@/lib/types'
 
@@ -197,12 +198,12 @@ export default async function EditSourcePage({ params }: { params: Promise<{ id:
 
         {/* Actions */}
         <div className="flex items-center gap-3">
-          <button
-            type="submit"
-            className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors"
+          <SubmitButton
+            pendingText="Saving…"
+            className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors"
           >
             Save &amp; re-index
-          </button>
+          </SubmitButton>
           <a href="/sources" className="px-5 py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
             Cancel
           </a>
