@@ -74,28 +74,15 @@ export async function createSource(formData: FormData) {
     const siteId = (formData.get('sharepoint_site_id') as string)?.trim()
     if (token) metadata = { ms_access_token: token, ...(siteId ? { sharepoint_site_id: siteId } : {}) }
   } else if (type === 'file') {
-    const file = formData.get('file') as File | null
-    if (!file || file.size === 0) throw new Error('No file provided')
-
-    // Ensure the storage bucket exists (idempotent)
-    await admin.storage.createBucket('sources', {
-      public:           false,
-      fileSizeLimit:    50 * 1024 * 1024,
-      allowedMimeTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/gif'],
-    }).catch(() => { /* already exists */ })
-
-    const ext         = file.name.split('.').pop() ?? 'bin'
-    const storagePath = `${workspaceId}/${crypto.randomUUID()}.${ext}`
-    const buffer      = await file.arrayBuffer()
-
-    const { error: uploadError } = await admin.storage
-      .from('sources')
-      .upload(storagePath, buffer, { contentType: file.type })
-
-    if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`)
-
-    filePath = storagePath
-    metadata = { mime_type: file.type, original_name: file.name }
+    // File was uploaded directly to Supabase Storage from the browser via presigned URL.
+    // The form submits only the path + metadata — no binary payload goes through Vercel.
+    const preuploaded = (formData.get('file_path') as string)?.trim()
+    if (!preuploaded) throw new Error('No file uploaded')
+    filePath = preuploaded
+    metadata = {
+      mime_type:     (formData.get('mime_type') as string) || 'application/octet-stream',
+      original_name: (formData.get('original_name') as string) || 'file',
+    }
   }
 
   const { data, error } = await admin

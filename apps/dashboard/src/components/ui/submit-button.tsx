@@ -7,6 +7,7 @@ interface SubmitButtonProps {
   children: React.ReactNode
   pendingText?: string
   className?: string
+  disabled?: boolean
 }
 
 /**
@@ -14,10 +15,10 @@ interface SubmitButtonProps {
  * Shows a spinner and disables the button while the server action is in-flight,
  * preventing duplicate submissions.
  */
-export function SubmitButton({ children, pendingText, className }: SubmitButtonProps) {
+export function SubmitButton({ children, pendingText, className, disabled }: SubmitButtonProps) {
   const { pending } = useFormStatus()
   return (
-    <button type="submit" disabled={pending} className={className}>
+    <button type="submit" disabled={pending || disabled} className={className}>
       {pending ? (
         <span className="inline-flex items-center gap-2">
           <Loader2 className="w-4 h-4 animate-spin" />

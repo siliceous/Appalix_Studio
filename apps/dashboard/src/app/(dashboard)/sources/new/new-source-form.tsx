@@ -2,8 +2,9 @@
 
 import { useState, useRef } from 'react'
 import { createSource } from '@/app/actions/source'
-import { Link2, FileText, AlignLeft, Upload, X, Lock, BookOpen, Cloud, HardDrive } from 'lucide-react'
+import { Link2, FileText, AlignLeft, Upload, X, Lock, BookOpen, Cloud, HardDrive, Loader2, CheckCircle2 } from 'lucide-react'
 import { SubmitButton } from '@/components/ui/submit-button'
+import { createClient } from '@/lib/supabase/client'
 
 export type SourceType =
   | 'url' | 'text' | 'file'
@@ -101,36 +102,91 @@ const monoInputCls = `${inputCls} font-mono`
 
 const MAX_FILE_BYTES = 50 * 1024 * 1024 // 50 MB
 
+type UploadState = 'idle' | 'uploading' | 'done' | 'error'
+
 export function NewSourceForm({ allowedTypes }: Props) {
   const firstAllowed = allowedTypes[0] ?? 'url'
-  const [type, setType]         = useState<SourceType>(firstAllowed)
-  const [fileName, setFileName] = useState<string | null>(null)
-  const [fileError, setFileError] = useState<string | null>(null)
+  const [type, setType]             = useState<SourceType>(firstAllowed)
+  const [fileName, setFileName]     = useState<string | null>(null)
+  const [fileError, setFileError]   = useState<string | null>(null)
+  const [uploadState, setUploadState] = useState<UploadState>('idle')
+  const [storagePath, setStoragePath] = useState<string>('')
+  const [fileMime, setFileMime]       = useState<string>('')
+  const [fileOrigName, setFileOrigName] = useState<string>('')
   const fileRef = useRef<HTMLInputElement>(null)
 
-  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+
     if (file.size > MAX_FILE_BYTES) {
       setFileError(`File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 50 MB.`)
       e.target.value = ''
       return
     }
+
     setFileError(null)
     setFileName(file.name)
+    setUploadState('uploading')
+    setStoragePath('')
+
+    try {
+      // 1. Get a presigned upload URL from our API route (tiny request — just metadata)
+      const urlRes = await fetch('/api/sources/upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: file.name, mimeType: file.type }),
+      })
+      if (!urlRes.ok) throw new Error('Failed to get upload URL')
+      const { token, storagePath: path } = await urlRes.json() as {
+        token: string; storagePath: string
+      }
+
+      // 2. Upload file directly to Supabase Storage — bypasses Vercel entirely
+      const supabase = createClient()
+      const { error: uploadErr } = await supabase.storage
+        .from('sources')
+        .uploadToSignedUrl(path, token, file, { contentType: file.type })
+      if (uploadErr) throw new Error(uploadErr.message)
+
+      setStoragePath(path)
+      setFileMime(file.type)
+      setFileOrigName(file.name)
+      setUploadState('done')
+    } catch (err) {
+      setFileError(err instanceof Error ? err.message : 'Upload failed')
+      setUploadState('error')
+      setFileName(null)
+      if (fileRef.current) fileRef.current.value = ''
+    }
   }
 
   function clearFile() {
     setFileName(null)
     setFileError(null)
+    setUploadState('idle')
+    setStoragePath('')
+    setFileMime('')
+    setFileOrigName('')
     if (fileRef.current) fileRef.current.value = ''
   }
 
   const isCloudType = ['notion', 'gitbook', 'google_drive', 'dropbox', 'onedrive', 'sharepoint'].includes(type)
+  // Disable submit if a file is selected but not yet uploaded
+  const fileUploading = type === 'file' && uploadState === 'uploading'
 
   return (
     <form action={createSource} className="space-y-6">
       <input type="hidden" name="type" value={type} />
+
+      {/* Pre-uploaded file metadata (replaces raw file in form body) */}
+      {storagePath && (
+        <>
+          <input type="hidden" name="file_path"     value={storagePath} />
+          <input type="hidden" name="mime_type"     value={fileMime} />
+          <input type="hidden" name="original_name" value={fileOrigName} />
+        </>
+      )}
 
       {/* Type selector */}
       <div className="bg-white rounded-xl border p-5">
@@ -221,12 +277,23 @@ export function NewSourceForm({ allowedTypes }: Props) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">File</label>
             {fileName ? (
-              <div className="flex items-center gap-3 px-3 py-2.5 border border-brand-300 bg-brand-50 rounded-lg">
-                <FileText className="w-4 h-4 text-brand-600 shrink-0" />
+              <div className={`flex items-center gap-3 px-3 py-2.5 border rounded-lg ${
+                uploadState === 'uploading' ? 'border-brand-300 bg-brand-50' :
+                uploadState === 'done'      ? 'border-brand-400 bg-brand-50' :
+                                             'border-red-300 bg-red-50'
+              }`}>
+                {uploadState === 'uploading' ? (
+                  <Loader2 className="w-4 h-4 text-brand-600 shrink-0 animate-spin" />
+                ) : uploadState === 'done' ? (
+                  <CheckCircle2 className="w-4 h-4 text-brand-600 shrink-0" />
+                ) : (
+                  <FileText className="w-4 h-4 text-red-500 shrink-0" />
+                )}
                 <span className="text-sm text-gray-800 truncate flex-1">{fileName}</span>
-                <button type="button" onClick={clearFile} className="text-gray-400 hover:text-gray-600">
-                  <X className="w-4 h-4" />
-                </button>
+                {uploadState === 'uploading'
+                  ? <span className="text-xs text-brand-600 shrink-0">Uploading…</span>
+                  : <button type="button" onClick={clearFile} className="text-gray-400 hover:text-gray-600 shrink-0"><X className="w-4 h-4" /></button>
+                }
               </div>
             ) : (
               <label className="flex flex-col items-center justify-center gap-2 px-4 py-8 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-brand-400 hover:bg-brand-50 transition-colors">
@@ -236,7 +303,6 @@ export function NewSourceForm({ allowedTypes }: Props) {
                 <input
                   ref={fileRef}
                   type="file"
-                  name="file"
                   accept=".pdf,image/jpeg,image/png,image/webp,image/gif"
                   onChange={handleFile}
                   className="sr-only"
@@ -370,10 +436,11 @@ export function NewSourceForm({ allowedTypes }: Props) {
 
       <div className="flex items-center gap-3">
         <SubmitButton
+          disabled={fileUploading || (type === 'file' && !storagePath && !fileError)}
           pendingText="Adding…"
           className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors"
         >
-          Add &amp; index source
+          {fileUploading ? 'Uploading file…' : 'Add & index source'}
         </SubmitButton>
         <a href="/sources" className="px-5 py-2.5 text-sm text-gray-600 hover:text-gray-900 transition-colors">
           Cancel
