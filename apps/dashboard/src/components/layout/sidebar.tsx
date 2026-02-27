@@ -55,7 +55,7 @@ export function Sidebar({ workspace }: SidebarProps) {
             alt="Appalix"
             width={120}
             height={36}
-            className="object-contain mix-blend-multiply dark:mix-blend-normal dark:brightness-0 dark:invert"
+            className="object-contain mix-blend-multiply dark:mix-blend-screen"
             priority
           />
         </div>
