@@ -231,6 +231,7 @@ export function NewSourceForm({ allowedTypes }: Props) {
                 />
               </label>
             )}
+            <p className="mt-1.5 text-xs text-gray-400">Accepted: PDF, JPG, PNG, WebP &mdash; maximum file size 50 MB</p>
           </div>
         )}
 
