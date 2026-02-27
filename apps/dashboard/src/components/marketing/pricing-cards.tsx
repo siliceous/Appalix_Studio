@@ -64,7 +64,7 @@ const PLANS = [
   {
     name: 'Scale',
     annualPrice: 299,
-    monthlyPrice: 601,
+    monthlyPrice: 469,
     desc: 'High-volume operations with white-label options.',
     popular: false,
     features: [
