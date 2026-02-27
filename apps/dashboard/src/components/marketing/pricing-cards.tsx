@@ -8,7 +8,7 @@ const PLANS = [
   {
     name: 'Starter',
     annualPrice: 29,
-    monthlyPrice: 45,
+    monthlyPrice: 63,
     desc: 'Perfect for small businesses getting started with AI.',
     popular: false,
     features: [
@@ -25,7 +25,7 @@ const PLANS = [
   {
     name: 'Core',
     annualPrice: 39,
-    monthlyPrice: 59,
+    monthlyPrice: 83,
     desc: 'More bots and integrations for growing teams.',
     popular: false,
     features: [
@@ -42,7 +42,7 @@ const PLANS = [
   {
     name: 'Pro',
     annualPrice: 79,
-    monthlyPrice: 119,
+    monthlyPrice: 167,
     desc: 'The complete toolkit for high-growth teams.',
     popular: true,
     features: [
@@ -63,8 +63,8 @@ const PLANS = [
   },
   {
     name: 'Scale',
-    annualPrice: 259,
-    monthlyPrice: 429,
+    annualPrice: 299,
+    monthlyPrice: 601,
     desc: 'High-volume operations with white-label options.',
     popular: false,
     features: [
