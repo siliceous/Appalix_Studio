@@ -32,7 +32,8 @@ const server = Fastify({
 // ---------------------------------------------------------------
 
 await server.register(helmet, {
-  contentSecurityPolicy: false,  // handled by Next.js dashboard
+  contentSecurityPolicy:        false,  // handled by Next.js dashboard
+  crossOriginResourcePolicy:    { policy: 'cross-origin' },  // allow widget.js to load on any domain
 })
 
 // Serve static files from /public (widget.js lives here)
