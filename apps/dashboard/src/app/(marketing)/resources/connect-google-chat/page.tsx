@@ -116,7 +116,7 @@ export default function ConnectGoogleChatPage() {
               Create a Google Chat integration in Appalix and configure your Google Chat app to point at Appalix. Your AI assistant will be live in your workspace in minutes.
             </p>
             <Link
-              href="/login"
+              href="/integrations/new"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
             >
               Go to Integrations →

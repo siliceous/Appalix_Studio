@@ -207,7 +207,7 @@ export default function ConnectHubspotPage() {
               Open your Appalix integrations dashboard and add your HubSpot token in under 2 minutes.
             </p>
             <Link
-              href="/login"
+              href="/integrations/new"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
             >
               Go to Integrations →

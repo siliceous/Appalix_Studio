@@ -156,7 +156,7 @@ export default function ConnectGoogleDrivePage() {
               Get a read-only OAuth token from Google, paste it into Appalix alongside your file URL, and your bot will be answering from your Drive content in minutes.
             </p>
             <Link
-              href="/login"
+              href="/sources/new"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
             >
               Go to Sources →

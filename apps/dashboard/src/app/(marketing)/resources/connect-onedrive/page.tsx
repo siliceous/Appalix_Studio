@@ -123,7 +123,7 @@ export default function ConnectOneDrivePage() {
               Sign in to Microsoft Graph Explorer, copy the access token, and paste it into Appalix alongside your file URL. Your bot will be answering from your documents right away.
             </p>
             <Link
-              href="/login"
+              href="/sources/new"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
             >
               Go to Sources →

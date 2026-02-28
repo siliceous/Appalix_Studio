@@ -137,7 +137,7 @@ export default function ConnectDropboxPage() {
               Create a Dropbox app, generate a token, and paste it into Appalix. Your bot will start answering from your stored documents right away.
             </p>
             <Link
-              href="/login"
+              href="/sources/new"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
             >
               Go to Sources →

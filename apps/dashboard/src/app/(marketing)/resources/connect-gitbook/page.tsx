@@ -113,7 +113,7 @@ export default function ConnectGitBookPage() {
               Generate a token in GitBook, paste your space URL into Appalix, and your bot will be answering from your docs in minutes.
             </p>
             <Link
-              href="/login"
+              href="/sources/new"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
             >
               Go to Sources →

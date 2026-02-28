@@ -245,7 +245,7 @@ export default function MultipleBotsPage() {
           <p className="text-gray-400 mb-5 text-sm">Ready to deploy your AI agent everywhere?</p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link
-              href="/login"
+              href="/signup"
               className="px-6 py-2.5 bg-[#1a8c76] hover:bg-[#14705d] text-white text-sm font-medium rounded-xl transition-colors"
             >
               Start a 7 Day Free Trial →

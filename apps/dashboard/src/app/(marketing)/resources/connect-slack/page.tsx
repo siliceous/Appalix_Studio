@@ -149,7 +149,7 @@ export default function ConnectSlackPage() {
               Create a Slack integration in Appalix, create a Slack app, and your bot will be answering questions in channels within minutes.
             </p>
             <Link
-              href="/login"
+              href="/integrations/new"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
             >
               Go to Integrations →

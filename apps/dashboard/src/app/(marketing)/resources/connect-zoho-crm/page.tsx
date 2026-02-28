@@ -230,7 +230,7 @@ export default function ConnectZohoCrmPage() {
               Paste your Zoho OAuth token in Appalix and leads will start flowing into your CRM automatically.
             </p>
             <Link
-              href="/login"
+              href="/integrations/new"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
             >
               Go to Integrations →

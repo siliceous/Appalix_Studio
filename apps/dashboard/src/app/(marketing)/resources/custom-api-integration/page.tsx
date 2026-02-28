@@ -193,7 +193,7 @@ followup = chat('How much does it cost?', data['conversation_id'])`}</pre>
               Create a Custom API integration in Appalix, grab your endpoint and key, and start making API calls from your application.
             </p>
             <Link
-              href="/login"
+              href="/integrations/new"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
             >
               Go to Integrations →
