@@ -358,10 +358,19 @@ export function NewSourceForm({ allowedTypes }: Props) {
               <input type="url" name="url" required placeholder="https://docs.google.com/document/d/FILE_ID/edit" className={inputCls} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">OAuth access token</label>
-              <input type="password" name="google_access_token" required placeholder="ya29.…" className={monoInputCls} />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                OAuth access token <span className="font-normal text-gray-500">or Service Account JSON</span>
+              </label>
+              <textarea
+                name="google_access_token"
+                required
+                rows={4}
+                placeholder={'Paste an OAuth token (ya29.…)\n\nor paste the entire contents of your\nService Account .json key file here'}
+                className={`${inputCls} font-mono resize-y`}
+              />
               <p className="text-xs text-gray-400 mt-1">
-                Two options: (1) <span className="font-medium">OAuth token</span> — generate via Google OAuth Playground (scope: <span className="font-mono bg-gray-100 dark:bg-white/10 dark:text-gray-300 px-1 rounded">drive.readonly</span>), <span className="text-amber-400 font-medium">expires in ~1 hour</span>. (2) <span className="font-medium">Service Account JSON</span> — paste the full contents of your downloaded <span className="font-mono bg-gray-100 dark:bg-white/10 dark:text-gray-300 px-1 rounded">.json</span> key file for a permanent token that never expires.
+                <span className="font-medium text-white">OAuth token</span> — from Google OAuth Playground, <span className="text-amber-400 font-medium">expires in ~1 hour</span>.{' '}
+                <span className="font-medium text-white">Service Account JSON</span> — open the <span className="font-mono bg-gray-100 dark:bg-white/10 dark:text-gray-300 px-1 rounded">.json</span> key file in a text editor, select all, and paste here. Never expires.
               </p>
             </div>
           </>
