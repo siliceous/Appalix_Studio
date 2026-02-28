@@ -141,8 +141,19 @@ export default async function EditSourcePage({ params }: { params: Promise<{ id:
               <input type="url" name="url" defaultValue={source.url ?? ''} className="w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-transparent dark:text-gray-100" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Access token</label>
-              <input type="password" name="google_access_token" placeholder="Leave blank to keep existing token" className="w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-transparent dark:text-gray-100" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                OAuth access token <span className="font-normal text-gray-500">or Service Account JSON</span>
+              </label>
+              <textarea
+                name="google_access_token"
+                rows={4}
+                placeholder={'Leave blank to keep existing credential\n\nOr paste a new OAuth token (ya29.…)\nor the entire contents of your Service Account .json key file'}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-y font-mono dark:bg-transparent dark:text-gray-100"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                <span className="font-medium text-gray-700 dark:text-white">OAuth token</span> — from Google OAuth Playground, expires ~1 hour.{' '}
+                <span className="font-medium text-gray-700 dark:text-white">Service Account JSON</span> — open the .json key file, select all, paste here. Never expires.
+              </p>
             </div>
           </div>
         )}
