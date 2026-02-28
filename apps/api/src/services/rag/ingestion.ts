@@ -423,6 +423,7 @@ async function fetchSourceContent(source: {
             }
             throw new Error(`Google Drive: 403 Forbidden (${reason || 'no permission'}) — check that the Google Drive API is enabled in your Cloud project and the file is shared with your credential.`)
           }
+          if (status === 404) throw new Error('Google Drive: 404 Not Found — the file was not found or is not accessible by this credential. If using a Service Account, open the file in Google Drive, click Share, and add the service account email (e.g. name@project.iam.gserviceaccount.com) as a Viewer.')
           throw new Error(`Google Drive API error: ${status}`)
         }
         return await dlRes.text()
