@@ -415,10 +415,13 @@ async function fetchSourceContent(source: {
           try { reason = ((await dlRes.json() as { error?: { errors?: { reason?: string }[] } }).error?.errors?.[0]?.reason ?? '') } catch { /* ignore */ }
           if (status === 401) throw new Error('Google Drive: 401 Unauthorized — token expired or invalid. Generate a fresh token and update this source.')
           if (status === 403) {
+            if (reason === 'accessNotConfigured') {
+              throw new Error('Google Drive: 403 accessNotConfigured — the Google Drive API is not enabled for your Google Cloud project. Go to console.cloud.google.com → APIs & Services → Library → search "Google Drive API" → Enable it, then re-sync.')
+            }
             if (reason === 'forbidden' || reason === 'insufficientPermissions') {
               throw new Error('Google Drive: 403 Forbidden — the credential does not have access to this file. If using a Service Account, make sure you shared the file with the service account email (Viewer access). If using an OAuth token, make sure it belongs to the file owner\'s account.')
             }
-            throw new Error(`Google Drive: 403 Forbidden (${reason || 'no permission'}) — check that the file is shared with your credential and the drive.readonly scope is granted.`)
+            throw new Error(`Google Drive: 403 Forbidden (${reason || 'no permission'}) — check that the Google Drive API is enabled in your Cloud project and the file is shared with your credential.`)
           }
           throw new Error(`Google Drive API error: ${status}`)
         }
