@@ -79,14 +79,17 @@ export default function AddWordPressChatbotPage() {
             <h2 className="text-xl font-semibold text-white mb-3">Step 2 — Install the Appalix Chat plugin</h2>
             <ol className="list-decimal pl-5 space-y-3">
               <li>
-                Download the plugin zip from your integration setup page, or directly from{' '}
-                <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">appalix.ai/downloads/appalix-chat.zip</code>.
+                Download the plugin zip from your integration setup page (the orange <strong className="text-white">Download appalix-chat.zip</strong> button), or directly from{' '}
+                <Link href="/downloads/appalix-chat.zip" className="text-brand-400 hover:text-brand-300 underline underline-offset-2">
+                  appalix.ai/downloads/appalix-chat.zip
+                </Link>.
               </li>
               <li>In WordPress admin, go to <strong className="text-white">Plugins → Add New → Upload Plugin</strong>.</li>
-              <li>Choose the zip file and click <strong className="text-white">Install Now</strong>, then <strong className="text-white">Activate Plugin</strong>.</li>
+              <li>Choose the <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">appalix-chat.zip</code> file and click <strong className="text-white">Install Now</strong>.</li>
+              <li>Click <strong className="text-white">Activate Plugin</strong> once installation completes.</li>
             </ol>
             <p className="mt-4 text-sm text-gray-400">
-              Already have the old <em>Claude AI Chat</em> plugin? Deactivate and delete it first — the Appalix plugin replaces it entirely and uses your Appalix dashboard instead of a direct API key.
+              Already have the old <em>Claude AI Chat</em> plugin? Deactivate and delete it first — the Appalix plugin replaces it entirely.
             </p>
           </section>
 
@@ -95,15 +98,20 @@ export default function AddWordPressChatbotPage() {
             <ol className="list-decimal pl-5 space-y-3">
               <li>In WordPress admin, go to <strong className="text-white">Settings → Appalix Chat</strong>.</li>
               <li>
-                Paste the <strong className="text-white">API Endpoint URL</strong> from your Appalix setup guide:
+                Paste the <strong className="text-white">API Endpoint</strong> copied from your Appalix integration setup page:
                 <pre className="bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-brand-300 overflow-x-auto mt-3">
                   {`https://api.appalix.ai/webhooks/wordpress/{your-integration-id}`}
                 </pre>
               </li>
-              <li>Paste the <strong className="text-white">API Key</strong> you created in Step 1.</li>
-              <li>Optionally set a <strong className="text-white">welcome message</strong> and choose which pages show the widget.</li>
+              <li>Paste the <strong className="text-white">API Key</strong> shown on the same setup page.</li>
               <li>Click <strong className="text-white">Save Settings</strong>.</li>
             </ol>
+            <p className="mt-4 text-sm text-gray-400">
+              Once saved, the settings page shows a green <em>"Widget is active"</em> status and links directly to your Appalix Conversations tab.
+            </p>
+            <p className="mt-2 text-sm text-gray-400">
+              <strong className="text-gray-300">Welcome message</strong> — configure this inside the bot&apos;s settings in your Appalix dashboard, not in the WordPress plugin. It applies across all platforms the bot is connected to.
+            </p>
           </section>
 
           <section>
@@ -128,7 +136,7 @@ export default function AddWordPressChatbotPage() {
                 <strong className="text-white">Set up human handoff</strong> — configure a Slack or email notification so your team is alerted when a visitor explicitly asks for a human agent.
               </li>
               <li>
-                <strong className="text-white">Security</strong> — your API key is stored as a WordPress option and sent in a custom header (<code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">X-WP-API-Key</code>). Appalix validates it server-side using a timing-safe comparison, so brute-forcing is not viable.
+                <strong className="text-white">Security</strong> — your API key is stored as a WordPress option (never exposed in the browser). The plugin identifies your integration by loading the Appalix <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">widget.js</code> with your integration ID. All message processing and authentication happen server-side on Appalix&apos;s API.
               </li>
             </ul>
           </section>
