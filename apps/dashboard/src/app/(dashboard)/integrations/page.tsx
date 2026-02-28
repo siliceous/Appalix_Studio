@@ -84,6 +84,12 @@ export default async function IntegrationsPage() {
                     <p className="text-xs text-red-500 mt-0.5">{int.last_error}</p>
                   )}
                 </div>
+                <a
+                  href={`/integrations/${int.id}`}
+                  className="text-xs text-brand-600 hover:text-brand-700 font-medium transition-colors shrink-0"
+                >
+                  Setup guide →
+                </a>
                 <IntegrationActions id={int.id} status={int.status} />
               </div>
             ))}
