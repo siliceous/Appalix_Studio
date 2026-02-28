@@ -148,21 +148,42 @@ export default async function EditSourcePage({ params }: { params: Promise<{ id:
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">File / folder URL</label>
               <input type="url" name="url" defaultValue={source.url ?? ''} className="w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-transparent dark:text-gray-100" />
             </div>
+            {/* Option A — Service Account JSON (recommended) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                OAuth access token <span className="font-normal text-gray-500">or Service Account JSON</span>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Service Account JSON key{' '}
+                <span className="font-normal text-brand-400">(recommended — never expires)</span>
               </label>
               <textarea
-                name="google_access_token"
+                name="google_service_account_json"
                 rows={4}
-                placeholder={'Leave blank to keep existing credential\n\nOr paste a new OAuth token (ya29.…)\nor the entire contents of your Service Account .json key file'}
+                placeholder={'Leave blank to keep existing credential\n\nOr paste the full contents of your Service Account .json key file here'}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-y font-mono dark:bg-transparent dark:text-gray-100"
               />
               <p className="text-xs text-gray-400 mt-1">
-                <span className="font-medium text-gray-700 dark:text-white">OAuth token</span> — from Google OAuth Playground, expires ~1 hour.{' '}
-                <span className="font-medium text-gray-700 dark:text-white">Service Account JSON</span> — open the .json key file, select all, paste here. Never expires.{' '}
+                Open the downloaded <span className="font-mono bg-white/10 px-1 rounded">.json</span> key file, select all, and paste here.{' '}
                 <a href="/resources/connect-google-drive" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">See full tutorial →</a>
               </p>
+            </div>
+            {/* Divider */}
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-gray-200 dark:bg-white/10" />
+              <span className="text-xs text-gray-400">or use a short-lived OAuth token</span>
+              <div className="h-px flex-1 bg-gray-200 dark:bg-white/10" />
+            </div>
+            {/* Option B — OAuth token */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                OAuth access token{' '}
+                <span className="font-normal text-amber-500">(expires ~1 hour)</span>
+              </label>
+              <input
+                type="password"
+                name="google_oauth_token"
+                placeholder="Leave blank to keep existing — or paste ya29.a0AfB…"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-transparent dark:text-gray-100"
+              />
+              <p className="text-xs text-gray-400 mt-1">From Google OAuth Playground — select the <span className="font-mono bg-white/10 px-1 rounded">drive.readonly</span> scope and copy the access token.</p>
             </div>
           </div>
         )}

@@ -140,8 +140,13 @@ export async function updateSource(sourceId: string, formData: FormData) {
     metadata = { ...prevMeta, ...(token ? { gitbook_token: token } : {}) }
   } else if (type === 'google_drive') {
     url = (formData.get('url') as string)?.trim() || null
-    const token = (formData.get('google_access_token') as string)?.trim()
-    metadata = { ...prevMeta, ...(token ? { google_access_token: token } : {}) }
+    // Edit form sends two separate fields; prefer Service Account JSON over OAuth token
+    const jsonKey = (formData.get('google_service_account_json') as string)?.trim()
+    const oauthToken = (formData.get('google_oauth_token') as string)?.trim()
+    // Also accept legacy combined field name (from add form)
+    const legacyToken = (formData.get('google_access_token') as string)?.trim()
+    const credential = jsonKey || oauthToken || legacyToken || null
+    metadata = { ...prevMeta, ...(credential ? { google_access_token: credential } : {}) }
   } else if (type === 'dropbox') {
     url = (formData.get('url') as string)?.trim() || null
     const token = (formData.get('dropbox_token') as string)?.trim()

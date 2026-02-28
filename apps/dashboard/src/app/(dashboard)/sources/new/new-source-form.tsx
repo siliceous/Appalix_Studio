@@ -107,6 +107,7 @@ type UploadState = 'idle' | 'uploading' | 'done' | 'error'
 export function NewSourceForm({ allowedTypes }: Props) {
   const firstAllowed = allowedTypes[0] ?? 'url'
   const [type, setType]             = useState<SourceType>(firstAllowed)
+  const [gdAuth, setGdAuth]         = useState<'json' | 'oauth'>('json')
   const [fileName, setFileName]     = useState<string | null>(null)
   const [fileError, setFileError]   = useState<string | null>(null)
   const [uploadState, setUploadState] = useState<UploadState>('idle')
@@ -360,21 +361,64 @@ export function NewSourceForm({ allowedTypes }: Props) {
               <input type="url" name="url" required placeholder="https://docs.google.com/document/d/FILE_ID/edit" className={inputCls} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                OAuth access token <span className="font-normal text-gray-500">or Service Account JSON</span>
-              </label>
-              <textarea
-                name="google_access_token"
-                required
-                rows={4}
-                placeholder={'Paste an OAuth token (ya29.…)\n\nor paste the entire contents of your\nService Account .json key file here'}
-                className={`${inputCls} font-mono resize-y`}
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                <span className="font-medium text-white">OAuth token</span> — from Google OAuth Playground, <span className="text-amber-400 font-medium">expires in ~1 hour</span>.{' '}
-                <span className="font-medium text-white">Service Account JSON</span> — open the <span className="font-mono bg-gray-100 dark:bg-white/10 dark:text-gray-300 px-1 rounded">.json</span> key file in a text editor, select all, and paste here. Never expires.{' '}
-                <a href="/resources/connect-google-drive" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">See full tutorial →</a>
-              </p>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Credential</label>
+              {/* Method toggle */}
+              <div className="flex gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={() => setGdAuth('json')}
+                  className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                    gdAuth === 'json'
+                      ? 'bg-brand-600/20 border-brand-600/40 text-brand-300'
+                      : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Service Account JSON <span className="text-brand-400">(recommended)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGdAuth('oauth')}
+                  className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                    gdAuth === 'oauth'
+                      ? 'bg-white/10 border-white/20 text-white'
+                      : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
+                  }`}
+                >
+                  OAuth token <span className="text-amber-400">(expires ~1 hr)</span>
+                </button>
+              </div>
+              {gdAuth === 'json' ? (
+                <>
+                  <textarea
+                    key="json"
+                    name="google_access_token"
+                    required
+                    rows={5}
+                    placeholder={'Open the downloaded Service Account .json key file,\nselect all the contents, and paste here.\n\nExample: {"type":"service_account","client_email":"…","private_key":"…"}'}
+                    className={`${inputCls} font-mono resize-y`}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    In Google Cloud Console: create a Service Account, download the JSON key, and share the Drive file with the service account email.{' '}
+                    <a href="/resources/connect-google-drive" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">See full tutorial →</a>
+                  </p>
+                </>
+              ) : (
+                <>
+                  <input
+                    key="oauth"
+                    type="password"
+                    name="google_access_token"
+                    required
+                    placeholder="ya29.a0AfB…"
+                    className={monoInputCls}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    From{' '}<span className="font-medium text-white">Google OAuth Playground</span> — select <span className="font-mono bg-white/10 dark:text-gray-300 px-1 rounded">drive.readonly</span> scope, authorise, and copy the access token.{' '}
+                    <span className="text-amber-400 font-medium">Expires in ~1 hour.</span>{' '}
+                    <a href="/resources/connect-google-drive" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">See full tutorial →</a>
+                  </p>
+                </>
+              )}
             </div>
           </>
         )}
