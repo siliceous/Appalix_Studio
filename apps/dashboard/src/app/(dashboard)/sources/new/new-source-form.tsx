@@ -327,7 +327,8 @@ export function NewSourceForm({ allowedTypes }: Props) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Integration token</label>
               <input type="password" name="notion_token" required placeholder="secret_…" className={monoInputCls} />
               <p className="text-xs text-gray-400 mt-1">
-                In Notion: <span className="font-medium">Settings → Integrations → Develop your own integrations</span>. Share the page with your integration.
+                In Notion: <span className="font-medium">Settings → Integrations → Develop your own integrations</span>. Share the page with your integration.{' '}
+                <a href="/resources/connect-notion" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">See full tutorial →</a>
               </p>
             </div>
           </>
@@ -344,7 +345,8 @@ export function NewSourceForm({ allowedTypes }: Props) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Personal API token</label>
               <input type="password" name="gitbook_token" required placeholder="gb-…" className={monoInputCls} />
               <p className="text-xs text-gray-400 mt-1">
-                In GitBook: <span className="font-medium">Account settings → Developer → Personal access tokens → Create token</span>.
+                In GitBook: <span className="font-medium">Account settings → Developer → Personal access tokens → Create token</span>.{' '}
+                <a href="/resources/connect-gitbook" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">See full tutorial →</a>
               </p>
             </div>
           </>
@@ -370,7 +372,8 @@ export function NewSourceForm({ allowedTypes }: Props) {
               />
               <p className="text-xs text-gray-400 mt-1">
                 <span className="font-medium text-white">OAuth token</span> — from Google OAuth Playground, <span className="text-amber-400 font-medium">expires in ~1 hour</span>.{' '}
-                <span className="font-medium text-white">Service Account JSON</span> — open the <span className="font-mono bg-gray-100 dark:bg-white/10 dark:text-gray-300 px-1 rounded">.json</span> key file in a text editor, select all, and paste here. Never expires.
+                <span className="font-medium text-white">Service Account JSON</span> — open the <span className="font-mono bg-gray-100 dark:bg-white/10 dark:text-gray-300 px-1 rounded">.json</span> key file in a text editor, select all, and paste here. Never expires.{' '}
+                <a href="/resources/connect-google-drive" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">See full tutorial →</a>
               </p>
             </div>
           </>
@@ -387,7 +390,8 @@ export function NewSourceForm({ allowedTypes }: Props) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Access token</label>
               <input type="password" name="dropbox_token" required placeholder="sl.…" className={monoInputCls} />
               <p className="text-xs text-gray-400 mt-1">
-                In Dropbox: <span className="font-medium">App Console → Create app → Generate access token</span> (long-lived token).
+                In Dropbox: <span className="font-medium">App Console → Create app → Generate access token</span> (long-lived token).{' '}
+                <a href="/resources/connect-dropbox" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">See full tutorial →</a>
               </p>
             </div>
           </>
@@ -404,7 +408,8 @@ export function NewSourceForm({ allowedTypes }: Props) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Microsoft Graph access token</label>
               <input type="password" name="ms_access_token" required placeholder="eyJ0…" className={monoInputCls} />
               <p className="text-xs text-gray-400 mt-1">
-                Generate via <span className="font-medium">Microsoft Graph Explorer</span> (scope: <span className="font-mono bg-gray-100 dark:bg-white/10 dark:text-gray-300 px-1 rounded">Files.Read</span>).
+                Generate via <span className="font-medium">Microsoft Graph Explorer</span> (scope: <span className="font-mono bg-gray-100 dark:bg-white/10 dark:text-gray-300 px-1 rounded">Files.Read</span>).{' '}
+                <a href="/resources/connect-onedrive" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">See full tutorial →</a>
               </p>
             </div>
           </>
@@ -425,7 +430,8 @@ export function NewSourceForm({ allowedTypes }: Props) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">SharePoint site ID</label>
               <input type="text" name="sharepoint_site_id" required placeholder="tenant.sharepoint.com,site-guid,web-guid" className={monoInputCls} />
               <p className="text-xs text-gray-400 mt-1">
-                Find via <span className="font-mono bg-gray-100 dark:bg-white/10 dark:text-gray-300 px-1 rounded">GET https://graph.microsoft.com/v1.0/sites?search=your-site-name</span>.
+                Find via <span className="font-mono bg-gray-100 dark:bg-white/10 dark:text-gray-300 px-1 rounded">GET https://graph.microsoft.com/v1.0/sites?search=your-site-name</span>.{' '}
+                <a href="/resources/connect-sharepoint" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">See full tutorial →</a>
               </p>
             </div>
           </>

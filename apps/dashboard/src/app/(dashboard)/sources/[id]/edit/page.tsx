@@ -113,6 +113,10 @@ export default async function EditSourcePage({ params }: { params: Promise<{ id:
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Integration token</label>
               <input type="password" name="notion_token" placeholder="Leave blank to keep existing token" className="w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-transparent dark:text-gray-100" />
+              <p className="text-xs text-gray-400 mt-1">
+                In Notion: <span className="font-medium">Settings → Integrations → Develop your own integrations</span>. Share the page with your integration.{' '}
+                <a href="/resources/connect-notion" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">See full tutorial →</a>
+              </p>
             </div>
           </div>
         )}
@@ -128,6 +132,10 @@ export default async function EditSourcePage({ params }: { params: Promise<{ id:
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">API token</label>
               <input type="password" name="gitbook_token" placeholder="Leave blank to keep existing token" className="w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-transparent dark:text-gray-100" />
+              <p className="text-xs text-gray-400 mt-1">
+                In GitBook: <span className="font-medium">Account settings → Developer → Personal access tokens → Create token</span>.{' '}
+                <a href="/resources/connect-gitbook" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">See full tutorial →</a>
+              </p>
             </div>
           </div>
         )}
@@ -152,7 +160,8 @@ export default async function EditSourcePage({ params }: { params: Promise<{ id:
               />
               <p className="text-xs text-gray-400 mt-1">
                 <span className="font-medium text-gray-700 dark:text-white">OAuth token</span> — from Google OAuth Playground, expires ~1 hour.{' '}
-                <span className="font-medium text-gray-700 dark:text-white">Service Account JSON</span> — open the .json key file, select all, paste here. Never expires.
+                <span className="font-medium text-gray-700 dark:text-white">Service Account JSON</span> — open the .json key file, select all, paste here. Never expires.{' '}
+                <a href="/resources/connect-google-drive" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">See full tutorial →</a>
               </p>
             </div>
           </div>
@@ -169,6 +178,10 @@ export default async function EditSourcePage({ params }: { params: Promise<{ id:
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Access token</label>
               <input type="password" name="dropbox_token" placeholder="Leave blank to keep existing token" className="w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-transparent dark:text-gray-100" />
+              <p className="text-xs text-gray-400 mt-1">
+                In Dropbox: <span className="font-medium">App Console → Create app → Generate access token</span> (long-lived token).{' '}
+                <a href="/resources/connect-dropbox" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">See full tutorial →</a>
+              </p>
             </div>
           </div>
         )}
@@ -184,6 +197,10 @@ export default async function EditSourcePage({ params }: { params: Promise<{ id:
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Access token</label>
               <input type="password" name="ms_access_token" placeholder="Leave blank to keep existing token" className="w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-transparent dark:text-gray-100" />
+              <p className="text-xs text-gray-400 mt-1">
+                Generate via <span className="font-medium">Microsoft Graph Explorer</span> (scope: <span className="font-mono bg-white/10 px-1 rounded">Files.Read</span>).{' '}
+                <a href="/resources/connect-onedrive" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">See full tutorial →</a>
+              </p>
             </div>
           </div>
         )}
@@ -199,6 +216,10 @@ export default async function EditSourcePage({ params }: { params: Promise<{ id:
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Access token</label>
               <input type="password" name="ms_access_token" placeholder="Leave blank to keep existing token" className="w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-transparent dark:text-gray-100" />
+              <p className="text-xs text-gray-400 mt-1">
+                Generate via <span className="font-medium">Microsoft Graph Explorer</span> (scopes: <span className="font-mono bg-white/10 px-1 rounded">Files.Read.All</span>, <span className="font-mono bg-white/10 px-1 rounded">Sites.Read.All</span>).{' '}
+                <a href="/resources/connect-sharepoint" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">See full tutorial →</a>
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Site ID <span className="text-gray-400 font-normal">(optional)</span></label>
