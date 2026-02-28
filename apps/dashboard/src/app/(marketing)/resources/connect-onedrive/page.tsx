@@ -97,10 +97,13 @@ export default function ConnectOneDrivePage() {
                     <strong className="text-white">Profile icon method:</strong> At the very top-right of the page, click your <strong className="text-white">profile picture or initials circle</strong> (next to the bell icon). A dropdown appears — click <strong className="text-white">Access token</strong>. The token is shown in a pop-up — click <strong className="text-white">Copy</strong>.
                   </li>
                 </ul>
-                The token is a long string starting with <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">eyJ0…</code>
+                The token is a long string. Work/school (Azure AD) accounts get a JWT starting with <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">eyJ0…</code>; personal Microsoft accounts (Outlook/Live) get a token starting with <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">EwB…</code>. Both are correct.
               </li>
             </ol>
-            <div className="mt-4 bg-amber-900/20 border border-amber-700/40 rounded-xl p-4 text-sm text-amber-300">
+            <div className="mt-4 bg-red-900/25 border border-red-600/40 rounded-xl p-4 text-sm text-red-300">
+              <strong>Common mistake — do not copy the browser URL!</strong> After highlighting the token text on the page, some browsers (Chrome, Edge) let you &ldquo;copy link to highlight&rdquo;. If you accidentally copy the address bar you&apos;ll get a URL like <code className="bg-white/10 px-1.5 py-0.5 rounded">https://developer.microsoft.com/…#:~:text=eyJ0…</code> — that is <em>not</em> your token. Always use the <strong>Copy button inside Graph Explorer</strong> (the button next to the token text), not the browser address bar.
+            </div>
+            <div className="mt-3 bg-amber-900/20 border border-amber-700/40 rounded-xl p-4 text-sm text-amber-300">
               <strong>Note:</strong> Graph Explorer tokens expire after ~1 hour. For production, register an Azure AD app and use the client credentials flow to generate long-lived tokens.
             </div>
           </section>
@@ -111,7 +114,7 @@ export default function ConnectOneDrivePage() {
               <li>In Appalix, go to <strong className="text-white">Sources → Add source</strong> and select <strong className="text-white">OneDrive</strong>.</li>
               <li>Enter a <strong className="text-white">Source name</strong> (e.g. <em>Sales Playbook</em>).</li>
               <li>Paste the <strong className="text-white">OneDrive file URL</strong> from Step 1.</li>
-              <li>Paste the <strong className="text-white">Microsoft Graph access token</strong> (<code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">eyJ0…</code>) from Step 2.</li>
+              <li>Paste the <strong className="text-white">Microsoft Graph access token</strong> from Step 2 (starts with <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">eyJ0…</code> or <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">EwB…</code>).</li>
               <li>Click <strong className="text-white">Add &amp; index source</strong>.</li>
             </ol>
           </section>

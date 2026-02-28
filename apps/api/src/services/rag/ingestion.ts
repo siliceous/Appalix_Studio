@@ -483,19 +483,35 @@ async function fetchSourceContent(source: {
       if (!token) throw new Error('OneDrive source missing ms_access_token in metadata')
       if (!source.url) throw new Error('OneDrive source has no URL')
 
-      // Extract item ID from URL or use the URL as a share URL
+      // If the URL already contains a Graph item ID use it directly;
+      // otherwise encode as a base64url sharing token (works for 1drv.ms
+      // short links, full share URLs, and browser-copied OneDrive URLs).
       const itemMatch = source.url.match(/items\/([^/?#]+)/)
       const itemId = itemMatch?.[1]
 
-      const endpoint = itemId
-        ? `https://graph.microsoft.com/v1.0/me/drive/items/${itemId}/content`
-        : `https://graph.microsoft.com/v1.0/me/drive/root:/${encodeURIComponent(source.url)}:/content`
+      let endpoint: string
+      if (itemId) {
+        endpoint = `https://graph.microsoft.com/v1.0/me/drive/items/${itemId}/content`
+      } else {
+        const sharingToken =
+          'u!' +
+          Buffer.from(source.url)
+            .toString('base64')
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/g, '')
+        endpoint = `https://graph.microsoft.com/v1.0/shares/${sharingToken}/driveItem/content`
+      }
 
       const dlRes = await fetch(endpoint, {
         headers: { 'Authorization': `Bearer ${token}` },
         signal: AbortSignal.timeout(30_000),
       })
-      if (!dlRes.ok) throw new Error(`OneDrive API error: ${dlRes.status}`)
+      if (!dlRes.ok) {
+        let detail = ''
+        try { detail = ` — ${JSON.stringify(await dlRes.json())}` } catch { /* ignore */ }
+        throw new Error(`OneDrive API error: ${dlRes.status}${detail}`)
+      }
       return await dlRes.text()
     }
 
