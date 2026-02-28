@@ -99,9 +99,17 @@ export default function ConnectGoogleDrivePage() {
               <li>Go to <strong className="text-white">IAM &amp; Admin → Service Accounts → Create Service Account</strong>. Give it a name and click <strong className="text-white">Done</strong>.</li>
               <li>Click the service account → <strong className="text-white">Keys → Add Key → Create new key → JSON</strong>. A <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">.json</code> file will download automatically.</li>
               <li>
-                Share the Google Drive file with the service account&apos;s email address (shown in the service account list, e.g. <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">name@project.iam.gserviceaccount.com</code>) — just like sharing with a colleague, with <strong className="text-white">Viewer</strong> access.
+                <strong className="text-white">Share the Google Drive file with the service account.</strong>
+                <ol className="list-decimal pl-5 mt-2 space-y-2 text-sm">
+                  <li>Open the file in <a href="https://drive.google.com" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">Google Drive</a> in your browser.</li>
+                  <li>Click the <strong className="text-white">Share</strong> button (top-right corner of the file, or right-click the file → Share).</li>
+                  <li>In the <strong className="text-white">&ldquo;Add people and groups&rdquo;</strong> field, paste the service account email — it looks like <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">your-sa-name@your-project-id.iam.gserviceaccount.com</code> and is shown in the service account list in Google Cloud Console.</li>
+                  <li>Set the role to <strong className="text-white">Viewer</strong>.</li>
+                  <li>Uncheck <strong className="text-white">&ldquo;Notify people&rdquo;</strong> — the service account has no inbox.</li>
+                  <li>Click <strong className="text-white">Share</strong>.</li>
+                </ol>
               </li>
-              <li>Open the downloaded <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">.json</code> key file in a text editor and copy the entire contents.</li>
+              <li>Open the downloaded <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">.json</code> key file in a text editor, select all the contents, and copy.</li>
             </ol>
           </section>
 

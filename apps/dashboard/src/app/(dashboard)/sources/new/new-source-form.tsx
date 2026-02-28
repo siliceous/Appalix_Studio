@@ -108,6 +108,7 @@ export function NewSourceForm({ allowedTypes }: Props) {
   const firstAllowed = allowedTypes[0] ?? 'url'
   const [type, setType]             = useState<SourceType>(firstAllowed)
   const [gdAuth, setGdAuth]         = useState<'json' | 'oauth'>('json')
+  const [tutorialUrl, setTutorialUrl] = useState<string | null>(null)
   const [fileName, setFileName]     = useState<string | null>(null)
   const [fileError, setFileError]   = useState<string | null>(null)
   const [uploadState, setUploadState] = useState<UploadState>('idle')
@@ -176,7 +177,38 @@ export function NewSourceForm({ allowedTypes }: Props) {
   // Disable submit if a file is selected but not yet uploaded
   const fileUploading = type === 'file' && uploadState === 'uploading'
 
+  const TUTORIAL_URLS: Partial<Record<SourceType, string>> = {
+    notion:       '/resources/connect-notion',
+    gitbook:      '/resources/connect-gitbook',
+    google_drive: '/resources/connect-google-drive',
+    dropbox:      '/resources/connect-dropbox',
+    onedrive:     '/resources/connect-onedrive',
+    sharepoint:   '/resources/connect-sharepoint',
+  }
+
   return (
+    <>
+    {/* Tutorial popup modal */}
+    {tutorialUrl && (
+      <div className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-sm">
+        <div className="flex items-center justify-between px-4 py-3 bg-[#1a1a1a] border-b border-white/10 shrink-0">
+          <span className="text-sm font-medium text-white">Tutorial</span>
+          <button
+            type="button"
+            onClick={() => setTutorialUrl(null)}
+            className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+            aria-label="Close tutorial"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <iframe
+          src={tutorialUrl}
+          className="flex-1 w-full bg-[#111]"
+          title="Tutorial"
+        />
+      </div>
+    )}
     <form action={createSource} className="space-y-6">
       <input type="hidden" name="type" value={type} />
 
@@ -320,6 +352,9 @@ export function NewSourceForm({ allowedTypes }: Props) {
         {/* ── Notion ── */}
         {type === 'notion' && (
           <>
+            <button type="button" onClick={() => setTutorialUrl(TUTORIAL_URLS.notion!)} className="w-full flex items-center justify-center gap-2 py-2 text-xs font-medium text-brand-400 border border-brand-600/30 rounded-lg hover:bg-brand-600/10 transition-colors">
+              <BookOpen className="w-3.5 h-3.5" /> View step-by-step tutorial
+            </button>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Notion page URL</label>
               <input type="url" name="url" required placeholder="https://www.notion.so/your-page-title-abc123" className={inputCls} />
@@ -338,6 +373,9 @@ export function NewSourceForm({ allowedTypes }: Props) {
         {/* ── GitBook ── */}
         {type === 'gitbook' && (
           <>
+            <button type="button" onClick={() => setTutorialUrl(TUTORIAL_URLS.gitbook!)} className="w-full flex items-center justify-center gap-2 py-2 text-xs font-medium text-brand-400 border border-brand-600/30 rounded-lg hover:bg-brand-600/10 transition-colors">
+              <BookOpen className="w-3.5 h-3.5" /> View step-by-step tutorial
+            </button>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">GitBook space URL</label>
               <input type="url" name="url" required placeholder="https://app.gitbook.com/o/orgId/s/spaceId" className={inputCls} />
@@ -356,6 +394,9 @@ export function NewSourceForm({ allowedTypes }: Props) {
         {/* ── Google Drive ── */}
         {type === 'google_drive' && (
           <>
+            <button type="button" onClick={() => setTutorialUrl(TUTORIAL_URLS.google_drive!)} className="w-full flex items-center justify-center gap-2 py-2 text-xs font-medium text-brand-400 border border-brand-600/30 rounded-lg hover:bg-brand-600/10 transition-colors">
+              <BookOpen className="w-3.5 h-3.5" /> View step-by-step tutorial
+            </button>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Google Drive file URL</label>
               <input type="url" name="url" required placeholder="https://docs.google.com/document/d/FILE_ID/edit" className={inputCls} />
@@ -426,6 +467,9 @@ export function NewSourceForm({ allowedTypes }: Props) {
         {/* ── Dropbox ── */}
         {type === 'dropbox' && (
           <>
+            <button type="button" onClick={() => setTutorialUrl(TUTORIAL_URLS.dropbox!)} className="w-full flex items-center justify-center gap-2 py-2 text-xs font-medium text-brand-400 border border-brand-600/30 rounded-lg hover:bg-brand-600/10 transition-colors">
+              <BookOpen className="w-3.5 h-3.5" /> View step-by-step tutorial
+            </button>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Dropbox file path or shared link</label>
               <input type="text" name="url" required placeholder="/Documents/file.txt or https://www.dropbox.com/s/…" className={inputCls} />
@@ -444,6 +488,9 @@ export function NewSourceForm({ allowedTypes }: Props) {
         {/* ── OneDrive ── */}
         {type === 'onedrive' && (
           <>
+            <button type="button" onClick={() => setTutorialUrl(TUTORIAL_URLS.onedrive!)} className="w-full flex items-center justify-center gap-2 py-2 text-xs font-medium text-brand-400 border border-brand-600/30 rounded-lg hover:bg-brand-600/10 transition-colors">
+              <BookOpen className="w-3.5 h-3.5" /> View step-by-step tutorial
+            </button>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">OneDrive file URL</label>
               <input type="url" name="url" required placeholder="https://onedrive.live.com/…" className={inputCls} />
@@ -462,6 +509,9 @@ export function NewSourceForm({ allowedTypes }: Props) {
         {/* ── SharePoint ── */}
         {type === 'sharepoint' && (
           <>
+            <button type="button" onClick={() => setTutorialUrl(TUTORIAL_URLS.sharepoint!)} className="w-full flex items-center justify-center gap-2 py-2 text-xs font-medium text-brand-400 border border-brand-600/30 rounded-lg hover:bg-brand-600/10 transition-colors">
+              <BookOpen className="w-3.5 h-3.5" /> View step-by-step tutorial
+            </button>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">SharePoint file URL</label>
               <input type="url" name="url" required placeholder="https://tenant.sharepoint.com/sites/…" className={inputCls} />
@@ -506,5 +556,6 @@ export function NewSourceForm({ allowedTypes }: Props) {
         </a>
       </div>
     </form>
+    </>
   )
 }
