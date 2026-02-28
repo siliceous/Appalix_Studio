@@ -85,8 +85,24 @@ export default function ConnectGoogleDrivePage() {
               <li>Copy the <strong className="text-white">Access token</strong> — it starts with <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">ya29.</code></li>
             </ol>
             <div className="mt-4 bg-amber-900/20 border border-amber-700/40 rounded-xl p-4 text-sm text-amber-300">
-              <strong>Note:</strong> OAuth Playground tokens expire after ~1 hour. For a long-lived setup, use a <strong>Service Account</strong> with domain-wide delegation and generate the token programmatically.
+              <strong>Note:</strong> OAuth Playground tokens expire after ~1 hour. Use them for a quick test, but for a permanent setup continue to Step 2b below.
             </div>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-white mb-3">Step 2b — Use a Service Account (permanent, recommended)</h2>
+            <p className="mb-3 text-sm text-gray-400">Service Account keys never expire. This is the best approach for production use.</p>
+            <ol className="list-decimal pl-5 space-y-3">
+              <li>
+                Go to <a href="https://console.cloud.google.com/" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">Google Cloud Console</a> → select or create a project → <strong className="text-white">APIs &amp; Services → Enable APIs</strong> → enable <strong className="text-white">Google Drive API</strong>.
+              </li>
+              <li>Go to <strong className="text-white">IAM &amp; Admin → Service Accounts → Create Service Account</strong>. Give it a name and click <strong className="text-white">Done</strong>.</li>
+              <li>Click the service account → <strong className="text-white">Keys → Add Key → Create new key → JSON</strong>. A <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">.json</code> file will download automatically.</li>
+              <li>
+                Share the Google Drive file with the service account&apos;s email address (shown in the service account list, e.g. <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">name@project.iam.gserviceaccount.com</code>) — just like sharing with a colleague, with <strong className="text-white">Viewer</strong> access.
+              </li>
+              <li>Open the downloaded <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">.json</code> key file in a text editor and copy the entire contents.</li>
+            </ol>
           </section>
 
           <section>
@@ -95,7 +111,13 @@ export default function ConnectGoogleDrivePage() {
               <li>In Appalix, go to <strong className="text-white">Sources → Add source</strong> and select <strong className="text-white">Google Drive</strong>.</li>
               <li>Enter a <strong className="text-white">Source name</strong> (e.g. <em>Product Spec Doc</em>).</li>
               <li>Paste the <strong className="text-white">Google Drive file URL</strong> from Step 1.</li>
-              <li>Paste the <strong className="text-white">OAuth access token</strong> (<code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">ya29.…</code>) from Step 2.</li>
+              <li>
+                In the <strong className="text-white">OAuth access token</strong> field, paste <em>either</em>:
+                <ul className="list-disc pl-5 mt-2 space-y-1 text-sm">
+                  <li>Your short-lived OAuth token (<code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">ya29.…</code>) from Step 2a, <strong className="text-white">or</strong></li>
+                  <li>The full contents of your Service Account JSON key file from Step 2b — Appalix will exchange it for a token automatically.</li>
+                </ul>
+              </li>
               <li>Click <strong className="text-white">Add &amp; index source</strong>.</li>
             </ol>
           </section>
@@ -112,10 +134,10 @@ export default function ConnectGoogleDrivePage() {
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">Tips &amp; best practices</h2>
             <ul className="list-disc pl-5 space-y-3">
+              <li><strong className="text-white">Service Account is permanent</strong> — unlike OAuth Playground tokens that expire hourly, a Service Account key works indefinitely. Use it for any source you want to re-sync regularly.</li>
               <li><strong className="text-white">One file per source</strong> — add each Drive file as a separate source for granular control and re-syncing.</li>
-              <li><strong className="text-white">Re-sync after edits</strong> — click <strong className="text-white">Re-sync</strong> on the source whenever the document content changes.</li>
-              <li><strong className="text-white">Production use</strong> — for a permanent setup, create a Service Account in Google Cloud Console, grant it viewer access to the file, and use a long-lived token rather than the OAuth Playground.</li>
-              <li><strong className="text-white">Shared Drive files</strong> — works with files in both My Drive and Shared Drives as long as the token&apos;s Google account has viewer access.</li>
+              <li><strong className="text-white">Re-sync after edits</strong> — click <strong className="text-white">Re-sync</strong> on the source whenever the document changes. The service account key is reused automatically.</li>
+              <li><strong className="text-white">Shared Drive files</strong> — share the file directly with the service account email, just as you would with any user.</li>
             </ul>
           </section>
 

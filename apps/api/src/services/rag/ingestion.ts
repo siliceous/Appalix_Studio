@@ -1,6 +1,57 @@
+import { createSign } from 'crypto'
 import { supabase } from '../../lib/supabase.js'
 import { embedBatch, chunkText } from './embeddings.js'
 import { recordUsage } from '../../lib/usage.js'
+
+/**
+ * Accepts either a short-lived OAuth access token (ya29.…) or a full
+ * Service Account JSON key. If JSON is detected, a signed JWT is exchanged
+ * for a fresh access token via Google's token endpoint.
+ */
+async function resolveGoogleAccessToken(credentialOrToken: string): Promise<string> {
+  const trimmed = credentialOrToken.trim()
+  if (!trimmed.startsWith('{')) return trimmed // already an access token
+
+  let sa: { client_email: string; private_key: string }
+  try {
+    sa = JSON.parse(trimmed)
+  } catch {
+    throw new Error('Google Drive: provided credential looks like JSON but could not be parsed.')
+  }
+  if (!sa.client_email || !sa.private_key) {
+    throw new Error('Google Drive: service account JSON must contain client_email and private_key.')
+  }
+
+  const now = Math.floor(Date.now() / 1000)
+  const header  = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url')
+  const payload = Buffer.from(JSON.stringify({
+    iss:   sa.client_email,
+    scope: 'https://www.googleapis.com/auth/drive.readonly',
+    aud:   'https://oauth2.googleapis.com/token',
+    exp:   now + 3600,
+    iat:   now,
+  })).toString('base64url')
+
+  const signer = createSign('RSA-SHA256')
+  signer.update(`${header}.${payload}`)
+  const sig = signer.sign(sa.private_key, 'base64url')
+  const jwt = `${header}.${payload}.${sig}`
+
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body:    new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion:  jwt,
+    }),
+  })
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Google Drive: service account token exchange failed (${res.status}): ${body}`)
+  }
+  const { access_token } = await res.json() as { access_token: string }
+  return access_token
+}
 
 /**
  * Ingest a document source into the vector store.
@@ -331,9 +382,10 @@ async function fetchSourceContent(source: {
     // Google Drive — access token + file/folder URL
     // ----------------------------------------------------------------
     case 'google_drive': {
-      const token = (source.metadata as Record<string, string> | null)?.google_access_token
-      if (!token) throw new Error('Google Drive source missing google_access_token in metadata')
+      const credential = (source.metadata as Record<string, string> | null)?.google_access_token
+      if (!credential) throw new Error('Google Drive source missing google_access_token in metadata')
       if (!source.url) throw new Error('Google Drive source has no URL')
+      const token = await resolveGoogleAccessToken(credential)
 
       // Extract file ID from URL
       const fileMatch = source.url.match(/\/d\/([^/?#]+)/) ?? source.url.match(/id=([^&]+)/)
