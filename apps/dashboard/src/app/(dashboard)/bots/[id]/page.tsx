@@ -7,6 +7,12 @@ import type { Bot, Integration, AgentRun } from '@/lib/types'
 
 export const metadata: Metadata = { title: 'Bot settings' }
 
+const MODEL_LABELS: Record<string, string> = {
+  'claude-sonnet-4-6':        'Claude Sonnet',
+  'claude-haiku-4-5-20251001': 'Claude Haiku',
+  'claude-opus-4-6':           'Claude Opus',
+}
+
 export default async function BotDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
@@ -59,7 +65,7 @@ export default async function BotDetailPage({ params }: { params: Promise<{ id: 
             <h2 className="text-sm font-semibold text-gray-900 mb-4">Configuration</h2>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
               {[
-                { label: 'Model',        value: bot.model },
+                { label: 'Model',        value: MODEL_LABELS[bot.model] ?? bot.model },
                 { label: 'Max tokens',   value: bot.max_tokens },
                 { label: 'Temperature',  value: bot.temperature },
                 { label: 'RAG',          value: bot.enable_rag ? 'Enabled' : 'Disabled' },
