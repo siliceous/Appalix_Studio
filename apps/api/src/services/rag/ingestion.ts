@@ -83,8 +83,14 @@ export async function ingestSource(sourceId: string): Promise<void> {
     const rawText = await fetchSourceContent(source)
     if (!rawText.trim()) throw new Error('Source content is empty')
 
+    // Sanitize: remove null bytes and other characters PostgreSQL rejects
+    const sanitized = rawText
+      .replace(/\u0000/g, '')           // null bytes
+      .replace(/\\u0000/g, '')          // literal \u0000 escape sequences
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // other non-printable control chars (keep \t \n \r)
+
     // Split into chunks
-    const textChunks = chunkText(rawText, 1500, 200)
+    const textChunks = chunkText(sanitized, 1500, 200)
 
     // Delete old chunks for this source (re-ingestion)
     await supabase.from('chunks').delete().eq('source_id', sourceId)
