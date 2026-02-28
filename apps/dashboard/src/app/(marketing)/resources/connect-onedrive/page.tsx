@@ -87,7 +87,18 @@ export default function ConnectOneDrivePage() {
               </li>
               <li>Click <strong className="text-white">Consent</strong> next to <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">Files.Read</code> and approve the pop-up.</li>
               <li>Run the query again — it should now return your OneDrive root folder details.</li>
-              <li>Click your <strong className="text-white">profile icon</strong> (top-right) → <strong className="text-white">Access token</strong> and copy the token. It starts with <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">eyJ0…</code></li>
+              <li>
+                Copy your access token — there are two ways depending on the Graph Explorer version you see:
+                <ul className="list-disc pl-5 mt-2 space-y-2 text-sm">
+                  <li>
+                    <strong className="text-white">Tab method (most common):</strong> Look at the response panel below the URL bar. Click the <strong className="text-white">Access token</strong> tab (it sits next to &ldquo;Response preview&rdquo; and &ldquo;Response headers&rdquo;). The full token is shown — click <strong className="text-white">Copy</strong>.
+                  </li>
+                  <li>
+                    <strong className="text-white">Profile icon method:</strong> At the very top-right of the page, click your <strong className="text-white">profile picture or initials circle</strong> (next to the bell icon). A dropdown appears — click <strong className="text-white">Access token</strong>. The token is shown in a pop-up — click <strong className="text-white">Copy</strong>.
+                  </li>
+                </ul>
+                The token is a long string starting with <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">eyJ0…</code>
+              </li>
             </ol>
             <div className="mt-4 bg-amber-900/20 border border-amber-700/40 rounded-xl p-4 text-sm text-amber-300">
               <strong>Note:</strong> Graph Explorer tokens expire after ~1 hour. For production, register an Azure AD app and use the client credentials flow to generate long-lived tokens.
