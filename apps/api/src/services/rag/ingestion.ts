@@ -357,7 +357,12 @@ async function fetchSourceContent(source: {
             signal: AbortSignal.timeout(30_000),
           },
         )
-        if (!dlRes.ok) throw new Error(`Google Drive API error: ${dlRes.status}`)
+        if (!dlRes.ok) {
+          const status = dlRes.status
+          if (status === 401) throw new Error('Google Drive API error: 401 Unauthorized — your OAuth access token has expired or is invalid. Please generate a new token from the Google OAuth Playground and update this source.')
+          if (status === 403) throw new Error('Google Drive API error: 403 Forbidden — the token does not have permission to access this file. Make sure you selected the drive.readonly scope and the token belongs to the file owner.')
+          throw new Error(`Google Drive API error: ${status}`)
+        }
         return await dlRes.text()
       }
       return await exportRes.text()

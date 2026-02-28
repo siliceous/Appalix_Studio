@@ -361,7 +361,7 @@ export function NewSourceForm({ allowedTypes }: Props) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">OAuth access token</label>
               <input type="password" name="google_access_token" required placeholder="ya29.…" className={monoInputCls} />
               <p className="text-xs text-gray-400 mt-1">
-                Generate via <span className="font-medium">Google OAuth Playground</span> (scope: <span className="font-mono bg-gray-100 dark:bg-white/10 dark:text-gray-300 px-1 rounded">drive.readonly</span>) or a service account with domain-wide delegation.
+                Generate via <span className="font-medium">Google OAuth Playground</span> (scope: <span className="font-mono bg-gray-100 dark:bg-white/10 dark:text-gray-300 px-1 rounded">drive.readonly</span>). <span className="text-amber-400 font-medium">Playground tokens expire in ~1 hour</span> — paste and index immediately, or use a service account for a long-lived token.
               </p>
             </div>
           </>
