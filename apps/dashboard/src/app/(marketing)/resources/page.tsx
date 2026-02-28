@@ -16,6 +16,61 @@ export const metadata: Metadata = {
 }
 
 const POSTS = [
+  // ── Knowledge base source tutorials ─────────────────────────────────────────
+  {
+    category: 'Tutorial',
+    title: 'How to Connect Notion to Appalix',
+    excerpt: 'Index any Notion page as a knowledge source. Create a Notion integration, share the page with it, and paste the token into Appalix — your bot will answer from your docs in minutes.',
+    readTime: '7 min read',
+    date: 'Feb 28, 2026',
+    emoji: '📝',
+    slug: 'connect-notion',
+  },
+  {
+    category: 'Tutorial',
+    title: 'How to Connect GitBook to Appalix',
+    excerpt: 'Turn your entire GitBook space into a live knowledge source. Generate a personal API token in GitBook, paste your space URL into Appalix, and your bot will answer from your developer docs.',
+    readTime: '6 min read',
+    date: 'Feb 28, 2026',
+    emoji: '📖',
+    slug: 'connect-gitbook',
+  },
+  {
+    category: 'Tutorial',
+    title: 'How to Connect Google Drive to Appalix',
+    excerpt: 'Index Google Docs and Drive files as AI knowledge sources. Generate a read-only OAuth token via the Google OAuth Playground and paste it into Appalix alongside your file URL.',
+    readTime: '8 min read',
+    date: 'Feb 28, 2026',
+    emoji: '☁️',
+    slug: 'connect-google-drive',
+  },
+  {
+    category: 'Tutorial',
+    title: 'How to Connect Dropbox to Appalix',
+    excerpt: 'Index Dropbox documents and shared links as AI knowledge sources. Create a Dropbox app in the App Console, generate a long-lived access token, and add any file path or shared link.',
+    readTime: '7 min read',
+    date: 'Feb 28, 2026',
+    emoji: '📦',
+    slug: 'connect-dropbox',
+  },
+  {
+    category: 'Tutorial',
+    title: 'How to Connect OneDrive to Appalix',
+    excerpt: 'Index Word documents and files from Microsoft OneDrive. Sign in to Microsoft Graph Explorer, copy the access token with Files.Read scope, and paste it into Appalix with your file URL.',
+    readTime: '8 min read',
+    date: 'Feb 28, 2026',
+    emoji: '🗂️',
+    slug: 'connect-onedrive',
+  },
+  {
+    category: 'Tutorial',
+    title: 'How to Connect SharePoint to Appalix',
+    excerpt: 'Index SharePoint documents so your AI bot answers from your organisation\'s intranet content and policies. Requires a Microsoft Graph token, file URL, and SharePoint Site ID.',
+    readTime: '10 min read',
+    date: 'Feb 28, 2026',
+    emoji: '🏢',
+    slug: 'connect-sharepoint',
+  },
   // ── Platform tutorials ──────────────────────────────────────────────────────
   {
     category: 'Tutorial',
