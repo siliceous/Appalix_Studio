@@ -107,7 +107,7 @@ export default async function ConversationsPage({
                   <td className="px-5 py-3.5 text-right text-gray-500">{c.message_count}</td>
                   <td className="px-5 py-3.5 text-right text-gray-400">{timeAgo(c.last_activity_at)}</td>
                   <td className="px-5 py-3.5">
-                    <ConversationActions id={c.id} />
+                    <ConversationActions id={c.id} title={c.title} />
                   </td>
                 </tr>
               ))}

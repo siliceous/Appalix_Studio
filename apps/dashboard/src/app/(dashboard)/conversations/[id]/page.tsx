@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { PLATFORM_META, formatDate } from '@/lib/utils'
 import { Download } from 'lucide-react'
 import { DeleteConversationButton } from './delete-button'
+import { RenameConversationTitle } from './rename-title'
 import type { Metadata } from 'next'
 import type { Conversation, Message } from '@/lib/types'
 
@@ -44,9 +45,7 @@ export default async function ConversationDetailPage({
           <a href="/conversations" className="text-xs text-gray-400 hover:text-brand-600 mb-1 block">
             ← Conversations
           </a>
-          <h1 className="text-xl font-semibold text-gray-900">
-            {conversation.title ?? 'Untitled conversation'}
-          </h1>
+          <RenameConversationTitle id={id} title={conversation.title} />
           <div className="flex items-center gap-3 mt-1.5">
             {conversation.platform && (
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PLATFORM_META[conversation.platform]?.color}`}>
