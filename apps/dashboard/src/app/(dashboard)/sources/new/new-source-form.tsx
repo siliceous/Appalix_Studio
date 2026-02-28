@@ -97,7 +97,7 @@ interface Props {
   allowedTypes: SourceType[]
 }
 
-const inputCls = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500'
+const inputCls = 'w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500'
 const monoInputCls = `${inputCls} font-mono`
 
 const MAX_FILE_BYTES = 50 * 1024 * 1024 // 50 MB
@@ -189,8 +189,8 @@ export function NewSourceForm({ allowedTypes }: Props) {
       )}
 
       {/* Type selector */}
-      <div className="bg-white rounded-xl border p-5">
-        <p className="text-sm font-semibold text-gray-900 mb-3">Source type</p>
+      <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5">
+        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Source type</p>
         <div className="grid grid-cols-3 gap-3">
           {ALL_TYPES.map(({ value, label, desc, icon, planLabel }) => {
             const locked = !allowedTypes.includes(value)
@@ -202,24 +202,24 @@ export function NewSourceForm({ allowedTypes }: Props) {
                 onClick={() => { setType(value); clearFile() }}
                 className={`relative flex flex-col items-start gap-2 p-3 rounded-lg border text-left transition-colors ${
                   locked
-                    ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+                    ? 'border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/5 opacity-60 cursor-not-allowed'
                     : type === value
-                      ? 'border-brand-500 bg-brand-50'
-                      : 'border-gray-200 hover:bg-gray-50'
+                      ? 'border-brand-500 dark:border-[#61c2ad]/60 bg-brand-50 dark:bg-[#61c2ad]/10'
+                      : 'border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5'
                 }`}
               >
                 {locked && (
-                  <span className="absolute top-2 right-2 inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-500">
+                  <span className="absolute top-2 right-2 inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400">
                     <Lock className="w-2.5 h-2.5" />
                     {planLabel}
                   </span>
                 )}
-                <span className={locked ? 'text-gray-300' : type === value ? 'text-brand-600' : 'text-gray-400'}>
+                <span className={locked ? 'text-gray-300 dark:text-white/20' : type === value ? 'text-brand-600 dark:text-[#61c2ad]' : 'text-gray-400 dark:text-gray-500'}>
                   {icon}
                 </span>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{label}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{label}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{desc}</p>
                 </div>
               </button>
             )
@@ -241,9 +241,9 @@ export function NewSourceForm({ allowedTypes }: Props) {
       </div>
 
       {/* Fields */}
-      <div className="bg-white rounded-xl border p-5 space-y-4">
+      <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Source name</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Source name</label>
           <input
             type="text"
             name="name"
@@ -255,14 +255,14 @@ export function NewSourceForm({ allowedTypes }: Props) {
 
         {type === 'url' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Page URL</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Page URL</label>
             <input type="url" name="url" required placeholder="https://yoursite.com/about" className={inputCls} />
           </div>
         )}
 
         {type === 'text' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Content</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Content</label>
             <textarea
               name="text"
               required
@@ -275,7 +275,7 @@ export function NewSourceForm({ allowedTypes }: Props) {
 
         {type === 'file' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">File</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">File</label>
             {fileName ? (
               <div className={`flex items-center gap-3 px-3 py-2.5 border rounded-lg ${
                 uploadState === 'uploading' ? 'border-brand-300 bg-brand-50' :
@@ -296,10 +296,10 @@ export function NewSourceForm({ allowedTypes }: Props) {
                 }
               </div>
             ) : (
-              <label className="flex flex-col items-center justify-center gap-2 px-4 py-8 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-brand-400 hover:bg-brand-50 transition-colors">
-                <Upload className="w-6 h-6 text-gray-400" />
-                <span className="text-sm text-gray-600">Click to upload a PDF or image</span>
-                <span className="text-xs text-gray-400">PDF, JPG, PNG, WebP — up to 50 MB</span>
+              <label className="flex flex-col items-center justify-center gap-2 px-4 py-8 border-2 border-dashed border-gray-300 dark:border-white/20 rounded-lg cursor-pointer hover:border-brand-400 hover:bg-brand-50 dark:hover:bg-white/5 transition-colors">
+                <Upload className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+                <span className="text-sm text-gray-600 dark:text-gray-400">Click to upload a PDF or image</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">PDF, JPG, PNG, WebP — up to 50 MB</span>
                 <input
                   ref={fileRef}
                   type="file"
@@ -320,11 +320,11 @@ export function NewSourceForm({ allowedTypes }: Props) {
         {type === 'notion' && (
           <>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Notion page URL</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Notion page URL</label>
               <input type="url" name="url" required placeholder="https://www.notion.so/your-page-title-abc123" className={inputCls} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Integration token</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Integration token</label>
               <input type="password" name="notion_token" required placeholder="secret_…" className={monoInputCls} />
               <p className="text-xs text-gray-400 mt-1">
                 In Notion: <span className="font-medium">Settings → Integrations → Develop your own integrations</span>. Share the page with your integration.
@@ -337,11 +337,11 @@ export function NewSourceForm({ allowedTypes }: Props) {
         {type === 'gitbook' && (
           <>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">GitBook space URL</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">GitBook space URL</label>
               <input type="url" name="url" required placeholder="https://app.gitbook.com/o/orgId/s/spaceId" className={inputCls} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Personal API token</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Personal API token</label>
               <input type="password" name="gitbook_token" required placeholder="gb-…" className={monoInputCls} />
               <p className="text-xs text-gray-400 mt-1">
                 In GitBook: <span className="font-medium">Account settings → Developer → Personal access tokens → Create token</span>.
@@ -354,14 +354,14 @@ export function NewSourceForm({ allowedTypes }: Props) {
         {type === 'google_drive' && (
           <>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Google Drive file URL</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Google Drive file URL</label>
               <input type="url" name="url" required placeholder="https://docs.google.com/document/d/FILE_ID/edit" className={inputCls} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">OAuth access token</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">OAuth access token</label>
               <input type="password" name="google_access_token" required placeholder="ya29.…" className={monoInputCls} />
               <p className="text-xs text-gray-400 mt-1">
-                Generate via <span className="font-medium">Google OAuth Playground</span> (scope: <span className="font-mono bg-gray-100 px-1 rounded">drive.readonly</span>) or a service account with domain-wide delegation.
+                Generate via <span className="font-medium">Google OAuth Playground</span> (scope: <span className="font-mono bg-gray-100 dark:bg-white/10 dark:text-gray-300 px-1 rounded">drive.readonly</span>) or a service account with domain-wide delegation.
               </p>
             </div>
           </>
@@ -371,11 +371,11 @@ export function NewSourceForm({ allowedTypes }: Props) {
         {type === 'dropbox' && (
           <>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Dropbox file path or shared link</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Dropbox file path or shared link</label>
               <input type="text" name="url" required placeholder="/Documents/file.txt or https://www.dropbox.com/s/…" className={inputCls} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Access token</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Access token</label>
               <input type="password" name="dropbox_token" required placeholder="sl.…" className={monoInputCls} />
               <p className="text-xs text-gray-400 mt-1">
                 In Dropbox: <span className="font-medium">App Console → Create app → Generate access token</span> (long-lived token).
@@ -388,14 +388,14 @@ export function NewSourceForm({ allowedTypes }: Props) {
         {type === 'onedrive' && (
           <>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">OneDrive file URL</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">OneDrive file URL</label>
               <input type="url" name="url" required placeholder="https://onedrive.live.com/…" className={inputCls} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Microsoft Graph access token</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Microsoft Graph access token</label>
               <input type="password" name="ms_access_token" required placeholder="eyJ0…" className={monoInputCls} />
               <p className="text-xs text-gray-400 mt-1">
-                Generate via <span className="font-medium">Microsoft Graph Explorer</span> (scope: <span className="font-mono bg-gray-100 px-1 rounded">Files.Read</span>).
+                Generate via <span className="font-medium">Microsoft Graph Explorer</span> (scope: <span className="font-mono bg-gray-100 dark:bg-white/10 dark:text-gray-300 px-1 rounded">Files.Read</span>).
               </p>
             </div>
           </>
@@ -405,18 +405,18 @@ export function NewSourceForm({ allowedTypes }: Props) {
         {type === 'sharepoint' && (
           <>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">SharePoint file URL</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">SharePoint file URL</label>
               <input type="url" name="url" required placeholder="https://tenant.sharepoint.com/sites/…" className={inputCls} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Microsoft Graph access token</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Microsoft Graph access token</label>
               <input type="password" name="ms_access_token" required placeholder="eyJ0…" className={monoInputCls} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">SharePoint site ID</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">SharePoint site ID</label>
               <input type="text" name="sharepoint_site_id" required placeholder="tenant.sharepoint.com,site-guid,web-guid" className={monoInputCls} />
               <p className="text-xs text-gray-400 mt-1">
-                Find via <span className="font-mono bg-gray-100 px-1 rounded">GET https://graph.microsoft.com/v1.0/sites?search=your-site-name</span>.
+                Find via <span className="font-mono bg-gray-100 dark:bg-white/10 dark:text-gray-300 px-1 rounded">GET https://graph.microsoft.com/v1.0/sites?search=your-site-name</span>.
               </p>
             </div>
           </>
@@ -424,12 +424,12 @@ export function NewSourceForm({ allowedTypes }: Props) {
       </div>
 
       {isCloudType && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-700">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 rounded-xl p-4 text-sm text-amber-700 dark:text-amber-300">
           <strong>Tokens are stored securely</strong> and used only to fetch your document content for indexing. We recommend using read-only scopes.
         </div>
       )}
 
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700">
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/40 rounded-xl p-4 text-sm text-blue-700 dark:text-blue-300">
         After adding, your source is processed and indexed automatically.
         Once <strong>Ready</strong>, bots with RAG enabled will use it to answer questions.
       </div>
