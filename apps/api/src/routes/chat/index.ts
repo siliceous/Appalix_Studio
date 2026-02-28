@@ -50,16 +50,20 @@ export async function chatRoutes(fastify: FastifyInstance) {
       const integration = await resolveIntegration(request.params.integrationId)
       if (!integration) return reply.status(404).send({ error: 'Integration not found' })
 
-      if (integration.platform !== 'web_widget') {
-        return reply.status(400).send({ error: 'This endpoint is for web_widget integrations only' })
+      if (integration.platform !== 'web_widget' && integration.platform !== 'wordpress') {
+        return reply.status(400).send({ error: 'This endpoint is for web widget integrations only' })
       }
 
-      const cfg            = integration.config as Record<string, unknown>
-      const allowedOrigins = (cfg.allowed_origins as string[]) ?? []
-      const origin         = request.headers.origin
+      const cfg = integration.config as Record<string, unknown>
 
-      if (!isOriginAllowed(origin, allowedOrigins)) {
-        return reply.status(403).send({ error: 'Origin not allowed' })
+      // For web_widget, enforce allowed_origins CORS check.
+      // For wordpress, the integration ID acts as the public token — allow any browser origin.
+      if (integration.platform === 'web_widget') {
+        const allowedOrigins = (cfg.allowed_origins as string[]) ?? []
+        const origin         = request.headers.origin
+        if (!isOriginAllowed(origin, allowedOrigins)) {
+          return reply.status(403).send({ error: 'Origin not allowed' })
+        }
       }
 
       const ctx = {
