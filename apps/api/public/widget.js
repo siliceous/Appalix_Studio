@@ -162,6 +162,7 @@
     try { localStorage.setItem('apx_session_' + integrationId, sessionId); } catch (_) {}
   }
 
+  function init() {
   // Shadow host
   var host = document.createElement('div');
   host.id = 'appalix-widget-host';
@@ -414,5 +415,12 @@
       render();
     })
     .catch(function () { render(); });
+  } // end init()
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 
 })();
