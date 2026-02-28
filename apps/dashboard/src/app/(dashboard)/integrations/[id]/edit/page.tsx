@@ -59,7 +59,9 @@ export default async function EditIntegrationPage({
   const crmSalesforceToken        = (cfg.crm_salesforce_token        as string | undefined) ?? ''
   const crmSalesforceInstanceUrl  = (cfg.crm_salesforce_instance_url as string | undefined) ?? ''
 
-  const isWebWidget = integration.platform === 'web_widget' || integration.platform === 'wordpress'
+  const isWebWidget  = integration.platform === 'web_widget' || integration.platform === 'wordpress'
+  const isWordPress  = integration.platform === 'wordpress'
+  const wpApiKey     = (cfg.api_key as string | undefined) ?? ''
 
   return (
     <div className="max-w-2xl">
@@ -116,6 +118,22 @@ export default async function EditIntegrationPage({
                 The first message visitors see when the chat widget opens.
               </p>
             </div>
+
+            {isWordPress && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">API Key</label>
+                <input
+                  type="text"
+                  name="wp_api_key"
+                  defaultValue={wpApiKey}
+                  placeholder="Paste a new key to replace the existing one"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  This is the API Key shown on the integration setup page. Leave blank to keep the current key.
+                </p>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">

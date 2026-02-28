@@ -44,9 +44,12 @@ export async function createIntegration(formData: FormData) {
       app_id:         formData.get('app_id') as string || '',
     }
   } else if (platform === 'wordpress') {
+    const submittedKey = (formData.get('api_key') as string | null)?.trim()
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    const apiKey = submittedKey || ('wp-' + Array.from({ length: 40 }, () => chars[Math.floor(Math.random() * chars.length)]).join(''))
     config = {
       site_url: formData.get('site_url') as string || '',
-      api_key:  formData.get('api_key') as string || '',
+      api_key:  apiKey,
     }
   } else if (platform === 'facebook_messenger') {
     config = {
@@ -158,6 +161,7 @@ export async function updateIntegration(integrationId: string, formData: FormDat
 
   const name              = (formData.get('name') as string | null)?.trim()
   const botId             = formData.get('bot_id') as string | null
+  const wpApiKey          = (formData.get('wp_api_key') as string | null)?.trim()
   const welcomeMsg        = (formData.get('welcome_message') as string | null)?.trim()
   const allowedOrigins    = (formData.get('allowed_origins') as string | null)?.trim()
   const crmProvider            = (formData.get('crm_provider')             as string | null)?.trim()
@@ -211,6 +215,11 @@ export async function updateIntegration(integrationId: string, formData: FormDat
   setOrDel('crm_zoho_token',               crmZohoToken)
   setOrDel('crm_salesforce_token',         crmSalesforceToken)
   setOrDel('crm_salesforce_instance_url',  crmSalesforceInstanceUrl)
+
+  // WordPress API key (only update if explicitly submitted)
+  if (wpApiKey !== null && wpApiKey !== undefined) {
+    if (wpApiKey) newConfig.api_key = wpApiKey
+  }
 
   setOrDel('handoff_webhook_url',      handoffWebhookUrl)
   setOrDel('handoff_telegram_token',   handoffTelegramToken)

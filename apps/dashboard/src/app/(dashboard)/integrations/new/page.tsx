@@ -111,6 +111,12 @@ export default async function NewIntegrationPage({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                API Key <span className="text-gray-400 font-normal">(WordPress — leave blank to auto-generate)</span>
+              </label>
+              <input type="text" name="api_key" placeholder="Auto-generated if left blank" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Page access token <span className="text-gray-400 font-normal">(Facebook)</span>
               </label>
               <input type="text" name="page_access_token" placeholder="EAAxx..." className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />

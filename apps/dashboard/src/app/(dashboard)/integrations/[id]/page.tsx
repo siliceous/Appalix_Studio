@@ -111,7 +111,7 @@ function WordPressSetup({
   apiUrl: string
 }) {
   const endpoint = `${apiUrl}/webhooks/wordpress/${integrationId}`
-  const apiKey   = (cfg.api_key as string) ?? '(not set)'
+  const apiKey   = (cfg.api_key as string) || '(not set)'
 
   return (
     <div className="space-y-5">
@@ -205,7 +205,7 @@ function CustomApiSetup({
   apiUrl: string
 }) {
   const endpoint = `${apiUrl}/chat/custom/${integrationId}`
-  const apiKey   = (cfg.api_key as string) ?? '(not set)'
+  const apiKey   = (cfg.api_key as string) || '(not set)'
 
   const curlExample = `curl -X POST '${endpoint}' \\
   -H 'Content-Type: application/json' \\
