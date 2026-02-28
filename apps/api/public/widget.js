@@ -6,12 +6,17 @@
   var integrationId = cfg.integrationId;
   if (!integrationId) return;
 
-  // Derive API base from this script src
-  var apiBase = 'https://api.appalix.ai';
-  try {
-    var s = document.currentScript && document.currentScript.src;
-    if (s) { var u = new URL(s); apiBase = u.origin; }
-  } catch (_) {}
+  // API base: prefer explicit value from AppalixConfig (set by the embedding script),
+  // then fall back to this script's own origin (works for non-async loads),
+  // then fall back to the default production URL.
+  var apiBase = cfg.apiBase || '';
+  if (!apiBase) {
+    try {
+      var s = document.currentScript && document.currentScript.src;
+      if (s) { var u = new URL(s); apiBase = u.origin; }
+    } catch (_) {}
+  }
+  if (!apiBase) apiBase = 'https://api.appalix.ai';
 
   // Skin catalogue
   var SKINS = {
