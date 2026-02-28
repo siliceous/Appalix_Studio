@@ -67,22 +67,33 @@ export default function ConnectSharePointPage() {
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">Step 2 — Generate a Microsoft Graph access token</h2>
+            <p className="mb-3 text-sm text-gray-400">
+              Graph Explorer only shows permissions relevant to the active query. You need to run a SharePoint query first so that <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">Files.Read.All</code> and <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">Sites.Read.All</code> appear.
+            </p>
             <ol className="list-decimal pl-5 space-y-3">
               <li>
                 Go to <a href="https://developer.microsoft.com/en-us/graph/graph-explorer" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">developer.microsoft.com/graph/graph-explorer</a>.
               </li>
               <li>Click <strong className="text-white">Sign in to Graph Explorer</strong> using your Microsoft 365 work or school account.</li>
-              <li>Click <strong className="text-white">Modify permissions (Preview)</strong> in the left panel and consent to:</li>
-            </ol>
-            <ul className="list-disc pl-5 mt-3 space-y-1 text-sm">
-              <li><code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">Files.Read.All</code> — read files across sites</li>
-              <li><code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">Sites.Read.All</code> — read SharePoint site data</li>
-            </ul>
-            <ol className="list-decimal pl-5 space-y-3 mt-3" start={4}>
-              <li>Click your profile icon (top-right) → <strong className="text-white">Access token</strong> and copy it. It starts with <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">eyJ0…</code></li>
+              <li>
+                In the request URL bar, enter:
+                <pre className="bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-brand-300 mt-2 overflow-x-auto">
+                  {`https://graph.microsoft.com/v1.0/sites?search=*`}
+                </pre>
+                Click <strong className="text-white">Run query</strong>. It will show an error — that&apos;s expected.
+              </li>
+              <li>
+                A blue <strong className="text-white">Modify permissions</strong> banner will appear (or click the <strong className="text-white">Modify permissions</strong> tab). You will now see the required permissions in the list. Click <strong className="text-white">Consent</strong> next to each:
+                <ul className="list-disc pl-5 mt-2 space-y-1 text-sm">
+                  <li><code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">Files.Read.All</code> — read files across sites</li>
+                  <li><code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">Sites.Read.All</code> — read SharePoint site data</li>
+                </ul>
+              </li>
+              <li>Run the query again — it should return a list of SharePoint sites.</li>
+              <li>Click your <strong className="text-white">profile icon</strong> (top-right) → <strong className="text-white">Access token</strong> and copy it. It starts with <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">eyJ0…</code></li>
             </ol>
             <div className="mt-4 bg-amber-900/20 border border-amber-700/40 rounded-xl p-4 text-sm text-amber-300">
-              <strong>Note:</strong> Graph Explorer tokens expire after ~1 hour. For production, register an app in Azure AD and use client credentials flow for long-lived tokens.
+              <strong>Note:</strong> Graph Explorer tokens expire after ~1 hour. For production, register an app in Azure AD and use the client credentials flow for long-lived tokens.
             </div>
           </section>
 

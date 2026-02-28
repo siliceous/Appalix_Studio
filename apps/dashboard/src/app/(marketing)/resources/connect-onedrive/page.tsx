@@ -68,21 +68,29 @@ export default function ConnectOneDrivePage() {
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">Step 2 — Generate a Microsoft Graph access token</h2>
             <p className="mb-3 text-sm text-gray-400">
-              The easiest way is via the Microsoft Graph Explorer.
+              The easiest way is via Microsoft Graph Explorer. Graph Explorer only shows permissions relevant to the active query, so you must run a OneDrive query first to surface <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">Files.Read</code>.
             </p>
             <ol className="list-decimal pl-5 space-y-3">
               <li>
                 Go to <a href="https://developer.microsoft.com/en-us/graph/graph-explorer" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">developer.microsoft.com/graph/graph-explorer</a>.
               </li>
               <li>Click <strong className="text-white">Sign in to Graph Explorer</strong> and sign in with your Microsoft account.</li>
-              <li>Click <strong className="text-white">Modify permissions (Preview)</strong> in the left panel.</li>
               <li>
-                Find and consent to the <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">Files.Read</code> permission (or <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">Files.Read.All</code> for all files).
+                In the request URL bar at the top, replace the default URL with:
+                <pre className="bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-brand-300 mt-2 overflow-x-auto">
+                  {`https://graph.microsoft.com/v1.0/me/drive/root`}
+                </pre>
+                Click <strong className="text-white">Run query</strong>. It will return an error — that&apos;s expected.
               </li>
-              <li>Click your profile icon (top-right) → <strong className="text-white">Access token</strong> and copy the token. It starts with <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">eyJ0…</code></li>
+              <li>
+                A blue <strong className="text-white">Modify permissions</strong> banner will appear below the request bar (or click the <strong className="text-white">Modify permissions</strong> tab). You will now see <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">Files.Read</code> and <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">Files.Read.All</code> in the list.
+              </li>
+              <li>Click <strong className="text-white">Consent</strong> next to <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">Files.Read</code> and approve the pop-up.</li>
+              <li>Run the query again — it should now return your OneDrive root folder details.</li>
+              <li>Click your <strong className="text-white">profile icon</strong> (top-right) → <strong className="text-white">Access token</strong> and copy the token. It starts with <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">eyJ0…</code></li>
             </ol>
             <div className="mt-4 bg-amber-900/20 border border-amber-700/40 rounded-xl p-4 text-sm text-amber-300">
-              <strong>Note:</strong> Graph Explorer tokens expire after ~1 hour. For production, register an Azure AD app and use client credentials flow to generate long-lived tokens.
+              <strong>Note:</strong> Graph Explorer tokens expire after ~1 hour. For production, register an Azure AD app and use the client credentials flow to generate long-lived tokens.
             </div>
           </section>
 
