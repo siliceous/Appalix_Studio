@@ -55,7 +55,14 @@ export function RenameConversationTitle({ id, title }: Props) {
           title="Save"
           className="p-1 text-brand-600 hover:bg-brand-50 rounded transition-colors disabled:opacity-50"
         >
-          <Check className="w-4 h-4" />
+          {isPending ? (
+            <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            </svg>
+          ) : (
+            <Check className="w-4 h-4" />
+          )}
         </button>
         <button
           onClick={() => { setValue(title ?? ''); setEditing(false) }}
