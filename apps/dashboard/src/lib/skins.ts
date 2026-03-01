@@ -33,6 +33,35 @@ export interface Skin {
 
 export const SKINS: Skin[] = [
   {
+    id:          'appalix',
+    name:        'Appalix',
+    description: 'Dark with teal accents — the Appalix brand look',
+    preview: {
+      headerBg:   '#1c1c1c',
+      chatBg:     '#1e1e1e',
+      accent:     '#61c2ad',
+      userBubble: '#1a8c76',
+      botBubble:  '#252525',
+      text:       '#f3f4f6',
+    },
+    vars: {
+      '--apx-header-bg':    '#1c1c1c',
+      '--apx-header-text':  '#ffffff',
+      '--apx-bg':           '#1e1e1e',
+      '--apx-border':       '#2d2d2d',
+      '--apx-user-bubble':  '#1a8c76',
+      '--apx-user-text':    '#ffffff',
+      '--apx-bot-bubble':   '#252525',
+      '--apx-bot-text':     '#d1d5db',
+      '--apx-input-bg':     '#1c1c1c',
+      '--apx-input-border': '#2d2d2d',
+      '--apx-input-text':   '#f3f4f6',
+      '--apx-accent':       '#61c2ad',
+      '--apx-accent-text':  '#ffffff',
+      '--apx-launcher-bg':  '#1a8c76',
+    },
+  },
+  {
     id:          'light',
     name:        'Light',
     description: 'Clean white — the classic default',
