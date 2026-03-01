@@ -171,6 +171,8 @@ export async function updateIntegration(integrationId: string, formData: FormDat
   const crmZohoToken                = (formData.get('crm_zoho_token')                as string | null)?.trim()
   const crmSalesforceToken          = (formData.get('crm_salesforce_token')          as string | null)?.trim()
   const crmSalesforceInstanceUrl    = (formData.get('crm_salesforce_instance_url')   as string | null)?.trim()
+  const crmMondayToken              = (formData.get('crm_monday_token')              as string | null)?.trim()
+  const crmMondayBoardId            = (formData.get('crm_monday_board_id')           as string | null)?.trim()
   const handoffChannel         = (formData.get('handoff_channel')           as string | null)?.trim()
   const handoffWebhookUrl      = (formData.get('handoff_webhook_url')       as string | null)?.trim()
   const handoffTelegramToken   = (formData.get('handoff_telegram_token')    as string | null)?.trim()
@@ -215,6 +217,8 @@ export async function updateIntegration(integrationId: string, formData: FormDat
   setOrDel('crm_zoho_token',               crmZohoToken)
   setOrDel('crm_salesforce_token',         crmSalesforceToken)
   setOrDel('crm_salesforce_instance_url',  crmSalesforceInstanceUrl)
+  setOrDel('crm_monday_token',             crmMondayToken)
+  setOrDel('crm_monday_board_id',          crmMondayBoardId)
 
   // WordPress API key (only update if explicitly submitted)
   if (wpApiKey !== null && wpApiKey !== undefined) {

@@ -58,6 +58,8 @@ export default async function EditIntegrationPage({
   const crmZohoToken              = (cfg.crm_zoho_token              as string | undefined) ?? ''
   const crmSalesforceToken        = (cfg.crm_salesforce_token        as string | undefined) ?? ''
   const crmSalesforceInstanceUrl  = (cfg.crm_salesforce_instance_url as string | undefined) ?? ''
+  const crmMondayToken            = (cfg.crm_monday_token            as string | undefined) ?? ''
+  const crmMondayBoardId          = (cfg.crm_monday_board_id         as string | undefined) ?? ''
 
   const isWebWidget  = integration.platform === 'web_widget' || integration.platform === 'wordpress'
   const isWordPress  = integration.platform === 'wordpress'
@@ -170,6 +172,8 @@ export default async function EditIntegrationPage({
             zohoToken={crmZohoToken}
             salesforceToken={crmSalesforceToken}
             salesforceInstanceUrl={crmSalesforceInstanceUrl}
+            mondayToken={crmMondayToken}
+            mondayBoardId={crmMondayBoardId}
           />
         </div>
 

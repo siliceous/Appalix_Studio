@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-type CrmProvider = 'none' | 'webhook' | 'zapier' | 'hubspot' | 'intercom' | 'zoho' | 'salesforce'
+type CrmProvider = 'none' | 'webhook' | 'zapier' | 'hubspot' | 'intercom' | 'zoho' | 'salesforce' | 'monday'
 
 const PROVIDERS: {
   value:  CrmProvider
@@ -47,6 +47,12 @@ const PROVIDERS: {
     desc:  'Create leads directly in Salesforce CRM using an OAuth access token and your instance URL.',
   },
   {
+    value: 'monday',
+    label: 'Monday.com',
+    logo:  '📋',
+    desc:  'Create items in a Monday.com board the moment a visitor shares contact details in chat.',
+  },
+  {
     value: 'webhook',
     label: 'Generic webhook',
     logo:  '🔗',
@@ -62,6 +68,8 @@ interface Props {
   zohoToken:              string
   salesforceToken:        string
   salesforceInstanceUrl:  string
+  mondayToken:    string
+  mondayBoardId:  string
 }
 
 export function CrmConfig(props: Props) {
@@ -193,6 +201,40 @@ export function CrmConfig(props: Props) {
               In Salesforce: <span className="font-medium">Setup → My Domain</span> or use the{' '}
               <span className="font-mono bg-gray-100 px-1 rounded">instance_url</span> from your OAuth token response.
               Requires <span className="font-mono bg-gray-100 px-1 rounded">api</span> scope.
+            </p>
+          </div>
+        </>
+      )}
+
+      {/* Monday.com */}
+      {provider === 'monday' && (
+        <>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">API token</label>
+            <input
+              type="password"
+              name="crm_monday_token"
+              defaultValue={props.mondayToken}
+              placeholder="eyJhbGciOiJIUzI1NiJ9.…"
+              className={monoInputCls}
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              In Monday.com: click your avatar → <span className="font-medium">Administration → API</span> → generate a <span className="font-medium">Personal API Token</span>.
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Board ID</label>
+            <input
+              type="text"
+              name="crm_monday_board_id"
+              defaultValue={props.mondayBoardId}
+              placeholder="1234567890"
+              className={monoInputCls}
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Open your board in Monday.com — the board ID is the number in the URL:{' '}
+              <span className="font-mono bg-gray-100 px-1 rounded">monday.com/boards/<strong>1234567890</strong></span>.
+              New leads appear as items in that board.
             </p>
           </div>
         </>

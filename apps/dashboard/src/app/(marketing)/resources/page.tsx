@@ -71,6 +71,15 @@ const POSTS = [
     emoji: '🏢',
     slug: 'connect-sharepoint',
   },
+  {
+    category: 'Guide',
+    title: 'Knowledge Base File Types — Everything Appalix Can Ingest',
+    excerpt: 'A complete reference of every file format the Appalix knowledge base supports: PDF, Word, Excel, PowerPoint, CSV, images, ZIP, website URLs, Notion, GitBook, and cloud drives — and how each one is processed.',
+    readTime: '6 min read',
+    date: 'Mar 1, 2026',
+    emoji: '📂',
+    slug: 'knowledge-base-file-types',
+  },
   // ── Platform tutorials ──────────────────────────────────────────────────────
   {
     category: 'Tutorial',

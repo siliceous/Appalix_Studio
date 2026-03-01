@@ -166,6 +166,50 @@ async function postLeadToSalesforce(token: string, instanceUrl: string, lead: Le
 }
 
 // ---------------------------------------------------------------------------
+// Monday.com — Personal API Token + Board ID
+// ---------------------------------------------------------------------------
+
+async function postLeadToMonday(token: string, boardId: string, lead: LeadData, payload: LeadWebhookPayload): Promise<void> {
+  try {
+    const boardIdInt = parseInt(boardId, 10)
+    if (isNaN(boardIdInt)) throw new Error('Invalid Monday.com board ID')
+
+    // Build a descriptive item name from whatever contact info we have
+    const parts: string[] = []
+    if (lead.email) parts.push(lead.email)
+    if (lead.phone) parts.push(lead.phone)
+    const itemName = parts.join(' · ') || 'Appalix Chat Lead'
+
+    // Try to set email/phone columns if they exist on the board (column IDs are board-specific)
+    const columnValues: Record<string, unknown> = {}
+    if (lead.email) columnValues['email'] = { email: lead.email, text: lead.email }
+    if (lead.phone) columnValues['phone'] = { phone: lead.phone, countryShortName: 'AU' }
+
+    const query = `mutation {
+      create_item(
+        board_id: ${boardIdInt},
+        item_name: ${JSON.stringify(itemName)},
+        column_values: ${JSON.stringify(JSON.stringify(columnValues))}
+      ) { id }
+    }`
+
+    const res = await fetch('https://api.monday.com/v2', {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${token}`,
+        'API-Version':   '2024-01',
+      },
+      body:   JSON.stringify({ query }),
+      signal: AbortSignal.timeout(10_000),
+    })
+    console.log(`[lead-capture] Monday.com responded ${res.status} for conversation=${payload.conversationId}`)
+  } catch (err) {
+    console.error(`[lead-capture] Monday.com failed: ${err instanceof Error ? err.message : String(err)}`)
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Dispatcher — routes to the correct provider based on integration config
 // ---------------------------------------------------------------------------
 
@@ -196,6 +240,12 @@ export async function routeLeadToProvider(
       const token       = config.crm_salesforce_token        as string | undefined
       const instanceUrl = config.crm_salesforce_instance_url as string | undefined
       if (token && instanceUrl) await postLeadToSalesforce(token, instanceUrl, lead, payload)
+      break
+    }
+    case 'monday': {
+      const token   = config.crm_monday_token    as string | undefined
+      const boardId = config.crm_monday_board_id as string | undefined
+      if (token && boardId) await postLeadToMonday(token, boardId, lead, payload)
       break
     }
     case 'zapier':

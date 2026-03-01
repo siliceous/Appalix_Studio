@@ -19,7 +19,7 @@ const FEATURES = [
   {
     icon: '🧠',
     title: 'Multi-source content training',
-    desc: 'Train your agent on website URLs, sitemaps, PDFs, DOCX, CSV, TXT, and raw text. Sync daily, weekly, or on demand — your agent always stays up to date.',
+    desc: 'Train your agent on website URLs, sitemaps, PDFs, Word documents, Excel spreadsheets, PowerPoint presentations, CSV files, images (JPG/PNG), ZIP archives, and raw text. Sync on demand — your agent always stays current.',
     tag: 'Knowledge',
   },
   {
@@ -85,7 +85,7 @@ const FEATURES = [
   {
     icon: '📂',
     title: 'Knowledge source connectors',
-    desc: 'Train your bot from Google Drive, Dropbox, OneDrive, SharePoint, Notion, and GitBook — in addition to URLs, PDFs, and text. Available on Pro and above.',
+    desc: 'Train your bot from Google Drive, Dropbox, OneDrive, SharePoint, Notion, and GitBook — in addition to URLs, PDFs, Office files (Word/Excel/PowerPoint), CSV, images, ZIP archives, and plain text. Available on Pro and above.',
     tag: 'Pro',
   },
 ]
