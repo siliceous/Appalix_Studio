@@ -298,7 +298,7 @@
           '</div>',
           '<button class="sbtn" id="apx-send"', (pendingTyping ? ' disabled' : ''), '>', ICONS.send, '</button>',
         '</div>',
-        '<div class="powered">\u00a9 2026 <a href="https://appalix.ai/" target="_blank" rel="noopener">Appalix.ai</a>. All rights reserved. Website powered by <a href="https://www.gorank.com.au/" target="_blank" rel="noopener">GoRank</a></div>',
+        '<div class="powered">Powered by <a href="https://appalix.ai/" target="_blank" rel="noopener">Appalix.ai</a></div>',
       '</div>',
     ].join('');
 

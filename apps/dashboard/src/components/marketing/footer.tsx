@@ -60,7 +60,10 @@ export function MarketingFooter() {
         </div>
 
         <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-gray-400">© {new Date().getFullYear()} Appalix. All rights reserved.</p>
+          <p className="text-xs text-gray-400">
+            © {new Date().getFullYear()} Appalix. All rights reserved. Website powered by{' '}
+            <a href="https://www.gorank.com.au/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GoRank</a>
+          </p>
           <div className="flex items-center gap-5">
             <Link href="#" className="text-gray-400 hover:text-gray-400 transition-colors">
               <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
