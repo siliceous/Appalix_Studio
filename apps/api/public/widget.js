@@ -126,6 +126,8 @@
   var botName = 'Chat Support';
   var skinVars = SKINS.appalix;
   var sessionId = '';
+  var userWidth  = 0;
+  var userHeight = 0;
 
   try {
     var stored = localStorage.getItem('apx_session_' + integrationId);
@@ -177,7 +179,9 @@
     '  z-index:2147483647;font-family:system-ui,-apple-system,sans-serif;font-size:14px;',
     '  transition:width .25s ease,height .25s ease,top .25s ease,right .25s ease,bottom .25s ease;',
     '}',
-    '.window.expanded{width:60vw;height:70vh;right:16px;}',
+    '.window.expanded{width:520px;max-width:calc(100vw - 32px);height:calc(100vh - 32px);top:16px;right:16px;bottom:auto;}',
+    '.resize-grip{width:14px;height:14px;cursor:nw-resize;opacity:.3;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:opacity .15s;margin-right:-2px;}',
+    '.resize-grip:hover{opacity:.7;}',
     '.header{',
     '  display:flex;align-items:center;padding:12px 14px;gap:10px;',
     '  background:var(--apx-header-bg);border-bottom:1px solid var(--apx-border);flex-shrink:0;',
@@ -265,6 +269,10 @@
     var isOpen     = state !== 'closed';
     var isExpanded = state === 'expanded';
 
+    var winStyle = 'display:' + (isOpen ? 'flex' : 'none');
+    if (!isExpanded && userWidth)  winStyle += ';width:'  + userWidth  + 'px';
+    if (!isExpanded && userHeight) winStyle += ';height:' + userHeight + 'px';
+
     var msgsHtml = messages.map(function (m) {
       return '<div class="msg ' + m.role + '"><div class="bubble">' + esc(m.text) + '</div></div>';
     }).join('');
@@ -278,8 +286,9 @@
       '<button class="launcher" id="apx-launcher" aria-label="Open chat" style="display:', (isOpen ? 'none' : 'flex'), '">',
         ICONS.chat,
       '</button>',
-      '<div class="window', (isExpanded ? ' expanded' : ''), '" style="display:', (isOpen ? 'flex' : 'none'), '">',
+      '<div id="apx-window" class="window' + (isExpanded ? ' expanded' : '') + '" style="' + winStyle + '">',
         '<div class="header">',
+          '<div class="resize-grip" id="apx-resize"><svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="10" cy="2" r="1.2"/></svg></div>',
           '<div class="hd"></div>',
           '<div class="ht">',
             '<div class="ht-name">', esc(botName), '</div>',
@@ -336,6 +345,8 @@
     var expandBtn = shadow.getElementById('apx-expand');
     if (expandBtn) expandBtn.addEventListener('click', function () {
       state = state === 'expanded' ? 'open' : 'expanded';
+      userWidth  = 0;
+      userHeight = 0;
       render();
     });
 
@@ -420,6 +431,58 @@
           inp.dispatchEvent(new Event('input'));
         }
       });
+    }
+
+    // Resize grip — drag top-left to resize (window is anchored bottom-right)
+    var resizeGrip = shadow.getElementById('apx-resize');
+    if (resizeGrip) {
+      resizeGrip.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        var winEl = shadow.getElementById('apx-window');
+        if (!winEl) return;
+        var startX = e.clientX, startY = e.clientY;
+        var startW = winEl.offsetWidth, startH = winEl.offsetHeight;
+
+        function onMove(e) {
+          var newW = Math.max(300, Math.min(startW + (startX - e.clientX), window.innerWidth  - 40));
+          var newH = Math.max(380, Math.min(startH + (startY - e.clientY), window.innerHeight - 40));
+          winEl.style.width  = newW + 'px';
+          winEl.style.height = newH + 'px';
+          userWidth  = newW;
+          userHeight = newH;
+        }
+        function onUp() {
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup',   onUp);
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup',   onUp);
+      });
+
+      resizeGrip.addEventListener('touchstart', function (e) {
+        e.preventDefault();
+        var winEl = shadow.getElementById('apx-window');
+        if (!winEl) return;
+        var t0 = e.touches[0];
+        var startX = t0.clientX, startY = t0.clientY;
+        var startW = winEl.offsetWidth, startH = winEl.offsetHeight;
+
+        function onMove(e) {
+          var t = e.touches[0];
+          var newW = Math.max(300, Math.min(startW + (startX - t.clientX), window.innerWidth  - 40));
+          var newH = Math.max(380, Math.min(startH + (startY - t.clientY), window.innerHeight - 40));
+          winEl.style.width  = newW + 'px';
+          winEl.style.height = newH + 'px';
+          userWidth  = newW;
+          userHeight = newH;
+        }
+        function onEnd() {
+          document.removeEventListener('touchmove', onMove);
+          document.removeEventListener('touchend',  onEnd);
+        }
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend',  onEnd);
+      }, { passive: false });
     }
   }
 
