@@ -208,13 +208,47 @@ async function fetchSourceContent(source: {
             if (result.value.trim()) return result.value
           }
 
+          // CSV — plain text
+          if (ct.includes('text/csv') || ct.includes('application/csv') || source.url.match(/\.csv$/i)) {
+            const text = await res.text()
+            if (text.trim()) return text
+          }
+
+          // Excel (.xlsx / .xls) — convert sheets to CSV text
+          if (ct.includes('spreadsheetml') || ct.includes('ms-excel') || source.url.match(/\.xlsx?$/i)) {
+            const { read, utils } = await import('xlsx')
+            const workbook = read(Buffer.from(await res.arrayBuffer()))
+            const texts: string[] = []
+            for (const sheetName of workbook.SheetNames) {
+              const csv = utils.sheet_to_csv(workbook.Sheets[sheetName] as never)
+              if (csv.trim()) texts.push(`## Sheet: ${sheetName}\n\n${csv}`)
+            }
+            if (texts.length > 0) return texts.join('\n\n')
+          }
+
+          // PowerPoint (.pptx) — extract slide text
+          if (ct.includes('presentationml') || source.url.match(/\.pptx?$/i)) {
+            const JSZip = (await import('jszip')).default
+            const zip = await JSZip.loadAsync(await res.arrayBuffer())
+            const slideFiles = Object.keys(zip.files)
+              .filter((n) => /^ppt\/slides\/slide\d+\.xml$/.test(n))
+              .sort()
+            const texts: string[] = []
+            for (const slidePath of slideFiles) {
+              const xml = await zip.files[slidePath].async('string')
+              const slideText = [...xml.matchAll(/<a:t[^>]*>([^<]+)<\/a:t>/g)].map((m) => m[1]).join(' ')
+              if (slideText.trim()) texts.push(`## Slide ${slidePath.match(/slide(\d+)/)?.[1] ?? '?'}\n\n${slideText}`)
+            }
+            if (texts.length > 0) return texts.join('\n\n')
+          }
+
           // Plain HTML/text — strip tags
           if (ct.includes('text/html') || ct.includes('text/plain') || ct === '') {
             const text = htmlToText(await res.text())
             if (text) return text
           }
 
-          // Any other binary type (PDF, Excel, etc.) — fall through to Jina Reader
+          // Any other binary type (PDF, ZIP, etc.) — fall through to Jina Reader
         }
       } catch {
         // fall through to Jina Reader
@@ -278,12 +312,28 @@ async function fetchSourceContent(source: {
       const arrayBuffer = await blob.arrayBuffer()
       const base64      = Buffer.from(arrayBuffer).toString('base64')
 
-      const isPdf  = mimeType === 'application/pdf'
+      // Use both MIME type AND filename extension as fallback (old uploads may have mime=application/octet-stream)
+      const origName = (source.metadata as Record<string, string> | null)?.original_name ?? source.name ?? ''
+
+      const isPdf   = mimeType === 'application/pdf'
+                   || /\.pdf$/i.test(origName)
       const isImage = mimeType.startsWith('image/')
+                   || /\.(jpe?g|png|gif|webp)$/i.test(origName)
       const isDocx  = mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
                    || mimeType === 'application/msword'
+                   || /\.docx?$/i.test(origName)
+      const isCsv   = mimeType === 'text/csv' || mimeType === 'application/csv'
+                   || /\.csv$/i.test(origName)
+      const isExcel = mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                   || mimeType === 'application/vnd.ms-excel'
+                   || /\.xlsx?$/i.test(origName)
+      const isPptx  = mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+                   || mimeType === 'application/vnd.ms-powerpoint'
+                   || /\.pptx?$/i.test(origName)
+      const isZip   = mimeType === 'application/zip' || mimeType === 'application/x-zip-compressed'
+                   || /\.zip$/i.test(origName)
 
-      // DOCX — extract raw text with mammoth (no Claude API call needed)
+      // DOCX — extract raw text with mammoth
       if (isDocx) {
         const { default: mammoth } = await import('mammoth')
         const buf    = Buffer.from(arrayBuffer)
@@ -291,7 +341,59 @@ async function fetchSourceContent(source: {
         return result.value
       }
 
-      if (!isPdf && !isImage) throw new Error(`Unsupported file MIME type: ${mimeType}. Supported: PDF, images, DOCX.`)
+      // CSV — plain text
+      if (isCsv) {
+        return Buffer.from(arrayBuffer).toString('utf-8')
+      }
+
+      // Excel (.xlsx / .xls) — convert each sheet to CSV text
+      if (isExcel) {
+        const { read, utils } = await import('xlsx')
+        const workbook = read(Buffer.from(arrayBuffer))
+        const texts: string[] = []
+        for (const sheetName of workbook.SheetNames) {
+          const csv = utils.sheet_to_csv(workbook.Sheets[sheetName] as never)
+          if (csv.trim()) texts.push(`## Sheet: ${sheetName}\n\n${csv}`)
+        }
+        return texts.join('\n\n') || 'Excel workbook contains no data.'
+      }
+
+      // PowerPoint (.pptx) — extract text from slide XML nodes
+      if (isPptx) {
+        const JSZip = (await import('jszip')).default
+        const zip = await JSZip.loadAsync(arrayBuffer)
+        const slideFiles = Object.keys(zip.files)
+          .filter((name) => /^ppt\/slides\/slide\d+\.xml$/.test(name))
+          .sort()
+        const texts: string[] = []
+        for (const slidePath of slideFiles) {
+          const xml = await zip.files[slidePath].async('string')
+          const slideText = [...xml.matchAll(/<a:t[^>]*>([^<]+)<\/a:t>/g)]
+            .map((m) => m[1])
+            .join(' ')
+          if (slideText.trim()) {
+            const num = slidePath.match(/slide(\d+)/)?.[1] ?? '?'
+            texts.push(`## Slide ${num}\n\n${slideText}`)
+          }
+        }
+        return texts.join('\n\n') || 'PowerPoint contains no readable text.'
+      }
+
+      // ZIP — extract and concatenate readable text files inside
+      if (isZip) {
+        const JSZip = (await import('jszip')).default
+        const zip = await JSZip.loadAsync(arrayBuffer)
+        const TEXT_EXTS = /\.(txt|md|csv|json|xml|html|htm)$/i
+        const texts: string[] = []
+        for (const [filePath, file] of Object.entries(zip.files)) {
+          if (file.dir || !TEXT_EXTS.test(filePath)) continue
+          const content = await file.async('string')
+          if (content.trim()) texts.push(`## ${filePath}\n\n${content}`)
+        }
+        return texts.join('\n\n') || 'ZIP archive contains no readable text files.'
+      }
+
+      if (!isPdf && !isImage) throw new Error(`Unsupported file MIME type: ${mimeType}. Supported: PDF, images, Word, Excel, PowerPoint, CSV, ZIP.`)
 
       // Use Claude to extract text — document API for PDFs, vision for images
       const { anthropic } = await import('../ai/claude.js')
