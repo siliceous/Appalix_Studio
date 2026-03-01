@@ -37,8 +37,8 @@ const ALL_TYPES: {
   },
   {
     value:     'file',
-    label:     'PDF / Word / Image',
-    desc:      'Upload a PDF, Word doc, PowerPoint, or image',
+    label:     'PDF / Word / ZIP',
+    desc:      'Upload a PDF, Word, PowerPoint, image, or ZIP',
     icon:      <FileText className="w-4 h-4" />,
     minPlan:   'pro',
     planLabel: 'Pro+',
