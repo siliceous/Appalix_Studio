@@ -26,13 +26,23 @@ export async function retrieveContext(params: RetrievalParams): Promise<Retrieve
   const {
     workspaceId,
     query,
-    matchThreshold = 0.50,
+    matchThreshold = 0.30,
     matchCount     = 5,
     sourceIds,
     conversationId,
   } = params
 
-  console.log(`[rag/retrieval] query="${query.slice(0, 80)}" threshold=${matchThreshold} workspace=${workspaceId}`)
+  // Count total chunks in this workspace so we can distinguish "no chunks" from "no matches"
+  const { count: totalChunks } = await supabase
+    .from('chunks')
+    .select('*', { count: 'exact', head: true })
+    .eq('workspace_id', workspaceId)
+  console.log(`[rag/retrieval] workspace=${workspaceId} total_chunks=${totalChunks ?? 0} threshold=${matchThreshold} query="${query.slice(0, 80)}"`)
+
+  if ((totalChunks ?? 0) === 0) {
+    console.warn(`[rag/retrieval] No chunks found for workspace ${workspaceId} — knowledge base is empty or not yet ingested`)
+    return []
+  }
 
   // Embed the query
   const queryEmbedding = await embedText(query)
