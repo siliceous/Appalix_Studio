@@ -239,6 +239,7 @@
     '.icon-btn.recording{color:#ef4444;opacity:1;animation:apxpulse 1s ease-in-out infinite;}',
     '@keyframes apxpulse{0%,100%{opacity:1;}50%{opacity:.5;}}',
     '.powered{font-size:10px;text-align:center;color:var(--apx-bot-text);opacity:.3;padding:3px 0 5px;}',
+    '.powered a{color:inherit;text-decoration:none;}.powered a:hover{text-decoration:underline;}',
   ].join('');
 
   function esc(str) {
@@ -297,7 +298,7 @@
           '</div>',
           '<button class="sbtn" id="apx-send"', (pendingTyping ? ' disabled' : ''), '>', ICONS.send, '</button>',
         '</div>',
-        '<div class="powered">Powered by Appalix</div>',
+        '<div class="powered">\u00a9 2026 Appalix. All rights reserved. Website powered by <a href="https://www.gorank.com.au/" target="_blank" rel="noopener">GoRank</a></div>',
       '</div>',
     ].join('');
 
