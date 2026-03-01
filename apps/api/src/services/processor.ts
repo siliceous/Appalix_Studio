@@ -187,9 +187,13 @@ export async function processMessage(
     ? `\n\nLANGUAGE: Always respond in ${bot.language_preference}, regardless of the language the user writes in.`
     : ''
 
+  const timeInjection = msg.clientTime
+    ? `\n\nCURRENT TIME: The user's local time is ${new Date(msg.clientTime).toLocaleString('en-AU', { timeZone: msg.clientTimezone ?? undefined, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}. Use this when answering questions about the current time, date, or scheduling.`
+    : ''
+
   const basePrompt = handoffTriggered
-    ? `${bot.system_prompt ?? ''}\n\n${HANDOFF_SYSTEM_INJECTION}${languageInjection}`.trim()
-    : `${bot.system_prompt ?? ''}\n\n${sensitivityInjection}${languageInjection}`.trim()
+    ? `${bot.system_prompt ?? ''}\n\n${HANDOFF_SYSTEM_INJECTION}${languageInjection}${timeInjection}`.trim()
+    : `${bot.system_prompt ?? ''}\n\n${sensitivityInjection}${languageInjection}${timeInjection}`.trim()
 
   const systemPrompt = buildSystemPrompt(basePrompt, ragContext)
 

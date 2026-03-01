@@ -30,6 +30,8 @@ export function parseWebWidgetRequest(
     platformThreadId: body.session_id ?? 'anon',
     platformUserId:   body.session_id,
     text,
+    clientTime:       body.client_time,
+    clientTimezone:   body.client_timezone,
     metadata:         body.metadata ?? {},
   }
 }
@@ -61,9 +63,11 @@ export function isOriginAllowed(origin: string | undefined, allowedOrigins: stri
 // Types
 // ---------------------------------------------------------------
 interface WebWidgetRequestBody {
-  message:     string
-  session_id?: string
-  metadata?:   Record<string, unknown>
+  message:          string
+  session_id?:      string
+  client_time?:     string
+  client_timezone?: string
+  metadata?:        Record<string, unknown>
 }
 
 interface WebWidgetResponseBody {

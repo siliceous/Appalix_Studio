@@ -36,6 +36,12 @@ export interface IncomingMessage {
   /** The text the user sent */
   text: string
 
+  /** User's local time as ISO string, e.g. "2026-03-01T14:32:00+11:00" */
+  clientTime?: string
+
+  /** User's IANA timezone, e.g. "Australia/Sydney" */
+  clientTimezone?: string
+
   /** Extra context the platform provides (e.g. channel name, team) */
   metadata?: Record<string, unknown>
 }

@@ -431,7 +431,7 @@
     fetch(apiBase + '/chat/' + integrationId, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text, session_id: sessionId }),
+      body: JSON.stringify({ message: text, session_id: sessionId, client_time: new Date().toISOString(), client_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
     })
       .then(function (r) { return r.json(); })
       .then(function (d) {
