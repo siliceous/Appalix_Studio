@@ -20,22 +20,6 @@
 
   // Skin catalogue
   var SKINS = {
-    custom: {
-      '--apx-header-bg':    '#f9fafb',
-      '--apx-header-text':  '#111827',
-      '--apx-bg':           '#ffffff',
-      '--apx-border':       '#e5e7eb',
-      '--apx-user-bubble':  '#ec732e',
-      '--apx-user-text':    '#ffffff',
-      '--apx-bot-bubble':   '#f3f4f6',
-      '--apx-bot-text':     '#111827',
-      '--apx-input-bg':     '#f9fafb',
-      '--apx-input-border': '#d1d5db',
-      '--apx-input-text':   '#111827',
-      '--apx-accent':       '#ec732e',
-      '--apx-accent-text':  '#ffffff',
-      '--apx-launcher-bg':  '#ec732e',
-    },
     appalix: {
       '--apx-header-bg':    '#1c1c1c',
       '--apx-header-text':  '#ffffff',
@@ -53,7 +37,7 @@
       '--apx-launcher-bg':  '#1a8c76',
     },
     appalix_lite: {
-      '--apx-header-bg':    '#1c1c1c',
+      '--apx-header-bg':    '#61c2ad',
       '--apx-header-text':  '#ffffff',
       '--apx-bg':           '#f3f4f6',
       '--apx-border':       '#e5e7eb',
@@ -100,22 +84,6 @@
       '--apx-accent-text': '#ffffff',
       '--apx-launcher-bg': '#1c3426',
     },
-    desert: {
-      '--apx-header-bg': '#6b3a2a',
-      '--apx-header-text': '#fef3c7',
-      '--apx-bg': '#fdf3e3',
-      '--apx-border': '#f5d0a9',
-      '--apx-user-bubble': '#d4722a',
-      '--apx-user-text': '#ffffff',
-      '--apx-bot-bubble': '#fae8cc',
-      '--apx-bot-text': '#4a2010',
-      '--apx-input-bg': '#fffbf0',
-      '--apx-input-border': '#f5d0a9',
-      '--apx-input-text': '#4a2010',
-      '--apx-accent': '#d4722a',
-      '--apx-accent-text': '#ffffff',
-      '--apx-launcher-bg': '#6b3a2a',
-    },
     ocean: {
       '--apx-header-bg': '#0a2d4a',
       '--apx-header-text': '#bae6fd',
@@ -155,7 +123,7 @@
   var messages = [];
   var pendingTyping = false;
   var welcomeMessage = 'Hi there! How can I help you today?';
-  var skinVars = SKINS.custom;
+  var skinVars = SKINS.appalix;
   var sessionId = '';
 
   try {
