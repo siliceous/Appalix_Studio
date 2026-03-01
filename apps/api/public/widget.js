@@ -392,12 +392,17 @@
       fileInput.addEventListener('change', function () {
         var file = fileInput.files && fileInput.files[0];
         if (!file) return;
+        fileInput.value = '';
+        if (file.size > 512000) {
+          messages.push({ role: 'bot', text: 'That file is too large (max 500 KB). Please upload a smaller file.' });
+          render();
+          return;
+        }
         var inp = shadow.getElementById('apx-input');
         if (inp) {
           inp.value = (inp.value ? inp.value + ' ' : '') + '[File: ' + file.name + ']';
           inp.dispatchEvent(new Event('input'));
         }
-        fileInput.value = '';
       });
     }
   }
