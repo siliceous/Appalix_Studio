@@ -239,7 +239,7 @@
     '.icon-btn:hover{opacity:.8;}',
     '.icon-btn.recording{color:#ef4444;opacity:1;animation:apxpulse 1s ease-in-out infinite;}',
     '@keyframes apxpulse{0%,100%{opacity:1;}50%{opacity:.5;}}',
-    '.powered{font-size:10px;text-align:center;color:var(--apx-bot-text);opacity:.42;padding:3px 0 5px;}',
+    '.powered{font-size:10px;text-align:center;color:#ffffff;opacity:.6;padding:3px 0 5px;}',
     '.powered a{color:inherit;text-decoration:none;}.powered a:hover{text-decoration:underline;}',
   ].join('');
 
