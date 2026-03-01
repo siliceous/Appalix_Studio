@@ -310,7 +310,13 @@
 
   function scrollToBottom() {
     var el = shadow.getElementById('apx-messages');
-    if (el) { setTimeout(function () { el.scrollTop = el.scrollHeight; }, 10); }
+    if (el) {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          el.scrollTop = el.scrollHeight;
+        });
+      });
+    }
   }
 
   function bindEvents() {
