@@ -38,7 +38,7 @@ const ALL_TYPES: {
   {
     value:     'file',
     label:     'PDF / Image',
-    desc:      'Upload a PDF or image file (up to 50 MB)',
+    desc:      'Upload a PDF, Word doc, or image (up to 50 MB)',
     icon:      <FileText className="w-4 h-4" />,
     minPlan:   'pro',
     planLabel: 'Pro+',
@@ -331,12 +331,12 @@ export function NewSourceForm({ allowedTypes }: Props) {
             ) : (
               <label className="flex flex-col items-center justify-center gap-2 px-4 py-8 border-2 border-dashed border-gray-300 dark:border-white/20 rounded-lg cursor-pointer hover:border-brand-400 hover:bg-brand-50 dark:hover:bg-white/5 transition-colors">
                 <Upload className="w-6 h-6 text-gray-400 dark:text-gray-500" />
-                <span className="text-sm text-gray-600 dark:text-gray-400">Click to upload a PDF or image</span>
-                <span className="text-xs text-gray-400 dark:text-gray-500">PDF, JPG, PNG, WebP — up to 50 MB</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Click to upload a file</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">PDF, Word (.doc/.docx), JPG, PNG, WebP — up to 50 MB</span>
                 <input
                   ref={fileRef}
                   type="file"
-                  accept=".pdf,image/jpeg,image/png,image/webp,image/gif"
+                  accept=".pdf,.doc,.docx,image/jpeg,image/png,image/webp,image/gif"
                   onChange={handleFile}
                   className="sr-only"
                 />
@@ -344,7 +344,7 @@ export function NewSourceForm({ allowedTypes }: Props) {
             )}
             {fileError
               ? <p className="mt-1.5 text-xs text-red-500">{fileError}</p>
-              : <p className="mt-1.5 text-xs text-gray-400">Accepted: PDF, JPG, PNG, WebP &mdash; maximum file size 50 MB</p>
+              : <p className="mt-1.5 text-xs text-gray-400">Accepted: PDF, Word (.doc/.docx), JPG, PNG, WebP &mdash; maximum file size 50 MB</p>
             }
           </div>
         )}

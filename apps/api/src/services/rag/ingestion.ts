@@ -198,14 +198,29 @@ async function fetchSourceContent(source: {
           redirect: 'follow',
         })
         if (res.ok) {
-          const text = htmlToText(await res.text())
-          if (text) return text
+          const ct = res.headers.get('content-type') ?? ''
+
+          // Word document (.docx) — extract text with mammoth
+          if (ct.includes('wordprocessingml') || ct.includes('msword') || source.url.match(/\.docx?$/i)) {
+            const { default: mammoth } = await import('mammoth')
+            const buf    = Buffer.from(await res.arrayBuffer())
+            const result = await mammoth.extractRawText({ buffer: buf })
+            if (result.value.trim()) return result.value
+          }
+
+          // Plain HTML/text — strip tags
+          if (ct.includes('text/html') || ct.includes('text/plain') || ct === '') {
+            const text = htmlToText(await res.text())
+            if (text) return text
+          }
+
+          // Any other binary type (PDF, Excel, etc.) — fall through to Jina Reader
         }
       } catch {
         // fall through to Jina Reader
       }
 
-      // 2. Fallback: Jina Reader (handles JS-rendered / bot-blocking pages)
+      // 2. Fallback: Jina Reader (handles JS-rendered / bot-blocking pages, Office docs, PDFs)
       try {
         const jinaRes = await fetch(`https://r.jina.ai/${source.url}`, {
           headers: { 'Accept': 'text/plain' },
@@ -263,9 +278,20 @@ async function fetchSourceContent(source: {
       const arrayBuffer = await blob.arrayBuffer()
       const base64      = Buffer.from(arrayBuffer).toString('base64')
 
-      const isPdf   = mimeType === 'application/pdf'
+      const isPdf  = mimeType === 'application/pdf'
       const isImage = mimeType.startsWith('image/')
-      if (!isPdf && !isImage) throw new Error(`Unsupported file MIME type: ${mimeType}`)
+      const isDocx  = mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                   || mimeType === 'application/msword'
+
+      // DOCX — extract raw text with mammoth (no Claude API call needed)
+      if (isDocx) {
+        const { default: mammoth } = await import('mammoth')
+        const buf    = Buffer.from(arrayBuffer)
+        const result = await mammoth.extractRawText({ buffer: buf })
+        return result.value
+      }
+
+      if (!isPdf && !isImage) throw new Error(`Unsupported file MIME type: ${mimeType}. Supported: PDF, images, DOCX.`)
 
       // Use Claude to extract text — document API for PDFs, vision for images
       const { anthropic } = await import('../ai/claude.js')
