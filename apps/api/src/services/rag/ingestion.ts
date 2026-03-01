@@ -386,10 +386,14 @@ async function fetchSourceContent(source: {
         const JSZip = (await import('jszip')).default
         const zip = await JSZip.loadAsync(arrayBuffer)
         const TEXT_EXTS = /\.(txt|md|csv|json|xml|html|htm)$/i
+        const MAX_UNZIPPED = 50 * 1024 * 1024 // 50 MB guard against zip bombs
+        let totalSize = 0
         const texts: string[] = []
         for (const [filePath, file] of Object.entries(zip.files)) {
           if (file.dir || !TEXT_EXTS.test(filePath)) continue
           const content = await file.async('string')
+          totalSize += content.length
+          if (totalSize > MAX_UNZIPPED) throw new Error('ZIP content exceeds 50 MB limit.')
           if (content.trim()) texts.push(`## ${filePath}\n\n${content}`)
         }
         return texts.join('\n\n') || 'ZIP archive contains no readable text files.'
