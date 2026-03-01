@@ -174,7 +174,7 @@
     '  z-index:2147483647;font-family:system-ui,-apple-system,sans-serif;font-size:14px;',
     '  transition:width .25s ease,height .25s ease,top .25s ease,right .25s ease,bottom .25s ease;',
     '}',
-    '.window.expanded{width:60vw;height:70vh;top:16px;right:16px;bottom:auto;}',
+    '.window.expanded{width:60vw;height:70vh;right:16px;}',
     '.header{',
     '  display:flex;align-items:center;padding:12px 14px;gap:10px;',
     '  background:var(--apx-header-bg);border-bottom:1px solid var(--apx-border);flex-shrink:0;',
