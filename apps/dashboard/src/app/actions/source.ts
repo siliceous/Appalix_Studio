@@ -3,6 +3,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 
 async function getWorkspaceId() {
   const supabase = await createClient()
@@ -20,28 +21,30 @@ async function getWorkspaceId() {
   return membership.workspace_id
 }
 
-async function triggerIngest(sourceId: string) {
-  const apiBase = process.env.API_BASE_URL
+function triggerIngest(sourceId: string) {
+  const apiBase    = process.env.API_BASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!apiBase || !serviceKey) {
     console.error('[triggerIngest] Missing API_BASE_URL or SUPABASE_SERVICE_ROLE_KEY — ingestion will not run.')
     return
   }
 
-  // Must await — Next.js redirect() throws NEXT_REDIRECT which cancels any
-  // un-awaited promises still in flight. The API responds with 202 immediately
-  // and does the real ingestion work in setImmediate, so this adds no latency.
-  try {
-    const res = await fetch(`${apiBase}/chat/ingest/${sourceId}`, {
-      method:  'POST',
-      headers: { 'x-service-key': serviceKey },
-    })
-    if (!res.ok) {
-      console.error(`[triggerIngest] Ingest API returned ${res.status} for source ${sourceId}`)
+  // after() runs AFTER the response/redirect is sent so it cannot be cancelled
+  // by the NEXT_REDIRECT throw. The API responds with 202 immediately and does
+  // the real embedding work in setImmediate on its end.
+  after(async () => {
+    try {
+      const res = await fetch(`${apiBase}/chat/ingest/${sourceId}`, {
+        method:  'POST',
+        headers: { 'x-service-key': serviceKey },
+      })
+      if (!res.ok) {
+        console.error(`[triggerIngest] Ingest API returned ${res.status} for source ${sourceId}`)
+      }
+    } catch (err: unknown) {
+      console.error(`[triggerIngest] Request to ${apiBase}/chat/ingest/${sourceId} failed:`, err)
     }
-  } catch (err: unknown) {
-    console.error(`[triggerIngest] Request to ${apiBase}/chat/ingest/${sourceId} failed:`, err)
-  }
+  })
 }
 
 export async function createSource(formData: FormData) {
@@ -113,7 +116,7 @@ export async function createSource(formData: FormData) {
 
   if (error || !data) throw new Error(error?.message ?? 'Failed to create source')
 
-  await triggerIngest(data.id)
+  triggerIngest(data.id)
   redirect('/sources')
 }
 
@@ -180,7 +183,7 @@ export async function updateSource(sourceId: string, formData: FormData) {
   if (metadata)        patch.metadata = metadata
 
   await admin.from('sources').update(patch).eq('id', sourceId).eq('workspace_id', workspaceId)
-  await triggerIngest(sourceId)
+  triggerIngest(sourceId)
   redirect('/sources')
 }
 
@@ -202,6 +205,6 @@ export async function resyncSource(sourceId: string) {
     .eq('id', sourceId)
     .eq('workspace_id', workspaceId)
 
-  await triggerIngest(sourceId)
+  triggerIngest(sourceId)
   revalidatePath('/sources')
 }
