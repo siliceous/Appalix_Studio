@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { createIntegration } from '@/app/actions/integration'
 import { PlatformSelector } from './platform-selector'
+import { SubmitButton } from '@/components/ui/submit-button'
 import type { Metadata } from 'next'
 import type { Platform } from '@/lib/types'
 
@@ -30,7 +31,7 @@ export default async function NewIntegrationPage({
     .order('created_at', { ascending: false })
   const bots = (rawBots ?? []) as { id: string; name: string }[]
 
-  const validPlatforms = ['web_widget','custom_api','slack','wordpress','facebook_messenger','whatsapp','google_chat']
+  const validPlatforms = ['web_widget','custom_api','slack','wordpress','facebook_messenger','whatsapp','google_chat','telegram']
   const selected = (validPlatforms.includes(qp ?? '') ? qp : 'web_widget') as Platform
 
   return (
@@ -121,16 +122,27 @@ export default async function NewIntegrationPage({
               </label>
               <input type="text" name="page_access_token" placeholder="EAAxx..." className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Bot token <span className="text-gray-400 font-normal">(Telegram — from @BotFather)</span>
+              </label>
+              <input type="text" name="telegram_bot_token" placeholder="7412345678:AAF..." className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Webhook secret <span className="text-gray-400 font-normal">(Telegram — leave blank to auto-generate)</span>
+              </label>
+              <input type="text" name="telegram_webhook_secret" placeholder="Auto-generated if left blank" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono" />
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            type="submit"
+          <SubmitButton
             className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors"
           >
             Create integration
-          </button>
+          </SubmitButton>
           <a href="/integrations" className="px-5 py-2.5 text-sm text-gray-600 hover:text-gray-900 transition-colors">
             Cancel
           </a>

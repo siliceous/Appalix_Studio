@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Header } from '@/components/layout/header'
+import { SubmitButton } from '@/components/ui/submit-button'
 import { Globe, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { LANGUAGE_GROUPS } from '@/lib/languages'
@@ -253,13 +254,13 @@ export default function NewBotPage() {
             >
               Cancel
             </button>
-            <button
-              type="submit"
+            <SubmitButton
               disabled={saving}
+              pendingText="Creating…"
               className="px-4 py-2 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
             >
-              {saving ? 'Creating…' : 'Create bot'}
-            </button>
+              Create bot
+            </SubmitButton>
           </div>
         </div>
       </form>

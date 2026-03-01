@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { saveAutomationSettings } from '@/app/actions/automation-settings'
 import { Header } from '@/components/layout/header'
+import { SubmitButton } from '@/components/ui/submit-button'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Automation Settings' }
@@ -152,12 +153,11 @@ export default async function AutomationSettingsPage({
         </section>
 
         <div className="flex justify-end">
-          <button
-            type="submit"
+          <SubmitButton
             className="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors"
           >
             Save settings
-          </button>
+          </SubmitButton>
         </div>
       </form>
     </div>

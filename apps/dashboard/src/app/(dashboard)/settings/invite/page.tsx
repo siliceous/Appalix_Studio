@@ -3,11 +3,12 @@
 import { useActionState } from 'react'
 import { inviteWorkspaceMember } from '@/app/actions/workspace'
 import { Header } from '@/components/layout/header'
+import { SubmitButton } from '@/components/ui/submit-button'
 
 const initialState = { error: undefined, success: false }
 
 export default function InvitePage() {
-  const [state, formAction, isPending] = useActionState(inviteWorkspaceMember, initialState)
+  const [state, formAction] = useActionState(inviteWorkspaceMember, initialState)
 
   return (
     <div className="max-w-lg space-y-6">
@@ -96,13 +97,12 @@ export default function InvitePage() {
               >
                 Cancel
               </a>
-              <button
-                type="submit"
-                disabled={isPending}
+              <SubmitButton
+                pendingText="Sending invite…"
                 className="flex-1 px-4 py-2.5 text-sm font-medium bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:bg-brand-400 transition-colors"
               >
-                {isPending ? 'Sending invite…' : 'Send invite'}
-              </button>
+                Send invite
+              </SubmitButton>
             </div>
           </form>
         )}
