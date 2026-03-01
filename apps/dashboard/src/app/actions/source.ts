@@ -23,13 +23,18 @@ async function getWorkspaceId() {
 async function triggerIngest(sourceId: string) {
   const apiBase = process.env.API_BASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!apiBase || !serviceKey) return
+  if (!apiBase || !serviceKey) {
+    console.error('[triggerIngest] Missing API_BASE_URL or SUPABASE_SERVICE_ROLE_KEY — ingestion will not run. Set API_BASE_URL in your environment.')
+    return
+  }
 
   // Fire-and-forget — ingest endpoint returns 202 immediately
   fetch(`${apiBase}/chat/ingest/${sourceId}`, {
     method: 'POST',
     headers: { 'x-service-key': serviceKey },
-  }).catch(() => {/* ignore network errors */})
+  }).catch((err: unknown) => {
+    console.error(`[triggerIngest] HTTP request to ${apiBase}/chat/ingest/${sourceId} failed:`, err)
+  })
 }
 
 export async function createSource(formData: FormData) {
