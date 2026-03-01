@@ -24,17 +24,24 @@ async function triggerIngest(sourceId: string) {
   const apiBase = process.env.API_BASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!apiBase || !serviceKey) {
-    console.error('[triggerIngest] Missing API_BASE_URL or SUPABASE_SERVICE_ROLE_KEY — ingestion will not run. Set API_BASE_URL in your environment.')
+    console.error('[triggerIngest] Missing API_BASE_URL or SUPABASE_SERVICE_ROLE_KEY — ingestion will not run.')
     return
   }
 
-  // Fire-and-forget — ingest endpoint returns 202 immediately
-  fetch(`${apiBase}/chat/ingest/${sourceId}`, {
-    method: 'POST',
-    headers: { 'x-service-key': serviceKey },
-  }).catch((err: unknown) => {
-    console.error(`[triggerIngest] HTTP request to ${apiBase}/chat/ingest/${sourceId} failed:`, err)
-  })
+  // Must await — Next.js redirect() throws NEXT_REDIRECT which cancels any
+  // un-awaited promises still in flight. The API responds with 202 immediately
+  // and does the real ingestion work in setImmediate, so this adds no latency.
+  try {
+    const res = await fetch(`${apiBase}/chat/ingest/${sourceId}`, {
+      method:  'POST',
+      headers: { 'x-service-key': serviceKey },
+    })
+    if (!res.ok) {
+      console.error(`[triggerIngest] Ingest API returned ${res.status} for source ${sourceId}`)
+    }
+  } catch (err: unknown) {
+    console.error(`[triggerIngest] Request to ${apiBase}/chat/ingest/${sourceId} failed:`, err)
+  }
 }
 
 export async function createSource(formData: FormData) {
