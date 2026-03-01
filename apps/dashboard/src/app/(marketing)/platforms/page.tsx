@@ -4,9 +4,9 @@ import type { Metadata } from 'next'
 import { ScrollReveal } from '@/components/marketing/animate'
 
 export const metadata: Metadata = {
-  title: 'Integrations — Slack, WhatsApp, HubSpot, Salesforce & More | Appalix',
+  title: 'Integrations — Slack, WhatsApp, HubSpot, Monday.com, Salesforce & More | Appalix',
   description:
-    'Deploy your AI sales agent across messaging channels, route leads to HubSpot, Salesforce, Zoho, or Intercom, and train it from Google Drive, Notion, Dropbox, and more.',
+    'Deploy your AI sales agent across messaging channels, route leads to HubSpot, Salesforce, Zoho, Intercom, or Monday.com, and train it from Google Drive, Notion, Dropbox, and more.',
   keywords: [
     'WhatsApp AI chatbot',
     'Slack AI agent',
@@ -110,6 +110,14 @@ const CRMS = [
     desc: 'Create Lead records in Salesforce automatically via the REST API. Requires an OAuth access token and your Salesforce instance URL.',
     plan: 'Pro+',
     guide: '/resources/connect-salesforce',
+  },
+  {
+    emoji: '📋',
+    name: 'Monday.com',
+    category: 'CRM',
+    desc: 'Create board items in Monday.com the moment a visitor shares contact details. Paste your Personal API Token and Board ID — leads appear in real time.',
+    plan: 'Pro+',
+    guide: '/resources/connect-monday',
   },
 ]
 

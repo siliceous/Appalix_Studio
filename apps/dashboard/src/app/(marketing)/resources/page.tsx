@@ -174,6 +174,15 @@ const POSTS = [
   },
   {
     category: 'Tutorial',
+    title: 'How to Connect Monday.com to Appalix',
+    excerpt: 'Create Monday.com board items automatically when your AI chatbot captures a lead. Get your Personal API Token, find your Board ID, and go live in under 5 minutes — no Zapier needed.',
+    readTime: '6 min read',
+    date: 'Mar 1, 2026',
+    emoji: '📋',
+    slug: 'connect-monday',
+  },
+  {
+    category: 'Tutorial',
     title: 'How to Connect HubSpot CRM to Appalix',
     excerpt: 'Native HubSpot integration — no Zapier needed. Create a Private App token in HubSpot and Appalix will push captured leads straight into your contacts automatically.',
     readTime: '8 min read',
