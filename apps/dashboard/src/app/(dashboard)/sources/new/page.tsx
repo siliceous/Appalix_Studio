@@ -10,9 +10,9 @@ export const metadata: Metadata = { title: 'Add source' }
 const PLAN_ALLOWED: Record<string, SourceType[]> = {
   starter:    ['url'],
   core:       ['url', 'text'],
-  pro:        ['url', 'text', 'file', 'notion', 'gitbook', 'google_drive', 'dropbox', 'onedrive', 'sharepoint'],
-  scale:      ['url', 'text', 'file', 'notion', 'gitbook', 'google_drive', 'dropbox', 'onedrive', 'sharepoint'],
-  enterprise: ['url', 'text', 'file', 'notion', 'gitbook', 'google_drive', 'dropbox', 'onedrive', 'sharepoint'],
+  pro:        ['url', 'text', 'file', 'excel', 'csv', 'notion', 'gitbook', 'google_drive', 'dropbox', 'onedrive', 'sharepoint'],
+  scale:      ['url', 'text', 'file', 'excel', 'csv', 'notion', 'gitbook', 'google_drive', 'dropbox', 'onedrive', 'sharepoint'],
+  enterprise: ['url', 'text', 'file', 'excel', 'csv', 'notion', 'gitbook', 'google_drive', 'dropbox', 'onedrive', 'sharepoint'],
 }
 
 export default async function NewSourcePage() {

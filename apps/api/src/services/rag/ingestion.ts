@@ -299,6 +299,8 @@ async function fetchSourceContent(source: {
         .join('\n\n---\n\n')
     }
 
+    case 'excel':
+    case 'csv':
     case 'file': {
       if (!source.file_path) throw new Error('File source has no file_path')
       const mimeType = (source.metadata as Record<string, string> | null)?.mime_type ?? ''

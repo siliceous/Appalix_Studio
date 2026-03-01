@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ScrollReveal } from '@/components/marketing/animate'
+import { ResourcesGrid } from './resources-grid'
 
 export const metadata: Metadata = {
   title: 'Resources — AI Sales Agent Guides, Tutorials & Case Studies | Appalix',
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 }
 
 const POSTS = [
-  // ── Knowledge base source tutorials ─────────────────────────────────────────
+  // Knowledge base source tutorials
   {
     category: 'Tutorial',
     title: 'How to Connect Notion to Appalix',
@@ -24,6 +25,8 @@ const POSTS = [
     readTime: '7 min read',
     date: 'Feb 28, 2026',
     emoji: '📝',
+    logo: '/integrations/notion.webp',
+    large: true,
     slug: 'connect-notion',
   },
   {
@@ -33,6 +36,7 @@ const POSTS = [
     readTime: '6 min read',
     date: 'Feb 28, 2026',
     emoji: '📖',
+    logo: '/integrations/gitbook.png',
     slug: 'connect-gitbook',
   },
   {
@@ -42,6 +46,7 @@ const POSTS = [
     readTime: '8 min read',
     date: 'Feb 28, 2026',
     emoji: '☁️',
+    logo: '/integrations/google-drive.png',
     slug: 'connect-google-drive',
   },
   {
@@ -51,6 +56,7 @@ const POSTS = [
     readTime: '7 min read',
     date: 'Feb 28, 2026',
     emoji: '📦',
+    logo: '/integrations/dropbox.png',
     slug: 'connect-dropbox',
   },
   {
@@ -60,15 +66,17 @@ const POSTS = [
     readTime: '8 min read',
     date: 'Feb 28, 2026',
     emoji: '🗂️',
+    logo: '/integrations/onedrive.png',
     slug: 'connect-onedrive',
   },
   {
     category: 'Tutorial',
     title: 'How to Connect SharePoint to Appalix',
-    excerpt: 'Index SharePoint documents so your AI bot answers from your organisation\'s intranet content and policies. Requires a Microsoft Graph token, file URL, and SharePoint Site ID.',
+    excerpt: "Index SharePoint documents so your AI bot answers from your organisation's intranet content and policies. Requires a Microsoft Graph token, file URL, and SharePoint Site ID.",
     readTime: '10 min read',
     date: 'Feb 28, 2026',
     emoji: '🏢',
+    logo: '/integrations/sharepoint.webp',
     slug: 'connect-sharepoint',
   },
   {
@@ -80,7 +88,7 @@ const POSTS = [
     emoji: '📂',
     slug: 'knowledge-base-file-types',
   },
-  // ── Platform tutorials ──────────────────────────────────────────────────────
+  // Platform tutorials
   {
     category: 'Tutorial',
     title: 'How to Add an AI Chatbot to WordPress with Appalix',
@@ -88,6 +96,7 @@ const POSTS = [
     readTime: '8 min read',
     date: 'Feb 27, 2026',
     emoji: '🔌',
+    logo: '/integrations/wordpress.jpg',
     slug: 'add-wordpress-chatbot',
   },
   {
@@ -106,6 +115,7 @@ const POSTS = [
     readTime: '9 min read',
     date: 'Feb 27, 2026',
     emoji: '💜',
+    logo: '/integrations/slack.png',
     slug: 'connect-slack',
   },
   {
@@ -115,15 +125,17 @@ const POSTS = [
     readTime: '10 min read',
     date: 'Feb 27, 2026',
     emoji: '📘',
+    logo: '/integrations/messenger.jpg',
     slug: 'connect-facebook-messenger',
   },
   {
     category: 'Tutorial',
     title: 'How to Connect Appalix to WhatsApp Business',
-    excerpt: 'Put your AI bot on WhatsApp so it replies to customer messages 24/7. Uses Meta\'s WhatsApp Business API — step-by-step from creating a Meta app to sending your first test message.',
+    excerpt: "Put your AI bot on WhatsApp so it replies to customer messages 24/7. Uses Meta's WhatsApp Business API — step-by-step from creating a Meta app to sending your first test message.",
     readTime: '11 min read',
     date: 'Feb 27, 2026',
     emoji: '💚',
+    logo: '/integrations/whatsapp.jpg',
     slug: 'connect-whatsapp',
   },
   {
@@ -133,6 +145,7 @@ const POSTS = [
     readTime: '9 min read',
     date: 'Feb 27, 2026',
     emoji: '🔵',
+    logo: '/integrations/google-chat.png',
     slug: 'connect-google-chat',
   },
   {
@@ -144,15 +157,87 @@ const POSTS = [
     emoji: '⚙️',
     slug: 'custom-api-integration',
   },
-  // ── Existing posts ──────────────────────────────────────────────────────────
+  {
+    category: 'Tutorial',
+    title: 'How to Connect Telegram to Appalix',
+    excerpt: 'Deploy your AI agent as a Telegram bot in under 10 minutes. Create a bot with @BotFather, paste the token into Appalix, and register the webhook — your bot is live instantly.',
+    readTime: '8 min read',
+    date: 'Mar 1, 2026',
+    emoji: '✈️',
+    logo: '/integrations/telegram.jpeg',
+    slug: 'connect-telegram',
+  },
+  // CRM tutorials
+  {
+    category: 'Tutorial',
+    title: 'How to Connect Monday.com to Appalix',
+    excerpt: 'Create Monday.com board items automatically when your AI chatbot captures a lead. Get your Personal API Token, find your Board ID, and go live in under 5 minutes — no Zapier needed.',
+    readTime: '6 min read',
+    date: 'Mar 1, 2026',
+    emoji: '📋',
+    logo: '/integrations/monday.png',
+    large: true,
+    slug: 'connect-monday',
+  },
+  {
+    category: 'Tutorial',
+    title: 'How to Connect HubSpot CRM to Appalix',
+    excerpt: 'Native HubSpot integration — no Zapier needed. Create a Private App token in HubSpot and Appalix will push captured leads straight into your contacts automatically.',
+    readTime: '8 min read',
+    date: 'Feb 26, 2026',
+    emoji: '🟠',
+    logo: '/integrations/hubspot.png',
+    slug: 'connect-hubspot',
+  },
+  {
+    category: 'Tutorial',
+    title: 'How to Connect Zapier to Appalix for CRM Lead Capture',
+    excerpt: 'Route Appalix leads to HubSpot, Salesforce, Google Sheets, Pipedrive, or 6,000+ apps via a Zapier Catch Hook. Available on Core plan and above — zero code required.',
+    readTime: '7 min read',
+    date: 'Feb 26, 2026',
+    emoji: '🔗',
+    logo: '/integrations/zapier.png',
+    slug: 'connect-zapier',
+  },
+  {
+    category: 'Tutorial',
+    title: 'How to Connect Intercom to Appalix',
+    excerpt: 'Automatically create Intercom leads the moment a visitor shares contact details in your AI chat. Get your Access Token from the Intercom Developer Hub in under 5 minutes.',
+    readTime: '7 min read',
+    date: 'Feb 26, 2026',
+    emoji: '💬',
+    logo: '/integrations/intercom.jpeg',
+    slug: 'connect-intercom',
+  },
+  {
+    category: 'Tutorial',
+    title: 'How to Connect Zoho CRM to Appalix',
+    excerpt: 'Push leads directly into the Zoho CRM Leads module using an OAuth access token. Covers both the quick Self Client method and the production OAuth app approach.',
+    readTime: '9 min read',
+    date: 'Feb 26, 2026',
+    emoji: '🔵',
+    logo: '/integrations/zoho.png',
+    slug: 'connect-zoho-crm',
+  },
+  {
+    category: 'Tutorial',
+    title: 'How to Connect Salesforce to Appalix',
+    excerpt: 'Create Salesforce Lead records automatically when visitors share contact details in chat. Step-by-step: get an OAuth access token via Workbench or a Connected App.',
+    readTime: '10 min read',
+    date: 'Feb 26, 2026',
+    emoji: '☁️',
+    logo: '/integrations/salesforce.jpg',
+    slug: 'connect-salesforce',
+  },
+  // General guides & posts
   {
     category: 'Product',
-    title: 'Meet Appalix Sage: Your Team\'s Internal AI Assistant',
+    title: "Meet Appalix Sage: Your Team's Internal AI Assistant",
     excerpt: 'Appalix Sage puts AI to work inside your team — searching your knowledge base, drafting proposals and reports, and sharing content with colleagues. Available on Pro and above.',
     readTime: '8 min read',
     date: 'Feb 26, 2026',
     emoji: '✦',
-    slug: 'meet-appalix-copilot',
+    slug: 'meet-appalix-sage',
   },
   {
     category: 'Guide',
@@ -171,60 +256,6 @@ const POSTS = [
     date: 'Feb 24, 2026',
     emoji: '🔗',
     slug: 'connecting-webhooks-crm-handover',
-  },
-  {
-    category: 'Tutorial',
-    title: 'How to Connect Monday.com to Appalix',
-    excerpt: 'Create Monday.com board items automatically when your AI chatbot captures a lead. Get your Personal API Token, find your Board ID, and go live in under 5 minutes — no Zapier needed.',
-    readTime: '6 min read',
-    date: 'Mar 1, 2026',
-    emoji: '📋',
-    slug: 'connect-monday',
-  },
-  {
-    category: 'Tutorial',
-    title: 'How to Connect HubSpot CRM to Appalix',
-    excerpt: 'Native HubSpot integration — no Zapier needed. Create a Private App token in HubSpot and Appalix will push captured leads straight into your contacts automatically.',
-    readTime: '8 min read',
-    date: 'Feb 26, 2026',
-    emoji: '🟠',
-    slug: 'connect-hubspot',
-  },
-  {
-    category: 'Tutorial',
-    title: 'How to Connect Zapier to Appalix for CRM Lead Capture',
-    excerpt: 'Route Appalix leads to HubSpot, Salesforce, Google Sheets, Pipedrive, or 6,000+ apps via a Zapier Catch Hook. Available on Core plan and above — zero code required.',
-    readTime: '7 min read',
-    date: 'Feb 26, 2026',
-    emoji: '🔗',
-    slug: 'connect-zapier',
-  },
-  {
-    category: 'Tutorial',
-    title: 'How to Connect Intercom to Appalix',
-    excerpt: 'Automatically create Intercom leads the moment a visitor shares contact details in your AI chat. Get your Access Token from the Intercom Developer Hub in under 5 minutes.',
-    readTime: '7 min read',
-    date: 'Feb 26, 2026',
-    emoji: '💬',
-    slug: 'connect-intercom',
-  },
-  {
-    category: 'Tutorial',
-    title: 'How to Connect Zoho CRM to Appalix',
-    excerpt: 'Push leads directly into the Zoho CRM Leads module using an OAuth access token. Covers both the quick Self Client method and the production OAuth app approach.',
-    readTime: '9 min read',
-    date: 'Feb 26, 2026',
-    emoji: '🔵',
-    slug: 'connect-zoho-crm',
-  },
-  {
-    category: 'Tutorial',
-    title: 'How to Connect Salesforce to Appalix',
-    excerpt: 'Create Salesforce Lead records automatically when visitors share contact details in chat. Step-by-step: get an OAuth access token via Workbench or a Connected App.',
-    readTime: '10 min read',
-    date: 'Feb 26, 2026',
-    emoji: '☁️',
-    slug: 'connect-salesforce',
   },
   {
     category: 'Guide',
@@ -253,7 +284,7 @@ const POSTS = [
   {
     category: 'Product',
     title: 'Introducing multilingual AI agents: 95 languages, zero setup',
-    excerpt: 'Your Appalix agent now automatically detects and responds in your visitor\'s language — enabling truly global customer conversations.',
+    excerpt: "Your Appalix agent now automatically detects and responds in your visitor's language — enabling truly global customer conversations.",
     readTime: '3 min read',
     date: 'Jan 30, 2026',
     emoji: '🌍',
@@ -261,7 +292,7 @@ const POSTS = [
   {
     category: 'Guide',
     title: 'Human handoff done right: when and how to escalate AI conversations',
-    excerpt: 'The best AI agents know their limits. Learn how to configure smart escalation rules so no customer ever feels stuck.',
+    excerpt: "The best AI agents know their limits. Learn how to configure smart escalation rules so no customer ever feels stuck.",
     readTime: '6 min read',
     date: 'Jan 24, 2026',
     emoji: '🤝',
@@ -298,65 +329,8 @@ export default function ResourcesPage() {
         </div>
       </section>
 
-      {/* Category filter */}
-      <section className="px-6 pb-8">
-        <ScrollReveal>
-          <div className="max-w-7xl mx-auto flex flex-wrap gap-2 justify-center">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                  cat === 'All'
-                    ? 'bg-brand-600/20 border-brand-600/40 text-brand-300'
-                    : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20 hover:text-white'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </ScrollReveal>
-      </section>
-
-      {/* Posts grid */}
-      <section className="py-8 px-6">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {POSTS.map((post, i) => (
-            <ScrollReveal key={post.title} delay={i * 0.07}>
-              <Link href={'slug' in post ? `/resources/${post.slug}` : '#'} className="block h-full">
-              <article className="group flex flex-col rounded-2xl bg-white/5 border border-white/10 hover:border-brand-600/30 transition-colors overflow-hidden cursor-pointer h-full">
-                {/* Thumbnail placeholder */}
-                <div className="h-36 bg-gradient-to-br from-brand-600/10 to-transparent flex items-center justify-center border-b border-white/5">
-                  <span className="text-5xl">{post.emoji}</span>
-                </div>
-
-                <div className="p-5 flex flex-col flex-1">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">
-                      {post.category}
-                    </span>
-                    <span className="text-xs text-gray-600">{post.readTime}</span>
-                  </div>
-
-                  <h2 className="font-semibold text-white leading-snug mb-2 group-hover:text-brand-300 transition-colors">
-                    {post.title}
-                  </h2>
-                  <p className="text-sm text-gray-400 leading-relaxed flex-1">{post.excerpt}</p>
-
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
-                    <span className="text-xs text-gray-600">{post.date}</span>
-                    <span className="text-xs text-brand-400 font-medium group-hover:text-brand-300 transition-colors">
-                      Read more →
-                    </span>
-                  </div>
-                </div>
-              </article>
-              </Link>
-            </ScrollReveal>
-          ))}
-        </div>
-      </section>
-
+      {/* Interactive grid: search + category filter + post cards */}
+      <ResourcesGrid posts={POSTS} categories={CATEGORIES} />
     </div>
   )
 }

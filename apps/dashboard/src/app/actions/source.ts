@@ -88,7 +88,7 @@ export async function createSource(formData: FormData) {
     const token  = (formData.get('ms_access_token') as string)?.trim()
     const siteId = (formData.get('sharepoint_site_id') as string)?.trim()
     if (token) metadata = { ms_access_token: token, ...(siteId ? { sharepoint_site_id: siteId } : {}) }
-  } else if (type === 'file') {
+  } else if (type === 'file' || type === 'excel' || type === 'csv') {
     // File was uploaded directly to Supabase Storage from the browser via presigned URL.
     // The form submits only the path + metadata — no binary payload goes through Vercel.
     const preuploaded = (formData.get('file_path') as string)?.trim()

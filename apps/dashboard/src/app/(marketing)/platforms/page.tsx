@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import { ScrollReveal } from '@/components/marketing/animate'
 
 export const metadata: Metadata = {
-  title: 'Integrations — Slack, WhatsApp, HubSpot, Monday.com, Salesforce & More | Appalix',
+  title: 'Integrations — Slack, WhatsApp, Telegram, HubSpot, Monday.com & More | Appalix',
   description:
     'Deploy your AI sales agent across messaging channels, route leads to HubSpot, Salesforce, Zoho, Intercom, or Monday.com, and train it from Google Drive, Notion, Dropbox, and more.',
   keywords: [
@@ -68,11 +68,19 @@ const CHANNELS = [
     desc: 'Use the Appalix REST API to build custom integrations, trigger agent runs from your backend, and retrieve conversation data programmatically.',
     plan: null,
   },
+  {
+    logo: '/integrations/telegram.jpeg',
+    name: 'Telegram',
+    category: 'Mobile messaging',
+    desc: 'Deploy your AI agent as a Telegram bot. Users chat privately or in groups and get instant AI responses — no extra apps needed.',
+    plan: null,
+    guide: '/resources/connect-telegram',
+  },
 ]
 
 const CRMS = [
   {
-    emoji: '🔗',
+    logo: '/integrations/zapier.png',
     name: 'Zapier',
     category: 'Automation',
     desc: 'Route captured leads to 6,000+ apps via a Zapier Catch Hook — HubSpot, Salesforce, Google Sheets, Pipedrive, Monday.com, and more. No code required.',
@@ -80,7 +88,7 @@ const CRMS = [
     guide: '/resources/connect-zapier',
   },
   {
-    emoji: '🟠',
+    logo: '/integrations/hubspot.png',
     name: 'HubSpot',
     category: 'CRM',
     desc: 'Create contacts directly in HubSpot CRM the moment a visitor shares their email or phone number. Uses a HubSpot Private App token — no Zapier needed.',
@@ -88,7 +96,7 @@ const CRMS = [
     guide: '/resources/connect-hubspot',
   },
   {
-    emoji: '💬',
+    logo: '/integrations/intercom.jpeg',
     name: 'Intercom',
     category: 'CRM',
     desc: 'Automatically create Intercom leads when a visitor shares contact details. Leads appear in your inbox instantly, ready for follow-up.',
@@ -96,7 +104,7 @@ const CRMS = [
     guide: '/resources/connect-intercom',
   },
   {
-    emoji: '🔵',
+    logo: '/integrations/zoho.png',
     name: 'Zoho CRM',
     category: 'CRM',
     desc: 'Push leads directly into Zoho CRM using an OAuth access token. Contacts are created under Leads with email, phone, and source set automatically.',
@@ -104,7 +112,7 @@ const CRMS = [
     guide: '/resources/connect-zoho-crm',
   },
   {
-    emoji: '☁️',
+    logo: '/integrations/salesforce.jpg',
     name: 'Salesforce',
     category: 'CRM',
     desc: 'Create Lead records in Salesforce automatically via the REST API. Requires an OAuth access token and your Salesforce instance URL.',
@@ -112,7 +120,7 @@ const CRMS = [
     guide: '/resources/connect-salesforce',
   },
   {
-    emoji: '📋',
+    logo: '/integrations/monday.png',
     name: 'Monday.com',
     category: 'CRM',
     desc: 'Create board items in Monday.com the moment a visitor shares contact details. Paste your Personal API Token and Board ID — leads appear in real time.',
@@ -123,42 +131,42 @@ const CRMS = [
 
 const SOURCES = [
   {
-    emoji: '📂',
+    logo: '/integrations/google-drive.png',
     name: 'Google Drive',
     category: 'Cloud storage',
     desc: 'Connect a Google Drive folder or file. Appalix extracts content from Docs, Sheets, and Slides and indexes it for your bot automatically.',
     plan: 'Pro+',
   },
   {
-    emoji: '📦',
+    logo: '/integrations/dropbox.png',
     name: 'Dropbox',
     category: 'Cloud storage',
     desc: 'Link a Dropbox file or folder. Appalix downloads and indexes supported documents, keeping your bot\'s knowledge base up to date.',
     plan: 'Pro+',
   },
   {
-    emoji: '☁️',
+    logo: '/integrations/onedrive.png',
     name: 'OneDrive',
     category: 'Cloud storage',
     desc: 'Sync files directly from Microsoft OneDrive using your Microsoft access token. Perfect for teams already working inside Microsoft 365.',
     plan: 'Pro+',
   },
   {
-    emoji: '🏢',
+    logo: '/integrations/sharepoint.webp',
     name: 'SharePoint',
     category: 'Enterprise',
     desc: 'Pull training content from SharePoint document libraries. Ideal for enterprises with internal wikis and policy documents on SharePoint.',
     plan: 'Pro+',
   },
   {
-    emoji: '📖',
+    logo: '/integrations/notion.webp',
     name: 'Notion',
     category: 'Productivity',
     desc: 'Connect a Notion page or database using an integration token. Your bot learns from your Notion workspace content automatically.',
     plan: 'Pro+',
   },
   {
-    emoji: '📗',
+    logo: '/integrations/gitbook.png',
     name: 'GitBook',
     category: 'Documentation',
     desc: 'Ingest your GitBook documentation space directly. Keep your bot perfectly aligned with your product docs as they evolve.',
@@ -231,12 +239,22 @@ export default function IntegrationsPage() {
                     </span>
                   </div>
                   <p className="text-sm text-gray-400 leading-relaxed">{item.desc}</p>
-                  <Link
-                    href="/integrations/new"
-                    className="inline-block mt-4 text-xs text-brand-400 hover:text-brand-300 font-medium transition-colors"
-                  >
-                    Connect →
-                  </Link>
+                  <div className="flex items-center gap-4 mt-4">
+                    <Link
+                      href="/integrations/new"
+                      className="text-xs text-brand-400 hover:text-brand-300 font-medium transition-colors"
+                    >
+                      Connect →
+                    </Link>
+                    {'guide' in item && item.guide && (
+                      <Link
+                        href={item.guide}
+                        className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                      >
+                        Setup guide →
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </ScrollReveal>
             ))}
@@ -259,8 +277,8 @@ export default function IntegrationsPage() {
                 <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-brand-600/30 transition-colors h-full flex flex-col">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                        <span className="text-xl">{item.emoji}</span>
+                      <div className={`w-10 h-10 rounded-xl bg-white flex items-center justify-center overflow-hidden ${item.name === 'Monday.com' ? '' : 'p-1'}`}>
+                        <Image src={item.logo} alt={item.name} width={32} height={32} className={`object-contain ${item.name === 'Monday.com' ? 'w-10 h-10' : 'w-8 h-8'}`} />
                       </div>
                       <div>
                         <h3 className="font-semibold text-white">{item.name}</h3>
@@ -310,8 +328,8 @@ export default function IntegrationsPage() {
                 <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-[#61c2ad]/20 transition-colors h-full">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                        <span className="text-xl">{item.emoji}</span>
+                      <div className={`w-10 h-10 rounded-xl bg-white flex items-center justify-center overflow-hidden ${item.name === 'Notion' ? '' : 'p-1'}`}>
+                        <Image src={item.logo} alt={item.name} width={32} height={32} className={`object-contain ${item.name === 'Notion' ? 'w-10 h-10' : 'w-8 h-8'}`} />
                       </div>
                       <div>
                         <h3 className="font-semibold text-white">{item.name}</h3>

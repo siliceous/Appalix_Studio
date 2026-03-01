@@ -7,7 +7,7 @@ import { SubmitButton } from '@/components/ui/submit-button'
 import { createClient } from '@/lib/supabase/client'
 
 export type SourceType =
-  | 'url' | 'text' | 'file'
+  | 'url' | 'text' | 'file' | 'excel' | 'csv'
   | 'notion' | 'gitbook'
   | 'google_drive' | 'dropbox' | 'onedrive' | 'sharepoint'
 
@@ -37,9 +37,25 @@ const ALL_TYPES: {
   },
   {
     value:     'file',
-    label:     'PDF / Image',
-    desc:      'Upload a PDF, Word doc, or image (up to 50 MB)',
+    label:     'PDF / Word / Image',
+    desc:      'Upload a PDF, Word doc, PowerPoint, or image',
     icon:      <FileText className="w-4 h-4" />,
+    minPlan:   'pro',
+    planLabel: 'Pro+',
+  },
+  {
+    value:     'excel',
+    label:     'Excel / XLS',
+    desc:      'Upload an .xlsx or .xls spreadsheet',
+    icon:      <FileText className="w-4 h-4" />,
+    minPlan:   'pro',
+    planLabel: 'Pro+',
+  },
+  {
+    value:     'csv',
+    label:     'CSV',
+    desc:      'Upload a comma-separated values file',
+    icon:      <AlignLeft className="w-4 h-4" />,
     minPlan:   'pro',
     planLabel: 'Pro+',
   },
@@ -174,8 +190,9 @@ export function NewSourceForm({ allowedTypes }: Props) {
   }
 
   const isCloudType = ['notion', 'gitbook', 'google_drive', 'dropbox', 'onedrive', 'sharepoint'].includes(type)
+  const isFileType = type === 'file' || type === 'excel' || type === 'csv'
   // Disable submit if a file is selected but not yet uploaded
-  const fileUploading = type === 'file' && uploadState === 'uploading'
+  const fileUploading = isFileType && uploadState === 'uploading'
 
   const TUTORIAL_URLS: Partial<Record<SourceType, string>> = {
     notion:       '/resources/connect-notion',
@@ -306,9 +323,11 @@ export function NewSourceForm({ allowedTypes }: Props) {
           </div>
         )}
 
-        {type === 'file' && (
+        {isFileType && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">File</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              {type === 'excel' ? 'Excel file' : type === 'csv' ? 'CSV file' : 'File'}
+            </label>
             {fileName ? (
               <div className={`flex items-center gap-3 px-3 py-2.5 border rounded-lg ${
                 uploadState === 'uploading' ? 'border-brand-300 bg-brand-50' :
@@ -332,11 +351,21 @@ export function NewSourceForm({ allowedTypes }: Props) {
               <label className="flex flex-col items-center justify-center gap-2 px-4 py-8 border-2 border-dashed border-gray-300 dark:border-white/20 rounded-lg cursor-pointer hover:border-brand-400 hover:bg-brand-50 dark:hover:bg-white/5 transition-colors">
                 <Upload className="w-6 h-6 text-gray-400 dark:text-gray-500" />
                 <span className="text-sm text-gray-600 dark:text-gray-400">Click to upload a file</span>
-                <span className="text-xs text-gray-400 dark:text-gray-500">PDF, Word, Excel, PowerPoint, CSV, ZIP, JPG, PNG — up to 50 MB</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">
+                  {type === 'excel'
+                    ? 'Excel spreadsheet (.xlsx, .xls) — up to 50 MB'
+                    : type === 'csv'
+                    ? 'CSV file (.csv) — up to 50 MB'
+                    : 'PDF, Word, PowerPoint, ZIP, JPG, PNG — up to 50 MB'}
+                </span>
                 <input
                   ref={fileRef}
                   type="file"
-                  accept=".pdf,.doc,.docx,.csv,.xlsx,.xls,.pptx,.ppt,.zip,image/jpeg,image/png,image/webp,image/gif"
+                  accept={
+                    type === 'excel' ? '.xlsx,.xls' :
+                    type === 'csv'   ? '.csv' :
+                    '.pdf,.doc,.docx,.pptx,.ppt,.zip,image/jpeg,image/png,image/webp,image/gif'
+                  }
                   onChange={handleFile}
                   className="sr-only"
                 />
@@ -344,7 +373,13 @@ export function NewSourceForm({ allowedTypes }: Props) {
             )}
             {fileError
               ? <p className="mt-1.5 text-xs text-red-500">{fileError}</p>
-              : <p className="mt-1.5 text-xs text-gray-400">Accepted: PDF, Word (.doc/.docx), Excel (.xlsx/.xls), PowerPoint (.pptx), CSV, ZIP, JPG, PNG &mdash; max 50 MB</p>
+              : <p className="mt-1.5 text-xs text-gray-400">
+                  {type === 'excel'
+                    ? 'Accepted: Excel (.xlsx, .xls) — max 50 MB'
+                    : type === 'csv'
+                    ? 'Accepted: CSV (.csv) — max 50 MB'
+                    : 'Accepted: PDF, Word (.doc/.docx), PowerPoint (.pptx), ZIP, JPG, PNG — max 50 MB'}
+                </p>
             }
           </div>
         )}
@@ -545,7 +580,7 @@ export function NewSourceForm({ allowedTypes }: Props) {
 
       <div className="flex items-center gap-3">
         <SubmitButton
-          disabled={fileUploading || (type === 'file' && !storagePath && !fileError)}
+          disabled={fileUploading || (isFileType && !storagePath && !fileError)}
           pendingText="Adding…"
           className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors"
         >

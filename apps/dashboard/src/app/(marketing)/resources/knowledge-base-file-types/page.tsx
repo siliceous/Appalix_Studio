@@ -1,17 +1,35 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'Knowledge Base File Types — Everything Appalix Can Ingest | Appalix',
+  title: 'Knowledge Base File Types — Every Format Appalix Can Ingest',
   description:
-    'Full reference of every file format supported by the Appalix knowledge base: PDF, Word, Excel, PowerPoint, CSV, images, ZIP, website URLs, sitemaps, Notion, GitBook, Google Drive, Dropbox, OneDrive, and SharePoint.',
+    'Complete reference of every file format the Appalix knowledge base supports: PDF, Word, Excel, PowerPoint, CSV, images, ZIP, website URLs, Notion, GitBook, Google Drive, Dropbox, OneDrive, and SharePoint.',
   keywords: [
     'Appalix knowledge base file types',
     'AI chatbot supported documents',
     'train AI on Excel PDF Word',
     'knowledge base ingestion formats',
     'AI bot file upload support',
+    'chatbot supported file formats',
+    'AI knowledge base PDF upload',
+    'chatbot document training formats',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/knowledge-base-file-types' },
+  openGraph: {
+    title: 'Knowledge Base File Types — Every Format Appalix Can Ingest',
+    description: 'Complete reference of every file format the Appalix knowledge base supports: PDF, Word, Excel, images, URLs, and cloud drives.',
+    url: 'https://appalix.ai/resources/knowledge-base-file-types',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Knowledge Base File Types — Every Format Appalix Can Ingest',
+    description: 'Complete reference of every file format the Appalix knowledge base supports: PDF, Word, Excel, images, URLs, and cloud drives.',
+  },
 }
 
 const FILE_TYPES = [
@@ -89,37 +107,37 @@ const FILE_TYPES = [
 
 const CLOUD_SOURCES = [
   {
-    emoji: '☁️',
+    logo: '/integrations/google-drive.png',
     name: 'Google Drive',
     note: 'Google Docs, Sheets, and Slides are exported as plain text. Binary files in the drive are downloaded directly.',
     plan: 'Pro+',
   },
   {
-    emoji: '📦',
+    logo: '/integrations/dropbox.png',
     name: 'Dropbox',
     note: 'Files and shared links are downloaded and processed using the same type handlers as uploaded files.',
     plan: 'Pro+',
   },
   {
-    emoji: '🗂️',
+    logo: '/integrations/onedrive.png',
     name: 'OneDrive',
     note: 'Microsoft Graph API downloads files directly from your OneDrive. Supports shared links and item IDs.',
     plan: 'Pro+',
   },
   {
-    emoji: '🏢',
+    logo: '/integrations/sharepoint.webp',
     name: 'SharePoint',
     note: 'Index intranet content, policy documents, and internal wikis from your SharePoint site using a Microsoft Graph token.',
     plan: 'Pro+',
   },
   {
-    emoji: '📝',
+    logo: '/integrations/notion.webp',
     name: 'Notion',
     note: 'Page blocks are fetched via the Notion API using your Internal Integration Token. Nested blocks are flattened to plain text.',
     plan: 'Pro+',
   },
   {
-    emoji: '📖',
+    logo: '/integrations/gitbook.png',
     name: 'GitBook',
     note: 'All pages in your GitBook space are fetched and indexed using the GitBook Content API and a personal token.',
     plan: 'Pro+',
@@ -129,6 +147,13 @@ const CLOUD_SOURCES = [
 export default function KnowledgeBaseFileTypesPage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="Article"
+        title="Knowledge Base File Types — Every Format Appalix Can Ingest"
+        description="Complete reference of every file format the Appalix knowledge base supports: PDF, Word, Excel, PowerPoint, CSV, images, ZIP, website URLs, Notion, GitBook, Google Drive, Dropbox, OneDrive, and SharePoint."
+        slug="knowledge-base-file-types"
+        datePublished="2026-03-01"
+      />
       <div className="max-w-3xl mx-auto">
 
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
@@ -187,7 +212,9 @@ export default function KnowledgeBaseFileTypesPage() {
               {CLOUD_SOURCES.map((cs) => (
                 <div key={cs.name} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg">{cs.emoji}</span>
+                    <div className={`rounded bg-white flex items-center justify-center overflow-hidden shrink-0 ${cs.name === 'Notion' ? 'w-8 h-8' : 'w-6 h-6 p-0.5'}`}>
+                      <Image src={cs.logo} alt={cs.name} width={20} height={20} className={`object-contain ${cs.name === 'Notion' ? 'w-8 h-8' : 'w-4 h-4'}`} />
+                    </div>
                     <span className="font-semibold text-white text-sm">{cs.name}</span>
                     <span className="ml-auto text-xs px-1.5 py-0.5 rounded bg-brand-600/15 text-brand-400 border border-brand-600/20">{cs.plan}</span>
                   </div>
