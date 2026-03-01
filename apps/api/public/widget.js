@@ -123,6 +123,7 @@
   var messages = [];
   var pendingTyping = false;
   var welcomeMessage = 'Hi there! How can I help you today?';
+  var botName = 'Chat Support';
   var skinVars = SKINS.appalix;
   var sessionId = '';
 
@@ -281,7 +282,7 @@
         '<div class="header">',
           '<div class="hd"></div>',
           '<div class="ht">',
-            '<div class="ht-name">Chat support</div>',
+            '<div class="ht-name">', esc(botName), '</div>',
             '<div class="ht-sub">Online &middot; Replies instantly</div>',
           '</div>',
           '<button class="hbtn" id="apx-expand" aria-label="', (isExpanded ? 'Contract' : 'Expand'), '">', ICONS[isExpanded ? 'contract' : 'expand'], '</button>',
@@ -451,6 +452,7 @@
     .then(function (r) { return r.json(); })
     .then(function (d) {
       if (d.welcome_message) welcomeMessage = d.welcome_message;
+      if (d.bot_name) botName = d.bot_name;
       var skinId = d.skin || 'light';
       if (skinId === 'custom') {
         skinVars = Object.assign({}, SKINS.light);
