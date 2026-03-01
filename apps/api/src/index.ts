@@ -8,6 +8,8 @@ import { config } from './config.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 import { slackRoutes }       from './routes/webhooks/slack.js'
+import { ingestSource }      from './services/rag/ingestion.js'
+import { supabase }          from './lib/supabase.js'
 import { facebookRoutes }    from './routes/webhooks/facebook.js'
 import { whatsappRoutes }    from './routes/webhooks/whatsapp.js'
 import { googleChatRoutes }  from './routes/webhooks/google-chat.js'
@@ -117,6 +119,40 @@ try {
   console.log(`   POST /chat/:id            (web widget)`)
   console.log(`   POST /chat/custom/:id     (custom API)`)
   console.log(`   POST /chat/ingest/:id     (RAG ingestion)\n`)
+
+  // ---------------------------------------------------------------
+  // Background ingestion poller
+  // Picks up any sources stuck in 'pending' every 30 s.
+  // This is a safety net — the dashboard also triggers ingest via HTTP,
+  // but if that call is dropped (cold start, network error) this catches it.
+  // ---------------------------------------------------------------
+  async function pollPendingSources() {
+    try {
+      const { data: pending } = await supabase
+        .from('sources')
+        .select('id, name')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: true })
+        .limit(5)
+
+      if (pending && pending.length > 0) {
+        console.log(`[poller] found ${pending.length} pending source(s) — ingesting`)
+        for (const source of pending) {
+          console.log(`[poller] ingesting source ${source.id} (${source.name})`)
+          ingestSource(source.id).catch((err: unknown) => {
+            console.error(`[poller] ingest failed for ${source.id}:`, err)
+          })
+        }
+      }
+    } catch (err) {
+      console.error('[poller] error checking pending sources:', err)
+    }
+  }
+
+  // Run once on startup then every 30 s
+  void pollPendingSources()
+  setInterval(pollPendingSources, 30_000)
+
 } catch (err) {
   server.log.error(err)
   process.exit(1)
