@@ -161,14 +161,11 @@ export function NewSourceForm({ allowedTypes }: Props) {
       }
 
       // 2. Upload file directly to Supabase Storage — bypasses Vercel entirely
-      // Use application/octet-stream for Excel/CSV since Supabase bucket
-      // allowlist may not include their specific MIME types. The real MIME is
-      // stored in metadata and used by the ingestion pipeline.
-      const uploadMime = (
-        file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-        file.type === 'application/vnd.ms-excel' ||
-        file.type === 'text/csv'
-      ) ? 'application/octet-stream' : file.type
+      // The bucket allowlist only covers images + PDF. For all other types
+      // (Office docs, Excel, CSV, ZIP) upload as octet-stream so the bucket
+      // accepts it. The real MIME is stored in metadata for ingestion to use.
+      const BUCKET_ALLOWED = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/gif']
+      const uploadMime = BUCKET_ALLOWED.includes(file.type) ? file.type : 'application/octet-stream'
       const supabase = createClient()
       const { error: uploadErr } = await supabase.storage
         .from('sources')
