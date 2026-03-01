@@ -88,6 +88,15 @@ const POSTS = [
     emoji: '📂',
     slug: 'knowledge-base-file-types',
   },
+  {
+    category: 'Tutorial',
+    title: 'How to Upload a ZIP File as a Knowledge Base Source',
+    excerpt: 'Bulk-import dozens of text files in one step. ZIP your .txt, .md, .csv, .json, .xml, and .html files, upload in Appalix, and your bot indexes all of them instantly — executables and binaries are safely skipped.',
+    readTime: '5 min read',
+    date: 'Mar 1, 2026',
+    emoji: '🗜️',
+    slug: 'upload-zip-knowledge-base',
+  },
   // Platform tutorials
   {
     category: 'Tutorial',

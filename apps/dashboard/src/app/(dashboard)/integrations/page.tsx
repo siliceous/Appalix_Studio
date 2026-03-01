@@ -16,7 +16,8 @@ const CRM_PROVIDERS: { emoji: string; name: string; desc: string; guide: string 
   { emoji: '🟠', name: 'HubSpot',    desc: 'Push captured leads directly into HubSpot contacts using a Private App token.',                 guide: '/resources/connect-hubspot' },
   { emoji: '💬', name: 'Intercom',   desc: 'Create Intercom leads instantly when a visitor shares contact details in chat.',                guide: '/resources/connect-intercom' },
   { emoji: '🔵', name: 'Zoho CRM',   desc: 'Automatically add leads to Zoho CRM using an OAuth access token.',                             guide: '/resources/connect-zoho-crm' },
-  { emoji: '☁️', name: 'Salesforce', desc: 'Create Salesforce Lead records via the REST API the moment a lead is captured.',               guide: '/resources/connect-salesforce' },
+  { emoji: '☁️', name: 'Salesforce',  desc: 'Create Salesforce Lead records via the REST API the moment a lead is captured.',               guide: '/resources/connect-salesforce' },
+  { emoji: '📋', name: 'Monday.com', desc: 'Create Monday.com board items automatically when your bot captures a lead.',                    guide: '/resources/connect-monday' },
 ]
 
 // All supported platforms shown in the "add" grid
