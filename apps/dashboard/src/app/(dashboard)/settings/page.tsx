@@ -132,6 +132,22 @@ export default async function SettingsPage() {
         </div>
       </section>
 
+      {/* Automation */}
+      <section className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10">
+        <div className="px-6 py-5 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Automation</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Configure email sending (Resend), approval routing, and AI tool settings.</p>
+          </div>
+          <a
+            href="/settings/automation"
+            className="shrink-0 px-4 py-2 text-sm font-medium border border-gray-300 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300 transition-colors"
+          >
+            Configure →
+          </a>
+        </div>
+      </section>
+
       {/* Team members */}
       <section className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10">
         <div className="px-6 py-5 border-b dark:border-white/10 flex items-center justify-between">
