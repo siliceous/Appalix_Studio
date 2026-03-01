@@ -150,6 +150,8 @@
     contract: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 14h6v6M14 4h6v6M4 14l7-7M14 10l7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     minimise: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
     send:     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 2 11 13M22 2 15 22l-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    mic:      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="12" rx="3" stroke="currentColor" stroke-width="2"/><path d="M5 10a7 7 0 0 0 14 0M12 19v3M9 22h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+    file:     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   };
 
   // CSS
@@ -224,6 +226,12 @@
     '}',
     '.sbtn:hover:not(:disabled){opacity:.88;transform:scale(1.05);}',
     '.sbtn:disabled{opacity:.4;cursor:not-allowed;}',
+    '.icon-btn{width:32px;height:32px;border:none;border-radius:8px;cursor:pointer;background:transparent;',
+    '  color:var(--apx-input-text);opacity:.45;display:flex;align-items:center;justify-content:center;',
+    '  flex-shrink:0;transition:opacity .15s,color .15s;padding:0;}',
+    '.icon-btn:hover{opacity:.8;}',
+    '.icon-btn.recording{color:#ef4444;opacity:1;animation:apxpulse 1s ease-in-out infinite;}',
+    '@keyframes apxpulse{0%,100%{opacity:1;}50%{opacity:.5;}}',
     '.powered{font-size:10px;text-align:center;color:var(--apx-bot-text);opacity:.3;padding:3px 0 5px;}',
   ].join('');
 
@@ -275,7 +283,10 @@
         '</div>',
         '<div class="messages" id="apx-messages">', msgsHtml, '</div>',
         '<div class="inputbar">',
+          '<button class="icon-btn" id="apx-mic" title="Voice input">', ICONS.mic, '</button>',
           '<textarea id="apx-input" rows="1" placeholder="Ask anything\u2026"></textarea>',
+          '<button class="icon-btn" id="apx-file" title="Upload file">', ICONS.file, '</button>',
+          '<input type="file" id="apx-file-input" style="display:none">',
           '<button class="sbtn" id="apx-send"', (pendingTyping ? ' disabled' : ''), '>', ICONS.send, '</button>',
         '</div>',
         '<div class="powered">Powered by Appalix</div>',
@@ -336,6 +347,59 @@
       });
     }
     if (sendBtn) sendBtn.addEventListener('click', doSend);
+
+    // Mic — Web Speech API
+    var micBtn = shadow.getElementById('apx-mic');
+    if (micBtn) {
+      var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SR) {
+        var recognition = new SR();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        recognition.onresult = function (e) {
+          var transcript = '';
+          for (var i = e.resultIndex; i < e.results.length; i++) {
+            transcript += e.results[i][0].transcript;
+          }
+          var inp = shadow.getElementById('apx-input');
+          if (inp) inp.value = transcript;
+        };
+        recognition.onend = function () {
+          micBtn.classList.remove('recording');
+        };
+        recognition.onerror = function () {
+          micBtn.classList.remove('recording');
+        };
+        micBtn.addEventListener('click', function () {
+          if (micBtn.classList.contains('recording')) {
+            recognition.stop();
+          } else {
+            recognition.start();
+            micBtn.classList.add('recording');
+          }
+        });
+      } else {
+        micBtn.style.display = 'none';
+      }
+    }
+
+    // File upload
+    var fileBtn   = shadow.getElementById('apx-file');
+    var fileInput = shadow.getElementById('apx-file-input');
+    if (fileBtn && fileInput) {
+      fileBtn.addEventListener('click', function () { fileInput.click(); });
+      fileInput.addEventListener('change', function () {
+        var file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        var inp = shadow.getElementById('apx-input');
+        if (inp) {
+          inp.value = (inp.value ? inp.value + ' ' : '') + '[File: ' + file.name + ']';
+          inp.dispatchEvent(new Event('input'));
+        }
+        fileInput.value = '';
+      });
+    }
   }
 
   function doSend() {
