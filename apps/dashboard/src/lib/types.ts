@@ -325,6 +325,19 @@ export interface SageIntegration {
   updated_at:   string
 }
 
+export interface SageReminder {
+  id:           string
+  workspace_id: string
+  deal_id:      string | null
+  contact_id:   string | null
+  title:        string
+  note:         string | null
+  due_at:       string
+  is_sent:      boolean
+  sent_at:      string | null
+  created_at:   string
+}
+
 // ---------------------------------------------------------------
 // Database shape (used by Supabase typed client)
 // ---------------------------------------------------------------

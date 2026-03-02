@@ -6,6 +6,15 @@ import { generateDocumentTool }   from '../document-generator.js'
 import { exportCsvTool }          from '../csv-exporter.js'
 import { requestApprovalTool }    from '../approval-routing.js'
 import { verifyWorkspaceMember }  from '../identity-verifier.js'
+import {
+  sageGetOverview,
+  sageSearchDeals,
+  sageMoveDeal,
+  sageUpdateDeal,
+  sageLogNote,
+  sageSetReminder,
+  sageSearchContacts,
+} from '../sage-tools.js'
 
 // ---------------------------------------------------------------
 // Tool definitions (declared to Claude)
@@ -205,6 +214,152 @@ export const BUILT_IN_TOOLS: Anthropic.Tool[] = [
       required: ['title', 'description', 'channel'],
     },
   },
+  // ── Sage CRM tools (all plans — subscriber's own pipeline data) ──
+  {
+    name:        'sage_get_overview',
+    description: 'Get a real-time overview of the subscriber\'s CRM for today: high-priority open deals, deals closing this week, and pending reminders due soon. Call this when the user asks "what are my tasks", "what\'s on my plate", "what should I focus on", or similar.',
+    input_schema: {
+      type:       'object',
+      properties: {},
+      required:   [],
+    },
+  },
+  {
+    name:        'sage_search_deals',
+    description: 'Search deals in the pipeline. Use when the user asks about a specific deal, a list of deals with certain criteria, or wants to find a deal by name.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: {
+          type:        'string',
+          description: 'Partial deal title to search for (case-insensitive).',
+        },
+        stage: {
+          type:        'string',
+          description: 'Filter by pipeline stage name (partial match).',
+        },
+        status: {
+          type:        'string',
+          enum:        ['open', 'won', 'lost'],
+          description: 'Filter by deal status.',
+        },
+        priority: {
+          type:        'string',
+          enum:        ['low', 'medium', 'high'],
+          description: 'Filter by priority.',
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name:        'sage_move_deal',
+    description: 'Move a deal to a different pipeline stage. Use when the user says "move X to Y", "advance X to Y stage", or "put X in Y". Fuzzy-matches both deal title and stage name.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        deal_title: {
+          type:        'string',
+          description: 'Part of the deal\'s title (case-insensitive match).',
+        },
+        to_stage: {
+          type:        'string',
+          description: 'Name of the target stage (partial match is fine, e.g. "qualified", "proposal").',
+        },
+      },
+      required: ['deal_title', 'to_stage'],
+    },
+  },
+  {
+    name:        'sage_update_deal',
+    description: 'Update fields on a deal: status (open/won/lost), close date, priority, win probability, or description. Use for "mark X as won", "set close date to Friday", "change priority to high", etc.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        deal_title: {
+          type:        'string',
+          description: 'Part of the deal\'s title (case-insensitive match).',
+        },
+        status: {
+          type:        'string',
+          enum:        ['open', 'won', 'lost'],
+          description: 'New deal status.',
+        },
+        close_date: {
+          type:        'string',
+          description: 'New close date — ISO format (2026-03-14), or natural language: "Friday", "next Monday", "tomorrow".',
+        },
+        priority: {
+          type:        'string',
+          enum:        ['low', 'medium', 'high'],
+          description: 'New priority level.',
+        },
+        win_percentage: {
+          type:        'number',
+          description: 'Win probability 0–100.',
+        },
+        description: {
+          type:        'string',
+          description: 'Updated deal description or notes.',
+        },
+      },
+      required: ['deal_title'],
+    },
+  },
+  {
+    name:        'sage_log_note',
+    description: 'Log a note or call summary against a deal in the activity log. Use when the user says "I called X and...", "log that we spoke about...", "note on X: ...".',
+    input_schema: {
+      type: 'object',
+      properties: {
+        deal_title: {
+          type:        'string',
+          description: 'Part of the deal\'s title (case-insensitive match).',
+        },
+        note: {
+          type:        'string',
+          description: 'The note text to log against the deal.',
+        },
+      },
+      required: ['deal_title', 'note'],
+    },
+  },
+  {
+    name:        'sage_set_reminder',
+    description: 'Set a follow-up reminder for a future date. Optionally link it to a deal. Use when the user says "remind me on Monday to...", "set a reminder for Friday", etc.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        title: {
+          type:        'string',
+          description: 'Short description of what to be reminded about.',
+        },
+        due_date: {
+          type:        'string',
+          description: 'When the reminder is due — ISO date or natural language: "Friday", "next Monday", "tomorrow", "2026-03-20".',
+        },
+        deal_title: {
+          type:        'string',
+          description: 'Optional: part of a deal title to link this reminder to.',
+        },
+      },
+      required: ['title', 'due_date'],
+    },
+  },
+  {
+    name:        'sage_search_contacts',
+    description: 'Search CRM contacts by name or email. Use when the user asks "find contact X", "what\'s the email for Y", or needs contact details.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: {
+          type:        'string',
+          description: 'Name or email to search for (partial, case-insensitive).',
+        },
+      },
+      required: ['query'],
+    },
+  },
 ]
 
 // ---------------------------------------------------------------
@@ -245,6 +400,15 @@ export interface ToolInput {
   // request_approval
   channel?:      string
   metadata?:     Record<string, unknown>
+  // sage CRM tools
+  deal_title?:      string
+  to_stage?:        string
+  stage?:           string
+  status?:          string
+  note?:            string
+  due_date?:        string
+  win_percentage?:  number
+  close_date?:      string
 }
 
 export async function executeTool(
@@ -330,6 +494,45 @@ export async function executeTool(
         return `Identity verified. Welcome, ${result.name} (${result.email}). You can now access sensitive information and share it with registered contacts via email.`
       }
       return `Verification failed: ${result.reason} Please check the email address and try again, or contact your administrator.`
+    }
+
+    // ── Sage CRM tools ─────────────────────────────────────────────
+
+    case 'sage_get_overview':
+      return sageGetOverview(ctx.workspaceId)
+
+    case 'sage_search_deals':
+      return sageSearchDeals(ctx.workspaceId, input.query, input.stage, input.status, input.priority)
+
+    case 'sage_move_deal': {
+      if (!input.deal_title || !input.to_stage) return 'Error: deal_title and to_stage are required.'
+      return sageMoveDeal(ctx.workspaceId, input.deal_title, input.to_stage)
+    }
+
+    case 'sage_update_deal': {
+      if (!input.deal_title) return 'Error: deal_title is required.'
+      return sageUpdateDeal(ctx.workspaceId, input.deal_title, {
+        status:         input.status,
+        close_date:     input.close_date,
+        priority:       input.priority,
+        win_percentage: input.win_percentage,
+        description:    input.description,
+      })
+    }
+
+    case 'sage_log_note': {
+      if (!input.deal_title || !input.note) return 'Error: deal_title and note are required.'
+      return sageLogNote(ctx.workspaceId, input.deal_title, input.note)
+    }
+
+    case 'sage_set_reminder': {
+      if (!input.title || !input.due_date) return 'Error: title and due_date are required.'
+      return sageSetReminder(ctx.workspaceId, input.title, input.due_date, input.deal_title)
+    }
+
+    case 'sage_search_contacts': {
+      if (!input.query) return 'Error: query is required.'
+      return sageSearchContacts(ctx.workspaceId, input.query)
     }
 
     default:
