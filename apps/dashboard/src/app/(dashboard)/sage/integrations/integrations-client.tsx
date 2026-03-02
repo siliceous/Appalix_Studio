@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Check, X, ExternalLink, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
+import Link from 'next/link'
+import { Check, X, ExternalLink, Loader2, ChevronDown, ChevronUp, BookOpen } from 'lucide-react'
 import { saveSageIntegration, disconnectSageIntegration } from '@/app/actions/sage'
 import type { SageIntegrationProvider } from '@/lib/types'
 
@@ -13,6 +14,7 @@ interface IntegrationCard {
   category:    'automation' | 'email' | 'tickets' | 'payments'
   fields:      Array<{ name: string; label: string; type: string; placeholder: string; hint?: string }>
   docsUrl?:    string
+  tutorialUrl?: string
 }
 
 const INTEGRATIONS: IntegrationCard[] = [
@@ -25,7 +27,8 @@ const INTEGRATIONS: IntegrationCard[] = [
     fields: [
       { name: 'secret_key', label: 'Secret Key', type: 'password', placeholder: 'sk_live_…', hint: 'Found in Stripe Dashboard → Developers → API keys' },
     ],
-    docsUrl: 'https://dashboard.stripe.com/apikeys',
+    docsUrl:     'https://dashboard.stripe.com/apikeys',
+    tutorialUrl: '/resources/connect-sage-stripe',
   },
   {
     provider:    'zapier',
@@ -36,7 +39,8 @@ const INTEGRATIONS: IntegrationCard[] = [
     fields: [
       { name: 'webhook_url', label: 'Webhook URL', type: 'url', placeholder: 'https://hooks.zapier.com/…', hint: 'Create a "Catch Hook" trigger in Zapier and paste the URL here' },
     ],
-    docsUrl: 'https://zapier.com/apps/webhook',
+    docsUrl:     'https://zapier.com/apps/webhook',
+    tutorialUrl: '/resources/connect-sage-zapier',
   },
   {
     provider:    'gmail',
@@ -48,7 +52,8 @@ const INTEGRATIONS: IntegrationCard[] = [
       { name: 'from_email',    label: 'From Email',    type: 'email',    placeholder: 'you@gmail.com' },
       { name: 'app_password',  label: 'App Password',  type: 'password', placeholder: 'xxxx xxxx xxxx xxxx', hint: 'Create an App Password in your Google Account → Security → 2-Step Verification → App Passwords' },
     ],
-    docsUrl: 'https://myaccount.google.com/apppasswords',
+    docsUrl:     'https://myaccount.google.com/apppasswords',
+    tutorialUrl: '/resources/connect-sage-gmail',
   },
   {
     provider:    'microsoft',
@@ -60,7 +65,8 @@ const INTEGRATIONS: IntegrationCard[] = [
       { name: 'from_email', label: 'Email Address', type: 'email',    placeholder: 'you@outlook.com' },
       { name: 'password',   label: 'App Password',  type: 'password', placeholder: 'App-specific password', hint: 'Create an App Password in your Microsoft Account → Security → Advanced security options' },
     ],
-    docsUrl: 'https://account.microsoft.com/security',
+    docsUrl:     'https://account.microsoft.com/security',
+    tutorialUrl: '/resources/connect-sage-microsoft',
   },
   {
     provider:    'freshdesk',
@@ -72,7 +78,8 @@ const INTEGRATIONS: IntegrationCard[] = [
       { name: 'domain',  label: 'Domain',  type: 'text',     placeholder: 'yourcompany.freshdesk.com' },
       { name: 'api_key', label: 'API Key', type: 'password', placeholder: 'Your Freshdesk API key', hint: 'Found in Freshdesk → Profile Settings → Your API Key' },
     ],
-    docsUrl: 'https://support.freshdesk.com/support/solutions/articles/215517',
+    docsUrl:     'https://support.freshdesk.com/support/solutions/articles/215517',
+    tutorialUrl: '/resources/connect-sage-freshdesk',
   },
   {
     provider:    'zendesk',
@@ -85,7 +92,8 @@ const INTEGRATIONS: IntegrationCard[] = [
       { name: 'email',     label: 'Email',     type: 'email',    placeholder: 'agent@yourcompany.com' },
       { name: 'api_token', label: 'API Token', type: 'password', placeholder: 'Your Zendesk API token', hint: 'Found in Zendesk Admin → Channels → API → API token' },
     ],
-    docsUrl: 'https://support.zendesk.com/hc/en-us/articles/4408889192858',
+    docsUrl:     'https://support.zendesk.com/hc/en-us/articles/4408889192858',
+    tutorialUrl: '/resources/connect-sage-zendesk',
   },
 ]
 
@@ -200,6 +208,17 @@ export function IntegrationsClient({ connected: initialConnected }: Integrations
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
+                        {integration.tutorialUrl && (
+                          <Link
+                            href={integration.tutorialUrl}
+                            target="_blank"
+                            className="flex items-center gap-1 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad]"
+                            title="Setup guide"
+                          >
+                            <BookOpen className="w-3.5 h-3.5" />
+                            <span className="text-[10px] font-medium hidden sm:inline">Setup guide</span>
+                          </Link>
+                        )}
                         {integration.docsUrl && (
                           <a
                             href={integration.docsUrl}

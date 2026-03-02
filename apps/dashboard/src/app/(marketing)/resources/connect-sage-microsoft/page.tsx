@@ -1,0 +1,189 @@
+import Link from 'next/link'
+import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
+
+export const metadata: Metadata = {
+  title: 'Connect Microsoft Outlook to Sage CRM — Send Emails from Deals | Appalix',
+  description:
+    'Send emails from Sage CRM contact and deal records using your Microsoft Outlook or Office 365 account. Generate an App Password, paste it into Sage Integrations, and every email is logged to the activity timeline.',
+  keywords: [
+    'Sage CRM Outlook integration',
+    'Appalix Sage Microsoft',
+    'send email from CRM Outlook',
+    'Microsoft App Password CRM',
+    'Office 365 CRM email',
+    'Sage email integration Outlook',
+    'Outlook SMTP CRM',
+  ],
+  alternates: { canonical: 'https://appalix.ai/resources/connect-sage-microsoft' },
+  openGraph: {
+    title: 'Connect Microsoft Outlook to Sage CRM — Send Emails from Deals | Appalix',
+    description: 'Send emails from Sage CRM using Outlook or Office 365. Step-by-step setup guide.',
+    url: 'https://appalix.ai/resources/connect-sage-microsoft',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Connect Microsoft Outlook to Sage CRM — Send Emails from Deals | Appalix',
+    description: 'Send emails from Sage CRM using Outlook or Office 365. Step-by-step setup guide.',
+  },
+}
+
+export default function ConnectSageMicrosoftPage() {
+  return (
+    <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="Connect Microsoft Outlook to Sage CRM"
+        description="Send emails from Sage CRM contact and deal records using your Microsoft Outlook or Office 365 account. Every email is automatically logged to the activity timeline."
+        slug="connect-sage-microsoft"
+        datePublished="2026-03-02"
+        steps={[
+          { name: 'Enable two-step verification on your Microsoft account', text: 'In your Microsoft Account security settings, turn on two-step verification. App Passwords are only available when two-step verification is active.' },
+          { name: 'Generate a Microsoft App Password', text: 'In your Microsoft Account, go to Security → Advanced security options → App passwords, add a new app password named "Appalix Sage", and copy the generated password.' },
+          { name: 'Paste credentials into Sage', text: 'In Appalix, go to Sage → Integrations, click Connect on the Microsoft / Outlook card, enter your email address and the App Password, then click Save & Connect.' },
+        ]}
+      />
+      <div className="max-w-3xl mx-auto">
+
+        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+          <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
+          <span>/</span>
+          <span className="text-gray-400">Connect Microsoft / Outlook to Sage</span>
+        </div>
+
+        <div className="mb-10">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
+            <span className="text-xs text-gray-500">6 min read · Pro+ plan</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
+            Connect Microsoft / Outlook to Sage CRM
+          </h1>
+          <p className="text-gray-400 text-lg leading-relaxed">
+            Once Microsoft is connected, you can send emails from contact records and deal pages directly inside Sage. Every email is automatically logged to the deal&apos;s activity timeline, giving your whole team full visibility without leaving the CRM.
+          </p>
+        </div>
+
+        <div className="border-t border-white/10 mb-10" />
+
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+
+          <section>
+            <h2 className="text-xl font-semibold text-white mb-3">Supported account types</h2>
+            <ul className="list-disc pl-5 space-y-2">
+              <li><strong className="text-white">Outlook.com</strong> — personal Microsoft accounts (@outlook.com, @hotmail.com, @live.com)</li>
+              <li><strong className="text-white">Microsoft 365</strong> — work or school accounts (Office 365, Exchange Online)</li>
+            </ul>
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+              <strong className="text-white">Note:</strong> Sage connects via SMTP (smtp.office365.com, port 587, STARTTLS). A standard account password will not work — you must use an App-specific password generated from your Microsoft security settings.
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-white mb-3">What you&apos;ll need</h2>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>An <strong className="text-white">Appalix account</strong> on the Pro plan or above</li>
+              <li>A <strong className="text-white">Microsoft account</strong> (Outlook.com or Microsoft 365)</li>
+              <li><strong className="text-white">Two-step verification enabled</strong> — required before App Passwords become available</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-white mb-3">Step 1 — Enable two-step verification</h2>
+            <p className="mb-3">If two-step verification is already on, skip to Step 2.</p>
+            <ol className="list-decimal pl-5 space-y-3">
+              <li>Go to <strong className="text-white">account.microsoft.com</strong> and sign in.</li>
+              <li>Click <strong className="text-white">Security</strong> in the top navigation.</li>
+              <li>Click <strong className="text-white">Advanced security options</strong>.</li>
+              <li>Under &quot;Two-step verification&quot;, click <strong className="text-white">Turn on</strong> and follow the prompts.</li>
+            </ol>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-white mb-3">Step 2 — Generate an App Password</h2>
+            <ol className="list-decimal pl-5 space-y-3">
+              <li>In your Microsoft Account, go to <strong className="text-white">Security → Advanced security options</strong>.</li>
+              <li>Scroll down to the <strong className="text-white">App passwords</strong> section and click <strong className="text-white">Create a new app password</strong>.</li>
+              <li>Microsoft will display a password. Give it the name <strong className="text-white">Appalix Sage</strong>.</li>
+              <li>Copy the generated password — it will only be shown once.</li>
+            </ol>
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+              <strong className="text-white">Microsoft 365 admin note:</strong> If your organisation manages Microsoft 365, your IT admin may need to allow SMTP AUTH for your account via the Exchange Admin Centre. Ask them to enable &quot;Authenticated SMTP&quot; (SMTP AUTH) for your mailbox.
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-white mb-3">Step 3 — Paste credentials into Sage</h2>
+            <ol className="list-decimal pl-5 space-y-3">
+              <li>In Appalix, go to <strong className="text-white">Sage → Integrations</strong>.</li>
+              <li>Under the <strong className="text-white">Email</strong> section, find the <strong className="text-white">Microsoft / Outlook</strong> card and click <strong className="text-white">Connect</strong>.</li>
+              <li>Enter your <strong className="text-white">email address</strong> (e.g. you@outlook.com or you@yourcompany.com).</li>
+              <li>Paste the <strong className="text-white">App Password</strong> into the App Password field.</li>
+              <li>Click <strong className="text-white">Save &amp; Connect</strong>.</li>
+            </ol>
+            <p className="mt-4">Sage will attempt a test SMTP connection. If successful, the Microsoft / Outlook card will show a green &quot;Connected&quot; badge.</p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-white mb-3">How it works</h2>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Open any <strong className="text-white">contact record</strong> or <strong className="text-white">deal page</strong> in Sage and click <strong className="text-white">Send Email</strong>.</li>
+              <li>Write your subject and body — the recipient is pre-filled from the contact&apos;s email address.</li>
+              <li>Click <strong className="text-white">Send</strong>. Sage delivers the email via Microsoft SMTP.</li>
+              <li>The email is immediately logged to the <strong className="text-white">activity timeline</strong>.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-white mb-3">Frequently asked questions</h2>
+            <div className="space-y-5">
+              <div>
+                <p className="font-semibold text-white">Will I see sent emails in my Outlook Sent Items?</p>
+                <p className="text-sm text-gray-400 mt-1">Yes — emails sent via Sage appear in your Outlook Sent Items folder, just like emails sent from Outlook directly.</p>
+              </div>
+              <div>
+                <p className="font-semibold text-white">Can I use a shared mailbox?</p>
+                <p className="text-sm text-gray-400 mt-1">Shared mailboxes don&apos;t support App Passwords directly. You&apos;ll need to connect an individual account that has &quot;Send As&quot; permission on the shared mailbox and use that account&apos;s credentials.</p>
+              </div>
+              <div>
+                <p className="font-semibold text-white">My organisation uses conditional access — will it work?</p>
+                <p className="text-sm text-gray-400 mt-1">If your organisation enforces modern authentication (OAuth) only, App Passwords may be blocked. Contact your IT admin to confirm whether SMTP AUTH with App Passwords is permitted for your mailbox.</p>
+              </div>
+              <div>
+                <p className="font-semibold text-white">How do I disconnect?</p>
+                <p className="text-sm text-gray-400 mt-1">Click <strong className="text-white">Disconnect</strong> on the Microsoft / Outlook card in Sage Integrations. Then revoke the App Password in your Microsoft Account security settings to fully remove access.</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
+            <p className="text-2xl mb-3">📬</p>
+            <h3 className="text-lg font-semibold text-white mb-2">Ready to send emails from Sage?</h3>
+            <p className="text-sm text-gray-400 mb-5">
+              Generate your Microsoft App Password, paste it into Sage Integrations, and start sending logged emails from every contact and deal.
+            </p>
+            <Link
+              href="/sage/integrations"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
+            >
+              Go to Sage Integrations →
+            </Link>
+          </section>
+
+        </div>
+
+        <div className="mt-16 pt-8 border-t border-white/10 flex items-center justify-between flex-wrap gap-4">
+          <Link href="/resources" className="text-sm text-brand-400 hover:text-brand-300 transition-colors">
+            ← Back to Resources
+          </Link>
+          <Link href="/sage/integrations" className="text-sm text-brand-400 hover:text-brand-300 transition-colors">
+            Sage Integrations →
+          </Link>
+        </div>
+
+      </div>
+    </div>
+  )
+}
