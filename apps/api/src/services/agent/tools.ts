@@ -17,6 +17,7 @@ import {
   sageSearchEmails,
   sageDraftReply,
 } from '../sage-tools.js'
+import { sageGetGuide, sageCheckFeatureStatus } from '../sage-guide-tools.js'
 
 // ---------------------------------------------------------------
 // Tool definitions (declared to Claude)
@@ -394,6 +395,34 @@ export const BUILT_IN_TOOLS: Anthropic.Tool[] = [
       required: ['email_id'],
     },
   },
+  {
+    name:        'sage_get_guide',
+    description: 'Get step-by-step setup instructions for any Appalix feature or integration. Use this whenever the user asks "how do I...", "help me set up...", "walk me through...", or "how does X work?". Topics include: gmail, microsoft, stripe, slack, whatsapp, facebook, telegram, pipeline, contacts, deals, knowledge-base, bot, widget, attachments, ai-rewrite, tickets, zapier, hubspot, wordpress, sage.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        topic: {
+          type:        'string',
+          description: 'The feature or integration to get instructions for (e.g. "gmail", "pipeline", "stripe", "widget", "slack").',
+        },
+      },
+      required: ['topic'],
+    },
+  },
+  {
+    name:        'sage_check_feature_status',
+    description: 'Check whether a specific feature or integration is configured and ready for the current workspace. Use this to verify each setup step is complete before telling the user to proceed. Features: gmail, microsoft, stripe, slack, whatsapp, facebook, telegram, zapier, hubspot, has_pipelines, has_contacts, has_deals, has_bots, has_sources, has_widget.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        feature: {
+          type:        'string',
+          description: 'The feature to check (e.g. "gmail", "stripe", "has_pipelines", "has_bots").',
+        },
+      },
+      required: ['feature'],
+    },
+  },
 ]
 
 // ---------------------------------------------------------------
@@ -445,6 +474,9 @@ export interface ToolInput {
   close_date?:      string
   // sage email tools
   email_id?:        string
+  // sage guide tools
+  topic?:           string
+  feature?:         string
 }
 
 export async function executeTool(
@@ -578,6 +610,16 @@ export async function executeTool(
     case 'sage_draft_reply': {
       if (!input.email_id) return 'Error: email_id is required.'
       return sageDraftReply(ctx.workspaceId, input.email_id)
+    }
+
+    case 'sage_get_guide': {
+      if (!input.topic) return 'Error: topic is required.'
+      return sageGetGuide(input.topic)
+    }
+
+    case 'sage_check_feature_status': {
+      if (!input.feature) return 'Error: feature is required.'
+      return sageCheckFeatureStatus(ctx.workspaceId, input.feature)
     }
 
     default:
