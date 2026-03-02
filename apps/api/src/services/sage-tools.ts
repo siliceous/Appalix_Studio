@@ -211,7 +211,7 @@ export async function sageSearchDeals(
   if (error) return `Error searching deals: ${error.message}`
   if (!data || data.length === 0) return `No deals found${query ? ` matching "${query}"` : ''}.`
 
-  let rows = data as (DealRow & { stage: { name: string } | null })[]
+  let rows = data as unknown as (DealRow & { stage: { name: string } | null })[]
 
   // Stage filter — done in JS since it's a join
   if (stage?.trim()) {
@@ -387,6 +387,77 @@ export async function sageSetReminder(
 
   const readableDate = dueDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
   return `✅ Reminder set: "${title}" on ${readableDate}.${dealId ? ` Linked to deal.` : ''}`
+}
+
+// ---------------------------------------------------------------------------
+// 8. sage_search_emails
+// ---------------------------------------------------------------------------
+
+export async function sageSearchEmails(
+  workspaceId: string,
+  query?:      string,
+  priority?:   string,
+): Promise<string> {
+  let q = supabase
+    .from('sage_emails')
+    .select('id, from_name, from_address, subject, received_at, ai_priority, ai_summary, direction')
+    .eq('workspace_id', workspaceId)
+    .eq('direction', 'inbound')
+    .order('received_at', { ascending: false })
+    .limit(10)
+
+  if (query?.trim()) {
+    q = q.or(`subject.ilike.%${query.trim()}%,from_address.ilike.%${query.trim()}%,from_name.ilike.%${query.trim()}%`)
+  }
+  if (priority?.trim()) {
+    q = q.eq('ai_priority', priority.trim().toLowerCase())
+  }
+
+  const { data, error } = await q
+
+  if (error) return `Error searching emails: ${error.message}`
+  if (!data || data.length === 0) return `No emails found${query ? ` matching "${query}"` : ''}${priority ? ` with priority "${priority}"` : ''}.`
+
+  return (data as { from_name: string | null; from_address: string; subject: string; received_at: string; ai_priority: string | null; ai_summary: string | null }[])
+    .map(e => {
+      const from     = e.from_name ?? e.from_address
+      const priority = e.ai_priority ? `[${e.ai_priority.toUpperCase()}]` : ''
+      const summary  = e.ai_summary ? ` — ${e.ai_summary}` : ''
+      const date     = new Date(e.received_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      return `• ${priority} From: ${from} | "${e.subject}"${summary} | ${date}`
+    })
+    .join('\n')
+}
+
+// ---------------------------------------------------------------------------
+// 9. sage_draft_reply
+// ---------------------------------------------------------------------------
+
+export async function sageDraftReply(
+  workspaceId: string,
+  emailId:     string,
+): Promise<string> {
+  const { data, error } = await supabase
+    .from('sage_emails')
+    .select('subject, from_name, from_address, ai_reply_drafts')
+    .eq('workspace_id', workspaceId)
+    .eq('id', emailId)
+    .single()
+
+  if (error || !data) return `Email not found with id "${emailId}".`
+
+  const drafts = data.ai_reply_drafts as { tone: string; body: string }[] | null
+
+  if (!drafts || drafts.length === 0) {
+    return `No AI reply drafts available for this email yet. Try syncing the inbox.`
+  }
+
+  const from = (data.from_name as string | null) ?? (data.from_address as string)
+  const lines = [`Reply drafts for email from ${from} — "${data.subject}":\n`]
+  for (const draft of drafts) {
+    lines.push(`[${draft.tone}]\n${draft.body}\n`)
+  }
+  return lines.join('\n')
 }
 
 // ---------------------------------------------------------------------------

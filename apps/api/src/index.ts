@@ -14,8 +14,10 @@ import { facebookRoutes }    from './routes/webhooks/facebook.js'
 import { whatsappRoutes }    from './routes/webhooks/whatsapp.js'
 import { googleChatRoutes }  from './routes/webhooks/google-chat.js'
 import { wordpressRoutes }   from './routes/webhooks/wordpress.js'
+import { telegramRoutes }    from './routes/webhooks/telegram.js'
 import { chatRoutes }        from './routes/chat/index.js'
 import { copilotRoutes }     from './routes/copilot/index.js'
+import { sageEmailRoutes }  from './routes/sage/emails.js'
 
 const server = Fastify({
   logger: {
@@ -84,12 +86,16 @@ await server.register(facebookRoutes,   { prefix: '/webhooks' })
 await server.register(whatsappRoutes,   { prefix: '/webhooks' })
 await server.register(googleChatRoutes, { prefix: '/webhooks' })
 await server.register(wordpressRoutes,  { prefix: '/webhooks' })
+await server.register(telegramRoutes,   { prefix: '/webhooks' })
 
 // Chat + ingestion endpoints
 await server.register(chatRoutes, { prefix: '/chat' })
 
 // Internal copilot endpoint (server-to-server, service-key auth)
 await server.register(copilotRoutes, { prefix: '/copilot' })
+
+// Sage email routes (sync, send, rewrite — service-key auth)
+await server.register(sageEmailRoutes, { prefix: '/sage/emails' })
 
 // ---------------------------------------------------------------
 // Error handler
@@ -116,6 +122,7 @@ try {
   console.log(`   POST /webhooks/whatsapp/:id`)
   console.log(`   POST /webhooks/google-chat/:id`)
   console.log(`   POST /webhooks/wordpress/:id`)
+  console.log(`   POST /webhooks/telegram/:id`)
   console.log(`   POST /chat/:id            (web widget)`)
   console.log(`   POST /chat/custom/:id     (custom API)`)
   console.log(`   POST /chat/ingest/:id     (RAG ingestion)\n`)

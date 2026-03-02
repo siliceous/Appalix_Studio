@@ -325,6 +325,33 @@ export interface SageIntegration {
   updated_at:   string
 }
 
+export interface SageEmail {
+  id:              string
+  workspace_id:    string
+  contact_id:      string | null
+  deal_id:         string | null
+  message_id:      string
+  thread_id:       string | null
+  from_address:    string
+  from_name:       string | null
+  to_address:      string
+  subject:         string
+  body_text:       string | null
+  body_html:       string | null
+  received_at:     string
+  direction:       'inbound' | 'outbound'
+  is_read:         boolean
+  is_starred:      boolean
+  ai_priority:     'high' | 'medium' | 'low' | null
+  ai_summary:      string | null
+  ai_insights:     string[] | null
+  ai_reply_drafts: { tone: string; body: string }[] | null
+  ai_analyzed_at:  string | null
+  created_at:      string
+  // joined
+  contact?:        Pick<SageContact, 'id' | 'name' | 'email'> | null
+}
+
 export interface SageReminder {
   id:           string
   workspace_id: string

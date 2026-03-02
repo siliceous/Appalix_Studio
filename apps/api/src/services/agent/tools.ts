@@ -14,6 +14,8 @@ import {
   sageLogNote,
   sageSetReminder,
   sageSearchContacts,
+  sageSearchEmails,
+  sageDraftReply,
 } from '../sage-tools.js'
 
 // ---------------------------------------------------------------
@@ -360,6 +362,38 @@ export const BUILT_IN_TOOLS: Anthropic.Tool[] = [
       required: ['query'],
     },
   },
+  {
+    name:        'sage_search_emails',
+    description: 'Search the inbox emails by sender, subject, or priority. Use when the user asks about emails, messages, or communication.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: {
+          type:        'string',
+          description: 'Search term — matches subject, sender name, or email address (partial, case-insensitive).',
+        },
+        priority: {
+          type:        'string',
+          description: 'Filter by AI priority: "high", "medium", or "low".',
+          enum:        ['high', 'medium', 'low'],
+        },
+      },
+    },
+  },
+  {
+    name:        'sage_draft_reply',
+    description: 'Retrieve the AI-generated reply drafts for a specific email. Use when the user wants to see or use a pre-written reply.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        email_id: {
+          type:        'string',
+          description: 'The sage_emails UUID of the email to retrieve drafts for.',
+        },
+      },
+      required: ['email_id'],
+    },
+  },
 ]
 
 // ---------------------------------------------------------------
@@ -409,6 +443,8 @@ export interface ToolInput {
   due_date?:        string
   win_percentage?:  number
   close_date?:      string
+  // sage email tools
+  email_id?:        string
 }
 
 export async function executeTool(
@@ -533,6 +569,15 @@ export async function executeTool(
     case 'sage_search_contacts': {
       if (!input.query) return 'Error: query is required.'
       return sageSearchContacts(ctx.workspaceId, input.query)
+    }
+
+    case 'sage_search_emails': {
+      return sageSearchEmails(ctx.workspaceId, input.query, input.priority)
+    }
+
+    case 'sage_draft_reply': {
+      if (!input.email_id) return 'Error: email_id is required.'
+      return sageDraftReply(ctx.workspaceId, input.email_id)
     }
 
     default:

@@ -20,6 +20,8 @@ const COPILOT_TOOL_NAMES = new Set([
   'sage_log_note',
   'sage_set_reminder',
   'sage_search_contacts',
+  'sage_search_emails',
+  'sage_draft_reply',
 ])
 
 const COPILOT_TOOLS = BUILT_IN_TOOLS.filter(t => COPILOT_TOOL_NAMES.has(t.name))
@@ -47,6 +49,8 @@ Your CRM capabilities:
 - sage_log_note: log a call note or update against a deal
 - sage_set_reminder: set a follow-up reminder for a future date
 - sage_search_contacts: find contacts by name or email
+- sage_search_emails: search the email inbox by sender, subject, or priority (high/medium/low)
+- sage_draft_reply: retrieve AI-generated reply drafts for a specific email
 - rag_search: search the workspace knowledge base for policies, docs, or product info
 
 Guidelines:

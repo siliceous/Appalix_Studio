@@ -18,6 +18,7 @@ import {
   Ticket,
   Link2,
   LayoutGrid,
+  Mail,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -58,6 +59,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/sage/dashboard',    label: 'Dashboard',    icon: LayoutGrid },
       { href: '/sage/pipelines',    label: 'Pipelines',    icon: Kanban },
       { href: '/sage/contacts',     label: 'Contacts',     icon: Users },
+      { href: '/sage/emails',       label: 'Emails',       icon: Mail },
       { href: '/sage/tickets',      label: 'Tickets',      icon: Ticket },
       { href: '/sage/integrations', label: 'Integrations', icon: Link2 },
     ],
