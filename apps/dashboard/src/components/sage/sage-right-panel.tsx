@@ -25,10 +25,10 @@ function getContextLabel(pathname: string): string {
 }
 
 const STARTER_PROMPTS = [
-  'Summarise new leads from today',
-  'Which deals need follow-up?',
-  'Show open high-priority tickets',
-  'Draft a follow-up email for a lead',
+  "What's on my plate today?",
+  'Show high-priority open deals',
+  'Which deals are closing this week?',
+  'Find contact by name or email',
 ]
 
 export function SageRightPanel({ workspaceId }: SageRightPanelProps) {

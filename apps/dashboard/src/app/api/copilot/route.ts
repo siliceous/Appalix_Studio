@@ -24,14 +24,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
   }
 
-  let body: { messages: { role: 'user' | 'assistant'; content: string }[]; workspace_id: string }
+  let body: { messages: { role: 'user' | 'assistant'; content: string }[]; workspace_id?: string; workspaceId?: string; context?: string }
   try {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
-  const { messages, workspace_id } = body
+  const { messages, context } = body
+  const workspace_id = body.workspace_id ?? body.workspaceId
   if (!messages?.length || !workspace_id) {
     return NextResponse.json({ error: 'messages and workspace_id are required' }, { status: 400 })
   }
@@ -80,6 +81,7 @@ export async function POST(req: NextRequest) {
         messages,
         user_name:      userName,
         workspace_name: ws.name,
+        context,
       }),
     })
 
