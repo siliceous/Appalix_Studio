@@ -1,6 +1,23 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
+
+// Countries that use "Postcode"
+const POSTCODE_COUNTRIES = new Set([
+  'uk', 'united kingdom', 'england', 'scotland', 'wales', 'northern ireland',
+  'australia', 'new zealand', 'south africa', 'canada',
+])
+// Countries that use "Pincode" / "PIN"
+const PINCODE_COUNTRIES = new Set([
+  'india', 'in', 'bangladesh', 'sri lanka', 'nepal', 'pakistan',
+])
+
+function postalCodeLabel(country: string): string {
+  const c = country.toLowerCase().trim()
+  if (PINCODE_COUNTRIES.has(c))  return 'Pincode'
+  if (POSTCODE_COUNTRIES.has(c)) return 'Postcode'
+  return 'Zip / Postal Code'
+}
 import { X, Loader2 } from 'lucide-react'
 import { createContact } from '@/app/actions/sage'
 import type { SageContact } from '@/lib/types'
@@ -16,6 +33,7 @@ const sectionCls = 'text-[10px] font-semibold text-gray-400 dark:text-gray-500 u
 
 export function ContactModal({ onClose, onCreated }: ContactModalProps) {
   const [pending, startTransition] = useTransition()
+  const [country, setCountry] = useState('')
 
   function handleSubmit(e: { preventDefault(): void; currentTarget: HTMLFormElement }) {
     e.preventDefault()
@@ -123,13 +141,13 @@ export function ContactModal({ onClose, onCreated }: ContactModalProps) {
                   <input name="state" type="text" placeholder="NY" className={inputCls} />
                 </div>
                 <div>
-                  <label className={labelCls}>Zip</label>
+                  <label className={labelCls}>{postalCodeLabel(country)}</label>
                   <input name="zip" type="text" placeholder="10001" className={inputCls} />
                 </div>
               </div>
               <div>
                 <label className={labelCls}>Country</label>
-                <input name="country" type="text" placeholder="United States" className={inputCls} />
+                <input name="country" type="text" placeholder="United States" value={country} onChange={e => setCountry(e.target.value)} className={inputCls} />
               </div>
             </div>
           </div>
