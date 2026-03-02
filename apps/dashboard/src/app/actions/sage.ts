@@ -107,17 +107,20 @@ export async function updateContact(id: string, formData: FormData) {
   const tagsRaw       = (formData.get('tags') as string | null)?.trim() || ''
   const tags          = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : []
 
-  const { error } = await admin
+  const { data, error } = await admin
     .from('sage_contacts')
     .update({ name, email, phone, title, contact_type, company_name, website_url, business_goal, street, city, state, zip, country, visibility, notes, tags, updated_at: new Date().toISOString() })
     .eq('id', id)
     .eq('workspace_id', workspaceId)
+    .select('*')
+    .single()
 
   if (error) throw new Error(error.message)
 
   await logActivity(workspaceId, 'contact', id, 'contact_updated', { name })
   revalidatePath('/sage/contacts')
   revalidatePath(`/sage/contacts/${id}`)
+  return data as SageContact
 }
 
 export async function deleteContact(id: string) {

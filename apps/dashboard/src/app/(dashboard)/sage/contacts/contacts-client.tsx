@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import {
-  UserPlus, Search, Mail, Phone, Globe, ExternalLink, Trash2,
+  UserPlus, Search, Mail, Phone, Globe, ExternalLink, Trash2, Pencil,
   Zap, ArrowUpDown, SlidersHorizontal, Columns3, Check,
 } from 'lucide-react'
 import { ContactModal } from '@/components/sage/contact-modal'
@@ -73,9 +73,10 @@ const EMPTY_FILTER: FilterState = { contactType: [], lastContacted: '', tags: ''
 interface ContactsClientProps { contacts: SageContact[] }
 
 export function ContactsClient({ contacts: initial }: ContactsClientProps) {
-  const [contacts,    setContacts]    = useState(initial)
-  const [showModal,   setShowModal]   = useState(false)
-  const [deleting,    setDeleting]    = useState<string | null>(null)
+  const [contacts,       setContacts]       = useState(initial)
+  const [showModal,      setShowModal]      = useState(false)
+  const [editingContact, setEditingContact] = useState<SageContact | null>(null)
+  const [deleting,       setDeleting]       = useState<string | null>(null)
   const [search,      setSearch]      = useState('')
   const [openPanel,   setOpenPanel]   = useState<'sort' | 'filter' | 'columns' | null>(null)
   const [sortField,   setSortField]   = useState('')
@@ -422,6 +423,13 @@ export function ContactsClient({ contacts: initial }: ContactsClientProps) {
                         <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
                       </Link>
                       <button
+                        onClick={() => setEditingContact(contact)}
+                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+                        title="Edit"
+                      >
+                        <Pencil className="w-3.5 h-3.5 text-gray-400" />
+                      </button>
+                      <button
                         onClick={() => handleDelete(contact.id)}
                         disabled={deleting === contact.id}
                         className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
@@ -437,10 +445,17 @@ export function ContactsClient({ contacts: initial }: ContactsClientProps) {
         )}
       </div>
 
-      {showModal && (
+      {(showModal || editingContact) && (
         <ContactModal
-          onClose={() => setShowModal(false)}
-          onCreated={contact => setContacts(prev => [contact, ...prev])}
+          contact={editingContact ?? undefined}
+          onClose={() => { setShowModal(false); setEditingContact(null) }}
+          onSaved={saved => {
+            if (editingContact) {
+              setContacts(prev => prev.map(c => c.id === saved.id ? saved : c))
+            } else {
+              setContacts(prev => [saved, ...prev])
+            }
+          }}
         />
       )}
     </div>
