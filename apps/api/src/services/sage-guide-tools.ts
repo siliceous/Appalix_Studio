@@ -310,7 +310,7 @@ const GUIDES: Record<string, Guide> = {
 
   'knowledge-base': {
     title:     'Add a Knowledge Source to your Bot',
-    summary:   'A knowledge source is content your bot learns from — a website URL, a PDF, a document, or plain text. The bot uses this to answer customer questions accurately.',
+    summary:   'A knowledge source is content your bot learns from. There are 11 source types supported. The bot searches across all connected sources to answer customer questions accurately.',
     verifyWith: 'has_sources',
     steps: [
       {
@@ -320,29 +320,31 @@ const GUIDES: Record<string, Guide> = {
       },
       {
         step:   2,
-        title:  'Click Add Source',
-        detail: 'Click "+ New Source". Choose a source type: URL (a webpage), Sitemap (all pages from a sitemap.xml), File (PDF, DOCX, TXT), or Text (paste content directly).',
+        title:  'Click Add Source and choose a type',
+        detail: 'Click "+ New Source". All 11 supported source types are:\n• URL — a single webpage (Appalix scrapes and indexes it)\n• Sitemap — all pages listed in a sitemap.xml URL\n• File — upload a PDF, DOCX, or TXT file directly\n• Text — paste content directly (FAQs, policies, notes)\n• Notion — connect a Notion page or database using your Integration Token (Pro+)\n• Google Drive — connect a Drive file or folder using an access token (Pro+)\n• Dropbox — connect a Dropbox file or folder (Pro+)\n• OneDrive — connect a OneDrive file using Microsoft Graph (Pro+)\n• SharePoint — connect a SharePoint document library (Pro+)\n• Confluence — connect a Confluence space or page (Pro+)\n• GitBook — connect a GitBook space using your API token (Pro+)',
       },
       {
         step:   3,
         title:  'Fill in the source details',
-        detail: 'For URL: paste the page URL. For Sitemap: paste the sitemap.xml URL. For File: upload the file. For Text: paste the content. Give it a descriptive name.',
+        detail: 'For URL/Sitemap: paste the URL. For File: upload the file. For Text: paste the content. For cloud sources (Notion, Google Drive, etc.): paste the access token/API key and the resource URL or ID. Give every source a descriptive name so you can identify it later.',
       },
       {
         step:   4,
         title:  'Ingest the source',
-        detail: 'Click Save. Appalix will automatically process the content (chunking, embedding). The status will change from Pending → Processing → Ready. This usually takes under a minute for most sources.',
+        detail: 'Click Save. Appalix automatically processes the content (chunking and embedding). Status changes from Pending → Processing → Ready. Most sources complete in under a minute.',
       },
       {
         step:   5,
         title:  'Test the bot',
-        detail: 'Once the source shows Ready status, test your bot using the Preview button. Ask a question that should be answered from the source and verify the bot responds correctly.',
+        detail: 'Once the source shows Ready status, use the bot Preview button. Ask a question that should be answered from the source and verify the response is accurate.',
       },
     ],
     tips: [
       'Add multiple sources — the bot searches across all of them simultaneously.',
       'Re-ingest a source after updating the underlying content to keep the bot current.',
-      'Pro+ plans support cloud connectors: Notion, Google Drive, Dropbox, SharePoint, GitBook.',
+      'Cloud connectors (Notion, Google Drive, Dropbox, OneDrive, SharePoint, Confluence, GitBook) require a Pro plan or above.',
+      'For Notion: generate an Internal Integration Token in notion.so/my-integrations and share the target page with the integration.',
+      'For Google Drive: use a service account or OAuth access token with at least Files (read) permission.',
     ],
   },
 
@@ -656,6 +658,245 @@ const GUIDES: Record<string, Guide> = {
   },
 
   // ────────────────────────────────────────────────────────────────
+  // CRM lead routing integrations — external CRMs
+  // ────────────────────────────────────────────────────────────────
+
+  salesforce: {
+    title:     'Connect Salesforce to Your Bot (Lead Capture)',
+    summary:   'When a website visitor shares their contact details in the chat widget, Appalix automatically creates a new Lead in Salesforce using your Connected App credentials. Sage is your built-in CRM — Salesforce is an external CRM you can route leads to.',
+    verifyWith: 'salesforce',
+    steps: [
+      {
+        step:   1,
+        title:  'Create a Salesforce Connected App',
+        detail: 'In Salesforce Setup → App Manager → New Connected App. Enable OAuth settings and add the scope "Manage user data via APIs (api)". Save and note your Consumer Key and Consumer Secret.',
+      },
+      {
+        step:   2,
+        title:  'Generate an Access Token',
+        detail: 'Use the OAuth Username-Password flow or Salesforce CLI to get an Access Token and your Instance URL (e.g. https://yourcompany.my.salesforce.com).',
+      },
+      {
+        step:   3,
+        title:  'Paste credentials in Appalix',
+        detail: 'In Appalix → Integrations → edit your integration → CRM section → set Provider to Salesforce → enter your Access Token and Instance URL. Click Save.',
+      },
+      {
+        step:   4,
+        title:  'Test lead capture',
+        detail: 'In the chat widget, share a name and email. Within seconds, a new Lead should appear in Salesforce → Leads.',
+      },
+    ],
+  },
+
+  monday: {
+    title:     'Connect Monday.com to Your Bot (Lead Capture)',
+    summary:   'Leads collected in the chat widget are pushed to a Monday.com board as new items using your API token. Monday.com is an external project/CRM tool — Sage is the built-in CRM.',
+    verifyWith: 'monday',
+    steps: [
+      {
+        step:   1,
+        title:  'Get your Monday.com API Token',
+        detail: 'In Monday.com → click your avatar (top right) → Administration → API → copy your Personal API Token.',
+      },
+      {
+        step:   2,
+        title:  'Find your Board ID',
+        detail: 'Open the board you want leads sent to. The Board ID is the number in the URL (e.g. monday.com/boards/1234567890).',
+      },
+      {
+        step:   3,
+        title:  'Paste credentials in Appalix',
+        detail: 'In Appalix → Integrations → edit your integration → CRM section → set Provider to Monday.com → enter your API Token and Board ID. Click Save.',
+      },
+      {
+        step:   4,
+        title:  'Test lead capture',
+        detail: 'In the chat widget, share a name and email. A new item should appear in your Monday.com board within seconds.',
+      },
+    ],
+  },
+
+  intercom: {
+    title:     'Connect Intercom to Your Bot (Lead Capture)',
+    summary:   'Leads collected in the chat widget are automatically pushed to Intercom as new contacts using your Access Token. Intercom is an external customer messaging platform — Sage is the built-in CRM.',
+    verifyWith: 'intercom',
+    steps: [
+      {
+        step:   1,
+        title:  'Create an Intercom App',
+        detail: 'Go to developers.intercom.com → Your Apps → New App. Give it a name (e.g. "Appalix Lead Sync").',
+      },
+      {
+        step:   2,
+        title:  'Copy the Access Token',
+        detail: 'In your Intercom App → Authentication → copy the Access Token.',
+      },
+      {
+        step:   3,
+        title:  'Paste in Appalix',
+        detail: 'In Appalix → Integrations → edit your integration → CRM section → set Provider to Intercom → paste the Access Token. Click Save.',
+      },
+      {
+        step:   4,
+        title:  'Test lead capture',
+        detail: 'In the chat widget, share a name and email. Within seconds, a new contact should appear in Intercom → Contacts (role: Lead).',
+      },
+    ],
+  },
+
+  zoho: {
+    title:     'Connect Zoho CRM to Your Bot (Lead Capture)',
+    summary:   'Leads collected in the chat widget are pushed to Zoho CRM as new Leads using your OAuth Access Token. Zoho is an external CRM — Sage is the built-in CRM.',
+    verifyWith: 'zoho',
+    steps: [
+      {
+        step:   1,
+        title:  'Create a Zoho Server-Based Application',
+        detail: 'Go to api-console.zoho.com → Add Client → Server-based Applications. Name it "Appalix". Add redirect URI https://appalix.ai. Note your Client ID and Client Secret.',
+      },
+      {
+        step:   2,
+        title:  'Generate an Access Token',
+        detail: 'Use the Zoho OAuth flow to generate an Access Token. Your domain is your Zoho data centre (e.g. www.zohoapis.com for US, www.zohoapis.eu for EU).',
+      },
+      {
+        step:   3,
+        title:  'Paste credentials in Appalix',
+        detail: 'In Appalix → Integrations → edit your integration → CRM section → set Provider to Zoho CRM → enter your Access Token and Zoho Domain. Click Save.',
+      },
+      {
+        step:   4,
+        title:  'Test lead capture',
+        detail: 'In the chat widget, share a name and email. A new Lead should appear in Zoho CRM → Leads within seconds.',
+      },
+    ],
+  },
+
+  freshdesk: {
+    title:     'Connect Freshdesk to Your Bot (Lead Capture)',
+    summary:   'When a visitor shares their contact details in the chat widget, Appalix creates a new contact in Freshdesk using your API Key. Freshdesk is an external helpdesk — Sage has its own built-in ticket system.',
+    verifyWith: 'freshdesk',
+    steps: [
+      {
+        step:   1,
+        title:  'Get your Freshdesk API Key',
+        detail: 'Log in to your Freshdesk account → click your profile avatar (top right) → Profile Settings. Copy the API Key shown on the right side of the page.',
+      },
+      {
+        step:   2,
+        title:  'Find your Freshdesk domain',
+        detail: 'Your Freshdesk domain is the subdomain of your account (e.g. yourcompany.freshdesk.com). Note this — it is required for the API endpoint.',
+      },
+      {
+        step:   3,
+        title:  'Paste credentials in Appalix',
+        detail: 'In Appalix → Integrations → edit your integration → CRM section → set Provider to Freshdesk → enter your API Key and Freshdesk Domain. Click Save.',
+      },
+      {
+        step:   4,
+        title:  'Test lead capture',
+        detail: 'In the chat widget, share a name and email. A new contact should appear in Freshdesk → Contacts within seconds.',
+      },
+    ],
+  },
+
+  zendesk: {
+    title:     'Connect Zendesk to Your Bot (Lead Capture)',
+    summary:   'When a visitor shares their contact details in the chat widget, Appalix creates a new user in Zendesk using your API Token. Zendesk is an external helpdesk platform — Sage has its own built-in ticket system.',
+    verifyWith: 'zendesk',
+    steps: [
+      {
+        step:   1,
+        title:  'Generate a Zendesk API Token',
+        detail: 'In Zendesk Admin Centre → Apps and integrations → APIs → Zendesk API → enable Token Access → Add API token. Copy the generated token.',
+      },
+      {
+        step:   2,
+        title:  'Note your Zendesk subdomain',
+        detail: 'Your Zendesk subdomain is the part before .zendesk.com in your URL (e.g. yourcompany.zendesk.com → subdomain is yourcompany).',
+      },
+      {
+        step:   3,
+        title:  'Paste credentials in Appalix',
+        detail: 'In Appalix → Integrations → edit your integration → CRM section → set Provider to Zendesk → enter your Email, API Token, and Zendesk Subdomain. Click Save.',
+      },
+      {
+        step:   4,
+        title:  'Test lead capture',
+        detail: 'In the chat widget, share a name and email. A new user should appear in Zendesk → Customers/Users.',
+      },
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────────────
+  // Additional channel integrations
+  // ────────────────────────────────────────────────────────────────
+
+  'google-chat': {
+    title:     'Connect Google Chat to Your Bot',
+    summary:   'Connect Google Chat so your bot can respond to messages in Google Chat spaces or direct messages.',
+    verifyWith: 'google-chat',
+    steps: [
+      {
+        step:   1,
+        title:  'Create a Google Cloud Project',
+        detail: 'Go to console.cloud.google.com → New Project. Enable the Google Chat API in APIs & Services → Library.',
+      },
+      {
+        step:   2,
+        title:  'Configure your Chat App',
+        detail: 'In Google Cloud → Google Chat API → Configuration. Set App name and Description. Under Functionality, enable "Receive 1:1 messages" and/or "Join spaces and group conversations". Under Connection settings, select "App URL" and paste the webhook URL from Appalix (https://api.appalix.ai/webhooks/google-chat/YOUR_ID).',
+      },
+      {
+        step:   3,
+        title:  'Set up service account credentials',
+        detail: 'In Google Cloud → IAM & Admin → Service Accounts → Create a service account. Download the JSON key file. In Appalix → Integrations → Google Chat card → paste the credentials. Click Save.',
+      },
+      {
+        step:   4,
+        title:  'Publish and test',
+        detail: 'In the Chat API Configuration page → Publish → Save. Then open Google Chat, find your app, and send a test message. Your bot should reply.',
+      },
+    ],
+    tips: [
+      'The Chat API requires a Google Workspace account for publishing beyond your own organisation.',
+      'You can add the bot to a Space by @mentioning it — it must be in the Space first.',
+    ],
+  },
+
+  'custom-api': {
+    title:     'Connect via Custom API / Webhook',
+    summary:   'Use the Custom API / Webhook integration to send chat lead data to any external system via HTTP POST, or to query your own API for bot responses.',
+    steps: [
+      {
+        step:   1,
+        title:  'Go to Integrations → New Integration',
+        detail: 'In Appalix → Integrations → New Integration. Choose Custom API / Webhook as the type.',
+      },
+      {
+        step:   2,
+        title:  'Configure the lead webhook URL',
+        detail: 'In the CRM section, set Provider to Webhook and paste your endpoint URL. Appalix will POST lead data (name, email, phone, conversation_id, workspace_id) to this URL whenever a visitor shares their details in the chat widget.',
+      },
+      {
+        step:   3,
+        title:  'Test the webhook',
+        detail: 'Open the chat widget and share a name and email address. Check your endpoint logs to confirm the POST request was received with the correct fields.',
+      },
+      {
+        step:   4,
+        title:  'Optional: chain to other services',
+        detail: 'You can point the webhook to a Zapier Catch Hook, Make (Integromat), or any custom server. From there, route leads to any tool that has no native Appalix integration.',
+      },
+    ],
+    tips: [
+      'Use Zapier as a no-code middleware to route leads to tools not natively supported.',
+      'Webhook POST body includes: workspace_id, conversation_id, name, email, phone, message, timestamp.',
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────────────
   // Sage overview
   // ────────────────────────────────────────────────────────────────
 
@@ -691,7 +932,7 @@ const GUIDES: Record<string, Guide> = {
       {
         step:   6,
         title:  'Integrations — Connect tools',
-        detail: 'Connect Gmail/Outlook (email), Stripe (invoices), Zapier/HubSpot/Intercom/Zoho (lead routing), and more from Sage → Integrations.',
+        detail: 'From Sage → Integrations you can connect:\n• Email: Gmail, Microsoft Outlook\n• Invoicing: Stripe\n• Chat channels: Web Widget, Slack, WhatsApp, Facebook Messenger, Telegram, Google Chat, WordPress (plugin)\n• Lead routing (external CRMs): HubSpot, Salesforce, Zoho CRM, Monday.com, Intercom, Freshdesk, Zendesk, Zapier\n• Custom: Custom API / Webhook',
       },
       {
         step:   7,
@@ -769,37 +1010,73 @@ const GUIDES: Record<string, Guide> = {
 
 // Aliases for common synonyms
 const TOPIC_ALIASES: Record<string, string> = {
-  email:        'gmail',
-  outlook:      'microsoft',
-  office365:    'microsoft',
-  'office 365': 'microsoft',
-  crm:          'sage',
-  pipeline:     'pipeline',
-  kanban:       'pipeline',
-  board:        'pipeline',
-  contact:      'contacts',
-  deal:         'deals',
-  lead:         'deals',
-  opportunity:  'deals',
-  'knowledge base': 'knowledge-base',
-  knowledge:    'knowledge-base',
-  sources:      'knowledge-base',
-  source:       'knowledge-base',
-  rag:          'knowledge-base',
-  bot:          'bot',
-  bots:         'bot',
-  chatbot:      'bot',
-  assistant:    'bot',
-  widget:       'widget',
-  embed:        'widget',
-  chat:         'widget',
-  attachment:   'attachments',
-  invoice:      'attachments',
-  proposal:     'attachments',
-  rewrite:      'ai-rewrite',
-  'ai rewrite': 'ai-rewrite',
-  ticket:       'tickets',
-  support:      'tickets',
+  // Email
+  email:              'gmail',
+  outlook:            'microsoft',
+  office365:          'microsoft',
+  'office 365':       'microsoft',
+  // CRM / general
+  crm:                'sage',
+  pipeline:           'pipeline',
+  kanban:             'pipeline',
+  board:              'pipeline',
+  contact:            'contacts',
+  deal:               'deals',
+  lead:               'deals',
+  opportunity:        'deals',
+  // Knowledge base
+  'knowledge base':   'knowledge-base',
+  knowledge:          'knowledge-base',
+  sources:            'knowledge-base',
+  source:             'knowledge-base',
+  rag:                'knowledge-base',
+  notion:             'knowledge-base',
+  'google drive':     'knowledge-base',
+  dropbox:            'knowledge-base',
+  onedrive:           'knowledge-base',
+  sharepoint:         'knowledge-base',
+  confluence:         'knowledge-base',
+  gitbook:            'knowledge-base',
+  // Bots
+  bot:                'bot',
+  bots:               'bot',
+  chatbot:            'bot',
+  assistant:          'bot',
+  // Channels
+  widget:             'widget',
+  embed:              'widget',
+  'web widget':       'widget',
+  wordpress:          'wordpress',
+  // Attachments / compose
+  attachment:         'attachments',
+  attachments:        'attachments',
+  invoice:            'attachments',
+  proposal:           'attachments',
+  rewrite:            'ai-rewrite',
+  'ai rewrite':       'ai-rewrite',
+  // Support
+  ticket:             'tickets',
+  tickets:            'tickets',
+  support:            'tickets',
+  // External CRM lead routing
+  salesforce:         'salesforce',
+  'sales force':      'salesforce',
+  sfdc:               'salesforce',
+  monday:             'monday',
+  'monday.com':       'monday',
+  intercom:           'intercom',
+  zoho:               'zoho',
+  'zoho crm':         'zoho',
+  freshdesk:          'freshdesk',
+  zendesk:            'zendesk',
+  zapier:             'zapier',
+  hubspot:            'hubspot',
+  // Channels
+  'google chat':      'google-chat',
+  'google-chat':      'google-chat',
+  'custom api':       'custom-api',
+  webhook:            'custom-api',
+  'custom webhook':   'custom-api',
 }
 
 /**
@@ -969,7 +1246,11 @@ export async function sageCheckFeatureStatus(
     case 'zapier':
     case 'hubspot':
     case 'intercom':
-    case 'zoho': {
+    case 'zoho':
+    case 'salesforce':
+    case 'monday':
+    case 'freshdesk':
+    case 'zendesk': {
       // These are stored in integrations.config as crm_provider
       const { data: ints } = await supabase
         .from('integrations')
@@ -978,9 +1259,15 @@ export async function sageCheckFeatureStatus(
       const found = (ints ?? []).some(
         (i: { config: Record<string, unknown> }) => i.config?.crm_provider === key,
       )
+      const label = key.charAt(0).toUpperCase() + key.slice(1)
       result = found
-        ? { feature: key, connected: true,  detail: `${key} CRM integration is configured.` }
-        : { feature: key, connected: false, detail: `${key} is not set up. Go to Integrations → edit an integration → CRM section.` }
+        ? { feature: key, connected: true,  detail: `${label} CRM integration is configured for lead routing.` }
+        : { feature: key, connected: false, detail: `${label} is not set up yet. Go to Integrations → edit an integration → CRM section → select ${label} as provider.` }
+      break
+    }
+
+    case 'google-chat': {
+      result = await integrationConnected('google-chat')
       break
     }
 
@@ -1070,7 +1357,7 @@ export async function sageCheckFeatureStatus(
     }
 
     default:
-      return `Unknown feature "${feature}". Checkable features: gmail, microsoft, stripe, slack, whatsapp, facebook, telegram, zapier, hubspot, has_pipelines, has_contacts, has_deals, has_bots, has_sources, has_widget.`
+      return `Unknown feature "${feature}". Checkable features: gmail, microsoft, stripe, slack, whatsapp, facebook, telegram, google-chat, zapier, hubspot, salesforce, monday, intercom, zoho, freshdesk, zendesk, has_pipelines, has_contacts, has_deals, has_bots, has_sources, has_widget.`
   }
 
   const icon = result.connected ? '✅' : '⏳'
