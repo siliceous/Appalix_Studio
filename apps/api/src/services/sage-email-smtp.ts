@@ -10,12 +10,19 @@
 import nodemailer from 'nodemailer'
 import { supabase } from '../lib/supabase.js'
 
+interface EmailAttachment {
+  filename:    string
+  contentType: string
+  dataBase64:  string
+}
+
 interface SendEmailOptions {
   workspaceId:     string
   to:              string
   subject:         string
   body:            string
   replyToEmailId?: string  // sage_emails.id of the email being replied to
+  attachments?:    EmailAttachment[]
 }
 
 interface SmtpCreds {
@@ -41,7 +48,7 @@ function getSmtpCreds(provider: string, config: Record<string, string>): SmtpCre
 }
 
 export async function sendEmailSMTP(opts: SendEmailOptions): Promise<void> {
-  const { workspaceId, to, subject, body, replyToEmailId } = opts
+  const { workspaceId, to, subject, body, replyToEmailId, attachments } = opts
 
   // Load connected email integration
   const { data: integrations } = await supabase
@@ -76,10 +83,15 @@ export async function sendEmailSMTP(opts: SendEmailOptions): Promise<void> {
 
   // Send the email
   const info = await transporter.sendMail({
-    from:    `"Sage CRM" <${creds.user}>`,
+    from:        `"Sage CRM" <${creds.user}>`,
     to,
     subject,
-    text:    body,
+    text:        body,
+    attachments: attachments?.map(a => ({
+      filename:    a.filename,
+      content:     Buffer.from(a.dataBase64, 'base64'),
+      contentType: a.contentType,
+    })),
   })
 
   // Determine In-Reply-To header if replying

@@ -1,10 +1,34 @@
 'use client'
 
 import React, { useState, useTransition, useRef } from 'react'
-import { Mail, RefreshCw, Send, Sparkles, Star, ChevronDown, ChevronUp, Loader2, AlertCircle } from 'lucide-react'
-import { syncEmails, sendEmail, rewriteEmail } from '@/app/actions/sage-emails'
+import {
+  Mail, RefreshCw, Send, Sparkles, Star, ChevronDown, ChevronUp,
+  Loader2, AlertCircle, Paperclip, Receipt, FileText, X,
+} from 'lucide-react'
+import {
+  syncEmails, sendEmail, rewriteEmail,
+  fetchStripeInvoices, fetchStripeInvoicePDF, generateProposalPDF,
+} from '@/app/actions/sage-emails'
 import type { SageEmail } from '@/lib/types'
 import { cn } from '@/lib/utils'
+
+// ---------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------
+
+interface EmailAttachment { filename: string; contentType: string; dataBase64: string }
+
+interface StripeInvoice {
+  id:             string
+  number:         string | null
+  customer_name:  string | null
+  customer_email: string | null
+  amount_due:     number
+  currency:       string
+  status:         string
+  invoice_pdf:    string | null
+  created:        number
+}
 
 // ---------------------------------------------------------------
 // Helpers
@@ -29,21 +53,18 @@ function PriorityBadge({ priority }: { priority: 'high' | 'medium' | 'low' | nul
 function formatDate(iso: string) {
   const d = new Date(iso)
   const now = new Date()
-  const diffMs = now.getTime() - d.getTime()
-  const diffHours = diffMs / (1000 * 60 * 60)
+  const diffHours = (now.getTime() - d.getTime()) / (1000 * 60 * 60)
 
-  if (diffHours < 24) {
-    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
-  }
-  if (diffHours < 168) {
-    return d.toLocaleDateString('en-US', { weekday: 'short' })
-  }
+  if (diffHours < 24)  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+  if (diffHours < 168) return d.toLocaleDateString('en-US', { weekday: 'short' })
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-// ---------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------
+function formatCurrency(amount: number, currency: string) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency', currency: currency.toUpperCase(), maximumFractionDigits: 2,
+  }).format(amount / 100)
+}
 
 type PriorityFilter = 'all' | 'high' | 'medium' | 'low'
 const DRAFT_TONES = ['Professional', 'Friendly', 'Concise'] as const
@@ -53,11 +74,17 @@ const DRAFT_TONES = ['Professional', 'Friendly', 'Concise'] as const
 // ---------------------------------------------------------------
 
 interface EmailInboxProps {
-  initialEmails: SageEmail[]
-  workspaceId:   string
+  initialEmails:  SageEmail[]
+  workspaceId:    string
+  stripeConnected?: boolean
+  contactDeals?:  Record<string, { id: string; title: string }[]>
 }
 
-export function EmailInbox({ initialEmails }: EmailInboxProps) {
+export function EmailInbox({
+  initialEmails,
+  stripeConnected = false,
+  contactDeals = {},
+}: EmailInboxProps) {
   const [emails,      setEmails]      = useState<SageEmail[]>(initialEmails)
   const [selected,    setSelected]    = useState<SageEmail | null>(null)
   const [filter,      setFilter]      = useState<PriorityFilter>('all')
@@ -69,16 +96,28 @@ export function EmailInbox({ initialEmails }: EmailInboxProps) {
   const [showRewrite, setShowRewrite] = useState(false)
   const [syncResult,  setSyncResult]  = useState<string | null>(null)
   const [sendResult,  setSendResult]  = useState<string | null>(null)
-  const [isPending,   startTransition] = useTransition()
-  const [isSending,   startSendTransition] = useTransition()
-  const [isRewriting, startRewriteTransition] = useTransition()
-  const rewriteRef = useRef<HTMLInputElement>(null)
+
+  // Attachments
+  const [attachments,        setAttachments]        = useState<EmailAttachment[]>([])
+  const [showStripePanel,    setShowStripePanel]    = useState(false)
+  const [stripeInvoices,     setStripeInvoices]     = useState<StripeInvoice[]>([])
+  const [invoicesLoaded,     setInvoicesLoaded]     = useState(false)
+  const [stripeError,        setStripeError]        = useState<string | null>(null)
+  const [loadingInvoiceId,   setLoadingInvoiceId]   = useState<string | null>(null)
+  const [isGeneratingProp,   setIsGeneratingProp]   = useState(false)
+  const [proposalError,      setProposalError]      = useState<string | null>(null)
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const [isPending,    startTransition]        = useTransition()
+  const [isSending,    startSendTransition]    = useTransition()
+  const [isRewriting,  startRewriteTransition] = useTransition()
 
   // ---------------------------------------------------------------
-  // Derived lists
+  // Derived
   // ---------------------------------------------------------------
 
-  const inbound = emails.filter(e => e.direction === 'inbound')
+  const inbound  = emails.filter(e => e.direction === 'inbound')
   const filtered = filter === 'all' ? inbound : inbound.filter(e => e.ai_priority === filter)
 
   const counts = {
@@ -86,6 +125,10 @@ export function EmailInbox({ initialEmails }: EmailInboxProps) {
     medium: inbound.filter(e => e.ai_priority === 'medium').length,
     low:    inbound.filter(e => e.ai_priority === 'low').length,
   }
+
+  // Deals linked to the currently selected email's contact
+  const contactId = selected?.contact_id ?? null
+  const linkedDeals = contactId ? (contactDeals[contactId] ?? []) : []
 
   // ---------------------------------------------------------------
   // Handlers
@@ -100,12 +143,13 @@ export function EmailInbox({ initialEmails }: EmailInboxProps) {
     setSendResult(null)
     setShowRewrite(false)
     setRewriteInst('')
+    setAttachments([])
+    setShowStripePanel(false)
+    setStripeError(null)
+    setProposalError(null)
 
-    // Auto-populate first draft if available
     const drafts = email.ai_reply_drafts ?? []
-    if (drafts.length > 0) {
-      setComposeBody(drafts[0].body)
-    }
+    if (drafts.length > 0) setComposeBody(drafts[0].body)
   }
 
   function handleDraftTab(idx: number) {
@@ -121,11 +165,74 @@ export function EmailInbox({ initialEmails }: EmailInboxProps) {
       if (result.error) {
         setSyncResult(`Error: ${result.error}`)
       } else {
-        setSyncResult(result.synced === 0 ? 'Inbox up to date.' : `${result.synced} new email${result.synced === 1 ? '' : 's'} synced.`)
-        // Reload page to show fresh data — simple approach
+        setSyncResult(result.synced === 0
+          ? 'Inbox up to date.'
+          : `${result.synced} new email${result.synced === 1 ? '' : 's'} synced.`)
         window.location.reload()
       }
     })
+  }
+
+  // File upload — read via FileReader, strip data URL prefix
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    files.forEach(file => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const result = reader.result as string
+        const comma = result.indexOf(',')
+        const dataBase64 = comma >= 0 ? result.slice(comma + 1) : result
+        setAttachments(prev => [...prev, { filename: file.name, contentType: file.type || 'application/octet-stream', dataBase64 }])
+      }
+      reader.readAsDataURL(file)
+    })
+    // Reset so the same file can be re-added
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  // Stripe — open panel and lazy-load invoices
+  async function handleOpenStripePanel() {
+    setShowStripePanel(v => !v)
+    if (!invoicesLoaded) {
+      setStripeError(null)
+      const result = await fetchStripeInvoices()
+      if (result.error) {
+        setStripeError(result.error)
+      } else {
+        setStripeInvoices(result.invoices)
+        setInvoicesLoaded(true)
+      }
+    }
+  }
+
+  async function handleAttachInvoice(invoice: StripeInvoice) {
+    setLoadingInvoiceId(invoice.id)
+    setStripeError(null)
+    const att = await fetchStripeInvoicePDF(invoice.id)
+    if (att.error) {
+      setStripeError(att.error)
+    } else {
+      setAttachments(prev => [...prev, { filename: att.filename, contentType: att.contentType, dataBase64: att.dataBase64 }])
+      setShowStripePanel(false)
+    }
+    setLoadingInvoiceId(null)
+  }
+
+  // Proposal PDF generation
+  async function handleGenerateProposal(dealId: string) {
+    setIsGeneratingProp(true)
+    setProposalError(null)
+    const att = await generateProposalPDF(dealId)
+    if (att.error) {
+      setProposalError(att.error)
+    } else {
+      setAttachments(prev => [...prev, { filename: att.filename, contentType: att.contentType, dataBase64: att.dataBase64 }])
+    }
+    setIsGeneratingProp(false)
+  }
+
+  function removeAttachment(idx: number) {
+    setAttachments(prev => prev.filter((_, i) => i !== idx))
   }
 
   function handleSend() {
@@ -133,40 +240,41 @@ export function EmailInbox({ initialEmails }: EmailInboxProps) {
     setSendResult(null)
     startSendTransition(async () => {
       const result = await sendEmail({
-        to:              composeTo,
-        subject:         composeSubj,
-        body:            composeBody,
-        replyToEmailId:  selected?.id,
+        to:             composeTo,
+        subject:        composeSubj,
+        body:           composeBody,
+        replyToEmailId: selected?.id,
+        attachments:    attachments.length > 0 ? attachments : undefined,
       })
       if (result.error) {
         setSendResult(`Error: ${result.error}`)
       } else {
         setSendResult('Email sent successfully.')
         setComposeBody('')
-        // Add outbound to local state
+        setAttachments([])
         const sent: SageEmail = {
-          id:            crypto.randomUUID(),
-          workspace_id:  selected?.workspace_id ?? '',
-          contact_id:    selected?.contact_id ?? null,
-          deal_id:       null,
-          message_id:    `sent-${Date.now()}`,
-          thread_id:     selected?.message_id ?? null,
-          from_address:  'you',
-          from_name:     'You',
-          to_address:    composeTo,
-          subject:       composeSubj,
-          body_text:     composeBody,
-          body_html:     null,
-          received_at:   new Date().toISOString(),
-          direction:     'outbound',
-          is_read:       true,
-          is_starred:    false,
-          ai_priority:   null,
-          ai_summary:    null,
-          ai_insights:   null,
+          id:              crypto.randomUUID(),
+          workspace_id:    selected?.workspace_id ?? '',
+          contact_id:      selected?.contact_id ?? null,
+          deal_id:         null,
+          message_id:      `sent-${Date.now()}`,
+          thread_id:       selected?.message_id ?? null,
+          from_address:    'you',
+          from_name:       'You',
+          to_address:      composeTo,
+          subject:         composeSubj,
+          body_text:       composeBody,
+          body_html:       null,
+          received_at:     new Date().toISOString(),
+          direction:       'outbound',
+          is_read:         true,
+          is_starred:      false,
+          ai_priority:     null,
+          ai_summary:      null,
+          ai_insights:     null,
           ai_reply_drafts: null,
-          ai_analyzed_at: null,
-          created_at:    new Date().toISOString(),
+          ai_analyzed_at:  null,
+          created_at:      new Date().toISOString(),
         }
         setEmails(prev => [sent, ...prev])
       }
@@ -233,7 +341,9 @@ export function EmailInbox({ initialEmails }: EmailInboxProps) {
                     : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5',
                 )}
               >
-                {p === 'all' ? 'All' : `${p.charAt(0).toUpperCase() + p.slice(1)}${counts[p] ? ` · ${counts[p]}` : ''}`}
+                {p === 'all'
+                  ? 'All'
+                  : `${p.charAt(0).toUpperCase() + p.slice(1)}${counts[p as keyof typeof counts] ? ` · ${counts[p as keyof typeof counts]}` : ''}`}
               </button>
             ))}
           </div>
@@ -371,7 +481,7 @@ export function EmailInbox({ initialEmails }: EmailInboxProps) {
             )}
 
             <div className="px-6 pb-4 pt-2 space-y-2">
-              {/* To / Subject row for compose */}
+              {/* To / Subject */}
               <div className="flex gap-2">
                 <input
                   value={composeTo}
@@ -396,6 +506,132 @@ export function EmailInbox({ initialEmails }: EmailInboxProps) {
                 className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-xl bg-white dark:bg-[#232323] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none"
               />
 
+              {/* ── Attachment chips ── */}
+              {attachments.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {attachments.map((att, i) => (
+                    <span
+                      key={i}
+                      className="flex items-center gap-1 text-[11px] px-2 py-1 bg-white dark:bg-white/5 border dark:border-white/10 rounded-lg text-gray-600 dark:text-gray-300"
+                    >
+                      <Paperclip className="w-3 h-3 text-gray-400 shrink-0" />
+                      <span className="max-w-[140px] truncate">{att.filename}</span>
+                      <button
+                        onClick={() => removeAttachment(i)}
+                        className="ml-0.5 text-gray-400 hover:text-red-400 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* ── Attachment toolbar ── */}
+              <div className="relative flex items-center gap-1.5">
+                {/* File upload */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="sr-only"
+                  onChange={handleFileChange}
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Attach file"
+                  className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg bg-white dark:bg-white/5 border dark:border-white/10 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+                >
+                  <Paperclip className="w-3 h-3" />
+                  File
+                </button>
+
+                {/* Stripe invoice button */}
+                {stripeConnected && (
+                  <div className="relative">
+                    <button
+                      onClick={handleOpenStripePanel}
+                      title="Attach Stripe invoice"
+                      className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg bg-white dark:bg-white/5 border dark:border-white/10 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+                    >
+                      <Receipt className="w-3 h-3" />
+                      Invoice
+                    </button>
+
+                    {/* Stripe invoice dropdown */}
+                    {showStripePanel && (
+                      <div className="absolute bottom-full mb-2 left-0 w-72 bg-white dark:bg-[#2a2a2a] border dark:border-white/10 rounded-xl shadow-lg z-50 overflow-hidden">
+                        <div className="px-3 py-2 border-b dark:border-white/8 flex items-center justify-between">
+                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Stripe Invoices</p>
+                          <button onClick={() => setShowStripePanel(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <div className="max-h-56 overflow-y-auto">
+                          {stripeError && (
+                            <p className="text-xs text-red-400 px-3 py-2">{stripeError}</p>
+                          )}
+                          {!invoicesLoaded && !stripeError && (
+                            <div className="flex items-center justify-center py-6">
+                              <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                            </div>
+                          )}
+                          {invoicesLoaded && stripeInvoices.length === 0 && (
+                            <p className="text-xs text-gray-400 px-3 py-4">No open invoices found.</p>
+                          )}
+                          {stripeInvoices.map(inv => (
+                            <button
+                              key={inv.id}
+                              onClick={() => handleAttachInvoice(inv)}
+                              disabled={loadingInvoiceId === inv.id}
+                              className="w-full text-left px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 border-b dark:border-white/5 last:border-0 transition-colors disabled:opacity-60"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="min-w-0">
+                                  <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
+                                    {inv.customer_name ?? inv.customer_email ?? 'Unknown'}
+                                  </p>
+                                  <p className="text-[11px] text-gray-400">
+                                    {inv.number ?? inv.id} · {formatCurrency(inv.amount_due, inv.currency)}
+                                  </p>
+                                </div>
+                                {loadingInvoiceId === inv.id
+                                  ? <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400 shrink-0" />
+                                  : <Paperclip className="w-3.5 h-3.5 text-gray-400 shrink-0" />}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Proposal button — only when contact has linked deals */}
+                {linkedDeals.length > 0 && (
+                  <div className="flex items-center gap-1">
+                    {linkedDeals.map(deal => (
+                      <button
+                        key={deal.id}
+                        onClick={() => handleGenerateProposal(deal.id)}
+                        disabled={isGeneratingProp}
+                        title={`Generate proposal for "${deal.title}"`}
+                        className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg bg-white dark:bg-white/5 border dark:border-white/10 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors disabled:opacity-60"
+                      >
+                        {isGeneratingProp
+                          ? <Loader2 className="w-3 h-3 animate-spin" />
+                          : <FileText className="w-3 h-3" />}
+                        <span className="max-w-[80px] truncate">Proposal: {deal.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {proposalError && (
+                  <p className="text-[11px] text-red-400">{proposalError}</p>
+                )}
+              </div>
+
               {/* AI Rewrite expander */}
               <div className="bg-white dark:bg-white/3 border dark:border-white/8 rounded-xl overflow-hidden">
                 <button
@@ -411,7 +647,6 @@ export function EmailInbox({ initialEmails }: EmailInboxProps) {
                 {showRewrite && (
                   <div className="px-3 pb-3 flex gap-2">
                     <input
-                      ref={rewriteRef}
                       value={rewriteInst}
                       onChange={e => setRewriteInst(e.target.value)}
                       placeholder="Instruction (e.g. make it shorter, more formal…)"
@@ -444,7 +679,7 @@ export function EmailInbox({ initialEmails }: EmailInboxProps) {
                   className="flex items-center gap-1.5 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium rounded-xl transition-colors disabled:opacity-50"
                 >
                   {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                  Send
+                  Send{attachments.length > 0 ? ` + ${attachments.length} attachment${attachments.length > 1 ? 's' : ''}` : ''}
                 </button>
               </div>
             </div>

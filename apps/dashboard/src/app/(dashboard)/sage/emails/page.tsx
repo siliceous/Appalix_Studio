@@ -25,14 +25,50 @@ export default async function SageEmailsPage() {
   const allowedPlans = ['pro', 'scale', 'enterprise']
   if (!allowedPlans.includes(membership.workspaces?.plan ?? '')) redirect('/settings/upgrade')
 
+  const workspaceId = membership.workspace_id
+
+  // Fetch emails
   const { data: emailsRaw } = await supabase
     .from('sage_emails')
     .select('*, contact:sage_contacts(id, name, email)')
-    .eq('workspace_id', membership.workspace_id)
+    .eq('workspace_id', workspaceId)
     .order('received_at', { ascending: false })
     .limit(100)
 
   const emails = (emailsRaw ?? []) as SageEmail[]
 
-  return <EmailInbox initialEmails={emails} workspaceId={membership.workspace_id} />
+  // Check if Stripe is connected
+  const { data: stripeIntegration } = await supabase
+    .from('sage_integrations')
+    .select('id')
+    .eq('workspace_id', workspaceId)
+    .eq('provider', 'stripe')
+    .eq('status', 'connected')
+    .limit(1)
+    .maybeSingle()
+
+  const stripeConnected = !!stripeIntegration
+
+  // Build contact → deals map for proposal generation
+  const { data: dealsRaw } = await supabase
+    .from('sage_deals')
+    .select('id, title, contact_id')
+    .eq('workspace_id', workspaceId)
+    .eq('status', 'open')
+    .not('contact_id', 'is', null)
+
+  const contactDeals: Record<string, { id: string; title: string }[]> = {}
+  for (const d of (dealsRaw ?? []) as { id: string; title: string; contact_id: string }[]) {
+    if (!contactDeals[d.contact_id]) contactDeals[d.contact_id] = []
+    contactDeals[d.contact_id].push({ id: d.id, title: d.title })
+  }
+
+  return (
+    <EmailInbox
+      initialEmails={emails}
+      workspaceId={workspaceId}
+      stripeConnected={stripeConnected}
+      contactDeals={contactDeals}
+    />
+  )
 }

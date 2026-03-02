@@ -11,11 +11,13 @@ import { syncEmailsForWorkspace } from '../../services/sage-email-sync.js'
 import { sendEmailSMTP }          from '../../services/sage-email-smtp.js'
 import { callClaude }             from '../../services/ai/claude.js'
 
-interface SyncBody   { workspace_id: string }
-interface SendBody   { workspace_id: string; to: string; subject: string; body: string; reply_to_email_id?: string }
+interface EmailAttachment { filename: string; contentType: string; dataBase64: string }
+
+interface SyncBody    { workspace_id: string }
+interface SendBody    { workspace_id: string; to: string; subject: string; body: string; reply_to_email_id?: string; attachments?: EmailAttachment[] }
 interface RewriteBody { workspace_id: string; body: string; instruction?: string }
 
-function authCheck(req: { headers: { 'x-service-key'?: string } }): boolean {
+function authCheck(req: { headers: Record<string, string | string[] | undefined> }): boolean {
   return req.headers['x-service-key'] === config.SUPABASE_SERVICE_ROLE_KEY
 }
 
@@ -47,13 +49,13 @@ export async function sageEmailRoutes(fastify: FastifyInstance) {
   fastify.post<{ Body: SendBody }>('/send', async (request, reply) => {
     if (!authCheck(request)) return reply.status(401).send({ error: 'Unauthorised' })
 
-    const { workspace_id, to, subject, body, reply_to_email_id } = request.body
+    const { workspace_id, to, subject, body, reply_to_email_id, attachments } = request.body
     if (!workspace_id || !to || !subject || !body) {
       return reply.status(400).send({ error: 'workspace_id, to, subject, body are required' })
     }
 
     try {
-      await sendEmailSMTP({ workspaceId: workspace_id, to, subject, body, replyToEmailId: reply_to_email_id })
+      await sendEmailSMTP({ workspaceId: workspace_id, to, subject, body, replyToEmailId: reply_to_email_id, attachments })
       return reply.send({ ok: true })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Send failed'

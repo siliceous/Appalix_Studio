@@ -2,9 +2,12 @@
 
 import { createClient }  from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 
 const API_BASE    = process.env.API_BASE_URL
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+interface EmailAttachment { filename: string; contentType: string; dataBase64: string }
 
 async function getWorkspaceId(): Promise<string | null> {
   const supabase = await createClient()
@@ -18,7 +21,7 @@ async function getWorkspaceId(): Promise<string | null> {
     .limit(1)
     .single()
 
-  return data?.workspace_id ?? null
+  return (data as { workspace_id: string } | null)?.workspace_id ?? null
 }
 
 /**
@@ -54,6 +57,7 @@ export async function sendEmail(opts: {
   subject:         string
   body:            string
   replyToEmailId?: string
+  attachments?:    EmailAttachment[]
 }): Promise<{ ok: boolean; error?: string }> {
   if (!API_BASE || !SERVICE_KEY) return { ok: false, error: 'Server not configured' }
 
@@ -64,7 +68,14 @@ export async function sendEmail(opts: {
     const res = await fetch(`${API_BASE}/sage/emails/send`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', 'X-Service-Key': SERVICE_KEY },
-      body:    JSON.stringify({ workspace_id: workspaceId, ...opts, reply_to_email_id: opts.replyToEmailId }),
+      body:    JSON.stringify({
+        workspace_id:      workspaceId,
+        to:                opts.to,
+        subject:           opts.subject,
+        body:              opts.body,
+        reply_to_email_id: opts.replyToEmailId,
+        attachments:       opts.attachments,
+      }),
     })
     const data = await res.json() as { ok?: boolean; error?: string }
     if (!res.ok) return { ok: false, error: data.error ?? 'Send failed' }
@@ -99,5 +110,245 @@ export async function rewriteEmail(opts: {
     return { body: data.body ?? opts.body }
   } catch {
     return { body: opts.body, error: 'Could not reach API' }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Stripe invoice helpers
+// ---------------------------------------------------------------------------
+
+interface StripeInvoice {
+  id:              string
+  number:          string | null
+  customer_name:   string | null
+  customer_email:  string | null
+  amount_due:      number
+  currency:        string
+  status:          string
+  invoice_pdf:     string | null
+  created:         number
+}
+
+/**
+ * Fetch the last 20 open Stripe invoices for the workspace.
+ */
+export async function fetchStripeInvoices(): Promise<{ invoices: StripeInvoice[]; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { invoices: [], error: 'Not authenticated' }
+
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { invoices: [], error: 'Not authenticated' }
+
+  // Load Stripe secret key from sage_integrations
+  const { data: integration } = await supabase
+    .from('sage_integrations')
+    .select('config')
+    .eq('workspace_id', workspaceId)
+    .eq('provider', 'stripe')
+    .eq('status', 'connected')
+    .limit(1)
+    .single()
+
+  const stripeKey = (integration as { config: Record<string, string> } | null)?.config?.secret_key
+  if (!stripeKey) return { invoices: [], error: 'Stripe not connected' }
+
+  try {
+    const res = await fetch('https://api.stripe.com/v1/invoices?limit=20&status=open', {
+      headers: { Authorization: `Bearer ${stripeKey}` },
+    })
+    const data = await res.json() as { data?: StripeInvoice[]; error?: { message: string } }
+    if (!res.ok) return { invoices: [], error: data.error?.message ?? 'Stripe error' }
+    return { invoices: data.data ?? [] }
+  } catch {
+    return { invoices: [], error: 'Could not reach Stripe' }
+  }
+}
+
+/**
+ * Download a Stripe invoice PDF and return it as a base64 attachment.
+ */
+export async function fetchStripeInvoicePDF(invoiceId: string): Promise<EmailAttachment & { error?: string }> {
+  const fallback: EmailAttachment = { filename: 'invoice.pdf', contentType: 'application/pdf', dataBase64: '' }
+
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { ...fallback, error: 'Not authenticated' }
+
+  const supabase = await createClient()
+  const { data: integration } = await supabase
+    .from('sage_integrations')
+    .select('config')
+    .eq('workspace_id', workspaceId)
+    .eq('provider', 'stripe')
+    .eq('status', 'connected')
+    .limit(1)
+    .single()
+
+  const stripeKey = (integration as { config: Record<string, string> } | null)?.config?.secret_key
+  if (!stripeKey) return { ...fallback, error: 'Stripe not connected' }
+
+  try {
+    // Fetch invoice metadata to get the PDF URL
+    const metaRes = await fetch(`https://api.stripe.com/v1/invoices/${invoiceId}`, {
+      headers: { Authorization: `Bearer ${stripeKey}` },
+    })
+    const invoice = await metaRes.json() as { number?: string; invoice_pdf?: string; error?: { message: string } }
+    if (!metaRes.ok) return { ...fallback, error: invoice.error?.message ?? 'Stripe error' }
+    if (!invoice.invoice_pdf) return { ...fallback, error: 'No PDF available for this invoice' }
+
+    // Download the PDF
+    const pdfRes = await fetch(invoice.invoice_pdf)
+    if (!pdfRes.ok) return { ...fallback, error: 'Failed to download invoice PDF' }
+    const buffer = Buffer.from(await pdfRes.arrayBuffer())
+    const filename = `invoice-${invoice.number ?? invoiceId}.pdf`
+    return { filename, contentType: 'application/pdf', dataBase64: buffer.toString('base64') }
+  } catch {
+    return { ...fallback, error: 'Could not fetch Stripe invoice' }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Proposal PDF generator
+// ---------------------------------------------------------------------------
+
+/**
+ * Generate a branded proposal PDF from a deal and return it as a base64 attachment.
+ */
+export async function generateProposalPDF(dealId: string): Promise<EmailAttachment & { error?: string }> {
+  const fallback: EmailAttachment = { filename: 'proposal.pdf', contentType: 'application/pdf', dataBase64: '' }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ...fallback, error: 'Not authenticated' }
+
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { ...fallback, error: 'Not authenticated' }
+
+  // Fetch deal + contact
+  const { data: deal } = await supabase
+    .from('sage_deals')
+    .select('title, value, close_date, description, contact:sage_contacts(name, email)')
+    .eq('id', dealId)
+    .eq('workspace_id', workspaceId)
+    .single()
+
+  if (!deal) return { ...fallback, error: 'Deal not found' }
+
+  // Fetch workspace name
+  const { data: ws } = await supabase
+    .from('workspaces')
+    .select('name')
+    .eq('id', workspaceId)
+    .single()
+
+  const workspaceName   = (ws as { name: string } | null)?.name ?? 'Your Company'
+  const dealData        = deal as {
+    title:       string
+    value:       number | null
+    close_date:  string | null
+    description: string | null
+    contact:     { name: string; email: string } | null
+  }
+  const contactName  = dealData.contact?.name  ?? 'Valued Client'
+  const contactEmail = dealData.contact?.email ?? ''
+  const dateStr      = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+  const closeDateStr = dealData.close_date
+    ? new Date(dealData.close_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+    : '—'
+  const valueStr     = dealData.value != null
+    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(dealData.value)
+    : '—'
+
+  try {
+    // Build PDF
+    const pdfDoc    = await PDFDocument.create()
+    const page      = pdfDoc.addPage([595, 842])  // A4
+    const { width, height } = page.getSize()
+    const fontBold  = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+    const fontReg   = await pdfDoc.embedFont(StandardFonts.Helvetica)
+    const orange    = rgb(0.929, 0.451, 0.180)  // #ec732e
+    const black     = rgb(0, 0, 0)
+    const gray      = rgb(0.4, 0.4, 0.4)
+
+    let y = height - 60
+
+    // Header bar
+    page.drawRectangle({ x: 0, y: height - 80, width, height: 80, color: orange })
+    page.drawText(workspaceName.toUpperCase(), { x: 40, y: height - 48, font: fontBold, size: 16, color: rgb(1,1,1) })
+    page.drawText('PROPOSAL', { x: width - 120, y: height - 48, font: fontBold, size: 16, color: rgb(1,1,1) })
+
+    y = height - 110
+
+    // Client block
+    page.drawText('PREPARED FOR', { x: 40, y, font: fontBold, size: 8, color: orange })
+    y -= 18
+    page.drawText(contactName, { x: 40, y, font: fontBold, size: 14, color: black })
+    y -= 16
+    if (contactEmail) {
+      page.drawText(contactEmail, { x: 40, y, font: fontReg, size: 10, color: gray })
+      y -= 14
+    }
+    page.drawText(`Date: ${dateStr}`, { x: 40, y, font: fontReg, size: 10, color: gray })
+
+    y -= 30
+    // Divider
+    page.drawLine({ start: { x: 40, y }, end: { x: width - 40, y }, thickness: 1, color: orange })
+    y -= 24
+
+    // Project section
+    page.drawText('PROJECT', { x: 40, y, font: fontBold, size: 8, color: orange })
+    y -= 18
+    page.drawText(dealData.title, { x: 40, y, font: fontBold, size: 14, color: black })
+    y -= 30
+
+    // Value + Close date row
+    page.drawText('VALUE', { x: 40, y, font: fontBold, size: 8, color: orange })
+    page.drawText('CLOSE DATE', { x: 220, y, font: fontBold, size: 8, color: orange })
+    y -= 16
+    page.drawText(valueStr, { x: 40, y, font: fontBold, size: 13, color: black })
+    page.drawText(closeDateStr, { x: 220, y, font: fontBold, size: 13, color: black })
+    y -= 30
+
+    // Description
+    if (dealData.description) {
+      page.drawText('SCOPE / DESCRIPTION', { x: 40, y, font: fontBold, size: 8, color: orange })
+      y -= 16
+      // Simple line-wrapping at ~80 chars
+      const words      = dealData.description.split(' ')
+      let   line       = ''
+      const maxWidth   = 75
+      for (const word of words) {
+        if ((line + ' ' + word).trim().length > maxWidth) {
+          page.drawText(line.trim(), { x: 40, y, font: fontReg, size: 10, color: black })
+          y   -= 14
+          line = word
+        } else {
+          line = line ? line + ' ' + word : word
+        }
+      }
+      if (line) {
+        page.drawText(line.trim(), { x: 40, y, font: fontReg, size: 10, color: black })
+        y -= 14
+      }
+      y -= 16
+    }
+
+    // Footer divider
+    page.drawLine({ start: { x: 40, y }, end: { x: width - 40, y }, thickness: 1, color: orange })
+    y -= 18
+    page.drawText(workspaceName, { x: 40, y, font: fontBold, size: 10, color: black })
+    y -= 14
+    page.drawText('This proposal is valid for 30 days.', { x: 40, y, font: fontReg, size: 9, color: gray })
+
+    const pdfBytes = await pdfDoc.save()
+    const slug     = dealData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)
+    return {
+      filename:    `proposal-${slug}.pdf`,
+      contentType: 'application/pdf',
+      dataBase64:  Buffer.from(pdfBytes).toString('base64'),
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'PDF generation failed'
+    return { ...fallback, error: msg }
   }
 }
