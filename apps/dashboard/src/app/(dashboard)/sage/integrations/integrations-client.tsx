@@ -125,7 +125,7 @@ export function IntegrationsClient({ connected: initialConnected }: Integrations
       await saveSageIntegration(provider, config)
       setConnected(prev => {
         const next = new Map(prev)
-        next.set(provider, { provider, status: 'connected', config, id: '', workspace_id: '', created_at: '', updated_at: '' })
+        next.set(provider, { provider: provider as SageIntegration['provider'], status: 'connected', config, id: '', workspace_id: '', created_at: '', updated_at: '' })
         return next
       })
       setExpanded(null)
