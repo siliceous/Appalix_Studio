@@ -65,6 +65,7 @@ export const PLATFORM_META: Record<Platform, { label: string; color: string }> =
   wordpress:           { label: 'WordPress',          color: 'bg-sky-100 text-sky-700' },
   web_widget:          { label: 'Web Widget',         color: 'bg-orange-100 text-orange-700' },
   custom_api:          { label: 'Custom API',         color: 'bg-gray-100 text-gray-700' },
+  telegram:            { label: 'Telegram',            color: 'bg-sky-100 text-sky-700' },
 }
 
 /** Subscription status badge colours */
