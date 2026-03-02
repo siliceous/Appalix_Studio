@@ -68,6 +68,14 @@ export async function createIntegration(formData: FormData) {
       service_account_json: formData.get('service_account_json') as string || '',
       space_name:           formData.get('space_name') as string || '',
     }
+  } else if (platform === 'telegram') {
+    const submittedSecret = (formData.get('telegram_webhook_secret') as string | null)?.trim()
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    const webhookSecret = submittedSecret || Array.from({ length: 48 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+    config = {
+      bot_token:             formData.get('telegram_bot_token') as string || '',
+      webhook_secret_token:  webhookSecret,
+    }
   }
 
   const admin = createAdminClient()
@@ -181,6 +189,7 @@ export async function updateIntegration(integrationId: string, formData: FormDat
   const handoffTwilioToken     = (formData.get('handoff_twilio_token')      as string | null)?.trim()
   const handoffTwilioFrom      = (formData.get('handoff_twilio_from')       as string | null)?.trim()
   const handoffTwilioTo        = (formData.get('handoff_twilio_to')         as string | null)?.trim()
+  const telegramBotTokenUpdate = (formData.get('telegram_bot_token_update') as string | null)?.trim()
 
   // Merge all config fields into existing JSONB config
   const existingConfig = (intRaw as { config: Record<string, unknown> }).config ?? {}
@@ -232,6 +241,11 @@ export async function updateIntegration(integrationId: string, formData: FormDat
   setOrDel('handoff_twilio_token',     handoffTwilioToken)
   setOrDel('handoff_twilio_from',      handoffTwilioFrom)
   setOrDel('handoff_twilio_to',        handoffTwilioTo)
+
+  // Telegram bot token update (only if explicitly submitted)
+  if (telegramBotTokenUpdate !== null && telegramBotTokenUpdate !== undefined) {
+    if (telegramBotTokenUpdate) newConfig.bot_token = telegramBotTokenUpdate
+  }
 
   const admin = createAdminClient()
   const { error } = await admin

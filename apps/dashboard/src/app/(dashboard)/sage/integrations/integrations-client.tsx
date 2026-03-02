@@ -3,10 +3,10 @@
 import { useState, useTransition } from 'react'
 import { Check, X, ExternalLink, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 import { saveSageIntegration, disconnectSageIntegration } from '@/app/actions/sage'
-import type { SageIntegration } from '@/lib/types'
+import type { SageIntegration, SageIntegrationProvider } from '@/lib/types'
 
 interface IntegrationCard {
-  provider:    string
+  provider:    SageIntegrationProvider
   name:        string
   description: string
   logo:        string
@@ -107,25 +107,25 @@ export function IntegrationsClient({ connected: initialConnected }: Integrations
   const [saving,      setSaving]     = useState<string | null>(null)
   const [formValues,  setFormValues] = useState<Record<string, Record<string, string>>>({})
 
-  function toggleExpand(provider: string) {
+  function toggleExpand(provider: SageIntegrationProvider) {
     setExpanded(prev => prev === provider ? null : provider)
   }
 
-  function handleFieldChange(provider: string, field: string, value: string) {
+  function handleFieldChange(provider: SageIntegrationProvider, field: string, value: string) {
     setFormValues(prev => ({
       ...prev,
       [provider]: { ...(prev[provider] ?? {}), [field]: value },
     }))
   }
 
-  function handleConnect(provider: string) {
+  function handleConnect(provider: SageIntegrationProvider) {
     const config = formValues[provider] ?? {}
     setSaving(provider)
     startTransition(async () => {
       await saveSageIntegration(provider, config)
       setConnected(prev => {
         const next = new Map(prev)
-        next.set(provider, { provider: provider as SageIntegration['provider'], status: 'connected', config, id: '', workspace_id: '', created_at: '', updated_at: '' })
+        next.set(provider, { provider, status: 'connected', config, id: '', workspace_id: '', created_at: '', updated_at: '' })
         return next
       })
       setExpanded(null)
@@ -133,7 +133,7 @@ export function IntegrationsClient({ connected: initialConnected }: Integrations
     })
   }
 
-  function handleDisconnect(provider: string) {
+  function handleDisconnect(provider: SageIntegrationProvider) {
     if (!confirm(`Disconnect ${provider}? You can reconnect at any time.`)) return
     setSaving(provider)
     startTransition(async () => {
