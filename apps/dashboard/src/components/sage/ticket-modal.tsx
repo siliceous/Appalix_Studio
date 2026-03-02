@@ -64,7 +64,7 @@ export function TicketModal({ contacts, onClose }: TicketModalProps) {
           {/* Urgency + Contact method */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Urgency</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Priority</label>
               <select
                 name="priority"
                 defaultValue="medium"
