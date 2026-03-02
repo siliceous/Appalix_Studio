@@ -97,12 +97,13 @@ export function PipelineBoard({ pipelineId, stages, deals: initialDeals, contact
               onDrop={e => handleDrop(e, stage.id)}
             >
               {/* Stage header */}
-              <div className={`flex items-center gap-2 mb-3 px-1 rounded-lg transition-colors ${isDragOver ? 'bg-brand-50 dark:bg-[#61c2ad]/5' : ''}`}>
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: stage.color }} />
-                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex-1 truncate">{stage.name}</span>
-                <span className="text-xs text-gray-400 shrink-0">{stageDeals.length}</span>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#61c2ad]/15 dark:bg-[#61c2ad]/20 text-[#3d9585] dark:text-[#61c2ad] truncate">
+                  {stage.name}
+                </span>
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 shrink-0 tabular-nums">{stageDeals.length}</span>
                 {total > 0 && (
-                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 shrink-0">
+                  <span className="text-xs font-semibold text-[#3d9585] dark:text-[#61c2ad] shrink-0">
                     {new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(total)}
                   </span>
                 )}
@@ -158,7 +159,7 @@ export function PipelineBoard({ pipelineId, stages, deals: initialDeals, contact
               {/* Add deal button */}
               <button
                 onClick={() => openAddDeal(stage.id)}
-                className="mt-2 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-white dark:hover:bg-white/5 transition-colors w-full"
+                className="mt-2 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-[#3d9585] dark:text-[#61c2ad] hover:bg-[#61c2ad]/10 dark:hover:bg-[#61c2ad]/15 transition-colors w-full"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Add deal
