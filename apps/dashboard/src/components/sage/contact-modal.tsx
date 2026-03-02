@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useTransition } from 'react'
+import { useTransition } from 'react'
 import { X, Loader2 } from 'lucide-react'
 import { createContact } from '@/app/actions/sage'
 
@@ -9,10 +9,9 @@ interface ContactModalProps {
 }
 
 export function ContactModal({ onClose }: ContactModalProps) {
-  const formRef      = useRef<HTMLFormElement>(null)
   const [pending, startTransition] = useTransition()
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(e: { preventDefault(): void; currentTarget: HTMLFormElement }) {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
     startTransition(async () => {
@@ -30,9 +29,9 @@ export function ContactModal({ onClose }: ContactModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative bg-white dark:bg-[#232323] rounded-2xl border dark:border-white/8 shadow-2xl w-full max-w-md">
+      <div className="relative bg-white dark:bg-[#232323] rounded-2xl border dark:border-white/8 shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b dark:border-white/8">
+        <div className="flex items-center justify-between px-6 py-4 border-b dark:border-white/8 shrink-0">
           <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">New Contact</h2>
           <button
             onClick={onClose}
@@ -43,7 +42,8 @@ export function ContactModal({ onClose }: ContactModalProps) {
         </div>
 
         {/* Form */}
-        <form ref={formRef} onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 overflow-y-auto">
+          {/* Name */}
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               Name <span className="text-red-500">*</span>
@@ -57,6 +57,7 @@ export function ContactModal({ onClose }: ContactModalProps) {
             />
           </div>
 
+          {/* Email + Phone */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email</label>
@@ -78,6 +79,40 @@ export function ContactModal({ onClose }: ContactModalProps) {
             </div>
           </div>
 
+          {/* Company + Website */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Company</label>
+              <input
+                name="company_name"
+                type="text"
+                placeholder="Acme Corp"
+                className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Website</label>
+              <input
+                name="website_url"
+                type="url"
+                placeholder="https://acme.com"
+                className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+              />
+            </div>
+          </div>
+
+          {/* Business Goal */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Business Goal</label>
+            <input
+              name="business_goal"
+              type="text"
+              placeholder="e.g. Automate customer support, grow online sales…"
+              className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+            />
+          </div>
+
+          {/* Tags */}
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               Tags <span className="text-gray-400 font-normal">(comma-separated)</span>
@@ -90,6 +125,7 @@ export function ContactModal({ onClose }: ContactModalProps) {
             />
           </div>
 
+          {/* Notes */}
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Notes</label>
             <textarea

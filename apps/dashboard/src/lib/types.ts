@@ -211,6 +211,9 @@ export interface SageContact {
   name:                   string
   email:                  string | null
   phone:                  string | null
+  company_name:           string | null
+  website_url:            string | null
+  business_goal:          string | null
   source:                 SageContactSource
   tags:                   string[]
   notes:                  string | null
@@ -270,6 +273,8 @@ export interface SageTicket {
   description:       string | null
   status:            SageTicketStatus
   priority:          SageTicketPriority
+  contact_method:    'email' | 'phone' | null
+  related_url:       string | null
   external_provider: string | null
   external_id:       string | null
   external_url:      string | null

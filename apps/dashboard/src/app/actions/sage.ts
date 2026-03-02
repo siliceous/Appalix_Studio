@@ -53,16 +53,19 @@ export async function createContact(formData: FormData) {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
 
-  const name      = (formData.get('name') as string).trim()
-  const email     = (formData.get('email') as string | null)?.trim() || null
-  const phone     = (formData.get('phone') as string | null)?.trim() || null
-  const notes     = (formData.get('notes') as string | null)?.trim() || null
-  const tagsRaw   = (formData.get('tags') as string | null)?.trim() || ''
-  const tags      = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : []
+  const name          = (formData.get('name') as string).trim()
+  const email         = (formData.get('email') as string | null)?.trim() || null
+  const phone         = (formData.get('phone') as string | null)?.trim() || null
+  const company_name  = (formData.get('company_name') as string | null)?.trim() || null
+  const website_url   = (formData.get('website_url') as string | null)?.trim() || null
+  const business_goal = (formData.get('business_goal') as string | null)?.trim() || null
+  const notes         = (formData.get('notes') as string | null)?.trim() || null
+  const tagsRaw       = (formData.get('tags') as string | null)?.trim() || ''
+  const tags          = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : []
 
   const { data, error } = await admin
     .from('sage_contacts')
-    .insert({ workspace_id: workspaceId, name, email, phone, notes, tags, source: 'manual' })
+    .insert({ workspace_id: workspaceId, name, email, phone, company_name, website_url, business_goal, notes, tags, source: 'manual' })
     .select('id')
     .single()
 
@@ -76,16 +79,19 @@ export async function updateContact(id: string, formData: FormData) {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
 
-  const name    = (formData.get('name') as string).trim()
-  const email   = (formData.get('email') as string | null)?.trim() || null
-  const phone   = (formData.get('phone') as string | null)?.trim() || null
-  const notes   = (formData.get('notes') as string | null)?.trim() || null
-  const tagsRaw = (formData.get('tags') as string | null)?.trim() || ''
-  const tags    = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : []
+  const name          = (formData.get('name') as string).trim()
+  const email         = (formData.get('email') as string | null)?.trim() || null
+  const phone         = (formData.get('phone') as string | null)?.trim() || null
+  const company_name  = (formData.get('company_name') as string | null)?.trim() || null
+  const website_url   = (formData.get('website_url') as string | null)?.trim() || null
+  const business_goal = (formData.get('business_goal') as string | null)?.trim() || null
+  const notes         = (formData.get('notes') as string | null)?.trim() || null
+  const tagsRaw       = (formData.get('tags') as string | null)?.trim() || ''
+  const tags          = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : []
 
   const { error } = await admin
     .from('sage_contacts')
-    .update({ name, email, phone, notes, tags, updated_at: new Date().toISOString() })
+    .update({ name, email, phone, company_name, website_url, business_goal, notes, tags, updated_at: new Date().toISOString() })
     .eq('id', id)
     .eq('workspace_id', workspaceId)
 
@@ -295,15 +301,17 @@ export async function createTicket(formData: FormData) {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
 
-  const title       = (formData.get('title') as string).trim()
-  const description = (formData.get('description') as string | null)?.trim() || null
-  const priority    = (formData.get('priority') as SageTicketPriority | null) || 'medium'
-  const contactId   = (formData.get('contact_id') as string | null) || null
-  const dealId      = (formData.get('deal_id') as string | null) || null
+  const title          = (formData.get('title') as string).trim()
+  const description    = (formData.get('description') as string | null)?.trim() || null
+  const priority       = (formData.get('priority') as SageTicketPriority | null) || 'medium'
+  const contactId      = (formData.get('contact_id') as string | null) || null
+  const dealId         = (formData.get('deal_id') as string | null) || null
+  const contact_method = (formData.get('contact_method') as 'email' | 'phone' | null) || null
+  const related_url    = (formData.get('related_url') as string | null)?.trim() || null
 
   const { data, error } = await admin
     .from('sage_tickets')
-    .insert({ workspace_id: workspaceId, title, description, priority, contact_id: contactId, deal_id: dealId, status: 'open' })
+    .insert({ workspace_id: workspaceId, title, description, priority, contact_id: contactId, deal_id: dealId, contact_method, related_url, status: 'open' })
     .select('id')
     .single()
 
