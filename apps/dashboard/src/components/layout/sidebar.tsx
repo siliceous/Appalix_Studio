@@ -13,22 +13,61 @@ import {
   Settings,
   LogOut,
   BookOpen,
-  Sparkles,
+  Kanban,
+  Users,
+  Ticket,
+  Link2,
+  LayoutGrid,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Workspace } from '@/lib/types'
 
-const NAV_ITEMS: { href: string; label: string; icon: React.ElementType; pro?: boolean }[] = [
-  { href: '/dashboard',        label: 'Overview',        icon: LayoutDashboard },
-  { href: '/bots',             label: 'Bots',            icon: Bot },
-  { href: '/conversations',    label: 'Conversations',   icon: MessageSquare },
-  { href: '/integrations',     label: 'Integrations',    icon: Plug },
-  { href: '/sources',          label: 'Knowledge Base',  icon: BookOpen },
-  { href: '/sage',             label: 'Sage',             icon: Sparkles, pro: true },
-  { href: '/analytics',        label: 'Analytics',       icon: BarChart2 },
-  { href: '/settings',         label: 'Settings',        icon: Settings },
+interface NavItem {
+  href:  string
+  label: string
+  icon:  React.ElementType
+}
+
+interface NavGroup {
+  label?: string
+  pro?:   boolean
+  items:  NavItem[]
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    items: [
+      { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
+    ],
+  },
+  {
+    label: 'Agent',
+    items: [
+      { href: '/bots',          label: 'Bots',           icon: Bot },
+      { href: '/conversations',  label: 'Conversations',  icon: MessageSquare },
+      { href: '/integrations',   label: 'Integrations',   icon: Plug },
+      { href: '/sources',        label: 'Knowledge Base', icon: BookOpen },
+    ],
+  },
+  {
+    label: 'Sage',
+    pro: true,
+    items: [
+      { href: '/sage/dashboard',    label: 'Dashboard',    icon: LayoutGrid },
+      { href: '/sage/pipelines',    label: 'Pipelines',    icon: Kanban },
+      { href: '/sage/contacts',     label: 'Contacts',     icon: Users },
+      { href: '/sage/tickets',      label: 'Tickets',      icon: Ticket },
+      { href: '/sage/integrations', label: 'Integrations', icon: Link2 },
+    ],
+  },
+  {
+    items: [
+      { href: '/analytics', label: 'Analytics', icon: BarChart2 },
+      { href: '/settings',  label: 'Settings',  icon: Settings },
+    ],
+  },
 ]
 
 interface SidebarProps {
@@ -36,13 +75,19 @@ interface SidebarProps {
 }
 
 export function Sidebar({ workspace }: SidebarProps) {
-  const pathname = usePathname()
-  const router = useRouter()
-  const supabase = createClient()
+  const pathname  = usePathname()
+  const router    = useRouter()
+  const supabase  = createClient()
+  const isProPlan = ['pro', 'scale', 'enterprise'].includes(workspace.plan)
 
   async function signOut() {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  function isActive(href: string) {
+    if (href === '/dashboard') return pathname === '/dashboard'
+    return pathname.startsWith(href)
   }
 
   return (
@@ -76,29 +121,61 @@ export function Sidebar({ workspace }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5">
-        {NAV_ITEMS.map(({ href, label, icon: Icon, pro }) => {
-          const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
-          const isProPlan = ['pro', 'scale', 'enterprise'].includes(workspace.plan)
+      <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto">
+        {NAV_GROUPS.map((group, gi) => {
+          // Hide Pro-gated groups for non-Pro plans — but show the label as locked
+          const locked = group.pro && !isProPlan
+
           return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                active
-                  ? 'bg-brand-50 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad] font-medium'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white',
+            <div key={gi}>
+              {group.label && (
+                <div className="flex items-center gap-2 px-3 mb-1">
+                  <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                    {group.label}
+                  </p>
+                  {group.pro && !isProPlan && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-brand-100 dark:bg-[#61c2ad]/10 text-brand-600 dark:text-[#61c2ad] font-bold">
+                      Pro
+                    </span>
+                  )}
+                </div>
               )}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              {label}
-              {pro && !isProPlan && (
-                <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-brand-100 dark:bg-[#61c2ad]/10 text-brand-600 dark:text-[#61c2ad] font-semibold">
-                  Pro
-                </span>
-              )}
-            </Link>
+
+              <div className="space-y-0.5">
+                {group.items.map(({ href, label, icon: Icon }) => {
+                  const active = isActive(href)
+
+                  if (locked) {
+                    return (
+                      <Link
+                        key={href}
+                        href="/settings/upgrade"
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 dark:text-gray-600 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                      >
+                        <Icon className="w-4 h-4 shrink-0" />
+                        {label}
+                      </Link>
+                    )
+                  }
+
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      className={cn(
+                        'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                        active
+                          ? 'bg-brand-50 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad] font-medium'
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white',
+                      )}
+                    >
+                      <Icon className="w-4 h-4 shrink-0" />
+                      {label}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
           )
         })}
       </nav>

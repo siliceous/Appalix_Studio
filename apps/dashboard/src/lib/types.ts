@@ -14,6 +14,7 @@ export type Platform =
   | 'wordpress'
   | 'web_widget'
   | 'custom_api'
+  | 'telegram'
 
 export type WorkspacePlan = 'starter' | 'core' | 'pro' | 'scale' | 'enterprise'
 export type SubscriptionStatus =
@@ -181,20 +182,147 @@ export interface UsageEvent {
 }
 
 // ---------------------------------------------------------------
+// Sage CRM types
+// ---------------------------------------------------------------
+
+export type SageTicketStatus   = 'open' | 'pending' | 'resolved'
+export type SageTicketPriority = 'low' | 'medium' | 'high' | 'urgent'
+export type SageDealStatus     = 'open' | 'won' | 'lost'
+export type SageContactSource  = 'chat' | 'manual' | 'import'
+export type SageIntegrationProvider = 'stripe' | 'gmail' | 'microsoft' | 'zapier' | 'freshdesk' | 'zendesk'
+export type SageIntegrationStatus   = 'connected' | 'disconnected' | 'error'
+export type SageActivityEntityType  = 'contact' | 'deal' | 'ticket' | 'company'
+
+export interface SageCompany {
+  id:           string
+  workspace_id: string
+  name:         string
+  domain:       string | null
+  industry:     string | null
+  created_at:   string
+  updated_at:   string
+}
+
+export interface SageContact {
+  id:                     string
+  workspace_id:           string
+  company_id:             string | null
+  source_conversation_id: string | null
+  name:                   string
+  email:                  string | null
+  phone:                  string | null
+  source:                 SageContactSource
+  tags:                   string[]
+  notes:                  string | null
+  created_at:             string
+  updated_at:             string
+  // joined
+  company?:               SageCompany | null
+}
+
+export interface SagePipeline {
+  id:            string
+  workspace_id:  string
+  name:          string
+  template_type: string | null
+  is_default:    boolean
+  created_at:    string
+}
+
+export interface SagePipelineStage {
+  id:          string
+  pipeline_id: string
+  name:        string
+  position:    number
+  color:       string
+  created_at:  string
+}
+
+export interface SageDeal {
+  id:                     string
+  workspace_id:           string
+  pipeline_id:            string | null
+  stage_id:               string | null
+  contact_id:             string | null
+  company_id:             string | null
+  owner_id:               string | null
+  source_conversation_id: string | null
+  title:                  string
+  value:                  number | null
+  currency:               string
+  status:                 SageDealStatus
+  tags:                   string[]
+  created_at:             string
+  updated_at:             string
+  // joined
+  contact?:               Pick<SageContact, 'id' | 'name' | 'email'> | null
+  company?:               Pick<SageCompany, 'id' | 'name'> | null
+  stage?:                 Pick<SagePipelineStage, 'id' | 'name' | 'color'> | null
+}
+
+export interface SageTicket {
+  id:                string
+  workspace_id:      string
+  contact_id:        string | null
+  deal_id:           string | null
+  owner_id:          string | null
+  title:             string
+  description:       string | null
+  status:            SageTicketStatus
+  priority:          SageTicketPriority
+  external_provider: string | null
+  external_id:       string | null
+  external_url:      string | null
+  created_at:        string
+  updated_at:        string
+  // joined
+  contact?:          Pick<SageContact, 'id' | 'name' | 'email'> | null
+}
+
+export interface SageActivityLog {
+  id:           string
+  workspace_id: string
+  entity_type:  SageActivityEntityType
+  entity_id:    string
+  event_type:   string
+  payload:      Json
+  user_id:      string | null
+  created_at:   string
+}
+
+export interface SageIntegration {
+  id:           string
+  workspace_id: string
+  provider:     SageIntegrationProvider
+  status:       SageIntegrationStatus
+  config:       Json
+  created_at:   string
+  updated_at:   string
+}
+
+// ---------------------------------------------------------------
 // Database shape (used by Supabase typed client)
 // ---------------------------------------------------------------
 export interface Database {
   public: {
     Tables: {
-      workspaces:        { Row: Workspace;        Insert: Partial<Workspace>;        Update: Partial<Workspace> }
-      workspace_members: { Row: WorkspaceMember;  Insert: Partial<WorkspaceMember>;  Update: Partial<WorkspaceMember> }
-      integrations:      { Row: Integration;      Insert: Partial<Integration>;      Update: Partial<Integration> }
-      bots:              { Row: Bot;              Insert: Partial<Bot>;              Update: Partial<Bot> }
-      conversations:     { Row: Conversation;     Insert: Partial<Conversation>;     Update: Partial<Conversation> }
-      messages:          { Row: Message;          Insert: Partial<Message>;          Update: Partial<Message> }
-      sources:           { Row: Source;           Insert: Partial<Source>;           Update: Partial<Source> }
-      agent_runs:        { Row: AgentRun;         Insert: Partial<AgentRun>;         Update: Partial<AgentRun> }
-      usage_events:      { Row: UsageEvent;       Insert: Partial<UsageEvent>;       Update: Partial<UsageEvent> }
+      workspaces:            { Row: Workspace;          Insert: Partial<Workspace>;          Update: Partial<Workspace> }
+      workspace_members:     { Row: WorkspaceMember;    Insert: Partial<WorkspaceMember>;    Update: Partial<WorkspaceMember> }
+      integrations:          { Row: Integration;        Insert: Partial<Integration>;        Update: Partial<Integration> }
+      bots:                  { Row: Bot;                Insert: Partial<Bot>;                Update: Partial<Bot> }
+      conversations:         { Row: Conversation;       Insert: Partial<Conversation>;       Update: Partial<Conversation> }
+      messages:              { Row: Message;            Insert: Partial<Message>;            Update: Partial<Message> }
+      sources:               { Row: Source;             Insert: Partial<Source>;             Update: Partial<Source> }
+      agent_runs:            { Row: AgentRun;           Insert: Partial<AgentRun>;           Update: Partial<AgentRun> }
+      usage_events:          { Row: UsageEvent;         Insert: Partial<UsageEvent>;         Update: Partial<UsageEvent> }
+      sage_companies:        { Row: SageCompany;        Insert: Partial<SageCompany>;        Update: Partial<SageCompany> }
+      sage_contacts:         { Row: SageContact;        Insert: Partial<SageContact>;        Update: Partial<SageContact> }
+      sage_pipelines:        { Row: SagePipeline;       Insert: Partial<SagePipeline>;       Update: Partial<SagePipeline> }
+      sage_pipeline_stages:  { Row: SagePipelineStage;  Insert: Partial<SagePipelineStage>;  Update: Partial<SagePipelineStage> }
+      sage_deals:            { Row: SageDeal;           Insert: Partial<SageDeal>;           Update: Partial<SageDeal> }
+      sage_tickets:          { Row: SageTicket;         Insert: Partial<SageTicket>;         Update: Partial<SageTicket> }
+      sage_activity_log:     { Row: SageActivityLog;    Insert: Partial<SageActivityLog>;    Update: Partial<SageActivityLog> }
+      sage_integrations:     { Row: SageIntegration;    Insert: Partial<SageIntegration>;    Update: Partial<SageIntegration> }
     }
     Views: Record<string, never>
     Functions: {
