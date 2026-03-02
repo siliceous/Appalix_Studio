@@ -91,7 +91,7 @@ export function PipelineBoard({ pipelineId, stages, deals: initialDeals, contact
           return (
             <div
               key={stage.id}
-              className="flex-shrink-0 w-72 flex flex-col"
+              className="flex-shrink-0 w-72 flex flex-col h-full min-h-0"
               onDragOver={e => handleDragOver(e, stage.id)}
               onDragLeave={() => setDragOverStage(null)}
               onDrop={e => handleDrop(e, stage.id)}
@@ -110,7 +110,7 @@ export function PipelineBoard({ pipelineId, stages, deals: initialDeals, contact
               </div>
 
               {/* Deal cards */}
-              <div className={`flex-1 space-y-2 min-h-[120px] rounded-xl p-2 border-2 transition-colors ${
+              <div className={`flex-1 min-h-0 space-y-2 overflow-y-auto rounded-xl p-2 border-2 transition-colors ${
                 isDragOver
                   ? 'border-brand-300 dark:border-[#61c2ad]/40 bg-brand-50/50 dark:bg-[#61c2ad]/5'
                   : 'border-transparent'
