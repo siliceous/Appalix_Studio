@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { IntegrationsClient } from './integrations-client'
 import type { Metadata } from 'next'
-import type { WorkspaceMember, SageIntegration } from '@/lib/types'
+import type { WorkspaceMember } from '@/lib/types'
 
 export const metadata: Metadata = { title: 'Integrations · Sage' }
 
@@ -23,13 +23,14 @@ export default async function SageIntegrationsPage() {
 
   const { data: integrationsRaw } = await supabase
     .from('sage_integrations')
-    .select('provider, status, config, updated_at')
+    .select('provider, status')
     .eq('workspace_id', membership.workspace_id)
 
-  const connected = new Map<string, SageIntegration>()
-  for (const row of (integrationsRaw ?? []) as SageIntegration[]) {
-    if (row.status === 'connected') connected.set(row.provider, row)
-  }
+  const connected = new Set<string>(
+    (integrationsRaw ?? [])
+      .filter((r: { provider: string; status: string }) => r.status === 'connected')
+      .map((r: { provider: string; status: string }) => r.provider)
+  )
 
   return <IntegrationsClient connected={connected} />
 }

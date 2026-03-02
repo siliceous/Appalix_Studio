@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { Check, X, ExternalLink, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 import { saveSageIntegration, disconnectSageIntegration } from '@/app/actions/sage'
-import type { SageIntegration, SageIntegrationProvider } from '@/lib/types'
+import type { SageIntegrationProvider } from '@/lib/types'
 
 interface IntegrationCard {
   provider:    SageIntegrationProvider
@@ -97,11 +97,11 @@ const CATEGORY_LABELS: Record<string, string> = {
 }
 
 interface IntegrationsClientProps {
-  connected: Map<string, SageIntegration>
+  connected: Set<string>
 }
 
 export function IntegrationsClient({ connected: initialConnected }: IntegrationsClientProps) {
-  const [connected,   setConnected]  = useState(initialConnected)
+  const [connected,   setConnected]  = useState<Set<string>>(initialConnected)
   const [expanded,    setExpanded]   = useState<string | null>(null)
   const [pending,     startTransition] = useTransition()
   const [saving,      setSaving]     = useState<string | null>(null)
@@ -123,11 +123,7 @@ export function IntegrationsClient({ connected: initialConnected }: Integrations
     setSaving(provider)
     startTransition(async () => {
       await saveSageIntegration(provider, config)
-      setConnected(prev => {
-        const next = new Map(prev)
-        next.set(provider, { provider, status: 'connected', config, id: '', workspace_id: '', created_at: '', updated_at: '' })
-        return next
-      })
+      setConnected(prev => new Set([...prev, provider]))
       setExpanded(null)
       setSaving(null)
     })
@@ -139,7 +135,7 @@ export function IntegrationsClient({ connected: initialConnected }: Integrations
     startTransition(async () => {
       await disconnectSageIntegration(provider)
       setConnected(prev => {
-        const next = new Map(prev)
+        const next = new Set(prev)
         next.delete(provider)
         return next
       })
