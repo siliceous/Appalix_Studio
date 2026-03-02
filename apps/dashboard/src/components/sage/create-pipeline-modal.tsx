@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { X, Loader2, Check, TrendingUp, Building2, Briefcase, Headphones, Rocket, Sparkles } from 'lucide-react'
+import { useState, useTransition, useRef } from 'react'
+import { X, Loader2, Check, TrendingUp, Building2, Briefcase, Headphones, Rocket, Sparkles, GripVertical, Plus, Trash2 } from 'lucide-react'
 import { createPipeline } from '@/app/actions/sage'
 
 interface CreatePipelineModalProps {
@@ -61,9 +61,11 @@ const TEMPLATES = [
 
 export function CreatePipelineModal({ onClose }: CreatePipelineModalProps) {
   const [selected, setSelected] = useState<string | null>(null)
-  const [step,     setStep]     = useState<'pick' | 'name'>('pick')
+  const [step,     setStep]     = useState<'pick' | 'name' | 'stages'>('pick')
   const [name,     setName]     = useState('')
+  const [stages,   setStages]   = useState<string[]>([])
   const [pending,  startTransition] = useTransition()
+  const dragIndexRef = useRef<number | null>(null)
 
   const template = TEMPLATES.find(t => t.key === selected)
 
@@ -73,14 +75,52 @@ export function CreatePipelineModal({ onClose }: CreatePipelineModalProps) {
     setStep('name')
   }
 
+  function handleToStages() {
+    if (!name.trim()) return
+    setStages(template?.stages ?? ['To Do', 'In Progress', 'Done'])
+    setStep('stages')
+  }
+
   function handleSubmit(e: { preventDefault(): void }) {
     e.preventDefault()
     const formData = new FormData()
     formData.set('template', selected ?? 'custom')
     formData.set('name', name.trim())
+    formData.set('custom_stages', JSON.stringify(stages.filter(s => s.trim())))
     startTransition(() => {
       createPipeline(formData)
     })
+  }
+
+  // Stage list management
+  function updateStage(i: number, val: string) {
+    setStages(prev => prev.map((s, idx) => idx === i ? val : s))
+  }
+
+  function deleteStage(i: number) {
+    setStages(prev => prev.filter((_, idx) => idx !== i))
+  }
+
+  function addStage() {
+    setStages(prev => [...prev, ''])
+  }
+
+  // HTML5 drag-to-reorder
+  function handleDragStart(i: number) {
+    dragIndexRef.current = i
+  }
+
+  function handleDragOver(e: React.DragEvent, i: number) {
+    e.preventDefault()
+    const from = dragIndexRef.current
+    if (from === null || from === i) return
+    setStages(prev => {
+      const next = [...prev]
+      const [item] = next.splice(from, 1)
+      next.splice(i, 0, item)
+      return next
+    })
+    dragIndexRef.current = i
   }
 
   return (
@@ -93,7 +133,9 @@ export function CreatePipelineModal({ onClose }: CreatePipelineModalProps) {
           <div>
             <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Create Pipeline</h2>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-              {step === 'pick' ? 'Choose a template to get started' : 'Name your pipeline'}
+              {step === 'pick'   ? 'Choose a template to get started'
+             : step === 'name'  ? 'Name your pipeline'
+             :                    'Customise your stages'}
             </p>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors">
@@ -101,7 +143,8 @@ export function CreatePipelineModal({ onClose }: CreatePipelineModalProps) {
           </button>
         </div>
 
-        {step === 'pick' ? (
+        {/* Step 1 — pick template */}
+        {step === 'pick' && (
           <>
             <div className="p-6 grid grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto">
               {TEMPLATES.map(t => {
@@ -117,24 +160,18 @@ export function CreatePipelineModal({ onClose }: CreatePipelineModalProps) {
                         : 'border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/4 hover:border-gray-300 dark:hover:border-white/20 hover:bg-white dark:hover:bg-white/7'
                     }`}
                   >
-                    {/* Selected check */}
                     {isSelected && (
                       <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-brand-600 dark:bg-[#61c2ad] flex items-center justify-center shrink-0">
                         <Check className="w-3 h-3 text-white dark:text-[#1c1c1c]" />
                       </div>
                     )}
-
-                    {/* Icon */}
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-3 ${t.color}`}>
                       <Icon className="w-4 h-4" />
                     </div>
-
                     <p className={`text-sm font-semibold mb-1 pr-6 ${isSelected ? 'text-brand-800 dark:text-[#61c2ad]' : 'text-gray-900 dark:text-gray-100'}`}>
                       {t.name}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 leading-relaxed">{t.description}</p>
-
-                    {/* Stage pills */}
                     <div className="flex flex-wrap gap-1">
                       {t.stages.map(s => (
                         <span
@@ -170,8 +207,11 @@ export function CreatePipelineModal({ onClose }: CreatePipelineModalProps) {
               </button>
             </div>
           </>
-        ) : (
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        )}
+
+        {/* Step 2 — name */}
+        {step === 'name' && (
+          <div className="p-6 space-y-4">
             {template && (
               <div className={`p-3 rounded-xl border ${template.color.includes('brand') ? 'bg-brand-50 dark:bg-[#61c2ad]/12 border-brand-100 dark:border-[#61c2ad]/25' : 'bg-gray-50 dark:bg-white/5 border-gray-100 dark:border-white/10'}`}>
                 <div className="flex items-center gap-2 mb-2">
@@ -201,6 +241,7 @@ export function CreatePipelineModal({ onClose }: CreatePipelineModalProps) {
                 required
                 placeholder="e.g. Q1 Sales 2026"
                 autoFocus
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleToStages() } }}
                 className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
               />
             </div>
@@ -214,8 +255,74 @@ export function CreatePipelineModal({ onClose }: CreatePipelineModalProps) {
                 ← Back
               </button>
               <button
+                type="button"
+                onClick={handleToStages}
+                disabled={!name.trim()}
+                className="flex-1 px-4 py-2 text-sm bg-brand-600 hover:bg-brand-700 disabled:bg-gray-300 dark:disabled:bg-white/10 text-white disabled:text-gray-500 dark:disabled:text-gray-500 font-medium rounded-xl transition-colors"
+              >
+                Continue →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3 — customise stages */}
+        {step === 'stages' && (
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Drag to reorder · click to rename · press × to remove
+            </p>
+
+            <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
+              {stages.map((stage, i) => (
+                <div
+                  key={i}
+                  draggable
+                  onDragStart={() => handleDragStart(i)}
+                  onDragOver={e => handleDragOver(e, i)}
+                  className="flex items-center gap-2 group"
+                >
+                  <GripVertical className="w-4 h-4 text-gray-300 dark:text-gray-600 cursor-grab shrink-0" />
+                  <span className="text-xs text-gray-400 dark:text-gray-500 w-5 shrink-0 text-right">{i + 1}</span>
+                  <input
+                    type="text"
+                    value={stage}
+                    onChange={e => updateStage(i, e.target.value)}
+                    placeholder="Stage name"
+                    className="flex-1 px-3 py-1.5 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => deleteStage(i)}
+                    disabled={stages.length <= 1}
+                    className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors disabled:opacity-30"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={addStage}
+              className="flex items-center gap-1.5 text-xs font-medium text-[#3d9585] dark:text-[#61c2ad] hover:text-brand-700 dark:hover:text-[#61c2ad]/80 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Stage
+            </button>
+
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setStep('name')}
+                className="flex-1 px-4 py-2 text-sm border border-gray-300 dark:border-white/20 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors font-medium"
+              >
+                ← Back
+              </button>
+              <button
                 type="submit"
-                disabled={pending || !name.trim()}
+                disabled={pending || stages.filter(s => s.trim()).length === 0}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm bg-brand-600 hover:bg-brand-700 disabled:bg-gray-300 dark:disabled:bg-white/10 text-white disabled:text-gray-500 dark:disabled:text-gray-500 font-medium rounded-xl transition-colors"
               >
                 {pending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}

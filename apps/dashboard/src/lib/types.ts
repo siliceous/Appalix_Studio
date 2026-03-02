@@ -268,6 +268,13 @@ export interface SageDeal {
   currency:               string
   status:                 SageDealStatus
   tags:                   string[]
+  close_date:             string | null
+  source:                 string | null
+  priority:               'low' | 'medium' | 'high' | null
+  win_percentage:         number | null
+  visibility:             string
+  description:            string | null
+  company_name:           string | null
   created_at:             string
   updated_at:             string
   // joined

@@ -6,6 +6,39 @@
 const EMAIL_RE = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g
 const PHONE_RE = /(?:\+?\d[\d\s\-().]{5,}\d)/g
 
+// ---------------------------------------------------------------------------
+// Name extraction — scans conversation messages for the visitor's name
+// ---------------------------------------------------------------------------
+
+const NAME_PATTERNS = [
+  /\bmy name(?:'s| is)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,
+  /\bi(?:'m| am)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,
+  /\bthis is\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,
+  /\bcall me\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,
+  /\bname[:\s]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,
+]
+
+const NAME_FALSE_POSITIVES = /^(a|an|the|not|just|here|there|sure|yes|no|ok|okay)$/i
+
+/**
+ * Scan a list of messages for the visitor's first/full name.
+ * Returns the first confident match, or null.
+ */
+export function extractName(messages: { content: string }[]): string | null {
+  for (const msg of messages) {
+    for (const pattern of NAME_PATTERNS) {
+      const match = msg.content.match(pattern)
+      if (match?.[1]) {
+        const candidate = match[1].trim()
+        if (candidate.length > 1 && !NAME_FALSE_POSITIVES.test(candidate)) {
+          return candidate
+        }
+      }
+    }
+  }
+  return null
+}
+
 export interface LeadData {
   email?: string
   phone?: string

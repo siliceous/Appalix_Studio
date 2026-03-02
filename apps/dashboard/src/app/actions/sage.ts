@@ -201,9 +201,10 @@ export async function createPipeline(formData: FormData) {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
 
-  const templateKey = (formData.get('template') as string | null) || 'custom'
-  const customName  = (formData.get('name') as string | null)?.trim()
-  const template    = PIPELINE_TEMPLATES[templateKey]
+  const templateKey     = (formData.get('template') as string | null) || 'custom'
+  const customName      = (formData.get('name') as string | null)?.trim()
+  const customStagesRaw = formData.get('custom_stages') as string | null
+  const template        = PIPELINE_TEMPLATES[templateKey]
 
   const name         = customName || template?.name || 'New Pipeline'
   const templateType = templateKey === 'custom' ? null : templateKey
@@ -217,15 +218,28 @@ export async function createPipeline(formData: FormData) {
   if (error) throw new Error(error.message)
   const pipelineId = (pipeline as { id: string }).id
 
-  // Create default stages
-  const stages = template?.stages ?? [
+  // Use custom stages from step 3 of modal if provided; fall back to template defaults
+  const fallbackColors = ['#6b7280', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec732e', '#10b981', '#ef4444', '#61c2ad']
+  const templateStages = template?.stages ?? [
     { name: 'To Do', color: '#6b7280' },
     { name: 'In Progress', color: '#3b82f6' },
     { name: 'Done', color: '#10b981' },
   ]
+  const templateColorMap = Object.fromEntries(templateStages.map(s => [s.name, s.color]))
+
+  let stageEntries: Array<{ name: string; color: string }>
+  if (customStagesRaw) {
+    const stageNames = (JSON.parse(customStagesRaw) as string[]).filter(s => s.trim())
+    stageEntries = stageNames.map((n, i) => ({
+      name:  n,
+      color: templateColorMap[n] ?? fallbackColors[i % fallbackColors.length],
+    }))
+  } else {
+    stageEntries = templateStages
+  }
 
   await admin.from('sage_pipeline_stages').insert(
-    stages.map((s, i) => ({
+    stageEntries.map((s, i) => ({
       pipeline_id: pipelineId,
       name:        s.name,
       position:    i,
@@ -235,6 +249,45 @@ export async function createPipeline(formData: FormData) {
 
   revalidatePath('/sage/pipelines')
   redirect(`/sage/pipelines/${pipelineId}`)
+}
+
+export async function updatePipelineStages(pipelineId: string, stageNames: string[]) {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+
+  // Verify ownership
+  const { data: pipeline } = await admin
+    .from('sage_pipelines')
+    .select('id')
+    .eq('id', pipelineId)
+    .eq('workspace_id', workspaceId)
+    .single()
+  if (!pipeline) throw new Error('Pipeline not found')
+
+  // Preserve existing colors for unchanged stage names
+  const { data: existingStages } = await admin
+    .from('sage_pipeline_stages')
+    .select('name, color')
+    .eq('pipeline_id', pipelineId)
+  const colorMap = Object.fromEntries((existingStages ?? []).map(s => [s.name, s.color]))
+  const fallbackColors = ['#6b7280', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec732e', '#10b981', '#ef4444', '#61c2ad']
+
+  await admin.from('sage_pipeline_stages').delete().eq('pipeline_id', pipelineId)
+
+  const filtered = stageNames.filter(s => s.trim())
+  if (filtered.length > 0) {
+    await admin.from('sage_pipeline_stages').insert(
+      filtered.map((stageName, i) => ({
+        pipeline_id: pipelineId,
+        name:        stageName,
+        position:    i,
+        color:       colorMap[stageName] ?? fallbackColors[i % fallbackColors.length],
+      }))
+    )
+  }
+
+  revalidatePath('/sage/pipelines')
+  revalidatePath(`/sage/pipelines/${pipelineId}`)
 }
 
 export async function deletePipeline(id: string) {
@@ -259,17 +312,45 @@ export async function createDeal(formData: FormData) {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
 
-  const title      = (formData.get('title') as string).trim()
-  const pipelineId = (formData.get('pipeline_id') as string | null) || null
-  const stageId    = (formData.get('stage_id') as string | null) || null
-  const contactId  = (formData.get('contact_id') as string | null) || null
-  const valueRaw   = (formData.get('value') as string | null)?.trim()
-  const value      = valueRaw ? parseFloat(valueRaw) : null
-  const currency   = (formData.get('currency') as string | null) || 'USD'
+  const title         = (formData.get('title') as string).trim()
+  const pipelineId    = (formData.get('pipeline_id') as string | null) || null
+  const stageId       = (formData.get('stage_id') as string | null) || null
+  const contactId     = (formData.get('contact_id') as string | null) || null
+  const valueRaw      = (formData.get('value') as string | null)?.trim()
+  const value         = valueRaw ? parseFloat(valueRaw) : null
+  const currency      = (formData.get('currency') as string | null) || 'USD'
+  const status        = ((formData.get('status') as string | null) || 'open') as SageDealStatus
+  const closeDate     = (formData.get('close_date') as string | null)?.trim() || null
+  const source        = (formData.get('source') as string | null)?.trim() || null
+  const priority      = (formData.get('priority') as string | null)?.trim() || null
+  const winPctRaw     = (formData.get('win_percentage') as string | null)?.trim()
+  const winPercentage = winPctRaw ? parseInt(winPctRaw, 10) : null
+  const visibility    = (formData.get('visibility') as string | null) || 'everyone'
+  const description   = (formData.get('description') as string | null)?.trim() || null
+  const companyName   = (formData.get('company_name') as string | null)?.trim() || null
+  const tagsRaw       = (formData.get('tags') as string | null)?.trim() || ''
+  const tags          = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : []
 
   const { data, error } = await admin
     .from('sage_deals')
-    .insert({ workspace_id: workspaceId, title, pipeline_id: pipelineId, stage_id: stageId, contact_id: contactId, value, currency, status: 'open' })
+    .insert({
+      workspace_id:   workspaceId,
+      title,
+      pipeline_id:    pipelineId,
+      stage_id:       stageId,
+      contact_id:     contactId,
+      value,
+      currency,
+      status,
+      close_date:     closeDate,
+      source,
+      priority:       priority || null,
+      win_percentage: winPercentage,
+      visibility,
+      description,
+      company_name:   companyName,
+      tags,
+    })
     .select('id')
     .single()
 

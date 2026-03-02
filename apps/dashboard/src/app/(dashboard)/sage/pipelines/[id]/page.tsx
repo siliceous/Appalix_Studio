@@ -28,19 +28,27 @@ export default async function PipelineBoardPage({ params }: { params: Promise<{ 
     { data: stagesRaw },
     { data: dealsRaw },
     { data: contactsRaw },
+    { data: allPipelinesRaw },
   ] = await Promise.all([
     supabase.from('sage_pipelines').select('*').eq('id', id).eq('workspace_id', workspaceId).single(),
     supabase.from('sage_pipeline_stages').select('*').eq('pipeline_id', id).order('position'),
-    supabase.from('sage_deals').select('id, title, value, currency, status, stage_id, contact:sage_contacts(id, name)').eq('pipeline_id', id).eq('workspace_id', workspaceId).eq('status', 'open').order('created_at'),
+    supabase.from('sage_deals')
+      .select('id, title, value, currency, status, stage_id, close_date, priority, company_name, contact:sage_contacts(id, name)')
+      .eq('pipeline_id', id)
+      .eq('workspace_id', workspaceId)
+      .order('created_at'),
     supabase.from('sage_contacts').select('id, name').eq('workspace_id', workspaceId).order('name'),
+    supabase.from('sage_pipelines').select('id, name').eq('workspace_id', workspaceId).order('created_at'),
   ])
 
   if (!pipelineRaw) notFound()
 
-  const pipeline = pipelineRaw   as SagePipeline
-  const stages   = (stagesRaw   ?? []) as SagePipelineStage[]
-  const deals    = (dealsRaw    ?? []) as (SageDeal & { contact: Pick<SageContact, 'id' | 'name'> | null })[]
-  const contacts = (contactsRaw ?? []) as Pick<SageContact, 'id' | 'name'>[]
+  const pipeline     = pipelineRaw      as SagePipeline
+  const stages       = (stagesRaw       ?? []) as SagePipelineStage[]
+  const deals        = (dealsRaw        ?? []) as (SageDeal & { contact: Pick<SageContact, 'id' | 'name'> | null })[]
+  const contacts     = (contactsRaw     ?? []) as Pick<SageContact, 'id' | 'name'>[]
+  const allPipelines = (allPipelinesRaw ?? []) as Pick<SagePipeline, 'id' | 'name'>[]
+  const ownerName    = user.email ?? 'You'
 
   return (
     <div className="flex flex-col h-full">
@@ -55,13 +63,13 @@ export default async function PipelineBoardPage({ params }: { params: Promise<{ 
         <div>
           <h1 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{pipeline.name}</h1>
           <p className="text-xs text-gray-400 mt-0.5">
-            {stages.length} stages · {deals.length} open deals
+            {stages.length} stages · {deals.length} deals
           </p>
         </div>
       </div>
 
       {/* Board */}
-      <div className="flex-1 overflow-hidden bg-gray-50 dark:bg-[#1c1c1c]">
+      <div className="flex-1 overflow-hidden bg-gray-50 dark:bg-[#1c1c1c] flex flex-col min-h-0">
         {stages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-sm text-gray-400">This pipeline has no stages.</p>
@@ -72,6 +80,8 @@ export default async function PipelineBoardPage({ params }: { params: Promise<{ 
             stages={stages}
             deals={deals}
             contacts={contacts}
+            allPipelines={allPipelines}
+            ownerName={ownerName}
           />
         )}
       </div>
