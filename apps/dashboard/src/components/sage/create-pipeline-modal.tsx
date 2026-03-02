@@ -157,14 +157,14 @@ export function CreatePipelineModal({ onClose }: CreatePipelineModalProps) {
             <div className="flex gap-3 px-6 py-4 border-t border-gray-100 dark:border-white/8">
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                className="flex-1 px-4 py-2 text-sm border border-gray-300 dark:border-white/20 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={handleNext}
                 disabled={!selected}
-                className="flex-1 px-4 py-2 text-sm bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors disabled:opacity-40"
+                className="flex-1 px-4 py-2 text-sm bg-brand-600 hover:bg-brand-700 disabled:bg-gray-300 dark:disabled:bg-white/10 text-white disabled:text-gray-500 dark:disabled:text-gray-500 font-medium rounded-xl transition-colors"
               >
                 Continue →
               </button>
@@ -209,14 +209,14 @@ export function CreatePipelineModal({ onClose }: CreatePipelineModalProps) {
               <button
                 type="button"
                 onClick={() => setStep('pick')}
-                className="flex-1 px-4 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                className="flex-1 px-4 py-2 text-sm border border-gray-300 dark:border-white/20 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors font-medium"
               >
                 ← Back
               </button>
               <button
                 type="submit"
                 disabled={pending || !name.trim()}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors disabled:opacity-60"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm bg-brand-600 hover:bg-brand-700 disabled:bg-gray-300 dark:disabled:bg-white/10 text-white disabled:text-gray-500 dark:disabled:text-gray-500 font-medium rounded-xl transition-colors"
               >
                 {pending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 {pending ? 'Creating…' : 'Create Pipeline'}
