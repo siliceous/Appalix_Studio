@@ -3,7 +3,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { SageTicketStatus, SageTicketPriority, SageDealStatus } from '@/lib/types'
+import type { SageContact, SageTicketStatus, SageTicketPriority, SageDealStatus, SageContactType, SageContactVisibility } from '@/lib/types'
 
 // ---------------------------------------------------------------
 // Helpers
@@ -56,23 +56,33 @@ export async function createContact(formData: FormData) {
   const name          = (formData.get('name') as string).trim()
   const email         = (formData.get('email') as string | null)?.trim() || null
   const phone         = (formData.get('phone') as string | null)?.trim() || null
+  const title         = (formData.get('title') as string | null)?.trim() || null
+  const contact_type  = ((formData.get('contact_type') as string | null) || 'potential_customer') as SageContactType
   const company_name  = (formData.get('company_name') as string | null)?.trim() || null
   const website_url   = (formData.get('website_url') as string | null)?.trim() || null
   const business_goal = (formData.get('business_goal') as string | null)?.trim() || null
+  const street        = (formData.get('street') as string | null)?.trim() || null
+  const city          = (formData.get('city') as string | null)?.trim() || null
+  const state         = (formData.get('state') as string | null)?.trim() || null
+  const zip           = (formData.get('zip') as string | null)?.trim() || null
+  const country       = (formData.get('country') as string | null)?.trim() || null
+  const visibility    = ((formData.get('visibility') as string | null) || 'everyone') as SageContactVisibility
   const notes         = (formData.get('notes') as string | null)?.trim() || null
   const tagsRaw       = (formData.get('tags') as string | null)?.trim() || ''
   const tags          = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : []
 
   const { data, error } = await admin
     .from('sage_contacts')
-    .insert({ workspace_id: workspaceId, name, email, phone, company_name, website_url, business_goal, notes, tags, source: 'manual' })
-    .select('id')
+    .insert({ workspace_id: workspaceId, name, email, phone, title, contact_type, company_name, website_url, business_goal, street, city, state, zip, country, visibility, notes, tags, source: 'manual' })
+    .select('*')
     .single()
 
   if (error) throw new Error(error.message)
 
-  await logActivity(workspaceId, 'contact', (data as { id: string }).id, 'contact_created', { name })
+  const contact = data as SageContact
+  await logActivity(workspaceId, 'contact', contact.id, 'contact_created', { name })
   revalidatePath('/sage/contacts')
+  return contact
 }
 
 export async function updateContact(id: string, formData: FormData) {
@@ -82,16 +92,24 @@ export async function updateContact(id: string, formData: FormData) {
   const name          = (formData.get('name') as string).trim()
   const email         = (formData.get('email') as string | null)?.trim() || null
   const phone         = (formData.get('phone') as string | null)?.trim() || null
+  const title         = (formData.get('title') as string | null)?.trim() || null
+  const contact_type  = ((formData.get('contact_type') as string | null) || 'potential_customer') as SageContactType
   const company_name  = (formData.get('company_name') as string | null)?.trim() || null
   const website_url   = (formData.get('website_url') as string | null)?.trim() || null
   const business_goal = (formData.get('business_goal') as string | null)?.trim() || null
+  const street        = (formData.get('street') as string | null)?.trim() || null
+  const city          = (formData.get('city') as string | null)?.trim() || null
+  const state         = (formData.get('state') as string | null)?.trim() || null
+  const zip           = (formData.get('zip') as string | null)?.trim() || null
+  const country       = (formData.get('country') as string | null)?.trim() || null
+  const visibility    = ((formData.get('visibility') as string | null) || 'everyone') as SageContactVisibility
   const notes         = (formData.get('notes') as string | null)?.trim() || null
   const tagsRaw       = (formData.get('tags') as string | null)?.trim() || ''
   const tags          = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : []
 
   const { error } = await admin
     .from('sage_contacts')
-    .update({ name, email, phone, company_name, website_url, business_goal, notes, tags, updated_at: new Date().toISOString() })
+    .update({ name, email, phone, title, contact_type, company_name, website_url, business_goal, street, city, state, zip, country, visibility, notes, tags, updated_at: new Date().toISOString() })
     .eq('id', id)
     .eq('workspace_id', workspaceId)
 

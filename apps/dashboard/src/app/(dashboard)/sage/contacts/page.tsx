@@ -23,7 +23,7 @@ export default async function ContactsPage() {
 
   const { data: contactsRaw } = await supabase
     .from('sage_contacts')
-    .select('id, name, email, phone, source, tags, created_at')
+    .select('*')
     .eq('workspace_id', membership.workspace_id)
     .order('created_at', { ascending: false })
 

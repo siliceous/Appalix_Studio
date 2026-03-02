@@ -1,34 +1,141 @@
 'use client'
 
-import { useState } from 'react'
-import { UserPlus, Search, Mail, Phone, Tag, ExternalLink, Trash2 } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import {
+  UserPlus, Search, Mail, Phone, Globe, ExternalLink, Trash2,
+  Zap, ArrowUpDown, SlidersHorizontal, Columns3, Check,
+} from 'lucide-react'
 import { ContactModal } from '@/components/sage/contact-modal'
 import { deleteContact } from '@/app/actions/sage'
 import { timeAgo } from '@/lib/utils'
 import Link from 'next/link'
 import type { SageContact } from '@/lib/types'
 
-const SOURCE_LABELS: Record<string, { label: string; color: string }> = {
-  chat:   { label: 'Chat',   color: 'bg-brand-50 text-brand-700 dark:bg-[#61c2ad]/10 dark:text-[#61c2ad]' },
-  manual: { label: 'Manual', color: 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-400' },
-  import: { label: 'Import', color: 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400' },
+// ── Column definitions ──────────────────────────────────────────────────────
+type ColKey =
+  | 'name' | 'title' | 'company_name' | 'email' | 'contact_type'
+  | 'last_contacted_at' | 'interactions' | 'inactive_days'
+  | 'tags' | 'city' | 'country' | 'created_at' | 'notes'
+  | 'updated_at' | 'phone' | 'state' | 'street' | 'website_url'
+
+const ALL_COLUMNS: { key: ColKey; label: string; required?: true }[] = [
+  { key: 'name',              label: 'Person',         required: true },
+  { key: 'title',             label: 'Title' },
+  { key: 'company_name',      label: 'Company' },
+  { key: 'email',             label: 'Email' },
+  { key: 'contact_type',      label: 'Contact Type' },
+  { key: 'last_contacted_at', label: 'Last Contacted' },
+  { key: 'interactions',      label: 'Interactions' },
+  { key: 'inactive_days',     label: 'Inactive Days' },
+  { key: 'tags',              label: 'Tags' },
+  { key: 'city',              label: 'City' },
+  { key: 'country',           label: 'Country' },
+  { key: 'created_at',        label: 'Created' },
+  { key: 'notes',             label: 'Description' },
+  { key: 'updated_at',        label: 'Modified' },
+  { key: 'phone',             label: 'Phone' },
+  { key: 'state',             label: 'State' },
+  { key: 'street',            label: 'Street' },
+  { key: 'website_url',       label: 'Website' },
+]
+
+const DEFAULT_VISIBLE = new Set<ColKey>(['name', 'company_name', 'email', 'contact_type', 'tags', 'created_at'])
+
+const SORT_FIELDS: { key: string; label: string }[] = [
+  { key: '',             label: 'None' },
+  { key: 'name',         label: 'Name' },
+  { key: 'email',        label: 'Email' },
+  { key: 'company_name', label: 'Company' },
+  { key: 'contact_type', label: 'Contact Type' },
+  { key: 'created_at',   label: 'Date Added' },
+  { key: 'updated_at',   label: 'Modified' },
+  { key: 'last_contacted_at', label: 'Last Contacted' },
+  { key: 'inactive_days',    label: 'Inactive Days' },
+]
+
+const CONTACT_TYPE_META: Record<string, { label: string; color: string }> = {
+  potential_customer: { label: 'Potential',  color: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400' },
+  active_customer:    { label: 'Active',     color: 'bg-brand-50 text-brand-700 dark:bg-[#61c2ad]/10 dark:text-[#61c2ad]' },
+  other:              { label: 'Other',      color: 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-400' },
 }
 
-interface ContactsClientProps {
-  contacts: SageContact[]
+interface FilterState {
+  contactType:   string[]
+  lastContacted: '' | '7d' | '30d' | '90d' | '1y'
+  tags:          string
+  city:          string
+  state:         string
+  country:       string
 }
+const EMPTY_FILTER: FilterState = { contactType: [], lastContacted: '', tags: '', city: '', state: '', country: '' }
 
-export function ContactsClient({ contacts: initialContacts }: ContactsClientProps) {
-  const [contacts,    setContacts]    = useState(initialContacts)
+// ── Component ───────────────────────────────────────────────────────────────
+interface ContactsClientProps { contacts: SageContact[] }
+
+export function ContactsClient({ contacts: initial }: ContactsClientProps) {
+  const [contacts,    setContacts]    = useState(initial)
   const [showModal,   setShowModal]   = useState(false)
-  const [search,      setSearch]      = useState('')
   const [deleting,    setDeleting]    = useState<string | null>(null)
+  const [search,      setSearch]      = useState('')
+  const [openPanel,   setOpenPanel]   = useState<'sort' | 'filter' | 'columns' | null>(null)
+  const [sortField,   setSortField]   = useState('')
+  const [sortDir,     setSortDir]     = useState<'asc' | 'desc'>('asc')
+  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(new Set(DEFAULT_VISIBLE))
+  const [filters,     setFilters]     = useState<FilterState>(EMPTY_FILTER)
 
-  const filtered = contacts.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.email?.toLowerCase().includes(search.toLowerCase()) ||
-    c.phone?.includes(search)
-  )
+  function togglePanel(p: 'sort' | 'filter' | 'columns') {
+    setOpenPanel(prev => prev === p ? null : p)
+  }
+
+  function toggleColumn(key: ColKey) {
+    setVisibleCols(prev => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      return next
+    })
+  }
+
+  function toggleContactTypeFilter(type: string) {
+    setFilters(prev => ({
+      ...prev,
+      contactType: prev.contactType.includes(type)
+        ? prev.contactType.filter(t => t !== type)
+        : [...prev.contactType, type],
+    }))
+  }
+
+  const activeFilterCount = [
+    filters.contactType.length > 0, !!filters.lastContacted,
+    !!filters.tags, !!filters.city, !!filters.state, !!filters.country,
+  ].filter(Boolean).length
+
+  // ── Filtering + sorting ──────────────────────────────────────────────────
+  const filtered = useMemo(() => {
+    let result = contacts.filter(c => {
+      const q = search.toLowerCase()
+      if (q && ![c.name, c.email, c.phone, c.company_name].some(v => v?.toLowerCase().includes(q))) return false
+      if (filters.contactType.length && !filters.contactType.includes(c.contact_type ?? 'other')) return false
+      if (filters.tags && !c.tags.some(t => t.toLowerCase().includes(filters.tags.toLowerCase()))) return false
+      if (filters.city    && !c.city?.toLowerCase().includes(filters.city.toLowerCase()))    return false
+      if (filters.state   && !c.state?.toLowerCase().includes(filters.state.toLowerCase()))  return false
+      if (filters.country && !c.country?.toLowerCase().includes(filters.country.toLowerCase())) return false
+      if (filters.lastContacted && c.last_contacted_at) {
+        const daysMap: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90, '1y': 365 }
+        const cutoff = new Date(Date.now() - daysMap[filters.lastContacted] * 86_400_000)
+        if (new Date(c.last_contacted_at) < cutoff) return false
+      }
+      return true
+    })
+
+    if (sortField) {
+      result = [...result].sort((a, b) => {
+        const av = String((a as unknown as Record<string, unknown>)[sortField] ?? '')
+        const bv = String((b as unknown as Record<string, unknown>)[sortField] ?? '')
+        return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
+      })
+    }
+    return result
+  }, [contacts, search, filters, sortField, sortDir])
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this contact? This cannot be undone.')) return
@@ -36,53 +143,255 @@ export function ContactsClient({ contacts: initialContacts }: ContactsClientProp
     try {
       await deleteContact(id)
       setContacts(prev => prev.filter(c => c.id !== id))
-    } finally {
-      setDeleting(null)
+    } finally { setDeleting(null) }
+  }
+
+  // ── Cell renderer ────────────────────────────────────────────────────────
+  function renderCell(key: ColKey, c: SageContact) {
+    switch (key) {
+      case 'name': return (
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 rounded-full bg-brand-100 dark:bg-[#61c2ad]/15 flex items-center justify-center shrink-0">
+            <span className="text-xs font-semibold text-brand-700 dark:text-[#61c2ad]">{c.name.charAt(0).toUpperCase()}</span>
+          </div>
+          <span className="text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">{c.name}</span>
+        </div>
+      )
+      case 'title':        return <span className="text-xs text-gray-500 dark:text-gray-400">{c.title ?? '—'}</span>
+      case 'company_name': return <span className="text-xs text-gray-600 dark:text-gray-300">{c.company_name ?? '—'}</span>
+      case 'email':        return c.email
+        ? <a href={`mailto:${c.email}`} className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-brand-600"><Mail className="w-3 h-3 shrink-0" /><span className="truncate max-w-40">{c.email}</span></a>
+        : <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
+      case 'contact_type': {
+        const meta = CONTACT_TYPE_META[c.contact_type ?? 'other'] ?? CONTACT_TYPE_META.other
+        return <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${meta.color}`}>{meta.label}</span>
+      }
+      case 'last_contacted_at': return <span className="text-xs text-gray-400 whitespace-nowrap">{c.last_contacted_at ? timeAgo(c.last_contacted_at) : '—'}</span>
+      case 'interactions': return <span className="text-xs text-gray-400">0</span>
+      case 'inactive_days': {
+        if (!c.last_contacted_at) return <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
+        const d = Math.floor((Date.now() - new Date(c.last_contacted_at).getTime()) / 86_400_000)
+        return <span className="text-xs text-gray-400">{d}d</span>
+      }
+      case 'tags': return c.tags.length > 0
+        ? <div className="flex gap-1 flex-wrap">{c.tags.slice(0, 2).map(t => <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 whitespace-nowrap">{t}</span>)}{c.tags.length > 2 && <span className="text-[10px] text-gray-400">+{c.tags.length - 2}</span>}</div>
+        : <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
+      case 'city':    return <span className="text-xs text-gray-500 dark:text-gray-400">{c.city ?? '—'}</span>
+      case 'state':   return <span className="text-xs text-gray-500 dark:text-gray-400">{c.state ?? '—'}</span>
+      case 'country': return <span className="text-xs text-gray-500 dark:text-gray-400">{c.country ?? '—'}</span>
+      case 'street':  return <span className="text-xs text-gray-500 dark:text-gray-400">{c.street ?? '—'}</span>
+      case 'created_at': return <span className="text-xs text-gray-400 whitespace-nowrap">{timeAgo(c.created_at)}</span>
+      case 'updated_at': return <span className="text-xs text-gray-400 whitespace-nowrap">{timeAgo(c.updated_at)}</span>
+      case 'notes':   return <span className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 max-w-48">{c.notes ?? '—'}</span>
+      case 'phone':   return c.phone
+        ? <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400"><Phone className="w-3 h-3 shrink-0" />{c.phone}</span>
+        : <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
+      case 'website_url': return c.website_url
+        ? <a href={c.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-brand-600 dark:text-[#61c2ad] hover:underline"><Globe className="w-3 h-3 shrink-0" /><span className="truncate max-w-32">{c.website_url.replace(/^https?:\/\//, '')}</span></a>
+        : <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
+      default: return null
     }
   }
 
+  const visibleColDefs = ALL_COLUMNS.filter(c => visibleCols.has(c.key))
+
+  // ── Shared button style ──────────────────────────────────────────────────
+  const toolbarBtn = (active: boolean) =>
+    `flex items-center gap-1.5 px-3 py-2 text-xs font-medium border rounded-lg transition-colors ${
+      active
+        ? 'bg-gray-100 dark:bg-white/10 border-gray-300 dark:border-white/20 text-gray-900 dark:text-gray-100'
+        : 'dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
+    }`
+
   return (
-    <div className="p-8">
+    <div className="p-8" onClick={() => setOpenPanel(null)}>
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start justify-between mb-5">
         <div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Contacts</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{contacts.length} total</p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={e => { e.stopPropagation(); setShowModal(true) }}
           className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
         >
-          <UserPlus className="w-4 h-4" />
-          New Contact
+          <UserPlus className="w-4 h-4" /> New Contact
         </button>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-5">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search by name, email or phone…"
-          className="w-full pl-9 pr-4 py-2.5 text-sm border dark:border-white/10 rounded-xl bg-white dark:bg-[#232323] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
-        />
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap" onClick={e => e.stopPropagation()}>
+        {/* Search */}
+        <div className="relative flex-1 min-w-52">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search contacts…"
+            className="w-full pl-9 pr-4 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#232323] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+          />
+        </div>
+
+        {/* Automation */}
+        <Link href="/sage/contacts/automations" className={toolbarBtn(false)}>
+          <Zap className="w-3.5 h-3.5" /> Automation
+        </Link>
+
+        {/* Sort */}
+        <div className="relative">
+          <button onClick={() => togglePanel('sort')} className={toolbarBtn(openPanel === 'sort')}>
+            <ArrowUpDown className="w-3.5 h-3.5" />
+            Sort
+            {sortField && <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />}
+          </button>
+          {openPanel === 'sort' && (
+            <div className="absolute top-full mt-1 left-0 z-30 w-60 bg-white dark:bg-[#232323] border dark:border-white/10 rounded-xl shadow-xl p-3 space-y-3">
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">Sort by</p>
+              <select
+                value={sortField}
+                onChange={e => setSortField(e.target.value)}
+                className="w-full px-2 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#1c1c1c] text-gray-900 dark:text-gray-100"
+              >
+                {SORT_FIELDS.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
+              </select>
+              <div className="grid grid-cols-2 gap-2">
+                {(['asc', 'desc'] as const).map(dir => (
+                  <button
+                    key={dir}
+                    onClick={() => setSortDir(dir)}
+                    className={`py-1.5 text-xs rounded-lg border transition-colors ${sortDir === dir ? 'bg-brand-600 border-brand-600 text-white' : 'dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}
+                  >
+                    {dir === 'asc' ? '↑ Ascending' : '↓ Descending'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Filter */}
+        <div className="relative">
+          <button onClick={() => togglePanel('filter')} className={toolbarBtn(openPanel === 'filter')}>
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            Filter
+            {activeFilterCount > 0 && (
+              <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-brand-600 text-white font-semibold">{activeFilterCount}</span>
+            )}
+          </button>
+          {openPanel === 'filter' && (
+            <div className="absolute top-full mt-1 right-0 z-30 w-72 bg-white dark:bg-[#232323] border dark:border-white/10 rounded-xl shadow-xl p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Filters</p>
+                {activeFilterCount > 0 && (
+                  <button onClick={() => setFilters(EMPTY_FILTER)} className="text-xs text-brand-600 dark:text-[#61c2ad] hover:underline">Clear all</button>
+                )}
+              </div>
+
+              {/* Contact Type */}
+              <div>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Contact Type</p>
+                <div className="space-y-1.5">
+                  {Object.entries(CONTACT_TYPE_META).map(([key, meta]) => (
+                    <label key={key} className="flex items-center gap-2 cursor-pointer">
+                      <button
+                        type="button"
+                        onClick={() => toggleContactTypeFilter(key)}
+                        className={`w-4 h-4 rounded flex items-center justify-center border transition-colors ${filters.contactType.includes(key) ? 'bg-brand-600 border-brand-600' : 'dark:border-white/20 border-gray-300'}`}
+                      >
+                        {filters.contactType.includes(key) && <Check className="w-2.5 h-2.5 text-white" />}
+                      </button>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">{meta.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Last Contacted */}
+              <div>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Last Contacted</p>
+                <select
+                  value={filters.lastContacted}
+                  onChange={e => setFilters(prev => ({ ...prev, lastContacted: e.target.value as FilterState['lastContacted'] }))}
+                  className="w-full px-2 py-1.5 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-[#1c1c1c] text-gray-900 dark:text-gray-100"
+                >
+                  <option value="">Any time</option>
+                  <option value="7d">Last 7 days</option>
+                  <option value="30d">Last 30 days</option>
+                  <option value="90d">Last 90 days</option>
+                  <option value="1y">This year</option>
+                </select>
+              </div>
+
+              {/* Tags */}
+              <div>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Tags</p>
+                <input
+                  type="text"
+                  value={filters.tags}
+                  onChange={e => setFilters(prev => ({ ...prev, tags: e.target.value }))}
+                  placeholder="Filter by tag…"
+                  className="w-full px-2 py-1.5 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-[#1c1c1c] text-gray-900 dark:text-gray-100 placeholder-gray-400"
+                />
+              </div>
+
+              {/* Location */}
+              <div>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Location</p>
+                <div className="space-y-1.5">
+                  {(['city', 'state', 'country'] as const).map(field => (
+                    <input
+                      key={field}
+                      type="text"
+                      value={filters[field]}
+                      onChange={e => setFilters(prev => ({ ...prev, [field]: e.target.value }))}
+                      placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+                      className="w-full px-2 py-1.5 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-[#1c1c1c] text-gray-900 dark:text-gray-100 placeholder-gray-400"
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Edit Columns */}
+        <div className="relative">
+          <button onClick={() => togglePanel('columns')} className={toolbarBtn(openPanel === 'columns')}>
+            <Columns3 className="w-3.5 h-3.5" /> Edit Columns
+          </button>
+          {openPanel === 'columns' && (
+            <div className="absolute top-full mt-1 right-0 z-30 w-52 bg-white dark:bg-[#232323] border dark:border-white/10 rounded-xl shadow-xl p-3">
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">Show / Hide Columns</p>
+              <div className="space-y-0.5 max-h-72 overflow-y-auto">
+                {ALL_COLUMNS.map(col => (
+                  <div
+                    key={col.key}
+                    className={`flex items-center justify-between px-2 py-1.5 rounded-lg ${col.required ? 'opacity-50' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5'}`}
+                    onClick={() => !col.required && toggleColumn(col.key)}
+                  >
+                    <span className="text-xs text-gray-700 dark:text-gray-300">{col.label}</span>
+                    <div className={`relative w-8 h-4 rounded-full transition-colors ${visibleCols.has(col.key) ? 'bg-brand-600' : 'bg-gray-200 dark:bg-white/15'}`}>
+                      <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform ${visibleCols.has(col.key) ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-hidden">
+      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-x-auto">
         {filtered.length === 0 ? (
           <div className="py-20 text-center">
             <UserPlus className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {search ? 'No contacts match your search.' : 'No contacts yet. Add your first one.'}
+              {search || activeFilterCount > 0 ? 'No contacts match your filters.' : 'No contacts yet. Add your first one.'}
             </p>
-            {!search && (
-              <button
-                onClick={() => setShowModal(true)}
-                className="mt-4 text-sm text-brand-600 dark:text-[#61c2ad] hover:underline"
-              >
+            {!search && !activeFilterCount && (
+              <button onClick={() => setShowModal(true)} className="mt-4 text-sm text-brand-600 dark:text-[#61c2ad] hover:underline">
                 Add a contact →
               </button>
             )}
@@ -91,96 +400,49 @@ export function ContactsClient({ contacts: initialContacts }: ContactsClientProp
           <table className="w-full">
             <thead>
               <tr className="border-b dark:border-white/8 bg-gray-50 dark:bg-white/3">
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">Contact</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Tags</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Source</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden xl:table-cell">Added</th>
-                <th className="px-5 py-3" />
+                {visibleColDefs.map(col => (
+                  <th key={col.key} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                    {col.label}
+                  </th>
+                ))}
+                <th className="px-4 py-3 w-16" />
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-white/8">
-              {filtered.map(contact => {
-                const src = SOURCE_LABELS[contact.source] ?? SOURCE_LABELS.manual
-                return (
-                  <tr key={contact.id} className="hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-[#61c2ad]/15 flex items-center justify-center shrink-0">
-                          <span className="text-xs font-semibold text-brand-700 dark:text-[#61c2ad]">
-                            {contact.name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{contact.name}</span>
-                      </div>
+              {filtered.map(contact => (
+                <tr key={contact.id} className="hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
+                  {visibleColDefs.map(col => (
+                    <td key={col.key} className="px-4 py-3">
+                      {renderCell(col.key, contact)}
                     </td>
-                    <td className="px-5 py-3.5 hidden md:table-cell">
-                      <div className="space-y-0.5">
-                        {contact.email && (
-                          <p className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                            <Mail className="w-3 h-3" /> {contact.email}
-                          </p>
-                        )}
-                        {contact.phone && (
-                          <p className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                            <Phone className="w-3 h-3" /> {contact.phone}
-                          </p>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 hidden lg:table-cell">
-                      {contact.tags.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {contact.tags.slice(0, 3).map(tag => (
-                            <span key={tag} className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400">
-                              <Tag className="w-2.5 h-2.5" />
-                              {tag}
-                            </span>
-                          ))}
-                          {contact.tags.length > 3 && (
-                            <span className="text-[10px] text-gray-400">+{contact.tags.length - 3}</span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${src.color}`}>
-                        {src.label}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5 hidden xl:table-cell">
-                      <span className="text-xs text-gray-400">{timeAgo(contact.created_at)}</span>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-1 justify-end">
-                        <Link
-                          href={`/sage/contacts/${contact.id}`}
-                          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
-                          title="View contact"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(contact.id)}
-                          disabled={deleting === contact.id}
-                          className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-                          title="Delete contact"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
+                  ))}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1 justify-end">
+                      <Link href={`/sage/contacts/${contact.id}`} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors" title="View">
+                        <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(contact.id)}
+                        disabled={deleting === contact.id}
+                        className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}
       </div>
 
-      {showModal && <ContactModal onClose={() => setShowModal(false)} />}
+      {showModal && (
+        <ContactModal
+          onClose={() => setShowModal(false)}
+          onCreated={contact => setContacts(prev => [contact, ...prev])}
+        />
+      )}
     </div>
   )
 }

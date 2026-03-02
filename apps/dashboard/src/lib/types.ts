@@ -185,11 +185,15 @@ export interface UsageEvent {
 // Sage CRM types
 // ---------------------------------------------------------------
 
-export type SageTicketStatus   = 'open' | 'pending' | 'resolved'
-export type SageTicketPriority = 'low' | 'medium' | 'high' | 'urgent'
-export type SageDealStatus     = 'open' | 'won' | 'lost'
-export type SageContactSource  = 'chat' | 'manual' | 'import'
-export type SageIntegrationProvider = 'stripe' | 'gmail' | 'microsoft' | 'zapier' | 'freshdesk' | 'zendesk'
+export type SageTicketStatus        = 'open' | 'pending' | 'resolved'
+export type SageTicketPriority      = 'low' | 'medium' | 'high' | 'urgent'
+export type SageDealStatus          = 'open' | 'won' | 'lost'
+export type SageContactSource       = 'chat' | 'manual' | 'import'
+export type SageContactType         = 'potential_customer' | 'active_customer' | 'other'
+export type SageContactVisibility   = 'everyone' | 'team' | 'only_me'
+export type SageIntegrationProvider =
+  | 'stripe' | 'gmail' | 'microsoft' | 'zapier' | 'freshdesk' | 'zendesk'
+  | 'mailchimp' | 'activecampaign' | 'convertkit' | 'klaviyo' | 'constantcontact'
 export type SageIntegrationStatus   = 'connected' | 'disconnected' | 'error'
 export type SageActivityEntityType  = 'contact' | 'deal' | 'ticket' | 'company'
 
@@ -214,6 +218,15 @@ export interface SageContact {
   company_name:           string | null
   website_url:            string | null
   business_goal:          string | null
+  contact_type:           SageContactType | null
+  title:                  string | null
+  street:                 string | null
+  city:                   string | null
+  state:                  string | null
+  zip:                    string | null
+  country:                string | null
+  visibility:             SageContactVisibility | null
+  last_contacted_at:      string | null
   source:                 SageContactSource
   tags:                   string[]
   notes:                  string | null
