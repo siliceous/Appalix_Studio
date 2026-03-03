@@ -342,6 +342,7 @@ export interface SageEmail {
   direction:       'inbound' | 'outbound'
   is_read:         boolean
   is_starred:      boolean
+  is_trashed:      boolean
   ai_priority:     'high' | 'medium' | 'low' | null
   ai_summary:      string | null
   ai_insights:     string[] | null

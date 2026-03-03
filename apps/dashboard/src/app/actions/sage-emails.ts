@@ -38,7 +38,7 @@ export async function syncEmails(): Promise<{ synced: number; error?: string }> 
     const res = await fetch(`${API_BASE}/sage/emails/sync`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', 'X-Service-Key': SERVICE_KEY },
-      body:    JSON.stringify({ workspace_id: workspaceId }),
+      body:    JSON.stringify({ workspace_id: workspaceId, limit: 250 }),
     })
     const data = await res.json() as { synced?: number; error?: string }
     if (!res.ok) return { synced: 0, error: data.error ?? 'Sync failed' }
@@ -47,6 +47,67 @@ export async function syncEmails(): Promise<{ synced: number; error?: string }> 
   } catch {
     return { synced: 0, error: 'Could not reach API' }
   }
+}
+
+/**
+ * Quick check — fetch only the latest 10 emails (fast, non-disruptive refresh).
+ */
+export async function quickCheckEmails(): Promise<{ synced: number; error?: string }> {
+  if (!API_BASE || !SERVICE_KEY) return { synced: 0, error: 'Server not configured' }
+
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { synced: 0, error: 'Not authenticated' }
+
+  try {
+    const res = await fetch(`${API_BASE}/sage/emails/sync`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Service-Key': SERVICE_KEY },
+      body:    JSON.stringify({ workspace_id: workspaceId, limit: 10 }),
+    })
+    const data = await res.json() as { synced?: number; error?: string }
+    if (!res.ok) return { synced: 0, error: data.error ?? 'Check failed' }
+    revalidatePath('/sage/emails')
+    return { synced: data.synced ?? 0 }
+  } catch {
+    return { synced: 0, error: 'Could not reach API' }
+  }
+}
+
+/**
+ * Toggle starred state on an email.
+ */
+export async function markEmailStarred(emailId: string, starred: boolean): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { error: 'Not authenticated' }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from('sage_emails') as any)
+    .update({ is_starred: starred })
+    .eq('id', emailId)
+    .eq('workspace_id', workspaceId)
+
+  if (error) return { error: (error as { message: string }).message }
+  return {}
+}
+
+/**
+ * Move an email to/from trash.
+ */
+export async function markEmailTrashed(emailId: string, trashed: boolean): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { error: 'Not authenticated' }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from('sage_emails') as any)
+    .update({ is_trashed: trashed })
+    .eq('id', emailId)
+    .eq('workspace_id', workspaceId)
+
+  if (error) return { error: (error as { message: string }).message }
+  revalidatePath('/sage/emails')
+  return {}
 }
 
 /**

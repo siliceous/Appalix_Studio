@@ -113,7 +113,7 @@ async function findContactByEmail(workspaceId: string, email: string): Promise<s
 // Main sync function
 // ---------------------------------------------------------------------------
 
-export async function syncEmailsForWorkspace(workspaceId: string): Promise<number> {
+export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): Promise<number> {
   // 1. Find a connected gmail or microsoft integration
   const { data: integrations } = await supabase
     .from('sage_integrations')
@@ -151,14 +151,13 @@ export async function syncEmailsForWorkspace(workspaceId: string): Promise<numbe
     const lock = await client.getMailboxLock('INBOX')
 
     try {
-      // Determine total message count so we can fetch the NEWEST 250
-      const STATUS_LIMIT = 250
+      // Determine total message count so we can fetch the NEWEST `limit` messages
       const mailbox = client.mailbox
       const total   = (mailbox as { exists?: number } | null)?.exists ?? 0
 
       // Build sequence range for the last N messages: e.g. "751:*" for last 250 of 1000
       // If there are fewer messages than the limit, fetch all ("1:*")
-      const start       = total > STATUS_LIMIT ? total - STATUS_LIMIT + 1 : 1
+      const start       = total > limit ? total - limit + 1 : 1
       const fetchRange  = `${start}:*`
 
       const messages = client.fetch(fetchRange, {
