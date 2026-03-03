@@ -667,7 +667,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                     ? `Analyse ${selectedIds.size}`
                     : unanalyzedCount > 0
                       ? `Analyse ${unanalyzedCount}`
-                      : 'Re-analyse'}
+                      : `Analyse ${visible.length}`}
               </button>
             )}
           </div>
@@ -792,6 +792,35 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
           </div>
 
         ) : (
+          <>
+            {/* ── Center toolbar: Select All + Delete ── */}
+            <div className="flex items-center gap-2 px-5 py-2 border-b dark:border-white/8 shrink-0">
+              <button
+                onClick={() => {
+                  const allSel = visible.every(t => selectedIds.has(t.email.id))
+                  setSelectedIds(allSel ? new Set() : new Set(visible.map(t => t.email.id)))
+                }}
+                className="text-[11px] font-medium text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+              >
+                {visible.every(t => selectedIds.has(t.email.id)) ? 'Deselect all' : `Select all (${visible.length})`}
+              </button>
+              {selectedIds.size > 0 && (
+                <>
+                  <span className="text-gray-200 dark:text-white/10">|</span>
+                  <span className="text-[11px] text-gray-400">{selectedIds.size} selected</span>
+                  <button
+                    onClick={handleDeleteSelected}
+                    disabled={isDeleting}
+                    title={`Delete ${selectedIds.size} selected`}
+                    className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50 transition-colors font-medium"
+                  >
+                    {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                    Delete
+                  </button>
+                </>
+              )}
+            </div>
+
           <div className="flex-1 overflow-y-auto p-5">
 
             {/* HIGH */}
@@ -920,6 +949,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
               </section>
             )}
           </div>
+          </>
         )}
 
         {/* ── Modal slides up from bottom of center panel ── */}
