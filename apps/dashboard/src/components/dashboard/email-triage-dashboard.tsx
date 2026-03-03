@@ -272,14 +272,14 @@ function TriageCard({
 
           {/* AI Summary */}
           {email.ai_summary ? (
-            <div className="mx-4 mt-3 mb-2 px-3 py-2.5 rounded-lg bg-brand-50 dark:bg-[#ec732e]/8 border border-brand-100 dark:border-[#ec732e]/15">
-              <div className="flex items-center gap-1.5 mb-1">
+            <div className="mx-4 mt-3 mb-2 px-3 py-2.5 rounded-lg bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10">
+              <div className="flex items-center gap-1.5 mb-1.5">
                 <Sparkles className="w-3 h-3 text-brand-500 dark:text-[#ec732e]" />
-                <span className="text-[10px] font-bold text-brand-600 dark:text-[#ec732e] uppercase tracking-wide">Summary</span>
+                <span className="text-[10px] font-bold text-brand-600 dark:text-[#ec732e] uppercase tracking-wide">AI Summary</span>
               </div>
-              <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{email.ai_summary}</p>
+              <p className="text-xs text-gray-900 dark:text-gray-100 leading-relaxed">{email.ai_summary}</p>
               {email.ai_reason && (
-                <p className="text-[10px] text-gray-500 mt-1.5 italic">{email.ai_reason}</p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1.5 italic">{email.ai_reason}</p>
               )}
             </div>
           ) : (
@@ -292,7 +292,7 @@ function TriageCard({
           {email.ai_user_prompt && (
             <div className="mx-4 mb-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-white/3 border border-gray-200 dark:border-white/8 flex items-start gap-2">
               <span className="text-brand-500 dark:text-[#ec732e] text-sm leading-none mt-0.5">→</span>
-              <p className="text-xs text-gray-700 dark:text-gray-300 font-medium leading-relaxed">{email.ai_user_prompt}</p>
+              <p className="text-xs text-gray-900 dark:text-gray-100 font-medium leading-relaxed">{email.ai_user_prompt}</p>
             </div>
           )}
 
