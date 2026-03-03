@@ -1,9 +1,10 @@
 'use client'
 
 import React, { useState, useTransition, useRef } from 'react'
+import Link from 'next/link'
 import {
   Mail, RefreshCw, Send, Sparkles, Star, ChevronDown, ChevronUp,
-  Loader2, AlertCircle, Paperclip, Receipt, FileText, X,
+  Loader2, AlertCircle, Paperclip, Receipt, FileText, X, ArrowRight,
 } from 'lucide-react'
 import {
   syncEmails, sendEmail, rewriteEmail,
@@ -696,10 +697,14 @@ export function EmailInbox({
               : 'Choose an email from the list'}
           </p>
           {emails.length === 0 && (
-            <div className="mt-2 flex items-center gap-2 text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2.5">
+            <Link
+              href="/sage/integrations"
+              className="mt-2 flex items-center gap-2 text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2.5 hover:bg-amber-500/15 transition-colors"
+            >
               <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>Connect Gmail or Outlook in Sage → Integrations first</span>
-            </div>
+              <span>Connect Gmail or Outlook in Sage → Integrations</span>
+              <ArrowRight className="w-3.5 h-3.5 shrink-0 ml-auto" />
+            </Link>
           )}
         </div>
       )}
