@@ -12,6 +12,7 @@ export type Platform =
   | 'wordpress'
   | 'web_widget'
   | 'custom_api'
+  | 'telegram'
 
 /** Normalised inbound message from any platform */
 export interface IncomingMessage {
