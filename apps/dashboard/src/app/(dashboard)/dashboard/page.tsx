@@ -1,22 +1,34 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { Header } from '@/components/layout/header'
-import { MessageSquare, Bot, Plug, TrendingUp } from 'lucide-react'
-import { formatTokens, formatCost, timeAgo, PLATFORM_META } from '@/lib/utils'
+import { redirect }      from 'next/navigation'
 import type { Metadata } from 'next'
-import type { WorkspaceMember, Conversation, UsageEvent } from '@/lib/types'
-
-type RecentConversation = Pick<Conversation, 'id' | 'title' | 'platform' | 'status' | 'message_count' | 'last_activity_at'>
-type UsageSummaryRow    = Pick<UsageEvent, 'tokens_input' | 'tokens_output' | 'cost_usd'>
+import type { WorkspaceMember, SageEmail } from '@/lib/types'
+import { EmailTriageDashboard, type TriageEmail, type TriageRecommendation } from '@/components/dashboard/email-triage-dashboard'
+import { SageRightPanel } from '@/components/sage/sage-right-panel'
 
 export const metadata: Metadata = { title: 'Overview' }
+
+// Support keywords used to classify an email as a ticket instead of a lead
+const SUPPORT_RE = /\b(not working|bug|issue|problem|access|billing|error|broken|down|outage|crash|fail)\b/i
+
+function deriveRecommendation(
+  email:          SageEmail,
+  matchedContact: { id: string } | null,
+  matchedDeal:    { id: string } | null,
+): TriageRecommendation {
+  if (email.ai_priority === 'low') return 'ignore'
+  const text = `${email.subject} ${email.body_text ?? ''}`
+  if (SUPPORT_RE.test(text)) return 'create_ticket'
+  if (matchedContact && matchedDeal)  return 'update_lead'
+  if (matchedContact && !matchedDeal) return 'reopen_account'
+  return 'create_lead'
+}
 
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Get workspace
+  // Workspace lookup
   const { data: membershipRaw } = await supabase
     .from('workspace_members')
     .select('workspace_id')
@@ -24,130 +36,85 @@ export default async function DashboardPage() {
     .limit(1)
     .single()
   const membership = membershipRaw as Pick<WorkspaceMember, 'workspace_id'> | null
-
   if (!membership) redirect('/login')
   const workspaceId = membership.workspace_id
 
-  // Parallel data fetching
-  const [
-    { count: totalConversations },
-    { count: totalBots },
-    { count: totalIntegrations },
-    { data: recentConversationsRaw },
-    { data: usageSummaryRaw },
-  ] = await Promise.all([
-    supabase
-      .from('conversations')
-      .select('*', { count: 'exact', head: true })
-      .eq('workspace_id', workspaceId),
-    supabase
-      .from('bots')
-      .select('*', { count: 'exact', head: true })
-      .eq('workspace_id', workspaceId),
-    supabase
-      .from('integrations')
-      .select('*', { count: 'exact', head: true })
+  // Parallel data fetches
+  const [emailsRes, contactsRes] = await Promise.all([
+    // Top 20 high + medium priority inbound emails (not trashed)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
+      .from('sage_emails')
+      .select('*, contact:sage_contacts(id, name, email)')
       .eq('workspace_id', workspaceId)
-      .eq('status', 'active'),
+      .eq('direction', 'inbound')
+      .in('ai_priority', ['high', 'medium'])
+      .neq('is_trashed', true)
+      .order('received_at', { ascending: false })
+      .limit(20),
+
+    // All workspace contacts (for email matching)
     supabase
-      .from('conversations')
-      .select('id, title, platform, status, message_count, last_activity_at, created_at')
+      .from('sage_contacts')
+      .select('id, name, email')
       .eq('workspace_id', workspaceId)
-      .order('last_activity_at', { ascending: false })
-      .limit(8),
-    supabase
-      .from('usage_events')
-      .select('tokens_input, tokens_output, cost_usd')
-      .eq('workspace_id', workspaceId)
-      .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
+      .not('email', 'is', null),
   ])
 
-  const recentConversations = (recentConversationsRaw ?? []) as RecentConversation[]
-  const usageSummary        = (usageSummaryRaw        ?? []) as UsageSummaryRow[]
+  const rawEmails   = (emailsRes.data   ?? []) as SageEmail[]
+  const rawContacts = (contactsRes.data ?? []) as { id: string; name: string; email: string | null }[]
 
-  const totalTokens = usageSummary.reduce((s, e) => s + e.tokens_input + e.tokens_output, 0)
-  const totalCost   = usageSummary.reduce((s, e) => s + Number(e.cost_usd), 0)
+  // Build email → contact map (lowercase for matching)
+  const contactByEmail = new Map<string, { id: string; name: string; email: string | null }>()
+  for (const c of rawContacts) {
+    if (c.email) contactByEmail.set(c.email.toLowerCase(), c)
+  }
 
-  const stats = [
-    { label: 'Total Conversations', value: totalConversations ?? 0,    icon: MessageSquare, color: 'text-blue-600',   bg: 'bg-blue-50' },
-    { label: 'Active Bots',         value: totalBots ?? 0,             icon: Bot,           color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Active Integrations', value: totalIntegrations ?? 0,     icon: Plug,          color: 'text-green-600',  bg: 'bg-green-50' },
-    { label: 'Tokens (30d)',        value: formatTokens(totalTokens),   icon: TrendingUp,    color: 'text-orange-600', bg: 'bg-orange-50' },
-  ]
+  // Find which matched contact ids have open deals
+  const matchedContactIds = Array.from(
+    new Set(
+      rawEmails
+        .map(e => contactByEmail.get(e.from_address.toLowerCase())?.id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  )
+
+  const openDealsByContactId = new Map<string, { id: string; title: string }>()
+  if (matchedContactIds.length > 0) {
+    const { data: dealsRaw } = await supabase
+      .from('sage_deals')
+      .select('id, title, contact_id')
+      .eq('workspace_id', workspaceId)
+      .eq('status', 'open')
+      .in('contact_id', matchedContactIds)
+    const deals = (dealsRaw ?? []) as { id: string; title: string; contact_id: string }[]
+    for (const d of deals) {
+      if (!openDealsByContactId.has(d.contact_id)) {
+        openDealsByContactId.set(d.contact_id, { id: d.id, title: d.title })
+      }
+    }
+  }
+
+  // Build TriageEmail[]
+  const triageEmails: TriageEmail[] = rawEmails.map(email => {
+    const matchedContact = contactByEmail.get(email.from_address.toLowerCase()) ?? null
+    const matchedDeal    = matchedContact ? (openDealsByContactId.get(matchedContact.id) ?? null) : null
+    const recommendation = deriveRecommendation(email, matchedContact, matchedDeal)
+    return { email, recommendation, matchedContact, matchedDeal }
+  })
+
+  // Sort: high first, then medium
+  triageEmails.sort((a, b) => {
+    if (a.email.ai_priority === 'high' && b.email.ai_priority !== 'high') return -1
+    if (b.email.ai_priority === 'high' && a.email.ai_priority !== 'high') return  1
+    return 0
+  })
 
   return (
-    <div>
-      <Header title="Overview" description="Your workspace at a glance" />
-
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-        {stats.map((s) => (
-          <div key={s.label} className="bg-white rounded-xl border p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-gray-500">{s.label}</span>
-              <div className={`${s.bg} ${s.color} p-2 rounded-lg`}>
-                <s.icon className="w-4 h-4" />
-              </div>
-            </div>
-            <p className="text-2xl font-semibold text-gray-900">{s.value}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Recent conversations */}
-        <div className="xl:col-span-2 bg-white rounded-xl border">
-          <div className="px-5 py-4 border-b flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-900">Recent Conversations</h2>
-            <a href="/conversations" className="text-xs text-brand-600 hover:underline">View all</a>
-          </div>
-          <div className="divide-y">
-            {recentConversations?.length === 0 && (
-              <p className="px-5 py-8 text-sm text-gray-400 text-center">No conversations yet.</p>
-            )}
-            {recentConversations?.map((c) => (
-              <a key={c.id} href={`/conversations/${c.id}`} className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {c.title ?? 'Untitled conversation'}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {c.message_count} messages · {timeAgo(c.last_activity_at)}
-                  </p>
-                </div>
-                {c.platform && (
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PLATFORM_META[c.platform as keyof typeof PLATFORM_META]?.color}`}>
-                    {PLATFORM_META[c.platform as keyof typeof PLATFORM_META]?.label}
-                  </span>
-                )}
-              </a>
-            ))}
-          </div>
-        </div>
-
-        {/* Cost summary */}
-        <div className="bg-white rounded-xl border">
-          <div className="px-5 py-4 border-b">
-            <h2 className="text-sm font-semibold text-gray-900">Usage (last 30 days)</h2>
-          </div>
-          <div className="px-5 py-5 space-y-4">
-            <div>
-              <p className="text-xs text-gray-500 mb-1">Tokens consumed</p>
-              <p className="text-2xl font-semibold text-gray-900">{formatTokens(totalTokens)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 mb-1">Estimated cost</p>
-              <p className="text-2xl font-semibold text-gray-900">{formatCost(totalCost)}</p>
-            </div>
-            <a
-              href="/analytics"
-              className="block mt-4 text-center text-xs text-brand-600 bg-brand-50 hover:bg-brand-100 rounded-lg py-2 transition-colors"
-            >
-              View detailed analytics →
-            </a>
-          </div>
-        </div>
-      </div>
+    // Break out of the layout's p-8 to claim the full viewport height
+    <div className="-m-8 flex h-screen overflow-hidden">
+      <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} />
+      <SageRightPanel workspaceId={workspaceId} />
     </div>
   )
 }
