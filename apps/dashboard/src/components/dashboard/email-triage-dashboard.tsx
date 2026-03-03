@@ -116,7 +116,11 @@ function TriageCard({ t, isDone, actionLabel, isDismissed, isChecked, onAction, 
       'flex flex-col bg-white dark:bg-[#232323] rounded-xl border transition-all',
       isDone
         ? 'border-green-200 dark:border-green-500/20'
-        : 'border-gray-200 dark:border-white/8 hover:border-gray-300 dark:hover:border-white/15',
+        : email.ai_priority === 'high'
+          ? 'border-[#61c2ad]/50 dark:border-[#61c2ad]/35 ring-1 ring-[#61c2ad]/20 dark:ring-[#61c2ad]/10'
+          : email.ai_priority === 'medium'
+            ? 'border-amber-300/70 dark:border-amber-500/30 ring-1 ring-amber-200/50 dark:ring-amber-500/10'
+            : 'border-gray-200 dark:border-white/8 hover:border-gray-300 dark:hover:border-white/15',
     )}>
 
       {/* Card header */}
@@ -163,8 +167,22 @@ function TriageCard({ t, isDone, actionLabel, isDismissed, isChecked, onAction, 
       {/* Sender + subject */}
       <div className="px-4 pb-2">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-brand-100 dark:bg-[#ec732e]/20 flex items-center justify-center shrink-0">
-            <span className="text-[11px] font-bold text-brand-600 dark:text-[#ec732e]">
+          <div className={cn(
+            'w-7 h-7 rounded-full flex items-center justify-center shrink-0',
+            email.ai_priority === 'high'
+              ? 'bg-[#61c2ad]/15 dark:bg-[#61c2ad]/20'
+              : email.ai_priority === 'medium'
+                ? 'bg-amber-100 dark:bg-amber-500/15'
+                : 'bg-gray-100 dark:bg-white/5',
+          )}>
+            <span className={cn(
+              'text-[11px] font-bold',
+              email.ai_priority === 'high'
+                ? 'text-[#61c2ad]'
+                : email.ai_priority === 'medium'
+                  ? 'text-amber-600 dark:text-amber-400'
+                  : 'text-gray-500 dark:text-gray-400',
+            )}>
               {(email.from_name ?? email.from_address).charAt(0).toUpperCase()}
             </span>
           </div>
@@ -722,11 +740,45 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
             {pendingEmails.filter(t => !dismissed.has(t.email.id)).length > 0 && (
               <section>
                 <div className="flex items-center gap-2 mb-3">
-                  <Brain className="w-3 h-3 text-purple-500 shrink-0" />
-                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-purple-500 dark:text-purple-400">
-                    Pending Analysis · {pendingEmails.filter(t => !dismissed.has(t.email.id)).length}
-                  </h3>
+                  {/* Clickable heading → triggers AI analysis */}
+                  <button
+                    onClick={handleReanalyze}
+                    disabled={isReanalyzing || isSyncing}
+                    className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-purple-500 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 disabled:opacity-50 transition-colors group"
+                  >
+                    {isReanalyzing
+                      ? <Loader2 className="w-3 h-3 shrink-0 animate-spin" />
+                      : <Brain className="w-3 h-3 shrink-0 group-hover:scale-110 transition-transform" />}
+                    {isReanalyzing
+                      ? 'Analysing…'
+                      : `Pending Analysis · ${pendingEmails.filter(t => !dismissed.has(t.email.id)).length}`}
+                  </button>
                   <div className="flex-1 h-px bg-purple-200 dark:bg-purple-500/20" />
+                  {/* Select all pending */}
+                  <button
+                    onClick={() => {
+                      const ids = pendingEmails.filter(t => !dismissed.has(t.email.id)).map(t => t.email.id)
+                      const allSel = ids.length > 0 && ids.every(id => selectedIds.has(id))
+                      setSelectedIds(prev => {
+                        const next = new Set(prev)
+                        ids.forEach(id => allSel ? next.delete(id) : next.add(id))
+                        return next
+                      })
+                    }}
+                    className="text-[11px] text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium transition-colors whitespace-nowrap"
+                  >
+                    {pendingEmails.filter(t => !dismissed.has(t.email.id)).every(t => selectedIds.has(t.email.id))
+                      ? 'Deselect all' : 'Select all'}
+                  </button>
+                  {/* Delete selected */}
+                  <button
+                    onClick={handleDeleteSelected}
+                    disabled={selectedIds.size === 0 || isDeleting}
+                    title={selectedIds.size > 0 ? `Delete ${selectedIds.size} selected` : 'Select emails to delete'}
+                    className="flex items-center justify-center w-6 h-6 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                  </button>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
                   {pendingEmails.filter(t => !dismissed.has(t.email.id)).map(t => (
