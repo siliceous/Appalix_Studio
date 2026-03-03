@@ -7,11 +7,10 @@ import {
   Mail, AlertCircle, ArrowRight, Sparkles,
   Plus, RefreshCw, Ticket, UserPlus, RotateCcw,
   Check, X, ChevronRight, Loader2, Trash2,
-  Phone, Globe, Tag, Brain, Send,
-  Paperclip, Receipt,
+  Phone, Globe, Tag, Brain, ChevronDown,
 } from 'lucide-react'
 import { triageCreateLead, triageCreateTicket, triageAddDealNote } from '@/app/actions/sage-triage'
-import { syncEmails, deleteTriageEmails, reanalyzeEmails, sendEmail, fetchStripeInvoices, fetchStripeInvoicePDF } from '@/app/actions/sage-emails'
+import { syncEmails, deleteTriageEmails, reanalyzeEmails } from '@/app/actions/sage-emails'
 import type { SageEmail } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -29,22 +28,6 @@ export interface TriageEmail {
   recommendation:  TriageRecommendation
   matchedContact?: { id: string; name: string; email: string | null } | null
   matchedDeal?:    { id: string; title: string } | null
-}
-
-interface EmailAttachment {
-  filename:    string
-  contentType: string
-  dataBase64:  string
-}
-
-interface StripeInvoiceMeta {
-  id:              string
-  number:          string | null
-  customer_name:   string | null
-  customer_email:  string | null
-  amount_due:      number
-  currency:        string
-  status:          string
 }
 
 interface Props {
@@ -92,116 +75,206 @@ function recIcon(r: TriageRecommendation) {
 }
 
 function recColor(r: TriageRecommendation): string {
-  if (r === 'create_lead')    return 'bg-brand-600 hover:bg-brand-700 text-white'
   if (r === 'create_ticket')  return 'bg-red-500 hover:bg-red-600 text-white'
-  if (r === 'ignore')         return 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
+  if (r === 'ignore')         return 'bg-gray-200 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-white/10'
   return 'bg-[#61c2ad] hover:bg-[#52b09b] text-white'
 }
 
-function recBadgeColor(r: TriageRecommendation): string {
-  if (r === 'create_lead')    return 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 border-brand-100 dark:border-brand-500/20'
-  if (r === 'create_ticket')  return 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20'
-  if (r === 'update_lead')    return 'bg-[#61c2ad]/10 dark:bg-[#61c2ad]/15 text-[#52b09b] dark:text-[#61c2ad] border-[#61c2ad]/30'
-  if (r === 'reopen_account') return 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/20'
-  return 'bg-gray-100 dark:bg-white/5 text-gray-400 border-gray-200 dark:border-white/8'
+// ─── Triage Card ──────────────────────────────────────────────────────────────
+
+interface CardProps {
+  t:            TriageEmail
+  isDone:       boolean
+  actionLabel:  string | undefined
+  isDismissed:  boolean
+  isChecked:    boolean
+  onAction:     (t: TriageEmail, mode: 'lead' | 'ticket' | 'deal_note') => void
+  onDismiss:    (id: string) => void
+  onToggle:     (id: string) => void
+  isDeleting:   boolean
+  onDelete:     (id: string) => void
 }
 
-// ─── Triage Row (single-line) ─────────────────────────────────────────────────
-
-interface RowProps {
-  t:          TriageEmail
-  isSelected: boolean
-  isChecked:  boolean
-  onSelect:   (t: TriageEmail) => void
-  onToggle:   (id: string) => void
-  onDelete:   (id: string) => void
-  deletingId: string | null
-}
-
-function TriageRow({ t, isSelected, isChecked, onSelect, onToggle, onDelete, deletingId }: RowProps) {
-  const isDeleting = deletingId === t.email.id
+function TriageCard({ t, isDone, actionLabel, isDismissed, isChecked, onAction, onDismiss, onToggle, isDeleting, onDelete }: CardProps) {
+  const [draftsOpen, setDraftsOpen] = useState(false)
+  const [activeDraft, setActiveDraft] = useState(0)
   const { email, recommendation } = t
-  const entities = email.ai_entities
+  const entities  = email.ai_entities
+  const drafts    = email.ai_reply_drafts ?? []
+
+  if (isDismissed) return null
+
+  function handlePrimaryAction() {
+    if (recommendation === 'create_lead')    onAction(t, 'lead')
+    if (recommendation === 'create_ticket')  onAction(t, 'ticket')
+    if (recommendation === 'update_lead')    onAction(t, 'deal_note')
+    if (recommendation === 'reopen_account') onAction(t, 'lead')
+  }
 
   return (
-    <div
-      onClick={() => onSelect(t)}
-      className={cn(
-        'flex items-center gap-3 px-5 py-3 cursor-pointer transition-colors border-l-2',
-        isSelected
-          ? 'bg-gray-50 dark:bg-white/[0.04] border-l-brand-500'
-          : 'border-l-transparent hover:bg-gray-50 dark:hover:bg-white/[0.03]',
-      )}
-    >
-      {/* Checkbox */}
-      <span
-        role="checkbox"
-        aria-checked={isChecked}
-        onClick={e => { e.stopPropagation(); onToggle(email.id) }}
-        className="shrink-0 cursor-pointer"
-      >
-        <span className={cn(
-          'w-4 h-4 rounded border flex items-center justify-center transition-colors',
-          isChecked
-            ? 'bg-[#61c2ad] border-[#61c2ad]'
-            : 'border-gray-300 dark:border-white/20 hover:border-[#61c2ad]',
-        )}>
-          {isChecked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
-        </span>
-      </span>
+    <div className={cn(
+      'flex flex-col bg-white dark:bg-[#232323] rounded-xl border transition-all',
+      isDone
+        ? 'border-green-200 dark:border-green-500/20'
+        : 'border-gray-200 dark:border-white/8 hover:border-gray-300 dark:hover:border-white/15',
+    )}>
 
-      {/* Priority dot */}
-      <span className={cn(
-        'w-2 h-2 rounded-full shrink-0',
-        email.ai_priority ? PRIORITY_DOT[email.ai_priority] : 'bg-gray-200 dark:bg-white/20',
-      )} />
-
-      {/* Avatar */}
-      <div className="w-7 h-7 rounded-full bg-brand-100 dark:bg-[#ec732e]/20 flex items-center justify-center shrink-0">
-        <span className="text-[11px] font-bold text-brand-600 dark:text-[#ec732e]">
-          {(email.from_name ?? email.from_address).charAt(0).toUpperCase()}
-        </span>
-      </div>
-
-      {/* Sender + subject */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-2 min-w-0">
-          <span className="text-sm font-semibold truncate text-gray-900 dark:text-gray-100">
-            {email.from_name ?? email.from_address}
-          </span>
-          {entities?.company && (
-            <span className="text-[11px] text-gray-400 shrink-0 truncate max-w-[120px]">
-              · {entities.company}
+      {/* Card header */}
+      <div className="flex items-center justify-between px-4 pt-4 pb-2">
+        <div className="flex items-center gap-2">
+          {email.ai_priority ? (
+            <span className={cn('flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border', PRIORITY_BADGE[email.ai_priority])}>
+              <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT[email.ai_priority])} />
+              {email.ai_priority}
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/5 text-gray-400 border border-gray-200 dark:border-white/8 font-medium">
+              <Brain className="w-2.5 h-2.5" /> Pending
+            </span>
+          )}
+          {isDone && (
+            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/20 font-medium">
+              <Check className="w-2.5 h-2.5" /> {actionLabel}
             </span>
           )}
         </div>
-        <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{email.subject}</p>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-gray-400">{formatDate(email.received_at)}</span>
+          <button onClick={() => onToggle(email.id)} title={isChecked ? 'Deselect' : 'Select'}>
+            <span className={cn(
+              'w-4 h-4 rounded border flex items-center justify-center transition-colors',
+              isChecked ? 'bg-[#61c2ad] border-[#61c2ad]' : 'border-gray-300 dark:border-white/20 hover:border-[#61c2ad]',
+            )}>
+              {isChecked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+            </span>
+          </button>
+        </div>
       </div>
 
-      {/* Action badge */}
-      {email.ai_analyzed_at && recommendation !== 'ignore' && (
-        <span className={cn(
-          'hidden lg:block text-[10px] px-2 py-0.5 rounded-full font-medium border whitespace-nowrap shrink-0',
-          recBadgeColor(recommendation),
-        )}>
-          {recLabel(recommendation, t)}
-        </span>
+      {/* Sender + subject */}
+      <div className="px-4 pb-2">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-full bg-brand-100 dark:bg-[#ec732e]/20 flex items-center justify-center shrink-0">
+            <span className="text-[11px] font-bold text-brand-600 dark:text-[#ec732e]">
+              {(email.from_name ?? email.from_address).charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+              {email.from_name ?? email.from_address}
+              {entities?.company && (
+                <span className="font-normal text-gray-400 text-xs ml-1">· {entities.company}</span>
+              )}
+            </p>
+          </div>
+        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 leading-snug line-clamp-1">
+          {email.subject}
+        </p>
+      </div>
+
+      {/* AI Summary */}
+      {email.ai_summary && (
+        <div className="mx-4 mb-2 px-3 py-2.5 rounded-lg bg-brand-50 dark:bg-[#ec732e]/8 border border-brand-100 dark:border-[#ec732e]/15">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Sparkles className="w-3 h-3 text-brand-500 dark:text-[#ec732e]" />
+            <span className="text-[10px] font-bold text-brand-600 dark:text-[#ec732e] uppercase tracking-wide">Summary</span>
+          </div>
+          <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">{email.ai_summary}</p>
+          {email.ai_reason && (
+            <p className="text-[10px] text-gray-400 mt-1.5 italic">{email.ai_reason}</p>
+          )}
+        </div>
       )}
 
-      {/* Time */}
-      <span className="text-[11px] text-gray-400 shrink-0 whitespace-nowrap">
-        {formatDate(email.received_at)}
-      </span>
+      {/* Entity chips */}
+      {entities && Object.keys(entities).length > 0 && (
+        <div className="px-4 pb-2 flex flex-wrap gap-1.5">
+          {entities.name && (
+            <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
+              <UserPlus className="w-2.5 h-2.5 text-gray-400 shrink-0" /> {entities.name}
+            </span>
+          )}
+          {entities.phone && (
+            <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
+              <Phone className="w-2.5 h-2.5 text-gray-400 shrink-0" /> {entities.phone}
+            </span>
+          )}
+          {entities.website && (
+            <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
+              <Globe className="w-2.5 h-2.5 text-gray-400 shrink-0" /> {entities.website}
+            </span>
+          )}
+          {entities.product_interest && (
+            <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-brand-50 dark:bg-[#ec732e]/10 border border-brand-100 dark:border-[#ec732e]/20 text-brand-700 dark:text-[#ec732e]">
+              <Tag className="w-2.5 h-2.5 shrink-0" /> {entities.product_interest}
+            </span>
+          )}
+        </div>
+      )}
 
-      {/* Delete */}
-      <button
-        onClick={e => { e.stopPropagation(); onDelete(email.id) }}
-        disabled={isDeleting}
-        title="Delete"
-        className="p-1.5 rounded-lg text-gray-300 dark:text-white/20 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors shrink-0 disabled:opacity-50"
-      >
-        {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-      </button>
+      {/* Reply drafts inline */}
+      {drafts.length > 0 && draftsOpen && (
+        <div className="mx-4 mb-3 rounded-lg border dark:border-white/8 overflow-hidden bg-gray-50 dark:bg-white/3">
+          <div className="flex items-center gap-1 px-3 pt-2 pb-1 flex-wrap">
+            {drafts.map((d, i) => (
+              <button key={i} onClick={() => setActiveDraft(i)}
+                className={cn('text-[11px] px-2.5 py-1 rounded-lg font-medium transition-colors',
+                  activeDraft === i
+                    ? 'bg-brand-600 text-white'
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5')}>
+                {d.tone}
+              </button>
+            ))}
+          </div>
+          <div className="px-3 py-2.5 border-t dark:border-white/8">
+            <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap line-clamp-6">
+              {drafts[activeDraft]?.body}
+            </p>
+          </div>
+          <div className="px-3 py-2 border-t dark:border-white/8 flex justify-end">
+            <Link href="/sage/emails"
+              className="text-[11px] text-brand-600 dark:text-[#61c2ad] hover:underline flex items-center gap-1">
+              Open email client to send <ArrowRight className="w-2.5 h-2.5" />
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Action buttons */}
+      <div className="px-4 pb-4 pt-1 mt-auto border-t dark:border-white/6 flex flex-wrap gap-1.5">
+        {!isDone && recommendation !== 'ignore' && email.ai_analyzed_at && (
+          <button
+            onClick={handlePrimaryAction}
+            className={cn('flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors', recColor(recommendation))}>
+            {recIcon(recommendation)}
+            {recLabel(recommendation, t)}
+          </button>
+        )}
+
+        {drafts.length > 0 && (
+          <button
+            onClick={() => setDraftsOpen(v => !v)}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors border border-gray-200 dark:border-white/8">
+            <Mail className="w-3 h-3" />
+            Reply
+            <ChevronDown className={cn('w-3 h-3 transition-transform', draftsOpen && 'rotate-180')} />
+          </button>
+        )}
+
+        <button
+          onClick={() => onDismiss(email.id)}
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-100 dark:bg-white/5 text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors border border-gray-200 dark:border-white/8">
+          <X className="w-3 h-3" /> Ignore
+        </button>
+
+        <button
+          onClick={() => onDelete(email.id)}
+          disabled={isDeleting}
+          className="flex items-center justify-center w-7 h-7 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors border border-gray-200 dark:border-white/8 hover:border-red-200 dark:hover:border-red-500/20">
+          {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+        </button>
+      </div>
     </div>
   )
 }
@@ -211,56 +284,16 @@ function TriageRow({ t, isSelected, isChecked, onSelect, onToggle, onDelete, del
 export function EmailTriageDashboard({ triageEmails }: Props) {
   const router = useRouter()
   const [dismissed,  setDismissed]  = useState<Set<string>>(new Set())
-  const [modalMode,    setModalMode]    = useState<'lead' | 'ticket' | 'deal_note' | null>(null)
-  const [modalEmail,   setModalEmail]   = useState<TriageEmail | null>(null)
-  const [selectedRow,  setSelectedRow]  = useState<TriageEmail | null>(null)
-  const [detailDraftIdx, setDetailDraftIdx] = useState(0)
-  const [replyTarget,  setReplyTarget]  = useState<TriageEmail | null>(null)
-  const [replyBody,    setReplyBody]    = useState('')
-  const [replyDraftIdx, setReplyDraftIdx] = useState(0)
-  const [replyResult,  setReplyResult]  = useState<string | null>(null)
-  const [isPending,      startTransition]         = useTransition()
+  const [actioned,   setActioned]   = useState<Map<string, string>>(new Map())
+  const [modalMode,  setModalMode]  = useState<'lead' | 'ticket' | 'deal_note' | null>(null)
+  const [modalEmail, setModalEmail] = useState<TriageEmail | null>(null)
+  const [isPending,      startTransition]          = useTransition()
   const [isSyncing,      startSyncTransition]      = useTransition()
   const [isDeleting,     startDeleteTransition]    = useTransition()
-  const [deletingId,     setDeletingId]            = useState<string | null>(null)
   const [isReanalyzing,  startReanalyzeTransition] = useTransition()
-  const [isSending,      startSendTransition]      = useTransition()
-  const [syncMsg,     setSyncMsg]     = useState<string | null>(null)
-  const [analyzeMsg,  setAnalyzeMsg]  = useState<string | null>(null)
-
-  // Attachment state (reply modal)
-  const [replyAttachments,   setReplyAttachments]  = useState<EmailAttachment[]>([])
-  const [showStripePanel,    setShowStripePanel]   = useState(false)
-  const [stripeInvoices,     setStripeInvoices]    = useState<StripeInvoiceMeta[]>([])
-  const [stripeError,        setStripeError]       = useState<string | null>(null)
-  const [isFetchingInvoices, setIsFetchingInvoices] = useState(false)
-  const [loadingInvoiceId,   setLoadingInvoiceId]  = useState<string | null>(null)
-
-  // Multi-select state
+  const [syncMsg,    setSyncMsg]    = useState<string | null>(null)
+  const [analyzeMsg, setAnalyzeMsg] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-
-  // ── Computed ───────────────────────────────────────────────────────────────
-  const visible        = triageEmails.filter(t => !dismissed.has(t.email.id))
-  const highEmails     = visible.filter(t => t.email.ai_priority === 'high')
-  const medEmails      = visible.filter(t => t.email.ai_priority === 'medium')
-  const lowEmails      = visible.filter(t => t.email.ai_priority === 'low')
-  const pendingEmails  = visible.filter(t => !t.email.ai_analyzed_at)
-  const highCount      = highEmails.length
-  const medCount       = medEmails.length
-  const unanalyzedCount = visible.filter(t => !t.email.ai_analyzed_at).length
-  const allSelected    = visible.length > 0 && visible.every(t => selectedIds.has(t.email.id))
-
-  // ── Handlers ───────────────────────────────────────────────────────────────
-
-  function selectRow(t: TriageEmail | null) {
-    setSelectedRow(t)
-    setDetailDraftIdx(0)
-  }
-
-  function toggleSelectAll() {
-    const ids = visible.map(t => t.email.id)
-    setSelectedIds(allSelected ? new Set() : new Set(ids))
-  }
 
   function handleSync() {
     setSyncMsg(null)
@@ -290,18 +323,14 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
       if (res.error) { setSyncMsg(`Error: ${res.error}`); return }
       setDismissed(prev => new Set([...prev, ...ids]))
       setSelectedIds(new Set())
-      if (selectedRow && ids.includes(selectedRow.email.id)) setSelectedRow(null)
       router.refresh()
     })
   }
 
   function handleDeleteOne(emailId: string) {
-    setDeletingId(emailId)
     startDeleteTransition(async () => {
       await deleteTriageEmails([emailId])
       setDismissed(prev => new Set([...prev, emailId]))
-      if (selectedRow?.email.id === emailId) setSelectedRow(null)
-      setDeletingId(null)
       router.refresh()
     })
   }
@@ -317,7 +346,6 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
 
   function dismiss(emailId: string) {
     setDismissed(prev => new Set([...prev, emailId]))
-    if (selectedRow?.email.id === emailId) setSelectedRow(null)
   }
 
   // Modal form state
@@ -371,9 +399,8 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
           notes:     mNotes || undefined,
         })
         if (!result.error) {
+          setActioned(prev => new Map(prev).set(emailId, 'Lead + deal created'))
           setModalMode(null)
-          setDismissed(prev => new Set([...prev, emailId]))
-          if (selectedRow?.email.id === emailId) setSelectedRow(null)
         }
       } else if (modalMode === 'ticket') {
         result = await triageCreateTicket({
@@ -384,18 +411,16 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
           priority:     mPriority,
         })
         if (!result.error) {
+          setActioned(prev => new Map(prev).set(emailId, 'Ticket created'))
           setModalMode(null)
-          setDismissed(prev => new Set([...prev, emailId]))
-          if (selectedRow?.email.id === emailId) setSelectedRow(null)
         }
       } else if (modalMode === 'deal_note') {
         const dealId = modalEmail.matchedDeal?.id
         if (!dealId) return
         result = await triageAddDealNote(dealId, mNote)
         if (!result.error) {
+          setActioned(prev => new Map(prev).set(emailId, 'Note logged on deal'))
           setModalMode(null)
-          setDismissed(prev => new Set([...prev, emailId]))
-          if (selectedRow?.email.id === emailId) setSelectedRow(null)
         }
       } else {
         return
@@ -405,181 +430,156 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
     })
   }
 
-  function openReply(t: TriageEmail) {
-    const drafts = t.email.ai_reply_drafts ?? []
-    setReplyTarget(t)
-    setReplyDraftIdx(0)
-    setReplyBody(drafts[0]?.body ?? '')
-    setReplyResult(null)
-    setReplyAttachments([])
-    setShowStripePanel(false)
-    setStripeInvoices([])
-    setStripeError(null)
+  const visible       = triageEmails.filter(t => !dismissed.has(t.email.id))
+  const highEmails    = visible.filter(t => t.email.ai_priority === 'high')
+  const medEmails     = visible.filter(t => t.email.ai_priority === 'medium')
+  const lowEmails     = visible.filter(t => t.email.ai_priority === 'low')
+  const pendingEmails = visible.filter(t => !t.email.ai_analyzed_at)
+  const highCount     = highEmails.length
+  const medCount      = medEmails.length
+  const unanalyzedCount = visible.filter(t => !t.email.ai_analyzed_at).length
+
+  const cardProps = {
+    onAction:   openModal,
+    onDismiss:  dismiss,
+    onToggle:   toggleSelect,
+    isDeleting,
+    onDelete:   handleDeleteOne,
   }
 
-  async function handleOpenStripePanel() {
-    if (showStripePanel) { setShowStripePanel(false); return }
-    setShowStripePanel(true)
-    if (stripeInvoices.length > 0) return
-    setIsFetchingInvoices(true)
-    setStripeError(null)
-    const res = await fetchStripeInvoices()
-    setIsFetchingInvoices(false)
-    if (res.error) { setStripeError(res.error); return }
-    setStripeInvoices(res.invoices as StripeInvoiceMeta[])
-  }
-
-  async function handleAttachStripeInvoice(invoice: StripeInvoiceMeta) {
-    setLoadingInvoiceId(invoice.id)
-    const att = await fetchStripeInvoicePDF(invoice.id)
-    setLoadingInvoiceId(null)
-    if (att.error || !att.dataBase64) { setStripeError(att.error ?? 'Failed to fetch PDF'); return }
-    setReplyAttachments(prev => [...prev, { filename: att.filename, contentType: att.contentType, dataBase64: att.dataBase64 }])
-    setShowStripePanel(false)
-  }
-
-  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? [])
-    files.forEach(file => {
-      const reader = new FileReader()
-      reader.onload = ev => {
-        const dataUrl = (ev.target?.result as string) ?? ''
-        const dataBase64 = dataUrl.split(',')[1] ?? ''
-        setReplyAttachments(prev => [...prev, { filename: file.name, contentType: file.type || 'application/octet-stream', dataBase64 }])
-      }
-      reader.readAsDataURL(file)
-    })
-    e.target.value = ''
-  }
-
-  function removeAttachment(index: number) {
-    setReplyAttachments(prev => prev.filter((_, i) => i !== index))
-  }
-
-  function handleSendReply() {
-    if (!replyTarget) return
-    setShowStripePanel(false)
-    startSendTransition(async () => {
-      const e = replyTarget.email
-      const res = await sendEmail({
-        to:              e.from_address,
-        subject:         `Re: ${e.subject}`,
-        body:            replyBody,
-        replyToEmailId:  e.id,
-        attachments:     replyAttachments.length > 0 ? replyAttachments : undefined,
-      })
-      if (res.error) {
-        setReplyResult(`Error: ${res.error}`)
-      } else {
-        setReplyResult('Sent!')
-        setTimeout(() => {
-          const id = replyTarget.email.id
-          setReplyTarget(null)
-          setReplyResult(null)
-          setReplyAttachments([])
-          setDismissed(prev => new Set([...prev, id]))
-          if (selectedRow?.email.id === id) setSelectedRow(null)
-        }, 1500)
-      }
-    })
-  }
-
-  // ── Section helper ────────────────────────────────────────────────────────
-  function SectionHeader({ dot, label, count }: { dot: string; label: string; count: number }) {
-    return (
-      <div className="flex items-center gap-2 px-5 py-1.5 bg-gray-50/80 dark:bg-[#161616] border-b dark:border-white/8 sticky top-0 z-10">
-        <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', dot)} />
-        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-          {label} · {count}
-        </span>
-      </div>
-    )
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-1 overflow-hidden">
 
-      {/* ── List pane ─────────────────────────────────────────────────── */}
-      <div className={cn(
-        'flex flex-col overflow-hidden border-r dark:border-white/8 bg-white dark:bg-[#1a1a1a] transition-[width] duration-200',
-        selectedRow ? 'w-[40%]' : 'flex-1',
-      )}>
+      {/* ─── LEFT: Triage List ─────────────────────────────────────────────── */}
+      <aside className="w-[260px] shrink-0 flex flex-col border-r dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
 
-        {/* Toolbar */}
-        <div className="px-5 py-3 border-b dark:border-white/8 shrink-0">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-
-            {/* Left: title + select all + delete */}
-            <div className="flex items-center gap-2.5">
+        {/* Header */}
+        <div className="px-4 py-3 border-b dark:border-white/8 shrink-0">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-brand-500 shrink-0" />
               <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Triage</h2>
-              <div className="w-px h-4 bg-gray-200 dark:bg-white/10 shrink-0" />
-              <button
-                onClick={toggleSelectAll}
-                className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors font-medium whitespace-nowrap"
-              >
-                {allSelected ? 'Deselect All' : 'Select All'}
-              </button>
+            </div>
+            <div className="flex items-center gap-1">
               {selectedIds.size > 0 && (
                 <button
                   onClick={handleDeleteSelected}
                   disabled={isDeleting}
                   title={`Delete ${selectedIds.size} selected`}
-                  className="flex items-center justify-center w-6 h-6 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+                  className="flex items-center justify-center w-7 h-7 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50 transition-colors"
                 >
                   {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                 </button>
               )}
-            </div>
-
-            {/* Right: badges + actions */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {highCount > 0 && (
-                <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 font-semibold border border-red-200 dark:border-red-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" />{highCount} High
-                </span>
-              )}
-              {medCount > 0 && (
-                <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold border border-amber-200 dark:border-amber-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />{medCount} Med
-                </span>
-              )}
               <button
                 onClick={handleSync}
                 disabled={isSyncing || isReanalyzing}
-                className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-50 transition-colors border dark:border-white/8 font-medium"
+                className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-50 transition-colors"
               >
                 <RefreshCw className={cn('w-3 h-3', isSyncing && 'animate-spin')} />
                 {isSyncing ? 'Syncing…' : 'Sync'}
               </button>
-              {(unanalyzedCount > 0 || selectedIds.size > 0) && (
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={handleReanalyze}
-                    disabled={isReanalyzing || isSyncing}
-                    className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 font-semibold border border-purple-200 dark:border-purple-500/20 hover:bg-purple-100 dark:hover:bg-purple-500/15 disabled:opacity-50 transition-colors"
-                  >
-                    {isReanalyzing ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Brain className="w-2.5 h-2.5" />}
-                    {isReanalyzing ? 'Analysing…' : selectedIds.size > 0 ? `Analyse ${selectedIds.size}` : `Analyse ${unanalyzedCount}`}
-                  </button>
-                  {analyzeMsg && !isReanalyzing && (
-                    <span className={cn('text-[11px] font-medium', analyzeMsg.startsWith('Error') ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
-                      {analyzeMsg}
-                    </span>
-                  )}
-                </div>
-              )}
-              {syncMsg && (
-                <span className={cn('text-[11px] font-medium', syncMsg.startsWith('Error') ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
-                  {syncMsg}
-                </span>
-              )}
             </div>
           </div>
+
+          {/* Status badges */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {highCount > 0 && (
+              <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 font-semibold border border-red-200 dark:border-red-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />{highCount} High
+              </span>
+            )}
+            {medCount > 0 && (
+              <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold border border-amber-200 dark:border-amber-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />{medCount} Medium
+              </span>
+            )}
+            {(unanalyzedCount > 0 || selectedIds.size > 0) && (
+              <button
+                onClick={handleReanalyze}
+                disabled={isReanalyzing || isSyncing}
+                className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 font-semibold border border-purple-200 dark:border-purple-500/20 hover:bg-purple-100 dark:hover:bg-purple-500/15 disabled:opacity-50 transition-colors"
+              >
+                {isReanalyzing ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Brain className="w-2.5 h-2.5" />}
+                {isReanalyzing ? 'Analysing…' : selectedIds.size > 0 ? `Analyse ${selectedIds.size}` : `Analyse ${unanalyzedCount}`}
+              </button>
+            )}
+          </div>
+          {(syncMsg || (analyzeMsg && !isReanalyzing)) && (
+            <p className={cn('text-[11px] mt-1 font-medium', (syncMsg ?? analyzeMsg ?? '').startsWith('Error') ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
+              {syncMsg ?? analyzeMsg}
+            </p>
+          )}
         </div>
 
-        {/* Empty state or rows */}
+        {/* Compact list */}
+        <div className="flex-1 overflow-y-auto">
+          {visible.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full gap-3 p-6 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-white/5 flex items-center justify-center">
+                <Mail className="w-5 h-5 text-gray-300 dark:text-gray-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No emails to triage</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Sync your inbox to get started</p>
+              </div>
+              <button
+                onClick={handleSync}
+                disabled={isSyncing}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors"
+              >
+                <RefreshCw className={cn('w-3 h-3', isSyncing && 'animate-spin')} />
+                {isSyncing ? 'Syncing…' : 'Sync Inbox'}
+              </button>
+            </div>
+          ) : (
+            visible.map(t => {
+              const isChecked = selectedIds.has(t.email.id)
+              const done      = actioned.has(t.email.id)
+              return (
+                <div key={t.email.id}
+                  className="flex items-stretch hover:bg-white dark:hover:bg-white/3 border-l-[3px] border-l-transparent transition-colors">
+                  <div className="flex-1 min-w-0 px-3 py-2.5">
+                    <div className="flex items-start gap-2">
+                      <span className={cn('mt-1.5 w-2 h-2 rounded-full shrink-0',
+                        t.email.ai_priority ? PRIORITY_DOT[t.email.ai_priority] : 'bg-gray-200 dark:bg-white/20')} />
+                      <div className="flex-1 min-w-0">
+                        <span className={cn('text-xs font-semibold truncate block', done ? 'text-gray-400' : 'text-gray-800 dark:text-gray-200')}>
+                          {t.email.from_name ?? t.email.from_address}
+                        </span>
+                        <p className="text-[11px] text-gray-400 truncate">{t.email.subject}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end justify-start gap-2 pt-2.5 pb-2.5 pr-3 shrink-0">
+                    <span className="text-[10px] text-gray-400 leading-none">{formatDate(t.email.received_at)}</span>
+                    <button onClick={() => toggleSelect(t.email.id)}>
+                      <span className={cn(
+                        'w-4 h-4 rounded border flex items-center justify-center transition-colors',
+                        isChecked ? 'bg-[#61c2ad] border-[#61c2ad]' : 'border-gray-300 dark:border-white/20 hover:border-[#61c2ad]',
+                      )}>
+                        {isChecked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-3 py-3 border-t dark:border-white/8 shrink-0">
+          <Link href="/sage/emails"
+            className="flex items-center justify-center gap-1.5 w-full py-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-white dark:hover:bg-white/5 rounded-xl transition-colors">
+            Full Email Inbox <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </aside>
+
+      {/* ─── CENTER: Priority Card Grid ────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-[#1c1c1c]">
+
         {triageEmails.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 text-gray-400 p-8">
             <div className="w-20 h-20 rounded-3xl bg-gray-100 dark:bg-white/5 flex items-center justify-center">
@@ -600,303 +600,112 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                 <RefreshCw className={cn('w-4 h-4 shrink-0', isSyncing && 'animate-spin')} />
                 {isSyncing ? 'Syncing inbox…' : 'Sync Inbox'}
               </button>
-              <Link
-                href="/sage/integrations"
-                className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl px-5 py-2.5 hover:bg-amber-100 transition-colors font-medium mt-1"
-              >
+              <Link href="/sage/integrations"
+                className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl px-5 py-2.5 hover:bg-amber-100 transition-colors font-medium mt-1">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 Connect Gmail or Outlook
                 <ArrowRight className="w-4 h-4 shrink-0" />
               </Link>
             </div>
           </div>
+
         ) : (
-          <div className="flex-1 overflow-y-auto divide-y dark:divide-white/8">
+          <div className="flex-1 overflow-y-auto p-5">
 
             {/* HIGH */}
             {highEmails.filter(t => !dismissed.has(t.email.id)).length > 0 && (
-              <>
-                <SectionHeader dot="bg-red-500" label="High Priority" count={highEmails.filter(t => !dismissed.has(t.email.id)).length} />
-                {highEmails.filter(t => !dismissed.has(t.email.id)).map(t => (
-                  <TriageRow
-                    key={t.email.id} t={t}
-                    isSelected={selectedRow?.email.id === t.email.id}
-                    isChecked={selectedIds.has(t.email.id)}
-                    onSelect={selectRow} onToggle={toggleSelect} onDelete={handleDeleteOne} deletingId={deletingId}
-                  />
-                ))}
-              </>
+              <section className="mb-7">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-red-500 dark:text-red-400">
+                    High Priority · {highEmails.filter(t => !dismissed.has(t.email.id)).length}
+                  </h3>
+                  <div className="flex-1 h-px bg-red-200 dark:bg-red-500/20" />
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                  {highEmails.filter(t => !dismissed.has(t.email.id)).map(t => (
+                    <TriageCard key={t.email.id} t={t}
+                      isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
+                      isDismissed={false} isChecked={selectedIds.has(t.email.id)}
+                      {...cardProps}
+                    />
+                  ))}
+                </div>
+              </section>
             )}
 
             {/* MEDIUM */}
             {medEmails.filter(t => !dismissed.has(t.email.id)).length > 0 && (
-              <>
-                <SectionHeader dot="bg-amber-400" label="Medium" count={medEmails.filter(t => !dismissed.has(t.email.id)).length} />
-                {medEmails.filter(t => !dismissed.has(t.email.id)).map(t => (
-                  <TriageRow
-                    key={t.email.id} t={t}
-                    isSelected={selectedRow?.email.id === t.email.id}
-                    isChecked={selectedIds.has(t.email.id)}
-                    onSelect={selectRow} onToggle={toggleSelect} onDelete={handleDeleteOne} deletingId={deletingId}
-                  />
-                ))}
-              </>
+              <section className="mb-7">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-amber-500 dark:text-amber-400">
+                    Medium · {medEmails.filter(t => !dismissed.has(t.email.id)).length}
+                  </h3>
+                  <div className="flex-1 h-px bg-amber-200 dark:bg-amber-500/20" />
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                  {medEmails.filter(t => !dismissed.has(t.email.id)).map(t => (
+                    <TriageCard key={t.email.id} t={t}
+                      isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
+                      isDismissed={false} isChecked={selectedIds.has(t.email.id)}
+                      {...cardProps}
+                    />
+                  ))}
+                </div>
+              </section>
             )}
 
             {/* LOW */}
             {lowEmails.filter(t => !dismissed.has(t.email.id)).length > 0 && (
-              <>
-                <SectionHeader dot="bg-gray-400 dark:bg-gray-600" label="Low" count={lowEmails.filter(t => !dismissed.has(t.email.id)).length} />
-                {lowEmails.filter(t => !dismissed.has(t.email.id)).map(t => (
-                  <TriageRow
-                    key={t.email.id} t={t}
-                    isSelected={selectedRow?.email.id === t.email.id}
-                    isChecked={selectedIds.has(t.email.id)}
-                    onSelect={selectRow} onToggle={toggleSelect} onDelete={handleDeleteOne} deletingId={deletingId}
-                  />
-                ))}
-              </>
+              <section className="mb-7">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-600 shrink-0" />
+                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                    Low · {lowEmails.filter(t => !dismissed.has(t.email.id)).length}
+                  </h3>
+                  <div className="flex-1 h-px bg-gray-200 dark:bg-white/8" />
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 opacity-70">
+                  {lowEmails.filter(t => !dismissed.has(t.email.id)).map(t => (
+                    <TriageCard key={t.email.id} t={t}
+                      isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
+                      isDismissed={false} isChecked={selectedIds.has(t.email.id)}
+                      {...cardProps}
+                    />
+                  ))}
+                </div>
+              </section>
             )}
 
             {/* PENDING */}
             {pendingEmails.filter(t => !dismissed.has(t.email.id)).length > 0 && (
-              <>
-                <div className="flex items-center gap-2 px-5 py-1.5 bg-gray-50/80 dark:bg-[#161616] border-b dark:border-white/8 sticky top-0 z-10">
+              <section>
+                <div className="flex items-center gap-2 mb-3">
                   <Brain className="w-3 h-3 text-purple-500 shrink-0" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-purple-500 dark:text-purple-400">
+                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-purple-500 dark:text-purple-400">
                     Pending Analysis · {pendingEmails.filter(t => !dismissed.has(t.email.id)).length}
-                  </span>
+                  </h3>
+                  <div className="flex-1 h-px bg-purple-200 dark:bg-purple-500/20" />
                 </div>
-                {pendingEmails.filter(t => !dismissed.has(t.email.id)).map(t => (
-                  <TriageRow
-                    key={t.email.id} t={t}
-                    isSelected={selectedRow?.email.id === t.email.id}
-                    isChecked={selectedIds.has(t.email.id)}
-                    onSelect={selectRow} onToggle={toggleSelect} onDelete={handleDeleteOne} deletingId={deletingId}
-                  />
-                ))}
-              </>
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 opacity-60">
+                  {pendingEmails.filter(t => !dismissed.has(t.email.id)).map(t => (
+                    <TriageCard key={t.email.id} t={t}
+                      isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
+                      isDismissed={false} isChecked={selectedIds.has(t.email.id)}
+                      {...cardProps}
+                    />
+                  ))}
+                </div>
+              </section>
             )}
           </div>
         )}
 
-        {/* Footer */}
-        <div className="px-4 py-2.5 border-t dark:border-white/8 shrink-0">
-          <Link
-            href="/sage/emails"
-            className="flex items-center justify-center gap-1.5 w-full py-1.5 text-xs font-medium text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg transition-colors"
-          >
-            Full Email Inbox <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-      </div>
-
-      {/* ── Detail pane (60%) ──────────────────────────────────────── */}
-      {selectedRow && (
-        <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#1a1a1a]">
-
-          {/* Header */}
-          <div className="px-5 py-4 border-b dark:border-white/8 shrink-0">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                {/* Priority badge */}
-                <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-                  {selectedRow.email.ai_priority ? (
-                    <span className={cn('flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border', PRIORITY_BADGE[selectedRow.email.ai_priority])}>
-                      <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT[selectedRow.email.ai_priority])} />
-                      {selectedRow.email.ai_priority}
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/5 text-gray-400 border border-gray-200 dark:border-white/8 font-medium">
-                      <Brain className="w-2.5 h-2.5" /> Pending
-                    </span>
-                  )}
-                </div>
-                {/* Avatar + sender */}
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-[#ec732e]/20 flex items-center justify-center shrink-0">
-                    <span className="text-sm font-bold text-brand-600 dark:text-[#ec732e]">
-                      {(selectedRow.email.from_name ?? selectedRow.email.from_address).charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                      {selectedRow.email.from_name ?? selectedRow.email.from_address}
-                      {selectedRow.email.ai_entities?.company && (
-                        <span className="font-normal text-gray-400 text-xs ml-2">· {selectedRow.email.ai_entities.company}</span>
-                      )}
-                    </p>
-                    <p className="text-xs text-gray-400">{selectedRow.email.from_address}</p>
-                  </div>
-                </div>
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mt-2.5">{selectedRow.email.subject}</p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {new Date(selectedRow.email.received_at).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}
-                </p>
-              </div>
-              <button
-                onClick={() => selectRow(null)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 shrink-0 mt-1"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Scrollable body */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
-
-            {/* AI Summary */}
-            {selectedRow.email.ai_summary && (
-              <div className="px-4 py-3.5 rounded-xl bg-brand-50 dark:bg-[#ec732e]/8 border border-brand-100 dark:border-[#ec732e]/15">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Sparkles className="w-3.5 h-3.5 text-brand-500 dark:text-[#ec732e]" />
-                  <span className="text-[10px] font-bold text-brand-600 dark:text-[#ec732e] uppercase tracking-wide">AI Summary</span>
-                </div>
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{selectedRow.email.ai_summary}</p>
-                {selectedRow.email.ai_reason && (
-                  <p className="text-xs text-gray-400 mt-2.5 pt-2.5 border-t border-brand-100 dark:border-[#ec732e]/15 italic">
-                    {selectedRow.email.ai_reason}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Key insights */}
-            {(selectedRow.email.ai_insights ?? []).length > 0 && (
-              <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">Key Points</p>
-                <ul className="space-y-2">
-                  {(selectedRow.email.ai_insights ?? []).map((pt, i) => (
-                    <li key={i} className="flex items-start gap-2.5">
-                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#61c2ad] shrink-0" />
-                      <span className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{pt}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Entity chips */}
-            {selectedRow.email.ai_entities && Object.keys(selectedRow.email.ai_entities).length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {selectedRow.email.ai_entities.name && (
-                  <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
-                    <UserPlus className="w-3 h-3 text-gray-400 shrink-0" /> {selectedRow.email.ai_entities.name}
-                  </span>
-                )}
-                {selectedRow.email.ai_entities.phone && (
-                  <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
-                    <Phone className="w-3 h-3 text-gray-400 shrink-0" /> {selectedRow.email.ai_entities.phone}
-                  </span>
-                )}
-                {selectedRow.email.ai_entities.website && (
-                  <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
-                    <Globe className="w-3 h-3 text-gray-400 shrink-0" /> {selectedRow.email.ai_entities.website}
-                  </span>
-                )}
-                {selectedRow.email.ai_entities.product_interest && (
-                  <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg bg-brand-50 dark:bg-[#ec732e]/10 border border-brand-100 dark:border-[#ec732e]/20 text-brand-700 dark:text-[#ec732e]">
-                    <Tag className="w-3 h-3 shrink-0" /> {selectedRow.email.ai_entities.product_interest}
-                  </span>
-                )}
-              </div>
-            )}
-
-            {/* Body preview */}
-            {selectedRow.email.body_text && (
-              <div className="px-4 py-3.5 rounded-xl bg-gray-50 dark:bg-white/3 border border-gray-100 dark:border-white/6">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">Email</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
-                  {selectedRow.email.body_text.slice(0, 800)}
-                  {selectedRow.email.body_text.length > 800 && <span className="text-gray-400"> … [truncated]</span>}
-                </p>
-              </div>
-            )}
-
-            {/* Reply drafts */}
-            {(selectedRow.email.ai_reply_drafts ?? []).length > 0 && (
-              <div className="rounded-xl border dark:border-white/8 overflow-hidden bg-gray-50 dark:bg-white/3">
-                <div className="flex items-center gap-1.5 px-4 pt-3 pb-2 border-b dark:border-white/6">
-                  <Mail className="w-3 h-3 text-gray-400 mr-0.5" />
-                  {(selectedRow.email.ai_reply_drafts ?? []).map((d, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setDetailDraftIdx(i)}
-                      className={cn(
-                        'text-xs px-3 py-1 rounded-lg font-medium transition-colors',
-                        detailDraftIdx === i
-                          ? 'bg-brand-600 text-white'
-                          : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8',
-                      )}
-                    >
-                      {d.tone}
-                    </button>
-                  ))}
-                </div>
-                <div className="px-4 py-3">
-                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
-                    {(selectedRow.email.ai_reply_drafts ?? [])[detailDraftIdx]?.body}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Action footer */}
-          <div className="px-5 py-4 border-t dark:border-white/8 shrink-0 flex flex-wrap items-center gap-2">
-            {selectedRow.recommendation !== 'ignore' && selectedRow.email.ai_analyzed_at && (
-              <button
-                onClick={() => {
-                  if (selectedRow.recommendation === 'create_lead')    openModal(selectedRow, 'lead')
-                  else if (selectedRow.recommendation === 'create_ticket')  openModal(selectedRow, 'ticket')
-                  else if (selectedRow.recommendation === 'update_lead')    openModal(selectedRow, 'deal_note')
-                  else if (selectedRow.recommendation === 'reopen_account') openModal(selectedRow, 'lead')
-                }}
-                className={cn('flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors', recColor(selectedRow.recommendation))}
-              >
-                {recIcon(selectedRow.recommendation)}
-                {recLabel(selectedRow.recommendation, selectedRow)}
-              </button>
-            )}
-            {/* Create Contact — shown when no contact matched yet */}
-            {!selectedRow.matchedContact && selectedRow.email.ai_analyzed_at && selectedRow.recommendation !== 'create_lead' && (
-              <button
-                onClick={() => openModal(selectedRow, 'lead')}
-                className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl transition-colors"
-              >
-                <UserPlus className="w-3.5 h-3.5" /> Create Contact
-              </button>
-            )}
-            <button
-              onClick={() => openReply(selectedRow)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#61c2ad] hover:bg-[#52b09b] text-white text-sm font-semibold rounded-xl transition-colors"
-            >
-              <Send className="w-3.5 h-3.5" /> Reply
-            </button>
-            <button
-              onClick={() => dismiss(selectedRow.email.id)}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/8 rounded-xl transition-colors"
-            >
-              <X className="w-3.5 h-3.5" /> Ignore
-            </button>
-            <div className="ml-auto">
-              <Link
-                href="/sage/emails"
-                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] transition-colors"
-              >
-                Open in inbox <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── CRM form modal ────────────────────────────────────────── */}
-      {modalMode && modalEmail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-2xl border dark:border-white/10 overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b dark:border-white/8">
+        {/* ── Modal slides up from bottom of center panel ── */}
+        {modalMode && modalEmail && (
+          <div className="border-t dark:border-white/8 bg-white dark:bg-[#1e1e1e] p-5 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+            <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
                   {modalMode === 'lead'   ? (modalEmail.recommendation === 'reopen_account' ? 'Reopen Account' : 'Create Lead') :
@@ -905,244 +714,106 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                 </h3>
                 <p className="text-[11px] text-gray-400 mt-0.5">From: {modalEmail.email.from_name ?? modalEmail.email.from_address}</p>
               </div>
-              <button onClick={() => setModalMode(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+              <button onClick={() => setModalMode(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="p-5">
-              {/* Lead form */}
-              {modalMode === 'lead' && (
+
+            {/* Lead form */}
+            {modalMode === 'lead' && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-semibold text-gray-500 block mb-1">Name *</label>
+                  <input value={mName} onChange={e => setMName(e.target.value)}
+                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-gray-500 block mb-1">Email</label>
+                  <input value={mEmail} onChange={e => setMEmail(e.target.value)}
+                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-gray-500 block mb-1">Company</label>
+                  <input value={mCompany} onChange={e => setMCompany(e.target.value)} placeholder="Optional"
+                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-gray-500 block mb-1">Deal Title *</label>
+                  <input value={mDealTitle} onChange={e => setMDealTitle(e.target.value)}
+                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500" />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-[11px] font-semibold text-gray-500 block mb-1">Notes</label>
+                  <textarea value={mNotes} onChange={e => setMNotes(e.target.value)} rows={2}
+                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none" />
+                </div>
+              </div>
+            )}
+
+            {/* Ticket form */}
+            {modalMode === 'ticket' && (
+              <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[11px] font-semibold text-gray-500 block mb-1">Name *</label>
+                    <label className="text-[11px] font-semibold text-gray-500 block mb-1">Contact Name</label>
                     <input value={mName} onChange={e => setMName(e.target.value)}
                       className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500" />
                   </div>
                   <div>
-                    <label className="text-[11px] font-semibold text-gray-500 block mb-1">Email</label>
-                    <input value={mEmail} onChange={e => setMEmail(e.target.value)}
-                      className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500" />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-500 block mb-1">Company</label>
-                    <input value={mCompany} onChange={e => setMCompany(e.target.value)} placeholder="Optional"
-                      className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500" />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-500 block mb-1">Deal Title *</label>
-                    <input value={mDealTitle} onChange={e => setMDealTitle(e.target.value)}
-                      className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500" />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="text-[11px] font-semibold text-gray-500 block mb-1">Notes</label>
-                    <textarea value={mNotes} onChange={e => setMNotes(e.target.value)} rows={2}
-                      className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none" />
+                    <label className="text-[11px] font-semibold text-gray-500 block mb-1">Priority</label>
+                    <select value={mPriority} onChange={e => setMPriority(e.target.value as 'low'|'medium'|'high'|'urgent')}
+                      className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none">
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="urgent">Urgent</option>
+                    </select>
                   </div>
                 </div>
-              )}
-              {/* Ticket form */}
-              {modalMode === 'ticket' && (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[11px] font-semibold text-gray-500 block mb-1">Contact Name</label>
-                      <input value={mName} onChange={e => setMName(e.target.value)}
-                        className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500" />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-semibold text-gray-500 block mb-1">Priority</label>
-                      <select value={mPriority} onChange={e => setMPriority(e.target.value as 'low'|'medium'|'high'|'urgent')}
-                        className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none">
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                        <option value="urgent">Urgent</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-500 block mb-1">Title *</label>
-                    <input value={mDealTitle} onChange={e => setMDealTitle(e.target.value)}
-                      className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500" />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-500 block mb-1">Description</label>
-                    <textarea value={mNotes} onChange={e => setMNotes(e.target.value)} rows={2}
-                      className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none" />
-                  </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-gray-500 block mb-1">Title *</label>
+                  <input value={mDealTitle} onChange={e => setMDealTitle(e.target.value)}
+                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500" />
                 </div>
-              )}
-              {/* Deal note form */}
-              {modalMode === 'deal_note' && (
-                <div className="space-y-3">
-                  <div className="px-3 py-2 rounded-lg bg-[#61c2ad]/10 border border-[#61c2ad]/20 text-sm text-[#61c2ad] font-medium">
-                    Deal: {mDealTitle}
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-500 block mb-1">Note</label>
-                    <textarea value={mNote} onChange={e => setMNote(e.target.value)} rows={3}
-                      className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none" />
-                  </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-gray-500 block mb-1">Description</label>
+                  <textarea value={mNotes} onChange={e => setMNotes(e.target.value)} rows={2}
+                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none" />
                 </div>
-              )}
-              {modalError && <p className="text-xs text-red-500 mt-2">{modalError}</p>}
-              <div className="flex items-center gap-2 mt-4">
-                <button onClick={handleModalSubmit} disabled={isPending}
-                  className="flex items-center gap-2 px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-60">
-                  {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                  {modalMode === 'lead' ? 'Save Lead' : modalMode === 'ticket' ? 'Create Ticket' : 'Log Note'}
-                </button>
-                <button onClick={() => setModalMode(null)} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-                  Cancel
-                </button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+            )}
 
-      {/* ── Reply compose modal ───────────────────────────────────── */}
-      {replyTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-2xl border dark:border-white/10 flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b dark:border-white/8">
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Reply</h3>
-                <p className="text-[11px] text-gray-400 mt-0.5">
-                  To: {replyTarget.email.from_name
-                    ? `${replyTarget.email.from_name} <${replyTarget.email.from_address}>`
-                    : replyTarget.email.from_address}
-                </p>
+            {/* Deal note form */}
+            {modalMode === 'deal_note' && (
+              <div className="space-y-3">
+                <div className="px-3 py-2 rounded-lg bg-[#61c2ad]/10 border border-[#61c2ad]/20 text-sm text-[#61c2ad] font-medium">
+                  Deal: {mDealTitle}
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-gray-500 block mb-1">Note</label>
+                  <textarea value={mNote} onChange={e => setMNote(e.target.value)} rows={3}
+                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none" />
+                </div>
               </div>
-              <button onClick={() => { setReplyTarget(null); setReplyResult(null); setReplyAttachments([]) }}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-                <X className="w-4 h-4" />
+            )}
+
+            {modalError && <p className="text-xs text-red-500 mt-2">{modalError}</p>}
+
+            <div className="flex items-center gap-2 mt-4">
+              <button onClick={handleModalSubmit} disabled={isPending}
+                className="flex items-center gap-2 px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-60">
+                {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                {modalMode === 'lead'   ? 'Save Lead' :
+                 modalMode === 'ticket' ? 'Create Ticket' :
+                                         'Log Note'}
+              </button>
+              <button onClick={() => setModalMode(null)} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                Cancel
               </button>
             </div>
-            <div className="px-5 py-2.5 border-b dark:border-white/8 bg-gray-50 dark:bg-white/3">
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                <span className="font-semibold text-gray-600 dark:text-gray-300">Subject: </span>
-                Re: {replyTarget.email.subject}
-              </p>
-            </div>
-            {(replyTarget.email.ai_reply_drafts ?? []).length > 0 && (
-              <div className="flex items-center gap-1.5 px-5 pt-3 pb-1">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mr-1">Tone:</span>
-                {(replyTarget.email.ai_reply_drafts ?? []).map((d, i) => (
-                  <button key={i}
-                    onClick={() => { setReplyDraftIdx(i); setReplyBody(d.body) }}
-                    className={cn(
-                      'text-[11px] px-2.5 py-1 rounded-lg font-medium transition-colors',
-                      replyDraftIdx === i
-                        ? 'bg-[#61c2ad] text-white'
-                        : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10',
-                    )}>
-                    {d.tone}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="px-5 py-3 flex-1">
-              <textarea
-                value={replyBody}
-                onChange={e => setReplyBody(e.target.value)}
-                rows={9}
-                placeholder="Write your reply…"
-                className="w-full text-sm text-gray-700 dark:text-gray-200 bg-transparent focus:outline-none resize-none leading-relaxed placeholder:text-gray-300 dark:placeholder:text-gray-600"
-              />
-            </div>
-            {replyAttachments.length > 0 && (
-              <div className="px-5 pb-2 flex flex-wrap gap-1.5">
-                {replyAttachments.map((att, i) => (
-                  <span key={i} className="flex items-center gap-1 text-[11px] bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-300 rounded-md px-2 py-1 border dark:border-white/8">
-                    <Paperclip className="w-3 h-3 shrink-0" />
-                    <span className="max-w-[160px] truncate">{att.filename}</span>
-                    <button onClick={() => removeAttachment(i)} className="ml-0.5 text-gray-400 hover:text-red-500 transition-colors">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-            {showStripePanel && (
-              <div className="mx-5 mb-3 border dark:border-white/8 rounded-xl overflow-hidden shadow-sm">
-                <div className="px-3 py-2 bg-gray-50 dark:bg-white/3 border-b dark:border-white/8 flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Open Invoices</span>
-                  {isFetchingInvoices && <Loader2 className="w-3 h-3 animate-spin text-gray-400" />}
-                </div>
-                {stripeError ? (
-                  <div className="px-3 py-2 text-xs text-red-500">{stripeError}</div>
-                ) : stripeInvoices.length === 0 && !isFetchingInvoices ? (
-                  <div className="px-3 py-2 text-xs text-gray-400">No open invoices found</div>
-                ) : (
-                  <div className="max-h-36 overflow-y-auto">
-                    {stripeInvoices.map(inv => (
-                      <button
-                        key={inv.id}
-                        onClick={() => handleAttachStripeInvoice(inv)}
-                        disabled={loadingInvoiceId === inv.id}
-                        className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-white/5 border-b last:border-0 dark:border-white/5 transition-colors disabled:opacity-60">
-                        <div>
-                          <p className="text-xs font-medium text-gray-800 dark:text-gray-200">
-                            {inv.customer_name ?? inv.customer_email ?? inv.id}
-                          </p>
-                          <p className="text-[10px] text-gray-400">{inv.number ?? inv.id}</p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: inv.currency.toUpperCase() }).format(inv.amount_due / 100)}
-                          </span>
-                          {loadingInvoiceId === inv.id
-                            ? <Loader2 className="w-3 h-3 animate-spin text-gray-400" />
-                            : <Paperclip className="w-3 h-3 text-gray-400" />}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-            <div className="px-5 py-3.5 border-t dark:border-white/8 flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <label title="Attach file" className="flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 cursor-pointer transition-colors">
-                  <Paperclip className="w-3.5 h-3.5" />
-                  <input type="file" multiple className="hidden" onChange={handleFileUpload} />
-                </label>
-                <button
-                  title="Attach Stripe invoice"
-                  onClick={handleOpenStripePanel}
-                  className={cn(
-                    'flex items-center justify-center w-7 h-7 rounded-lg transition-colors',
-                    showStripePanel
-                      ? 'bg-[#635bff]/10 text-[#635bff] dark:text-[#7b73ff]'
-                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8',
-                  )}>
-                  <Receipt className="w-3.5 h-3.5" />
-                </button>
-                {replyResult && (
-                  <span className={cn('text-xs font-medium ml-1', replyResult.startsWith('Error') ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
-                    {replyResult}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => { setReplyTarget(null); setReplyResult(null); setReplyAttachments([]) }}
-                  className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSendReply}
-                  disabled={isSending || !replyBody.trim()}
-                  className="flex items-center gap-2 px-5 py-2 bg-[#61c2ad] hover:bg-[#52b09b] disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
-                  {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                  {isSending ? 'Sending…' : `Send${replyAttachments.length > 0 ? ` (${replyAttachments.length})` : ''}`}
-                </button>
-              </div>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
