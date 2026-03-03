@@ -151,12 +151,19 @@ export async function syncEmailsForWorkspace(workspaceId: string): Promise<numbe
     const lock = await client.getMailboxLock('INBOX')
 
     try {
-      // Fetch last 50 messages (newest first) — we search all to avoid missing unread
-      const messages = client.fetch('1:50', {
-        uid:      true,
-        envelope: true,
-        bodyParts: ['TEXT'],
-        source:   true,
+      // Determine total message count so we can fetch the NEWEST 250
+      const STATUS_LIMIT = 250
+      const mailbox = client.mailbox
+      const total   = (mailbox as { exists?: number } | null)?.exists ?? 0
+
+      // Build sequence range for the last N messages: e.g. "751:*" for last 250 of 1000
+      // If there are fewer messages than the limit, fetch all ("1:*")
+      const start       = total > STATUS_LIMIT ? total - STATUS_LIMIT + 1 : 1
+      const fetchRange  = `${start}:*`
+
+      const messages = client.fetch(fetchRange, {
+        uid:    true,
+        source: true,
       }, { uid: false })
 
       const toProcess: { uid: number; raw: Buffer }[] = []
@@ -167,7 +174,7 @@ export async function syncEmailsForWorkspace(workspaceId: string): Promise<numbe
         }
       }
 
-      // Process newest first (reverse message order)
+      // Process newest first (highest sequence number = most recent)
       for (const { raw } of toProcess.reverse()) {
         try {
           const parsed = await simpleParser(raw)
