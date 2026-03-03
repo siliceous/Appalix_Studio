@@ -444,7 +444,14 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
 
   function handleReanalyze() {
     setAnalyzeMsg(null)
-    const targetIds = selectedIds.size > 0 ? Array.from(selectedIds) : undefined
+    // If specific emails are checked → re-analyze those
+    // If nothing selected but unanalyzed pending → let server handle pending-only
+    // If nothing selected and ALL already analyzed → force re-analyze all visible by passing their IDs
+    const targetIds = selectedIds.size > 0
+      ? Array.from(selectedIds)
+      : unanalyzedCount === 0 && visible.length > 0
+        ? visible.map(t => t.email.id)
+        : undefined
     startReanalyzeTransition(async () => {
       const res = await reanalyzeEmails(50, targetIds)
       if (res.error) { setAnalyzeMsg(`Error: ${res.error}`); return }

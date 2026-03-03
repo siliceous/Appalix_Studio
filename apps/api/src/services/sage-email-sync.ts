@@ -90,11 +90,12 @@ MEDIUM — assign when:
   • Real business reaching out (partnership from a legitimate business, not a sales pitch)
 
 LOW — assign when ANY of the following is true:
-  • Not related to the recipient's products or services
   • Personal email, internal team message, social notification, receipt, invoice, account alert
   • Newsletter, subscription email, automated notification, marketing blast (contains "unsubscribe")
-  • Vendor pitch / cold outreach: someone SELLING to you ("SEO services", "we can get you clients", "lead generation", "web design offer", "partnership proposal" from an unknown party pitching their own service)
+  • Vendor pitch / cold outreach: someone SELLING THEIR OWN services TO you — e.g. "we offer SEO", "we can get you clients", "we build websites for you", "our agency does X". NOTE: if the email is from a CUSTOMER or PROSPECT asking about YOUR products/services, that is NOT a vendor pitch — classify as High or Medium instead.
   • Spam, recruitment outreach, mass email
+
+IMPORTANT: When in doubt about whether an email is relevant to your business, default to MEDIUM rather than LOW. Only use LOW when you are confident the email is clearly irrelevant, automated, or a vendor pitch.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CATEGORY RULES:
