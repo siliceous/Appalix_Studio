@@ -356,39 +356,21 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                       ? 'bg-[#61c2ad]/[0.12] dark:bg-[#61c2ad]/[0.1] border-l-[3px] border-l-[#61c2ad]'
                       : 'hover:bg-white dark:hover:bg-white/3 border-l-[3px] border-l-transparent',
                   )}>
-                  {/* Checkbox column */}
-                  <button
-                    onClick={e => toggleSelect(t.email.id, e)}
-                    className="flex items-center justify-center pl-2.5 pr-1 py-3 shrink-0"
-                    title={isChecked ? 'Deselect' : 'Select'}
-                  >
-                    <span className={cn(
-                      'w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0',
-                      isChecked
-                        ? 'bg-brand-600 border-brand-600 dark:bg-[#ec732e] dark:border-[#ec732e]'
-                        : 'border-gray-300 dark:border-white/20 hover:border-brand-400',
-                    )}>
-                      {isChecked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
-                    </span>
-                  </button>
 
-                  {/* Email row */}
+                  {/* Main email select area */}
                   <button
                     onClick={() => { setSelected(t); setComposeOpen(false); setModalMode(null) }}
                     className="flex-1 text-left min-w-0"
                   >
-                    <div className="flex items-start gap-2.5 pr-3 py-3">
+                    <div className="flex items-start gap-2.5 pl-3 pr-1 py-3">
                       {/* Priority dot */}
                       <span className={cn('mt-1.5 w-2 h-2 rounded-full shrink-0',
                         t.email.ai_priority ? PRIORITY_DOT[t.email.ai_priority] : 'bg-gray-200 dark:bg-white/20')} />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1 mb-0.5">
-                          <span className={cn('text-xs font-semibold truncate',
-                            done ? 'text-gray-400' : 'text-gray-800 dark:text-gray-200')}>
-                            {t.email.from_name ?? t.email.from_address}
-                          </span>
-                          <span className="text-[10px] text-gray-400 shrink-0">{formatDate(t.email.received_at)}</span>
-                        </div>
+                        <span className={cn('text-xs font-semibold truncate block mb-0.5',
+                          done ? 'text-gray-400' : 'text-gray-800 dark:text-gray-200')}>
+                          {t.email.from_name ?? t.email.from_address}
+                        </span>
                         <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate leading-tight">
                           {t.email.subject}
                         </p>
@@ -415,6 +397,25 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                       </div>
                     </div>
                   </button>
+
+                  {/* Right column: timestamp + checkbox (stacked) */}
+                  <div className="flex flex-col items-end justify-start gap-2 pt-3 pb-3 pr-3 shrink-0">
+                    <span className="text-[10px] text-gray-400 leading-none">{formatDate(t.email.received_at)}</span>
+                    <button
+                      onClick={e => toggleSelect(t.email.id, e)}
+                      title={isChecked ? 'Deselect' : 'Select'}
+                      className="flex items-center justify-center"
+                    >
+                      <span className={cn(
+                        'w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0',
+                        isChecked
+                          ? 'bg-[#61c2ad] border-[#61c2ad]'
+                          : 'border-gray-300 dark:border-white/20 hover:border-[#61c2ad]',
+                      )}>
+                        {isChecked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+                      </span>
+                    </button>
+                  </div>
                 </div>
               )
             })
