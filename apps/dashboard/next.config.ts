@@ -1,9 +1,11 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // Raise Server Action body limit to 52 MB to support PDF/image uploads
-  serverActions: {
-    bodySizeLimit: '52mb',
+  experimental: {
+    // Raise Server Action body limit to 52 MB to support PDF/image uploads
+    serverActions: {
+      bodySizeLimit: '52mb',
+    },
   },
   images: {
     remotePatterns: [
