@@ -1,22 +1,52 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'How to Connect Appalix to Google Chat | AI Bot for Google Workspace',
+  title: 'Add an AI Bot to Google Chat with Appalix — Step-by-Step Guide',
   description:
-    'Add an Appalix AI bot to Google Chat spaces and DMs. Step-by-step guide to creating a Google Chat app and connecting it to Appalix using an HTTP endpoint.',
+    'Add your Appalix AI bot to Google Chat Spaces and DMs as a native Google Chat app. Ideal for internal teams on Google Workspace — step-by-step setup guide.',
   keywords: [
     'Google Chat AI bot',
     'Appalix Google Chat integration',
     'Google Workspace chatbot',
     'Google Chat app setup',
     'AI assistant Google Chat',
+    'Google Chat bot HTTP endpoint',
+    'Google Workspace AI automation',
+    'Google Chat internal AI bot',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/connect-google-chat' },
+  openGraph: {
+    title: 'Add an AI Bot to Google Chat with Appalix — Step-by-Step Guide',
+    description: 'Add your Appalix AI bot to Google Chat Spaces and DMs as a native Google Chat app. Step-by-step guide.',
+    url: 'https://appalix.ai/resources/connect-google-chat',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Add an AI Bot to Google Chat with Appalix — Step-by-Step Guide',
+    description: 'Add your Appalix AI bot to Google Chat Spaces and DMs as a native Google Chat app. Step-by-step guide.',
+  },
 }
 
 export default function ConnectGoogleChatPage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="How to Connect Appalix to Google Chat"
+        description="Add your Appalix AI bot to Google Chat Spaces and DMs as a native Google Chat app. Ideal for internal teams on Google Workspace — step-by-step setup guide."
+        slug="connect-google-chat"
+        datePublished="2026-02-27"
+        steps={[
+          { name: 'Create a Google Cloud project and enable the Chat API', text: 'Go to Google Cloud Console, create a new project, enable the Google Chat API, and configure the app name and avatar.' },
+          { name: 'Set the HTTP endpoint to your Appalix webhook', text: 'In the Chat API configuration, set the connection type to HTTP endpoint and paste your Appalix Google Chat webhook URL.' },
+          { name: 'Connect Google Chat in Appalix', text: 'In Appalix, create a new Google Chat integration to generate your webhook URL, then paste it into the Google Cloud Console Chat API settings.' },
+          { name: 'Test the integration', text: 'Add the bot to a Google Chat Space and send a message to verify the AI bot replies automatically.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">

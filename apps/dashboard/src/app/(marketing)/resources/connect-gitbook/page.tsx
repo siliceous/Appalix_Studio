@@ -1,22 +1,52 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'How to Connect GitBook to Appalix | Index GitBook Docs as Knowledge Base',
+  title: 'Connect GitBook to Appalix — Index GitBook Docs as AI Knowledge Base',
   description:
-    'Step-by-step guide to indexing a GitBook space in Appalix. Generate a personal API token, grab your space URL, and your AI bot will answer questions straight from your GitBook docs.',
+    'Turn your entire GitBook space into a live knowledge source. Generate a personal API token in GitBook, paste your space URL into Appalix, and your bot answers from your developer docs.',
   keywords: [
     'Appalix GitBook integration',
     'GitBook knowledge base AI',
     'index GitBook space chatbot',
     'GitBook API token',
     'AI bot GitBook docs',
+    'train AI on GitBook',
+    'GitBook AI chatbot',
+    'developer docs AI chatbot',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/connect-gitbook' },
+  openGraph: {
+    title: 'Connect GitBook to Appalix — Index GitBook Docs as AI Knowledge Base',
+    description: 'Turn your GitBook space into a live AI knowledge source. Generate a token and your bot answers from your docs.',
+    url: 'https://appalix.ai/resources/connect-gitbook',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Connect GitBook to Appalix — Index GitBook Docs as AI Knowledge Base',
+    description: 'Turn your GitBook space into a live AI knowledge source. Generate a token and your bot answers from your docs.',
+  },
 }
 
 export default function ConnectGitBookPage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="How to Connect GitBook to Appalix"
+        description="Turn your entire GitBook space into a live knowledge source. Generate a personal API token in GitBook, paste your space URL into Appalix, and your bot answers from your developer docs."
+        slug="connect-gitbook"
+        datePublished="2026-02-28"
+        steps={[
+          { name: 'Generate a GitBook Personal API Token', text: 'In GitBook, go to your account settings → Developer → Personal API token, create a new token with read access, and copy it.' },
+          { name: 'Find your GitBook Space URL', text: 'Open your GitBook space and copy the URL from the address bar — it ends with .gitbook.io/your-space or is your custom domain.' },
+          { name: 'Add GitBook as a knowledge source in Appalix', text: 'In Appalix, go to Sources → Add Source → GitBook, paste your API token and space URL, then save and trigger a sync.' },
+          { name: 'Test the knowledge source', text: 'In your Appalix bot preview, ask a question that is answered in your GitBook docs and verify the AI bot responds with the correct content.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">

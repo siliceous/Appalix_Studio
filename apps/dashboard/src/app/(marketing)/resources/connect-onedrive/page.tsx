@@ -1,22 +1,52 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'How to Connect OneDrive to Appalix | Index OneDrive Files as Knowledge Base',
+  title: 'Connect OneDrive to Appalix — Index Word Documents as AI Knowledge Base',
   description:
-    'Step-by-step guide to indexing Microsoft OneDrive files in Appalix. Generate a Microsoft Graph access token, add your file URL, and your AI bot will answer questions from your OneDrive content.',
+    'Index Word documents and files from Microsoft OneDrive. Sign in to Microsoft Graph Explorer, copy the access token with Files.Read scope, and paste it into Appalix with your file URL. Step-by-step guide.',
   keywords: [
     'Appalix OneDrive integration',
     'OneDrive knowledge base AI',
     'index OneDrive file chatbot',
     'Microsoft Graph access token Files.Read',
     'AI bot OneDrive docs',
+    'OneDrive AI training',
+    'Microsoft 365 AI chatbot',
+    'train AI on OneDrive files',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/connect-onedrive' },
+  openGraph: {
+    title: 'Connect OneDrive to Appalix — Index Word Documents as AI Knowledge Base',
+    description: 'Index Word documents from OneDrive as AI knowledge sources using a Microsoft Graph access token. Step-by-step.',
+    url: 'https://appalix.ai/resources/connect-onedrive',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Connect OneDrive to Appalix — Index Word Documents as AI Knowledge Base',
+    description: 'Index Word documents from OneDrive as AI knowledge sources using a Microsoft Graph access token. Step-by-step.',
+  },
 }
 
 export default function ConnectOneDrivePage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="How to Connect OneDrive to Appalix"
+        description="Index Word documents and files from Microsoft OneDrive. Sign in to Microsoft Graph Explorer, copy the access token with Files.Read scope, and paste it into Appalix with your file URL."
+        slug="connect-onedrive"
+        datePublished="2026-02-28"
+        steps={[
+          { name: 'Get a Microsoft Graph access token', text: 'Go to Microsoft Graph Explorer, sign in with your Microsoft account, and copy the access token — it automatically includes Files.Read scope.' },
+          { name: 'Get your OneDrive file URL or item ID', text: 'In OneDrive, right-click your file → Share → Copy Link to get the sharing URL, or use Graph Explorer to find the file item ID.' },
+          { name: 'Add OneDrive as a knowledge source in Appalix', text: 'In Appalix, go to Sources → Add Source → OneDrive, paste your Microsoft Graph access token and file URL, then save and sync.' },
+          { name: 'Test the knowledge source', text: 'In your Appalix bot preview, ask a question answered in the indexed OneDrive document and verify the AI bot responds correctly.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">

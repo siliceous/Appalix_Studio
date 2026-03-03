@@ -1,22 +1,52 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'How to Connect Monday.com to Appalix | AI Lead Capture Integration',
+  title: 'Connect Monday.com to Appalix — AI Lead Capture Tutorial',
   description:
-    'Automatically create Monday.com board items when your AI chatbot captures a lead. Step-by-step guide: get your API token, find your Board ID, and connect in under 5 minutes.',
+    'Auto-create Monday.com board items when your AI chatbot captures a lead. Get your Personal API Token, find your Board ID, and go live in under 5 minutes — no Zapier needed.',
   keywords: [
     'Monday.com Appalix integration',
     'AI chatbot Monday.com',
     'Monday.com lead capture',
     'Monday.com CRM integration',
     'Appalix Monday board',
+    'Monday.com Personal API Token',
+    'AI agent lead capture board',
+    'Monday.com GraphQL API',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/connect-monday' },
+  openGraph: {
+    title: 'Connect Monday.com to Appalix — AI Lead Capture Tutorial',
+    description: 'Auto-create Monday.com board items when your AI chatbot captures a lead. Step-by-step guide.',
+    url: 'https://appalix.ai/resources/connect-monday',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Connect Monday.com to Appalix — AI Lead Capture Tutorial',
+    description: 'Auto-create Monday.com board items when your AI chatbot captures a lead. Step-by-step guide.',
+  },
 }
 
 export default function ConnectMondayPage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="How to Connect Monday.com to Appalix"
+        description="Auto-create Monday.com board items when your AI chatbot captures a lead. Get your Personal API Token, find your Board ID, and go live in under 5 minutes."
+        slug="connect-monday"
+        datePublished="2026-03-01"
+        steps={[
+          { name: 'Get your Monday.com API Token', text: 'Click your profile avatar → Administration → API in the left sidebar, then generate and copy your Personal API Token.' },
+          { name: 'Find your Board ID', text: 'Open your Monday.com board and copy the number after /boards/ in the URL bar — that is your Board ID.' },
+          { name: 'Connect Monday.com in Appalix', text: 'In Appalix Integrations, click Edit, scroll to CRM integration, select Monday.com, paste your API token and Board ID, then save.' },
+          { name: 'Test the integration', text: 'Send a test message with an email in your Appalix chat and verify a new item appears on your Monday.com board within seconds.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}

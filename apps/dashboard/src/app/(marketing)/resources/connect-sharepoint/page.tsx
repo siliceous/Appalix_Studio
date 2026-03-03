@@ -1,22 +1,52 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'How to Connect SharePoint to Appalix | Index SharePoint Files as Knowledge Base',
+  title: 'Connect SharePoint to Appalix — Index SharePoint Docs as AI Knowledge Base',
   description:
-    'Step-by-step guide to indexing Microsoft SharePoint files in Appalix. Generate a Microsoft Graph access token, find your Site ID, and add any SharePoint document as a knowledge source for your AI bot.',
+    'Index SharePoint documents so your AI bot answers from your organisation\'s intranet content. Requires a Microsoft Graph token, file URL, and SharePoint Site ID. Step-by-step guide.',
   keywords: [
     'Appalix SharePoint integration',
     'SharePoint knowledge base AI',
     'index SharePoint file chatbot',
     'Microsoft Graph SharePoint Site ID',
     'AI bot SharePoint docs',
+    'SharePoint AI training',
+    'enterprise AI knowledge base SharePoint',
+    'Microsoft 365 SharePoint chatbot',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/connect-sharepoint' },
+  openGraph: {
+    title: 'Connect SharePoint to Appalix — Index SharePoint Docs as AI Knowledge Base',
+    description: 'Index SharePoint documents so your AI bot answers from your intranet. Requires a Microsoft Graph token and Site ID.',
+    url: 'https://appalix.ai/resources/connect-sharepoint',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Connect SharePoint to Appalix — Index SharePoint Docs as AI Knowledge Base',
+    description: 'Index SharePoint documents so your AI bot answers from your intranet. Requires a Microsoft Graph token and Site ID.',
+  },
 }
 
 export default function ConnectSharePointPage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="How to Connect SharePoint to Appalix"
+        description="Index SharePoint documents so your AI bot answers from your organisation's intranet content. Requires a Microsoft Graph token, file URL, and SharePoint Site ID."
+        slug="connect-sharepoint"
+        datePublished="2026-02-28"
+        steps={[
+          { name: 'Get a Microsoft Graph access token', text: 'Go to Microsoft Graph Explorer, sign in with your Microsoft 365 account, and copy the access token with Sites.Read.All and Files.Read scope.' },
+          { name: 'Find your SharePoint Site ID', text: 'In Graph Explorer, run GET https://graph.microsoft.com/v1.0/sites?search=yoursite to find your SharePoint Site ID and copy it.' },
+          { name: 'Add SharePoint as a knowledge source in Appalix', text: 'In Appalix, go to Sources → Add Source → SharePoint, paste your access token, file URL, and Site ID, then save and trigger a sync.' },
+          { name: 'Test the knowledge source', text: 'In your Appalix bot preview, ask a question answered in the indexed SharePoint document and verify the AI bot responds with the correct information.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">

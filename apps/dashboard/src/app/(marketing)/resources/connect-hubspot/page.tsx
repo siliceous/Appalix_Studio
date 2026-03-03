@@ -1,22 +1,51 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'How to Connect HubSpot to Appalix | Step-by-Step Guide',
+  title: 'Connect HubSpot CRM to Appalix — AI Lead Capture Tutorial',
   description:
-    'Connect your Appalix AI agent to HubSpot CRM. When a visitor shares their email or phone number in chat, a HubSpot contact is created automatically — no Zapier needed.',
+    'Push AI chat leads directly into HubSpot CRM with no Zapier needed. Create a HubSpot Private App token and connect it to Appalix in under 2 minutes. Step-by-step guide.',
   keywords: [
     'HubSpot CRM integration',
     'Appalix HubSpot',
     'AI chatbot HubSpot lead capture',
     'HubSpot private app token',
     'chatbot CRM integration',
+    'HubSpot contacts API',
+    'AI lead capture CRM',
+    'HubSpot no Zapier',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/connect-hubspot' },
+  openGraph: {
+    title: 'Connect HubSpot CRM to Appalix — AI Lead Capture Tutorial',
+    description: 'Push AI chat leads directly into HubSpot CRM with no Zapier needed. Step-by-step guide.',
+    url: 'https://appalix.ai/resources/connect-hubspot',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Connect HubSpot CRM to Appalix — AI Lead Capture Tutorial',
+    description: 'Push AI chat leads directly into HubSpot CRM with no Zapier needed. Step-by-step guide.',
+  },
 }
 
 export default function ConnectHubspotPage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="How to Connect HubSpot CRM to Appalix"
+        description="Push AI chat leads directly into HubSpot CRM with no Zapier needed. Create a HubSpot Private App token and connect it to Appalix in under 2 minutes."
+        slug="connect-hubspot"
+        datePublished="2026-02-26"
+        steps={[
+          { name: 'Create a HubSpot Private App', text: 'Go to HubSpot Settings → Integrations → Private Apps, create a new app with crm.objects.contacts.write scope, and copy the pat- token.' },
+          { name: 'Connect HubSpot in Appalix', text: 'In Appalix Integrations, click Edit on your integration, scroll to CRM integration, select HubSpot, and paste your Private App token.' },
+          { name: 'Test the integration', text: 'Open your integration live chat, send a message with an email address, and verify the contact appears in HubSpot CRM → Contacts within seconds.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}

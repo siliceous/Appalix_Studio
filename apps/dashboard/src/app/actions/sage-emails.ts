@@ -43,6 +43,7 @@ export async function syncEmails(): Promise<{ synced: number; error?: string }> 
     const data = await res.json() as { synced?: number; error?: string }
     if (!res.ok) return { synced: 0, error: data.error ?? 'Sync failed' }
     revalidatePath('/sage/emails')
+    revalidatePath('/dashboard')
     return { synced: data.synced ?? 0 }
   } catch {
     return { synced: 0, error: 'Could not reach API' }

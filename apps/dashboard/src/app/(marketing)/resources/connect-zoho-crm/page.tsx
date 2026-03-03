@@ -1,22 +1,51 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'How to Connect Zoho CRM to Appalix | Step-by-Step Guide',
+  title: 'Connect Zoho CRM to Appalix — AI Lead Capture Tutorial',
   description:
-    'Push leads from your Appalix AI chat directly into Zoho CRM using an OAuth access token. Leads are created under the Leads module automatically — no Zapier needed.',
+    'Push AI chat leads into Zoho CRM Leads module automatically using an OAuth token. Covers both the quick Self Client method and production OAuth app setup. Step-by-step guide.',
   keywords: [
     'Zoho CRM Appalix integration',
     'Zoho CRM OAuth token API',
     'AI chatbot Zoho lead capture',
     'ZohoCRM modules leads API',
     'chatbot CRM automation Zoho',
+    'Zoho Self Client access token',
+    'AI sales agent Zoho',
+    'Zoho Developer Console OAuth',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/connect-zoho-crm' },
+  openGraph: {
+    title: 'Connect Zoho CRM to Appalix — AI Lead Capture Tutorial',
+    description: 'Push AI chat leads into Zoho CRM Leads module automatically using an OAuth token. Step-by-step guide.',
+    url: 'https://appalix.ai/resources/connect-zoho-crm',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Connect Zoho CRM to Appalix — AI Lead Capture Tutorial',
+    description: 'Push AI chat leads into Zoho CRM Leads module automatically using an OAuth token. Step-by-step guide.',
+  },
 }
 
 export default function ConnectZohoCrmPage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="How to Connect Zoho CRM to Appalix"
+        description="Push AI chat leads into Zoho CRM Leads module automatically using an OAuth token. Covers the quick Self Client method and production OAuth app setup."
+        slug="connect-zoho-crm"
+        datePublished="2026-02-26"
+        steps={[
+          { name: 'Generate a Zoho OAuth access token', text: 'Go to api-console.zoho.com, use Self Client for a quick token with ZohoCRM.modules.leads.CREATE scope, or create a Server-based OAuth app for production.' },
+          { name: 'Connect Zoho CRM in Appalix', text: 'In Appalix Integrations, click Edit on your integration, scroll to CRM integration, select Zoho CRM, paste your OAuth access token, then save.' },
+          { name: 'Test the integration', text: 'Open your Appalix chat preview, send a message with an email address, and verify the new lead appears in Zoho CRM under Modules → Leads.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}

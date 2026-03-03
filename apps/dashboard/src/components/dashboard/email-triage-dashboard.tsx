@@ -8,6 +8,7 @@ import {
   Check, X, ChevronRight, Loader2,
 } from 'lucide-react'
 import { triageCreateLead, triageCreateTicket, triageAddDealNote } from '@/app/actions/sage-triage'
+import { syncEmails } from '@/app/actions/sage-emails'
 import type { SageEmail } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -93,6 +94,8 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
   const [activeDraft, setActiveDraft] = useState(0)
   const [composeOpen, setComposeOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [isSyncing, startSyncTransition] = useTransition()
+  const [syncMsg, setSyncMsg] = useState<string | null>(null)
 
   // Modal form state
   const [mName,     setMName]     = useState('')
@@ -198,10 +201,28 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
       <aside className="w-[280px] shrink-0 flex flex-col border-r dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
 
         {/* Header */}
-        <div className="px-4 py-4 border-b dark:border-white/8">
-          <div className="flex items-center gap-2 mb-2">
-            <Mail className="w-4 h-4 text-brand-500 shrink-0" />
-            <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Email Triage</h2>
+        <div className="px-4 py-3 border-b dark:border-white/8 shrink-0">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Mail className="w-4 h-4 text-brand-500 shrink-0" />
+              <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Email Triage</h2>
+            </div>
+            <button
+              onClick={() => {
+                setSyncMsg(null)
+                startSyncTransition(async () => {
+                  const res = await syncEmails()
+                  if (res.error) setSyncMsg(`Error: ${res.error}`)
+                  else setSyncMsg(res.synced > 0 ? `+${res.synced} synced` : 'Up to date')
+                })
+              }}
+              disabled={isSyncing}
+              title="Sync inbox"
+              className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-50 transition-colors"
+            >
+              <RefreshCw className={cn('w-3 h-3', isSyncing && 'animate-spin')} />
+              {isSyncing ? 'Syncing…' : syncMsg ?? 'Sync'}
+            </button>
           </div>
           <div className="flex items-center gap-2">
             {highCount > 0 && (
@@ -230,9 +251,29 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No emails to triage</p>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Sync your inbox to get started</p>
               </div>
+              {syncMsg && (
+                <p className={cn('text-[11px] font-medium', syncMsg.startsWith('Error') ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
+                  {syncMsg}
+                </p>
+              )}
+              <button
+                onClick={() => {
+                  setSyncMsg(null)
+                  startSyncTransition(async () => {
+                    const res = await syncEmails()
+                    if (res.error) setSyncMsg(`Error: ${res.error}`)
+                    else setSyncMsg(res.synced > 0 ? `+${res.synced} synced` : 'Up to date')
+                  })
+                }}
+                disabled={isSyncing}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors"
+              >
+                <RefreshCw className={cn('w-3 h-3', isSyncing && 'animate-spin')} />
+                {isSyncing ? 'Syncing…' : 'Sync Inbox'}
+              </button>
               <Link href="/sage/emails"
-                className="flex items-center gap-1.5 text-xs text-brand-600 dark:text-[#61c2ad] hover:underline">
-                Go to Email Inbox <ChevronRight className="w-3.5 h-3.5" />
+                className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:underline">
+                Full Inbox <ChevronRight className="w-3 h-3" />
               </Link>
             </div>
           ) : (
@@ -312,12 +353,34 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
                 Connect Gmail or Outlook under Sage → Integrations, then sync your inbox to get AI-powered triage here.
               </p>
             </div>
-            <Link href="/sage/integrations"
-              className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl px-5 py-2.5 hover:bg-amber-100 dark:hover:bg-amber-500/15 transition-colors font-medium">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              Connect Gmail or Outlook
-              <ArrowRight className="w-4 h-4 shrink-0" />
-            </Link>
+            <div className="flex flex-col items-center gap-2">
+              <button
+                onClick={() => {
+                  setSyncMsg(null)
+                  startSyncTransition(async () => {
+                    const res = await syncEmails()
+                    if (res.error) setSyncMsg(`Error: ${res.error}`)
+                    else setSyncMsg(res.synced > 0 ? `+${res.synced} synced` : 'Up to date — connect an inbox first')
+                  })
+                }}
+                disabled={isSyncing}
+                className="flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
+              >
+                <RefreshCw className={cn('w-4 h-4 shrink-0', isSyncing && 'animate-spin')} />
+                {isSyncing ? 'Syncing inbox…' : 'Sync Inbox'}
+              </button>
+              {syncMsg && (
+                <p className={cn('text-xs font-medium', syncMsg.startsWith('Error') ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
+                  {syncMsg}
+                </p>
+              )}
+              <Link href="/sage/integrations"
+                className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl px-5 py-2.5 hover:bg-amber-100 dark:hover:bg-amber-500/15 transition-colors font-medium mt-1">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                Connect Gmail or Outlook
+                <ArrowRight className="w-4 h-4 shrink-0" />
+              </Link>
+            </div>
           </div>
 
         ) : !selected ? (

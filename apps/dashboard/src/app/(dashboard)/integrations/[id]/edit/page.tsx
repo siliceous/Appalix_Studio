@@ -63,7 +63,10 @@ export default async function EditIntegrationPage({
 
   const isWebWidget  = integration.platform === 'web_widget' || integration.platform === 'wordpress'
   const isWordPress  = integration.platform === 'wordpress'
+  const isTelegram   = integration.platform === 'telegram'
   const wpApiKey     = (cfg.api_key as string | undefined) ?? ''
+  const tgBotToken   = (cfg.bot_token             as string | undefined) ?? ''
+  const tgWebhookSecret = (cfg.webhook_secret_token as string | undefined) ?? ''
 
   return (
     <div className="max-w-2xl">
@@ -151,6 +154,51 @@ export default async function EditIntegrationPage({
               <p className="text-xs text-gray-400 mt-1">
                 Comma-separated list of allowed origins, or{' '}
                 <code className="font-mono bg-gray-100 px-1 rounded">*</code> for all.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Telegram config */}
+        {isTelegram && (
+          <div className="bg-white rounded-xl border p-5 space-y-4">
+            <p className="text-sm font-semibold text-gray-900">Telegram settings</p>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Webhook URL</label>
+              <input
+                readOnly
+                value={`https://api.appalix.ai/webhooks/telegram/${integration.id}`}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono bg-gray-50 text-gray-600 select-all"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Paste this URL into the <code className="font-mono bg-gray-100 px-1 rounded">setWebhook</code> call when registering your Telegram bot.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Bot token</label>
+              <input
+                type="password"
+                name="telegram_bot_token_update"
+                defaultValue={tgBotToken}
+                placeholder="7412345678:AAF…"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                The token from @BotFather. Leave blank to keep the current token.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Webhook secret token</label>
+              <input
+                readOnly
+                value={tgWebhookSecret}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono bg-gray-50 text-gray-600 select-all"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Pass this as the <code className="font-mono bg-gray-100 px-1 rounded">secret_token</code> parameter in your <code className="font-mono bg-gray-100 px-1 rounded">setWebhook</code> call.
               </p>
             </div>
           </div>

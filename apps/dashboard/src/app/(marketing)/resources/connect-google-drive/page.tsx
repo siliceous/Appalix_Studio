@@ -1,22 +1,52 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'How to Connect Google Drive to Appalix | Index Google Docs as Knowledge Base',
+  title: 'Connect Google Drive to Appalix — Index Google Docs as AI Knowledge Base',
   description:
-    'Step-by-step guide to indexing Google Drive files and Google Docs in Appalix. Generate an OAuth access token, add your file URL, and your AI bot will answer questions from your Drive content.',
+    'Index Google Docs and Drive files as AI knowledge sources. Generate a read-only OAuth token via the Google OAuth Playground and paste it into Appalix with your file URL. Step-by-step guide.',
   keywords: [
     'Appalix Google Drive integration',
     'Google Drive knowledge base AI',
     'index Google Doc chatbot',
     'Google OAuth access token drive.readonly',
     'AI bot Google Docs',
+    'Google Drive AI training',
+    'train AI on Google Docs',
+    'Google Drive chatbot knowledge base',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/connect-google-drive' },
+  openGraph: {
+    title: 'Connect Google Drive to Appalix — Index Google Docs as AI Knowledge Base',
+    description: 'Index Google Docs and Drive files as AI knowledge sources. Generate a token and your bot answers from your files.',
+    url: 'https://appalix.ai/resources/connect-google-drive',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Connect Google Drive to Appalix — Index Google Docs as AI Knowledge Base',
+    description: 'Index Google Docs and Drive files as AI knowledge sources. Generate a token and your bot answers from your files.',
+  },
 }
 
 export default function ConnectGoogleDrivePage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="How to Connect Google Drive to Appalix"
+        description="Index Google Docs and Drive files as AI knowledge sources. Generate a read-only OAuth token via the Google OAuth Playground and paste it into Appalix with your file URL."
+        slug="connect-google-drive"
+        datePublished="2026-02-28"
+        steps={[
+          { name: 'Get a Google OAuth access token', text: 'Go to Google OAuth Playground, select the drive.readonly scope, authorise, and exchange the code for an access token. Copy it.' },
+          { name: 'Copy your Google Drive file URL', text: 'Open your Google Doc or Drive file and copy the sharing URL from the address bar or the Share dialog.' },
+          { name: 'Add Google Drive as a knowledge source in Appalix', text: 'In Appalix, go to Sources → Add Source → Google Drive, paste your OAuth token and file URL, then save and trigger a sync.' },
+          { name: 'Test the knowledge source', text: 'In your Appalix bot preview, ask a question answered in the indexed document and verify the AI bot responds correctly.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">

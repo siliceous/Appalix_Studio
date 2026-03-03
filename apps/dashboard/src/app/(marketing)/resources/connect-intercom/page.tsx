@@ -1,22 +1,51 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'How to Connect Intercom to Appalix | Step-by-Step Guide',
+  title: 'Connect Intercom to Appalix — AI Chat Lead Capture Tutorial',
   description:
-    'Automatically create Intercom leads when a visitor shares their email or phone in your Appalix AI chat. Uses an Intercom Access Token — no Zapier or middleware required.',
+    'Create Intercom leads automatically when visitors share contact details in your AI chat. Get an Intercom Access Token from the Developer Hub in under 5 minutes. Step-by-step guide.',
   keywords: [
     'Intercom Appalix integration',
     'AI chatbot Intercom lead capture',
     'Intercom access token API',
     'chatbot CRM automation',
     'Intercom lead creation API',
+    'Intercom Developer Hub token',
+    'AI agent Intercom contacts',
+    'Intercom lead automation',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/connect-intercom' },
+  openGraph: {
+    title: 'Connect Intercom to Appalix — AI Chat Lead Capture Tutorial',
+    description: 'Create Intercom leads automatically when visitors share contact details in your AI chat. Step-by-step.',
+    url: 'https://appalix.ai/resources/connect-intercom',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Connect Intercom to Appalix — AI Chat Lead Capture Tutorial',
+    description: 'Create Intercom leads automatically when visitors share contact details in your AI chat. Step-by-step.',
+  },
 }
 
 export default function ConnectIntercomPage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="How to Connect Intercom to Appalix"
+        description="Create Intercom leads automatically when visitors share contact details in your AI chat. Get an Intercom Access Token from the Developer Hub in under 5 minutes."
+        slug="connect-intercom"
+        datePublished="2026-02-26"
+        steps={[
+          { name: 'Get your Intercom Access Token', text: 'Go to Intercom Settings → Developer Hub, create a new app named Appalix Lead Capture, then copy the Access Token from the Authentication section.' },
+          { name: 'Connect Intercom in Appalix', text: 'In Appalix Integrations, click Edit, scroll to CRM integration, select Intercom, paste your Access Token, then save changes.' },
+          { name: 'Test the connection', text: 'Open your Appalix integration preview, type a message with an email address, and verify the new lead appears in Intercom Contacts → Leads.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}

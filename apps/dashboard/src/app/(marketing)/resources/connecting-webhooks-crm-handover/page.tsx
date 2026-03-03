@@ -1,10 +1,11 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'Connecting Webhook URLs to CRMs and Human Handover | Appalix Resources',
+  title: 'Connecting Webhooks to CRMs and Human Handover — Appalix Guide',
   description:
-    'Step-by-step guide to connecting your Appalix AI agent to a CRM via webhooks and routing human handoff notifications to Slack, Discord, Telegram, WhatsApp, or any messaging tool.',
+    'Capture leads into HubSpot or Salesforce automatically and alert your team on Slack, Discord, Telegram, or WhatsApp the moment a visitor requests a human. Step-by-step guide.',
   keywords: [
     'CRM webhook integration',
     'AI chatbot human handoff',
@@ -12,12 +13,39 @@ export const metadata: Metadata = {
     'WhatsApp handoff bot',
     'Zapier chatbot integration',
     'Telegram bot webhook',
+    'human handover AI chatbot',
+    'chatbot lead capture webhook',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/connecting-webhooks-crm-handover' },
+  openGraph: {
+    title: 'Connecting Webhooks to CRMs and Human Handover — Appalix Guide',
+    description: 'Capture leads into HubSpot automatically and alert your team on Slack or Telegram when a visitor requests a human.',
+    url: 'https://appalix.ai/resources/connecting-webhooks-crm-handover',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Connecting Webhooks to CRMs and Human Handover — Appalix Guide',
+    description: 'Capture leads into HubSpot automatically and alert your team on Slack or Telegram when a visitor requests a human.',
+  },
 }
 
 export default function WebhookGuidePage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="Connecting Webhooks to CRMs and Human Handover"
+        description="Capture leads into HubSpot or Salesforce automatically and alert your team on Slack, Discord, Telegram, or WhatsApp the moment a visitor requests a human."
+        slug="connecting-webhooks-crm-handover"
+        datePublished="2026-02-24"
+        steps={[
+          { name: 'Set up CRM lead capture webhook', text: 'In Appalix, go to Integrations → Edit → CRM webhook URL and paste your Zapier Catch Hook or HubSpot/Salesforce webhook URL. Appalix will POST lead data automatically when a visitor shares their email or phone.' },
+          { name: 'Configure human handoff notifications', text: 'In Integrations → Edit → Human handoff → Notify via, choose Slack, Discord, Telegram, WhatsApp, or a generic webhook URL to receive real-time alerts when a visitor requests a human agent.' },
+          { name: 'Test the payload with Webhook.site', text: 'Paste a Webhook.site URL as a temporary endpoint to verify the exact JSON payload before connecting your real CRM or notification channel.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}

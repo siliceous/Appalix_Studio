@@ -1,22 +1,52 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'How to Connect Appalix to Slack | AI Bot in Slack Channels & DMs',
+  title: 'Add an AI Bot to Slack with Appalix — Step-by-Step Integration Guide',
   description:
-    'Deploy your Appalix AI bot inside Slack so it answers questions in channels and DMs automatically. Step-by-step: create a Slack app, set up event subscriptions, and go live.',
+    'Deploy your Appalix AI bot inside Slack workspaces in minutes. Create a Slack app, subscribe to message events, paste credentials into Appalix, and your bot answers DMs and channels automatically.',
   keywords: [
     'Appalix Slack integration',
     'AI bot in Slack',
     'Slack chatbot setup',
     'Slack app event subscriptions',
     'AI assistant Slack',
+    'Slack AI agent tutorial',
+    'Slack bot webhook',
+    'AI chatbot Slack workspace',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/connect-slack' },
+  openGraph: {
+    title: 'Add an AI Bot to Slack with Appalix — Step-by-Step Integration Guide',
+    description: 'Deploy your Appalix AI bot inside Slack. Create a Slack app, subscribe to events, and go live in minutes.',
+    url: 'https://appalix.ai/resources/connect-slack',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Add an AI Bot to Slack with Appalix — Step-by-Step Integration Guide',
+    description: 'Deploy your Appalix AI bot inside Slack. Create a Slack app, subscribe to events, and go live in minutes.',
+  },
 }
 
 export default function ConnectSlackPage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="How to Connect Appalix to Slack"
+        description="Deploy your Appalix AI bot inside Slack workspaces. Create a Slack app, subscribe to message events, paste credentials into Appalix, and your bot answers DMs and channels automatically."
+        slug="connect-slack"
+        datePublished="2026-02-27"
+        steps={[
+          { name: 'Create a Slack app', text: 'Go to api.slack.com/apps, click Create New App → From scratch, name it Appalix, select your workspace, and enable the messages.channels and messages.im bot event subscriptions.' },
+          { name: 'Install the app and copy credentials', text: 'Under OAuth & Permissions, install the app to your workspace, then copy the Bot User OAuth Token and Signing Secret from Basic Information.' },
+          { name: 'Connect Slack in Appalix', text: 'In Appalix, create a new Slack integration, paste your Bot Token and Signing Secret, then copy the Appalix webhook URL to paste into your Slack app Event Subscriptions.' },
+          { name: 'Test the integration', text: 'Invite the bot to a Slack channel with /invite @YourBotName, send a message, and verify the AI bot replies automatically.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">

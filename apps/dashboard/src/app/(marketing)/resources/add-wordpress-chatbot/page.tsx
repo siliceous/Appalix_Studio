@@ -1,22 +1,52 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'How to Add an AI Chatbot to WordPress with Appalix | Step-by-Step Guide',
+  title: 'Add an AI Chatbot to WordPress with Appalix — Plugin Setup Guide',
   description:
-    'Install the Appalix Chat plugin on any WordPress site and connect it to your AI bot in minutes. Handles customer questions, captures leads, and works on any theme.',
+    'Install the Appalix plugin, enter your API endpoint and key in Settings → Appalix Chat, and your AI bot is live on every WordPress page in minutes. Step-by-step guide.',
   keywords: [
     'WordPress AI chatbot',
     'Appalix WordPress plugin',
     'add chatbot to WordPress',
     'WordPress live chat AI',
     'WordPress bot integration',
+    'WordPress AI plugin setup',
+    'chatbot WordPress site',
+    'AI customer support WordPress',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/add-wordpress-chatbot' },
+  openGraph: {
+    title: 'Add an AI Chatbot to WordPress with Appalix — Plugin Setup Guide',
+    description: 'Install the Appalix plugin and your AI bot is live on every WordPress page in minutes. Step-by-step guide.',
+    url: 'https://appalix.ai/resources/add-wordpress-chatbot',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Add an AI Chatbot to WordPress with Appalix — Plugin Setup Guide',
+    description: 'Install the Appalix plugin and your AI bot is live on every WordPress page in minutes. Step-by-step guide.',
+  },
 }
 
 export default function AddWordPressChatbotPage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="How to Add an AI Chatbot to WordPress with Appalix"
+        description="Install the Appalix plugin, enter your API endpoint and key in Settings → Appalix Chat, and your AI bot is live on every WordPress page in minutes."
+        slug="add-wordpress-chatbot"
+        datePublished="2026-02-27"
+        steps={[
+          { name: 'Create a WordPress integration in Appalix', text: 'In Appalix, go to Integrations → New → WordPress, name your integration, select your bot, and save to get your API endpoint and API key.' },
+          { name: 'Install the Appalix plugin on WordPress', text: 'In your WordPress admin, go to Plugins → Add New, search for Appalix Chat, install and activate the plugin.' },
+          { name: 'Configure the plugin', text: 'Go to Settings → Appalix Chat, paste your API endpoint and API key from Appalix, adjust the widget position and colours, and save.' },
+          { name: 'Test the chatbot', text: 'Visit any page on your WordPress site, open the chat widget, send a message, and verify the AI bot responds correctly.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}

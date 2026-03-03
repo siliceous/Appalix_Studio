@@ -1,22 +1,51 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'Custom API Integration — Connect Appalix to Any Platform | Developer Guide',
+  title: 'Appalix Custom API Integration — Connect AI Chat to Any Platform',
   description:
-    'Use the Appalix Custom API to power chat in any app, mobile app, or internal tool. Full REST API reference, authentication, request/response formats, and code examples.',
+    'Use the Appalix REST API to power AI chat in any app, mobile app, or internal tool. One POST request gets you an AI reply. Full API reference with auth, request format, and code examples.',
   keywords: [
     'Appalix custom API',
     'chatbot REST API',
     'AI chat API integration',
     'custom chatbot backend',
     'Appalix developer guide',
+    'AI chatbot API endpoint',
+    'REST API chatbot integration',
+    'AI agent API JavaScript Python',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/custom-api-integration' },
+  openGraph: {
+    title: 'Appalix Custom API Integration — Connect AI Chat to Any Platform',
+    description: 'Use the Appalix REST API to power AI chat in any platform. One POST request gets you an AI reply. Full reference.',
+    url: 'https://appalix.ai/resources/custom-api-integration',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Appalix Custom API Integration — Connect AI Chat to Any Platform',
+    description: 'Use the Appalix REST API to power AI chat in any platform. One POST request gets you an AI reply. Full reference.',
+  },
 }
 
 export default function CustomApiIntegrationPage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="Custom API Integration — Connect Appalix to Any Platform"
+        description="Use the Appalix REST API to power AI chat in any app, mobile app, or internal tool. One POST request gets you an AI reply. Full API reference with auth, request format, and code examples."
+        slug="custom-api-integration"
+        datePublished="2026-02-27"
+        steps={[
+          { name: 'Create a Custom API integration', text: 'Go to Integrations → Add integration, choose Custom API, name it and select a bot, click Create integration, then copy the API Key and Endpoint URL from the setup page.' },
+          { name: 'Send a POST request with your API key', text: 'POST to https://api.appalix.ai/chat/custom/your-integration-id with Content-Type: application/json and x-api-key header. Include a message field in the JSON body to receive an AI reply.' },
+          { name: 'Pass conversation_id to maintain context', text: 'Store the conversation_id returned in the first response and include it in every subsequent request to enable memory and maintain conversation history for each user session.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">

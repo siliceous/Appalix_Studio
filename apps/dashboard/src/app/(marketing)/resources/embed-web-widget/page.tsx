@@ -1,22 +1,52 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'How to Embed the Appalix Chat Widget on Any Website | Setup Guide',
+  title: 'Embed an AI Chat Widget on Any Website — Appalix Setup Guide',
   description:
-    'Add the Appalix AI chat widget to any website in under 5 minutes with a single script tag. Works with React, Next.js, WordPress, Webflow, Squarespace, Framer, and more.',
+    'Add a floating AI chat bubble to any site with two lines of code. Works with HTML, Next.js, Webflow, Squarespace, Framer, Shopify, and more. Step-by-step with platform-specific instructions.',
   keywords: [
     'embed AI chat widget',
     'Appalix web widget',
     'add chatbot to website',
     'website chat widget script',
     'AI chat embed code',
+    'floating chat bubble website',
+    'JavaScript chat widget install',
+    'AI chatbot embed any website',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/embed-web-widget' },
+  openGraph: {
+    title: 'Embed an AI Chat Widget on Any Website — Appalix Setup Guide',
+    description: 'Add a floating AI chat bubble to any site with two lines of code. Works with any website platform.',
+    url: 'https://appalix.ai/resources/embed-web-widget',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Embed an AI Chat Widget on Any Website — Appalix Setup Guide',
+    description: 'Add a floating AI chat bubble to any site with two lines of code. Works with any website platform.',
+  },
 }
 
 export default function EmbedWebWidgetPage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="How to Embed the Appalix Chat Widget on Any Website"
+        description="Add a floating AI chat bubble to any site with two lines of code. Works with HTML, Next.js, Webflow, Squarespace, Framer, Shopify, and more."
+        slug="embed-web-widget"
+        datePublished="2026-02-27"
+        steps={[
+          { name: 'Create a Web Widget integration in Appalix', text: 'In Appalix, go to Integrations → New → Web Widget, name your integration, connect your bot, and save to get your embed snippet.' },
+          { name: 'Copy the embed snippet', text: 'On the integration setup page, copy the two-line script tag that includes your unique integration ID.' },
+          { name: 'Paste the snippet into your website', text: 'Add the script tag to your site\'s HTML just before the closing </body> tag. For Next.js use a Script component in layout.tsx; for Webflow paste in site settings → custom code.' },
+          { name: 'Test the widget', text: 'Visit your website and confirm the floating chat bubble appears in the bottom-right corner. Click to open and send a test message.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}

@@ -1,22 +1,52 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'How to Connect Zapier to Appalix for CRM Lead Capture | Step-by-Step Guide',
+  title: 'Connect Zapier to Appalix for CRM Lead Capture — Step-by-Step',
   description:
-    'Use Zapier to route Appalix lead captures to HubSpot, Salesforce, Google Sheets, Pipedrive, or any of 6,000+ apps. Available on Core plan and above — no code required.',
+    'Route Appalix AI chat leads to HubSpot, Salesforce, Google Sheets, Pipedrive, or 6,000+ apps via a Zapier Catch Hook. No code required. Available on Core plan and above.',
   keywords: [
     'Zapier Appalix integration',
     'chatbot lead capture Zapier',
     'Appalix CRM webhook',
     'Zapier catch hook chatbot',
     'lead capture automation',
+    'Zapier webhook chatbot',
+    'AI chatbot Zapier HubSpot',
+    'no-code lead routing',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/connect-zapier' },
+  openGraph: {
+    title: 'Connect Zapier to Appalix for CRM Lead Capture — Step-by-Step',
+    description: 'Route Appalix AI chat leads to HubSpot, Salesforce, Google Sheets, or 6,000+ apps via Zapier. No code.',
+    url: 'https://appalix.ai/resources/connect-zapier',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Connect Zapier to Appalix for CRM Lead Capture — Step-by-Step',
+    description: 'Route Appalix AI chat leads to HubSpot, Salesforce, Google Sheets, or 6,000+ apps via Zapier. No code.',
+  },
 }
 
 export default function ConnectZapierPage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="How to Connect Zapier to Appalix for CRM Lead Capture"
+        description="Route Appalix AI chat leads to HubSpot, Salesforce, Google Sheets, Pipedrive, or 6,000+ apps via a Zapier Catch Hook. No code required."
+        slug="connect-zapier"
+        datePublished="2026-02-26"
+        steps={[
+          { name: 'Create a Zapier Catch Hook trigger', text: 'In Zapier, create a new Zap, add a Webhooks by Zapier trigger, choose Catch Hook, and copy the generated webhook URL.' },
+          { name: 'Paste the webhook URL in Appalix', text: 'In Appalix Integrations, click Edit, scroll to CRM integration, select Zapier, paste your Catch Hook URL, then save.' },
+          { name: 'Send a test lead', text: 'Open your Appalix integration preview, send a message with an email address, then click Test trigger in Zapier to confirm the payload was received.' },
+          { name: 'Add your CRM action and publish', text: 'Add your CRM action in Zapier (HubSpot, Salesforce, Google Sheets, etc.), map the email and phone fields, then turn the Zap on.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}

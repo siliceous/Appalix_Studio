@@ -12,6 +12,7 @@ const PLATFORMS: { platform: Platform; desc: string }[] = [
   { platform: 'facebook_messenger',  desc: 'Handle Messenger conversations' },
   { platform: 'whatsapp',            desc: 'Chat on WhatsApp Business' },
   { platform: 'google_chat',         desc: 'Answer questions in Google Chat' },
+  { platform: 'telegram',            desc: 'Chat with users on Telegram' },
 ]
 
 export function PlatformSelector({ defaultPlatform }: { defaultPlatform: Platform }) {

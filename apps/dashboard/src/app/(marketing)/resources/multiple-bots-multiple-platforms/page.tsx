@@ -1,11 +1,12 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'Multiple Bots on Multiple Platforms — One Agent, Every Channel | Appalix Resources',
+  title: 'Multiple Bots on Multiple Platforms — One AI Agent, Every Channel',
   description:
-    'Learn how to deploy a single Appalix AI agent across your website, Slack, WhatsApp, Telegram, Facebook Messenger, and more — each with its own settings, branding, and CRM integration.',
+    'Train one AI agent and deploy it across unlimited websites, Slack, WhatsApp, Telegram, and more — each channel with its own settings, branding, and CRM integration. Step-by-step guide.',
   keywords: [
     'AI agent multiple platforms',
     'deploy chatbot multiple sites',
@@ -13,12 +14,34 @@ export const metadata: Metadata = {
     'WhatsApp and Slack chatbot',
     'chatbot for multiple websites',
     'omnichannel AI agent',
+    'AI chatbot multi-channel deployment',
+    'one chatbot multiple integrations',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/multiple-bots-multiple-platforms' },
+  openGraph: {
+    title: 'Multiple Bots on Multiple Platforms — One AI Agent, Every Channel',
+    description: 'Train one AI agent and deploy it across unlimited websites, Slack, WhatsApp, Telegram, and more.',
+    url: 'https://appalix.ai/resources/multiple-bots-multiple-platforms',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Multiple Bots on Multiple Platforms — One AI Agent, Every Channel',
+    description: 'Train one AI agent and deploy it across unlimited websites, Slack, WhatsApp, Telegram, and more.',
+  },
 }
 
 export default function MultipleBotsPage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="Article"
+        title="Multiple Bots on Multiple Platforms — One AI Agent, Every Channel"
+        description="Train one AI agent and deploy it across unlimited websites, Slack, WhatsApp, Telegram, and more — each channel with its own settings, branding, and CRM integration."
+        slug="multiple-bots-multiple-platforms"
+        datePublished="2026-03-05"
+      />
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}

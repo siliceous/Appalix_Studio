@@ -1,22 +1,52 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'How to Connect Notion to Appalix | Index Notion Pages as Knowledge Base',
+  title: 'Connect Notion to Appalix — Index Notion Pages as an AI Knowledge Base',
   description:
-    'Step-by-step guide to indexing Notion pages in Appalix. Create a Notion integration, share your page, and add it as a knowledge base source so your AI bot can answer questions from it.',
+    'Turn Notion pages into a live AI knowledge base. Create a Notion integration token, share your page, and add it as a source in Appalix — your bot answers from your docs in minutes.',
   keywords: [
     'Appalix Notion integration',
     'Notion knowledge base AI',
     'index Notion page chatbot',
     'Notion internal integration token',
     'AI bot Notion docs',
+    'Notion AI training',
+    'connect Notion chatbot',
+    'Notion workspace knowledge base',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/connect-notion' },
+  openGraph: {
+    title: 'Connect Notion to Appalix — Index Notion Pages as an AI Knowledge Base',
+    description: 'Turn Notion pages into a live AI knowledge base. Create an integration token, share your page, and add it as a source in Appalix.',
+    url: 'https://appalix.ai/resources/connect-notion',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Connect Notion to Appalix — Index Notion Pages as an AI Knowledge Base',
+    description: 'Turn Notion pages into a live AI knowledge base. Create an integration token, share your page, and add it as a source in Appalix.',
+  },
 }
 
 export default function ConnectNotionPage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="How to Connect Notion to Appalix"
+        description="Turn Notion pages into a live AI knowledge base. Create an integration token, share your page, and add it as a source in Appalix — your bot answers from your docs in minutes."
+        slug="connect-notion"
+        datePublished="2026-02-28"
+        steps={[
+          { name: 'Create a Notion integration', text: 'Go to notion.so/my-integrations, click + New integration, name it Appalix, set capabilities to Read content only, and copy the Internal Integration Token starting with secret_.' },
+          { name: 'Share your Notion page with the integration', text: 'Open the Notion page you want to index, click Share → Invite, search for your integration name, select it, and click Invite to grant access.' },
+          { name: 'Copy the Notion page URL', text: 'While viewing the page, copy the URL from your browser address bar — it looks like notion.so/your-workspace/Page-Title-abc123def456.' },
+          { name: 'Add the source in Appalix and verify', text: 'In Appalix, go to Sources → Add source → Notion, enter a name, paste the page URL and integration token, click Add & index source, then verify it shows Ready status in the Sources list.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">

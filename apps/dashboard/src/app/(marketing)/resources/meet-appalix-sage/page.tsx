@@ -1,10 +1,11 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'Meet Appalix Sage — Your Team\'s Internal AI Assistant | Appalix Resources',
+  title: 'Meet Appalix Sage — Your Team\'s Internal AI Assistant',
   description:
-    'Appalix Sage is a Pro-exclusive AI assistant built for your internal team. Search your knowledge base, draft proposals, generate reports, and share content with colleagues — all from inside your dashboard.',
+    'Appalix Sage puts AI to work inside your team — searching your knowledge base, drafting proposals and reports, and sharing content with colleagues. Available on Pro plan and above.',
   keywords: [
     'internal AI assistant',
     'team AI sage',
@@ -14,12 +15,34 @@ export const metadata: Metadata = {
     'AI proposal drafting',
     'internal chatbot',
     'Appalix Sage',
+    'AI team productivity tool',
+    'internal knowledge base AI search',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/meet-appalix-sage' },
+  openGraph: {
+    title: 'Meet Appalix Sage — Your Team\'s Internal AI Assistant',
+    description: 'Appalix Sage puts AI to work inside your team — searching docs, drafting proposals, and sharing content with colleagues.',
+    url: 'https://appalix.ai/resources/meet-appalix-sage',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Meet Appalix Sage — Your Team\'s Internal AI Assistant',
+    description: 'Appalix Sage puts AI to work inside your team — searching docs, drafting proposals, and sharing content with colleagues.',
+  },
 }
 
 export default function SageBlogPage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="Article"
+        title="Meet Appalix Sage — Your Team's Internal AI Assistant"
+        description="Appalix Sage puts AI to work inside your team — searching your knowledge base, drafting proposals and reports, and sharing content with colleagues. Available on Pro plan and above."
+        slug="meet-appalix-sage"
+        datePublished="2026-02-26"
+      />
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}

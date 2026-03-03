@@ -273,7 +273,7 @@ export function BotsDashboard({
             </div>
 
             {/* Lead rows */}
-            <div className="flex-1 overflow-y-auto divide-y divide-gray-50 dark:divide-white/5">
+            <div className="flex-1 overflow-y-auto">
               {botConvs.map(conv => {
                 const priority = derivePriority(conv.message_count)
                 const rec      = deriveRec(conv.title, priority)
@@ -283,7 +283,7 @@ export function BotsDashboard({
                   : null
 
                 return (
-                  <div key={conv.id} className="px-5 py-3.5 flex items-start gap-3">
+                  <div key={conv.id} className="px-5 py-3.5 flex items-start gap-3 border-b border-gray-100 dark:border-white/[0.05]">
                     {/* Priority dot */}
                     <span className={`w-2 h-2 rounded-full shrink-0 mt-2 ${PRIORITY_DOT[priority]}`} />
 

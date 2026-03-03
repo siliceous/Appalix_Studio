@@ -1,22 +1,52 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'How to Connect Appalix to WhatsApp Business | AI Bot for WhatsApp',
+  title: 'Add an AI Bot to WhatsApp Business with Appalix — Step-by-Step Guide',
   description:
-    'Deploy your Appalix AI bot on WhatsApp Business API so it replies to customer messages 24/7. Step-by-step guide using Meta\'s WhatsApp Business Platform.',
+    'Put your AI agent on WhatsApp so it replies 24/7 using Meta\'s WhatsApp Business API. Create a Meta app, configure the webhook, and send your first test message. Step-by-step guide.',
   keywords: [
     'WhatsApp AI chatbot',
     'Appalix WhatsApp integration',
     'WhatsApp Business API bot',
     'WhatsApp chatbot setup',
     'Meta WhatsApp Business Platform',
+    'WhatsApp AI agent 24/7',
+    'WhatsApp business automation',
+    'Meta developer WhatsApp webhook',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/connect-whatsapp' },
+  openGraph: {
+    title: 'Add an AI Bot to WhatsApp Business with Appalix — Step-by-Step Guide',
+    description: 'Put your AI agent on WhatsApp so it replies 24/7 using Meta\'s WhatsApp Business API. Step-by-step guide.',
+    url: 'https://appalix.ai/resources/connect-whatsapp',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Add an AI Bot to WhatsApp Business with Appalix — Step-by-Step Guide',
+    description: 'Put your AI agent on WhatsApp so it replies 24/7 using Meta\'s WhatsApp Business API. Step-by-step guide.',
+  },
 }
 
 export default function ConnectWhatsAppPage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="How to Connect Appalix to WhatsApp Business"
+        description="Put your AI agent on WhatsApp so it replies 24/7 using Meta's WhatsApp Business API. Create a Meta app, configure the webhook, and send your first test message."
+        slug="connect-whatsapp"
+        datePublished="2026-02-27"
+        steps={[
+          { name: 'Create a Meta developer app', text: 'Go to developers.facebook.com, create a new app with WhatsApp product, and set up the WhatsApp Business API by adding a phone number.' },
+          { name: 'Configure the webhook', text: 'In your Meta app settings, add the Appalix webhook URL under WhatsApp → Configuration, set a verify token, and subscribe to the messages field.' },
+          { name: 'Connect WhatsApp in Appalix', text: 'In Appalix, create a new WhatsApp integration and paste your WhatsApp Access Token, Phone Number ID, and the verify token you set in Meta.' },
+          { name: 'Test the integration', text: 'Send a message from your personal WhatsApp to the test number and verify the AI bot replies automatically.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">

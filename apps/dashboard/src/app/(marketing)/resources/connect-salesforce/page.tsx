@@ -1,22 +1,52 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'How to Connect Salesforce to Appalix | Step-by-Step Guide',
+  title: 'Connect Salesforce to Appalix — AI Chat Lead Capture Tutorial',
   description:
-    'Create Salesforce Lead records automatically when visitors share contact details in your Appalix AI chat. Uses an OAuth access token and your Salesforce instance URL.',
+    'Auto-create Salesforce Lead records when visitors share contact details in your AI chat. Get an OAuth access token via Workbench or a Connected App. Step-by-step guide.',
   keywords: [
     'Salesforce Appalix integration',
     'Salesforce REST API lead creation',
     'AI chatbot Salesforce CRM',
     'Salesforce OAuth access token',
     'chatbot lead capture Salesforce',
+    'Salesforce Connected App OAuth',
+    'AI sales agent Salesforce',
+    'Salesforce Workbench access token',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/connect-salesforce' },
+  openGraph: {
+    title: 'Connect Salesforce to Appalix — AI Chat Lead Capture Tutorial',
+    description: 'Auto-create Salesforce Lead records when visitors share contact details in your AI chat. Step-by-step.',
+    url: 'https://appalix.ai/resources/connect-salesforce',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Connect Salesforce to Appalix — AI Chat Lead Capture Tutorial',
+    description: 'Auto-create Salesforce Lead records when visitors share contact details in your AI chat. Step-by-step.',
+  },
 }
 
 export default function ConnectSalesforcePage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="How to Connect Salesforce to Appalix"
+        description="Auto-create Salesforce Lead records when visitors share contact details in your AI chat. Get an OAuth access token via Workbench or a Connected App."
+        slug="connect-salesforce"
+        datePublished="2026-02-26"
+        steps={[
+          { name: 'Find your Salesforce instance URL', text: 'Log in to Salesforce and copy the base domain from the URL bar, e.g. https://yourcompany.my.salesforce.com.' },
+          { name: 'Get a Salesforce OAuth access token', text: 'Use Workbench (workbench.developerforce.com → Info → Session ID) for a quick token, or create a Connected App for a long-lived production token.' },
+          { name: 'Connect Salesforce in Appalix', text: 'In Appalix Integrations, click Edit, scroll to CRM integration, select Salesforce, paste your access token and instance URL, then save.' },
+          { name: 'Test the integration', text: 'Send a message with an email in your Appalix chat preview and verify a new Lead record appears in Salesforce under Leads.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}

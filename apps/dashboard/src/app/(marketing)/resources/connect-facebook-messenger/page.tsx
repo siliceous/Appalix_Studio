@@ -1,22 +1,52 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'How to Connect Appalix to Facebook Messenger | AI Chatbot for Messenger',
+  title: 'Add an AI Bot to Facebook Messenger with Appalix — Step-by-Step Guide',
   description:
-    'Deploy your Appalix AI bot on Facebook Messenger. Connect your Meta Page, set up a webhook, and let your bot answer customer messages automatically — step-by-step guide.',
+    'Deploy your AI bot on Facebook Messenger to reply to every message on your Page automatically. Set up a Meta app, configure the webhook, and go live. Step-by-step guide.',
   keywords: [
     'Facebook Messenger AI chatbot',
     'Appalix Facebook integration',
     'Meta Messenger bot setup',
     'Facebook page chatbot',
     'Messenger webhook tutorial',
+    'Facebook AI customer service bot',
+    'Meta developer Messenger webhook',
+    'automated Facebook Messenger replies',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/connect-facebook-messenger' },
+  openGraph: {
+    title: 'Add an AI Bot to Facebook Messenger with Appalix — Step-by-Step Guide',
+    description: 'Deploy your AI bot on Facebook Messenger to auto-reply to every message on your Page. Step-by-step guide.',
+    url: 'https://appalix.ai/resources/connect-facebook-messenger',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Add an AI Bot to Facebook Messenger with Appalix — Step-by-Step Guide',
+    description: 'Deploy your AI bot on Facebook Messenger to auto-reply to every message on your Page. Step-by-step guide.',
+  },
 }
 
 export default function ConnectFacebookMessengerPage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="How to Connect Appalix to Facebook Messenger"
+        description="Deploy your AI bot on Facebook Messenger to reply to every message on your Page automatically. Set up a Meta app, configure the webhook, and go live."
+        slug="connect-facebook-messenger"
+        datePublished="2026-02-27"
+        steps={[
+          { name: 'Create a Meta developer app with Messenger product', text: 'Go to developers.facebook.com, create a new app, add the Messenger product, and connect your Facebook Page to the app.' },
+          { name: 'Generate a Page Access Token', text: 'Under Messenger → Settings, generate a long-lived Page Access Token and copy it — you will paste this into Appalix.' },
+          { name: 'Set up the webhook', text: 'In Appalix, create a Facebook Messenger integration to get your webhook URL and verify token, then paste both into your Meta app under Webhooks and subscribe to the messages event.' },
+          { name: 'Test the integration', text: 'Send a message to your Facebook Page via Messenger and verify the AI bot replies automatically within seconds.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">

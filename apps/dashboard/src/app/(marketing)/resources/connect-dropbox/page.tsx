@@ -1,22 +1,52 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'How to Connect Dropbox to Appalix | Index Dropbox Files as Knowledge Base',
+  title: 'Connect Dropbox to Appalix — Index Dropbox Files as AI Knowledge Base',
   description:
-    'Step-by-step guide to indexing Dropbox files in Appalix. Create a Dropbox app, generate a long-lived access token, and add any file or shared link as a knowledge source for your AI bot.',
+    'Index Dropbox documents and shared links as AI knowledge sources. Create a Dropbox app in the App Console, generate a long-lived access token, and add any file path or shared link. Step-by-step guide.',
   keywords: [
     'Appalix Dropbox integration',
     'Dropbox knowledge base AI',
     'index Dropbox file chatbot',
     'Dropbox App Console access token',
     'AI bot Dropbox docs',
+    'Dropbox AI training',
+    'train AI on Dropbox files',
+    'Dropbox chatbot knowledge base',
   ],
+  alternates: { canonical: 'https://appalix.ai/resources/connect-dropbox' },
+  openGraph: {
+    title: 'Connect Dropbox to Appalix — Index Dropbox Files as AI Knowledge Base',
+    description: 'Index Dropbox documents as AI knowledge sources. Generate an access token and your bot answers from your files.',
+    url: 'https://appalix.ai/resources/connect-dropbox',
+    type: 'article',
+    siteName: 'Appalix',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Connect Dropbox to Appalix — Index Dropbox Files as AI Knowledge Base',
+    description: 'Index Dropbox documents as AI knowledge sources. Generate an access token and your bot answers from your files.',
+  },
 }
 
 export default function ConnectDropboxPage() {
   return (
     <div className="pt-24 pb-24 px-6">
+      <ArticleSeo
+        type="HowTo"
+        title="How to Connect Dropbox to Appalix"
+        description="Index Dropbox documents and shared links as AI knowledge sources. Create a Dropbox app in the App Console, generate a long-lived access token, and add any file path or shared link."
+        slug="connect-dropbox"
+        datePublished="2026-02-28"
+        steps={[
+          { name: 'Create a Dropbox app and generate an access token', text: 'Go to the Dropbox App Console, create a new app with Full Dropbox access, and generate a long-lived access token from the Settings tab.' },
+          { name: 'Get your Dropbox file path or shared link', text: 'In Dropbox, right-click your file or folder and copy the path (e.g. /Documents/handbook.pdf) or create a shared link.' },
+          { name: 'Add Dropbox as a knowledge source in Appalix', text: 'In Appalix, go to Sources → Add Source → Dropbox, paste your access token and file path or shared link, then save and sync.' },
+          { name: 'Test the knowledge source', text: 'In your Appalix bot preview, ask a question answered in the indexed Dropbox document and verify the AI bot responds correctly.' },
+        ]}
+      />
       <div className="max-w-3xl mx-auto">
 
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
