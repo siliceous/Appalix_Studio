@@ -7,10 +7,10 @@ import {
   Mail, AlertCircle, ArrowRight, Sparkles,
   Plus, RefreshCw, Ticket, UserPlus, RotateCcw,
   Check, X, ChevronRight, Loader2, Trash2,
-  Phone, Globe, Tag, Brain, ChevronDown,
+  Phone, Globe, Tag, Brain, ChevronDown, Send,
 } from 'lucide-react'
 import { triageCreateLead, triageCreateTicket, triageAddDealNote } from '@/app/actions/sage-triage'
-import { syncEmails, deleteTriageEmails, reanalyzeEmails } from '@/app/actions/sage-emails'
+import { syncEmails, deleteTriageEmails, reanalyzeEmails, sendEmail } from '@/app/actions/sage-emails'
 import type { SageEmail } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -91,11 +91,12 @@ interface CardProps {
   onAction:     (t: TriageEmail, mode: 'lead' | 'ticket' | 'deal_note') => void
   onDismiss:    (id: string) => void
   onToggle:     (id: string) => void
+  onReply:      (t: TriageEmail) => void
   isDeleting:   boolean
   onDelete:     (id: string) => void
 }
 
-function TriageCard({ t, isDone, actionLabel, isDismissed, isChecked, onAction, onDismiss, onToggle, isDeleting, onDelete }: CardProps) {
+function TriageCard({ t, isDone, actionLabel, isDismissed, isChecked, onAction, onDismiss, onToggle, onReply, isDeleting, onDelete }: CardProps) {
   const [expanded,    setExpanded]    = useState(false)
   const [activeDraft, setActiveDraft] = useState(0)
   const { email, recommendation } = t
@@ -313,6 +314,13 @@ function TriageCard({ t, isDone, actionLabel, isDismissed, isChecked, onAction, 
           </button>
         )}
 
+        {/* Reply button */}
+        <button
+          onClick={() => onReply(t)}
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-[#61c2ad]/10 dark:hover:bg-[#61c2ad]/10 hover:text-[#61c2ad] transition-colors border border-gray-200 dark:border-white/8">
+          <Send className="w-3 h-3" /> Reply
+        </button>
+
         <button
           onClick={() => onDismiss(email.id)}
           className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-100 dark:bg-white/5 text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors border border-gray-200 dark:border-white/8">
@@ -338,14 +346,19 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
   const router = useRouter()
   const [dismissed,  setDismissed]  = useState<Set<string>>(new Set())
   const [actioned,   setActioned]   = useState<Map<string, string>>(new Map())
-  const [modalMode,  setModalMode]  = useState<'lead' | 'ticket' | 'deal_note' | null>(null)
-  const [modalEmail, setModalEmail] = useState<TriageEmail | null>(null)
-  const [isPending, startTransition] = useTransition()
-  const [isSyncing, startSyncTransition] = useTransition()
-  const [isDeleting, startDeleteTransition] = useTransition()
-  const [isReanalyzing, startReanalyzeTransition] = useTransition()
-  const [syncMsg, setSyncMsg] = useState<string | null>(null)
-  const [analyzeMsg, setAnalyzeMsg] = useState<string | null>(null)
+  const [modalMode,    setModalMode]    = useState<'lead' | 'ticket' | 'deal_note' | null>(null)
+  const [modalEmail,   setModalEmail]   = useState<TriageEmail | null>(null)
+  const [replyTarget,  setReplyTarget]  = useState<TriageEmail | null>(null)
+  const [replyBody,    setReplyBody]    = useState('')
+  const [replyDraftIdx, setReplyDraftIdx] = useState(0)
+  const [replyResult,  setReplyResult]  = useState<string | null>(null)
+  const [isPending,      startTransition]         = useTransition()
+  const [isSyncing,      startSyncTransition]      = useTransition()
+  const [isDeleting,     startDeleteTransition]    = useTransition()
+  const [isReanalyzing,  startReanalyzeTransition] = useTransition()
+  const [isSending,      startSendTransition]      = useTransition()
+  const [syncMsg,     setSyncMsg]     = useState<string | null>(null)
+  const [analyzeMsg,  setAnalyzeMsg]  = useState<string | null>(null)
 
   // Multi-select state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -483,6 +496,33 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
 
   function dismiss(emailId: string) {
     setDismissed(prev => new Set([...prev, emailId]))
+  }
+
+  function openReply(t: TriageEmail) {
+    const drafts = t.email.ai_reply_drafts ?? []
+    setReplyTarget(t)
+    setReplyDraftIdx(0)
+    setReplyBody(drafts[0]?.body ?? '')
+    setReplyResult(null)
+  }
+
+  function handleSendReply() {
+    if (!replyTarget) return
+    startSendTransition(async () => {
+      const e = replyTarget.email
+      const res = await sendEmail({
+        to:              e.from_address,
+        subject:         `Re: ${e.subject}`,
+        body:            replyBody,
+        replyToEmailId:  e.id,
+      })
+      if (res.error) {
+        setReplyResult(`Error: ${res.error}`)
+      } else {
+        setReplyResult('Sent!')
+        setTimeout(() => { setReplyTarget(null); setReplyResult(null) }, 1500)
+      }
+    })
   }
 
   const visible        = triageEmails.filter(t => !dismissed.has(t.email.id))
@@ -700,6 +740,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                       onAction={openModal}
                       onDismiss={dismiss}
                       onToggle={toggleSelect}
+                      onReply={openReply}
                       isDeleting={isDeleting}
                       onDelete={handleDeleteOne}
                     />
@@ -730,6 +771,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                       onAction={openModal}
                       onDismiss={dismiss}
                       onToggle={toggleSelect}
+                      onReply={openReply}
                       isDeleting={isDeleting}
                       onDelete={handleDeleteOne}
                     />
@@ -760,6 +802,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                       onAction={openModal}
                       onDismiss={dismiss}
                       onToggle={toggleSelect}
+                      onReply={openReply}
                       isDeleting={isDeleting}
                       onDelete={handleDeleteOne}
                     />
@@ -790,6 +833,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                       onAction={openModal}
                       onDismiss={dismiss}
                       onToggle={toggleSelect}
+                      onReply={openReply}
                       isDeleting={isDeleting}
                       onDelete={handleDeleteOne}
                     />
@@ -916,6 +960,93 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
           </div>
         )}
       </div>
+
+      {/* ── Reply compose modal overlay ─────────────────────────────────── */}
+      {replyTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-lg bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-2xl border dark:border-white/10 flex flex-col overflow-hidden">
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b dark:border-white/8">
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Reply</h3>
+                <p className="text-[11px] text-gray-400 mt-0.5">
+                  To: {replyTarget.email.from_name
+                    ? `${replyTarget.email.from_name} <${replyTarget.email.from_address}>`
+                    : replyTarget.email.from_address}
+                </p>
+              </div>
+              <button onClick={() => { setReplyTarget(null); setReplyResult(null) }}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Subject (readonly) */}
+            <div className="px-5 py-2.5 border-b dark:border-white/8 bg-gray-50 dark:bg-white/3">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="font-semibold text-gray-600 dark:text-gray-300">Subject: </span>
+                Re: {replyTarget.email.subject}
+              </p>
+            </div>
+
+            {/* Draft tone tabs */}
+            {(replyTarget.email.ai_reply_drafts ?? []).length > 0 && (
+              <div className="flex items-center gap-1.5 px-5 pt-3 pb-1">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mr-1">Tone:</span>
+                {(replyTarget.email.ai_reply_drafts ?? []).map((d, i) => (
+                  <button key={i}
+                    onClick={() => { setReplyDraftIdx(i); setReplyBody(d.body) }}
+                    className={cn(
+                      'text-[11px] px-2.5 py-1 rounded-lg font-medium transition-colors',
+                      replyDraftIdx === i
+                        ? 'bg-[#61c2ad] text-white'
+                        : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10',
+                    )}>
+                    {d.tone}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Editable body */}
+            <div className="px-5 py-3 flex-1">
+              <textarea
+                value={replyBody}
+                onChange={e => setReplyBody(e.target.value)}
+                rows={10}
+                placeholder="Write your reply…"
+                className="w-full text-sm text-gray-700 dark:text-gray-200 bg-transparent focus:outline-none resize-none leading-relaxed placeholder:text-gray-300 dark:placeholder:text-gray-600"
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-3.5 border-t dark:border-white/8 flex items-center justify-between">
+              <div>
+                {replyResult && (
+                  <span className={cn('text-xs font-medium', replyResult.startsWith('Error') ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
+                    {replyResult}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { setReplyTarget(null); setReplyResult(null) }}
+                  className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendReply}
+                  disabled={isSending || !replyBody.trim()}
+                  className="flex items-center gap-2 px-5 py-2 bg-[#61c2ad] hover:bg-[#52b09b] disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
+                  {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                  {isSending ? 'Sending…' : 'Send Reply'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
