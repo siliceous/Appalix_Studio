@@ -214,17 +214,24 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
       const start       = total > limit ? total - limit + 1 : 1
       const fetchRange  = `${start}:*`
 
+      // Fetch messages WITH flags so we can skip Junk/Spam/Deleted/Draft
       const messages = client.fetch(fetchRange, {
         uid:    true,
         source: true,
+        flags:  true,
       }, { uid: false })
+
+      // IMAP system flags that indicate a message should be excluded from triage
+      const SKIP_FLAGS = new Set(['\\Junk', '\\Spam', '\\Deleted', '\\Draft'])
 
       const toProcess: { uid: number; raw: Buffer }[] = []
 
       for await (const msg of messages) {
-        if (msg.source) {
-          toProcess.push({ uid: msg.uid, raw: msg.source })
-        }
+        if (!msg.source) continue
+        // Skip messages in Junk/Spam/Trash/Draft state even if in INBOX folder
+        const flags = msg.flags ?? new Set<string>()
+        if ([...flags].some(f => SKIP_FLAGS.has(f))) continue
+        toProcess.push({ uid: msg.uid, raw: msg.source })
       }
 
       // Process newest first (highest sequence number = most recent)

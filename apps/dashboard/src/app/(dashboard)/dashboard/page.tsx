@@ -81,6 +81,7 @@ export default async function DashboardPage({
         .select('*, contact:sage_contacts(id, name, email)')
         .eq('workspace_id', workspaceId)
         .eq('direction', 'inbound')
+        .eq('is_trashed', false)   // exclude user-deleted emails
         // neq() excludes NULLs in SQL — use or() so unanalyzed emails (null priority) are included
         .or('ai_priority.neq.low,ai_priority.is.null')
         .order('ai_priority', { ascending: true, nullsFirst: false })  // high, medium, null
