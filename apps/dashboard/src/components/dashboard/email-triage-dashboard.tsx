@@ -1,13 +1,13 @@
 'use client'
 
-import React, { useState, useTransition, useEffect, useRef } from 'react'
+import React, { useState, useTransition, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Mail, AlertCircle, ArrowRight, Sparkles,
   Plus, RefreshCw, Ticket, UserPlus, RotateCcw,
   Check, X, ChevronRight, Loader2, Trash2,
-  Phone, Globe, Tag, Brain, ChevronDown,
+  Phone, Globe, Tag, Brain,
 } from 'lucide-react'
 import { triageCreateLead, triageCreateTicket, triageAddDealNote } from '@/app/actions/sage-triage'
 import { syncEmails, deleteTriageEmails, reanalyzeEmails } from '@/app/actions/sage-emails'
@@ -49,7 +49,6 @@ const PRIORITY_BADGE: Record<string, string> = {
   low:    'bg-gray-100 dark:bg-white/5 text-gray-500 border-gray-200 dark:border-white/10',
 }
 
-// Priority sort order: high=0, medium=1, low=2, pending=3
 const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 }
 
 function sortByPriority(a: TriageEmail, b: TriageEmail): number {
@@ -85,9 +84,15 @@ function recIcon(r: TriageRecommendation) {
 }
 
 function recColor(r: TriageRecommendation): string {
-  if (r === 'create_ticket')  return 'bg-red-500 hover:bg-red-600 text-white'
-  if (r === 'ignore')         return 'bg-gray-200 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-white/10'
-  return 'bg-[#61c2ad] hover:bg-[#52b09b] text-white'
+  if (r === 'create_ticket') return 'bg-sky-500 hover:bg-sky-600 text-white'
+  if (r === 'ignore')        return 'bg-gray-200 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-white/10'
+  return 'bg-blue-600 hover:bg-blue-700 text-white'
+}
+
+function categoryClass(cat: string): string {
+  if (cat === 'Sales')   return 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/20'
+  if (cat === 'Support') return 'bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-500/20'
+  return 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-white/10'
 }
 
 // ─── Copy chip ────────────────────────────────────────────────────────────────
@@ -113,298 +118,333 @@ function CopyChip({ value, children, className }: { value: string; children: Rea
   )
 }
 
-// ─── Triage Card ──────────────────────────────────────────────────────────────
+// ─── Compact Triage Card (grid view) ─────────────────────────────────────────
 
 interface CardProps {
-  t:            TriageEmail
-  isDone:       boolean
-  actionLabel:  string | undefined
-  isDismissed:  boolean
-  isChecked:    boolean
-  isSelected:   boolean
-  onAction:     (t: TriageEmail, mode: 'lead' | 'ticket' | 'deal_note') => void
-  onDismiss:    (id: string) => void
-  onToggle:     (id: string) => void
-  onSelect:     (id: string) => void
-  isDeleting:   boolean
-  onDelete:     (id: string) => void
+  t:          TriageEmail
+  isDone:     boolean
+  actionLabel: string | undefined
+  isChecked:  boolean
+  isSelected: boolean
+  onSelect:   (id: string) => void
+  onToggle:   (id: string) => void
 }
 
-function TriageCard({
-  t, isDone, actionLabel, isDismissed, isChecked, isSelected,
-  onAction, onDismiss, onToggle, onSelect, isDeleting, onDelete,
-}: CardProps) {
-  const [expanded,    setExpanded]    = useState(false)
-  const [draftsOpen,  setDraftsOpen]  = useState(false)
+function TriageCard({ t, isDone, actionLabel, isChecked, isSelected, onSelect, onToggle }: CardProps) {
+  const { email } = t
+  const entities = email.ai_entities
+
+  return (
+    <div
+      onClick={() => onSelect(isSelected ? '' : email.id)}
+      className={cn(
+        'flex flex-col bg-white dark:bg-[#232323] rounded-xl border transition-all cursor-pointer hover:shadow-sm',
+        isSelected
+          ? 'ring-2 ring-blue-400/40 dark:ring-blue-400/30 border-blue-200 dark:border-blue-500/30'
+          : isDone
+            ? 'border-green-200 dark:border-green-500/20'
+            : email.ai_priority === 'high'
+              ? 'border-[#61c2ad]/50 dark:border-[#61c2ad]/35'
+              : email.ai_priority === 'medium'
+                ? 'border-amber-300/70 dark:border-amber-500/30'
+                : 'border-gray-200 dark:border-white/8',
+      )}
+    >
+      {/* Top row: badges + time + checkbox */}
+      <div className="flex items-center justify-between px-4 pt-3 pb-2">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {email.ai_priority ? (
+            <span className={cn('flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border', PRIORITY_BADGE[email.ai_priority])}>
+              <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT[email.ai_priority])} />
+              {email.ai_priority}
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/5 text-gray-500 border border-gray-200 dark:border-white/8 font-medium">
+              <Brain className="w-2.5 h-2.5" /> Pending
+            </span>
+          )}
+          {email.ai_category && (
+            <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-semibold border', categoryClass(email.ai_category))}>
+              {email.ai_category}
+            </span>
+          )}
+          {isDone && (
+            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/20 font-medium">
+              <Check className="w-2.5 h-2.5" /> {actionLabel}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-gray-400">{formatDate(email.received_at)}</span>
+          <button
+            type="button"
+            onClick={e => { e.stopPropagation(); onToggle(email.id) }}
+            title={isChecked ? 'Deselect' : 'Select'}
+          >
+            <span className={cn(
+              'w-4 h-4 rounded border flex items-center justify-center transition-colors',
+              isChecked ? 'bg-blue-600 border-blue-600' : 'border-gray-300 dark:border-white/20 hover:border-blue-400',
+            )}>
+              {isChecked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Sender + subject + summary preview */}
+      <div className="px-4 pb-3">
+        <div className="flex items-center gap-2">
+          <div className={cn(
+            'w-7 h-7 rounded-full flex items-center justify-center shrink-0',
+            email.ai_priority === 'high'   ? 'bg-[#61c2ad]/15 dark:bg-[#61c2ad]/20'
+            : email.ai_priority === 'medium' ? 'bg-amber-100 dark:bg-amber-500/15'
+            : 'bg-gray-100 dark:bg-white/5',
+          )}>
+            <span className={cn(
+              'text-[11px] font-bold',
+              email.ai_priority === 'high'   ? 'text-[#61c2ad]'
+              : email.ai_priority === 'medium' ? 'text-amber-600 dark:text-amber-400'
+              : 'text-gray-500 dark:text-gray-400',
+            )}>
+              {(email.from_name ?? email.from_address).charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+              {email.from_name ?? email.from_address}
+              {entities?.company && (
+                <span className="font-normal text-gray-400 text-xs ml-1">· {entities.company}</span>
+              )}
+            </p>
+          </div>
+        </div>
+        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1.5 leading-snug line-clamp-2">{email.subject}</p>
+        {email.ai_summary && (
+          <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1 line-clamp-1 italic">{email.ai_summary}</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Full-width Detail Card ────────────────────────────────────────────────────
+
+interface DetailCardProps {
+  t:          TriageEmail
+  actioned:   Map<string, string>
+  onAction:   (t: TriageEmail, mode: 'lead' | 'ticket' | 'deal_note') => void
+  onDismiss:  (id: string) => void
+  onDelete:   (id: string) => void
+  isDeleting: boolean
+}
+
+function DetailCard({ t, actioned, onAction, onDismiss, onDelete, isDeleting }: DetailCardProps) {
   const [activeDraft, setActiveDraft] = useState(0)
-  const cardRef = useRef<HTMLDivElement>(null)
   const { email, recommendation } = t
   const entities  = email.ai_entities
   const drafts    = email.ai_reply_drafts ?? []
+  const isDone    = actioned.has(email.id)
+  const actionLabel = actioned.get(email.id)
 
-  // Auto-expand and scroll into view when selected from the left panel
-  useEffect(() => {
-    if (isSelected) {
-      setExpanded(true)
-      setTimeout(() => cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50)
-    }
-  }, [isSelected])
-
-  if (isDismissed) return null
-
-  function handlePrimaryAction(e: React.MouseEvent) {
-    e.stopPropagation()
+  function handlePrimaryAction() {
     if (recommendation === 'create_lead')    onAction(t, 'lead')
     if (recommendation === 'create_ticket')  onAction(t, 'ticket')
     if (recommendation === 'update_lead')    onAction(t, 'deal_note')
     if (recommendation === 'reopen_account') onAction(t, 'lead')
   }
 
-  function handleHeaderClick() {
-    setExpanded(v => !v)
-    onSelect(email.id)
-  }
-
   return (
-    <div
-      ref={cardRef}
-      className={cn(
-        'flex flex-col bg-white dark:bg-[#232323] rounded-xl border transition-all',
-        isSelected
-          ? 'ring-2 ring-[#61c2ad]/40 dark:ring-[#61c2ad]/30'
-          : '',
-        isDone
-          ? 'border-green-200 dark:border-green-500/20'
-          : email.ai_priority === 'high'
-            ? 'border-[#61c2ad]/50 dark:border-[#61c2ad]/35'
-            : email.ai_priority === 'medium'
-              ? 'border-amber-300/70 dark:border-amber-500/30'
-              : 'border-gray-200 dark:border-white/8',
-      )}
-    >
-      {/* ── Clickable header — click anywhere here to expand/collapse ── */}
-      <div
-        onClick={handleHeaderClick}
-        className="flex flex-col cursor-pointer select-none hover:bg-gray-50/60 dark:hover:bg-white/[0.02] rounded-t-xl transition-colors"
-      >
-        {/* Top row: badges + time + chevron + checkbox */}
-        <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {email.ai_priority ? (
-              <span className={cn('flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border', PRIORITY_BADGE[email.ai_priority])}>
+    <div className={cn(
+      'bg-white dark:bg-[#232323] rounded-2xl border shadow-sm',
+      email.ai_priority === 'high'
+        ? 'border-blue-200 dark:border-blue-500/25'
+        : email.ai_priority === 'medium'
+          ? 'border-amber-200 dark:border-amber-500/25'
+          : 'border-gray-200 dark:border-white/8',
+    )}>
+      {/* ── Header ── */}
+      <div className="px-6 pt-5 pb-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-50 leading-tight">{email.subject}</h2>
+            <div className="flex items-center gap-2 mt-2.5">
+              <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center shrink-0">
+                <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                  {(email.from_name ?? email.from_address).charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{email.from_name ?? email.from_address}</p>
+                {email.from_name && <p className="text-xs text-gray-400">{email.from_address}</p>}
+              </div>
+              <span className="text-gray-200 dark:text-white/15 mx-0.5">·</span>
+              <span className="text-xs text-gray-400">
+                {new Date(email.received_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {email.ai_priority && (
+              <span className={cn('text-[11px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wide border flex items-center gap-1.5', PRIORITY_BADGE[email.ai_priority])}>
                 <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT[email.ai_priority])} />
                 {email.ai_priority}
               </span>
-            ) : (
-              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-white/8 font-medium">
-                <Brain className="w-2.5 h-2.5" /> Pending
-              </span>
             )}
             {email.ai_category && (
-              <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-semibold border', {
-                'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/20': email.ai_category === 'Sales',
-                'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20': email.ai_category === 'Support',
-                'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10': email.ai_category === 'Other',
-              })}>
+              <span className={cn('text-[11px] px-2.5 py-0.5 rounded-full font-semibold border', categoryClass(email.ai_category))}>
                 {email.ai_category}
               </span>
             )}
-            {isDone && (
-              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/20 font-medium">
-                <Check className="w-2.5 h-2.5" /> {actionLabel}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-gray-400">{formatDate(email.received_at)}</span>
-            <ChevronDown className={cn('w-3.5 h-3.5 text-gray-400 transition-transform duration-200', expanded && 'rotate-180')} />
             <button
-              type="button"
-              onClick={e => { e.stopPropagation(); onToggle(email.id) }}
-              title={isChecked ? 'Deselect' : 'Select'}
+              onClick={() => onDelete(email.id)}
+              disabled={isDeleting}
+              className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors border border-transparent hover:border-red-100 dark:hover:border-red-500/20"
             >
-              <span className={cn(
-                'w-4 h-4 rounded border flex items-center justify-center transition-colors',
-                isChecked ? 'bg-[#61c2ad] border-[#61c2ad]' : 'border-gray-300 dark:border-white/20 hover:border-[#61c2ad]',
-              )}>
-                {isChecked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
-              </span>
+              {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
             </button>
           </div>
-        </div>
-
-        {/* Sender + subject */}
-        <div className="px-4 pb-3">
-          <div className="flex items-center gap-2">
-            <div className={cn(
-              'w-7 h-7 rounded-full flex items-center justify-center shrink-0',
-              email.ai_priority === 'high'   ? 'bg-[#61c2ad]/15 dark:bg-[#61c2ad]/20'
-              : email.ai_priority === 'medium' ? 'bg-amber-100 dark:bg-amber-500/15'
-              : 'bg-gray-100 dark:bg-white/5',
-            )}>
-              <span className={cn(
-                'text-[11px] font-bold',
-                email.ai_priority === 'high'   ? 'text-[#61c2ad]'
-                : email.ai_priority === 'medium' ? 'text-amber-600 dark:text-amber-400'
-                : 'text-gray-500 dark:text-gray-400',
-              )}>
-                {(email.from_name ?? email.from_address).charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                {email.from_name ?? email.from_address}
-                {entities?.company && (
-                  <span className="font-normal text-gray-400 text-xs ml-1">· {entities.company}</span>
-                )}
-              </p>
-            </div>
-          </div>
-          <p className="text-xs text-gray-700 dark:text-gray-400 mt-1.5 leading-snug line-clamp-2">
-            {email.subject}
-          </p>
         </div>
       </div>
 
-      {/* ── Accordion body — shown only when expanded ── */}
-      {expanded && (
-        <div className="border-t dark:border-white/8">
+      {/* ── Content ── */}
+      <div className="px-6 pb-5 pt-4 border-t dark:border-white/8 space-y-4">
 
-          {/* AI Summary */}
-          {email.ai_summary ? (
-            <div className="mx-4 mt-3 mb-2 px-3 py-2.5 rounded-lg bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <Sparkles className="w-3 h-3 text-brand-500 dark:text-[#ec732e]" />
-                <span className="text-[10px] font-bold text-brand-600 dark:text-[#ec732e] uppercase tracking-wide">AI Summary</span>
-              </div>
-              <p className="text-xs text-gray-900 dark:text-gray-100 leading-relaxed">{email.ai_summary}</p>
-              {email.ai_reason && (
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1.5 italic">{email.ai_reason}</p>
-              )}
+        {/* AI user prompt callout */}
+        {email.ai_user_prompt && (
+          <div className="rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 px-4 py-3 flex items-start gap-2.5">
+            <Sparkles className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+            <p className="text-sm text-gray-900 dark:text-gray-100 font-medium leading-relaxed">{email.ai_user_prompt}</p>
+          </div>
+        )}
+
+        {/* AI Summary */}
+        {email.ai_summary ? (
+          <div className="rounded-xl bg-gray-50 dark:bg-white/3 border border-gray-200 dark:border-white/10 px-4 py-3.5">
+            <div className="flex items-center gap-2 mb-2">
+              <Brain className="w-3.5 h-3.5 text-blue-500" />
+              <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">AI Summary</span>
+            </div>
+            <p className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed">{email.ai_summary}</p>
+            {email.ai_reason && <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 italic">{email.ai_reason}</p>}
+          </div>
+        ) : (
+          <div className="rounded-xl bg-blue-50 dark:bg-blue-500/8 border border-dashed border-blue-200 dark:border-blue-500/20 px-4 py-3 text-center">
+            <p className="text-[11px] text-blue-500 dark:text-blue-400">AI analysis pending — click Analyse to generate insights</p>
+          </div>
+        )}
+
+        {/* AI Insights */}
+        {Array.isArray(email.ai_insights) && (email.ai_insights as string[]).length > 0 && (
+          <ul className="space-y-1.5 pl-1">
+            {(email.ai_insights as string[]).map((insight, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700 dark:text-gray-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0 mt-1.5" />
+                {insight}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* Intent + urgency chips */}
+        {((entities?.intent_signals ?? []).length > 0 || (entities?.urgency_signals ?? []).length > 0) && (
+          <div className="flex flex-wrap gap-2">
+            {(entities?.intent_signals ?? []).map((s, i) => (
+              <CopyChip key={i} value={s} className="text-[11px] px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 font-medium">
+                {s}
+              </CopyChip>
+            ))}
+            {(entities?.urgency_signals ?? []).map((s, i) => (
+              <CopyChip key={i} value={s} className="text-[11px] px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-500/20 font-medium">
+                ⚡ {s}
+              </CopyChip>
+            ))}
+          </div>
+        )}
+
+        {/* Entity chips */}
+        {entities && (entities.name || entities.phone || entities.website || entities.product_interest) && (
+          <div className="flex flex-wrap gap-2">
+            {entities.name && (
+              <CopyChip value={entities.name} className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-700 dark:text-gray-300">
+                <UserPlus className="w-3 h-3 text-gray-400 shrink-0" /> {entities.name}
+              </CopyChip>
+            )}
+            {entities.phone && (
+              <CopyChip value={entities.phone} className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-700 dark:text-gray-300">
+                <Phone className="w-3 h-3 text-gray-400 shrink-0" /> {entities.phone}
+              </CopyChip>
+            )}
+            {entities.website && (
+              <a
+                href={entities.website.startsWith('http') ? entities.website : `https://${entities.website}`}
+                target="_blank" rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-700 dark:text-gray-300 hover:text-blue-600 transition-colors"
+              >
+                <Globe className="w-3 h-3 shrink-0" /> {entities.website}
+              </a>
+            )}
+            {entities.product_interest && (
+              <CopyChip value={entities.product_interest} className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 text-blue-700 dark:text-blue-400">
+                <Tag className="w-3 h-3 shrink-0" /> {entities.product_interest}
+              </CopyChip>
+            )}
+          </div>
+        )}
+
+        {/* Reply drafts */}
+        {drafts.length > 0 && (
+          <div className="rounded-xl border dark:border-white/8 overflow-hidden">
+            <div className="flex items-center gap-1 px-4 py-2.5 border-b dark:border-white/8 bg-gray-50 dark:bg-white/3">
+              <Mail className="w-3.5 h-3.5 text-gray-400 mr-1.5" />
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mr-2">Reply</span>
+              {drafts.map((d, i) => (
+                <button key={i} onClick={() => setActiveDraft(i)}
+                  className={cn('text-[11px] px-2.5 py-1 rounded-lg font-medium transition-colors',
+                    activeDraft === i ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/8')}>
+                  {d.tone}
+                </button>
+              ))}
+            </div>
+            <div className="px-5 py-4 bg-white dark:bg-[#232323]">
+              <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">{drafts[activeDraft]?.body}</p>
+            </div>
+            <div className="px-4 py-2.5 border-t dark:border-white/8 bg-gray-50 dark:bg-white/3 flex justify-end">
+              <Link href="/sage/emails" className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+                Open email client to send <ArrowRight className="w-2.5 h-2.5" />
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 flex-wrap pt-1">
+          {isDone ? (
+            <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded-xl">
+              <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+              <span className="text-sm font-medium text-green-700 dark:text-green-400">{actionLabel}</span>
             </div>
           ) : (
-            <div className="mx-4 mt-3 mb-2 px-3 py-2 rounded-lg bg-purple-50 dark:bg-purple-500/8 border border-dashed border-purple-200 dark:border-purple-500/20 text-center">
-              <p className="text-[11px] text-purple-500 dark:text-purple-400">AI analysis pending — click Analyse to generate insights</p>
-            </div>
-          )}
-
-          {/* User prompt callout */}
-          {email.ai_user_prompt && (
-            <div className="mx-4 mb-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-white/3 border border-gray-200 dark:border-white/8 flex items-start gap-2">
-              <span className="text-brand-500 dark:text-[#ec732e] text-sm leading-none mt-0.5">→</span>
-              <p className="text-xs text-gray-900 dark:text-gray-100 font-medium leading-relaxed">{email.ai_user_prompt}</p>
-            </div>
-          )}
-
-          {/* Intent + urgency signal chips */}
-          {((entities?.intent_signals ?? []).length > 0 || (entities?.urgency_signals ?? []).length > 0) && (
-            <div className="px-4 pb-2 flex flex-wrap gap-1.5">
-              {(entities?.intent_signals ?? []).map((s, i) => (
-                <CopyChip key={i} value={s} className="text-[10px] px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 font-medium">
-                  {s}
-                </CopyChip>
-              ))}
-              {(entities?.urgency_signals ?? []).map((s, i) => (
-                <CopyChip key={i} value={s} className="text-[10px] px-2 py-0.5 rounded-md bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/20 font-medium">
-                  ⚡ {s}
-                </CopyChip>
-              ))}
-            </div>
-          )}
-
-          {/* Entity chips */}
-          {entities && (entities.name || entities.phone || entities.website || entities.product_interest) && (
-            <div className="px-4 pb-2 flex flex-wrap gap-1.5">
-              {entities.name && (
-                <CopyChip value={entities.name} className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
-                  <UserPlus className="w-2.5 h-2.5 text-gray-500 shrink-0" /> {entities.name}
-                </CopyChip>
-              )}
-              {entities.phone && (
-                <CopyChip value={entities.phone} className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
-                  <Phone className="w-2.5 h-2.5 text-gray-500 shrink-0" /> {entities.phone}
-                </CopyChip>
-              )}
-              {entities.website && (
-                <a
-                  href={entities.website.startsWith('http') ? entities.website : `https://${entities.website}`}
-                  target="_blank" rel="noopener noreferrer"
-                  onClick={e => e.stopPropagation()}
-                  className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300 hover:text-[#61c2ad] transition-colors"
+            <>
+              {recommendation !== 'ignore' && (
+                <button
+                  onClick={handlePrimaryAction}
+                  className={cn('flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors', recColor(recommendation))}
                 >
-                  <Globe className="w-2.5 h-2.5 shrink-0" /> {entities.website}
-                </a>
+                  {recIcon(recommendation)}
+                  {recLabel(recommendation, t)}
+                </button>
               )}
-              {entities.product_interest && (
-                <CopyChip value={entities.product_interest} className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-brand-50 dark:bg-[#ec732e]/10 border border-brand-100 dark:border-[#ec732e]/20 text-brand-700 dark:text-[#ec732e]">
-                  <Tag className="w-2.5 h-2.5 shrink-0" /> {entities.product_interest}
-                </CopyChip>
-              )}
-            </div>
-          )}
-
-          {/* Reply drafts inline */}
-          {drafts.length > 0 && draftsOpen && (
-            <div className="mx-4 mb-3 rounded-lg border dark:border-white/8 overflow-hidden bg-gray-50 dark:bg-white/3">
-              <div className="flex items-center gap-1 px-3 pt-2 pb-1 flex-wrap">
-                {drafts.map((d, i) => (
-                  <button key={i} onClick={e => { e.stopPropagation(); setActiveDraft(i) }}
-                    className={cn('text-[11px] px-2.5 py-1 rounded-lg font-medium transition-colors',
-                      activeDraft === i ? 'bg-brand-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5')}>
-                    {d.tone}
-                  </button>
-                ))}
-              </div>
-              <div className="px-3 py-2.5 border-t dark:border-white/8">
-                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap line-clamp-6">
-                  {drafts[activeDraft]?.body}
-                </p>
-              </div>
-              <div className="px-3 py-2 border-t dark:border-white/8 flex justify-end">
-                <Link href="/sage/emails"
-                  className="text-[11px] text-brand-600 dark:text-[#61c2ad] hover:underline flex items-center gap-1">
-                  Open email client to send <ArrowRight className="w-2.5 h-2.5" />
-                </Link>
-              </div>
-            </div>
-          )}
-
-          {/* Action buttons */}
-          <div className="px-4 pb-4 pt-2 flex flex-wrap gap-1.5">
-            {!isDone && recommendation !== 'ignore' && (
               <button
-                onClick={handlePrimaryAction}
-                className={cn('flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors', recColor(recommendation))}>
-                {recIcon(recommendation)}
-                {recLabel(recommendation, t)}
+                onClick={() => onDismiss(email.id)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 border border-gray-200 dark:border-white/8 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" /> Ignore
               </button>
-            )}
-
-            {drafts.length > 0 && (
-              <button
-                onClick={e => { e.stopPropagation(); setDraftsOpen(v => !v) }}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors border border-gray-200 dark:border-white/8">
-                <Mail className="w-3 h-3" />
-                Reply
-                <ChevronDown className={cn('w-3 h-3 transition-transform', draftsOpen && 'rotate-180')} />
-              </button>
-            )}
-
-            <button
-              onClick={e => { e.stopPropagation(); onDismiss(email.id) }}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors border border-gray-200 dark:border-white/8">
-              <X className="w-3 h-3" /> Ignore
-            </button>
-
-            <button
-              onClick={e => { e.stopPropagation(); onDelete(email.id) }}
-              disabled={isDeleting}
-              className="flex items-center justify-center w-7 h-7 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors border border-gray-200 dark:border-white/8 hover:border-red-200 dark:hover:border-red-500/20">
-              {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-            </button>
-          </div>
+            </>
+          )}
         </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -413,20 +453,20 @@ function TriageCard({
 
 export function EmailTriageDashboard({ triageEmails }: Props) {
   const router = useRouter()
-  const [dismissed,     setDismissed]     = useState<Set<string>>(new Set())
-  const [actioned,      setActioned]      = useState<Map<string, string>>(new Map())
-  const [modalMode,     setModalMode]     = useState<'lead' | 'ticket' | 'deal_note' | null>(null)
-  const [modalEmail,    setModalEmail]    = useState<TriageEmail | null>(null)
-  const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null)
+  const [dismissed,       setDismissed]       = useState<Set<string>>(new Set())
+  const [actioned,        setActioned]        = useState<Map<string, string>>(new Map())
+  const [modalMode,       setModalMode]       = useState<'lead' | 'ticket' | 'deal_note' | null>(null)
+  const [modalEmail,      setModalEmail]      = useState<TriageEmail | null>(null)
+  const [selectedEmailId, setSelectedEmailId] = useState<string>('')
   const [isPending,         startTransition]          = useTransition()
   const [isSyncing,         startSyncTransition]      = useTransition()
   const [isDeleting,        startDeleteTransition]    = useTransition()
   const [isReanalyzing,     startReanalyzeTransition] = useTransition()
-  const [syncMsg,       setSyncMsg]       = useState<string | null>(null)
-  const [analyzeMsg,    setAnalyzeMsg]    = useState<string | null>(null)
-  const [selectedIds,   setSelectedIds]   = useState<Set<string>>(new Set())
+  const [syncMsg,         setSyncMsg]         = useState<string | null>(null)
+  const [analyzeMsg,      setAnalyzeMsg]      = useState<string | null>(null)
+  const [selectedIds,     setSelectedIds]     = useState<Set<string>>(new Set())
 
-  // Auto-refresh every 60 s so emails pushed by the IMAP IDLE loop appear
+  // Auto-refresh every 60 s
   useEffect(() => {
     const id = setInterval(() => { router.refresh() }, 60_000)
     return () => clearInterval(id)
@@ -444,9 +484,6 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
 
   function handleReanalyze() {
     setAnalyzeMsg(null)
-    // If specific emails are checked → re-analyze those
-    // If nothing selected but unanalyzed pending → let server handle pending-only
-    // If nothing selected and ALL already analyzed → force re-analyze all visible by passing their IDs
     const targetIds = selectedIds.size > 0
       ? Array.from(selectedIds)
       : unanalyzedCount === 0 && visible.length > 0
@@ -467,6 +504,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
       if (res.error) { setSyncMsg(`Error: ${res.error}`); return }
       setDismissed(prev => new Set([...prev, ...ids]))
       setSelectedIds(new Set())
+      if (ids.includes(selectedEmailId)) setSelectedEmailId('')
       router.refresh()
     })
   }
@@ -475,6 +513,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
     startDeleteTransition(async () => {
       await deleteTriageEmails([emailId])
       setDismissed(prev => new Set([...prev, emailId]))
+      if (emailId === selectedEmailId) setSelectedEmailId('')
       router.refresh()
     })
   }
@@ -490,6 +529,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
 
   function dismiss(emailId: string) {
     setDismissed(prev => new Set([...prev, emailId]))
+    if (emailId === selectedEmailId) setSelectedEmailId('')
   }
 
   // Modal form state
@@ -574,25 +614,30 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
     })
   }
 
-  const visible       = triageEmails.filter(t => !dismissed.has(t.email.id))
-  const highEmails    = visible.filter(t => t.email.ai_priority === 'high')
-  const medEmails     = visible.filter(t => t.email.ai_priority === 'medium')
-  const lowEmails     = visible.filter(t => t.email.ai_priority === 'low')
-  const pendingEmails = visible.filter(t => !t.email.ai_analyzed_at)
-  const highCount     = highEmails.length
-  const medCount      = medEmails.length
-  const unanalyzedCount = visible.filter(t => !t.email.ai_analyzed_at).length
+  const visible         = triageEmails.filter(t => !dismissed.has(t.email.id))
+  const highEmails      = visible.filter(t => t.email.ai_priority === 'high')
+  const medEmails       = visible.filter(t => t.email.ai_priority === 'medium')
+  const lowEmails       = visible.filter(t => t.email.ai_priority === 'low')
+  const pendingEmails   = visible.filter(t => !t.email.ai_analyzed_at)
+  const highCount       = highEmails.length
+  const medCount        = medEmails.length
+  const unanalyzedCount = pendingEmails.length
 
-  // Left panel list sorted: high → medium → low → pending
-  const sortedVisible = [...visible].sort(sortByPriority)
+  const sortedVisible       = [...visible].sort(sortByPriority)
+  const selectedTriageEmail = selectedEmailId ? visible.find(t => t.email.id === selectedEmailId) ?? null : null
 
-  const cardProps = {
+  // Emails that appear in the grid below the detail card (exclude the selected one)
+  const gridHigh    = highEmails.filter(t => t.email.id !== selectedEmailId)
+  const gridMed     = medEmails.filter(t => t.email.id !== selectedEmailId)
+  const gridLow     = lowEmails.filter(t => t.email.id !== selectedEmailId)
+  const gridPending = pendingEmails.filter(t => t.email.id !== selectedEmailId)
+
+  const detailCardProps = {
+    actioned,
     onAction:   openModal,
     onDismiss:  dismiss,
-    onToggle:   toggleSelect,
-    onSelect:   setSelectedEmailId,
-    isDeleting,
     onDelete:   handleDeleteOne,
+    isDeleting,
   }
 
   return (
@@ -605,7 +650,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
         <div className="px-4 py-3 border-b dark:border-white/8 shrink-0">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4 text-brand-500 shrink-0" />
+              <Mail className="w-4 h-4 text-blue-500 shrink-0" />
               <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Triage</h2>
             </div>
             <div className="flex items-center gap-1">
@@ -628,7 +673,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                   title={visible.every(t => selectedIds.has(t.email.id)) ? 'Deselect all' : 'Select all'}
                   className="text-[11px] px-2 py-1 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors font-medium"
                 >
-                  {visible.length > 0 && visible.every(t => selectedIds.has(t.email.id)) ? 'Deselect' : 'All'}
+                  {visible.every(t => selectedIds.has(t.email.id)) ? 'Deselect' : 'All'}
                 </button>
               )}
               <button
@@ -658,7 +703,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
               <button
                 onClick={handleReanalyze}
                 disabled={isReanalyzing || isSyncing}
-                className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 font-semibold border border-purple-200 dark:border-purple-500/20 hover:bg-purple-100 dark:hover:bg-purple-500/15 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/15 disabled:opacity-50 transition-colors"
               >
                 {isReanalyzing ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Brain className="w-2.5 h-2.5" />}
                 {isReanalyzing
@@ -678,7 +723,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
           )}
         </div>
 
-        {/* Priority-sorted list — clicking a row expands the card in the center */}
+        {/* Priority-sorted list */}
         <div className="flex-1 overflow-y-auto">
           {visible.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-3 p-6 text-center">
@@ -692,7 +737,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
               <button
                 onClick={handleSync}
                 disabled={isSyncing}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors"
               >
                 <RefreshCw className={cn('w-3 h-3', isSyncing && 'animate-spin')} />
                 {isSyncing ? 'Syncing…' : 'Sync Inbox'}
@@ -706,7 +751,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
               return (
                 <div
                   key={t.email.id}
-                  onClick={() => setSelectedEmailId(t.email.id)}
+                  onClick={() => setSelectedEmailId(isActive ? '' : t.email.id)}
                   className={cn(
                     'flex items-stretch border-l-[3px] transition-colors cursor-pointer',
                     isActive
@@ -716,7 +761,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                           ? 'border-l-amber-400 bg-amber-50 dark:bg-amber-500/8'
                           : priority === 'low'
                             ? 'border-l-gray-400 bg-gray-100 dark:bg-white/5'
-                            : 'border-l-purple-400 bg-purple-50 dark:bg-purple-500/8'
+                            : 'border-l-blue-400 bg-blue-50 dark:bg-blue-500/8'
                       : 'border-l-transparent hover:bg-white dark:hover:bg-white/3',
                   )}
                 >
@@ -738,7 +783,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                     <button onClick={e => { e.stopPropagation(); toggleSelect(t.email.id) }}>
                       <span className={cn(
                         'w-4 h-4 rounded border flex items-center justify-center transition-colors',
-                        isChecked ? 'bg-[#61c2ad] border-[#61c2ad]' : 'border-gray-300 dark:border-white/20 hover:border-[#61c2ad]',
+                        isChecked ? 'bg-blue-600 border-blue-600' : 'border-gray-300 dark:border-white/20 hover:border-blue-400',
                       )}>
                         {isChecked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
                       </span>
@@ -759,7 +804,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
         </div>
       </aside>
 
-      {/* ─── CENTER: Priority Card Grid ────────────────────────────────────── */}
+      {/* ─── CENTER: Detail view + card grid ──────────────────────────────── */}
       <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-[#1c1c1c]">
 
         {triageEmails.length === 0 ? (
@@ -777,7 +822,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
               <button
                 onClick={handleSync}
                 disabled={isSyncing}
-                className="flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
+                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
               >
                 <RefreshCw className={cn('w-4 h-4 shrink-0', isSyncing && 'animate-spin')} />
                 {isSyncing ? 'Syncing inbox…' : 'Sync Inbox'}
@@ -793,7 +838,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
 
         ) : (
           <>
-            {/* ── Center toolbar: Select All + Delete ── */}
+            {/* ── Select All + Delete toolbar ── */}
             <div className="flex items-center gap-2 px-5 py-2 border-b dark:border-white/8 shrink-0">
               <button
                 onClick={() => {
@@ -821,138 +866,127 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
               )}
             </div>
 
-          <div className="flex-1 overflow-y-auto p-5">
+            <div className="flex-1 overflow-y-auto p-5 space-y-7">
 
-            {/* HIGH */}
-            {highEmails.filter(t => !dismissed.has(t.email.id)).length > 0 && (
-              <section className="mb-7">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="w-2 h-2 rounded-full bg-[#61c2ad] shrink-0" />
-                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#3a9e8a] dark:text-[#61c2ad]">
-                    High Priority · {highEmails.filter(t => !dismissed.has(t.email.id)).length}
-                  </h3>
-                  <div className="flex-1 h-px bg-[#61c2ad]/30 dark:bg-[#61c2ad]/20" />
+              {/* ── Full-width Detail Card (shown when email is selected) ── */}
+              {selectedTriageEmail && (
+                <div>
+                  <DetailCard t={selectedTriageEmail} {...detailCardProps} />
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
-                  {highEmails.filter(t => !dismissed.has(t.email.id)).map(t => (
-                    <TriageCard key={t.email.id} t={t}
-                      isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
-                      isDismissed={false} isChecked={selectedIds.has(t.email.id)}
-                      isSelected={selectedEmailId === t.email.id}
-                      {...cardProps}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
+              )}
 
-            {/* MEDIUM */}
-            {medEmails.filter(t => !dismissed.has(t.email.id)).length > 0 && (
-              <section className="mb-7">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-amber-500 dark:text-amber-400">
-                    Medium · {medEmails.filter(t => !dismissed.has(t.email.id)).length}
-                  </h3>
-                  <div className="flex-1 h-px bg-amber-200 dark:bg-amber-500/20" />
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
-                  {medEmails.filter(t => !dismissed.has(t.email.id)).map(t => (
-                    <TriageCard key={t.email.id} t={t}
-                      isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
-                      isDismissed={false} isChecked={selectedIds.has(t.email.id)}
-                      isSelected={selectedEmailId === t.email.id}
-                      {...cardProps}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* LOW */}
-            {lowEmails.filter(t => !dismissed.has(t.email.id)).length > 0 && (
-              <section className="mb-7">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-600 shrink-0" />
-                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-                    Low · {lowEmails.filter(t => !dismissed.has(t.email.id)).length}
-                  </h3>
+              {/* ── Divider between detail and remaining grid ── */}
+              {selectedTriageEmail && (gridHigh.length + gridMed.length + gridLow.length + gridPending.length) > 0 && (
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px bg-gray-200 dark:bg-white/8" />
+                  <span className="text-[11px] text-gray-400 font-medium whitespace-nowrap">Other emails</span>
                   <div className="flex-1 h-px bg-gray-200 dark:bg-white/8" />
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
-                  {lowEmails.filter(t => !dismissed.has(t.email.id)).map(t => (
-                    <TriageCard key={t.email.id} t={t}
-                      isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
-                      isDismissed={false} isChecked={selectedIds.has(t.email.id)}
-                      isSelected={selectedEmailId === t.email.id}
-                      {...cardProps}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
+              )}
 
-            {/* PENDING */}
-            {pendingEmails.filter(t => !dismissed.has(t.email.id)).length > 0 && (
-              <section>
-                <div className="flex items-center gap-2 mb-3">
-                  {/* Clickable heading → triggers AI analysis */}
-                  <button
-                    onClick={handleReanalyze}
-                    disabled={isReanalyzing || isSyncing}
-                    className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-purple-500 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 disabled:opacity-50 transition-colors group"
-                  >
-                    {isReanalyzing
-                      ? <Loader2 className="w-3 h-3 shrink-0 animate-spin" />
-                      : <Brain className="w-3 h-3 shrink-0 group-hover:scale-110 transition-transform" />}
-                    {isReanalyzing
-                      ? 'Analysing…'
-                      : `Pending Analysis · ${pendingEmails.filter(t => !dismissed.has(t.email.id)).length}`}
-                  </button>
-                  <div className="flex-1 h-px bg-purple-200 dark:bg-purple-500/20" />
-                  {/* Select all pending */}
-                  <button
-                    onClick={() => {
-                      const ids = pendingEmails.filter(t => !dismissed.has(t.email.id)).map(t => t.email.id)
-                      const allSel = ids.length > 0 && ids.every(id => selectedIds.has(id))
-                      setSelectedIds(prev => {
-                        const next = new Set(prev)
-                        ids.forEach(id => allSel ? next.delete(id) : next.add(id))
-                        return next
-                      })
-                    }}
-                    className="text-[11px] text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium transition-colors whitespace-nowrap"
-                  >
-                    {pendingEmails.filter(t => !dismissed.has(t.email.id)).every(t => selectedIds.has(t.email.id))
-                      ? 'Deselect all' : 'Select all'}
-                  </button>
-                  {/* Delete selected */}
-                  <button
-                    onClick={handleDeleteSelected}
-                    disabled={selectedIds.size === 0 || isDeleting}
-                    title={selectedIds.size > 0 ? `Delete ${selectedIds.size} selected` : 'Select emails to delete'}
-                    className="flex items-center justify-center w-6 h-6 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
-                  {pendingEmails.filter(t => !dismissed.has(t.email.id)).map(t => (
-                    <TriageCard key={t.email.id} t={t}
-                      isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
-                      isDismissed={false} isChecked={selectedIds.has(t.email.id)}
-                      isSelected={selectedEmailId === t.email.id}
-                      {...cardProps}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-          </div>
+              {/* ── HIGH ── */}
+              {gridHigh.length > 0 && (
+                <section>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-2 h-2 rounded-full bg-[#61c2ad] shrink-0" />
+                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#3a9e8a] dark:text-[#61c2ad]">
+                      High Priority · {gridHigh.length}
+                    </h3>
+                    <div className="flex-1 h-px bg-[#61c2ad]/30 dark:bg-[#61c2ad]/20" />
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {gridHigh.map(t => (
+                      <TriageCard key={t.email.id} t={t}
+                        isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
+                        isChecked={selectedIds.has(t.email.id)} isSelected={selectedEmailId === t.email.id}
+                        onSelect={id => setSelectedEmailId(selectedEmailId === id ? '' : id)}
+                        onToggle={toggleSelect}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* ── MEDIUM ── */}
+              {gridMed.length > 0 && (
+                <section>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-amber-500 dark:text-amber-400">
+                      Medium · {gridMed.length}
+                    </h3>
+                    <div className="flex-1 h-px bg-amber-200 dark:bg-amber-500/20" />
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {gridMed.map(t => (
+                      <TriageCard key={t.email.id} t={t}
+                        isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
+                        isChecked={selectedIds.has(t.email.id)} isSelected={selectedEmailId === t.email.id}
+                        onSelect={id => setSelectedEmailId(selectedEmailId === id ? '' : id)}
+                        onToggle={toggleSelect}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* ── LOW ── */}
+              {gridLow.length > 0 && (
+                <section>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-600 shrink-0" />
+                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                      Low · {gridLow.length}
+                    </h3>
+                    <div className="flex-1 h-px bg-gray-200 dark:bg-white/8" />
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {gridLow.map(t => (
+                      <TriageCard key={t.email.id} t={t}
+                        isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
+                        isChecked={selectedIds.has(t.email.id)} isSelected={selectedEmailId === t.email.id}
+                        onSelect={id => setSelectedEmailId(selectedEmailId === id ? '' : id)}
+                        onToggle={toggleSelect}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* ── PENDING ── */}
+              {gridPending.length > 0 && (
+                <section>
+                  <div className="flex items-center gap-2 mb-3">
+                    <button
+                      onClick={handleReanalyze}
+                      disabled={isReanalyzing || isSyncing}
+                      className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:opacity-50 transition-colors group"
+                    >
+                      {isReanalyzing
+                        ? <Loader2 className="w-3 h-3 shrink-0 animate-spin" />
+                        : <Brain className="w-3 h-3 shrink-0 group-hover:scale-110 transition-transform" />}
+                      {isReanalyzing ? 'Analysing…' : `Pending Analysis · ${gridPending.length}`}
+                    </button>
+                    <div className="flex-1 h-px bg-blue-200 dark:bg-blue-500/20" />
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {gridPending.map(t => (
+                      <TriageCard key={t.email.id} t={t}
+                        isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
+                        isChecked={selectedIds.has(t.email.id)} isSelected={selectedEmailId === t.email.id}
+                        onSelect={id => setSelectedEmailId(selectedEmailId === id ? '' : id)}
+                        onToggle={toggleSelect}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+            </div>
           </>
         )}
 
-        {/* ── Modal slides up from bottom of center panel ── */}
+        {/* ── Modal slides up from bottom ── */}
         {modalMode && modalEmail && (
           <div className="border-t dark:border-white/8 bg-white dark:bg-[#1e1e1e] p-5 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
             <div className="flex items-center justify-between mb-4">
@@ -975,27 +1009,27 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                 <div>
                   <label className="text-[11px] font-semibold text-gray-500 block mb-1">Name *</label>
                   <input value={mName} onChange={e => setMName(e.target.value)}
-                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500" />
+                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-gray-500 block mb-1">Email</label>
                   <input value={mEmail} onChange={e => setMEmail(e.target.value)}
-                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500" />
+                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-gray-500 block mb-1">Company</label>
                   <input value={mCompany} onChange={e => setMCompany(e.target.value)} placeholder="Optional"
-                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500" />
+                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-gray-500 block mb-1">Deal Title *</label>
                   <input value={mDealTitle} onChange={e => setMDealTitle(e.target.value)}
-                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500" />
+                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
                 </div>
                 <div className="col-span-2">
                   <label className="text-[11px] font-semibold text-gray-500 block mb-1">Notes</label>
                   <textarea value={mNotes} onChange={e => setMNotes(e.target.value)} rows={2}
-                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none" />
+                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none" />
                 </div>
               </div>
             )}
@@ -1007,7 +1041,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                   <div>
                     <label className="text-[11px] font-semibold text-gray-500 block mb-1">Contact Name</label>
                     <input value={mName} onChange={e => setMName(e.target.value)}
-                      className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500" />
+                      className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
                   </div>
                   <div>
                     <label className="text-[11px] font-semibold text-gray-500 block mb-1">Priority</label>
@@ -1023,12 +1057,12 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                 <div>
                   <label className="text-[11px] font-semibold text-gray-500 block mb-1">Title *</label>
                   <input value={mDealTitle} onChange={e => setMDealTitle(e.target.value)}
-                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500" />
+                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-gray-500 block mb-1">Description</label>
                   <textarea value={mNotes} onChange={e => setMNotes(e.target.value)} rows={2}
-                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none" />
+                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none" />
                 </div>
               </div>
             )}
@@ -1036,13 +1070,13 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
             {/* Deal note form */}
             {modalMode === 'deal_note' && (
               <div className="space-y-3">
-                <div className="px-3 py-2 rounded-lg bg-[#61c2ad]/10 border border-[#61c2ad]/20 text-sm text-[#3a9e8a] dark:text-[#61c2ad] font-medium">
+                <div className="px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 text-sm text-blue-700 dark:text-blue-400 font-medium">
                   Deal: {mDealTitle}
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-gray-500 block mb-1">Note</label>
                   <textarea value={mNote} onChange={e => setMNote(e.target.value)} rows={3}
-                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none" />
+                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none" />
                 </div>
               </div>
             )}
@@ -1051,7 +1085,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
 
             <div className="flex items-center gap-2 mt-4">
               <button onClick={handleModalSubmit} disabled={isPending}
-                className="flex items-center gap-2 px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-60">
+                className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-60">
                 {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
                 {modalMode === 'lead'   ? 'Save Lead' :
                  modalMode === 'ticket' ? 'Create Ticket' :
