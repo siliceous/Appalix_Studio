@@ -4,6 +4,9 @@ import { Sidebar } from '@/components/layout/sidebar'
 import { createWorkspace } from '@/app/actions/workspace'
 import type { Workspace } from '@/lib/types'
 
+// All dashboard pages are user-specific and require live DB access — never statically render.
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
 
