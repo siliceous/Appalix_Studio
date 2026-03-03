@@ -43,16 +43,21 @@ function getImapCreds(provider: string, config: Record<string, string>): ImapCre
 // ---------------------------------------------------------------------------
 
 interface EmailAnalysis {
-  priority:     'high' | 'medium' | 'low'
-  summary:      string | null
-  reason:       string
-  action:       'create_lead' | 'update_lead' | 'reopen' | 'create_ticket' | 'reply_draft' | 'ignore'
-  entities:     {
+  priority:    'high' | 'medium' | 'low'
+  category:    'Sales' | 'Support' | 'Other'
+  summary:     string | null
+  reason:      string
+  user_prompt: string
+  action:      'create_lead' | 'update_lead' | 'reopen' | 'create_ticket' | 'reply_draft' | 'ignore'
+  extracted:   {
     name?:             string
     company?:          string
+    email?:            string
     phone?:            string
     website?:          string
     product_interest?: string
+    intent_signals:    string[]
+    urgency_signals:   string[]
   }
   insights:     string[]
   reply_drafts: { tone: string; body: string }[]
@@ -63,59 +68,66 @@ async function analyzeEmail(
   subject: string,
   bodyText: string,
 ): Promise<EmailAnalysis | null> {
-  const prompt = `You are an AI email triage assistant for a B2B SaaS CRM. Analyse this email and return ONLY valid JSON (no markdown fences, no explanation).
+  const prompt = `You are an Email Triage & Pipeline Assistant inside Appalix CRM. Analyse this email and return ONLY valid JSON (no markdown fences, no explanation).
 
-PRIORITY RULES — apply in order, first match wins:
+Your job:
+1) Read the email and classify priority using the rules below.
+2) For High/Medium only: produce a short summary and extract lead details.
+3) Recommend the next action and produce a short user_prompt.
 
-HIGH (buying intent + relevance, OR urgency + relevance):
-- Buying intent keywords: "pricing", "quote", "demo", "book a call", "free trial", "proposal", "timeline", "budget", "how much", "cost", "purchase", "buy", "sign up", "get started"
-- Urgency keywords: "ASAP", "this week", "urgent", "by Friday", "need help now", "immediately", "deadline", "today"
-- Must also be relevant to the business (product/service enquiry, not spam)
-- If both buying intent AND urgency present → definitely HIGH
+PRIORITY RULES:
+- High: relevant to products/services AND shows urgency OR buying intent (pricing/quote/demo/timeline/budget/ASAP/sign up/get started/how much/cost/purchase/book a call/free trial/proposal)
+- Medium: relevant inquiry but low urgency or early exploration; missing details acceptable. Also: follow-up, partnership from real business, exploring options.
+- Low: not related to products/services; personal emails; newsletters/spam/automated notifications; someone pitching their own products/services (cold outreach: "SEO services", "we can get you leads", "partnership offer").
 
-MEDIUM (relevant but no urgency):
-- General business enquiry about product/services
-- Follow-up on a previous conversation
-- Partnership or collaboration from a real business (not a vendor pitch)
-- Exploring or researching options
-
-LOW (unrelated, personal, or spam):
-- Vendor pitches: "SEO services", "we can get you leads", "partnership offer" from cold outreach
-- Newsletters, automated notifications, receipts, invoices
-- Personal/non-business emails
-- Spam or promotional content
+CATEGORY RULES:
+- Sales: pricing, demo, quote, trial, proposal, buying intent, follow-up on a sale
+- Support: bug, not working, error, access issue, billing problem, crash, outage, broken, can't login, support request
+- Other: everything else
 
 ACTION RULES:
-- "create_ticket" if subject/body contains: bug, not working, error, access issue, billing problem, crash, outage, broken, can't login, support request
-- "create_lead" if HIGH or MEDIUM and no existing contact match
-- "update_lead" if contact already exists in CRM (hint: matchedContact field is set by the server)
-- "reopen" if LOW but was previously active contact (handled by server)
-- "reply_draft" if MEDIUM and a simple reply would resolve it
-- "ignore" if LOW
+- "create_ticket" if category is Support
+- "create_lead" if High or Medium and category is Sales
+- "update_lead" if contact already exists in CRM
+- "reply_draft" if Medium and a simple reply would resolve it (category Other)
+- "ignore" if Low
 
-ENTITY EXTRACTION — extract from email body and signature:
-- name: sender's full name (from signature or "I'm X" patterns)
+EXTRACTION — from email body and signature:
+- name: sender's full name
 - company: company name (from domain, signature, or body)
-- phone: any phone number found
+- email: sender email address
+- phone: any phone number
 - website: website URL from signature
-- product_interest: what product/service/feature they are asking about
+- product_interest: what product/service/feature they ask about
+- intent_signals: array of phrases showing buying intent (e.g. ["wants pricing", "asking for demo"])
+- urgency_signals: array of urgency phrases (e.g. ["ASAP", "by Friday", "urgent"])
 
-SUMMARY — only for HIGH and MEDIUM: one sentence on what is being asked and what action is needed. Null for LOW.
+USER PROMPT — a single short sentence asking the user what to do next. Examples:
+- "Looks like a pricing inquiry — want to create a lead and send a quote?"
+- "Support issue reported — create a ticket?"
+- "Early-stage enquiry — draft a reply to learn more?"
+- "Vendor pitch — safe to ignore."
 
-REPLY DRAFTS — only for HIGH and MEDIUM, 3 tones. For LOW, return empty array.
+SUMMARY — 1–2 lines for High/Medium only. Null for Low.
+REPLY DRAFTS — 3 tones for High/Medium only (max 6 lines each, ask max 3 questions). Empty array for Low.
 
 Return this exact JSON:
 {
   "priority": "high" | "medium" | "low",
+  "category": "Sales" | "Support" | "Other",
   "summary": "string or null",
-  "reason": "one sentence explaining why this priority was assigned",
+  "reason": "one sentence why this priority",
+  "user_prompt": "short question to the user",
   "action": "create_lead" | "update_lead" | "reopen" | "create_ticket" | "reply_draft" | "ignore",
-  "entities": {
+  "extracted": {
     "name": "string or omit",
     "company": "string or omit",
+    "email": "string or omit",
     "phone": "string or omit",
     "website": "string or omit",
-    "product_interest": "string or omit"
+    "product_interest": "string or omit",
+    "intent_signals": ["phrase1", "phrase2"],
+    "urgency_signals": ["phrase1"]
   },
   "insights": ["key insight 1", "key insight 2"],
   "reply_drafts": [
@@ -141,6 +153,14 @@ ${bodyText.slice(0, 3000)}`
 
     const json = JSON.parse(result.content.trim()) as EmailAnalysis
     if (!json.priority || !json.action) return null
+    // Normalise: support both old `entities` key and new `extracted` key
+    const raw = json as unknown as Record<string, unknown>
+    if (!json.extracted && raw['entities']) {
+      json.extracted = raw['entities'] as EmailAnalysis['extracted']
+    }
+    if (!json.extracted) json.extracted = { intent_signals: [], urgency_signals: [] }
+    if (!json.extracted.intent_signals)  json.extracted.intent_signals  = []
+    if (!json.extracted.urgency_signals) json.extracted.urgency_signals = []
     return json
   } catch {
     return null
@@ -297,14 +317,19 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
             )
 
             if (analysis) {
+              const extracted = analysis.extracted ?? {}
+              // Merge intent/urgency signals into entities for dashboard display
+              const entities = { ...extracted }
               await supabase
                 .from('sage_emails')
                 .update({
                   ai_priority:     analysis.priority,
+                  ai_category:     analysis.category ?? null,
                   ai_summary:      analysis.summary ?? null,
                   ai_reason:       analysis.reason,
+                  ai_user_prompt:  analysis.user_prompt ?? null,
                   ai_action:       analysis.action,
-                  ai_entities:     Object.keys(analysis.entities ?? {}).length > 0 ? analysis.entities : null,
+                  ai_entities:     Object.keys(entities).length > 0 ? entities : null,
                   ai_insights:     analysis.insights,
                   ai_reply_drafts: analysis.reply_drafts,
                   ai_analyzed_at:  new Date().toISOString(),
@@ -371,10 +396,12 @@ export async function reanalyzePendingEmails(workspaceId: string, batchSize = 50
           .from('sage_emails')
           .update({
             ai_priority:     analysis.priority,
+            ai_category:     analysis.category ?? null,
             ai_summary:      analysis.summary ?? null,
             ai_reason:       analysis.reason,
+            ai_user_prompt:  analysis.user_prompt ?? null,
             ai_action:       analysis.action,
-            ai_entities:     Object.keys(analysis.entities ?? {}).length > 0 ? analysis.entities : null,
+            ai_entities:     Object.keys(analysis.extracted ?? {}).length > 0 ? analysis.extracted : null,
             ai_insights:     analysis.insights,
             ai_reply_drafts: analysis.reply_drafts,
             ai_analyzed_at:  new Date().toISOString(),

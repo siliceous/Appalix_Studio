@@ -121,7 +121,7 @@ function TriageCard({ t, isDone, actionLabel, isDismissed, isChecked, onAction, 
 
       {/* Card header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap">
           {email.ai_priority ? (
             <span className={cn('flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border', PRIORITY_BADGE[email.ai_priority])}>
               <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT[email.ai_priority])} />
@@ -130,6 +130,15 @@ function TriageCard({ t, isDone, actionLabel, isDismissed, isChecked, onAction, 
           ) : (
             <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-white/8 font-medium">
               <Brain className="w-2.5 h-2.5" /> Pending
+            </span>
+          )}
+          {email.ai_category && (
+            <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-semibold border', {
+              'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/20': email.ai_category === 'Sales',
+              'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20': email.ai_category === 'Support',
+              'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10': email.ai_category === 'Other',
+            })}>
+              {email.ai_category}
             </span>
           )}
           {isDone && (
@@ -184,6 +193,30 @@ function TriageCard({ t, isDone, actionLabel, isDismissed, isChecked, onAction, 
           {email.ai_reason && (
             <p className="text-[10px] text-gray-500 mt-1.5 italic">{email.ai_reason}</p>
           )}
+        </div>
+      )}
+
+      {/* User prompt callout */}
+      {email.ai_user_prompt && (
+        <div className="mx-4 mb-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-white/3 border border-gray-200 dark:border-white/8 flex items-start gap-2">
+          <span className="text-brand-500 dark:text-[#ec732e] text-sm leading-none mt-0.5">→</span>
+          <p className="text-xs text-gray-700 dark:text-gray-300 font-medium leading-relaxed">{email.ai_user_prompt}</p>
+        </div>
+      )}
+
+      {/* Intent + urgency signal chips */}
+      {((entities?.intent_signals ?? []).length > 0 || (entities?.urgency_signals ?? []).length > 0) && (
+        <div className="px-4 pb-2 flex flex-wrap gap-1.5">
+          {(entities?.intent_signals ?? []).map((s, i) => (
+            <span key={i} className="text-[10px] px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 font-medium">
+              {s}
+            </span>
+          ))}
+          {(entities?.urgency_signals ?? []).map((s, i) => (
+            <span key={i} className="text-[10px] px-2 py-0.5 rounded-md bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/20 font-medium">
+              ⚡ {s}
+            </span>
+          ))}
         </div>
       )}
 
