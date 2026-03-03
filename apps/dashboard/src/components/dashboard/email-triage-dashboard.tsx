@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useTransition } from 'react'
+import React, { useState, useTransition, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -327,6 +327,13 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
   const [syncMsg,    setSyncMsg]    = useState<string | null>(null)
   const [analyzeMsg, setAnalyzeMsg] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  // Auto-refresh every 60 s so emails pushed by the IMAP IDLE loop appear
+  // without the user having to click anything.
+  useEffect(() => {
+    const id = setInterval(() => { router.refresh() }, 60_000)
+    return () => clearInterval(id)
+  }, [router])
 
   function handleSync() {
     setSyncMsg(null)

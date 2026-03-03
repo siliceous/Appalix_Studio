@@ -18,6 +18,7 @@ import { telegramRoutes }    from './routes/webhooks/telegram.js'
 import { chatRoutes }        from './routes/chat/index.js'
 import { copilotRoutes }     from './routes/copilot/index.js'
 import { sageEmailRoutes }  from './routes/sage/emails.js'
+import { startIdleManager, stopIdleManager } from './services/sage-email-idle.js'
 
 const server = Fastify({
   logger: {
@@ -159,6 +160,19 @@ try {
   // Run once on startup then every 30 s
   void pollPendingSources()
   setInterval(pollPendingSources, 30_000)
+
+  // ---------------------------------------------------------------
+  // IMAP IDLE manager
+  // Opens a persistent IMAP connection for every connected Gmail /
+  // Outlook workspace. When the mail server signals a new message the
+  // loop immediately syncs it — no manual "Sync" button needed.
+  // ---------------------------------------------------------------
+  void startIdleManager()
+
+  // Graceful shutdown — release IMAP connections before process exits
+  const shutdown = () => { stopIdleManager(); process.exit(0) }
+  process.once('SIGTERM', shutdown)
+  process.once('SIGINT',  shutdown)
 
 } catch (err) {
   server.log.error(err)
