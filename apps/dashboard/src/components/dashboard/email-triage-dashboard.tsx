@@ -128,7 +128,7 @@ function TriageCard({ t, isDone, actionLabel, isDismissed, isChecked, onAction, 
               {email.ai_priority}
             </span>
           ) : (
-            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/5 text-gray-400 border border-gray-200 dark:border-white/8 font-medium">
+            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-white/8 font-medium">
               <Brain className="w-2.5 h-2.5" /> Pending
             </span>
           )}
@@ -168,7 +168,7 @@ function TriageCard({ t, isDone, actionLabel, isDismissed, isChecked, onAction, 
             </p>
           </div>
         </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 leading-snug line-clamp-1">
+        <p className="text-xs text-gray-700 dark:text-gray-400 mt-1.5 leading-snug line-clamp-1">
           {email.subject}
         </p>
       </div>
@@ -182,7 +182,7 @@ function TriageCard({ t, isDone, actionLabel, isDismissed, isChecked, onAction, 
           </div>
           <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">{email.ai_summary}</p>
           {email.ai_reason && (
-            <p className="text-[10px] text-gray-400 mt-1.5 italic">{email.ai_reason}</p>
+            <p className="text-[10px] text-gray-500 mt-1.5 italic">{email.ai_reason}</p>
           )}
         </div>
       )}
@@ -192,17 +192,17 @@ function TriageCard({ t, isDone, actionLabel, isDismissed, isChecked, onAction, 
         <div className="px-4 pb-2 flex flex-wrap gap-1.5">
           {entities.name && (
             <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
-              <UserPlus className="w-2.5 h-2.5 text-gray-400 shrink-0" /> {entities.name}
+              <UserPlus className="w-2.5 h-2.5 text-gray-500 shrink-0" /> {entities.name}
             </span>
           )}
           {entities.phone && (
             <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
-              <Phone className="w-2.5 h-2.5 text-gray-400 shrink-0" /> {entities.phone}
+              <Phone className="w-2.5 h-2.5 text-gray-500 shrink-0" /> {entities.phone}
             </span>
           )}
           {entities.website && (
             <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
-              <Globe className="w-2.5 h-2.5 text-gray-400 shrink-0" /> {entities.website}
+              <Globe className="w-2.5 h-2.5 text-gray-500 shrink-0" /> {entities.website}
             </span>
           )}
           {entities.product_interest && (
@@ -264,7 +264,7 @@ function TriageCard({ t, isDone, actionLabel, isDismissed, isChecked, onAction, 
 
         <button
           onClick={() => onDismiss(email.id)}
-          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-100 dark:bg-white/5 text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors border border-gray-200 dark:border-white/8">
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors border border-gray-200 dark:border-white/8">
           <X className="w-3 h-3" /> Ignore
         </button>
 
@@ -666,7 +666,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                   </h3>
                   <div className="flex-1 h-px bg-gray-200 dark:bg-white/8" />
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 opacity-70">
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
                   {lowEmails.filter(t => !dismissed.has(t.email.id)).map(t => (
                     <TriageCard key={t.email.id} t={t}
                       isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
@@ -688,7 +688,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                   </h3>
                   <div className="flex-1 h-px bg-purple-200 dark:bg-purple-500/20" />
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 opacity-60">
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
                   {pendingEmails.filter(t => !dismissed.has(t.email.id)).map(t => (
                     <TriageCard key={t.email.id} t={t}
                       isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
