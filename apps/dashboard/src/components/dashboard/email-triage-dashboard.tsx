@@ -8,9 +8,10 @@ import {
   Plus, RefreshCw, Ticket, UserPlus, RotateCcw,
   Check, X, ChevronRight, Loader2, Trash2,
   Phone, Globe, Tag, Brain, ChevronDown, Send,
+  Paperclip, Receipt,
 } from 'lucide-react'
 import { triageCreateLead, triageCreateTicket, triageAddDealNote } from '@/app/actions/sage-triage'
-import { syncEmails, deleteTriageEmails, reanalyzeEmails, sendEmail } from '@/app/actions/sage-emails'
+import { syncEmails, deleteTriageEmails, reanalyzeEmails, sendEmail, fetchStripeInvoices, fetchStripeInvoicePDF } from '@/app/actions/sage-emails'
 import type { SageEmail } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -28,6 +29,22 @@ export interface TriageEmail {
   recommendation:  TriageRecommendation
   matchedContact?: { id: string; name: string; email: string | null } | null
   matchedDeal?:    { id: string; title: string } | null
+}
+
+interface EmailAttachment {
+  filename:    string
+  contentType: string
+  dataBase64:  string
+}
+
+interface StripeInvoiceMeta {
+  id:              string
+  number:          string | null
+  customer_name:   string | null
+  customer_email:  string | null
+  amount_due:      number
+  currency:        string
+  status:          string
 }
 
 interface Props {
@@ -360,6 +377,14 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
   const [syncMsg,     setSyncMsg]     = useState<string | null>(null)
   const [analyzeMsg,  setAnalyzeMsg]  = useState<string | null>(null)
 
+  // Attachment state (reply modal)
+  const [replyAttachments,     setReplyAttachments]    = useState<EmailAttachment[]>([])
+  const [showStripePanel,      setShowStripePanel]     = useState(false)
+  const [stripeInvoices,       setStripeInvoices]      = useState<StripeInvoiceMeta[]>([])
+  const [stripeError,          setStripeError]         = useState<string | null>(null)
+  const [isFetchingInvoices,   setIsFetchingInvoices]  = useState(false)
+  const [loadingInvoiceId,     setLoadingInvoiceId]    = useState<string | null>(null)
+
   // Multi-select state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
@@ -504,10 +529,54 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
     setReplyDraftIdx(0)
     setReplyBody(drafts[0]?.body ?? '')
     setReplyResult(null)
+    setReplyAttachments([])
+    setShowStripePanel(false)
+    setStripeInvoices([])
+    setStripeError(null)
+  }
+
+  async function handleOpenStripePanel() {
+    if (showStripePanel) { setShowStripePanel(false); return }
+    setShowStripePanel(true)
+    if (stripeInvoices.length > 0) return
+    setIsFetchingInvoices(true)
+    setStripeError(null)
+    const res = await fetchStripeInvoices()
+    setIsFetchingInvoices(false)
+    if (res.error) { setStripeError(res.error); return }
+    setStripeInvoices(res.invoices as StripeInvoiceMeta[])
+  }
+
+  async function handleAttachStripeInvoice(invoice: StripeInvoiceMeta) {
+    setLoadingInvoiceId(invoice.id)
+    const att = await fetchStripeInvoicePDF(invoice.id)
+    setLoadingInvoiceId(null)
+    if (att.error || !att.dataBase64) { setStripeError(att.error ?? 'Failed to fetch PDF'); return }
+    setReplyAttachments(prev => [...prev, { filename: att.filename, contentType: att.contentType, dataBase64: att.dataBase64 }])
+    setShowStripePanel(false)
+  }
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    files.forEach(file => {
+      const reader = new FileReader()
+      reader.onload = ev => {
+        const dataUrl = (ev.target?.result as string) ?? ''
+        const dataBase64 = dataUrl.split(',')[1] ?? ''
+        setReplyAttachments(prev => [...prev, { filename: file.name, contentType: file.type || 'application/octet-stream', dataBase64 }])
+      }
+      reader.readAsDataURL(file)
+    })
+    e.target.value = ''
+  }
+
+  function removeAttachment(index: number) {
+    setReplyAttachments(prev => prev.filter((_, i) => i !== index))
   }
 
   function handleSendReply() {
     if (!replyTarget) return
+    setShowStripePanel(false)
     startSendTransition(async () => {
       const e = replyTarget.email
       const res = await sendEmail({
@@ -515,12 +584,13 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
         subject:         `Re: ${e.subject}`,
         body:            replyBody,
         replyToEmailId:  e.id,
+        attachments:     replyAttachments.length > 0 ? replyAttachments : undefined,
       })
       if (res.error) {
         setReplyResult(`Error: ${res.error}`)
       } else {
         setReplyResult('Sent!')
-        setTimeout(() => { setReplyTarget(null); setReplyResult(null) }, 1500)
+        setTimeout(() => { setReplyTarget(null); setReplyResult(null); setReplyAttachments([]) }, 1500)
       }
     })
   }
@@ -976,7 +1046,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                     : replyTarget.email.from_address}
                 </p>
               </div>
-              <button onClick={() => { setReplyTarget(null); setReplyResult(null) }}
+              <button onClick={() => { setReplyTarget(null); setReplyResult(null); setReplyAttachments([]) }}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
                 <X className="w-4 h-4" />
               </button>
@@ -1014,24 +1084,98 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
               <textarea
                 value={replyBody}
                 onChange={e => setReplyBody(e.target.value)}
-                rows={10}
+                rows={9}
                 placeholder="Write your reply…"
                 className="w-full text-sm text-gray-700 dark:text-gray-200 bg-transparent focus:outline-none resize-none leading-relaxed placeholder:text-gray-300 dark:placeholder:text-gray-600"
               />
             </div>
 
+            {/* Attachment chips */}
+            {replyAttachments.length > 0 && (
+              <div className="px-5 pb-2 flex flex-wrap gap-1.5">
+                {replyAttachments.map((att, i) => (
+                  <span key={i} className="flex items-center gap-1 text-[11px] bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-300 rounded-md px-2 py-1 border dark:border-white/8">
+                    <Paperclip className="w-3 h-3 shrink-0" />
+                    <span className="max-w-[160px] truncate">{att.filename}</span>
+                    <button onClick={() => removeAttachment(i)} className="ml-0.5 text-gray-400 hover:text-red-500 transition-colors">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Stripe invoice dropdown */}
+            {showStripePanel && (
+              <div className="mx-5 mb-3 border dark:border-white/8 rounded-xl overflow-hidden shadow-sm">
+                <div className="px-3 py-2 bg-gray-50 dark:bg-white/3 border-b dark:border-white/8 flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Open Invoices</span>
+                  {isFetchingInvoices && <Loader2 className="w-3 h-3 animate-spin text-gray-400" />}
+                </div>
+                {stripeError ? (
+                  <div className="px-3 py-2 text-xs text-red-500">{stripeError}</div>
+                ) : stripeInvoices.length === 0 && !isFetchingInvoices ? (
+                  <div className="px-3 py-2 text-xs text-gray-400">No open invoices found</div>
+                ) : (
+                  <div className="max-h-36 overflow-y-auto">
+                    {stripeInvoices.map(inv => (
+                      <button
+                        key={inv.id}
+                        onClick={() => handleAttachStripeInvoice(inv)}
+                        disabled={loadingInvoiceId === inv.id}
+                        className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-white/5 border-b last:border-0 dark:border-white/5 transition-colors disabled:opacity-60">
+                        <div>
+                          <p className="text-xs font-medium text-gray-800 dark:text-gray-200">
+                            {inv.customer_name ?? inv.customer_email ?? inv.id}
+                          </p>
+                          <p className="text-[10px] text-gray-400">{inv.number ?? inv.id}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: inv.currency.toUpperCase() }).format(inv.amount_due / 100)}
+                          </span>
+                          {loadingInvoiceId === inv.id
+                            ? <Loader2 className="w-3 h-3 animate-spin text-gray-400" />
+                            : <Paperclip className="w-3 h-3 text-gray-400" />}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Footer */}
             <div className="px-5 py-3.5 border-t dark:border-white/8 flex items-center justify-between">
-              <div>
+              {/* Left: attach buttons + status */}
+              <div className="flex items-center gap-1">
+                {/* File upload */}
+                <label title="Attach file" className="flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 cursor-pointer transition-colors">
+                  <Paperclip className="w-3.5 h-3.5" />
+                  <input type="file" multiple className="hidden" onChange={handleFileUpload} />
+                </label>
+                {/* Stripe invoice */}
+                <button
+                  title="Attach Stripe invoice"
+                  onClick={handleOpenStripePanel}
+                  className={cn(
+                    'flex items-center justify-center w-7 h-7 rounded-lg transition-colors',
+                    showStripePanel
+                      ? 'bg-[#635bff]/10 text-[#635bff] dark:text-[#7b73ff]'
+                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8',
+                  )}>
+                  <Receipt className="w-3.5 h-3.5" />
+                </button>
                 {replyResult && (
-                  <span className={cn('text-xs font-medium', replyResult.startsWith('Error') ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
+                  <span className={cn('text-xs font-medium ml-1', replyResult.startsWith('Error') ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
                     {replyResult}
                   </span>
                 )}
               </div>
+              {/* Right: cancel + send */}
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => { setReplyTarget(null); setReplyResult(null) }}
+                  onClick={() => { setReplyTarget(null); setReplyResult(null); setReplyAttachments([]) }}
                   className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
                   Cancel
                 </button>
@@ -1040,7 +1184,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                   disabled={isSending || !replyBody.trim()}
                   className="flex items-center gap-2 px-5 py-2 bg-[#61c2ad] hover:bg-[#52b09b] disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
                   {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                  {isSending ? 'Sending…' : 'Send Reply'}
+                  {isSending ? 'Sending…' : `Send${replyAttachments.length > 0 ? ` (${replyAttachments.length})` : ''}`}
                 </button>
               </div>
             </div>
