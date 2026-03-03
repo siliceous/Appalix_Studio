@@ -7,7 +7,7 @@ import {
   Mail, AlertCircle, ArrowRight, Sparkles,
   Plus, RefreshCw, Ticket, UserPlus, RotateCcw,
   Check, X, ChevronRight, Loader2, Trash2,
-  Building2, Phone, Globe, Tag, Brain, ChevronDown,
+  Phone, Globe, Tag, Brain, ChevronDown,
 } from 'lucide-react'
 import { triageCreateLead, triageCreateTicket, triageAddDealNote } from '@/app/actions/sage-triage'
 import { syncEmails, deleteTriageEmails, reanalyzeEmails } from '@/app/actions/sage-emails'
@@ -96,11 +96,12 @@ interface CardProps {
 }
 
 function TriageCard({ t, isDone, actionLabel, isDismissed, isChecked, onAction, onDismiss, onToggle, isDeleting, onDelete }: CardProps) {
-  const [draftsOpen, setDraftsOpen] = useState(false)
+  const [expanded,    setExpanded]    = useState(false)
   const [activeDraft, setActiveDraft] = useState(0)
   const { email, recommendation } = t
-  const entities  = email.ai_entities
-  const drafts    = email.ai_reply_drafts ?? []
+  const entities = email.ai_entities
+  const drafts   = email.ai_reply_drafts ?? []
+  const insights = email.ai_insights ?? []
 
   if (isDismissed) return null
 
@@ -111,159 +112,204 @@ function TriageCard({ t, isDone, actionLabel, isDismissed, isChecked, onAction, 
     if (recommendation === 'reopen_account') onAction(t, 'lead')
   }
 
+  const hasExpandableContent = !!(email.ai_summary || insights.length > 0 || entities || email.body_text || drafts.length > 0)
+
   return (
     <div className={cn(
       'flex flex-col bg-white dark:bg-[#232323] rounded-xl border transition-all',
       isDone
         ? 'border-green-200 dark:border-green-500/20'
-        : 'border-gray-200 dark:border-white/8 hover:border-gray-300 dark:hover:border-white/15',
+        : expanded
+          ? 'border-[#61c2ad]/40 dark:border-[#61c2ad]/30 shadow-sm'
+          : 'border-gray-200 dark:border-white/8 hover:border-gray-300 dark:hover:border-white/15',
     )}>
 
-      {/* Card header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <div className="flex items-center gap-2">
-          {/* Priority badge */}
-          {email.ai_priority ? (
-            <span className={cn('flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border', PRIORITY_BADGE[email.ai_priority])}>
-              <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT[email.ai_priority])} />
-              {email.ai_priority}
-            </span>
-          ) : (
-            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/5 text-gray-400 border border-gray-200 dark:border-white/8 font-medium">
-              <Brain className="w-2.5 h-2.5" /> Pending
-            </span>
-          )}
-
-          {/* Done badge */}
-          {isDone && (
-            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/20 font-medium">
-              <Check className="w-2.5 h-2.5" /> {actionLabel}
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] text-gray-400">{formatDate(email.received_at)}</span>
-          {/* Checkbox */}
-          <button onClick={() => onToggle(email.id)} title={isChecked ? 'Deselect' : 'Select'}>
-            <span className={cn(
-              'w-4 h-4 rounded border flex items-center justify-center transition-colors',
-              isChecked ? 'bg-[#61c2ad] border-[#61c2ad]' : 'border-gray-300 dark:border-white/20 hover:border-[#61c2ad]',
-            )}>
-              {isChecked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* Sender + subject */}
-      <div className="px-4 pb-2">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-brand-100 dark:bg-[#ec732e]/20 flex items-center justify-center shrink-0">
-            <span className="text-[11px] font-bold text-brand-600 dark:text-[#ec732e]">
-              {(email.from_name ?? email.from_address).charAt(0).toUpperCase()}
+      {/* ── Clickable accordion header ─────────────────────────── */}
+      <button
+        onClick={() => hasExpandableContent && setExpanded(v => !v)}
+        className={cn('text-left w-full', hasExpandableContent ? 'cursor-pointer' : 'cursor-default')}
+      >
+        {/* Top row: priority + date + checkbox */}
+        <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
+          <div className="flex items-center gap-2">
+            {email.ai_priority ? (
+              <span className={cn('flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border', PRIORITY_BADGE[email.ai_priority])}>
+                <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT[email.ai_priority])} />
+                {email.ai_priority}
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/5 text-gray-400 border border-gray-200 dark:border-white/8 font-medium">
+                <Brain className="w-2.5 h-2.5" /> Pending
+              </span>
+            )}
+            {isDone && (
+              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/20 font-medium">
+                <Check className="w-2.5 h-2.5" /> {actionLabel}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-gray-400">{formatDate(email.received_at)}</span>
+            {hasExpandableContent && (
+              <ChevronDown className={cn('w-3.5 h-3.5 text-gray-400 transition-transform shrink-0', expanded && 'rotate-180')} />
+            )}
+            {/* Checkbox — stop propagation so it doesn't toggle accordion */}
+            <span onClick={e => { e.stopPropagation(); onToggle(email.id) }}
+              title={isChecked ? 'Deselect' : 'Select'}>
+              <span className={cn(
+                'w-4 h-4 rounded border flex items-center justify-center transition-colors',
+                isChecked ? 'bg-[#61c2ad] border-[#61c2ad]' : 'border-gray-300 dark:border-white/20 hover:border-[#61c2ad]',
+              )}>
+                {isChecked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+              </span>
             </span>
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-              {email.from_name ?? email.from_address}
-              {entities?.company && (
-                <span className="font-normal text-gray-400 text-xs ml-1">· {entities.company}</span>
+        </div>
+
+        {/* Sender + subject */}
+        <div className="px-4 pb-3">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-7 h-7 rounded-full bg-brand-100 dark:bg-[#ec732e]/20 flex items-center justify-center shrink-0">
+              <span className="text-[11px] font-bold text-brand-600 dark:text-[#ec732e]">
+                {(email.from_name ?? email.from_address).charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                {email.from_name ?? email.from_address}
+                {entities?.company && (
+                  <span className="font-normal text-gray-400 text-xs ml-1.5">· {entities.company}</span>
+                )}
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug line-clamp-1 ml-9">
+            {email.subject}
+          </p>
+
+          {/* Collapsed summary preview (1 line, only when not expanded) */}
+          {!expanded && email.ai_summary && (
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1.5 ml-9 line-clamp-1 italic">
+              {email.ai_summary}
+            </p>
+          )}
+        </div>
+      </button>
+
+      {/* ── Expanded accordion body ─────────────────────────────── */}
+      {expanded && (
+        <div className="border-t dark:border-white/6">
+
+          {/* AI Summary block */}
+          {email.ai_summary && (
+            <div className="mx-4 mt-3 mb-2 px-3 py-2.5 rounded-lg bg-brand-50 dark:bg-[#ec732e]/8 border border-brand-100 dark:border-[#ec732e]/15">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Sparkles className="w-3 h-3 text-brand-500 dark:text-[#ec732e]" />
+                <span className="text-[10px] font-bold text-brand-600 dark:text-[#ec732e] uppercase tracking-wide">AI Summary</span>
+              </div>
+              <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{email.ai_summary}</p>
+              {email.ai_reason && (
+                <p className="text-[10px] text-gray-400 mt-2 pt-2 border-t border-brand-100 dark:border-[#ec732e]/15 italic">
+                  {email.ai_reason}
+                </p>
               )}
-            </p>
-          </div>
-        </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 leading-snug line-clamp-1">
-          {email.subject}
-        </p>
-      </div>
+            </div>
+          )}
 
-      {/* AI Summary */}
-      {email.ai_summary && (
-        <div className="mx-4 mb-2 px-3 py-2.5 rounded-lg bg-brand-50 dark:bg-[#ec732e]/8 border border-brand-100 dark:border-[#ec732e]/15">
-          <div className="flex items-center gap-1.5 mb-1">
-            <Sparkles className="w-3 h-3 text-brand-500 dark:text-[#ec732e]" />
-            <span className="text-[10px] font-bold text-brand-600 dark:text-[#ec732e] uppercase tracking-wide">Summary</span>
-          </div>
-          <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">{email.ai_summary}</p>
-          {email.ai_reason && (
-            <p className="text-[10px] text-gray-400 mt-1.5 italic">{email.ai_reason}</p>
+          {/* Key insights */}
+          {insights.length > 0 && (
+            <div className="px-4 py-2">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">Key Points</p>
+              <ul className="space-y-1">
+                {insights.map((pt, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#61c2ad] shrink-0" />
+                    <span className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">{pt}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Entity chips */}
+          {entities && Object.keys(entities).length > 0 && (
+            <div className="px-4 pb-2 pt-1 flex flex-wrap gap-1.5">
+              {entities.name && (
+                <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
+                  <UserPlus className="w-2.5 h-2.5 text-gray-400 shrink-0" /> {entities.name}
+                </span>
+              )}
+              {entities.phone && (
+                <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
+                  <Phone className="w-2.5 h-2.5 text-gray-400 shrink-0" /> {entities.phone}
+                </span>
+              )}
+              {entities.website && (
+                <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
+                  <Globe className="w-2.5 h-2.5 text-gray-400 shrink-0" /> {entities.website}
+                </span>
+              )}
+              {entities.product_interest && (
+                <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-brand-50 dark:bg-[#ec732e]/10 border border-brand-100 dark:border-[#ec732e]/20 text-brand-700 dark:text-[#ec732e]">
+                  <Tag className="w-2.5 h-2.5 shrink-0" /> {entities.product_interest}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Email body preview */}
+          {email.body_text && (
+            <div className="mx-4 mb-3 px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-white/3 border border-gray-100 dark:border-white/6">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">Email</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed whitespace-pre-wrap line-clamp-6">
+                {email.body_text.slice(0, 600)}
+                {email.body_text.length > 600 && <span className="text-gray-400"> … [truncated]</span>}
+              </p>
+            </div>
+          )}
+
+          {/* Reply drafts */}
+          {drafts.length > 0 && (
+            <div className="mx-4 mb-3 rounded-lg border dark:border-white/8 overflow-hidden bg-gray-50 dark:bg-white/3">
+              <div className="flex items-center gap-1 px-3 pt-2 pb-1.5 border-b dark:border-white/6">
+                <Mail className="w-3 h-3 text-gray-400 mr-1" />
+                {drafts.map((d, i) => (
+                  <button key={i} onClick={() => setActiveDraft(i)}
+                    className={cn('text-[11px] px-2.5 py-1 rounded-lg font-medium transition-colors',
+                      activeDraft === i
+                        ? 'bg-brand-600 text-white'
+                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8')}>
+                    {d.tone}
+                  </button>
+                ))}
+              </div>
+              <div className="px-3 py-2.5">
+                <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                  {drafts[activeDraft]?.body}
+                </p>
+              </div>
+              <div className="px-3 py-2 border-t dark:border-white/6 flex justify-end">
+                <Link href="/sage/emails"
+                  className="text-[11px] text-brand-600 dark:text-[#61c2ad] hover:underline flex items-center gap-1">
+                  Open in email client <ArrowRight className="w-2.5 h-2.5" />
+                </Link>
+              </div>
+            </div>
           )}
         </div>
       )}
 
-      {/* Entity chips */}
-      {entities && Object.keys(entities).length > 0 && (
-        <div className="px-4 pb-2 flex flex-wrap gap-1.5">
-          {entities.name && (
-            <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
-              <UserPlus className="w-2.5 h-2.5 text-gray-400 shrink-0" /> {entities.name}
-            </span>
-          )}
-          {entities.phone && (
-            <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
-              <Phone className="w-2.5 h-2.5 text-gray-400 shrink-0" /> {entities.phone}
-            </span>
-          )}
-          {entities.website && (
-            <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
-              <Globe className="w-2.5 h-2.5 text-gray-400 shrink-0" /> {entities.website}
-            </span>
-          )}
-          {entities.product_interest && (
-            <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-brand-50 dark:bg-[#ec732e]/10 border border-brand-100 dark:border-[#ec732e]/20 text-brand-700 dark:text-[#ec732e]">
-              <Tag className="w-2.5 h-2.5 shrink-0" /> {entities.product_interest}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Reply drafts (inline expand) */}
-      {drafts.length > 0 && draftsOpen && (
-        <div className="mx-4 mb-3 rounded-lg border dark:border-white/8 overflow-hidden bg-gray-50 dark:bg-white/3">
-          <div className="flex items-center gap-1 px-3 pt-2 pb-1 flex-wrap">
-            {drafts.map((d, i) => (
-              <button key={i} onClick={() => setActiveDraft(i)}
-                className={cn('text-[11px] px-2.5 py-1 rounded-lg font-medium transition-colors',
-                  activeDraft === i
-                    ? 'bg-brand-600 text-white'
-                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5')}>
-                {d.tone}
-              </button>
-            ))}
-          </div>
-          <div className="px-3 py-2.5 border-t dark:border-white/8">
-            <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap line-clamp-6">
-              {drafts[activeDraft]?.body}
-            </p>
-          </div>
-          <div className="px-3 py-2 border-t dark:border-white/8 flex justify-end">
-            <Link href="/sage/emails"
-              className="text-[11px] text-brand-600 dark:text-[#61c2ad] hover:underline flex items-center gap-1">
-              Open email client to send <ArrowRight className="w-2.5 h-2.5" />
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* Action buttons */}
-      <div className="px-4 pb-4 pt-1 mt-auto border-t dark:border-white/6 flex flex-wrap gap-1.5">
+      {/* ── Action buttons (always visible) ────────────────────── */}
+      <div className={cn(
+        'px-4 pb-3.5 flex flex-wrap gap-1.5',
+        expanded ? 'pt-2 border-t dark:border-white/6' : 'pt-2',
+      )}>
         {!isDone && recommendation !== 'ignore' && email.ai_analyzed_at && (
           <button
             onClick={handlePrimaryAction}
             className={cn('flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors', recColor(recommendation))}>
             {recIcon(recommendation)}
             {recLabel(recommendation, t)}
-          </button>
-        )}
-
-        {drafts.length > 0 && (
-          <button
-            onClick={() => setDraftsOpen(v => !v)}
-            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors border border-gray-200 dark:border-white/8">
-            <Mail className="w-3 h-3" />
-            Reply
-            <ChevronDown className={cn('w-3 h-3 transition-transform', draftsOpen && 'rotate-180')} />
           </button>
         )}
 
@@ -285,44 +331,6 @@ function TriageCard({ t, isDone, actionLabel, isDismissed, isChecked, onAction, 
 }
 
 // ─── Priority section ─────────────────────────────────────────────────────────
-
-function PrioritySection({ label, dot, emails, ...cardProps }: {
-  label: string
-  dot:   string
-  emails: TriageEmail[]
-} & Omit<CardProps, 't' | 'isDone' | 'actionLabel' | 'isDismissed' | 'isChecked'> & {
-  actioned:    Map<string, string>
-  dismissed:   Set<string>
-  selectedIds: Set<string>
-}) {
-  const { actioned, dismissed, selectedIds, ...rest } = cardProps as typeof cardProps & { actioned: Map<string,string>; dismissed: Set<string>; selectedIds: Set<string> }
-  const visible = emails.filter(t => !dismissed.has(t.email.id))
-  if (visible.length === 0) return null
-
-  return (
-    <section className="mb-6">
-      <div className="flex items-center gap-2 mb-3">
-        <span className={cn('w-2 h-2 rounded-full shrink-0', dot)} />
-        <h3 className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-          {label} · {visible.length}
-        </h3>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
-        {visible.map(t => (
-          <TriageCard
-            key={t.email.id}
-            t={t}
-            isDone={actioned.has(t.email.id)}
-            actionLabel={actioned.get(t.email.id)}
-            isDismissed={false}
-            isChecked={selectedIds.has(t.email.id)}
-            {...rest}
-          />
-        ))}
-      </div>
-    </section>
-  )
-}
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
@@ -485,18 +493,6 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
   const highCount      = highEmails.length
   const medCount       = medEmails.length
   const unanalyzedCount = visible.filter(t => !t.email.ai_analyzed_at).length
-
-  // Shared card props (passed to PrioritySection)
-  const sharedCardProps = {
-    actioned,
-    dismissed,
-    selectedIds,
-    onAction:  openModal,
-    onDismiss: dismiss,
-    onToggle:  toggleSelect,
-    isDeleting,
-    onDelete:  handleDeleteOne,
-  }
 
   return (
     <div className="flex flex-1 overflow-hidden">
