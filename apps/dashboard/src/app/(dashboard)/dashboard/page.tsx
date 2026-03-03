@@ -68,10 +68,11 @@ export default async function DashboardPage({
         .select('*, contact:sage_contacts(id, name, email)')
         .eq('workspace_id', workspaceId)
         .eq('direction', 'inbound')
-        .neq('ai_priority', 'low')           // exclude explicitly low-priority
+        // neq() excludes NULLs in SQL — use or() so unanalyzed emails (null priority) are included
+        .or('ai_priority.neq.low,ai_priority.is.null')
         .order('ai_priority', { ascending: true, nullsFirst: false })  // high, medium, null
         .order('received_at', { ascending: false })
-        .limit(20),
+        .limit(50),
 
       // All workspace contacts (for email matching)
       supabase
