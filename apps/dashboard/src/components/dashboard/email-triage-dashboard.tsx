@@ -99,6 +99,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
   const [isDeleting, startDeleteTransition] = useTransition()
   const [isReanalyzing, startReanalyzeTransition] = useTransition()
   const [syncMsg, setSyncMsg] = useState<string | null>(null)
+  const [analyzeMsg, setAnalyzeMsg] = useState<string | null>(null)
 
   // Multi-select state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -114,11 +115,12 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
   }
 
   function handleReanalyze() {
-    setSyncMsg(null)
+    setAnalyzeMsg(null)
+    const targetIds = selectedIds.size > 0 ? Array.from(selectedIds) : undefined
     startReanalyzeTransition(async () => {
-      const res = await reanalyzeEmails(50)
-      if (res.error) { setSyncMsg(`Error: ${res.error}`); return }
-      setSyncMsg(res.reanalyzed > 0 ? `Analysed ${res.reanalyzed}` : 'All analysed')
+      const res = await reanalyzeEmails(50, targetIds)
+      if (res.error) { setAnalyzeMsg(`Error: ${res.error}`); return }
+      setAnalyzeMsg(res.reanalyzed > 0 ? `Analysed ${res.reanalyzed}` : 'All analysed')
       router.refresh()
     })
   }
@@ -259,19 +261,18 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-brand-500 shrink-0" />
-              <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Email Triage</h2>
+              <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Triage</h2>
             </div>
             <div className="flex items-center gap-1">
-              {/* Delete selected button */}
+              {/* Delete selected button — icon only */}
               {selectedIds.size > 0 && (
                 <button
                   onClick={handleDeleteSelected}
                   disabled={isDeleting}
                   title={`Delete ${selectedIds.size} selected`}
-                  className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+                  className="flex items-center justify-center w-7 h-7 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50 transition-colors"
                 >
                   {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-                  Delete ({selectedIds.size})
                 </button>
               )}
               <button
@@ -300,16 +301,24 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                 {medCount} Medium
               </span>
             )}
-            {unanalyzedCount > 0 && (
-              <button
-                onClick={handleReanalyze}
-                disabled={isReanalyzing || isSyncing}
-                title="Run AI analysis on unanalyzed emails"
-                className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 font-semibold border border-purple-200 dark:border-purple-500/20 hover:bg-purple-100 dark:hover:bg-purple-500/15 disabled:opacity-50 transition-colors"
-              >
-                {isReanalyzing ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Brain className="w-2.5 h-2.5" />}
-                {isReanalyzing ? 'Analysing…' : `Analyse ${unanalyzedCount}`}
-              </button>
+            {/* Analyse button — shows when there are unanalyzed emails OR emails are selected */}
+            {(unanalyzedCount > 0 || selectedIds.size > 0) && (
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={handleReanalyze}
+                  disabled={isReanalyzing || isSyncing}
+                  title={selectedIds.size > 0 ? `Re-analyse ${selectedIds.size} selected email(s)` : 'Run AI analysis on unanalyzed emails'}
+                  className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 font-semibold border border-purple-200 dark:border-purple-500/20 hover:bg-purple-100 dark:hover:bg-purple-500/15 disabled:opacity-50 transition-colors"
+                >
+                  {isReanalyzing ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Brain className="w-2.5 h-2.5" />}
+                  {isReanalyzing ? 'Analysing…' : selectedIds.size > 0 ? `Analyse ${selectedIds.size}` : `Analyse ${unanalyzedCount}`}
+                </button>
+                {analyzeMsg && !isReanalyzing && (
+                  <span className={cn('text-[11px] font-medium', analyzeMsg.startsWith('Error') ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
+                    {analyzeMsg}
+                  </span>
+                )}
+              </div>
             )}
           </div>
           {syncMsg && (

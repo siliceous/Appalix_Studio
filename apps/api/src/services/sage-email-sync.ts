@@ -333,15 +333,22 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
 // Retroactive re-analysis for emails with null ai_priority
 // ---------------------------------------------------------------------------
 
-export async function reanalyzePendingEmails(workspaceId: string, batchSize = 50): Promise<number> {
-  const { data: emails } = await supabase
+export async function reanalyzePendingEmails(workspaceId: string, batchSize = 50, emailIds?: string[]): Promise<number> {
+  let query = supabase
     .from('sage_emails')
     .select('id, from_name, from_address, subject, body_text')
     .eq('workspace_id', workspaceId)
     .eq('direction', 'inbound')
-    .is('ai_analyzed_at', null)
-    .order('received_at', { ascending: false })
-    .limit(batchSize)
+
+  if (emailIds && emailIds.length > 0) {
+    // Re-analyse specific emails (regardless of whether they've been analysed before)
+    query = query.in('id', emailIds)
+  } else {
+    // Only analyse emails that haven't been processed yet
+    query = query.is('ai_analyzed_at', null).order('received_at', { ascending: false }).limit(batchSize)
+  }
+
+  const { data: emails } = await query
 
   if (!emails || emails.length === 0) return 0
 

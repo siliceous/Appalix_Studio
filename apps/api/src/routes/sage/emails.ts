@@ -15,7 +15,7 @@ import { callClaude }             from '../../services/ai/claude.js'
 interface EmailAttachment { filename: string; contentType: string; dataBase64: string }
 
 interface SyncBody      { workspace_id: string; limit?: number }
-interface ReanalyzeBody { workspace_id: string; batch_size?: number }
+interface ReanalyzeBody { workspace_id: string; batch_size?: number; email_ids?: string[] }
 interface SendBody      { workspace_id: string; to: string; subject: string; body: string; reply_to_email_id?: string; attachments?: EmailAttachment[] }
 interface RewriteBody   { workspace_id: string; body: string; instruction?: string }
 
@@ -51,11 +51,11 @@ export async function sageEmailRoutes(fastify: FastifyInstance) {
   fastify.post<{ Body: ReanalyzeBody }>('/reanalyze', async (request, reply) => {
     if (!authCheck(request)) return reply.status(401).send({ error: 'Unauthorised' })
 
-    const { workspace_id, batch_size } = request.body
+    const { workspace_id, batch_size, email_ids } = request.body
     if (!workspace_id) return reply.status(400).send({ error: 'workspace_id is required' })
 
     try {
-      const reanalyzed = await reanalyzePendingEmails(workspace_id, batch_size ?? 50)
+      const reanalyzed = await reanalyzePendingEmails(workspace_id, batch_size ?? 50, email_ids)
       return reply.send({ ok: true, reanalyzed })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Reanalysis failed'

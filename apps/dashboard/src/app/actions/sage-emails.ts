@@ -73,19 +73,24 @@ export async function deleteTriageEmails(emailIds: string[]): Promise<{ deleted:
 }
 
 /**
- * Trigger retroactive AI analysis for emails that haven't been analyzed yet.
+ * Trigger retroactive AI analysis for emails.
+ * If emailIds is provided, only those emails are re-analysed (regardless of prior analysis).
+ * Otherwise, analyses up to batchSize emails that have never been processed.
  */
-export async function reanalyzeEmails(batchSize = 50): Promise<{ reanalyzed: number; error?: string }> {
+export async function reanalyzeEmails(batchSize = 50, emailIds?: string[]): Promise<{ reanalyzed: number; error?: string }> {
   if (!API_BASE || !SERVICE_KEY) return { reanalyzed: 0, error: 'Server not configured' }
 
   const workspaceId = await getWorkspaceId()
   if (!workspaceId) return { reanalyzed: 0, error: 'Not authenticated' }
 
   try {
+    const body: Record<string, unknown> = { workspace_id: workspaceId, batch_size: batchSize }
+    if (emailIds && emailIds.length > 0) body.email_ids = emailIds
+
     const res = await fetch(`${API_BASE}/sage/emails/reanalyze`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', 'X-Service-Key': SERVICE_KEY },
-      body:    JSON.stringify({ workspace_id: workspaceId, batch_size: batchSize }),
+      body:    JSON.stringify(body),
     })
     const data = await res.json() as { reanalyzed?: number; error?: string }
     if (!res.ok) return { reanalyzed: 0, error: data.error ?? 'Reanalysis failed' }
