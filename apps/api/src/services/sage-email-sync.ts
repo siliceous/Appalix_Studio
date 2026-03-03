@@ -194,12 +194,14 @@ ${bodyText.slice(0, 3000)}`
       temperature:  0.2,
     })
 
-    const json = JSON.parse(result.content.trim()) as EmailAnalysis
+    // Strip markdown fences in case the model wraps the JSON (e.g. ```json ... ```)
+    const cleaned = result.content.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '')
+    const json = JSON.parse(cleaned) as EmailAnalysis
     if (!json.priority || !json.action) return null
     // Normalise: support both old `entities` key and new `extracted` key
-    const raw = json as unknown as Record<string, unknown>
-    if (!json.extracted && raw['entities']) {
-      json.extracted = raw['entities'] as EmailAnalysis['extracted']
+    const jsonRaw = json as unknown as Record<string, unknown>
+    if (!json.extracted && jsonRaw['entities']) {
+      json.extracted = jsonRaw['entities'] as EmailAnalysis['extracted']
     }
     if (!json.extracted) json.extracted = { intent_signals: [], urgency_signals: [] }
     if (!json.extracted.intent_signals)  json.extracted.intent_signals  = []
@@ -435,7 +437,7 @@ export async function reanalyzePendingEmails(workspaceId: string, batchSize = 50
       )
 
       if (analysis) {
-        await supabase
+        const { error: updateErr } = await supabase
           .from('sage_emails')
           .update({
             ai_priority:     analysis.priority,
@@ -451,10 +453,11 @@ export async function reanalyzePendingEmails(workspaceId: string, batchSize = 50
           })
           .eq('id', email.id)
 
-        reanalyzed++
+        if (!updateErr) reanalyzed++
+        else console.error(`[reanalyze] DB update failed for ${email.id}:`, updateErr.message)
       }
-    } catch {
-      // Skip individual failures
+    } catch (err) {
+      console.error(`[reanalyze] failed for ${email.id}:`, (err as Error).message)
     }
   }
 
