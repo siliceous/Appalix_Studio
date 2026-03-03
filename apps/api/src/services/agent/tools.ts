@@ -397,13 +397,13 @@ export const BUILT_IN_TOOLS: Anthropic.Tool[] = [
   },
   {
     name:        'sage_get_guide',
-    description: 'Get step-by-step setup instructions for any Appalix feature or integration. Use this whenever the user asks "how do I...", "help me set up...", "walk me through...", or "how does X work?". Topics include: gmail, microsoft, stripe, slack, whatsapp, facebook, telegram, pipeline, contacts, deals, knowledge-base, bot, widget, attachments, ai-rewrite, tickets, zapier, hubspot, wordpress, sage.',
+    description: 'ALWAYS call this first whenever a user asks about setting up, connecting, configuring, or using any Appalix feature — even simple questions like "connect gmail", "set up stripe", "add a pipeline", "how does the widget work". Returns the full numbered step list. After calling this, present ONLY Step 1 to the user and wait for confirmation before proceeding to Step 2. Topics: gmail, microsoft, stripe, slack, whatsapp, facebook, telegram, google-chat, widget, wordpress, custom-api, knowledge-base, bot, pipeline, contacts, deals, tickets, attachments, ai-rewrite, zapier, hubspot, salesforce, zoho, monday, intercom, freshdesk, zendesk, sage.',
     input_schema: {
       type: 'object',
       properties: {
         topic: {
           type:        'string',
-          description: 'The feature or integration to get instructions for (e.g. "gmail", "pipeline", "stripe", "widget", "slack").',
+          description: 'The feature or integration topic (e.g. "gmail", "pipeline", "stripe", "widget", "slack", "salesforce").',
         },
       },
       required: ['topic'],
@@ -411,13 +411,13 @@ export const BUILT_IN_TOOLS: Anthropic.Tool[] = [
   },
   {
     name:        'sage_check_feature_status',
-    description: 'Check whether a specific feature or integration is configured and ready for the current workspace. Use this to verify each setup step is complete before telling the user to proceed. Features: gmail, microsoft, stripe, slack, whatsapp, facebook, telegram, zapier, hubspot, has_pipelines, has_contacts, has_deals, has_bots, has_sources, has_widget.',
+    description: 'Check whether a specific feature or integration is configured for this workspace. Call this (1) at the start of a guided setup to know which steps are already done, and (2) after each step to verify the user completed it before moving on. Features: gmail, microsoft, stripe, slack, whatsapp, facebook, telegram, google-chat, zapier, hubspot, salesforce, monday, intercom, zoho, freshdesk, zendesk, has_pipelines, has_contacts, has_deals, has_bots, has_sources, has_widget.',
     input_schema: {
       type: 'object',
       properties: {
         feature: {
           type:        'string',
-          description: 'The feature to check (e.g. "gmail", "stripe", "has_pipelines", "has_bots").',
+          description: 'The feature key to check (e.g. "gmail", "stripe", "has_pipelines", "salesforce").',
         },
       },
       required: ['feature'],
