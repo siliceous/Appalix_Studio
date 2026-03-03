@@ -11,34 +11,46 @@ import { SageRightPanel }   from '@/components/sage/sage-right-panel'
 
 export const metadata: Metadata = { title: 'Overview' }
 
-// Support keywords used to classify an email as a ticket instead of a lead
-const SUPPORT_RE = /\b(not working|bug|issue|problem|access|billing|error|broken|down|outage|crash|fail)\b/i
+// Consumer email domains — don't use these for company domain matching
+const CONSUMER_DOMAINS = new Set([
+  'gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com',
+  'live.com', 'msn.com', 'me.com', 'aol.com', 'protonmail.com',
+  'pm.me', 'fastmail.com', 'zoho.com', 'ymail.com', 'googlemail.com',
+])
+
+function emailDomain(address: string): string | null {
+  const parts = address.toLowerCase().split('@')
+  if (parts.length !== 2) return null
+  const domain = parts[1]
+  return CONSUMER_DOMAINS.has(domain) ? null : domain
+}
 
 function deriveRecommendation(
-  email:          SageEmail,
-  matchedContact: { id: string } | null,
-  matchedDeal:    { id: string } | null,
+  email:            SageEmail,
+  matchedContact:   { id: string } | null,
+  openDeal:         { id: string } | null,
+  closedDeal:       { id: string; title: string } | null,
 ): TriageRecommendation {
-  // Use Claude's recommendation when available (new emails analyzed with updated prompt)
-  if (email.ai_action) {
-    // Map ai_action → TriageRecommendation (reopen → reopen_account for UI)
-    if (email.ai_action === 'reopen') return 'reopen_account'
-    if (email.ai_action === 'reply_draft') {
-      // Refine reply_draft based on contact match
-      if (matchedContact && matchedDeal)  return 'update_lead'
-      if (matchedContact && !matchedDeal) return 'reopen_account'
-      return 'create_lead'
-    }
-    return email.ai_action as TriageRecommendation
+  // Low priority → always ignore (AI is authoritative)
+  if (email.ai_priority === 'low') return 'ignore'
+
+  // Use Claude's action recommendation, enriched with CRM match data
+  const action = email.ai_action
+
+  if (action === 'create_ticket') return 'create_ticket'
+  if (action === 'ignore')        return 'ignore'
+
+  // CRM-aware routing: override create_lead/reply_draft when we have a match
+  if (matchedContact) {
+    if (openDeal)   return 'update_lead'    // active deal → add note + move bucket
+    if (closedDeal) return 'reopen_account' // won/lost → offer to reopen
+    return 'reopen_account'                 // known contact, no deal → re-engage
   }
 
-  // Fallback for legacy emails without ai_action
-  if (email.ai_priority === 'low') return 'ignore'
-  const text = `${email.subject} ${email.body_text ?? ''}`
-  if (SUPPORT_RE.test(text)) return 'create_ticket'
-  if (matchedContact && matchedDeal)  return 'update_lead'
-  if (matchedContact && !matchedDeal) return 'reopen_account'
-  return 'create_lead'
+  if (action === 'create_lead')  return 'create_lead'
+  if (action === 'reply_draft')  return 'create_lead'  // no CRM match → create lead
+
+  return 'create_lead'  // sensible default for high/medium with no CRM match
 }
 
 export default async function DashboardPage({
@@ -99,42 +111,66 @@ export default async function DashboardPage({
     const rawEmails   = (emailsRes.data   ?? []) as SageEmail[]
     const rawContacts = (contactsRes.data ?? []) as { id: string; name: string; email: string | null }[]
 
-    // Build email → contact map (lowercase for matching)
-    const contactByEmail = new Map<string, { id: string; name: string; email: string | null }>()
+    // ── Contact matching: email-exact + company-domain ─────────────────────
+    // Primary: exact email address match
+    const contactByEmail  = new Map<string, { id: string; name: string; email: string | null }>()
+    // Secondary: non-consumer email domain → company match
+    const contactByDomain = new Map<string, { id: string; name: string; email: string | null }>()
+
     for (const c of rawContacts) {
-      if (c.email) contactByEmail.set(c.email.toLowerCase(), c)
+      if (!c.email) continue
+      const addr = c.email.toLowerCase()
+      contactByEmail.set(addr, c)
+      const domain = emailDomain(addr)
+      if (domain && !contactByDomain.has(domain)) contactByDomain.set(domain, c)
     }
 
-    // Find which matched contact ids have open deals
+    function findContact(fromAddress: string) {
+      const addr   = fromAddress.toLowerCase()
+      const exact  = contactByEmail.get(addr)
+      if (exact) return exact
+      const domain = emailDomain(addr)
+      return domain ? (contactByDomain.get(domain) ?? null) : null
+    }
+
+    // ── Deal lookup: open + closed (won/lost) for matched contacts ──────────
     const matchedContactIds = Array.from(
       new Set(
         rawEmails
-          .map(e => contactByEmail.get(e.from_address.toLowerCase())?.id)
+          .map(e => findContact(e.from_address)?.id)
           .filter((id): id is string => Boolean(id)),
       ),
     )
 
-    const openDealsByContactId = new Map<string, { id: string; title: string }>()
+    const openDealsByContactId:   Map<string, { id: string; title: string }> = new Map()
+    const closedDealsByContactId: Map<string, { id: string; title: string }> = new Map()
+
     if (matchedContactIds.length > 0) {
       const { data: dealsRaw } = await supabase
         .from('sage_deals')
-        .select('id, title, contact_id')
+        .select('id, title, contact_id, status')
         .eq('workspace_id', workspaceId)
-        .eq('status', 'open')
+        .in('status', ['open', 'won', 'lost'])
         .in('contact_id', matchedContactIds)
-      const deals = (dealsRaw ?? []) as { id: string; title: string; contact_id: string }[]
+      const deals = (dealsRaw ?? []) as { id: string; title: string; contact_id: string; status: string }[]
       for (const d of deals) {
-        if (!openDealsByContactId.has(d.contact_id)) {
-          openDealsByContactId.set(d.contact_id, { id: d.id, title: d.title })
+        if (d.status === 'open') {
+          if (!openDealsByContactId.has(d.contact_id))
+            openDealsByContactId.set(d.contact_id, { id: d.id, title: d.title })
+        } else {
+          if (!closedDealsByContactId.has(d.contact_id))
+            closedDealsByContactId.set(d.contact_id, { id: d.id, title: d.title })
         }
       }
     }
 
     // Build TriageEmail[]
     triageEmails = rawEmails.map(email => {
-      const matchedContact = contactByEmail.get(email.from_address.toLowerCase()) ?? null
-      const matchedDeal    = matchedContact ? (openDealsByContactId.get(matchedContact.id) ?? null) : null
-      const recommendation = deriveRecommendation(email, matchedContact, matchedDeal)
+      const matchedContact = findContact(email.from_address)
+      const openDeal       = matchedContact ? (openDealsByContactId.get(matchedContact.id)   ?? null) : null
+      const closedDeal     = matchedContact ? (closedDealsByContactId.get(matchedContact.id) ?? null) : null
+      const recommendation = deriveRecommendation(email, matchedContact, openDeal, closedDeal)
+      const matchedDeal    = openDeal ?? closedDeal ?? null
       return { email, recommendation, matchedContact, matchedDeal }
     })
 
