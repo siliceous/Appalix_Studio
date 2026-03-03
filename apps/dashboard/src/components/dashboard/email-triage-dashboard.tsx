@@ -79,11 +79,9 @@ function recIcon(r: TriageRecommendation) {
 }
 
 function recColor(r: TriageRecommendation): string {
-  if (r === 'create_lead')    return 'bg-brand-600 hover:bg-brand-700 text-white'
-  if (r === 'update_lead')    return 'bg-[#61c2ad] hover:bg-[#52b09b] text-white'
-  if (r === 'reopen_account') return 'bg-amber-500 hover:bg-amber-600 text-white'
   if (r === 'create_ticket')  return 'bg-red-500 hover:bg-red-600 text-white'
-  return 'bg-gray-200 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-white/10'
+  if (r === 'ignore')         return 'bg-gray-200 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-white/10'
+  return 'bg-[#61c2ad] hover:bg-[#52b09b] text-white'
 }
 
 // ─── Main component ────────────────────────────────────────────────────────────
@@ -355,7 +353,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                   className={cn(
                     'flex items-stretch transition-colors',
                     isSelected
-                      ? 'bg-brand-50 dark:bg-[#ec732e]/8 border-l-[3px] border-l-brand-500 dark:border-l-[#ec732e]'
+                      ? 'bg-[#61c2ad]/[0.12] dark:bg-[#61c2ad]/[0.1] border-l-[3px] border-l-[#61c2ad]'
                       : 'hover:bg-white dark:hover:bg-white/3 border-l-[3px] border-l-transparent',
                   )}>
                   {/* Checkbox column */}
@@ -406,11 +404,9 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                             </span>
                           ) : (
                             <span className={cn('flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-lg font-medium border',
-                              t.recommendation === 'create_lead'    ? 'bg-brand-50 dark:bg-[#ec732e]/10 text-brand-600 dark:text-[#ec732e] border-brand-200 dark:border-[#ec732e]/20' :
-                              t.recommendation === 'update_lead'    ? 'bg-[#61c2ad]/10 text-[#61c2ad] border-[#61c2ad]/20' :
-                              t.recommendation === 'reopen_account' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/20' :
                               t.recommendation === 'create_ticket'  ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20' :
-                                                                      'bg-gray-100 dark:bg-white/5 text-gray-400 border-gray-200 dark:border-white/10')}>
+                              t.recommendation === 'ignore'         ? 'bg-gray-100 dark:bg-white/5 text-gray-400 border-gray-200 dark:border-white/10' :
+                                                                      'bg-[#61c2ad]/10 text-[#61c2ad] border-[#61c2ad]/20')}>
                               {recIcon(t.recommendation)}
                               {recLabel(t.recommendation, t)}
                             </span>
