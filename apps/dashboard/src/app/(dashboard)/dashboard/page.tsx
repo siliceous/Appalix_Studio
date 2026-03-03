@@ -94,9 +94,6 @@ export default async function DashboardPage({
         .eq('workspace_id', workspaceId)
         .eq('direction', 'inbound')
         .eq('is_trashed', false)   // exclude user-deleted emails
-        // neq() excludes NULLs in SQL — use or() so unanalyzed emails (null priority) are included
-        .or('ai_priority.neq.low,ai_priority.is.null')
-        .order('ai_priority', { ascending: true, nullsFirst: false })  // high, medium, null
         .order('received_at', { ascending: false })
         .limit(50),
 
@@ -174,11 +171,12 @@ export default async function DashboardPage({
       return { email, recommendation, matchedContact, matchedDeal }
     })
 
-    // Sort: high first, then medium
+    // Sort: high → medium → low → pending (unanalyzed)
+    const P: Record<string, number> = { high: 0, medium: 1, low: 2 }
     triageEmails.sort((a, b) => {
-      if (a.email.ai_priority === 'high' && b.email.ai_priority !== 'high') return -1
-      if (b.email.ai_priority === 'high' && a.email.ai_priority !== 'high') return  1
-      return 0
+      const pa = a.email.ai_priority ? (P[a.email.ai_priority] ?? 3) : 3
+      const pb = b.email.ai_priority ? (P[b.email.ai_priority] ?? 3) : 3
+      return pa - pb
     })
 
   } else if (tab === 'bots') {

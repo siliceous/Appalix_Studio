@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useTransition, useEffect } from 'react'
+import React, { useState, useTransition, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -38,15 +38,25 @@ interface Props {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const PRIORITY_DOT: Record<string, string> = {
-  high:   'bg-red-500',
+  high:   'bg-[#61c2ad]',
   medium: 'bg-amber-400',
   low:    'bg-gray-300 dark:bg-gray-600',
 }
 
 const PRIORITY_BADGE: Record<string, string> = {
-  high:   'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20',
+  high:   'bg-[#61c2ad]/10 dark:bg-[#61c2ad]/15 text-[#3a9e8a] dark:text-[#61c2ad] border-[#61c2ad]/30 dark:border-[#61c2ad]/25',
   medium: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/20',
   low:    'bg-gray-100 dark:bg-white/5 text-gray-500 border-gray-200 dark:border-white/10',
+}
+
+// Priority sort order: high=0, medium=1, low=2, pending=3
+const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 }
+
+function sortByPriority(a: TriageEmail, b: TriageEmail): number {
+  const pa = a.email.ai_priority ? (PRIORITY_ORDER[a.email.ai_priority] ?? 3) : 3
+  const pb = b.email.ai_priority ? (PRIORITY_ORDER[b.email.ai_priority] ?? 3) : 3
+  if (pa !== pb) return pa - pb
+  return new Date(b.email.received_at).getTime() - new Date(a.email.received_at).getTime()
 }
 
 function formatDate(iso: string) {
@@ -80,6 +90,29 @@ function recColor(r: TriageRecommendation): string {
   return 'bg-[#61c2ad] hover:bg-[#52b09b] text-white'
 }
 
+// ─── Copy chip ────────────────────────────────────────────────────────────────
+
+function CopyChip({ value, children, className }: { value: string; children: React.ReactNode; className: string }) {
+  const [copied, setCopied] = useState(false)
+  function handleCopy(e: React.MouseEvent) {
+    e.stopPropagation()
+    void navigator.clipboard.writeText(value).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    })
+  }
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      title={copied ? 'Copied!' : `Copy: ${value}`}
+      className={cn(className, 'cursor-pointer transition-opacity hover:opacity-80 active:scale-95')}
+    >
+      {copied ? <span className="flex items-center gap-1"><Check className="w-2.5 h-2.5" />Copied</span> : children}
+    </button>
+  )
+}
+
 // ─── Triage Card ──────────────────────────────────────────────────────────────
 
 interface CardProps {
@@ -88,244 +121,290 @@ interface CardProps {
   actionLabel:  string | undefined
   isDismissed:  boolean
   isChecked:    boolean
+  isSelected:   boolean
   onAction:     (t: TriageEmail, mode: 'lead' | 'ticket' | 'deal_note') => void
   onDismiss:    (id: string) => void
   onToggle:     (id: string) => void
+  onSelect:     (id: string) => void
   isDeleting:   boolean
   onDelete:     (id: string) => void
 }
 
-function TriageCard({ t, isDone, actionLabel, isDismissed, isChecked, onAction, onDismiss, onToggle, isDeleting, onDelete }: CardProps) {
-  const [draftsOpen, setDraftsOpen] = useState(false)
+function TriageCard({
+  t, isDone, actionLabel, isDismissed, isChecked, isSelected,
+  onAction, onDismiss, onToggle, onSelect, isDeleting, onDelete,
+}: CardProps) {
+  const [expanded,    setExpanded]    = useState(false)
+  const [draftsOpen,  setDraftsOpen]  = useState(false)
   const [activeDraft, setActiveDraft] = useState(0)
+  const cardRef = useRef<HTMLDivElement>(null)
   const { email, recommendation } = t
   const entities  = email.ai_entities
   const drafts    = email.ai_reply_drafts ?? []
 
+  // Auto-expand and scroll into view when selected from the left panel
+  useEffect(() => {
+    if (isSelected) {
+      setExpanded(true)
+      setTimeout(() => cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50)
+    }
+  }, [isSelected])
+
   if (isDismissed) return null
 
-  function handlePrimaryAction() {
+  function handlePrimaryAction(e: React.MouseEvent) {
+    e.stopPropagation()
     if (recommendation === 'create_lead')    onAction(t, 'lead')
     if (recommendation === 'create_ticket')  onAction(t, 'ticket')
     if (recommendation === 'update_lead')    onAction(t, 'deal_note')
     if (recommendation === 'reopen_account') onAction(t, 'lead')
   }
 
+  function handleHeaderClick() {
+    setExpanded(v => !v)
+    onSelect(email.id)
+  }
+
   return (
-    <div className={cn(
-      'flex flex-col bg-white dark:bg-[#232323] rounded-xl border transition-all',
-      isDone
-        ? 'border-green-200 dark:border-green-500/20'
-        : email.ai_priority === 'high'
-          ? 'border-[#61c2ad]/50 dark:border-[#61c2ad]/35 ring-1 ring-[#61c2ad]/20 dark:ring-[#61c2ad]/10'
-          : email.ai_priority === 'medium'
-            ? 'border-amber-300/70 dark:border-amber-500/30 ring-1 ring-amber-200/50 dark:ring-amber-500/10'
-            : 'border-gray-200 dark:border-white/8 hover:border-gray-300 dark:hover:border-white/15',
-    )}>
-
-      {/* Card header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {email.ai_priority ? (
-            <span className={cn('flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border', PRIORITY_BADGE[email.ai_priority])}>
-              <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT[email.ai_priority])} />
-              {email.ai_priority}
-            </span>
-          ) : (
-            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-white/8 font-medium">
-              <Brain className="w-2.5 h-2.5" /> Pending
-            </span>
-          )}
-          {email.ai_category && (
-            <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-semibold border', {
-              'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/20': email.ai_category === 'Sales',
-              'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20': email.ai_category === 'Support',
-              'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10': email.ai_category === 'Other',
-            })}>
-              {email.ai_category}
-            </span>
-          )}
-          {isDone && (
-            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/20 font-medium">
-              <Check className="w-2.5 h-2.5" /> {actionLabel}
-            </span>
-          )}
+    <div
+      ref={cardRef}
+      className={cn(
+        'flex flex-col bg-white dark:bg-[#232323] rounded-xl border transition-all',
+        isSelected
+          ? 'ring-2 ring-[#61c2ad]/40 dark:ring-[#61c2ad]/30'
+          : '',
+        isDone
+          ? 'border-green-200 dark:border-green-500/20'
+          : email.ai_priority === 'high'
+            ? 'border-[#61c2ad]/50 dark:border-[#61c2ad]/35'
+            : email.ai_priority === 'medium'
+              ? 'border-amber-300/70 dark:border-amber-500/30'
+              : 'border-gray-200 dark:border-white/8',
+      )}
+    >
+      {/* ── Clickable header — click anywhere here to expand/collapse ── */}
+      <div
+        onClick={handleHeaderClick}
+        className="flex flex-col cursor-pointer select-none hover:bg-gray-50/60 dark:hover:bg-white/[0.02] rounded-t-xl transition-colors"
+      >
+        {/* Top row: badges + time + chevron + checkbox */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {email.ai_priority ? (
+              <span className={cn('flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border', PRIORITY_BADGE[email.ai_priority])}>
+                <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT[email.ai_priority])} />
+                {email.ai_priority}
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-white/8 font-medium">
+                <Brain className="w-2.5 h-2.5" /> Pending
+              </span>
+            )}
+            {email.ai_category && (
+              <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-semibold border', {
+                'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/20': email.ai_category === 'Sales',
+                'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20': email.ai_category === 'Support',
+                'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10': email.ai_category === 'Other',
+              })}>
+                {email.ai_category}
+              </span>
+            )}
+            {isDone && (
+              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/20 font-medium">
+                <Check className="w-2.5 h-2.5" /> {actionLabel}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-gray-400">{formatDate(email.received_at)}</span>
+            <ChevronDown className={cn('w-3.5 h-3.5 text-gray-400 transition-transform duration-200', expanded && 'rotate-180')} />
+            <button
+              type="button"
+              onClick={e => { e.stopPropagation(); onToggle(email.id) }}
+              title={isChecked ? 'Deselect' : 'Select'}
+            >
+              <span className={cn(
+                'w-4 h-4 rounded border flex items-center justify-center transition-colors',
+                isChecked ? 'bg-[#61c2ad] border-[#61c2ad]' : 'border-gray-300 dark:border-white/20 hover:border-[#61c2ad]',
+              )}>
+                {isChecked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+              </span>
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] text-gray-400">{formatDate(email.received_at)}</span>
-          <button onClick={() => onToggle(email.id)} title={isChecked ? 'Deselect' : 'Select'}>
-            <span className={cn(
-              'w-4 h-4 rounded border flex items-center justify-center transition-colors',
-              isChecked ? 'bg-[#61c2ad] border-[#61c2ad]' : 'border-gray-300 dark:border-white/20 hover:border-[#61c2ad]',
+
+        {/* Sender + subject */}
+        <div className="px-4 pb-3">
+          <div className="flex items-center gap-2">
+            <div className={cn(
+              'w-7 h-7 rounded-full flex items-center justify-center shrink-0',
+              email.ai_priority === 'high'   ? 'bg-[#61c2ad]/15 dark:bg-[#61c2ad]/20'
+              : email.ai_priority === 'medium' ? 'bg-amber-100 dark:bg-amber-500/15'
+              : 'bg-gray-100 dark:bg-white/5',
             )}>
-              {isChecked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
-            </span>
-          </button>
+              <span className={cn(
+                'text-[11px] font-bold',
+                email.ai_priority === 'high'   ? 'text-[#61c2ad]'
+                : email.ai_priority === 'medium' ? 'text-amber-600 dark:text-amber-400'
+                : 'text-gray-500 dark:text-gray-400',
+              )}>
+                {(email.from_name ?? email.from_address).charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                {email.from_name ?? email.from_address}
+                {entities?.company && (
+                  <span className="font-normal text-gray-400 text-xs ml-1">· {entities.company}</span>
+                )}
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-gray-700 dark:text-gray-400 mt-1.5 leading-snug line-clamp-2">
+            {email.subject}
+          </p>
         </div>
       </div>
 
-      {/* Sender + subject */}
-      <div className="px-4 pb-2">
-        <div className="flex items-center gap-2">
-          <div className={cn(
-            'w-7 h-7 rounded-full flex items-center justify-center shrink-0',
-            email.ai_priority === 'high'
-              ? 'bg-[#61c2ad]/15 dark:bg-[#61c2ad]/20'
-              : email.ai_priority === 'medium'
-                ? 'bg-amber-100 dark:bg-amber-500/15'
-                : 'bg-gray-100 dark:bg-white/5',
-          )}>
-            <span className={cn(
-              'text-[11px] font-bold',
-              email.ai_priority === 'high'
-                ? 'text-[#61c2ad]'
-                : email.ai_priority === 'medium'
-                  ? 'text-amber-600 dark:text-amber-400'
-                  : 'text-gray-500 dark:text-gray-400',
-            )}>
-              {(email.from_name ?? email.from_address).charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-              {email.from_name ?? email.from_address}
-              {entities?.company && (
-                <span className="font-normal text-gray-400 text-xs ml-1">· {entities.company}</span>
+      {/* ── Accordion body — shown only when expanded ── */}
+      {expanded && (
+        <div className="border-t dark:border-white/8">
+
+          {/* AI Summary */}
+          {email.ai_summary ? (
+            <div className="mx-4 mt-3 mb-2 px-3 py-2.5 rounded-lg bg-brand-50 dark:bg-[#ec732e]/8 border border-brand-100 dark:border-[#ec732e]/15">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Sparkles className="w-3 h-3 text-brand-500 dark:text-[#ec732e]" />
+                <span className="text-[10px] font-bold text-brand-600 dark:text-[#ec732e] uppercase tracking-wide">Summary</span>
+              </div>
+              <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{email.ai_summary}</p>
+              {email.ai_reason && (
+                <p className="text-[10px] text-gray-500 mt-1.5 italic">{email.ai_reason}</p>
               )}
-            </p>
-          </div>
-        </div>
-        <p className="text-xs text-gray-700 dark:text-gray-400 mt-1.5 leading-snug line-clamp-1">
-          {email.subject}
-        </p>
-      </div>
-
-      {/* AI Summary */}
-      {email.ai_summary && (
-        <div className="mx-4 mb-2 px-3 py-2.5 rounded-lg bg-brand-50 dark:bg-[#ec732e]/8 border border-brand-100 dark:border-[#ec732e]/15">
-          <div className="flex items-center gap-1.5 mb-1">
-            <Sparkles className="w-3 h-3 text-brand-500 dark:text-[#ec732e]" />
-            <span className="text-[10px] font-bold text-brand-600 dark:text-[#ec732e] uppercase tracking-wide">Summary</span>
-          </div>
-          <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">{email.ai_summary}</p>
-          {email.ai_reason && (
-            <p className="text-[10px] text-gray-500 mt-1.5 italic">{email.ai_reason}</p>
+            </div>
+          ) : (
+            <div className="mx-4 mt-3 mb-2 px-3 py-2 rounded-lg bg-purple-50 dark:bg-purple-500/8 border border-dashed border-purple-200 dark:border-purple-500/20 text-center">
+              <p className="text-[11px] text-purple-500 dark:text-purple-400">AI analysis pending — click Analyse to generate insights</p>
+            </div>
           )}
-        </div>
-      )}
 
-      {/* User prompt callout */}
-      {email.ai_user_prompt && (
-        <div className="mx-4 mb-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-white/3 border border-gray-200 dark:border-white/8 flex items-start gap-2">
-          <span className="text-brand-500 dark:text-[#ec732e] text-sm leading-none mt-0.5">→</span>
-          <p className="text-xs text-gray-700 dark:text-gray-300 font-medium leading-relaxed">{email.ai_user_prompt}</p>
-        </div>
-      )}
+          {/* User prompt callout */}
+          {email.ai_user_prompt && (
+            <div className="mx-4 mb-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-white/3 border border-gray-200 dark:border-white/8 flex items-start gap-2">
+              <span className="text-brand-500 dark:text-[#ec732e] text-sm leading-none mt-0.5">→</span>
+              <p className="text-xs text-gray-700 dark:text-gray-300 font-medium leading-relaxed">{email.ai_user_prompt}</p>
+            </div>
+          )}
 
-      {/* Intent + urgency signal chips */}
-      {((entities?.intent_signals ?? []).length > 0 || (entities?.urgency_signals ?? []).length > 0) && (
-        <div className="px-4 pb-2 flex flex-wrap gap-1.5">
-          {(entities?.intent_signals ?? []).map((s, i) => (
-            <span key={i} className="text-[10px] px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 font-medium">
-              {s}
-            </span>
-          ))}
-          {(entities?.urgency_signals ?? []).map((s, i) => (
-            <span key={i} className="text-[10px] px-2 py-0.5 rounded-md bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/20 font-medium">
-              ⚡ {s}
-            </span>
-          ))}
-        </div>
-      )}
+          {/* Intent + urgency signal chips */}
+          {((entities?.intent_signals ?? []).length > 0 || (entities?.urgency_signals ?? []).length > 0) && (
+            <div className="px-4 pb-2 flex flex-wrap gap-1.5">
+              {(entities?.intent_signals ?? []).map((s, i) => (
+                <CopyChip key={i} value={s} className="text-[10px] px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 font-medium">
+                  {s}
+                </CopyChip>
+              ))}
+              {(entities?.urgency_signals ?? []).map((s, i) => (
+                <CopyChip key={i} value={s} className="text-[10px] px-2 py-0.5 rounded-md bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/20 font-medium">
+                  ⚡ {s}
+                </CopyChip>
+              ))}
+            </div>
+          )}
 
-      {/* Entity chips */}
-      {entities && Object.keys(entities).length > 0 && (
-        <div className="px-4 pb-2 flex flex-wrap gap-1.5">
-          {entities.name && (
-            <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
-              <UserPlus className="w-2.5 h-2.5 text-gray-500 shrink-0" /> {entities.name}
-            </span>
+          {/* Entity chips */}
+          {entities && (entities.name || entities.phone || entities.website || entities.product_interest) && (
+            <div className="px-4 pb-2 flex flex-wrap gap-1.5">
+              {entities.name && (
+                <CopyChip value={entities.name} className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
+                  <UserPlus className="w-2.5 h-2.5 text-gray-500 shrink-0" /> {entities.name}
+                </CopyChip>
+              )}
+              {entities.phone && (
+                <CopyChip value={entities.phone} className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
+                  <Phone className="w-2.5 h-2.5 text-gray-500 shrink-0" /> {entities.phone}
+                </CopyChip>
+              )}
+              {entities.website && (
+                <a
+                  href={entities.website.startsWith('http') ? entities.website : `https://${entities.website}`}
+                  target="_blank" rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300 hover:text-[#61c2ad] transition-colors"
+                >
+                  <Globe className="w-2.5 h-2.5 shrink-0" /> {entities.website}
+                </a>
+              )}
+              {entities.product_interest && (
+                <CopyChip value={entities.product_interest} className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-brand-50 dark:bg-[#ec732e]/10 border border-brand-100 dark:border-[#ec732e]/20 text-brand-700 dark:text-[#ec732e]">
+                  <Tag className="w-2.5 h-2.5 shrink-0" /> {entities.product_interest}
+                </CopyChip>
+              )}
+            </div>
           )}
-          {entities.phone && (
-            <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
-              <Phone className="w-2.5 h-2.5 text-gray-500 shrink-0" /> {entities.phone}
-            </span>
-          )}
-          {entities.website && (
-            <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300">
-              <Globe className="w-2.5 h-2.5 text-gray-500 shrink-0" /> {entities.website}
-            </span>
-          )}
-          {entities.product_interest && (
-            <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-brand-50 dark:bg-[#ec732e]/10 border border-brand-100 dark:border-[#ec732e]/20 text-brand-700 dark:text-[#ec732e]">
-              <Tag className="w-2.5 h-2.5 shrink-0" /> {entities.product_interest}
-            </span>
-          )}
-        </div>
-      )}
 
-      {/* Reply drafts inline */}
-      {drafts.length > 0 && draftsOpen && (
-        <div className="mx-4 mb-3 rounded-lg border dark:border-white/8 overflow-hidden bg-gray-50 dark:bg-white/3">
-          <div className="flex items-center gap-1 px-3 pt-2 pb-1 flex-wrap">
-            {drafts.map((d, i) => (
-              <button key={i} onClick={() => setActiveDraft(i)}
-                className={cn('text-[11px] px-2.5 py-1 rounded-lg font-medium transition-colors',
-                  activeDraft === i
-                    ? 'bg-brand-600 text-white'
-                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5')}>
-                {d.tone}
+          {/* Reply drafts inline */}
+          {drafts.length > 0 && draftsOpen && (
+            <div className="mx-4 mb-3 rounded-lg border dark:border-white/8 overflow-hidden bg-gray-50 dark:bg-white/3">
+              <div className="flex items-center gap-1 px-3 pt-2 pb-1 flex-wrap">
+                {drafts.map((d, i) => (
+                  <button key={i} onClick={e => { e.stopPropagation(); setActiveDraft(i) }}
+                    className={cn('text-[11px] px-2.5 py-1 rounded-lg font-medium transition-colors',
+                      activeDraft === i ? 'bg-brand-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5')}>
+                    {d.tone}
+                  </button>
+                ))}
+              </div>
+              <div className="px-3 py-2.5 border-t dark:border-white/8">
+                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap line-clamp-6">
+                  {drafts[activeDraft]?.body}
+                </p>
+              </div>
+              <div className="px-3 py-2 border-t dark:border-white/8 flex justify-end">
+                <Link href="/sage/emails"
+                  className="text-[11px] text-brand-600 dark:text-[#61c2ad] hover:underline flex items-center gap-1">
+                  Open email client to send <ArrowRight className="w-2.5 h-2.5" />
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="px-4 pb-4 pt-2 flex flex-wrap gap-1.5">
+            {!isDone && recommendation !== 'ignore' && (
+              <button
+                onClick={handlePrimaryAction}
+                className={cn('flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors', recColor(recommendation))}>
+                {recIcon(recommendation)}
+                {recLabel(recommendation, t)}
               </button>
-            ))}
-          </div>
-          <div className="px-3 py-2.5 border-t dark:border-white/8">
-            <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap line-clamp-6">
-              {drafts[activeDraft]?.body}
-            </p>
-          </div>
-          <div className="px-3 py-2 border-t dark:border-white/8 flex justify-end">
-            <Link href="/sage/emails"
-              className="text-[11px] text-brand-600 dark:text-[#61c2ad] hover:underline flex items-center gap-1">
-              Open email client to send <ArrowRight className="w-2.5 h-2.5" />
-            </Link>
+            )}
+
+            {drafts.length > 0 && (
+              <button
+                onClick={e => { e.stopPropagation(); setDraftsOpen(v => !v) }}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors border border-gray-200 dark:border-white/8">
+                <Mail className="w-3 h-3" />
+                Reply
+                <ChevronDown className={cn('w-3 h-3 transition-transform', draftsOpen && 'rotate-180')} />
+              </button>
+            )}
+
+            <button
+              onClick={e => { e.stopPropagation(); onDismiss(email.id) }}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors border border-gray-200 dark:border-white/8">
+              <X className="w-3 h-3" /> Ignore
+            </button>
+
+            <button
+              onClick={e => { e.stopPropagation(); onDelete(email.id) }}
+              disabled={isDeleting}
+              className="flex items-center justify-center w-7 h-7 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors border border-gray-200 dark:border-white/8 hover:border-red-200 dark:hover:border-red-500/20">
+              {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+            </button>
           </div>
         </div>
       )}
-
-      {/* Action buttons */}
-      <div className="px-4 pb-4 pt-1 mt-auto border-t dark:border-white/6 flex flex-wrap gap-1.5">
-        {!isDone && recommendation !== 'ignore' && email.ai_analyzed_at && (
-          <button
-            onClick={handlePrimaryAction}
-            className={cn('flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors', recColor(recommendation))}>
-            {recIcon(recommendation)}
-            {recLabel(recommendation, t)}
-          </button>
-        )}
-
-        {drafts.length > 0 && (
-          <button
-            onClick={() => setDraftsOpen(v => !v)}
-            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors border border-gray-200 dark:border-white/8">
-            <Mail className="w-3 h-3" />
-            Reply
-            <ChevronDown className={cn('w-3 h-3 transition-transform', draftsOpen && 'rotate-180')} />
-          </button>
-        )}
-
-        <button
-          onClick={() => onDismiss(email.id)}
-          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors border border-gray-200 dark:border-white/8">
-          <X className="w-3 h-3" /> Ignore
-        </button>
-
-        <button
-          onClick={() => onDelete(email.id)}
-          disabled={isDeleting}
-          className="flex items-center justify-center w-7 h-7 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors border border-gray-200 dark:border-white/8 hover:border-red-200 dark:hover:border-red-500/20">
-          {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-        </button>
-      </div>
     </div>
   )
 }
@@ -334,20 +413,20 @@ function TriageCard({ t, isDone, actionLabel, isDismissed, isChecked, onAction, 
 
 export function EmailTriageDashboard({ triageEmails }: Props) {
   const router = useRouter()
-  const [dismissed,  setDismissed]  = useState<Set<string>>(new Set())
-  const [actioned,   setActioned]   = useState<Map<string, string>>(new Map())
-  const [modalMode,  setModalMode]  = useState<'lead' | 'ticket' | 'deal_note' | null>(null)
-  const [modalEmail, setModalEmail] = useState<TriageEmail | null>(null)
-  const [isPending,      startTransition]          = useTransition()
-  const [isSyncing,      startSyncTransition]      = useTransition()
-  const [isDeleting,     startDeleteTransition]    = useTransition()
-  const [isReanalyzing,  startReanalyzeTransition] = useTransition()
-  const [syncMsg,    setSyncMsg]    = useState<string | null>(null)
-  const [analyzeMsg, setAnalyzeMsg] = useState<string | null>(null)
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [dismissed,     setDismissed]     = useState<Set<string>>(new Set())
+  const [actioned,      setActioned]      = useState<Map<string, string>>(new Map())
+  const [modalMode,     setModalMode]     = useState<'lead' | 'ticket' | 'deal_note' | null>(null)
+  const [modalEmail,    setModalEmail]    = useState<TriageEmail | null>(null)
+  const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null)
+  const [isPending,         startTransition]          = useTransition()
+  const [isSyncing,         startSyncTransition]      = useTransition()
+  const [isDeleting,        startDeleteTransition]    = useTransition()
+  const [isReanalyzing,     startReanalyzeTransition] = useTransition()
+  const [syncMsg,       setSyncMsg]       = useState<string | null>(null)
+  const [analyzeMsg,    setAnalyzeMsg]    = useState<string | null>(null)
+  const [selectedIds,   setSelectedIds]   = useState<Set<string>>(new Set())
 
   // Auto-refresh every 60 s so emails pushed by the IMAP IDLE loop appear
-  // without the user having to click anything.
   useEffect(() => {
     const id = setInterval(() => { router.refresh() }, 60_000)
     return () => clearInterval(id)
@@ -497,10 +576,14 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
   const medCount      = medEmails.length
   const unanalyzedCount = visible.filter(t => !t.email.ai_analyzed_at).length
 
+  // Left panel list sorted: high → medium → low → pending
+  const sortedVisible = [...visible].sort(sortByPriority)
+
   const cardProps = {
     onAction:   openModal,
     onDismiss:  dismiss,
     onToggle:   toggleSelect,
+    onSelect:   setSelectedEmailId,
     isDeleting,
     onDelete:   handleDeleteOne,
   }
@@ -508,7 +591,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
   return (
     <div className="flex flex-1 overflow-hidden">
 
-      {/* ─── LEFT: Triage List ─────────────────────────────────────────────── */}
+      {/* ─── LEFT: Priority-sorted email list ──────────────────────────────── */}
       <aside className="w-[260px] shrink-0 flex flex-col border-r dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
 
         {/* Header */}
@@ -543,8 +626,8 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
           {/* Status badges */}
           <div className="flex items-center gap-2 flex-wrap">
             {highCount > 0 && (
-              <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 font-semibold border border-red-200 dark:border-red-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />{highCount} High
+              <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#61c2ad]/10 text-[#3a9e8a] dark:text-[#61c2ad] font-semibold border border-[#61c2ad]/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#61c2ad]" />{highCount} High
               </span>
             )}
             {medCount > 0 && (
@@ -570,7 +653,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
           )}
         </div>
 
-        {/* Compact list */}
+        {/* Priority-sorted list — clicking a row expands the card in the center */}
         <div className="flex-1 overflow-y-auto">
           {visible.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-3 p-6 text-center">
@@ -591,18 +674,34 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
               </button>
             </div>
           ) : (
-            visible.map(t => {
+            sortedVisible.map(t => {
               const isChecked = selectedIds.has(t.email.id)
-              const done      = actioned.has(t.email.id)
+              const isActive  = selectedEmailId === t.email.id
+              const priority  = t.email.ai_priority
               return (
-                <div key={t.email.id}
-                  className="flex items-stretch hover:bg-white dark:hover:bg-white/3 border-l-[3px] border-l-transparent transition-colors">
+                <div
+                  key={t.email.id}
+                  onClick={() => setSelectedEmailId(t.email.id)}
+                  className={cn(
+                    'flex items-stretch border-l-[3px] transition-colors cursor-pointer',
+                    isActive
+                      ? priority === 'high'
+                        ? 'border-l-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10'
+                        : priority === 'medium'
+                          ? 'border-l-amber-400 bg-amber-50 dark:bg-amber-500/8'
+                          : priority === 'low'
+                            ? 'border-l-gray-400 bg-gray-100 dark:bg-white/5'
+                            : 'border-l-purple-400 bg-purple-50 dark:bg-purple-500/8'
+                      : 'border-l-transparent hover:bg-white dark:hover:bg-white/3',
+                  )}
+                >
                   <div className="flex-1 min-w-0 px-3 py-2.5">
                     <div className="flex items-start gap-2">
                       <span className={cn('mt-1.5 w-2 h-2 rounded-full shrink-0',
-                        t.email.ai_priority ? PRIORITY_DOT[t.email.ai_priority] : 'bg-gray-200 dark:bg-white/20')} />
+                        priority ? PRIORITY_DOT[priority] : 'bg-gray-200 dark:bg-white/20')} />
                       <div className="flex-1 min-w-0">
-                        <span className={cn('text-xs font-semibold truncate block', done ? 'text-gray-400' : 'text-gray-800 dark:text-gray-200')}>
+                        <span className={cn('text-xs font-semibold truncate block',
+                          actioned.has(t.email.id) ? 'text-gray-400' : 'text-gray-800 dark:text-gray-200')}>
                           {t.email.from_name ?? t.email.from_address}
                         </span>
                         <p className="text-[11px] text-gray-400 truncate">{t.email.subject}</p>
@@ -611,7 +710,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                   </div>
                   <div className="flex flex-col items-end justify-start gap-2 pt-2.5 pb-2.5 pr-3 shrink-0">
                     <span className="text-[10px] text-gray-400 leading-none">{formatDate(t.email.received_at)}</span>
-                    <button onClick={() => toggleSelect(t.email.id)}>
+                    <button onClick={e => { e.stopPropagation(); toggleSelect(t.email.id) }}>
                       <span className={cn(
                         'w-4 h-4 rounded border flex items-center justify-center transition-colors',
                         isChecked ? 'bg-[#61c2ad] border-[#61c2ad]' : 'border-gray-300 dark:border-white/20 hover:border-[#61c2ad]',
@@ -674,17 +773,18 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
             {highEmails.filter(t => !dismissed.has(t.email.id)).length > 0 && (
               <section className="mb-7">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
-                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-red-500 dark:text-red-400">
+                  <span className="w-2 h-2 rounded-full bg-[#61c2ad] shrink-0" />
+                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#3a9e8a] dark:text-[#61c2ad]">
                     High Priority · {highEmails.filter(t => !dismissed.has(t.email.id)).length}
                   </h3>
-                  <div className="flex-1 h-px bg-red-200 dark:bg-red-500/20" />
+                  <div className="flex-1 h-px bg-[#61c2ad]/30 dark:bg-[#61c2ad]/20" />
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
                   {highEmails.filter(t => !dismissed.has(t.email.id)).map(t => (
                     <TriageCard key={t.email.id} t={t}
                       isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
                       isDismissed={false} isChecked={selectedIds.has(t.email.id)}
+                      isSelected={selectedEmailId === t.email.id}
                       {...cardProps}
                     />
                   ))}
@@ -707,6 +807,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                     <TriageCard key={t.email.id} t={t}
                       isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
                       isDismissed={false} isChecked={selectedIds.has(t.email.id)}
+                      isSelected={selectedEmailId === t.email.id}
                       {...cardProps}
                     />
                   ))}
@@ -729,6 +830,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                     <TriageCard key={t.email.id} t={t}
                       isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
                       isDismissed={false} isChecked={selectedIds.has(t.email.id)}
+                      isSelected={selectedEmailId === t.email.id}
                       {...cardProps}
                     />
                   ))}
@@ -785,6 +887,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                     <TriageCard key={t.email.id} t={t}
                       isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
                       isDismissed={false} isChecked={selectedIds.has(t.email.id)}
+                      isSelected={selectedEmailId === t.email.id}
                       {...cardProps}
                     />
                   ))}
@@ -878,7 +981,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
             {/* Deal note form */}
             {modalMode === 'deal_note' && (
               <div className="space-y-3">
-                <div className="px-3 py-2 rounded-lg bg-[#61c2ad]/10 border border-[#61c2ad]/20 text-sm text-[#61c2ad] font-medium">
+                <div className="px-3 py-2 rounded-lg bg-[#61c2ad]/10 border border-[#61c2ad]/20 text-sm text-[#3a9e8a] dark:text-[#61c2ad] font-medium">
                   Deal: {mDealTitle}
                 </div>
                 <div>
