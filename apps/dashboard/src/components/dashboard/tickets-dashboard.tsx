@@ -1,9 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { TicketCheck, User, Clock, Mail, Phone, ExternalLink, Inbox } from 'lucide-react'
+import { TicketCheck, User, Clock, Mail, ExternalLink, Inbox, Bot } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import type { SageTicket, SageContact } from '@/lib/types'
+
+// Derive ticket source for display.
+// contact_method='email' → from Email.
+// Anything else (chat, phone, null) → from Bot.
+// Per spec, Bot overrides Email when a ticket has both origins.
+function ticketSource(ticket: SageTicket): 'bot' | 'email' {
+  return ticket.contact_method === 'email' ? 'email' : 'bot'
+}
 
 type TicketRow = SageTicket & {
   contact: Pick<SageContact, 'id' | 'name' | 'email'> | null
@@ -65,8 +73,10 @@ export function TicketsDashboard({ tickets }: { tickets: TicketRow[] }) {
         {/* List */}
         <div className="flex-1 overflow-y-auto">
           {tickets.map((ticket) => {
-            const priority = PRIORITY_STYLES[ticket.priority ?? 'low']
+            const priority   = PRIORITY_STYLES[ticket.priority ?? 'low']
             const isSelected = ticket.id === selectedId
+            const source     = ticketSource(ticket)
+
             return (
               <button
                 key={ticket.id}
@@ -84,9 +94,23 @@ export function TicketsDashboard({ tickets }: { tickets: TicketRow[] }) {
                     <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate leading-5">
                       {ticket.title}
                     </p>
-                    <p className="text-[11px] text-gray-400 mt-0.5 truncate">
-                      {ticket.contact?.name ?? 'Unknown'} · {timeAgo(ticket.created_at)}
-                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      {/* Source badge — Bot overrides Email if ticket has both origins */}
+                      {source === 'bot' ? (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 shrink-0">
+                          <Bot className="w-2.5 h-2.5" />
+                          Bot
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 shrink-0">
+                          <Mail className="w-2.5 h-2.5" />
+                          Email
+                        </span>
+                      )}
+                      <span className="text-[11px] text-gray-400 truncate">
+                        {ticket.contact?.name ?? 'Unknown'} · {timeAgo(ticket.created_at)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </button>
@@ -130,14 +154,15 @@ export function TicketsDashboard({ tickets }: { tickets: TicketRow[] }) {
               <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_STYLES[selected.status]?.badge ?? STATUS_STYLES.open.badge}`}>
                 {STATUS_STYLES[selected.status]?.label ?? selected.status}
               </span>
-              {selected.contact_method && (
-                <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-gray-100 text-gray-600 dark:bg-white/8 dark:text-gray-400 flex items-center gap-1">
-                  {selected.contact_method === 'email' ? (
-                    <Mail className="w-3 h-3" />
-                  ) : (
-                    <Phone className="w-3 h-3" />
-                  )}
-                  via {selected.contact_method}
+              {ticketSource(selected) === 'bot' ? (
+                <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 flex items-center gap-1">
+                  <Bot className="w-3 h-3" />
+                  via Bot
+                </span>
+              ) : (
+                <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 flex items-center gap-1">
+                  <Mail className="w-3 h-3" />
+                  via Email
                 </span>
               )}
             </div>
