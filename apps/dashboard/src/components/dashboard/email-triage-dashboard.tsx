@@ -2,6 +2,7 @@
 
 import React, { useState, useTransition } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   Mail, AlertCircle, ArrowRight, Star, Sparkles,
   Plus, RefreshCw, Ticket, UserPlus, RotateCcw,
@@ -87,6 +88,7 @@ function recColor(r: TriageRecommendation): string {
 // ─── Main component ────────────────────────────────────────────────────────────
 
 export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
+  const router = useRouter()
   const [selected,   setSelected]   = useState<TriageEmail | null>(triageEmails[0] ?? null)
   const [dismissed,  setDismissed]  = useState<Set<string>>(new Set())
   const [actioned,   setActioned]   = useState<Map<string, string>>(new Map())
@@ -96,6 +98,16 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
   const [isPending, startTransition] = useTransition()
   const [isSyncing, startSyncTransition] = useTransition()
   const [syncMsg, setSyncMsg] = useState<string | null>(null)
+
+  function handleSync() {
+    setSyncMsg(null)
+    startSyncTransition(async () => {
+      const res = await syncEmails()
+      if (res.error) { setSyncMsg(`Error: ${res.error}`); return }
+      setSyncMsg(res.synced > 0 ? `+${res.synced} new` : 'Up to date')
+      router.refresh()
+    })
+  }
 
   // Modal form state
   const [mName,     setMName]     = useState('')
@@ -208,14 +220,7 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
               <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Email Triage</h2>
             </div>
             <button
-              onClick={() => {
-                setSyncMsg(null)
-                startSyncTransition(async () => {
-                  const res = await syncEmails()
-                  if (res.error) setSyncMsg(`Error: ${res.error}`)
-                  else setSyncMsg(res.synced > 0 ? `+${res.synced} synced` : 'Up to date')
-                })
-              }}
+              onClick={handleSync}
               disabled={isSyncing}
               title="Sync inbox"
               className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-50 transition-colors"
@@ -257,14 +262,7 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
                 </p>
               )}
               <button
-                onClick={() => {
-                  setSyncMsg(null)
-                  startSyncTransition(async () => {
-                    const res = await syncEmails()
-                    if (res.error) setSyncMsg(`Error: ${res.error}`)
-                    else setSyncMsg(res.synced > 0 ? `+${res.synced} synced` : 'Up to date')
-                  })
-                }}
+                onClick={handleSync}
                 disabled={isSyncing}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors"
               >
@@ -355,14 +353,7 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
             </div>
             <div className="flex flex-col items-center gap-2">
               <button
-                onClick={() => {
-                  setSyncMsg(null)
-                  startSyncTransition(async () => {
-                    const res = await syncEmails()
-                    if (res.error) setSyncMsg(`Error: ${res.error}`)
-                    else setSyncMsg(res.synced > 0 ? `+${res.synced} synced` : 'Up to date — connect an inbox first')
-                  })
-                }}
+                onClick={handleSync}
                 disabled={isSyncing}
                 className="flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
               >
