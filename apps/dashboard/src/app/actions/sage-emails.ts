@@ -51,6 +51,53 @@ export async function syncEmails(): Promise<{ synced: number; error?: string }> 
 }
 
 /**
+ * Permanently delete emails from the triage list (hard delete from DB).
+ */
+export async function deleteTriageEmails(emailIds: string[]): Promise<{ deleted: number; error?: string }> {
+  if (!emailIds.length) return { deleted: 0 }
+
+  const supabase = await createClient()
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { deleted: 0, error: 'Not authenticated' }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error, count } = await (supabase.from('sage_emails') as any)
+    .delete({ count: 'exact' })
+    .eq('workspace_id', workspaceId)
+    .in('id', emailIds)
+
+  if (error) return { deleted: 0, error: (error as { message: string }).message }
+  revalidatePath('/sage/emails')
+  revalidatePath('/dashboard')
+  return { deleted: count ?? emailIds.length }
+}
+
+/**
+ * Trigger retroactive AI analysis for emails that haven't been analyzed yet.
+ */
+export async function reanalyzeEmails(batchSize = 50): Promise<{ reanalyzed: number; error?: string }> {
+  if (!API_BASE || !SERVICE_KEY) return { reanalyzed: 0, error: 'Server not configured' }
+
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { reanalyzed: 0, error: 'Not authenticated' }
+
+  try {
+    const res = await fetch(`${API_BASE}/sage/emails/reanalyze`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Service-Key': SERVICE_KEY },
+      body:    JSON.stringify({ workspace_id: workspaceId, batch_size: batchSize }),
+    })
+    const data = await res.json() as { reanalyzed?: number; error?: string }
+    if (!res.ok) return { reanalyzed: 0, error: data.error ?? 'Reanalysis failed' }
+    revalidatePath('/sage/emails')
+    revalidatePath('/dashboard')
+    return { reanalyzed: data.reanalyzed ?? 0 }
+  } catch {
+    return { reanalyzed: 0, error: 'Could not reach API' }
+  }
+}
+
+/**
  * Quick check — fetch only the latest 10 emails (fast, non-disruptive refresh).
  */
 export async function quickCheckEmails(): Promise<{ synced: number; error?: string }> {

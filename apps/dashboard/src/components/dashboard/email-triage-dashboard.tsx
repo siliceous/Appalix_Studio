@@ -6,10 +6,11 @@ import { useRouter } from 'next/navigation'
 import {
   Mail, AlertCircle, ArrowRight, Star, Sparkles,
   Plus, RefreshCw, Ticket, UserPlus, RotateCcw,
-  Check, X, ChevronRight, Loader2,
+  Check, X, ChevronRight, Loader2, Trash2,
+  Building2, Phone, Globe, Tag, Brain,
 } from 'lucide-react'
 import { triageCreateLead, triageCreateTicket, triageAddDealNote } from '@/app/actions/sage-triage'
-import { syncEmails } from '@/app/actions/sage-emails'
+import { syncEmails, deleteTriageEmails, reanalyzeEmails } from '@/app/actions/sage-emails'
 import type { SageEmail } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -87,7 +88,7 @@ function recColor(r: TriageRecommendation): string {
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
+export function EmailTriageDashboard({ triageEmails }: Props) {
   const router = useRouter()
   const [selected,   setSelected]   = useState<TriageEmail | null>(triageEmails[0] ?? null)
   const [dismissed,  setDismissed]  = useState<Set<string>>(new Set())
@@ -97,7 +98,12 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
   const [composeOpen, setComposeOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [isSyncing, startSyncTransition] = useTransition()
+  const [isDeleting, startDeleteTransition] = useTransition()
+  const [isReanalyzing, startReanalyzeTransition] = useTransition()
   const [syncMsg, setSyncMsg] = useState<string | null>(null)
+
+  // Multi-select state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   function handleSync() {
     setSyncMsg(null)
@@ -106,6 +112,42 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
       if (res.error) { setSyncMsg(`Error: ${res.error}`); return }
       setSyncMsg(res.synced > 0 ? `+${res.synced} new` : 'Up to date')
       router.refresh()
+    })
+  }
+
+  function handleReanalyze() {
+    setSyncMsg(null)
+    startReanalyzeTransition(async () => {
+      const res = await reanalyzeEmails(50)
+      if (res.error) { setSyncMsg(`Error: ${res.error}`); return }
+      setSyncMsg(res.reanalyzed > 0 ? `Analysed ${res.reanalyzed}` : 'All analysed')
+      router.refresh()
+    })
+  }
+
+  function handleDeleteSelected() {
+    const ids = Array.from(selectedIds)
+    startDeleteTransition(async () => {
+      const res = await deleteTriageEmails(ids)
+      if (res.error) { setSyncMsg(`Error: ${res.error}`); return }
+      // Remove from local state
+      setDismissed(prev => new Set([...prev, ...ids]))
+      setSelectedIds(new Set())
+      if (selected && ids.includes(selected.email.id)) {
+        const next = visible.find(t => !ids.includes(t.email.id))
+        setSelected(next ?? null)
+      }
+      router.refresh()
+    })
+  }
+
+  function toggleSelect(emailId: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(emailId)) next.delete(emailId)
+      else next.add(emailId)
+      return next
     })
   }
 
@@ -122,6 +164,7 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
   const visible = triageEmails.filter(t => !dismissed.has(t.email.id))
   const highCount = visible.filter(t => t.email.ai_priority === 'high').length
   const medCount  = visible.filter(t => t.email.ai_priority === 'medium').length
+  const unanalyzedCount = visible.filter(t => !t.email.ai_analyzed_at).length
 
   function dismiss(emailId: string) {
     setDismissed(prev => new Set([...prev, emailId]))
@@ -138,7 +181,7 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
     if (mode === 'lead') {
       setMName(e.from_name ?? e.from_address)
       setMEmail(e.from_address)
-      setMCompany('')
+      setMCompany(e.ai_entities?.company ?? '')
       setMDealTitle(e.subject.replace(/^(Re:|Fwd:)\s*/i, '').trim())
       setMNotes(e.ai_summary ?? '')
     }
@@ -205,6 +248,7 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
   }
 
   const draftTabs = selected?.email.ai_reply_drafts ?? []
+  const entities  = selected?.email.ai_entities
 
   return (
     <div className="flex flex-1 overflow-hidden">
@@ -219,17 +263,33 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
               <Mail className="w-4 h-4 text-brand-500 shrink-0" />
               <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Email Triage</h2>
             </div>
-            <button
-              onClick={handleSync}
-              disabled={isSyncing}
-              title="Sync inbox"
-              className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-50 transition-colors"
-            >
-              <RefreshCw className={cn('w-3 h-3', isSyncing && 'animate-spin')} />
-              {isSyncing ? 'Syncing…' : syncMsg ?? 'Sync'}
-            </button>
+            <div className="flex items-center gap-1">
+              {/* Delete selected button */}
+              {selectedIds.size > 0 && (
+                <button
+                  onClick={handleDeleteSelected}
+                  disabled={isDeleting}
+                  title={`Delete ${selectedIds.size} selected`}
+                  className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+                >
+                  {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                  Delete ({selectedIds.size})
+                </button>
+              )}
+              <button
+                onClick={handleSync}
+                disabled={isSyncing || isReanalyzing}
+                title="Sync inbox"
+                className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-50 transition-colors"
+              >
+                <RefreshCw className={cn('w-3 h-3', isSyncing && 'animate-spin')} />
+                {isSyncing ? 'Syncing…' : 'Sync'}
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          {/* Status badges row */}
+          <div className="flex items-center gap-2 flex-wrap">
             {highCount > 0 && (
               <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 font-semibold border border-red-200 dark:border-red-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
@@ -242,7 +302,23 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
                 {medCount} Medium
               </span>
             )}
+            {unanalyzedCount > 0 && (
+              <button
+                onClick={handleReanalyze}
+                disabled={isReanalyzing || isSyncing}
+                title="Run AI analysis on unanalyzed emails"
+                className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 font-semibold border border-purple-200 dark:border-purple-500/20 hover:bg-purple-100 dark:hover:bg-purple-500/15 disabled:opacity-50 transition-colors"
+              >
+                {isReanalyzing ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Brain className="w-2.5 h-2.5" />}
+                {isReanalyzing ? 'Analysing…' : `Analyse ${unanalyzedCount}`}
+              </button>
+            )}
           </div>
+          {syncMsg && (
+            <p className={cn('text-[11px] mt-1 font-medium', syncMsg.startsWith('Error') ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
+              {syncMsg}
+            </p>
+          )}
         </div>
 
         {/* List */}
@@ -256,11 +332,6 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No emails to triage</p>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Sync your inbox to get started</p>
               </div>
-              {syncMsg && (
-                <p className={cn('text-[11px] font-medium', syncMsg.startsWith('Error') ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
-                  {syncMsg}
-                </p>
-              )}
               <button
                 onClick={handleSync}
                 disabled={isSyncing}
@@ -276,52 +347,79 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
             </div>
           ) : (
             visible.map(t => {
-              const isSelected = selected?.email.id === t.email.id
-              const done       = actioned.has(t.email.id)
+              const isSelected  = selected?.email.id === t.email.id
+              const isChecked   = selectedIds.has(t.email.id)
+              const done        = actioned.has(t.email.id)
               return (
-                <button key={t.email.id} onClick={() => { setSelected(t); setComposeOpen(false); setModalMode(null) }}
+                <div key={t.email.id}
                   className={cn(
-                    'w-full text-left transition-colors',
+                    'flex items-stretch transition-colors',
                     isSelected
                       ? 'bg-brand-50 dark:bg-[#ec732e]/8 border-l-[3px] border-l-brand-500 dark:border-l-[#ec732e]'
                       : 'hover:bg-white dark:hover:bg-white/3 border-l-[3px] border-l-transparent',
                   )}>
-                  <div className="flex items-start gap-2.5 px-3 py-3">
-                    {/* Priority dot */}
-                    <span className={cn('mt-1.5 w-2 h-2 rounded-full shrink-0',
-                      t.email.ai_priority ? PRIORITY_DOT[t.email.ai_priority] : 'bg-gray-200')} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1 mb-0.5">
-                        <span className={cn('text-xs font-semibold truncate',
-                          done ? 'text-gray-400' : 'text-gray-800 dark:text-gray-200')}>
-                          {t.email.from_name ?? t.email.from_address}
-                        </span>
-                        <span className="text-[10px] text-gray-400 shrink-0">{formatDate(t.email.received_at)}</span>
-                      </div>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate leading-tight">
-                        {t.email.subject}
-                      </p>
-                      {/* Recommendation chip */}
-                      <div className="mt-1.5 flex items-center gap-1">
-                        {done ? (
-                          <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-lg bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 font-medium border border-green-200 dark:border-green-500/20">
-                            <Check className="w-2.5 h-2.5" /> {actioned.get(t.email.id)}
+                  {/* Checkbox column */}
+                  <button
+                    onClick={e => toggleSelect(t.email.id, e)}
+                    className="flex items-center justify-center pl-2.5 pr-1 py-3 shrink-0"
+                    title={isChecked ? 'Deselect' : 'Select'}
+                  >
+                    <span className={cn(
+                      'w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0',
+                      isChecked
+                        ? 'bg-brand-600 border-brand-600 dark:bg-[#ec732e] dark:border-[#ec732e]'
+                        : 'border-gray-300 dark:border-white/20 hover:border-brand-400',
+                    )}>
+                      {isChecked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+                    </span>
+                  </button>
+
+                  {/* Email row */}
+                  <button
+                    onClick={() => { setSelected(t); setComposeOpen(false); setModalMode(null) }}
+                    className="flex-1 text-left min-w-0"
+                  >
+                    <div className="flex items-start gap-2.5 pr-3 py-3">
+                      {/* Priority dot */}
+                      <span className={cn('mt-1.5 w-2 h-2 rounded-full shrink-0',
+                        t.email.ai_priority ? PRIORITY_DOT[t.email.ai_priority] : 'bg-gray-200 dark:bg-white/20')} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <span className={cn('text-xs font-semibold truncate',
+                            done ? 'text-gray-400' : 'text-gray-800 dark:text-gray-200')}>
+                            {t.email.from_name ?? t.email.from_address}
                           </span>
-                        ) : (
-                          <span className={cn('flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-lg font-medium border',
-                            t.recommendation === 'create_lead'    ? 'bg-brand-50 dark:bg-[#ec732e]/10 text-brand-600 dark:text-[#ec732e] border-brand-200 dark:border-[#ec732e]/20' :
-                            t.recommendation === 'update_lead'    ? 'bg-[#61c2ad]/10 text-[#61c2ad] border-[#61c2ad]/20' :
-                            t.recommendation === 'reopen_account' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/20' :
-                            t.recommendation === 'create_ticket'  ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20' :
-                                                                    'bg-gray-100 dark:bg-white/5 text-gray-400 border-gray-200 dark:border-white/10')}>
-                            {recIcon(t.recommendation)}
-                            {recLabel(t.recommendation, t)}
-                          </span>
-                        )}
+                          <span className="text-[10px] text-gray-400 shrink-0">{formatDate(t.email.received_at)}</span>
+                        </div>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate leading-tight">
+                          {t.email.subject}
+                        </p>
+                        {/* Recommendation chip */}
+                        <div className="mt-1.5 flex items-center gap-1">
+                          {done ? (
+                            <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-lg bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 font-medium border border-green-200 dark:border-green-500/20">
+                              <Check className="w-2.5 h-2.5" /> {actioned.get(t.email.id)}
+                            </span>
+                          ) : !t.email.ai_analyzed_at ? (
+                            <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-400 font-medium border border-gray-200 dark:border-white/10">
+                              <Brain className="w-2.5 h-2.5" /> Pending analysis
+                            </span>
+                          ) : (
+                            <span className={cn('flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-lg font-medium border',
+                              t.recommendation === 'create_lead'    ? 'bg-brand-50 dark:bg-[#ec732e]/10 text-brand-600 dark:text-[#ec732e] border-brand-200 dark:border-[#ec732e]/20' :
+                              t.recommendation === 'update_lead'    ? 'bg-[#61c2ad]/10 text-[#61c2ad] border-[#61c2ad]/20' :
+                              t.recommendation === 'reopen_account' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/20' :
+                              t.recommendation === 'create_ticket'  ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20' :
+                                                                      'bg-gray-100 dark:bg-white/5 text-gray-400 border-gray-200 dark:border-white/10')}>
+                              {recIcon(t.recommendation)}
+                              {recLabel(t.recommendation, t)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
+                </div>
               )
             })
           )}
@@ -430,6 +528,62 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
                       <p className="text-[10px] font-bold text-brand-600 dark:text-[#ec732e] uppercase tracking-wide">AI Summary</p>
                     </div>
                     <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{selected.email.ai_summary}</p>
+                    {/* Priority reason */}
+                    {selected.email.ai_reason && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 pt-2 border-t border-brand-100 dark:border-[#ec732e]/15 italic">
+                        {selected.email.ai_reason}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Pending analysis */}
+                {!selected.email.ai_analyzed_at && (
+                  <div className="bg-purple-50 dark:bg-purple-500/10 border border-purple-100 dark:border-purple-500/20 rounded-xl p-4 flex items-center gap-3">
+                    <Brain className="w-4 h-4 text-purple-500 shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-purple-700 dark:text-purple-400">Not yet analysed</p>
+                      <p className="text-xs text-purple-500 dark:text-purple-400 mt-0.5">Click &ldquo;Analyse&rdquo; in the left panel to run AI triage on this email.</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Extracted Entities */}
+                {entities && Object.keys(entities).length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">Extracted Contact Info</p>
+                    <div className="flex flex-wrap gap-2">
+                      {entities.name && (
+                        <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-700 dark:text-gray-300">
+                          <UserPlus className="w-3 h-3 text-gray-400 shrink-0" />
+                          {entities.name}
+                        </span>
+                      )}
+                      {entities.company && (
+                        <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-700 dark:text-gray-300">
+                          <Building2 className="w-3 h-3 text-gray-400 shrink-0" />
+                          {entities.company}
+                        </span>
+                      )}
+                      {entities.phone && (
+                        <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-700 dark:text-gray-300">
+                          <Phone className="w-3 h-3 text-gray-400 shrink-0" />
+                          {entities.phone}
+                        </span>
+                      )}
+                      {entities.website && (
+                        <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-700 dark:text-gray-300">
+                          <Globe className="w-3 h-3 text-gray-400 shrink-0" />
+                          {entities.website}
+                        </span>
+                      )}
+                      {entities.product_interest && (
+                        <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-brand-50 dark:bg-[#ec732e]/10 border border-brand-100 dark:border-[#ec732e]/20 text-brand-700 dark:text-[#ec732e]">
+                          <Tag className="w-3 h-3 shrink-0" />
+                          {entities.product_interest}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -520,7 +674,7 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-3">Recommended Action</p>
                     <div className="flex flex-wrap gap-2">
                       {/* Primary action */}
-                      {selected.recommendation !== 'ignore' && (
+                      {selected.recommendation !== 'ignore' && selected.email.ai_analyzed_at && (
                         <button
                           onClick={() => {
                             if (selected.recommendation === 'create_lead')    openModal('lead')
@@ -544,6 +698,18 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
                       <button onClick={() => dismiss(selected.email.id)}
                         className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-white/5 border dark:border-white/10 text-gray-400 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors">
                         <X className="w-3.5 h-3.5" /> Ignore
+                      </button>
+                      {/* Delete */}
+                      <button
+                        onClick={() => {
+                          startDeleteTransition(async () => {
+                            await deleteTriageEmails([selected.email.id])
+                            dismiss(selected.email.id)
+                            router.refresh()
+                          })
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-white/5 border dark:border-white/10 text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-200 dark:hover:border-red-500/20 transition-colors">
+                        <Trash2 className="w-3.5 h-3.5" /> Delete
                       </button>
                     </div>
                   </div>

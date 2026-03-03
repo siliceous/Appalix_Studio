@@ -345,6 +345,9 @@ export interface SageEmail {
   is_trashed:      boolean
   ai_priority:     'high' | 'medium' | 'low' | null
   ai_summary:      string | null
+  ai_reason:       string | null
+  ai_action:       'create_lead' | 'update_lead' | 'reopen' | 'create_ticket' | 'reply_draft' | 'ignore' | null
+  ai_entities:     { name?: string; company?: string; phone?: string; website?: string; product_interest?: string } | null
   ai_insights:     string[] | null
   ai_reply_drafts: { tone: string; body: string }[] | null
   ai_analyzed_at:  string | null

@@ -1,21 +1,23 @@
 /**
- * POST /sage/emails/sync    — IMAP sync for workspace
- * POST /sage/emails/send    — SMTP send via connected account
+ * POST /sage/emails/sync       — IMAP sync for workspace
+ * POST /sage/emails/reanalyze  — Retroactive AI analysis for unanalyzed emails
+ * POST /sage/emails/send       — SMTP send via connected account
  * POST /sage/emails/:id/rewrite — AI email rewrite
  *
  * All routes are server-to-server only (authenticated via X-Service-Key).
  */
 import type { FastifyInstance } from 'fastify'
 import { config }              from '../../config.js'
-import { syncEmailsForWorkspace } from '../../services/sage-email-sync.js'
+import { syncEmailsForWorkspace, reanalyzePendingEmails } from '../../services/sage-email-sync.js'
 import { sendEmailSMTP }          from '../../services/sage-email-smtp.js'
 import { callClaude }             from '../../services/ai/claude.js'
 
 interface EmailAttachment { filename: string; contentType: string; dataBase64: string }
 
-interface SyncBody    { workspace_id: string; limit?: number }
-interface SendBody    { workspace_id: string; to: string; subject: string; body: string; reply_to_email_id?: string; attachments?: EmailAttachment[] }
-interface RewriteBody { workspace_id: string; body: string; instruction?: string }
+interface SyncBody      { workspace_id: string; limit?: number }
+interface ReanalyzeBody { workspace_id: string; batch_size?: number }
+interface SendBody      { workspace_id: string; to: string; subject: string; body: string; reply_to_email_id?: string; attachments?: EmailAttachment[] }
+interface RewriteBody   { workspace_id: string; body: string; instruction?: string }
 
 function authCheck(req: { headers: Record<string, string | string[] | undefined> }): boolean {
   return req.headers['x-service-key'] === config.SUPABASE_SERVICE_ROLE_KEY
@@ -38,6 +40,26 @@ export async function sageEmailRoutes(fastify: FastifyInstance) {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sync failed'
       fastify.log.error({ err, workspace_id }, 'Email sync failed')
+      return reply.status(500).send({ error: message })
+    }
+  })
+
+  /**
+   * POST /sage/emails/reanalyze
+   * Retroactively runs AI analysis on emails that have not been analyzed yet.
+   */
+  fastify.post<{ Body: ReanalyzeBody }>('/reanalyze', async (request, reply) => {
+    if (!authCheck(request)) return reply.status(401).send({ error: 'Unauthorised' })
+
+    const { workspace_id, batch_size } = request.body
+    if (!workspace_id) return reply.status(400).send({ error: 'workspace_id is required' })
+
+    try {
+      const reanalyzed = await reanalyzePendingEmails(workspace_id, batch_size ?? 50)
+      return reply.send({ ok: true, reanalyzed })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Reanalysis failed'
+      fastify.log.error({ err, workspace_id }, 'Email reanalysis failed')
       return reply.status(500).send({ error: message })
     }
   })

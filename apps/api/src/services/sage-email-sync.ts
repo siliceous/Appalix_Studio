@@ -3,7 +3,7 @@
  *
  * Uses App Password credentials already stored in sage_integrations to
  * connect via IMAP and pull recent emails into the sage_emails table.
- * Each new email is analysed by Claude (priority, summary, insights, reply drafts).
+ * Each new email is analysed by Claude (priority, summary, entities, reason, action, reply drafts).
  *
  * Supported providers: gmail → imap.gmail.com:993
  *                      microsoft → outlook.office365.com:993
@@ -44,7 +44,16 @@ function getImapCreds(provider: string, config: Record<string, string>): ImapCre
 
 interface EmailAnalysis {
   priority:     'high' | 'medium' | 'low'
-  summary:      string
+  summary:      string | null
+  reason:       string
+  action:       'create_lead' | 'update_lead' | 'reopen' | 'create_ticket' | 'reply_draft' | 'ignore'
+  entities:     {
+    name?:             string
+    company?:          string
+    phone?:            string
+    website?:          string
+    product_interest?: string
+  }
   insights:     string[]
   reply_drafts: { tone: string; body: string }[]
 }
@@ -54,22 +63,67 @@ async function analyzeEmail(
   subject: string,
   bodyText: string,
 ): Promise<EmailAnalysis | null> {
-  const prompt = `You are analysing a CRM email. Return ONLY valid JSON (no markdown fences, no explanation):
+  const prompt = `You are an AI email triage assistant for a B2B SaaS CRM. Analyse this email and return ONLY valid JSON (no markdown fences, no explanation).
+
+PRIORITY RULES — apply in order, first match wins:
+
+HIGH (buying intent + relevance, OR urgency + relevance):
+- Buying intent keywords: "pricing", "quote", "demo", "book a call", "free trial", "proposal", "timeline", "budget", "how much", "cost", "purchase", "buy", "sign up", "get started"
+- Urgency keywords: "ASAP", "this week", "urgent", "by Friday", "need help now", "immediately", "deadline", "today"
+- Must also be relevant to the business (product/service enquiry, not spam)
+- If both buying intent AND urgency present → definitely HIGH
+
+MEDIUM (relevant but no urgency):
+- General business enquiry about product/services
+- Follow-up on a previous conversation
+- Partnership or collaboration from a real business (not a vendor pitch)
+- Exploring or researching options
+
+LOW (unrelated, personal, or spam):
+- Vendor pitches: "SEO services", "we can get you leads", "partnership offer" from cold outreach
+- Newsletters, automated notifications, receipts, invoices
+- Personal/non-business emails
+- Spam or promotional content
+
+ACTION RULES:
+- "create_ticket" if subject/body contains: bug, not working, error, access issue, billing problem, crash, outage, broken, can't login, support request
+- "create_lead" if HIGH or MEDIUM and no existing contact match
+- "update_lead" if contact already exists in CRM (hint: matchedContact field is set by the server)
+- "reopen" if LOW but was previously active contact (handled by server)
+- "reply_draft" if MEDIUM and a simple reply would resolve it
+- "ignore" if LOW
+
+ENTITY EXTRACTION — extract from email body and signature:
+- name: sender's full name (from signature or "I'm X" patterns)
+- company: company name (from domain, signature, or body)
+- phone: any phone number found
+- website: website URL from signature
+- product_interest: what product/service/feature they are asking about
+
+SUMMARY — only for HIGH and MEDIUM: one sentence on what is being asked and what action is needed. Null for LOW.
+
+REPLY DRAFTS — only for HIGH and MEDIUM, 3 tones. For LOW, return empty array.
+
+Return this exact JSON:
 {
   "priority": "high" | "medium" | "low",
-  "summary": "<one sentence — what is being asked and what action is needed>",
-  "insights": ["<key insight 1>", "<key insight 2>"],
+  "summary": "string or null",
+  "reason": "one sentence explaining why this priority was assigned",
+  "action": "create_lead" | "update_lead" | "reopen" | "create_ticket" | "reply_draft" | "ignore",
+  "entities": {
+    "name": "string or omit",
+    "company": "string or omit",
+    "phone": "string or omit",
+    "website": "string or omit",
+    "product_interest": "string or omit"
+  },
+  "insights": ["key insight 1", "key insight 2"],
   "reply_drafts": [
-    {"tone":"Professional","body":"<complete reply>"},
-    {"tone":"Friendly","body":"<complete reply>"},
-    {"tone":"Concise","body":"<complete reply>"}
+    {"tone":"Professional","body":"complete reply"},
+    {"tone":"Friendly","body":"complete reply"},
+    {"tone":"Concise","body":"complete reply"}
   ]
 }
-
-Priority guide:
-- high: urgent request, complaint, contract/payment/legal matter, decision needed today
-- medium: question, follow-up, proposal response, general enquiry
-- low: newsletter, FYI, automated notification, no action required
 
 From: ${from}
 Subject: ${subject}
@@ -78,15 +132,15 @@ ${bodyText.slice(0, 3000)}`
 
   try {
     const result = await callClaude({
-      model:       'claude-haiku-4-5-20251001',  // fast + cheap for bulk analysis
+      model:        'claude-haiku-4-5-20251001',  // fast + cheap for bulk analysis
       systemPrompt: 'You are a precise JSON generator. Output only the JSON object requested.',
-      messages:    [{ role: 'user', content: prompt }],
-      maxTokens:   1024,
-      temperature: 0.3,
+      messages:     [{ role: 'user', content: prompt }],
+      maxTokens:    1024,
+      temperature:  0.2,
     })
 
     const json = JSON.parse(result.content.trim()) as EmailAnalysis
-    if (!json.priority || !json.summary) return null
+    if (!json.priority || !json.action) return null
     return json
   } catch {
     return null
@@ -240,7 +294,10 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
                 .from('sage_emails')
                 .update({
                   ai_priority:     analysis.priority,
-                  ai_summary:      analysis.summary,
+                  ai_summary:      analysis.summary ?? null,
+                  ai_reason:       analysis.reason,
+                  ai_action:       analysis.action,
+                  ai_entities:     Object.keys(analysis.entities ?? {}).length > 0 ? analysis.entities : null,
                   ai_insights:     analysis.insights,
                   ai_reply_drafts: analysis.reply_drafts,
                   ai_analyzed_at:  new Date().toISOString(),
@@ -263,4 +320,59 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
   }
 
   return synced
+}
+
+// ---------------------------------------------------------------------------
+// Retroactive re-analysis for emails with null ai_priority
+// ---------------------------------------------------------------------------
+
+export async function reanalyzePendingEmails(workspaceId: string, batchSize = 50): Promise<number> {
+  const { data: emails } = await supabase
+    .from('sage_emails')
+    .select('id, from_name, from_address, subject, body_text')
+    .eq('workspace_id', workspaceId)
+    .eq('direction', 'inbound')
+    .is('ai_analyzed_at', null)
+    .order('received_at', { ascending: false })
+    .limit(batchSize)
+
+  if (!emails || emails.length === 0) return 0
+
+  let reanalyzed = 0
+
+  for (const email of emails as { id: string; from_name: string | null; from_address: string; subject: string; body_text: string | null }[]) {
+    try {
+      const fromName    = email.from_name ?? email.from_address
+      const fromAddress = email.from_address
+      const bodyText    = email.body_text ?? ''
+
+      const analysis = await analyzeEmail(
+        `${fromName} <${fromAddress}>`,
+        email.subject,
+        bodyText,
+      )
+
+      if (analysis) {
+        await supabase
+          .from('sage_emails')
+          .update({
+            ai_priority:     analysis.priority,
+            ai_summary:      analysis.summary ?? null,
+            ai_reason:       analysis.reason,
+            ai_action:       analysis.action,
+            ai_entities:     Object.keys(analysis.entities ?? {}).length > 0 ? analysis.entities : null,
+            ai_insights:     analysis.insights,
+            ai_reply_drafts: analysis.reply_drafts,
+            ai_analyzed_at:  new Date().toISOString(),
+          })
+          .eq('id', email.id)
+
+        reanalyzed++
+      }
+    } catch {
+      // Skip individual failures
+    }
+  }
+
+  return reanalyzed
 }

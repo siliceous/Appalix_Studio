@@ -19,7 +19,20 @@ function deriveRecommendation(
   matchedContact: { id: string } | null,
   matchedDeal:    { id: string } | null,
 ): TriageRecommendation {
-  // Explicitly low priority → ignore; null/unknown priority treated as medium
+  // Use Claude's recommendation when available (new emails analyzed with updated prompt)
+  if (email.ai_action) {
+    // Map ai_action → TriageRecommendation (reopen → reopen_account for UI)
+    if (email.ai_action === 'reopen') return 'reopen_account'
+    if (email.ai_action === 'reply_draft') {
+      // Refine reply_draft based on contact match
+      if (matchedContact && matchedDeal)  return 'update_lead'
+      if (matchedContact && !matchedDeal) return 'reopen_account'
+      return 'create_lead'
+    }
+    return email.ai_action as TriageRecommendation
+  }
+
+  // Fallback for legacy emails without ai_action
   if (email.ai_priority === 'low') return 'ignore'
   const text = `${email.subject} ${email.body_text ?? ''}`
   if (SUPPORT_RE.test(text)) return 'create_ticket'
