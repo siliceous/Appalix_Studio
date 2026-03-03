@@ -317,7 +317,8 @@ export function EmailInbox({
           subject: composeSubj, body_text: composeBody, body_html: null,
           received_at: new Date().toISOString(), direction: 'outbound',
           is_read: true, is_starred: false, is_trashed: false,
-          ai_priority: null, ai_summary: null, ai_insights: null,
+          ai_priority: null, ai_summary: null, ai_reason: null,
+          ai_action: null, ai_entities: null, ai_insights: null,
           ai_reply_drafts: null, ai_analyzed_at: null,
           created_at: new Date().toISOString(),
         }
