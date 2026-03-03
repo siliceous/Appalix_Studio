@@ -15,6 +15,7 @@ function deriveRecommendation(
   matchedContact: { id: string } | null,
   matchedDeal:    { id: string } | null,
 ): TriageRecommendation {
+  // Explicitly low priority → ignore; null/unknown priority treated as medium
   if (email.ai_priority === 'low') return 'ignore'
   const text = `${email.subject} ${email.body_text ?? ''}`
   if (SUPPORT_RE.test(text)) return 'create_ticket'
@@ -41,15 +42,16 @@ export default async function DashboardPage() {
 
   // Parallel data fetches
   const [emailsRes, contactsRes] = await Promise.all([
-    // Top 20 high + medium priority inbound emails (not trashed)
+    // Top 20 inbound emails — any priority (null included), not trashed
+    // Uses 'as any' because sage_emails is not yet in the generated Database types
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (supabase as any)
       .from('sage_emails')
       .select('*, contact:sage_contacts(id, name, email)')
       .eq('workspace_id', workspaceId)
       .eq('direction', 'inbound')
-      .in('ai_priority', ['high', 'medium'])
-      .neq('is_trashed', true)
+      .neq('ai_priority', 'low')           // exclude explicitly low-priority
+      .order('ai_priority', { ascending: true, nullsFirst: false })  // high, medium, null
       .order('received_at', { ascending: false })
       .limit(20),
 
