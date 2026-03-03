@@ -612,6 +612,18 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                   {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                 </button>
               )}
+              {visible.length > 0 && (
+                <button
+                  onClick={() => {
+                    const allSel = visible.length > 0 && visible.every(t => selectedIds.has(t.email.id))
+                    setSelectedIds(allSel ? new Set() : new Set(visible.map(t => t.email.id)))
+                  }}
+                  title={visible.every(t => selectedIds.has(t.email.id)) ? 'Deselect all' : 'Select all'}
+                  className="text-[11px] px-2 py-1 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors font-medium"
+                >
+                  {visible.length > 0 && visible.every(t => selectedIds.has(t.email.id)) ? 'Deselect' : 'All'}
+                </button>
+              )}
               <button
                 onClick={handleSync}
                 disabled={isSyncing || isReanalyzing}
@@ -635,14 +647,20 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />{medCount} Medium
               </span>
             )}
-            {(unanalyzedCount > 0 || selectedIds.size > 0) && (
+            {visible.length > 0 && (
               <button
                 onClick={handleReanalyze}
                 disabled={isReanalyzing || isSyncing}
                 className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 font-semibold border border-purple-200 dark:border-purple-500/20 hover:bg-purple-100 dark:hover:bg-purple-500/15 disabled:opacity-50 transition-colors"
               >
                 {isReanalyzing ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Brain className="w-2.5 h-2.5" />}
-                {isReanalyzing ? 'Analysing…' : selectedIds.size > 0 ? `Analyse ${selectedIds.size}` : `Analyse ${unanalyzedCount}`}
+                {isReanalyzing
+                  ? 'Analysing…'
+                  : selectedIds.size > 0
+                    ? `Analyse ${selectedIds.size}`
+                    : unanalyzedCount > 0
+                      ? `Analyse ${unanalyzedCount}`
+                      : 'Re-analyse'}
               </button>
             )}
           </div>
