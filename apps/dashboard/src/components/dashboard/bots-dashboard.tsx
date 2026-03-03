@@ -193,7 +193,7 @@ export function BotsDashboard({
                 key={bot.id}
                 onClick={() => setSelectedBotId(bot.id)}
                 className={[
-                  'w-full text-left px-4 py-3 border-b border-gray-100 dark:border-white/5 transition-colors',
+                  'w-full text-left px-4 py-3 transition-colors',
                   isSelected
                     ? 'bg-white dark:bg-[#1e1e1e]'
                     : 'hover:bg-gray-100/70 dark:hover:bg-white/4',
@@ -283,7 +283,7 @@ export function BotsDashboard({
                   : null
 
                 return (
-                  <div key={conv.id} className="px-5 py-3.5 flex items-start gap-3 border-b border-gray-100 dark:border-white/[0.05]">
+                  <div key={conv.id} className="px-5 py-3.5 flex items-start gap-3">
                     {/* Priority dot */}
                     <span className={`w-2 h-2 rounded-full shrink-0 mt-2 ${PRIORITY_DOT[priority]}`} />
 

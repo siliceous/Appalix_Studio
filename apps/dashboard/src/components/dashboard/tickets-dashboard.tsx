@@ -82,7 +82,7 @@ export function TicketsDashboard({ tickets }: { tickets: TicketRow[] }) {
                 key={ticket.id}
                 onClick={() => setSelectedId(ticket.id)}
                 className={[
-                  'w-full text-left px-4 py-3 border-b border-gray-100 dark:border-white/5 transition-colors',
+                  'w-full text-left px-4 py-3 transition-colors',
                   isSelected
                     ? 'bg-white dark:bg-[#1e1e1e]'
                     : 'hover:bg-gray-100/70 dark:hover:bg-white/4',

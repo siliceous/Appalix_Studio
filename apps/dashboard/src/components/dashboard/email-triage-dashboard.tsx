@@ -283,7 +283,7 @@ export function EmailTriageDashboard({ triageEmails, workspaceId }: Props) {
               return (
                 <button key={t.email.id} onClick={() => { setSelected(t); setComposeOpen(false); setModalMode(null) }}
                   className={cn(
-                    'w-full text-left border-b dark:border-white/5 transition-colors',
+                    'w-full text-left transition-colors',
                     isSelected
                       ? 'bg-brand-50 dark:bg-[#ec732e]/8 border-l-[3px] border-l-brand-500 dark:border-l-[#ec732e]'
                       : 'hover:bg-white dark:hover:bg-white/3 border-l-[3px] border-l-transparent',
