@@ -249,10 +249,12 @@ interface DetailCardProps {
   onDismiss:  (id: string) => void
   onDelete:   (id: string) => void
   onClose:    () => void
+  onAnalyze:  (id: string) => void
   isDeleting: boolean
+  isAnalyzing: boolean
 }
 
-function DetailCard({ t, actioned, onAction, onDismiss, onDelete, onClose, isDeleting }: DetailCardProps) {
+function DetailCard({ t, actioned, onAction, onDismiss, onDelete, onClose, onAnalyze, isDeleting, isAnalyzing }: DetailCardProps) {
   const [activeDraft, setActiveDraft] = useState(0)
   const { email, recommendation, meeting } = t
   const entities  = email.ai_entities
@@ -400,8 +402,17 @@ function DetailCard({ t, actioned, onAction, onDismiss, onDelete, onClose, isDel
             {email.ai_reason && <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 italic">{email.ai_reason}</p>}
           </div>
         ) : (
-          <div className="rounded-xl bg-gray-100 dark:bg-white/8 border border-dashed border-gray-300 dark:border-white/20 px-4 py-3 text-center">
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-200">AI analysis pending — click Analyse to generate insights</p>
+          <div className="rounded-xl bg-gray-100 dark:bg-white/8 border border-dashed border-gray-300 dark:border-white/20 px-4 py-3 flex items-center justify-center gap-2">
+            <Brain className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">AI analysis pending —</p>
+            <button
+              onClick={() => onAnalyze(email.id)}
+              disabled={isAnalyzing}
+              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline disabled:opacity-50 flex items-center gap-1 transition-colors"
+            >
+              {isAnalyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+              {isAnalyzing ? 'Analysing…' : 'Analyse this email'}
+            </button>
           </div>
         )}
 
@@ -539,8 +550,10 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
   const [selectedIds,     setSelectedIds]     = useState<Set<string>>(new Set())
 
   // Ref so the interval callback can always see the latest pending count
-  const pendingCountRef = useRef(0)
-  const isAutoAnalyzingRef = useRef(false)
+  const pendingCountRef     = useRef(0)
+  const isAutoAnalyzingRef  = useRef(false)
+  // Ref on the detail card — used for document-level click-outside detection
+  const detailRef = useRef<HTMLDivElement>(null)
 
   // Auto-analyze: runs when there are unanalyzed emails, no manual run needed
   const runAutoAnalyze = useCallback(async () => {
@@ -564,6 +577,18 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
     }, 60_000)
     return () => clearInterval(id)
   }, [router, runAutoAnalyze])
+
+  // Click-outside to close the detail card
+  useEffect(() => {
+    if (!selectedEmailId) return
+    function handleMouseDown(e: MouseEvent) {
+      if (detailRef.current && !detailRef.current.contains(e.target as Node)) {
+        setSelectedEmailId('')
+      }
+    }
+    document.addEventListener('mousedown', handleMouseDown)
+    return () => document.removeEventListener('mousedown', handleMouseDown)
+  }, [selectedEmailId])
 
   function handleSync() {
     setSyncMsg(null)
@@ -734,13 +759,22 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
   const gridLow     = lowEmails.filter(t => t.email.id !== selectedEmailId)
   const gridPending = pendingEmails.filter(t => t.email.id !== selectedEmailId)
 
+  function handleAnalyzeOne(emailId: string) {
+    startReanalyzeTransition(async () => {
+      await reanalyzeEmails(1, [emailId])
+      router.refresh()
+    })
+  }
+
   const detailCardProps = {
     actioned,
-    onAction:   openModal,
-    onDismiss:  dismiss,
-    onDelete:   handleDeleteOne,
-    onClose:    () => setSelectedEmailId(''),
+    onAction:    openModal,
+    onDismiss:   dismiss,
+    onDelete:    handleDeleteOne,
+    onClose:     () => setSelectedEmailId(''),
+    onAnalyze:   handleAnalyzeOne,
     isDeleting,
+    isAnalyzing: isReanalyzing,
   }
 
   return (
@@ -976,12 +1010,11 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
               </button>
             </div>
 
-            {/* Clicking the empty background of the scroll area closes the open card */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-7" onClick={() => setSelectedEmailId('')}>
+            <div className="flex-1 overflow-y-auto p-5 space-y-7">
 
               {/* ── Full-width Detail Card (shown when email is selected) ── */}
               {selectedTriageEmail && (
-                <div onClick={e => e.stopPropagation()}>
+                <div ref={detailRef}>
                   <DetailCard t={selectedTriageEmail} {...detailCardProps} />
                 </div>
               )}
