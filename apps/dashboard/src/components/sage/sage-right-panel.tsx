@@ -108,7 +108,7 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
   return (
     <div className="w-80 shrink-0 border-l dark:border-white/8 bg-white dark:bg-[#232323] flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b dark:border-white/8 shrink-0">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-[#61c2ad]/20 dark:border-[#61c2ad]/15 bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10 shrink-0">
         <div className="w-6 h-6 rounded-md bg-brand-50 dark:bg-[#61c2ad]/10 flex items-center justify-center">
           <Sparkles className="w-3.5 h-3.5 text-brand-600 dark:text-[#61c2ad]" />
         </div>
@@ -177,7 +177,7 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
       </div>
 
       {/* Input */}
-      <div className="p-3 border-t dark:border-white/8 shrink-0">
+      <div className="p-3 border-t border-[#61c2ad]/20 dark:border-[#61c2ad]/15 bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10 shrink-0">
         <div className="flex items-end gap-2 bg-gray-50 dark:bg-white/5 rounded-xl border dark:border-white/8 px-3 py-2">
           <textarea
             ref={textareaRef}
