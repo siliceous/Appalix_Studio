@@ -14,6 +14,85 @@ import { supabase }     from '../lib/supabase.js'
 import { callClaude }   from './ai/claude.js'
 
 // ---------------------------------------------------------------------------
+// .ics / iCalendar parser — no external dependency needed
+// ---------------------------------------------------------------------------
+
+interface ParsedMeeting {
+  icsUid:        string | null
+  title:         string | null
+  startAt:       string | null  // ISO 8601
+  endAt:         string | null  // ISO 8601
+  location:      string | null
+  description:   string | null
+  organizer:     string | null  // email address
+  organizerName: string | null
+  attendees:     string[]
+}
+
+function unfoldIcs(raw: string): string {
+  // RFC 5545: lines longer than 75 octets are folded with CRLF + space/tab
+  return raw.replace(/\r?\n[ \t]/g, '')
+}
+
+function parseDtIcs(val: string | null): string | null {
+  if (!val) return null
+  // All-day: 20240301
+  if (/^\d{8}$/.test(val))
+    return `${val.slice(0, 4)}-${val.slice(4, 6)}-${val.slice(6, 8)}T00:00:00.000Z`
+  // UTC: 20240301T100000Z
+  if (/^\d{8}T\d{6}Z$/.test(val))
+    return `${val.slice(0, 4)}-${val.slice(4, 6)}-${val.slice(6, 8)}T${val.slice(9, 11)}:${val.slice(11, 13)}:${val.slice(13, 15)}.000Z`
+  // Local (no tz): treat as UTC for simplicity
+  if (/^\d{8}T\d{6}$/.test(val))
+    return `${val.slice(0, 4)}-${val.slice(4, 6)}-${val.slice(6, 8)}T${val.slice(9, 11)}:${val.slice(11, 13)}:${val.slice(13, 15)}.000Z`
+  return null
+}
+
+function parseIcs(raw: string): ParsedMeeting | null {
+  const unfolded = unfoldIcs(raw)
+  const eventMatch = unfolded.match(/BEGIN:VEVENT([\s\S]*?)END:VEVENT/i)
+  if (!eventMatch) return null
+  const ev = eventMatch[1]
+
+  const getField = (key: string): string | null => {
+    // KEY or KEY;params: value
+    const m = ev.match(new RegExp(`^${key}(?:;[^:]*)?:([^\r\n]*)`, 'im'))
+    return m ? m[1].trim() : null
+  }
+
+  // Organizer: ORGANIZER;CN="John Smith":mailto:john@example.com
+  const orgLine = ev.match(/^ORGANIZER(?:;CN=([^;:\r\n]*))?[^:]*:(?:mailto:)?([^\r\n]+)/im)
+  const organizer     = orgLine ? orgLine[2]?.trim() ?? null : null
+  const organizerName = orgLine ? orgLine[1]?.replace(/^["']|["']$/g, '').trim() || null : null
+
+  // Attendees: ATTENDEE;...;CN=Jane Doe:mailto:jane@example.com
+  const attendees: string[] = []
+  const attRe = /^ATTENDEE[^:]*:(?:mailto:)?([^\r\n]+)/gim
+  let m: RegExpExecArray | null
+  while ((m = attRe.exec(ev)) !== null) {
+    const addr = m[1].trim()
+    if (addr) attendees.push(addr)
+  }
+
+  const rawDesc = getField('DESCRIPTION')
+  const description = rawDesc
+    ? rawDesc.replace(/\\n/g, '\n').replace(/\\,/g, ',').replace(/\\;/g, ';')
+    : null
+
+  return {
+    icsUid:        getField('UID'),
+    title:         getField('SUMMARY'),
+    startAt:       parseDtIcs(getField('DTSTART')),
+    endAt:         parseDtIcs(getField('DTEND')),
+    location:      getField('LOCATION'),
+    description,
+    organizer,
+    organizerName,
+    attendees,
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Provider config
 // ---------------------------------------------------------------------------
 
@@ -44,7 +123,7 @@ function getImapCreds(provider: string, config: Record<string, string>): ImapCre
 
 interface EmailAnalysis {
   priority:    'high' | 'medium' | 'low'
-  category:    'Sales' | 'Support' | 'Other'
+  category:    'Sales' | 'Support' | 'Invoice' | 'Receipt' | 'Financial' | 'Social' | 'Promotion' | 'Legal' | 'Security' | 'Meeting' | 'Partnership' | 'Shipping' | 'Subscription' | 'Other'
   summary:     string | null
   reason:      string
   user_prompt: string
@@ -98,18 +177,32 @@ LOW — assign when ANY of the following is true:
 IMPORTANT: When in doubt about whether an email is relevant to your business, default to MEDIUM rather than LOW. Only use LOW when you are confident the email is clearly irrelevant, automated, or a vendor pitch.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CATEGORY RULES:
+CATEGORY RULES — assign exactly one:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Sales   — pricing, demo, quote, trial, proposal, buying intent, follow-up on a sale, evaluating product
-Support — bug, not working, error, access issue, billing problem, crash, outage, broken, can't login, forgotten password, refund
-Other   — everything else (partnerships, general enquiries, media, events)
+Sales         — pricing, demo, quote, trial, proposal, buying intent, follow-up on a sale, evaluating your product/service
+Support       — bug, not working, error, access issue, billing problem, crash, outage, broken, can't login, forgotten password, refund request
+Invoice       — invoice for payment (e.g. "Invoice #1234 due", "please find your invoice attached", "amount due")
+Receipt       — payment confirmation, purchase receipt, order confirmation (e.g. "your receipt", "order confirmed", "payment received")
+Financial     — bank statement, account summary, transaction alert, balance notification, wire transfer, payroll from a bank or financial institution
+Social        — LinkedIn, Facebook, Twitter/X, Instagram, GitHub, Slack or other social/community platform notification
+Promotion     — marketing email, sale, discount code, newsletter, promotional offer (typically contains "unsubscribe")
+Legal         — contract, NDA, terms of service, legal notice, compliance requirement, cease and desist, agreement requiring signature or review
+Security      — 2FA code, password reset, login alert, suspicious activity warning, account breach notification, security verification
+Meeting       — meeting request, calendar invite, scheduling link (Calendly, Google Calendar), "can we jump on a call?", availability request
+Partnership   — collaboration proposal, joint venture, affiliate inquiry, co-marketing from a legitimate business (not a vendor pitch selling to you)
+Shipping      — order tracking update, dispatch confirmation, delivery notification, courier status from a shipping provider
+Subscription  — SaaS renewal reminder, plan change notice, trial expiry, subscription upgrade/downgrade/cancellation confirmation
+Other         — general enquiries, media, events, internal, personal — anything that doesn't fit the categories above
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ACTION RULES — assign exactly one:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 "create_ticket"  — if category is Support (regardless of priority)
 "create_lead"    — if priority is High or Medium AND category is Sales
+"reply_draft"    — if category is Legal, Meeting, or Partnership (these need a human reply)
 "reply_draft"    — if priority is Medium AND category is Other (a reply would gather more info)
+"ignore"         — if category is Invoice, Receipt, Financial, Social, Promotion, Shipping, or Subscription (automated mail, no action needed)
+"ignore"         — if category is Security (handle outside email; no reply needed)
 "ignore"         — if priority is Low
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -155,7 +248,7 @@ OUTPUT — return ONLY this JSON, nothing else:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 {
   "priority": "high" | "medium" | "low",
-  "category": "Sales" | "Support" | "Other",
+  "category": "Sales" | "Support" | "Invoice" | "Receipt" | "Financial" | "Social" | "Promotion" | "Legal" | "Security" | "Meeting" | "Partnership" | "Shipping" | "Subscription" | "Other",
   "summary": "string or null",
   "reason": "one sentence why this priority was assigned",
   "user_prompt": "short sentence for the user",
@@ -353,6 +446,39 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
           if (!inserted) continue
 
           synced++
+
+          // Parse .ics calendar attachment (if present) → store as meeting
+          try {
+            const attachments = parsed.attachments ?? []
+            const icsAtt = attachments.find(
+              a => a.contentType === 'text/calendar' ||
+                   a.contentType === 'application/ics' ||
+                   (a.filename ?? '').toLowerCase().endsWith('.ics'),
+            )
+            if (icsAtt) {
+              const icsText = icsAtt.content.toString('utf8')
+              const meeting = parseIcs(icsText)
+              if (meeting && (meeting.title || meeting.startAt)) {
+                await supabase
+                  .from('sage_meetings')
+                  .upsert({
+                    workspace_id:    workspaceId,
+                    email_id:        inserted.id,
+                    ics_uid:         meeting.icsUid,
+                    title:           meeting.title ?? '(untitled)',
+                    start_at:        meeting.startAt,
+                    end_at:          meeting.endAt,
+                    location:        meeting.location,
+                    description:     meeting.description,
+                    organizer:       meeting.organizer,
+                    organizer_name:  meeting.organizerName,
+                    attendees:       meeting.attendees,
+                  }, { onConflict: 'workspace_id,ics_uid', ignoreDuplicates: true })
+              }
+            }
+          } catch {
+            // Calendar parsing failure doesn't block email sync
+          }
 
           // AI analysis (non-blocking per email — best effort)
           try {

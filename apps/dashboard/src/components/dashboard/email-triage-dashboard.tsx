@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useTransition, useEffect } from 'react'
+import React, { useState, useTransition, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -8,10 +8,11 @@ import {
   Plus, RefreshCw, Ticket, UserPlus, RotateCcw,
   Check, X, ChevronRight, Loader2, Trash2,
   Phone, Globe, Tag, Brain,
+  Calendar, MapPin, Users, Clock,
 } from 'lucide-react'
 import { triageCreateLead, triageCreateTicket, triageAddDealNote } from '@/app/actions/sage-triage'
 import { syncEmails, deleteTriageEmails, reanalyzeEmails } from '@/app/actions/sage-emails'
-import type { SageEmail } from '@/lib/types'
+import type { SageEmail, SageMeeting } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -28,6 +29,7 @@ export interface TriageEmail {
   recommendation:  TriageRecommendation
   matchedContact?: { id: string; name: string; email: string | null } | null
   matchedDeal?:    { id: string; title: string } | null
+  meeting?:        SageMeeting | null
 }
 
 interface Props {
@@ -90,8 +92,19 @@ function recColor(r: TriageRecommendation): string {
 }
 
 function categoryClass(cat: string): string {
-  if (cat === 'Sales')   return 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/20'
-  if (cat === 'Support') return 'bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-500/20'
+  if (cat === 'Sales')        return 'bg-teal-50 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-200 dark:border-teal-500/20'
+  if (cat === 'Support')      return 'bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-500/20'
+  if (cat === 'Invoice')      return 'bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-500/20'
+  if (cat === 'Receipt')      return 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/20'
+  if (cat === 'Financial')    return 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20'
+  if (cat === 'Social')       return 'bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-200 dark:border-pink-500/20'
+  if (cat === 'Promotion')    return 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-500/20'
+  if (cat === 'Legal')        return 'bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-500/20'
+  if (cat === 'Security')     return 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20'
+  if (cat === 'Meeting')      return 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20'
+  if (cat === 'Partnership')  return 'bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-200 dark:border-cyan-500/20'
+  if (cat === 'Shipping')     return 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/20'
+  if (cat === 'Subscription') return 'bg-slate-100 dark:bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-500/20'
   return 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-white/10'
 }
 
@@ -235,12 +248,13 @@ interface DetailCardProps {
   onAction:   (t: TriageEmail, mode: 'lead' | 'ticket' | 'deal_note') => void
   onDismiss:  (id: string) => void
   onDelete:   (id: string) => void
+  onClose:    () => void
   isDeleting: boolean
 }
 
-function DetailCard({ t, actioned, onAction, onDismiss, onDelete, isDeleting }: DetailCardProps) {
+function DetailCard({ t, actioned, onAction, onDismiss, onDelete, onClose, isDeleting }: DetailCardProps) {
   const [activeDraft, setActiveDraft] = useState(0)
-  const { email, recommendation } = t
+  const { email, recommendation, meeting } = t
   const entities  = email.ai_entities
   const drafts    = email.ai_reply_drafts ?? []
   const isDone    = actioned.has(email.id)
@@ -253,17 +267,26 @@ function DetailCard({ t, actioned, onAction, onDismiss, onDelete, isDeleting }: 
     if (recommendation === 'reopen_account') onAction(t, 'lead')
   }
 
+  function formatMeetingTime(iso: string | null) {
+    if (!iso) return null
+    const d = new Date(iso)
+    return d.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
+  }
+
   return (
-    <div className={cn(
-      'bg-white dark:bg-[#232323] rounded-2xl border shadow-sm',
-      email.ai_priority === 'high'
-        ? 'border-blue-200 dark:border-blue-500/25'
-        : email.ai_priority === 'medium'
-          ? 'border-amber-200 dark:border-amber-500/25'
-          : 'border-gray-200 dark:border-white/8',
-    )}>
+    <div
+      className={cn(
+        'bg-white dark:bg-[#232323] rounded-2xl border shadow-sm cursor-pointer',
+        email.ai_priority === 'high'
+          ? 'border-blue-200 dark:border-blue-500/25'
+          : email.ai_priority === 'medium'
+            ? 'border-amber-200 dark:border-amber-500/25'
+            : 'border-gray-200 dark:border-white/8',
+      )}
+      onClick={onClose}
+    >
       {/* ── Header ── */}
-      <div className="px-6 pt-5 pb-4">
+      <div className="px-6 pt-5 pb-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-50 leading-tight">{email.subject}</h2>
@@ -296,18 +319,68 @@ function DetailCard({ t, actioned, onAction, onDismiss, onDelete, isDeleting }: 
               </span>
             )}
             <button
-              onClick={() => onDelete(email.id)}
+              onClick={e => { e.stopPropagation(); onDelete(email.id) }}
               disabled={isDeleting}
               className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors border border-transparent hover:border-red-100 dark:hover:border-red-500/20"
             >
               {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+            </button>
+            <button
+              onClick={e => { e.stopPropagation(); onClose() }}
+              title="Close"
+              className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+            >
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
       </div>
 
       {/* ── Content ── */}
-      <div className="px-6 pb-5 pt-4 border-t dark:border-white/8 space-y-4">
+      <div className="px-6 pb-5 pt-4 border-t dark:border-white/8 space-y-4" onClick={e => e.stopPropagation()}>
+
+        {/* Meeting details card — shown when a .ics was parsed from this email */}
+        {meeting && (
+          <div className="rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 px-4 py-3.5 space-y-2.5">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-3.5 h-3.5 text-indigo-500" />
+              <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">Meeting Invite</span>
+            </div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{meeting.title}</p>
+            <div className="space-y-1.5">
+              {(meeting.start_at || meeting.end_at) && (
+                <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                  <Clock className="w-3 h-3 text-indigo-400 shrink-0" />
+                  <span>
+                    {formatMeetingTime(meeting.start_at)}
+                    {meeting.end_at && meeting.end_at !== meeting.start_at && ` → ${formatMeetingTime(meeting.end_at)}`}
+                  </span>
+                </div>
+              )}
+              {meeting.location && (
+                <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                  <MapPin className="w-3 h-3 text-indigo-400 shrink-0" />
+                  <span className="truncate">{meeting.location}</span>
+                </div>
+              )}
+              {meeting.organizer && (
+                <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                  <UserPlus className="w-3 h-3 text-indigo-400 shrink-0" />
+                  <span>{meeting.organizer_name ? `${meeting.organizer_name} (${meeting.organizer})` : meeting.organizer}</span>
+                </div>
+              )}
+              {meeting.attendees.length > 0 && (
+                <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
+                  <Users className="w-3 h-3 text-indigo-400 shrink-0 mt-0.5" />
+                  <span className="leading-relaxed">
+                    {meeting.attendees.slice(0, 5).join(', ')}
+                    {meeting.attendees.length > 5 ? ` +${meeting.attendees.length - 5} more` : ''}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* AI user prompt callout */}
         {email.ai_user_prompt && (
@@ -466,11 +539,32 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
   const [analyzeMsg,      setAnalyzeMsg]      = useState<string | null>(null)
   const [selectedIds,     setSelectedIds]     = useState<Set<string>>(new Set())
 
-  // Auto-refresh every 60 s
-  useEffect(() => {
-    const id = setInterval(() => { router.refresh() }, 60_000)
-    return () => clearInterval(id)
+  // Ref so the interval callback can always see the latest pending count
+  const pendingCountRef = useRef(0)
+  const isAutoAnalyzingRef = useRef(false)
+
+  // Auto-analyze: runs when there are unanalyzed emails, no manual run needed
+  const runAutoAnalyze = useCallback(async () => {
+    if (isAutoAnalyzingRef.current) return
+    isAutoAnalyzingRef.current = true
+    try {
+      await reanalyzeEmails(50, undefined)
+      router.refresh()
+    } finally {
+      isAutoAnalyzingRef.current = false
+    }
   }, [router])
+
+  // Auto-refresh every 60 s; also trigger analysis if pending emails exist
+  useEffect(() => {
+    const id = setInterval(() => {
+      router.refresh()
+      if (pendingCountRef.current > 0) {
+        void runAutoAnalyze()
+      }
+    }, 60_000)
+    return () => clearInterval(id)
+  }, [router, runAutoAnalyze])
 
   function handleSync() {
     setSyncMsg(null)
@@ -623,6 +717,15 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
   const medCount        = medEmails.length
   const unanalyzedCount = pendingEmails.length
 
+  // Keep ref in sync and auto-trigger analysis when new pending emails appear
+  useEffect(() => {
+    const prev = pendingCountRef.current
+    pendingCountRef.current = unanalyzedCount
+    if (unanalyzedCount > 0 && unanalyzedCount !== prev) {
+      void runAutoAnalyze()
+    }
+  }, [unanalyzedCount, runAutoAnalyze])
+
   const sortedVisible       = [...visible].sort(sortByPriority)
   const selectedTriageEmail = selectedEmailId ? visible.find(t => t.email.id === selectedEmailId) ?? null : null
 
@@ -637,6 +740,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
     onAction:   openModal,
     onDismiss:  dismiss,
     onDelete:   handleDeleteOne,
+    onClose:    () => setSelectedEmailId(''),
     isDeleting,
   }
 

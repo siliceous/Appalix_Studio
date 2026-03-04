@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect }      from 'next/navigation'
 import type { Metadata } from 'next'
-import type { WorkspaceMember, SageEmail, SageTicket, SageContact, Bot as BotRow } from '@/lib/types'
+import type { WorkspaceMember, SageEmail, SageTicket, SageContact, SageMeeting, Bot as BotRow } from '@/lib/types'
 import { EmailTriageDashboard, type TriageEmail, type TriageRecommendation } from '@/components/dashboard/email-triage-dashboard'
 import { BotsDashboard, type BotConversation } from '@/components/dashboard/bots-dashboard'
 import { TicketsDashboard } from '@/components/dashboard/tickets-dashboard'
@@ -161,6 +161,20 @@ export default async function DashboardPage({
       }
     }
 
+    // Fetch meetings for these email IDs
+    const emailIds = rawEmails.map(e => e.id)
+    const meetingsByEmailId = new Map<string, SageMeeting>()
+    if (emailIds.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: meetingsRaw } = await (supabase as any)
+        .from('sage_meetings')
+        .select('*')
+        .in('email_id', emailIds)
+      for (const m of (meetingsRaw ?? []) as SageMeeting[]) {
+        if (m.email_id) meetingsByEmailId.set(m.email_id, m)
+      }
+    }
+
     // Build TriageEmail[]
     triageEmails = rawEmails.map(email => {
       const matchedContact = findContact(email.from_address)
@@ -168,7 +182,8 @@ export default async function DashboardPage({
       const closedDeal     = matchedContact ? (closedDealsByContactId.get(matchedContact.id) ?? null) : null
       const recommendation = deriveRecommendation(email, matchedContact, openDeal, closedDeal)
       const matchedDeal    = openDeal ?? closedDeal ?? null
-      return { email, recommendation, matchedContact, matchedDeal }
+      const meeting        = meetingsByEmailId.get(email.id) ?? null
+      return { email, recommendation, matchedContact, matchedDeal, meeting }
     })
 
     // Sort: high → medium → low → pending (unanalyzed)

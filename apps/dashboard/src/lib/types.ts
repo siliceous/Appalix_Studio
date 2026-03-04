@@ -344,7 +344,7 @@ export interface SageEmail {
   is_starred:      boolean
   is_trashed:      boolean
   ai_priority:     'high' | 'medium' | 'low' | null
-  ai_category:     'Sales' | 'Support' | 'Other' | null
+  ai_category:     'Sales' | 'Support' | 'Invoice' | 'Receipt' | 'Financial' | 'Social' | 'Promotion' | 'Legal' | 'Security' | 'Meeting' | 'Partnership' | 'Shipping' | 'Subscription' | 'Other' | null
   ai_summary:      string | null
   ai_reason:       string | null
   ai_user_prompt:  string | null
@@ -365,6 +365,22 @@ export interface SageEmail {
   created_at:      string
   // joined
   contact?:        Pick<SageContact, 'id' | 'name' | 'email'> | null
+}
+
+export interface SageMeeting {
+  id:             string
+  workspace_id:   string
+  email_id:       string | null
+  ics_uid:        string | null
+  title:          string
+  start_at:       string | null
+  end_at:         string | null
+  location:       string | null
+  description:    string | null
+  organizer:      string | null
+  organizer_name: string | null
+  attendees:      string[]
+  created_at:     string
 }
 
 export interface SageReminder {
