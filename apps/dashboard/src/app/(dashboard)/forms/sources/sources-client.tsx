@@ -22,7 +22,6 @@ interface PlatformDef {
     placeholder: string
     hint:        string
   }[]
-  docsUrl:     string
   tutorialUrl: string
 }
 
@@ -41,7 +40,6 @@ const PLATFORMS: PlatformDef[] = [
         hint:        'The key you set in Google Ads → Lead Forms → Webhook → Key',
       },
     ],
-    docsUrl:     'https://support.google.com/google-ads/answer/9423895',
     tutorialUrl: '/resources/connect-google-ads-leads',
   },
   {
@@ -72,7 +70,6 @@ const PLATFORMS: PlatformDef[] = [
         hint:        'Long-lived Page Access Token from your Facebook Page',
       },
     ],
-    docsUrl:     'https://developers.facebook.com/docs/marketing-api/guides/lead-ads/retrieving/',
     tutorialUrl: '/resources/connect-meta-leads',
   },
 ]
@@ -377,15 +374,13 @@ export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, e
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <a
-                  href={def.docsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  href={def.tutorialUrl}
                   className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
-                  title="Documentation"
+                  title="Setup guide"
                 >
-                  <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
-                </a>
+                  <BookOpen className="w-3.5 h-3.5 text-gray-400" />
+                </Link>
 
                 {connected ? (
                   <button
