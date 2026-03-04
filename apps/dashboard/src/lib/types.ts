@@ -404,6 +404,64 @@ export interface SageReminder {
 }
 
 // ---------------------------------------------------------------
+// Lead Ads (Forms section)
+// ---------------------------------------------------------------
+export type LeadAdPlatform = 'meta' | 'google_ads'
+export type LeadScore = 'high' | 'medium' | 'low'
+
+export interface LeadAdSourceConfig {
+  // Meta
+  verify_token?:      string
+  app_secret?:        string
+  page_access_token?: string
+  // Google Ads
+  webhook_key?:       string
+}
+
+export interface LeadAdSource {
+  id:           string
+  workspace_id: string
+  platform:     LeadAdPlatform
+  name:         string
+  status:       'active' | 'inactive'
+  config:       LeadAdSourceConfig
+  leads_count:  number
+  last_lead_at: string | null
+  created_at:   string
+  updated_at:   string
+}
+
+export interface Lead {
+  id:              string
+  workspace_id:    string
+  source_id:       string | null
+  name:            string
+  email:           string | null
+  phone:           string | null
+  company:         string | null
+  job_title:       string | null
+  website:         string | null
+  source_platform: LeadAdPlatform
+  campaign_name:   string | null
+  ad_name:         string | null
+  form_name:       string | null
+  lead_score:      LeadScore | null
+  pipeline_stage:  string
+  raw_payload:     Record<string, unknown> | null
+  created_at:      string
+  updated_at:      string
+  source?:         LeadAdSource | null
+}
+
+export interface LeadEvent {
+  id:         string
+  lead_id:    string
+  event_type: string
+  event_data: Record<string, unknown> | null
+  created_at: string
+}
+
+// ---------------------------------------------------------------
 // Database shape (used by Supabase typed client)
 // ---------------------------------------------------------------
 export interface Database {

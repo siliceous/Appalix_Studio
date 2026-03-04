@@ -19,6 +19,9 @@ import {
   Link2,
   LayoutGrid,
   Mail,
+  Inbox,
+  Rss,
+  PieChart,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -62,6 +65,15 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/sage/emails',       label: 'Emails',       icon: Mail },
       { href: '/sage/tickets',      label: 'Tickets',      icon: Ticket },
       { href: '/sage/integrations', label: 'Integrations', icon: Link2 },
+    ],
+  },
+  {
+    label: 'Forms',
+    pro: true,
+    items: [
+      { href: '/forms/leads',     label: 'All Leads',  icon: Inbox },
+      { href: '/forms/sources',   label: 'Sources',    icon: Rss },
+      { href: '/forms/analytics', label: 'Analytics',  icon: PieChart },
     ],
   },
   {
