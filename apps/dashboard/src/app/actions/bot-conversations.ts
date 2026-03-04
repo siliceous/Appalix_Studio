@@ -45,6 +45,30 @@ export async function renameConversation(
 }
 
 /**
+ * Delete bot conversations by ID (scoped to the workspace).
+ */
+export async function deleteConversations(
+  conversationIds: string[],
+): Promise<{ error?: string }> {
+  if (!conversationIds.length) return {}
+
+  const supabase    = await createClient()
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { error: 'Not authenticated' }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
+    .from('conversations')
+    .delete()
+    .in('id', conversationIds)
+    .eq('workspace_id', workspaceId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard')
+  return {}
+}
+
+/**
  * Trigger AI analysis for bot conversations in the workspace.
  * If conversationIds is provided, only those conversations are re-analysed.
  * Otherwise, analyses up to batchSize conversations that have never been processed.
