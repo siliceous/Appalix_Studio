@@ -149,7 +149,7 @@ function TriageCard({ t, isDone, actionLabel, isChecked, isSelected, onSelect, o
 
   return (
     <div
-      onClick={() => onSelect(isSelected ? '' : email.id)}
+      onClick={e => { e.stopPropagation(); onSelect(isSelected ? '' : email.id) }}
       className={cn(
         'flex flex-col bg-white dark:bg-[#232323] rounded-xl border transition-all cursor-pointer hover:shadow-sm',
         isSelected
@@ -276,17 +276,16 @@ function DetailCard({ t, actioned, onAction, onDismiss, onDelete, onClose, isDel
   return (
     <div
       className={cn(
-        'bg-white dark:bg-[#232323] rounded-2xl border shadow-sm cursor-pointer',
+        'bg-white dark:bg-[#232323] rounded-2xl border shadow-sm',
         email.ai_priority === 'high'
           ? 'border-blue-200 dark:border-blue-500/25'
           : email.ai_priority === 'medium'
             ? 'border-amber-200 dark:border-amber-500/25'
             : 'border-gray-200 dark:border-white/8',
       )}
-      onClick={onClose}
     >
       {/* ── Header ── */}
-      <div className="px-6 pt-5 pb-4" onClick={e => e.stopPropagation()}>
+      <div className="px-6 pt-5 pb-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-50 leading-tight">{email.subject}</h2>
@@ -337,7 +336,7 @@ function DetailCard({ t, actioned, onAction, onDismiss, onDelete, onClose, isDel
       </div>
 
       {/* ── Content ── */}
-      <div className="px-6 pb-5 pt-4 border-t dark:border-white/8 space-y-4" onClick={e => e.stopPropagation()}>
+      <div className="px-6 pb-5 pt-4 border-t dark:border-white/8 space-y-4">
 
         {/* Meeting details card — shown when a .ics was parsed from this email */}
         {meeting && (
@@ -977,11 +976,12 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 space-y-7">
+            {/* Clicking the empty background of the scroll area closes the open card */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-7" onClick={() => setSelectedEmailId('')}>
 
               {/* ── Full-width Detail Card (shown when email is selected) ── */}
               {selectedTriageEmail && (
-                <div>
+                <div onClick={e => e.stopPropagation()}>
                   <DetailCard t={selectedTriageEmail} {...detailCardProps} />
                 </div>
               )}

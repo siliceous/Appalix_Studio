@@ -28,6 +28,46 @@ const config: Config = {
       },
     },
   },
+  // Safelist all category badge colours — these are returned as dynamic strings
+  // from categoryClass() so Tailwind JIT must be told explicitly to include them
+  safelist: [
+    // teal (Sales)
+    'bg-teal-50','text-teal-600','border-teal-200',
+    'dark:bg-teal-500/10','dark:text-teal-400','dark:border-teal-500/20',
+    // sky (Support)
+    'bg-sky-50','text-sky-600','border-sky-200',
+    'dark:bg-sky-500/10','dark:text-sky-400','dark:border-sky-500/20',
+    // violet (Invoice)
+    'bg-violet-50','text-violet-600','border-violet-200',
+    'dark:bg-violet-500/10','dark:text-violet-400','dark:border-violet-500/20',
+    // blue (Receipt)
+    'bg-blue-50','text-blue-600','border-blue-200',
+    'dark:bg-blue-500/10','dark:text-blue-400','dark:border-blue-500/20',
+    // emerald (Financial)
+    'bg-emerald-50','text-emerald-600','border-emerald-200',
+    'dark:bg-emerald-500/10','dark:text-emerald-400','dark:border-emerald-500/20',
+    // pink (Social)
+    'bg-pink-50','text-pink-600','border-pink-200',
+    'dark:bg-pink-500/10','dark:text-pink-400','dark:border-pink-500/20',
+    // orange (Promotion + Legal)
+    'bg-orange-50','text-orange-600','text-orange-700','border-orange-200',
+    'dark:bg-orange-500/10','dark:text-orange-400','dark:border-orange-500/20',
+    // red (Security)
+    'bg-red-50','text-red-600','border-red-200',
+    'dark:bg-red-500/10','dark:text-red-400','dark:border-red-500/20',
+    // indigo (Meeting)
+    'bg-indigo-50','text-indigo-600','border-indigo-200',
+    'dark:bg-indigo-500/10','dark:text-indigo-400','dark:border-indigo-500/20',
+    // cyan (Partnership)
+    'bg-cyan-50','text-cyan-600','border-cyan-200',
+    'dark:bg-cyan-500/10','dark:text-cyan-400','dark:border-cyan-500/20',
+    // amber (Shipping)
+    'bg-amber-50','text-amber-600','border-amber-200',
+    'dark:bg-amber-500/10','dark:text-amber-400','dark:border-amber-500/20',
+    // slate (Subscription)
+    'bg-slate-100','text-slate-600','border-slate-200',
+    'dark:bg-slate-500/10','dark:text-slate-400','dark:border-slate-500/20',
+  ],
   plugins: [],
 }
 
