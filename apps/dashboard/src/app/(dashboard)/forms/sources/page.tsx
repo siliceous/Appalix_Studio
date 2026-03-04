@@ -5,7 +5,8 @@ import { Header } from '@/components/layout/header'
 import { SourcesClient } from './sources-client'
 import type { WorkspaceMember, LeadAdSource, SageIntegration } from '@/lib/types'
 
-const EMAIL_PROVIDERS = ['mailchimp', 'activecampaign'] as const
+const EMAIL_PROVIDERS = ['mailchimp', 'activecampaign', 'convertkit', 'klaviyo', 'constantcontact'] as const
+const SYNC_PROVIDERS  = ['mailchimp', 'activecampaign'] as const
 
 export default async function SourcesPage() {
   const supabase = await createClient()
@@ -42,7 +43,7 @@ export default async function SourcesPage() {
       .from('leads')
       .select('source_platform')
       .eq('workspace_id', workspaceId)
-      .in('source_platform', EMAIL_PROVIDERS),
+      .in('source_platform', SYNC_PROVIDERS),
   ])
 
   const sources           = (sourcesRaw ?? []) as LeadAdSource[]
