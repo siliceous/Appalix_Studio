@@ -184,7 +184,7 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                   {contact && (
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
                       {contact.name as string}
-                      {contact.company_name && ` · ${contact.company_name}`}
+                      {(contact.company_name as string | null) && ` · ${contact.company_name as string}`}
                     </p>
                   )}
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
