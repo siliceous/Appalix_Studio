@@ -1,9 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect }      from 'next/navigation'
 import type { Metadata } from 'next'
-import type { WorkspaceMember, SageEmail, SageTicket, SageContact, SageMeeting, Bot as BotRow } from '@/lib/types'
+import type { WorkspaceMember, SageEmail, SageTicket, SageContact, SageMeeting, Bot as BotRow, Conversation } from '@/lib/types'
 import { EmailTriageDashboard, type TriageEmail, type TriageRecommendation } from '@/components/dashboard/email-triage-dashboard'
-import { BotsDashboard, type BotConversation } from '@/components/dashboard/bots-dashboard'
+import { BotTriageDashboard, type TriageConversation } from '@/components/dashboard/bots-triage-dashboard'
 import { TicketsDashboard } from '@/components/dashboard/tickets-dashboard'
 import { FormsDashboard }   from '@/components/dashboard/forms-dashboard'
 import { OverviewTabBar }   from '@/components/dashboard/overview-tab-bar'
@@ -77,9 +77,8 @@ export default async function DashboardPage({
 
   // ── Per-tab data fetching ─────────────────────────────────────────────────
 
-  let triageEmails:  TriageEmail[] = []
-  let bots:          BotRow[] = []
-  let conversations: BotConversation[] = []
+  let triageEmails:        TriageEmail[] = []
+  let triageConversations: TriageConversation[] = []
   let tickets: (SageTicket & { contact: Pick<SageContact, 'id' | 'name' | 'email'> | null })[] = []
 
   if (tab === 'email') {
@@ -198,19 +197,26 @@ export default async function DashboardPage({
     const [botsRes, convsRes] = await Promise.all([
       supabase
         .from('bots')
-        .select('*, integrations(count)')
+        .select('id, name, bot_type')
         .eq('workspace_id', workspaceId)
         .order('created_at', { ascending: false }),
-      // Fetch all conversations for this workspace so we can group by bot_id
       supabase
         .from('conversations')
-        .select('id, title, platform, status, message_count, last_activity_at, bot_id')
+        .select('id, title, platform, status, message_count, last_activity_at, bot_id, ai_priority, ai_summary, ai_insights, ai_action, ai_entities, ai_analyzed_at')
         .eq('workspace_id', workspaceId)
         .order('last_activity_at', { ascending: false })
         .limit(300),
     ])
-    bots          = (botsRes.data  ?? []) as BotRow[]
-    conversations = (convsRes.data ?? []) as BotConversation[]
+    const rawBots  = (botsRes.data  ?? []) as Pick<BotRow, 'id' | 'name' | 'bot_type'>[]
+    const rawConvs = (convsRes.data ?? []) as Conversation[]
+    const botMap   = new Map(rawBots.map(b => [b.id, b]))
+
+    triageConversations = rawConvs
+      .filter(c => c.bot_id && botMap.has(c.bot_id))
+      .map(c => {
+        const bot = botMap.get(c.bot_id!)!
+        return { conversation: c, botName: bot.name, botType: bot.bot_type }
+      })
 
   } else if (tab === 'tickets') {
     const { data } = await supabase
@@ -233,7 +239,7 @@ export default async function DashboardPage({
           <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} />
         )}
         {tab === 'bots' && (
-          <BotsDashboard bots={bots} conversations={conversations} />
+          <BotTriageDashboard triageConversations={triageConversations} />
         )}
         {tab === 'tickets' && (
           <TicketsDashboard tickets={tickets} />

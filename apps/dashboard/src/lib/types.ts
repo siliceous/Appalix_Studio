@@ -113,6 +113,13 @@ export interface Conversation {
   last_activity_at: string
   created_at: string
   updated_at: string
+  // AI triage fields (added in migration 00036)
+  ai_priority?:    'high' | 'medium' | 'low' | null
+  ai_summary?:     string | null
+  ai_insights?:    string[] | null
+  ai_action?:      'create_lead' | 'create_ticket' | 'ignore' | null
+  ai_entities?:    { name?: string; email?: string; phone?: string; product_interest?: string } | null
+  ai_analyzed_at?: string | null
 }
 
 export interface Message {
