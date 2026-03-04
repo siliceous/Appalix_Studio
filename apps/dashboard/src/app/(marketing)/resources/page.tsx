@@ -294,6 +294,26 @@ const POSTS = [
     emoji: '🛟',
     slug: 'connect-sage-zendesk',
   },
+  // Lead Ads integration tutorials
+  {
+    category: 'Tutorial',
+    title: 'Connect Google Ads Lead Forms to Appalix',
+    excerpt: 'Automatically receive Google Ads lead form submissions inside Appalix. Paste your webhook URL into Google Ads Lead Form Extensions and connect in Forms → Sources in under 5 minutes — no Zapier needed.',
+    readTime: '8 min read',
+    date: 'Mar 4, 2026',
+    emoji: '🎯',
+    large: true,
+    slug: 'connect-google-ads-leads',
+  },
+  {
+    category: 'Tutorial',
+    title: 'Connect Meta Lead Ads to Appalix',
+    excerpt: 'Automatically receive Facebook and Instagram lead ad submissions inside Appalix. Set up a Meta webhook in 5 steps — leads are scored, deduplicated, and ready to push to your CRM pipeline instantly.',
+    readTime: '10 min read',
+    date: 'Mar 4, 2026',
+    emoji: '📘',
+    slug: 'connect-meta-leads',
+  },
   // General guides & posts
   {
     category: 'Product',
