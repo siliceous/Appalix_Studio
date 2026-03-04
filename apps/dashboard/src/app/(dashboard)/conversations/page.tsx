@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/header'
 import { MessageSquare } from 'lucide-react'
 import { PLATFORM_META, timeAgo } from '@/lib/utils'
 import { ConversationActions } from './conversation-actions'
+import { ConversationTitleCell } from './conversation-title-cell'
 import type { Metadata } from 'next'
 import type { Conversation } from '@/lib/types'
 
@@ -87,9 +88,7 @@ export default async function ConversationsPage({
               {conversations?.map((c) => (
                 <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-5 py-3.5">
-                    <a href={`/conversations/${c.id}`} className="font-medium text-gray-900 hover:text-brand-700">
-                      {c.title ?? 'Untitled'}
-                    </a>
+                    <ConversationTitleCell id={c.id} title={c.title} />
                     {c.sentiment && (
                       <span className={`ml-2 text-xs ${SENTIMENT_COLORS[c.sentiment]}`}>●</span>
                     )}
