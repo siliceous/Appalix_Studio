@@ -34,7 +34,7 @@ const PRIORITY_DOT: Record<string, string> = {
 
 const PRIORITY_BADGE: Record<string, string> = {
   high:   'bg-[#61c2ad]/10 dark:bg-[#61c2ad]/15 text-[#3a9e8a] dark:text-[#61c2ad] border-[#61c2ad]/30 dark:border-[#61c2ad]/25',
-  medium: 'bg-amber-50 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-200/70 dark:border-amber-500/18',
+  medium: 'bg-amber-50 dark:bg-amber-500/10 text-amber-500/75 dark:text-amber-400/75 border-amber-200/70 dark:border-amber-500/18',
   low:    'bg-gray-100 dark:bg-white/5 text-gray-500 border-gray-200 dark:border-white/10',
 }
 
@@ -646,7 +646,7 @@ export function BotTriageDashboard({ triageConversations }: Props) {
               </span>
             )}
             {medConvs.length > 0 && (
-              <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 font-semibold border border-amber-200/70 dark:border-amber-500/18">
+              <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-500/75 dark:text-amber-400/75 font-semibold border border-amber-200/70 dark:border-amber-500/18">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />{medConvs.length} Medium
               </span>
             )}
@@ -832,7 +832,7 @@ export function BotTriageDashboard({ triageConversations }: Props) {
                 <section>
                   <div className="flex items-center gap-2 mb-3">
                     <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-amber-500 dark:text-amber-400">
+                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-amber-500/75 dark:text-amber-400/75">
                       Medium · {gridMed.length}
                     </h3>
                     <div className="flex-1 h-px bg-amber-200/60 dark:bg-amber-500/15" />
