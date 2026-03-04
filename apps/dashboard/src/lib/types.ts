@@ -282,12 +282,28 @@ export interface SageDeal {
   visibility:             string
   description:            string | null
   company_name:           string | null
+  lost_reason:            string | null
+  won_at:                 string | null
+  lost_at:                string | null
   created_at:             string
   updated_at:             string
   // joined
   contact?:               Pick<SageContact, 'id' | 'name' | 'email'> | null
   company?:               Pick<SageCompany, 'id' | 'name'> | null
   stage?:                 Pick<SagePipelineStage, 'id' | 'name' | 'color'> | null
+}
+
+export interface SageDealActivity {
+  id:           string
+  workspace_id: string
+  deal_id:      string
+  type:         'note' | 'call' | 'meeting' | 'task'
+  title:        string | null
+  body:         string | null
+  due_at:       string | null
+  completed_at: string | null
+  created_by:   string | null
+  created_at:   string
 }
 
 export interface SageTicket {

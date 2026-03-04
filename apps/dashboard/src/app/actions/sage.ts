@@ -3,7 +3,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { SageContact, SageTicketStatus, SageTicketPriority, SageDealStatus, SageContactType, SageContactVisibility } from '@/lib/types'
+import type { SageContact, SageTicketStatus, SageTicketPriority, SageDealStatus, SageContactType, SageContactVisibility, SageDealActivity } from '@/lib/types'
 
 // ---------------------------------------------------------------
 // Helpers
@@ -379,20 +379,111 @@ export async function moveDeal(dealId: string, stageId: string) {
   revalidatePath('/sage/pipelines')
 }
 
-export async function updateDealStatus(dealId: string, status: SageDealStatus) {
+export async function updateDealStatus(
+  dealId:     string,
+  status:     SageDealStatus,
+  lostReason?: string,
+  wonAt?:      string,
+  lostAt?:     string,
+) {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
 
+  const patch: Record<string, unknown> = { status, updated_at: new Date().toISOString() }
+  if (status === 'won') {
+    patch.won_at    = wonAt ?? new Date().toISOString()
+    patch.lost_at   = null
+    patch.lost_reason = null
+  } else if (status === 'lost') {
+    patch.lost_at   = lostAt ?? new Date().toISOString()
+    patch.lost_reason = lostReason ?? null
+    patch.won_at    = null
+  }
+
   const { error } = await admin
     .from('sage_deals')
-    .update({ status, updated_at: new Date().toISOString() })
+    .update(patch)
     .eq('id', dealId)
     .eq('workspace_id', workspaceId)
 
   if (error) throw new Error(error.message)
 
-  await logActivity(workspaceId, 'deal', dealId, 'status_changed', { status })
+  await logActivity(workspaceId, 'deal', dealId, 'status_changed', { status, lost_reason: lostReason })
   revalidatePath('/sage/pipelines')
+}
+
+export async function getDealDetail(dealId: string): Promise<{
+  deal: (Record<string, unknown> & { contact: Record<string, unknown> | null }) | null
+  activities: SageDealActivity[]
+  error?: string
+}> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+
+  const { data: deal, error: dealErr } = await admin
+    .from('sage_deals')
+    .select('*, contact:sage_contacts(id, name, email, phone, company_name), stage:sage_pipeline_stages(id, name, color)')
+    .eq('id', dealId)
+    .eq('workspace_id', workspaceId)
+    .single()
+
+  if (dealErr || !deal) return { deal: null, activities: [], error: dealErr?.message }
+
+  const { data: activities } = await admin
+    .from('sage_deal_activities')
+    .select('*')
+    .eq('deal_id', dealId)
+    .order('created_at', { ascending: false })
+
+  return {
+    deal:       deal as Record<string, unknown> & { contact: Record<string, unknown> | null },
+    activities: (activities ?? []) as SageDealActivity[],
+  }
+}
+
+export async function addDealActivity(
+  dealId: string,
+  type:   'note' | 'call' | 'meeting' | 'task',
+  title?: string,
+  body?:  string,
+  dueAt?: string,
+): Promise<{ error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { error } = await admin
+    .from('sage_deal_activities')
+    .insert({
+      workspace_id: workspaceId,
+      deal_id:      dealId,
+      type,
+      title:        title?.trim() || null,
+      body:         body?.trim()  || null,
+      due_at:       dueAt         || null,
+      created_by:   user?.id      ?? null,
+    })
+
+  if (error) return { error: error.message }
+  await logActivity(workspaceId, 'deal', dealId, `${type}_added`, { title, body })
+  revalidatePath('/sage/pipelines')
+  return {}
+}
+
+export async function completeDealTask(activityId: string): Promise<{ error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+
+  const { error } = await admin
+    .from('sage_deal_activities')
+    .update({ completed_at: new Date().toISOString() })
+    .eq('id', activityId)
+    .eq('workspace_id', workspaceId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/sage/pipelines')
+  return {}
 }
 
 // ---------------------------------------------------------------

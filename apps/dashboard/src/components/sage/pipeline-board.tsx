@@ -5,6 +5,7 @@ import { Plus, GripVertical, Search, SlidersHorizontal, ArrowUpDown, Settings2 }
 import { moveDeal } from '@/app/actions/sage'
 import { DealModal } from './deal-modal'
 import { ManageStagesModal } from './manage-stages-modal'
+import { DealSlideOver } from './deal-slide-over'
 import type { SageDeal, SagePipelineStage, SageContact, SagePipeline } from '@/lib/types'
 
 type DealWithContact = SageDeal & {
@@ -41,6 +42,7 @@ export function PipelineBoard({
   const [showDealModal,    setShowDealModal]    = useState(false)
   const [showManageStages, setShowManageStages] = useState(false)
   const [defaultStage,     setDefaultStage]     = useState<string | undefined>()
+  const [selectedDealId,   setSelectedDealId]   = useState<string | null>(null)
 
   // Header controls
   const [searchQuery,      setSearchQuery]      = useState('')
@@ -314,7 +316,8 @@ export function PipelineBoard({
                     draggable
                     onDragStart={e => handleDragStart(e, deal.id)}
                     onDragEnd={handleDragEnd}
-                    className={`bg-white dark:bg-[#2a2a2a] rounded-xl p-3.5 border dark:border-white/8 cursor-grab active:cursor-grabbing select-none transition-all ${
+                    onClick={() => { if (!dragId) setSelectedDealId(deal.id) }}
+                    className={`bg-white dark:bg-[#2a2a2a] rounded-xl p-3.5 border dark:border-white/8 cursor-pointer active:cursor-grabbing select-none transition-all ${
                       dragId === deal.id ? 'opacity-40 scale-95 rotate-1' : 'hover:shadow-sm hover:border-gray-200 dark:hover:border-white/15'
                     }`}
                   >
@@ -407,6 +410,11 @@ export function PipelineBoard({
           }}
         />
       )}
+
+      <DealSlideOver
+        dealId={selectedDealId}
+        onClose={() => setSelectedDealId(null)}
+      />
     </>
   )
 }
