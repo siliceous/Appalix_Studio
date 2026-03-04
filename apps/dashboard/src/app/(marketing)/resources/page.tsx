@@ -296,13 +296,22 @@ const POSTS = [
   },
   // Lead Ads integration tutorials
   {
+    category: 'Guide',
+    title: 'Appalix Forms — Complete Guide to Lead Capture & Management',
+    excerpt: 'Everything about the Forms section in one place: connect Meta and Google Ads webhooks, sync Mailchimp and ActiveCampaign contacts, understand lead scoring, and push to your CRM pipeline in one click.',
+    readTime: '15 min read',
+    date: 'Mar 4, 2026',
+    emoji: '📥',
+    large: true,
+    slug: 'forms-lead-ads-guide',
+  },
+  {
     category: 'Tutorial',
     title: 'Connect Google Ads Lead Forms to Appalix',
     excerpt: 'Automatically receive Google Ads lead form submissions inside Appalix. Paste your webhook URL into Google Ads Lead Form Extensions and connect in Forms → Sources in under 5 minutes — no Zapier needed.',
     readTime: '8 min read',
     date: 'Mar 4, 2026',
     emoji: '🎯',
-    large: true,
     slug: 'connect-google-ads-leads',
   },
   {
