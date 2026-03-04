@@ -6,13 +6,14 @@ import { createDeal } from '@/app/actions/sage'
 import type { SageContact, SagePipelineStage, SagePipeline } from '@/lib/types'
 
 interface DealModalProps {
-  pipelineId:     string
-  stages:         SagePipelineStage[]
-  contacts:       Pick<SageContact, 'id' | 'name'>[]
-  allPipelines:   Pick<SagePipeline, 'id' | 'name'>[]
-  ownerName:      string
-  defaultStageId?: string
-  onClose:        () => void
+  pipelineId:        string
+  stages:            SagePipelineStage[]
+  contacts:          Pick<SageContact, 'id' | 'name'>[]
+  allPipelines:      Pick<SagePipeline, 'id' | 'name'>[]
+  ownerName:         string
+  defaultStageId?:   string
+  defaultContactId?: string
+  onClose:           () => void
 }
 
 const FIELD_CLS = 'w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]'
@@ -25,6 +26,7 @@ export function DealModal({
   allPipelines,
   ownerName,
   defaultStageId,
+  defaultContactId,
   onClose,
 }: DealModalProps) {
   const [pending, startTransition] = useTransition()
@@ -94,7 +96,7 @@ export function DealModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={LABEL_CLS}>Primary Contact</label>
-              <select name="contact_id" className={FIELD_CLS}>
+              <select name="contact_id" defaultValue={defaultContactId ?? ''} className={FIELD_CLS}>
                 <option value="">No contact</option>
                 {contacts.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
@@ -165,7 +167,7 @@ export function DealModal({
               <input
                 name="close_date"
                 type="date"
-                className={FIELD_CLS}
+                className={`${FIELD_CLS} dark:[color-scheme:dark]`}
               />
             </div>
             <div>

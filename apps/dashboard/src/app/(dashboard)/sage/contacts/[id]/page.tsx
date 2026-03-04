@@ -4,7 +4,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft, Mail, Phone, Tag, Activity, Clock } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
-import type { WorkspaceMember, SageContact, SageActivityLog, SageDeal } from '@/lib/types'
+import { ContactActionsClient } from '@/components/sage/contact-actions-client'
+import type { WorkspaceMember, SageContact, SageActivityLog, SageDeal, SagePipelineStage, SagePipeline } from '@/lib/types'
 
 export default async function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -27,17 +28,29 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     { data: contactRaw },
     { data: activityRaw },
     { data: dealsRaw },
+    { data: pipelinesRaw },
   ] = await Promise.all([
     supabase.from('sage_contacts').select('*').eq('id', id).eq('workspace_id', workspaceId).single(),
     supabase.from('sage_activity_log').select('*').eq('entity_id', id).order('created_at', { ascending: false }).limit(20),
-    supabase.from('sage_deals').select('id, title, value, currency, status, stage:sage_pipeline_stages(name, color), created_at').eq('contact_id', id).eq('workspace_id', workspaceId).order('created_at', { ascending: false }),
+    supabase.from('sage_deals')
+      .select('id, title, value, currency, status, pipeline_id, stage:sage_pipeline_stages(name, color), created_at')
+      .eq('contact_id', id).eq('workspace_id', workspaceId).order('created_at', { ascending: false }),
+    supabase.from('sage_pipelines')
+      .select('id, name, stages:sage_pipeline_stages(id, name, color, position)')
+      .eq('workspace_id', workspaceId).order('created_at', { ascending: true }),
   ])
 
   if (!contactRaw) notFound()
 
   const contact  = contactRaw as SageContact
   const activity = (activityRaw ?? []) as SageActivityLog[]
-  const deals    = (dealsRaw ?? []) as (SageDeal & { stage: { name: string; color: string } | null })[]
+  const deals    = (dealsRaw ?? []) as (SageDeal & { pipeline_id: string | null; stage: { name: string; color: string } | null })[]
+
+  const firstPipeline  = (pipelinesRaw?.[0] ?? null) as ({ id: string; name: string; stages: SagePipelineStage[] } | null)
+  const allPipelines   = ((pipelinesRaw ?? []) as { id: string; name: string }[]).map(p => ({ id: p.id, name: p.name })) as Pick<SagePipeline, 'id' | 'name'>[]
+  const firstStages    = firstPipeline
+    ? ([...(firstPipeline.stages ?? [])] as SagePipelineStage[]).sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+    : []
 
   function eventLabel(eventType: string) {
     const map: Record<string, string> = {
@@ -105,12 +118,18 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
               </div>
             )}
           </div>
-          <div className="text-right shrink-0">
+          <div className="flex flex-col items-end gap-2 shrink-0">
             <span className="text-xs text-gray-400">Added {timeAgo(contact.created_at)}</span>
-            <br />
-            <span className="text-xs px-2 py-0.5 rounded-full mt-1 inline-block bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400 capitalize">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400 capitalize">
               {contact.source}
             </span>
+            <ContactActionsClient
+              contact={contact}
+              pipelineId={firstPipeline?.id ?? null}
+              stages={firstStages}
+              allPipelines={allPipelines}
+              ownerName={user.email ?? ''}
+            />
           </div>
         </div>
         {contact.notes && (
@@ -131,7 +150,11 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
             {deals.length === 0 ? (
               <p className="px-5 py-8 text-sm text-gray-400 text-center">No deals linked to this contact.</p>
             ) : deals.map(deal => (
-              <div key={deal.id} className="flex items-center gap-3 px-5 py-3.5">
+              <Link
+                key={deal.id}
+                href={deal.pipeline_id ? `/sage/pipelines/${deal.pipeline_id}` : '#'}
+                className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors"
+              >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{deal.title}</p>
                   {deal.stage && (
@@ -149,7 +172,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
                     {deal.status}
                   </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import {
-  UserPlus, Search, Mail, Phone, Globe, ExternalLink, Trash2, Pencil,
+  UserPlus, Search, Mail, Phone, Globe, Trash2, Pencil,
   Zap, ArrowUpDown, SlidersHorizontal, Columns3, Check,
 } from 'lucide-react'
 import { ContactModal } from '@/components/sage/contact-modal'
@@ -73,6 +74,7 @@ const EMPTY_FILTER: FilterState = { contactType: [], lastContacted: '', tags: ''
 interface ContactsClientProps { contacts: SageContact[] }
 
 export function ContactsClient({ contacts: initial }: ContactsClientProps) {
+  const router = useRouter()
   const [contacts,       setContacts]       = useState(initial)
   const [showModal,      setShowModal]      = useState(false)
   const [editingContact, setEditingContact] = useState<SageContact | null>(null)
@@ -411,17 +413,18 @@ export function ContactsClient({ contacts: initial }: ContactsClientProps) {
             </thead>
             <tbody className="divide-y dark:divide-white/8">
               {filtered.map(contact => (
-                <tr key={contact.id} className="hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
+                <tr
+                  key={contact.id}
+                  className="hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer"
+                  onClick={() => router.push(`/sage/contacts/${contact.id}`)}
+                >
                   {visibleColDefs.map(col => (
                     <td key={col.key} className="px-4 py-3">
                       {renderCell(col.key, contact)}
                     </td>
                   ))}
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center gap-1 justify-end">
-                      <Link href={`/sage/contacts/${contact.id}`} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors" title="View">
-                        <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
-                      </Link>
                       <button
                         onClick={() => setEditingContact(contact)}
                         className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"

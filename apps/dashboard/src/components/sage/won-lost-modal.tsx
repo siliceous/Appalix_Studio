@@ -81,7 +81,7 @@ export function WonLostModal({ dealId, dealTitle, mode, onClose, onConfirm }: Wo
                   type="date"
                   value={wonDate}
                   onChange={e => setWonDate(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-400"
+                  className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-400 dark:[color-scheme:dark]"
                 />
               </div>
             </>
