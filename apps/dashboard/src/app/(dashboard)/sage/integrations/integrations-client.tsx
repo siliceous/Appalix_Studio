@@ -218,7 +218,7 @@ export function IntegrationsClient({ connected: initialConnected }: Integrations
   const categories = ['payments', 'automation', 'email', 'tickets', 'email_marketing'] as const
 
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="p-8 max-w-3xl mx-auto">
       <div className="mb-8">
         <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Integrations</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
