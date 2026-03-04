@@ -200,9 +200,11 @@ export default async function DashboardPage({
         .select('id, name, bot_type')
         .eq('workspace_id', workspaceId)
         .order('created_at', { ascending: false }),
+      // Use '*' so the query succeeds even if ai_* columns don't exist yet
+      // (they're added by migration 00036 — optional fields in Conversation type)
       supabase
         .from('conversations')
-        .select('id, title, platform, status, message_count, last_activity_at, bot_id, ai_priority, ai_summary, ai_insights, ai_action, ai_entities, ai_analyzed_at')
+        .select('*')
         .eq('workspace_id', workspaceId)
         .order('last_activity_at', { ascending: false })
         .limit(300),
