@@ -153,6 +153,26 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
   const contact = deal?.contact as Record<string, unknown> | null
   const stage   = deal?.stage   as Record<string, unknown> | null
 
+  // Typed extractions — Record<string,unknown> &&-expressions produce `unknown`, not ReactNode
+  const dealTitle      = (deal?.title       as string       ) ?? ''
+  const dealValue      = (deal?.value       as number | null) ?? null
+  const dealCurrency   = (deal?.currency    as string       ) ?? 'USD'
+  const dealStatus     = (deal?.status      as string       ) ?? ''
+  const dealPriority   = (deal?.priority    as string | null) ?? null
+  const dealCloseDate  = (deal?.close_date  as string | null) ?? null
+  const dealSource     = (deal?.source      as string | null) ?? null
+  const dealWinPct     = (deal?.win_percentage as number | null) ?? null
+  const dealWonAt      = (deal?.won_at      as string | null) ?? null
+  const dealLostReason = (deal?.lost_reason as string | null) ?? null
+  const dealDesc       = (deal?.description as string | null) ?? null
+  const dealTags       = Array.isArray(deal?.tags) ? (deal!.tags as string[]) : ([] as string[])
+  const dealPipelineId = (deal?.pipeline_id as string | null) ?? null
+  const contactName    = (contact?.name         as string | null) ?? null
+  const contactEmail   = (contact?.email        as string | null) ?? null
+  const contactPhone   = (contact?.phone        as string | null) ?? null
+  const contactCompany = (contact?.company_name as string | null) ?? null
+  const contactId      = (contact?.id           as string | null) ?? null
+
   return (
     <>
       {/* Backdrop */}
@@ -179,33 +199,33 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
               <div className="flex items-start gap-3">
                 <div className="flex-1 min-w-0">
                   <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 leading-snug">
-                    {deal.title as string}
+                    {dealTitle}
                   </h2>
                   {contact && (
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-                      {contact.name as string}
-                      {(contact.company_name as string | null) && ` · ${contact.company_name as string}`}
+                      {contactName}
+                      {contactCompany && ` · ${contactCompany}`}
                     </p>
                   )}
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    {deal.value && (
+                    {dealValue && (
                       <span className="flex items-center gap-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
                         <DollarSign className="w-3.5 h-3.5 text-gray-400" />
-                        {formatCurrency(deal.value as number, deal.currency as string)}
+                        {formatCurrency(dealValue, dealCurrency)}
                       </span>
                     )}
-                    {deal.close_date && (
+                    {dealCloseDate && (
                       <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                         <Calendar className="w-3 h-3" />
-                        Close {new Date(deal.close_date as string).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        Close {new Date(dealCloseDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </span>
                     )}
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium capitalize ${STATUS_BADGE[deal.status as string] ?? ''}`}>
-                      {deal.status as string}
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium capitalize ${STATUS_BADGE[dealStatus] ?? ''}`}>
+                      {dealStatus}
                     </span>
-                    {deal.priority && (
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium capitalize ${PRIORITY_BADGE[deal.priority as string] ?? ''}`}>
-                        {deal.priority as string}
+                    {dealPriority && (
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium capitalize ${PRIORITY_BADGE[dealPriority] ?? ''}`}>
+                        {dealPriority}
                       </span>
                     )}
                   </div>
@@ -213,7 +233,7 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
 
                 <div className="flex items-center gap-1.5 shrink-0">
                   {/* Won button */}
-                  {deal.status !== 'won' && (
+                  {dealStatus !== 'won' && (
                     <button
                       onClick={() => setWonLostMode('won')}
                       className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10 hover:bg-green-100 dark:hover:bg-green-500/20 rounded-lg border border-green-200 dark:border-green-500/20 transition-colors"
@@ -223,7 +243,7 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                     </button>
                   )}
                   {/* Lost button */}
-                  {deal.status !== 'lost' && (
+                  {dealStatus !== 'lost' && (
                     <button
                       onClick={() => setWonLostMode('lost')}
                       className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg border border-red-200 dark:border-red-500/20 transition-colors"
@@ -269,22 +289,22 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
               {activeTab === 'overview' && (
                 <div className="p-5 space-y-5">
                   {/* Won/Lost info */}
-                  {deal.status === 'won' && deal.won_at && (
+                  {dealStatus === 'won' && dealWonAt && (
                     <div className="p-3 bg-green-50 dark:bg-green-500/10 rounded-xl border border-green-200 dark:border-green-500/20 flex items-center gap-2">
                       <Trophy className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" />
                       <div>
                         <p className="text-sm font-semibold text-green-700 dark:text-green-300">Deal Won</p>
-                        <p className="text-xs text-green-600/70 dark:text-green-400/70">{formatDate(deal.won_at as string)}</p>
+                        <p className="text-xs text-green-600/70 dark:text-green-400/70">{formatDate(dealWonAt)}</p>
                       </div>
                     </div>
                   )}
-                  {deal.status === 'lost' && (
+                  {dealStatus === 'lost' && (
                     <div className="p-3 bg-red-50 dark:bg-red-500/10 rounded-xl border border-red-200 dark:border-red-500/20 flex items-center gap-2">
                       <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
                       <div>
                         <p className="text-sm font-semibold text-red-600 dark:text-red-400">Deal Lost</p>
-                        {deal.lost_reason && (
-                          <p className="text-xs text-red-500/70 dark:text-red-400/70">Reason: {deal.lost_reason as string}</p>
+                        {dealLostReason && (
+                          <p className="text-xs text-red-500/70 dark:text-red-400/70">Reason: {dealLostReason}</p>
                         )}
                       </div>
                     </div>
@@ -298,77 +318,79 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{stage.name as string}</p>
                       </div>
                     )}
-                    {deal.source && (
+                    {dealSource && (
                       <div className="p-3 bg-gray-50 dark:bg-white/[0.03] rounded-xl border dark:border-white/8">
                         <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1">Source</p>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 capitalize">{deal.source as string}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 capitalize">{dealSource}</p>
                       </div>
                     )}
-                    {deal.win_percentage != null && (
+                    {dealWinPct != null && (
                       <div className="p-3 bg-gray-50 dark:bg-white/[0.03] rounded-xl border dark:border-white/8">
                         <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1">Win %</p>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{deal.win_percentage as number}%</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{dealWinPct}%</p>
                       </div>
                     )}
-                    {deal.close_date && (
+                    {dealCloseDate && (
                       <div className="p-3 bg-gray-50 dark:bg-white/[0.03] rounded-xl border dark:border-white/8">
                         <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1">Close Date</p>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{formatDate(deal.close_date as string)}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{formatDate(dealCloseDate)}</p>
                       </div>
                     )}
                   </div>
 
                   {/* Contact card */}
-                  {contact && (
+                  {contact && contactName && (
                     <div className="p-3.5 bg-gray-50 dark:bg-white/[0.03] rounded-xl border dark:border-white/8">
                       <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-2">Contact</p>
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-[#ec732e]/15 flex items-center justify-center shrink-0">
                           <span className="text-xs font-semibold text-brand-600 dark:text-[#ec732e]">
-                            {(contact.name as string)?.charAt(0).toUpperCase()}
+                            {contactName.charAt(0).toUpperCase()}
                           </span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{contact.name as string}</p>
-                          {contact.email && (
-                            <p className="text-xs text-gray-400 truncate">{contact.email as string}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{contactName}</p>
+                          {contactEmail && (
+                            <p className="text-xs text-gray-400 truncate">{contactEmail}</p>
                           )}
-                          {contact.phone && (
-                            <p className="text-xs text-gray-400">{contact.phone as string}</p>
+                          {contactPhone && (
+                            <p className="text-xs text-gray-400">{contactPhone}</p>
                           )}
                         </div>
-                        <a
-                          href={`/sage/contacts/${contact.id as string}`}
-                          className="text-gray-400 hover:text-brand-600 dark:hover:text-[#ec732e] transition-colors"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
+                        {contactId && (
+                          <a
+                            href={`/sage/contacts/${contactId}`}
+                            className="text-gray-400 hover:text-brand-600 dark:hover:text-[#ec732e] transition-colors"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        )}
                       </div>
-                      {contact.company_name && (
+                      {contactCompany && (
                         <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-500 dark:text-gray-400">
                           <Building2 className="w-3 h-3" />
-                          {contact.company_name as string}
+                          {contactCompany}
                         </div>
                       )}
                     </div>
                   )}
 
                   {/* Description */}
-                  {deal.description && (
+                  {dealDesc && (
                     <div>
                       <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1.5">Description</p>
-                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{deal.description as string}</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{dealDesc}</p>
                     </div>
                   )}
 
                   {/* Tags */}
-                  {Array.isArray(deal.tags) && (deal.tags as string[]).length > 0 && (
+                  {dealTags.length > 0 && (
                     <div>
                       <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1.5 flex items-center gap-1">
                         <Tag className="w-3 h-3" /> Tags
                       </p>
                       <div className="flex flex-wrap gap-1.5">
-                        {(deal.tags as string[]).map(tag => (
+                        {dealTags.map(tag => (
                           <span key={tag} className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 rounded-full">
                             {tag}
                           </span>
@@ -378,12 +400,14 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                   )}
 
                   {/* View in Pipelines */}
-                  <a
-                    href={`/sage/pipelines/${deal.pipeline_id as string}`}
-                    className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-brand-600 dark:hover:text-[#ec732e] transition-colors"
-                  >
-                    View in Pipeline <ChevronRight className="w-3.5 h-3.5" />
-                  </a>
+                  {dealPipelineId && (
+                    <a
+                      href={`/sage/pipelines/${dealPipelineId}`}
+                      className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-brand-600 dark:hover:text-[#ec732e] transition-colors"
+                    >
+                      View in Pipeline <ChevronRight className="w-3.5 h-3.5" />
+                    </a>
+                  )}
                 </div>
               )}
 
