@@ -332,7 +332,7 @@ export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, e
   const labelCls   = 'block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1'
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+    <div className="flex flex-col gap-4">
       {error && (
         <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-sm text-red-700 dark:text-red-400">
           <AlertCircle className="w-4 h-4 shrink-0" />
