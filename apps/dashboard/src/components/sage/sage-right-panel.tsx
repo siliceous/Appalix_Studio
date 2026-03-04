@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
-import { Sparkles, Send, ChevronRight, ChevronLeft } from 'lucide-react'
+import { Sparkles, Send, ChevronRight, ChevronLeft, Mic, MicOff } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -37,8 +37,11 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
   const [messages,  setMessages]   = useState<Message[]>([])
   const [input,     setInput]      = useState('')
   const [loading,   setLoading]    = useState(false)
-  const bottomRef   = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [listening, setListening]  = useState(false)
+  const bottomRef      = useRef<HTMLDivElement>(null)
+  const textareaRef    = useRef<HTMLTextAreaElement>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -85,6 +88,40 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
     setInput(e.target.value)
     e.target.style.height = 'auto'
     e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
+  }
+
+  function toggleVoice() {
+    if (listening) {
+      recognitionRef.current?.stop()
+      setListening(false)
+      return
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any
+    const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition
+    if (!SR) return
+
+    const rec = new SR()
+    rec.lang = 'en-US'
+    rec.interimResults = false
+    rec.maxAlternatives = 1
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rec.onresult = (e: any) => {
+      const transcript = e.results[0][0].transcript
+      setInput(prev => (prev ? prev + ' ' + transcript : transcript))
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto'
+        textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px'
+      }
+    }
+    rec.onend  = () => setListening(false)
+    rec.onerror = () => setListening(false)
+
+    recognitionRef.current = rec
+    rec.start()
+    setListening(true)
   }
 
   // Collapsed state — just show a thin strip
@@ -185,10 +222,21 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
             value={input}
             onChange={autoResize}
             onKeyDown={handleKey}
-            placeholder="Ask Sage…"
+            placeholder={listening ? 'Listening…' : 'Ask Sage…'}
             disabled={loading}
             className="flex-1 bg-transparent text-xs text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 resize-none outline-none leading-relaxed max-h-[120px]"
           />
+          <button
+            onClick={toggleVoice}
+            title={listening ? 'Stop listening' : 'Speak to Sage'}
+            className={`shrink-0 w-6 h-6 rounded-lg flex items-center justify-center transition-colors ${
+              listening
+                ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse'
+                : 'text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] hover:bg-gray-100 dark:hover:bg-white/10'
+            }`}
+          >
+            {listening ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
+          </button>
           <button
             onClick={() => send(input)}
             disabled={!input.trim() || loading}
