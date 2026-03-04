@@ -164,8 +164,14 @@ export function ContactModal({ contact, onClose, onSaved }: ContactModalProps) {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelCls}>Tags <span className="text-gray-400 font-normal">(comma-sep)</span></label>
-                  <input name="tags" type="text" placeholder="hot-lead, enterprise" defaultValue={contact?.tags?.join(', ') ?? ''} className={inputCls} />
+                  <label className={labelCls}>Source</label>
+                  <select name="source" defaultValue={contact?.source ?? 'manual'} className={inputCls}>
+                    <option value="manual">Manual</option>
+                    <option value="bot">Bot</option>
+                    <option value="email">Email</option>
+                    <option value="form">Form</option>
+                    <option value="other">Other</option>
+                  </select>
                 </div>
                 <div>
                   <label className={labelCls}>Visibility</label>
@@ -174,6 +180,12 @@ export function ContactModal({ contact, onClose, onSaved }: ContactModalProps) {
                     <option value="team">Individuals (My Team)</option>
                     <option value="only_me">Only Me</option>
                   </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Tags <span className="text-gray-400 font-normal">(comma-sep)</span></label>
+                  <input name="tags" type="text" placeholder="hot-lead, enterprise" defaultValue={contact?.tags?.join(', ') ?? ''} className={inputCls} />
                 </div>
               </div>
               <div>

@@ -70,10 +70,11 @@ export async function createContact(formData: FormData) {
   const notes         = (formData.get('notes') as string | null)?.trim() || null
   const tagsRaw       = (formData.get('tags') as string | null)?.trim() || ''
   const tags          = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : []
+  const source        = ((formData.get('source') as string | null)?.trim() || 'manual')
 
   const { data, error } = await admin
     .from('sage_contacts')
-    .insert({ workspace_id: workspaceId, name, email, phone, title, contact_type, company_name, website_url, business_goal, street, city, state, zip, country, visibility, notes, tags, source: 'manual' })
+    .insert({ workspace_id: workspaceId, name, email, phone, title, contact_type, company_name, website_url, business_goal, street, city, state, zip, country, visibility, notes, tags, source })
     .select('*')
     .single()
 
@@ -106,10 +107,11 @@ export async function updateContact(id: string, formData: FormData) {
   const notes         = (formData.get('notes') as string | null)?.trim() || null
   const tagsRaw       = (formData.get('tags') as string | null)?.trim() || ''
   const tags          = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : []
+  const source        = ((formData.get('source') as string | null)?.trim() || 'manual')
 
   const { data, error } = await admin
     .from('sage_contacts')
-    .update({ name, email, phone, title, contact_type, company_name, website_url, business_goal, street, city, state, zip, country, visibility, notes, tags, updated_at: new Date().toISOString() })
+    .update({ name, email, phone, title, contact_type, company_name, website_url, business_goal, street, city, state, zip, country, visibility, notes, tags, source, updated_at: new Date().toISOString() })
     .eq('id', id)
     .eq('workspace_id', workspaceId)
     .select('*')
