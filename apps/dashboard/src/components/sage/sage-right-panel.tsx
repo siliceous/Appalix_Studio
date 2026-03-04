@@ -47,6 +47,18 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (collapsed) return
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if (e.key === 'm' || e.key === 'M') toggleVoice()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collapsed, listening])
+
   const send = useCallback(async (text: string) => {
     const trimmed = text.trim()
     if (!trimmed || loading) return
@@ -246,7 +258,7 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
           </button>
         </div>
         <p className="text-[9px] text-gray-400 dark:text-gray-600 text-center mt-1.5">
-          Shift+Enter for new line · Enter to send
+          Press <kbd className="font-mono bg-gray-200 dark:bg-white/10 px-0.5 rounded">M</kbd> for mic · Enter to send
         </p>
       </div>
     </div>
