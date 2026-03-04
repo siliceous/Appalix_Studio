@@ -27,10 +27,24 @@
     border-color: rgba(255, 255, 255, 0.08);
   }
 
+  /* Light mode card shadow — rounded white panels get a soft 20% drop shadow */
+  .rounded-xl.bg-white,
+  .rounded-2xl.bg-white,
+  .rounded-lg.bg-white {
+    box-shadow: 0 1px 4px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.10);
+  }
+
   /* Surfaces — catch all grey/white backgrounds across ALL pages */
   .dark .bg-white   { background-color: #2a2a2a; }
   .dark .bg-gray-50 { background-color: #232323; }
   .dark .bg-gray-100 { background-color: #303030; }
+
+  /* Remove shadow in dark mode */
+  .dark .rounded-xl.bg-white,
+  .dark .rounded-2xl.bg-white,
+  .dark .rounded-lg.bg-white {
+    box-shadow: none;
+  }
 
   /* Hover backgrounds */
   .dark .hover\:bg-gray-50:hover,
