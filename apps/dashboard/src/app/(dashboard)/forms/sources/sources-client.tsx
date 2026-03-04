@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { Check, Copy, ChevronDown, ChevronUp, ExternalLink, BookOpen, Loader2, Unplug, AlertCircle } from 'lucide-react'
-import { saveLeadSource, deleteLeadSource } from '@/app/actions/leads'
-import type { LeadAdSource, LeadAdPlatform } from '@/lib/types'
+import { Check, Copy, ChevronDown, ChevronUp, ExternalLink, BookOpen, Loader2, Unplug, AlertCircle, RefreshCw } from 'lucide-react'
+import { saveLeadSource, deleteLeadSource, syncFromEmailPlatform } from '@/app/actions/leads'
+import type { LeadAdSource, LeadAdPlatform, SageIntegration } from '@/lib/types'
 
 // ---------------------------------------------------------------------------
 // Platform definitions
@@ -134,13 +134,119 @@ function CopyButton({ text }: { text: string }) {
 // Main component
 // ---------------------------------------------------------------------------
 
+type EmailIntegration = Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at'>
+
 interface SourcesClientProps {
-  sources:     LeadAdSource[]
-  workspaceId: string
-  baseUrl:     string
+  sources:            LeadAdSource[]
+  workspaceId:        string
+  baseUrl:            string
+  emailIntegrations:  EmailIntegration[]
+  leadCounts:         Record<string, number>
 }
 
-export function SourcesClient({ sources: initialSources, workspaceId, baseUrl }: SourcesClientProps) {
+// ---------------------------------------------------------------------------
+// Email platform sync section (Mailchimp / ActiveCampaign)
+// ---------------------------------------------------------------------------
+
+const EMAIL_PLATFORM_META: Record<string, { name: string; emoji: string; color: string; docsPath: string }> = {
+  mailchimp: {
+    name:     'Mailchimp',
+    emoji:    '🐒',
+    color:    'bg-yellow-50 dark:bg-yellow-500/10 border-yellow-200 dark:border-yellow-500/20',
+    docsPath: '/sage/contacts/automations',
+  },
+  activecampaign: {
+    name:     'ActiveCampaign',
+    emoji:    '⚡',
+    color:    'bg-purple-50 dark:bg-purple-500/10 border-purple-200 dark:border-purple-500/20',
+    docsPath: '/sage/contacts/automations',
+  },
+}
+
+function EmailSyncCard({
+  integration,
+  leadCount,
+}: {
+  integration: EmailIntegration
+  leadCount:   number
+}) {
+  const meta = EMAIL_PLATFORM_META[integration.provider]
+  const [syncing,  setSyncing]  = useState(false)
+  const [result,   setResult]   = useState<{ synced: number; skipped: number } | null>(null)
+  const [error,    setError]    = useState<string | null>(null)
+  const [, startTransition]     = useTransition()
+
+  function handleSync() {
+    setSyncing(true)
+    setResult(null)
+    setError(null)
+    startTransition(async () => {
+      try {
+        const res = await syncFromEmailPlatform(integration.provider as 'mailchimp' | 'activecampaign')
+        setResult(res)
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Sync failed')
+      } finally {
+        setSyncing(false)
+      }
+    })
+  }
+
+  return (
+    <div className="bg-white dark:bg-[#232323] rounded-xl border border-gray-200 dark:border-white/8 overflow-hidden">
+      <div className="flex items-center gap-4 p-5">
+        <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-white/8 flex items-center justify-center text-xl shrink-0">
+          {meta.emoji}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{meta.name}</p>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+              Connected
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            {leadCount} lead{leadCount !== 1 ? 's' : ''} synced
+            {integration.updated_at && ` · Last sync: ${new Date(integration.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            href={meta.docsPath}
+            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+            title="Manage connection in Sage Automations"
+          >
+            <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
+          </Link>
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 disabled:bg-gray-300 dark:disabled:bg-white/10 text-white disabled:text-gray-400 rounded-lg transition-colors"
+          >
+            {syncing
+              ? <Loader2 className="w-3 h-3 animate-spin" />
+              : <RefreshCw className="w-3 h-3" />
+            }
+            {syncing ? 'Syncing…' : 'Sync Now'}
+          </button>
+        </div>
+      </div>
+
+      {(result || error) && (
+        <div className={`border-t px-5 py-3 text-xs ${error ? 'border-red-100 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400' : 'border-gray-100 dark:border-white/6 bg-gray-50 dark:bg-white/2 text-gray-500 dark:text-gray-400'}`}>
+          {error
+            ? error
+            : `✓ ${result!.synced} new lead${result!.synced !== 1 ? 's' : ''} imported · ${result!.skipped} duplicate${result!.skipped !== 1 ? 's' : ''} skipped`
+          }
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, emailIntegrations, leadCounts }: SourcesClientProps) {
   const [sources, setSources]   = useState<LeadAdSource[]>(initialSources)
   const [expanded, setExpanded] = useState<LeadAdPlatform | null>(null)
   const [formValues, setFormValues] = useState<Record<string, Record<string, string>>>({})
@@ -364,6 +470,31 @@ export function SourcesClient({ sources: initialSources, workspaceId, baseUrl }:
           </div>
         )
       })}
+
+      {/* Email platform sync — spans full width if present */}
+      {emailIntegrations.length > 0 && (
+        <div className="col-span-full mt-2">
+          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-3">
+            Sync from connected email platforms
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {emailIntegrations.map(integration => (
+              <EmailSyncCard
+                key={integration.provider}
+                integration={integration}
+                leadCount={leadCounts[integration.provider] ?? 0}
+              />
+            ))}
+          </div>
+          <p className="text-[10px] text-gray-400 mt-3">
+            These platforms are connected via{' '}
+            <Link href="/sage/contacts/automations" className="text-brand-400 hover:text-brand-300 transition-colors">
+              Sage → Automations
+            </Link>
+            . Sync imports their contacts as leads for AI analysis.
+          </p>
+        </div>
+      )}
     </div>
   )
 }

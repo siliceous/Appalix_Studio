@@ -3,7 +3,9 @@ import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { Header } from '@/components/layout/header'
 import { SourcesClient } from './sources-client'
-import type { WorkspaceMember, LeadAdSource } from '@/lib/types'
+import type { WorkspaceMember, LeadAdSource, SageIntegration } from '@/lib/types'
+
+const EMAIL_PROVIDERS = ['mailchimp', 'activecampaign'] as const
 
 export default async function SourcesPage() {
   const supabase = await createClient()
@@ -21,12 +23,37 @@ export default async function SourcesPage() {
   if (!membership) redirect('/login')
   const workspaceId = membership.workspace_id
 
-  const { data: sourcesRaw } = await supabase
-    .from('lead_ad_sources')
-    .select('*')
-    .eq('workspace_id', workspaceId)
+  const [
+    { data: sourcesRaw },
+    { data: emailIntegrationsRaw },
+    { data: leadCountsRaw },
+  ] = await Promise.all([
+    supabase
+      .from('lead_ad_sources')
+      .select('*')
+      .eq('workspace_id', workspaceId),
+    supabase
+      .from('sage_integrations')
+      .select('id, provider, status, updated_at')
+      .eq('workspace_id', workspaceId)
+      .eq('status', 'connected')
+      .in('provider', EMAIL_PROVIDERS),
+    supabase
+      .from('leads')
+      .select('source_platform')
+      .eq('workspace_id', workspaceId)
+      .in('source_platform', EMAIL_PROVIDERS),
+  ])
 
-  const sources = (sourcesRaw ?? []) as LeadAdSource[]
+  const sources           = (sourcesRaw ?? []) as LeadAdSource[]
+  const emailIntegrations = (emailIntegrationsRaw ?? []) as Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at'>[]
+
+  // Count leads per email platform
+  const leadCounts: Record<string, number> = {}
+  for (const row of leadCountsRaw ?? []) {
+    const p = (row as { source_platform: string }).source_platform
+    leadCounts[p] = (leadCounts[p] ?? 0) + 1
+  }
 
   const headersList = await headers()
   const host  = headersList.get('host') ?? 'appalix.ai'
@@ -44,6 +71,8 @@ export default async function SourcesPage() {
         sources={sources}
         workspaceId={workspaceId}
         baseUrl={baseUrl}
+        emailIntegrations={emailIntegrations}
+        leadCounts={leadCounts}
       />
     </div>
   )

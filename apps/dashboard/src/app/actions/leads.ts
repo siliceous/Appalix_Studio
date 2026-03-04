@@ -3,7 +3,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { LeadAdSource, Lead } from '@/lib/types'
+import type { LeadAdSource, Lead, LeadScore } from '@/lib/types'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -185,7 +185,11 @@ export async function moveLeadToPipeline(leadId: string): Promise<void> {
   const contactId = contactRaw ? (contactRaw as { id: string }).id : null
 
   // Create SageDeal
-  const platformLabel = lead.source_platform === 'meta' ? 'Meta Ads' : 'Google Ads'
+  const PLATFORM_LABELS: Record<string, string> = {
+    meta: 'Meta Ads', google_ads: 'Google Ads',
+    mailchimp: 'Mailchimp', activecampaign: 'ActiveCampaign',
+  }
+  const platformLabel = PLATFORM_LABELS[lead.source_platform] ?? lead.source_platform
   const dealTitle     = `${lead.name} – ${platformLabel}`
 
   await admin.from('sage_deals').insert({
@@ -214,4 +218,153 @@ export async function moveLeadToPipeline(leadId: string): Promise<void> {
 
   revalidatePath('/forms/leads')
   revalidatePath('/sage/pipelines')
+}
+
+// ---------------------------------------------------------------------------
+// Email Platform Sync (Mailchimp / ActiveCampaign)
+// ---------------------------------------------------------------------------
+
+interface NormalizedContact {
+  name:      string
+  email:     string | null
+  phone:     string | null
+  company:   string | null
+  job_title: string | null
+  raw:       Record<string, unknown>
+}
+
+function scoreContact(c: NormalizedContact): LeadScore {
+  const n = [c.email, c.phone, c.company, c.job_title].filter(Boolean).length
+  return n >= 3 ? 'high' : n >= 2 ? 'medium' : 'low'
+}
+
+async function fetchMailchimpContacts(config: Record<string, string>): Promise<NormalizedContact[]> {
+  const { api_key, server, list_id } = config
+  const results: NormalizedContact[] = []
+  let offset = 0
+  const count = 1000
+
+  while (true) {
+    const res = await fetch(
+      `https://${server}.api.mailchimp.com/3.0/lists/${list_id}/members?count=${count}&offset=${offset}&status=subscribed`,
+      { headers: { Authorization: `Basic ${Buffer.from(`any:${api_key}`).toString('base64')}` } }
+    )
+    if (!res.ok) break
+    const data = await res.json() as { members?: Record<string, unknown>[]; total_items?: number }
+    const members = data.members ?? []
+    for (const m of members) {
+      const mf = (m.merge_fields ?? {}) as Record<string, string>
+      const name = (m.full_name as string | undefined) ||
+        `${mf.FNAME ?? ''} ${mf.LNAME ?? ''}`.trim() ||
+        (m.email_address as string)
+      results.push({
+        name,
+        email:     (m.email_address as string | null) ?? null,
+        phone:     mf.PHONE   ?? null,
+        company:   mf.COMPANY ?? null,
+        job_title: null,
+        raw:       m,
+      })
+    }
+    if (members.length < count) break
+    offset += count
+  }
+  return results
+}
+
+async function fetchActiveCampaignContacts(config: Record<string, string>): Promise<NormalizedContact[]> {
+  const { api_url, api_key } = config
+  const results: NormalizedContact[] = []
+  let offset = 0
+  const limit = 100
+
+  while (true) {
+    const res = await fetch(
+      `${api_url.replace(/\/$/, '')}/api/3/contacts?limit=${limit}&offset=${offset}`,
+      { headers: { 'Api-Token': api_key } }
+    )
+    if (!res.ok) break
+    const data = await res.json() as { contacts?: Record<string, unknown>[] }
+    const contacts = data.contacts ?? []
+    for (const c of contacts) {
+      const name = `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() || (c.email as string)
+      results.push({
+        name,
+        email:     (c.email     as string | null) ?? null,
+        phone:     (c.phone     as string | null) ?? null,
+        company:   (c.orgname   as string | null) ?? null,
+        job_title: null,
+        raw:       c,
+      })
+    }
+    if (contacts.length < limit) break
+    offset += limit
+  }
+  return results
+}
+
+export async function syncFromEmailPlatform(
+  provider: 'mailchimp' | 'activecampaign',
+): Promise<{ synced: number; skipped: number }> {
+  const workspaceId = await getWorkspaceId()
+  const admin       = createAdminClient()
+
+  // Read stored credentials from sage_integrations
+  const { data: integrationRaw } = await admin
+    .from('sage_integrations')
+    .select('config')
+    .eq('workspace_id', workspaceId)
+    .eq('provider', provider)
+    .eq('status', 'connected')
+    .maybeSingle()
+
+  if (!integrationRaw) throw new Error(`${provider} is not connected. Connect it in Sage → Automations first.`)
+  const config = integrationRaw.config as Record<string, string>
+
+  // Fetch contacts from the platform
+  const contacts = provider === 'mailchimp'
+    ? await fetchMailchimpContacts(config)
+    : await fetchActiveCampaignContacts(config)
+
+  let synced  = 0
+  let skipped = 0
+
+  for (const contact of contacts) {
+    if (!contact.email && !contact.phone) { skipped++; continue }
+
+    // Deduplicate by email or phone within workspace
+    const orFilter = [
+      contact.email ? `email.eq.${contact.email}` : null,
+      contact.phone ? `phone.eq.${contact.phone}` : null,
+    ].filter(Boolean).join(',')
+
+    const { data: existing } = await admin
+      .from('leads')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .or(orFilter)
+      .limit(1)
+      .maybeSingle()
+
+    if (existing) { skipped++; continue }
+
+    await admin.from('leads').insert({
+      workspace_id:    workspaceId,
+      source_id:       null,
+      source_platform: provider,
+      name:            contact.name,
+      email:           contact.email,
+      phone:           contact.phone,
+      company:         contact.company,
+      job_title:       contact.job_title,
+      lead_score:      scoreContact(contact),
+      pipeline_stage:  'new_lead',
+      raw_payload:     contact.raw,
+    })
+    synced++
+  }
+
+  revalidatePath('/forms/leads')
+  revalidatePath('/forms/analytics')
+  return { synced, skipped }
 }

@@ -406,7 +406,7 @@ export interface SageReminder {
 // ---------------------------------------------------------------
 // Lead Ads (Forms section)
 // ---------------------------------------------------------------
-export type LeadAdPlatform = 'meta' | 'google_ads'
+export type LeadAdPlatform = 'meta' | 'google_ads' | 'mailchimp' | 'activecampaign'
 export type LeadScore = 'high' | 'medium' | 'low'
 
 export interface LeadAdSourceConfig {

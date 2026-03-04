@@ -11,13 +11,17 @@ import type { Lead, LeadAdPlatform, LeadScore } from '@/lib/types'
 // ---------------------------------------------------------------------------
 
 const PLATFORM_LABEL: Record<LeadAdPlatform, string> = {
-  meta:       'Meta Ads',
-  google_ads: 'Google Ads',
+  meta:           'Meta Ads',
+  google_ads:     'Google Ads',
+  mailchimp:      'Mailchimp',
+  activecampaign: 'ActiveCampaign',
 }
 
 const PLATFORM_COLOR: Record<LeadAdPlatform, string> = {
-  meta:       'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400',
-  google_ads: 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400',
+  meta:           'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400',
+  google_ads:     'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400',
+  mailchimp:      'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400',
+  activecampaign: 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400',
 }
 
 const SCORE_STYLES: Record<LeadScore, string> = {
@@ -128,6 +132,8 @@ export function LeadsClient({ leads: initial }: LeadsClientProps) {
             <option value="all">All platforms</option>
             <option value="meta">Meta Ads</option>
             <option value="google_ads">Google Ads</option>
+            <option value="mailchimp">Mailchimp</option>
+            <option value="activecampaign">ActiveCampaign</option>
           </select>
           <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
         </div>
