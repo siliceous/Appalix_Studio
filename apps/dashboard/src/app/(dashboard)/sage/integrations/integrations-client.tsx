@@ -11,7 +11,7 @@ interface IntegrationCard {
   name:        string
   description: string
   logo:        string
-  category:    'automation' | 'email' | 'tickets' | 'payments'
+  category:    'automation' | 'email' | 'tickets' | 'payments' | 'email_marketing'
   fields:      Array<{ name: string; label: string; type: string; placeholder: string; hint?: string }>
   docsUrl?:    string
   tutorialUrl?: string
@@ -95,13 +95,77 @@ const INTEGRATIONS: IntegrationCard[] = [
     docsUrl:     'https://support.zendesk.com/hc/en-us/articles/4408889192858',
     tutorialUrl: '/resources/connect-sage-zendesk',
   },
+  // ── Email Marketing ───────────────────────────────────────────────────────
+  {
+    provider:    'mailchimp',
+    name:        'Mailchimp',
+    description: 'Sync contacts to Mailchimp audiences automatically and pull lead form data into your Forms section for AI analysis.',
+    logo:        '🐒',
+    category:    'email_marketing',
+    fields: [
+      { name: 'api_key',  label: 'API Key',        type: 'password', placeholder: 'Your Mailchimp API key', hint: 'Found in Mailchimp → Account → Extras → API Keys' },
+      { name: 'server',   label: 'Server Prefix',   type: 'text',     placeholder: 'us1 (from https://us1.api.mailchimp.com)', hint: 'The subdomain in your Mailchimp API endpoint URL' },
+      { name: 'list_id',  label: 'Audience ID',     type: 'text',     placeholder: 'Your audience/list ID', hint: 'Found in Audience → Settings → Audience name and defaults' },
+    ],
+    docsUrl: 'https://mailchimp.com/developer/marketing/guides/quick-start/',
+  },
+  {
+    provider:    'activecampaign',
+    name:        'ActiveCampaign',
+    description: 'Push contacts to ActiveCampaign lists and trigger automations. Pull existing contacts into Forms for AI lead analysis.',
+    logo:        '⚡',
+    category:    'email_marketing',
+    fields: [
+      { name: 'api_url', label: 'API URL',  type: 'url',      placeholder: 'https://youraccountname.api-us1.com', hint: 'Found in ActiveCampaign → Settings → Developer' },
+      { name: 'api_key', label: 'API Key',  type: 'password', placeholder: 'Your ActiveCampaign API key' },
+    ],
+    docsUrl: 'https://developers.activecampaign.com/reference/overview',
+  },
+  {
+    provider:    'convertkit',
+    name:        'Kit (ConvertKit)',
+    description: 'Add contacts as Kit subscribers and apply tags. Ideal for creators and course-based businesses.',
+    logo:        '✉️',
+    category:    'email_marketing',
+    fields: [
+      { name: 'api_key',    label: 'API Key',    type: 'password', placeholder: 'Your Kit API key', hint: 'Found in Kit → Settings → Advanced → API' },
+      { name: 'api_secret', label: 'API Secret', type: 'password', placeholder: 'Your Kit API secret' },
+    ],
+    docsUrl: 'https://developers.kit.com/v4',
+  },
+  {
+    provider:    'klaviyo',
+    name:        'Klaviyo',
+    description: 'Sync contacts to Klaviyo lists and trigger flows. Great for e-commerce and lifecycle email marketing.',
+    logo:        '📊',
+    category:    'email_marketing',
+    fields: [
+      { name: 'api_key', label: 'Private API Key', type: 'password', placeholder: 'pk_…', hint: 'Found in Klaviyo → Settings → API Keys → Create Private API Key' },
+      { name: 'list_id', label: 'List ID',         type: 'text',     placeholder: 'Your Klaviyo list ID', hint: 'Found in Lists & Segments → your list → Settings' },
+    ],
+    docsUrl: 'https://developers.klaviyo.com/en/reference/api-overview',
+  },
+  {
+    provider:    'constantcontact',
+    name:        'Constant Contact',
+    description: 'Add new contacts to Constant Contact lists and keep them in sync as contact details are updated.',
+    logo:        '📬',
+    category:    'email_marketing',
+    fields: [
+      { name: 'api_key',      label: 'API Key',      type: 'password', placeholder: 'Your Constant Contact API key' },
+      { name: 'access_token', label: 'Access Token', type: 'password', placeholder: 'OAuth access token', hint: 'Generate via Constant Contact developer portal' },
+      { name: 'list_id',      label: 'List ID',      type: 'text',     placeholder: 'Contact list ID to sync to' },
+    ],
+    docsUrl: 'https://developer.constantcontact.com/api_reference/',
+  },
 ]
 
 const CATEGORY_LABELS: Record<string, string> = {
-  payments:   'Payments',
-  automation: 'Automation',
-  email:      'Email',
-  tickets:    'Tickets',
+  payments:        'Payments',
+  automation:      'Automation',
+  email:           'Email',
+  tickets:         'Tickets',
+  email_marketing: 'Email Marketing',
 }
 
 interface IntegrationsClientProps {
@@ -151,7 +215,7 @@ export function IntegrationsClient({ connected: initialConnected }: Integrations
     })
   }
 
-  const categories = ['payments', 'automation', 'email', 'tickets'] as const
+  const categories = ['payments', 'automation', 'email', 'tickets', 'email_marketing'] as const
 
   return (
     <div className="p-8 max-w-3xl">
