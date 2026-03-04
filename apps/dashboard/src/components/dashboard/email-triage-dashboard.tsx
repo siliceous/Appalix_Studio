@@ -839,31 +839,38 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
         ) : (
           <>
             {/* ── Select All + Delete toolbar ── */}
-            <div className="flex items-center gap-2 px-5 py-2 border-b dark:border-white/8 shrink-0">
+            <div className="flex items-center gap-3 px-5 py-2 border-b dark:border-white/8 bg-white dark:bg-[#1a1a1a] shrink-0">
               <button
                 onClick={() => {
                   const allSel = visible.every(t => selectedIds.has(t.email.id))
                   setSelectedIds(allSel ? new Set() : new Set(visible.map(t => t.email.id)))
                 }}
-                className="text-[11px] font-medium text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                className="flex items-center gap-2 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
               >
-                {visible.every(t => selectedIds.has(t.email.id)) ? 'Deselect all' : `Select all (${visible.length})`}
+                <span className={cn(
+                  'w-3.5 h-3.5 rounded border flex items-center justify-center transition-colors',
+                  visible.every(t => selectedIds.has(t.email.id)) && visible.length > 0
+                    ? 'bg-blue-600 border-blue-600'
+                    : 'border-gray-300 dark:border-white/20',
+                )}>
+                  {visible.every(t => selectedIds.has(t.email.id)) && visible.length > 0 && (
+                    <Check className="w-2 h-2 text-white" strokeWidth={3} />
+                  )}
+                </span>
+                {selectedIds.size > 0
+                  ? `${selectedIds.size} selected`
+                  : `Select all (${visible.length})`}
               </button>
-              {selectedIds.size > 0 && (
-                <>
-                  <span className="text-gray-200 dark:text-white/10">|</span>
-                  <span className="text-[11px] text-gray-400">{selectedIds.size} selected</span>
-                  <button
-                    onClick={handleDeleteSelected}
-                    disabled={isDeleting}
-                    title={`Delete ${selectedIds.size} selected`}
-                    className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50 transition-colors font-medium"
-                  >
-                    {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-                    Delete
-                  </button>
-                </>
-              )}
+
+              <button
+                onClick={handleDeleteSelected}
+                disabled={selectedIds.size === 0 || isDeleting}
+                title={selectedIds.size > 0 ? `Delete ${selectedIds.size} selected` : 'Select emails first'}
+                className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:text-red-600 hover:border-red-200 dark:hover:border-red-500/30 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-gray-200 dark:disabled:hover:border-white/10 disabled:hover:text-gray-500 transition-colors"
+              >
+                {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                Delete
+              </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-5 space-y-7">
