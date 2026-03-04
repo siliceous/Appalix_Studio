@@ -68,7 +68,7 @@ export default async function AnalyticsPage() {
   ]
 
   return (
-    <div>
+    <div className="p-8">
       <Header
         title="Campaign Analytics"
         description="Lead performance across all connected platforms"

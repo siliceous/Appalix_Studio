@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Inbox, Zap } from 'lucide-react'
+import { SageRightPanel } from '@/components/sage/sage-right-panel'
 import type { Workspace } from '@/lib/types'
 
 export default async function FormsLayout({ children }: { children: React.ReactNode }) {
@@ -54,5 +55,12 @@ export default async function FormsLayout({ children }: { children: React.ReactN
     )
   }
 
-  return <>{children}</>
+  return (
+    <div className="flex h-[calc(100vh-0px)] -m-8 overflow-hidden">
+      <div className="flex-1 h-full overflow-auto bg-gray-50 dark:bg-[#1c1c1c]">
+        {children}
+      </div>
+      <SageRightPanel workspaceId={workspace.id} />
+    </div>
+  )
 }

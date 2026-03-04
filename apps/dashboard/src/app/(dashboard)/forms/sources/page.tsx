@@ -34,7 +34,7 @@ export default async function SourcesPage() {
   const baseUrl = `${proto}://${host}`
 
   return (
-    <div>
+    <div className="p-8">
       <Header
         title="Sources"
         description="Connect ad platforms to receive leads automatically"
