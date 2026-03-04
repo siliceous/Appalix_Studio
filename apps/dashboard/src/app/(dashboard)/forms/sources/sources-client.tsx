@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Check, Copy, ChevronDown, ChevronUp, ExternalLink, Loader2, Unplug, AlertCircle } from 'lucide-react'
+import Link from 'next/link'
+import { Check, Copy, ChevronDown, ChevronUp, ExternalLink, BookOpen, Loader2, Unplug, AlertCircle } from 'lucide-react'
 import { saveLeadSource, deleteLeadSource } from '@/app/actions/leads'
 import type { LeadAdSource, LeadAdPlatform } from '@/lib/types'
 
@@ -21,7 +22,8 @@ interface PlatformDef {
     placeholder: string
     hint:        string
   }[]
-  docsUrl: string
+  docsUrl:     string
+  tutorialUrl: string
 }
 
 const PLATFORMS: PlatformDef[] = [
@@ -39,7 +41,8 @@ const PLATFORMS: PlatformDef[] = [
         hint:        'The key you set in Google Ads → Lead Forms → Webhook → Key',
       },
     ],
-    docsUrl: 'https://support.google.com/google-ads/answer/9423895',
+    docsUrl:     'https://support.google.com/google-ads/answer/9423895',
+    tutorialUrl: '/resources/connect-google-ads-leads',
   },
   {
     platform:    'meta',
@@ -69,7 +72,8 @@ const PLATFORMS: PlatformDef[] = [
         hint:        'Long-lived Page Access Token from your Facebook Page',
       },
     ],
-    docsUrl: 'https://developers.facebook.com/docs/marketing-api/guides/lead-ads/retrieving/',
+    docsUrl:     'https://developers.facebook.com/docs/marketing-api/guides/lead-ads/retrieving/',
+    tutorialUrl: '/resources/connect-meta-leads',
   },
 ]
 
@@ -290,6 +294,17 @@ export function SourcesClient({ sources: initialSources, workspaceId, baseUrl }:
                   <p className="text-[10px] text-gray-400 mt-1">Paste this URL into your {def.name} settings</p>
                 </div>
 
+                {/* Tutorial link */}
+                <Link
+                  href={def.tutorialUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-brand-400 hover:text-brand-300 transition-colors"
+                >
+                  <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                  Step-by-step setup guide →
+                </Link>
+
                 {/* Fields */}
                 {def.fields.map(field => (
                   <div key={field.name}>
@@ -327,12 +342,23 @@ export function SourcesClient({ sources: initialSources, workspaceId, baseUrl }:
                     <CopyButton text={webhookUrl} />
                   </div>
                 </div>
-                <button
-                  onClick={() => setExpanded(null)}
-                  className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                >
-                  Close
-                </button>
+                <div className="flex items-center justify-between">
+                  <Link
+                    href={def.tutorialUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-xs text-brand-400 hover:text-brand-300 transition-colors"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                    Setup guide →
+                  </Link>
+                  <button
+                    onClick={() => setExpanded(null)}
+                    className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             )}
           </div>
