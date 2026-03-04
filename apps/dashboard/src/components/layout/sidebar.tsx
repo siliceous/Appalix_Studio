@@ -73,7 +73,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/forms/leads',     label: 'All Leads',  icon: Inbox },
       { href: '/forms/sources',   label: 'Sources',    icon: Rss },
-      { href: '/forms/analytics', label: 'Analytics',  icon: PieChart },
+      { href: '/forms/analytics', label: 'Form Analytics',  icon: PieChart },
     ],
   },
   {

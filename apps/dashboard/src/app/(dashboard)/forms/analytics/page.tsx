@@ -70,7 +70,7 @@ export default async function AnalyticsPage() {
   return (
     <div className="p-8">
       <Header
-        title="Campaign Analytics"
+        title="Form Analytics"
         description="Lead performance across all connected platforms"
       />
 
