@@ -106,7 +106,7 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
   }
 
   return (
-    <div className="w-80 shrink-0 border-l dark:border-white/8 bg-white dark:bg-[#232323] flex flex-col">
+    <div className="w-80 shrink-0 border-l dark:border-white/8 bg-white dark:bg-[#232323] flex flex-col shadow-[-4px_0_16px_rgba(0,0,0,0.06)] dark:shadow-[-4px_0_16px_rgba(0,0,0,0.25)]">
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-[#61c2ad]/20 dark:border-[#61c2ad]/15 bg-[#61c2ad]/[0.08] dark:bg-[#61c2ad]/10 shrink-0">
         <div className="w-6 h-6 rounded-md bg-brand-50 dark:bg-[#61c2ad]/10 flex items-center justify-center">
