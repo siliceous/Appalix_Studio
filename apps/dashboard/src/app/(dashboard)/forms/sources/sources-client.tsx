@@ -26,6 +26,22 @@ interface PlatformDef {
 
 const PLATFORMS: PlatformDef[] = [
   {
+    platform:    'google_ads',
+    name:        'Google Ads',
+    description: 'Automatically capture leads submitted through Google Ads Lead Form Extensions.',
+    color:       'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400',
+    fields: [
+      {
+        name:        'webhook_key',
+        label:       'Webhook Key',
+        type:        'text',
+        placeholder: 'my-google-webhook-key',
+        hint:        'The key you set in Google Ads → Lead Forms → Webhook → Key',
+      },
+    ],
+    docsUrl: 'https://support.google.com/google-ads/answer/9423895',
+  },
+  {
     platform:    'meta',
     name:        'Meta (Facebook & Instagram)',
     description: 'Receive leads from Facebook and Instagram Lead Ad forms in real time.',
@@ -54,22 +70,6 @@ const PLATFORMS: PlatformDef[] = [
       },
     ],
     docsUrl: 'https://developers.facebook.com/docs/marketing-api/guides/lead-ads/retrieving/',
-  },
-  {
-    platform:    'google_ads',
-    name:        'Google Ads',
-    description: 'Automatically capture leads submitted through Google Ads Lead Form Extensions.',
-    color:       'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400',
-    fields: [
-      {
-        name:        'webhook_key',
-        label:       'Webhook Key',
-        type:        'text',
-        placeholder: 'my-google-webhook-key',
-        hint:        'The key you set in Google Ads → Lead Forms → Webhook → Key',
-      },
-    ],
-    docsUrl: 'https://support.google.com/google-ads/answer/9423895',
   },
 ]
 
@@ -197,7 +197,7 @@ export function SourcesClient({ sources: initialSources, workspaceId, baseUrl }:
   const labelCls   = 'block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1'
 
   return (
-    <div className="space-y-4 max-w-2xl">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
       {error && (
         <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-sm text-red-700 dark:text-red-400">
           <AlertCircle className="w-4 h-4 shrink-0" />
