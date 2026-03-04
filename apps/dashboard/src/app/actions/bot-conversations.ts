@@ -22,6 +22,29 @@ async function getWorkspaceId(): Promise<string | null> {
 }
 
 /**
+ * Rename a bot conversation title.
+ */
+export async function renameConversation(
+  conversationId: string,
+  title:          string,
+): Promise<{ error?: string }> {
+  const supabase    = await createClient()
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { error: 'Not authenticated' }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
+    .from('conversations')
+    .update({ title: title.trim() || null })
+    .eq('id', conversationId)
+    .eq('workspace_id', workspaceId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard')
+  return {}
+}
+
+/**
  * Trigger AI analysis for bot conversations in the workspace.
  * If conversationIds is provided, only those conversations are re-analysed.
  * Otherwise, analyses up to batchSize conversations that have never been processed.

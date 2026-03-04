@@ -5,10 +5,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Bot, Brain, Check, X, ChevronRight, Loader2,
-  UserPlus, Ticket, Sparkles, Plus, Phone, Tag,
+  UserPlus, Ticket, Sparkles, Plus, Phone, Tag, Pencil,
 } from 'lucide-react'
 import { triageCreateLead, triageCreateTicket } from '@/app/actions/sage-triage'
-import { analyzeConversations } from '@/app/actions/bot-conversations'
+import { analyzeConversations, renameConversation } from '@/app/actions/bot-conversations'
 import type { Conversation } from '@/lib/types'
 import { timeAgo, PLATFORM_META, cn } from '@/lib/utils'
 
@@ -52,21 +52,44 @@ function sortByPriority(a: TriageConversation, b: TriageConversation): number {
 // ─── Triage Card (grid view) ───────────────────────────────────────────────
 
 interface CardProps {
-  tc:         TriageConversation
-  isDone:     boolean
+  tc:          TriageConversation
+  isDone:      boolean
   actionLabel: string | undefined
-  isSelected: boolean
-  onSelect:   (id: string) => void
+  isSelected:  boolean
+  onSelect:    (id: string) => void
+  onRename:    (id: string, title: string) => void
 }
 
-function ConvCard({ tc, isDone, actionLabel, isSelected, onSelect }: CardProps) {
+function ConvCard({ tc, isDone, actionLabel, isSelected, onSelect, onRename }: CardProps) {
   const { conversation, botName } = tc
   const platform = conversation.platform
   const meta     = platform ? PLATFORM_META[platform] : null
 
+  const [isEditing, setIsEditing] = useState(false)
+  const [editValue, setEditValue] = useState(conversation.title ?? '')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  function startEdit(e: React.MouseEvent) {
+    e.stopPropagation()
+    setEditValue(conversation.title ?? '')
+    setIsEditing(true)
+    setTimeout(() => inputRef.current?.select(), 0)
+  }
+
+  function commitEdit() {
+    setIsEditing(false)
+    const trimmed = editValue.trim()
+    if (trimmed !== (conversation.title ?? '')) onRename(conversation.id, trimmed)
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter')  { e.preventDefault(); commitEdit() }
+    if (e.key === 'Escape') { setIsEditing(false); setEditValue(conversation.title ?? '') }
+  }
+
   return (
     <div
-      onClick={e => { e.stopPropagation(); onSelect(isSelected ? '' : conversation.id) }}
+      onClick={e => { if (!isEditing) { e.stopPropagation(); onSelect(isSelected ? '' : conversation.id) } }}
       className={cn(
         'flex flex-col bg-white dark:bg-[#232323] rounded-xl border transition-all cursor-pointer hover:shadow-sm',
         isSelected
@@ -117,16 +140,38 @@ function ConvCard({ tc, isDone, actionLabel, isSelected, onSelect }: CardProps) 
             : conversation.ai_priority === 'medium' ? 'bg-amber-100 dark:bg-amber-500/15'
             : 'bg-gray-100 dark:bg-white/5',
           )}>
-              <Bot className={cn('w-3.5 h-3.5',
+            <Bot className={cn('w-3.5 h-3.5',
               conversation.ai_priority === 'high'   ? 'text-[#61c2ad]'
               : conversation.ai_priority === 'medium' ? 'text-amber-600 dark:text-amber-400'
               : 'text-gray-400'
             )} />
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-              {conversation.title ?? 'Untitled conversation'}
-            </p>
+          <div className="min-w-0 flex-1">
+            {isEditing ? (
+              <input
+                ref={inputRef}
+                value={editValue}
+                onChange={e => setEditValue(e.target.value)}
+                onBlur={commitEdit}
+                onKeyDown={handleKeyDown}
+                onClick={e => e.stopPropagation()}
+                className="w-full text-sm font-semibold bg-white dark:bg-[#2a2a2a] border border-blue-400 dark:border-blue-500 rounded px-1.5 py-0.5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                autoFocus
+              />
+            ) : (
+              <div className="flex items-center gap-1 group/title">
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                  {conversation.title ?? 'Untitled conversation'}
+                </p>
+                <button
+                  onClick={startEdit}
+                  title="Rename"
+                  className="shrink-0 opacity-0 group-hover/title:opacity-100 transition-opacity text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+              </div>
+            )}
             <p className="text-[11px] text-gray-400">
               {conversation.message_count ?? 0} messages
               {meta ? ` · ${meta.label}` : ''}
@@ -150,10 +195,11 @@ interface DetailCardProps {
   onDismiss:   (id: string) => void
   onClose:     () => void
   onAnalyze:   (id: string) => void
+  onRename:    (id: string, title: string) => void
   isAnalyzing: boolean
 }
 
-function DetailCard({ tc, actioned, onAction, onDismiss, onClose, onAnalyze, isAnalyzing }: DetailCardProps) {
+function DetailCard({ tc, actioned, onAction, onDismiss, onClose, onAnalyze, onRename, isAnalyzing }: DetailCardProps) {
   const { conversation, botName } = tc
   const entities   = conversation.ai_entities
   const isDone     = actioned.has(conversation.id)
@@ -161,6 +207,28 @@ function DetailCard({ tc, actioned, onAction, onDismiss, onClose, onAnalyze, isA
   const action     = conversation.ai_action
   const platform   = conversation.platform
   const meta       = platform ? PLATFORM_META[platform] : null
+
+  const [isTitleEditing, setIsTitleEditing] = useState(false)
+  const [titleValue,     setTitleValue]     = useState(conversation.title ?? '')
+  const titleInputRef = useRef<HTMLInputElement>(null)
+
+  function startTitleEdit(e: React.MouseEvent) {
+    e.stopPropagation()
+    setTitleValue(conversation.title ?? '')
+    setIsTitleEditing(true)
+    setTimeout(() => titleInputRef.current?.select(), 0)
+  }
+
+  function commitTitleEdit() {
+    setIsTitleEditing(false)
+    const trimmed = titleValue.trim()
+    if (trimmed !== (conversation.title ?? '')) onRename(conversation.id, trimmed)
+  }
+
+  function handleTitleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter')  { e.preventDefault(); commitTitleEdit() }
+    if (e.key === 'Escape') { setIsTitleEditing(false); setTitleValue(conversation.title ?? '') }
+  }
 
   return (
     <div className={cn(
@@ -176,9 +244,30 @@ function DetailCard({ tc, actioned, onAction, onDismiss, onClose, onAnalyze, isA
       <div className="px-6 pt-5 pb-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-50 leading-tight">
-              {conversation.title ?? 'Untitled conversation'}
-            </h2>
+            {isTitleEditing ? (
+              <input
+                ref={titleInputRef}
+                value={titleValue}
+                onChange={e => setTitleValue(e.target.value)}
+                onBlur={commitTitleEdit}
+                onKeyDown={handleTitleKeyDown}
+                className="w-full text-xl font-bold bg-white dark:bg-[#2a2a2a] border border-blue-400 dark:border-blue-500 rounded-lg px-2 py-1 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-400 leading-tight"
+                autoFocus
+              />
+            ) : (
+              <div className="flex items-center gap-2 group/dtitle">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-50 leading-tight">
+                  {conversation.title ?? 'Untitled conversation'}
+                </h2>
+                <button
+                  onClick={startTitleEdit}
+                  title="Rename"
+                  className="shrink-0 opacity-0 group-hover/dtitle:opacity-100 transition-opacity text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mt-0.5"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
             <div className="flex items-center gap-2 mt-2.5 flex-wrap">
               {/* Bot badge */}
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-xs font-semibold text-blue-700 dark:text-blue-400">
@@ -394,6 +483,10 @@ export function BotTriageDashboard({ triageConversations }: Props) {
       else if (res.analyzed === 0) setAnalyzeMsg('Analysis returned no results — check API logs')
       router.refresh()
     })
+  }
+
+  function handleRename(convId: string, title: string) {
+    void renameConversation(convId, title).then(() => router.refresh())
   }
 
   function dismiss(convId: string) {
@@ -635,6 +728,7 @@ export function BotTriageDashboard({ triageConversations }: Props) {
                     onDismiss={dismiss}
                     onClose={() => setSelectedId('')}
                     onAnalyze={handleAnalyzeOne}
+                    onRename={handleRename}
                     isAnalyzing={isAnalyzing}
                   />
                 </div>
@@ -665,6 +759,7 @@ export function BotTriageDashboard({ triageConversations }: Props) {
                         isDone={actioned.has(tc.conversation.id)} actionLabel={actioned.get(tc.conversation.id)}
                         isSelected={selectedId === tc.conversation.id}
                         onSelect={id => setSelectedId(selectedId === id ? '' : id)}
+                        onRename={handleRename}
                       />
                     ))}
                   </div>
@@ -687,6 +782,7 @@ export function BotTriageDashboard({ triageConversations }: Props) {
                         isDone={actioned.has(tc.conversation.id)} actionLabel={actioned.get(tc.conversation.id)}
                         isSelected={selectedId === tc.conversation.id}
                         onSelect={id => setSelectedId(selectedId === id ? '' : id)}
+                        onRename={handleRename}
                       />
                     ))}
                   </div>
@@ -709,6 +805,7 @@ export function BotTriageDashboard({ triageConversations }: Props) {
                         isDone={actioned.has(tc.conversation.id)} actionLabel={actioned.get(tc.conversation.id)}
                         isSelected={selectedId === tc.conversation.id}
                         onSelect={id => setSelectedId(selectedId === id ? '' : id)}
+                        onRename={handleRename}
                       />
                     ))}
                   </div>
@@ -737,6 +834,7 @@ export function BotTriageDashboard({ triageConversations }: Props) {
                         isDone={actioned.has(tc.conversation.id)} actionLabel={actioned.get(tc.conversation.id)}
                         isSelected={selectedId === tc.conversation.id}
                         onSelect={id => setSelectedId(selectedId === id ? '' : id)}
+                        onRename={handleRename}
                       />
                     ))}
                   </div>
