@@ -328,8 +328,8 @@ function DetailCard({ t, actioned, onAction, onDismiss, onDelete, isDeleting }: 
             {email.ai_reason && <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 italic">{email.ai_reason}</p>}
           </div>
         ) : (
-          <div className="rounded-xl bg-blue-50 dark:bg-blue-500/8 border border-dashed border-blue-200 dark:border-blue-500/20 px-4 py-3 text-center">
-            <p className="text-[11px] text-blue-500 dark:text-blue-400">AI analysis pending — click Analyse to generate insights</p>
+          <div className="rounded-xl bg-gray-100 dark:bg-white/8 border border-dashed border-gray-300 dark:border-white/20 px-4 py-3 text-center">
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-200">AI analysis pending — click Analyse to generate insights</p>
           </div>
         )}
 
