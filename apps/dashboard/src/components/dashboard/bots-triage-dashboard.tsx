@@ -115,7 +115,7 @@ function ConvCard({ tc, isDone, actionLabel, isSelected, isChecked, onSelect, on
             checked={isChecked}
             onChange={e => { e.stopPropagation(); onCheck(conversation.id, e.target.checked) }}
             onClick={e => e.stopPropagation()}
-            className="w-3.5 h-3.5 rounded accent-brand-600 shrink-0 cursor-pointer"
+            className="w-3.5 h-3.5 rounded accent-orange-500 shrink-0 cursor-pointer"
           />
           {conversation.ai_priority ? (
             <span className={cn('flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border', PRIORITY_BADGE[conversation.ai_priority])}>
@@ -344,7 +344,7 @@ function DetailCard({ tc, actioned, onAction, onDismiss, onClose, onAnalyze, onR
             <Brain className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5">AI Analysis Complete</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 italic">Low priority — no summary generated for this conversation.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 italic">No summary available — re-analyse to generate one.</p>
             </div>
           </div>
         )}
@@ -758,7 +758,7 @@ export function BotTriageDashboard({ triageConversations }: Props) {
                   if (e.target.checked) setCheckedIds(new Set(visible.map(tc => tc.conversation.id)))
                   else setCheckedIds(new Set())
                 }}
-                className="w-3.5 h-3.5 rounded accent-brand-600 cursor-pointer"
+                className="w-3.5 h-3.5 rounded accent-orange-500 cursor-pointer"
               />
               <span className="text-xs text-gray-500 dark:text-gray-400 flex-1 select-none">
                 {checkedIds.size > 0 ? `${checkedIds.size} selected` : `${visible.length} conversation${visible.length !== 1 ? 's' : ''}`}

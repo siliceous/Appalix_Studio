@@ -68,8 +68,8 @@ email            — any email address they provided
 phone            — any phone number they provided
 product_interest — specific product/service/feature they enquire about
 
-SUMMARY — 1–2 sentences for High/Medium only. null for Low.
-INSIGHTS — 2–3 bullet points for High/Medium: key observations. [] for Low.
+SUMMARY — 1–2 sentences for all priorities. Be brief for Low (e.g. "Short greeting, no substantive request.").
+INSIGHTS — 2–3 bullet points for all priorities. Keep Low insights concise.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OUTPUT — return ONLY this JSON, nothing else:

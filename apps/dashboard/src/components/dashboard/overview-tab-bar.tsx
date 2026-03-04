@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useTransition } from 'react'
 import { Mail, Bot, Ticket, ClipboardList } from 'lucide-react'
 
 const TABS = [
@@ -12,6 +13,7 @@ const TABS = [
 
 export function OverviewTabBar({ activeTab }: { activeTab: string }) {
   const router = useRouter()
+  const [, startTransition] = useTransition()
 
   return (
     <div className="flex items-end px-6 pt-3 gap-1 border-b border-gray-200 dark:border-white/8 bg-gray-50 dark:bg-[#1c1c1c] shrink-0">
@@ -21,7 +23,9 @@ export function OverviewTabBar({ activeTab }: { activeTab: string }) {
           <button
             key={id}
             onClick={() =>
-              router.push(id === 'email' ? '/dashboard' : `/dashboard?tab=${id}`)
+              startTransition(() =>
+                router.push(id === 'email' ? '/dashboard' : `/dashboard?tab=${id}`)
+              )
             }
             className={[
               'flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-t-lg border transition-colors duration-150',
