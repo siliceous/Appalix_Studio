@@ -26,17 +26,16 @@ export default async function FormsLayout({ children }: { children: React.ReactN
 
   if (!isPro) {
     return (
-      <div className="flex flex-col items-center justify-center h-full py-24 px-6 text-center relative overflow-hidden -m-8">
-        <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full bg-[#61c2ad]/[0.06] blur-[120px] dark:block hidden" />
-        <div className="w-16 h-16 rounded-2xl bg-brand-50 dark:bg-[#61c2ad]/10 border border-brand-200 dark:border-[#61c2ad]/20 flex items-center justify-center mb-6 relative z-10">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <div className="w-16 h-16 rounded-2xl bg-brand-50 dark:bg-[#61c2ad]/10 border border-brand-200 dark:border-[#61c2ad]/20 flex items-center justify-center mb-6">
           <Inbox className="w-7 h-7 text-brand-600 dark:text-[#61c2ad]" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3 relative z-10">Lead Ad Forms</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm max-w-md mb-8 leading-relaxed relative z-10">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">Lead Ad Forms</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm max-w-md mb-8 leading-relaxed">
           Capture leads from Meta, Google Ads, and more — automatically scored and pushed into your CRM pipeline.
           Available on <strong>Pro</strong> plans and above.
         </p>
-        <div className="flex flex-col sm:flex-row gap-3 relative z-10">
+        <div className="flex flex-col sm:flex-row gap-3">
           <Link
             href="/settings/upgrade"
             className="inline-flex items-center gap-2 px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors text-sm"
@@ -55,9 +54,5 @@ export default async function FormsLayout({ children }: { children: React.ReactN
     )
   }
 
-  return (
-    <div className="flex flex-col h-full">
-      {children}
-    </div>
-  )
+  return <>{children}</>
 }
