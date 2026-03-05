@@ -277,10 +277,6 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
     if (result.ok) {
       setSent(true)
       setNoteText(composeBody.slice(0, 300))
-      // No deal to log against → auto-dismiss after 2s
-      if (!t.matchedDeal) {
-        setTimeout(() => { onDismiss(email.id); onClose() }, 2000)
-      }
     } else {
       setSendError(result.error ?? 'Send failed')
     }
@@ -293,8 +289,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
     await triageAddDealNote(dealId, noteText)
     setIsLoggingNote(false)
     setNoteSaved(true)
-    // Email fully actioned — remove from triage after brief confirmation
-    setTimeout(() => { onDismiss(email.id); onClose() }, 1500)
+    // Stay visible so user can confirm the note was saved — they dismiss manually
   }
 
   async function handleRewrite() {
@@ -632,11 +627,35 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
           </div>
         )}
 
-        {/* Post-send: no deal → brief confirmation then auto-dismissed */}
+        {/* Post-send: no deal → confirmation with manual dismiss */}
         {sent && !t.matchedDeal && (
-          <div className="rounded-xl border border-green-200 dark:border-green-500/20 px-4 py-2.5 flex items-center gap-2 bg-green-50 dark:bg-green-500/10">
-            <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-            <span className="text-[11px] font-medium text-green-700 dark:text-green-400">Reply sent — removing from triage…</span>
+          <div className="rounded-xl border border-green-200 dark:border-green-500/20 px-4 py-2.5 flex items-center justify-between gap-2 bg-green-50 dark:bg-green-500/10">
+            <div className="flex items-center gap-2">
+              <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+              <span className="text-[11px] font-medium text-green-700 dark:text-green-400">Reply sent</span>
+            </div>
+            <button
+              onClick={() => { onDismiss(email.id); onClose() }}
+              className="text-[11px] font-semibold text-green-700 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 transition-colors"
+            >
+              Done →
+            </button>
+          </div>
+        )}
+
+        {/* Post-send: note logged confirmation */}
+        {noteSaved && (
+          <div className="rounded-xl border border-brand-200 dark:border-brand-500/30 px-4 py-2.5 flex items-center justify-between gap-2 bg-brand-50 dark:bg-brand-500/10">
+            <div className="flex items-center gap-2">
+              <Check className="w-3.5 h-3.5 text-brand-600 dark:text-[#61c2ad]" />
+              <span className="text-[11px] font-medium text-brand-700 dark:text-[#61c2ad]">Note logged in Follow ups</span>
+            </div>
+            <button
+              onClick={() => { onDismiss(email.id); onClose() }}
+              className="text-[11px] font-semibold text-brand-700 dark:text-[#61c2ad] hover:opacity-70 transition-opacity"
+            >
+              Done →
+            </button>
           </div>
         )}
 
