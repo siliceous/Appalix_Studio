@@ -414,6 +414,18 @@ export async function updateDealStatus(
   revalidatePath('/sage/pipelines')
 }
 
+export async function getContactDetail(contactId: string): Promise<SageContact | null> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('sage_contacts')
+    .select('*')
+    .eq('id', contactId)
+    .eq('workspace_id', workspaceId)
+    .single()
+  return (data ?? null) as SageContact | null
+}
+
 export async function getDealDetail(dealId: string): Promise<{
   deal: (Record<string, unknown> & { contact: Record<string, unknown> | null }) | null
   activities: SageDealActivity[]

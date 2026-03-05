@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Plus, GripVertical, Search, SlidersHorizontal, ArrowUpDown, Settings2, UserPlus } from 'lucide-react'
+import { Plus, GripVertical, Search, SlidersHorizontal, ArrowUpDown, Settings2, UserPlus, Pencil } from 'lucide-react'
 import { moveDeal } from '@/app/actions/sage'
 import { DealModal } from './deal-modal'
 import { ManageStagesModal } from './manage-stages-modal'
 import { DealSlideOver } from './deal-slide-over'
 import { ContactPickerModal } from './contact-picker-modal'
+import { ContactEditModal } from './contact-edit-modal'
 import type { SageDeal, SagePipelineStage, SageContact, SagePipeline } from '@/lib/types'
 
 type DealWithContact = SageDeal & {
@@ -43,6 +44,7 @@ export function PipelineBoard({
   const [showDealModal,      setShowDealModal]      = useState(false)
   const [showManageStages,   setShowManageStages]   = useState(false)
   const [showContactPicker,  setShowContactPicker]  = useState(false)
+  const [editingContactId,   setEditingContactId]   = useState<string | null>(null)
   const [defaultStage,       setDefaultStage]       = useState<string | undefined>()
   const [defaultContactId,   setDefaultContactId]   = useState<string | undefined>()
   const [selectedDealId,     setSelectedDealId]     = useState<string | null>(null)
@@ -336,7 +338,18 @@ export function PipelineBoard({
                     <div className="flex items-start gap-2">
                       <GripVertical className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 mt-0.5 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-snug">{deal.title}</p>
+                        <div className="flex items-center gap-1 group/title">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-snug flex-1">{deal.title}</p>
+                          {deal.contact && (
+                            <button
+                              onClick={e => { e.stopPropagation(); setEditingContactId(deal.contact!.id) }}
+                              className="opacity-0 group-hover/title:opacity-100 p-0.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] rounded transition-all shrink-0"
+                              title="Edit contact"
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
                         {deal.contact && (
                           <p className="text-xs text-gray-400 mt-0.5 truncate">{deal.contact.name}</p>
                         )}
@@ -431,6 +444,14 @@ export function PipelineBoard({
         dealId={selectedDealId}
         onClose={() => setSelectedDealId(null)}
       />
+
+      {editingContactId && (
+        <ContactEditModal
+          contactId={editingContactId}
+          onClose={() => setEditingContactId(null)}
+          onSaved={() => setEditingContactId(null)}
+        />
+      )}
     </>
   )
 }
