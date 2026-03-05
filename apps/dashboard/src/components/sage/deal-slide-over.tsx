@@ -226,7 +226,7 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
       {/* Slide-over panel */}
       <div
         ref={slideRef}
-        className={`fixed top-0 right-80 h-full w-[520px] max-w-[calc(100vw-320px)] bg-white dark:bg-[#1e1e1e] border-l dark:border-white/8 z-50 flex flex-col shadow-2xl transition-transform duration-300 ${
+        className={`fixed top-0 right-0 h-full w-[520px] max-w-full bg-white dark:bg-[#1e1e1e] border-l dark:border-white/8 z-50 flex flex-col shadow-2xl transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >

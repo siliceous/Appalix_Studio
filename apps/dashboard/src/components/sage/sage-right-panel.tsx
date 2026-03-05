@@ -13,7 +13,7 @@ interface SageRightPanelProps {
   workspaceId: string
 }
 
-type PanelState = 'normal' | 'minimized' | 'expanded' | 'closed'
+type PanelState = 'normal' | 'minimized' | 'floating' | 'closed'
 
 function getContextLabel(pathname: string): string {
   if (pathname.includes('/sage/contacts/')) return 'Contact context'
@@ -44,6 +44,9 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
   const textareaRef    = useRef<HTMLTextAreaElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null)
+  const dragRef        = useRef<{ ox: number; oy: number; mx: number; my: number } | null>(null)
+  const floatReady     = useRef(false)
+  const [floatPos,     setFloatPos] = useState({ x: 40, y: 100 })
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -60,6 +63,14 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
     return () => window.removeEventListener('keydown', onKeyDown)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [panelState, listening])
+
+  useEffect(() => {
+    if (panelState === 'floating' && !floatReady.current) {
+      floatReady.current = true
+      setFloatPos({ x: window.innerWidth - 440, y: window.innerHeight - 620 })
+    }
+    if (panelState !== 'floating') floatReady.current = false
+  }, [panelState])
 
   const send = useCallback(async (text: string) => {
     const trimmed = text.trim()
@@ -138,6 +149,23 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
     setListening(true)
   }
 
+  function startDrag(e: React.MouseEvent) {
+    e.preventDefault()
+    const start = { ox: floatPos.x, oy: floatPos.y, mx: e.clientX, my: e.clientY }
+    function onMove(ev: MouseEvent) {
+      setFloatPos({
+        x: Math.max(0, Math.min(window.innerWidth  - 420, start.ox + ev.clientX - start.mx)),
+        y: Math.max(0, Math.min(window.innerHeight - 580, start.oy + ev.clientY - start.my)),
+      })
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup',   onUp)
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup',   onUp)
+  }
+
   // ── Closed — floating reopen button ──────────────────────────────────────
   if (panelState === 'closed') {
     return (
@@ -169,13 +197,22 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
     )
   }
 
-  // ── Normal or Expanded ────────────────────────────────────────────────────
-  const isExpanded = panelState === 'expanded'
+  // ── Normal or Floating ────────────────────────────────────────────────────
+  const isFloating = panelState === 'floating'
 
   return (
-    <div className={`${isExpanded ? 'w-[520px]' : 'w-80'} shrink-0 border-l dark:border-white/8 bg-white dark:bg-[#232323] flex flex-col shadow-[-4px_0_16px_rgba(0,0,0,0.06)] dark:shadow-[-4px_0_16px_rgba(0,0,0,0.25)] transition-all duration-200`}>
-      {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-[#61c2ad]/20 dark:border-[#61c2ad]/15 bg-[#61c2ad]/[0.08] dark:bg-[#61c2ad]/10 shrink-0">
+    <div
+      className={isFloating
+        ? 'fixed z-[100] w-[420px] bg-white dark:bg-[#232323] rounded-2xl border border-gray-200 dark:border-white/10 shadow-2xl flex flex-col overflow-hidden'
+        : 'w-80 shrink-0 border-l dark:border-white/8 bg-white dark:bg-[#232323] flex flex-col shadow-[-4px_0_16px_rgba(0,0,0,0.06)] dark:shadow-[-4px_0_16px_rgba(0,0,0,0.25)] transition-all duration-200'
+      }
+      style={isFloating ? { left: floatPos.x, top: floatPos.y, height: 580 } : undefined}
+    >
+      {/* Header — doubles as drag handle when floating */}
+      <div
+        className={`flex items-center gap-2 px-4 py-3 border-b border-[#61c2ad]/20 dark:border-[#61c2ad]/15 bg-[#61c2ad]/[0.08] dark:bg-[#61c2ad]/10 shrink-0 ${isFloating ? 'cursor-grab active:cursor-grabbing select-none' : ''}`}
+        onMouseDown={isFloating ? startDrag : undefined}
+      >
         <div className="w-6 h-6 rounded-md bg-brand-50 dark:bg-[#61c2ad]/10 flex items-center justify-center">
           <Sparkles className="w-3.5 h-3.5 text-brand-600 dark:text-[#61c2ad]" />
         </div>
@@ -194,11 +231,11 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
             <Minus className="w-3.5 h-3.5 text-gray-400" />
           </button>
           <button
-            onClick={() => setPanelState(isExpanded ? 'normal' : 'expanded')}
-            title={isExpanded ? 'Restore' : 'Expand'}
+            onClick={() => setPanelState(isFloating ? 'normal' : 'floating')}
+            title={isFloating ? 'Dock panel' : 'Float window'}
             className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
           >
-            {isExpanded
+            {isFloating
               ? <Square className="w-3 h-3 text-gray-400" />
               : <Maximize2 className="w-3.5 h-3.5 text-gray-400" />
             }

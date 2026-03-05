@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/layout/sidebar'
+import { SageRightPanel } from '@/components/sage/sage-right-panel'
 import { createWorkspace } from '@/app/actions/workspace'
 import type { Workspace } from '@/lib/types'
 
@@ -62,6 +63,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <main className="flex-1 p-8 overflow-auto bg-[#dce3f5] dark:bg-[#1c1c1c]">
         {children}
       </main>
+      <SageRightPanel workspaceId={workspace.id} />
     </div>
   )
 }

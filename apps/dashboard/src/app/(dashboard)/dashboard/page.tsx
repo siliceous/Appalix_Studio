@@ -7,7 +7,6 @@ import { BotTriageDashboard, type TriageConversation } from '@/components/dashbo
 import { TicketsDashboard } from '@/components/dashboard/tickets-dashboard'
 import { FormsDashboard }   from '@/components/dashboard/forms-dashboard'
 import { OverviewTabBar }   from '@/components/dashboard/overview-tab-bar'
-import { SageRightPanel }   from '@/components/sage/sage-right-panel'
 
 export const metadata: Metadata = { title: 'Overview' }
 
@@ -249,7 +248,6 @@ export default async function DashboardPage({
         {tab === 'forms' && (
           <FormsDashboard />
         )}
-        <SageRightPanel workspaceId={workspaceId} />
       </div>
     </div>
   )

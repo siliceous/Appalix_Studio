@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { SageRightPanel } from '@/components/sage/sage-right-panel'
 import Link from 'next/link'
 import { Sparkles, Zap } from 'lucide-react'
 import type { Workspace } from '@/lib/types'
@@ -64,8 +63,6 @@ export default async function SageLayout({ children }: { children: React.ReactNo
         {children}
       </div>
 
-      {/* Right AI panel */}
-      <SageRightPanel workspaceId={workspace.id} />
     </div>
   )
 }
