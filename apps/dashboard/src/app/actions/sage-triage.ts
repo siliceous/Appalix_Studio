@@ -257,8 +257,19 @@ export async function triageAddDealNote(
   if (!workspaceId) return { error: 'Not authenticated' }
 
   try {
+    const admin = createAdminClient()
+    // Write to sage_deal_activities so it appears in the deal slide-over Follow ups section
+    await admin.from('sage_deal_activities').insert({
+      workspace_id: workspaceId,
+      deal_id:      dealId,
+      type:         'note',
+      title:        'Note from email triage',
+      body:         note,
+    })
+    // Also log to general activity log
     await logActivity(workspaceId, 'deal', dealId, 'note_added', { note })
     revalidatePath('/dashboard')
+    revalidatePath('/sage/pipelines')
     return {}
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unexpected error'
