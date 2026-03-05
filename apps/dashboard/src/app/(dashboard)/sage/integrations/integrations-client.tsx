@@ -252,7 +252,7 @@ export function IntegrationsClient({ connected: initialConnected }: Integrations
                     }`}
                   >
                     {/* Card header */}
-                    <div className="flex items-center gap-4 p-4">
+                    <div className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${isConnected ? 'hover:bg-gray-50 dark:hover:bg-white/[0.03]' : ''}`}>
                       <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-white/5 border dark:border-white/8 flex items-center justify-center text-xl shrink-0">
                         {integration.logo}
                       </div>
