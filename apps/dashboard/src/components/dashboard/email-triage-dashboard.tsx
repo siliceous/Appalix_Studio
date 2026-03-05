@@ -567,12 +567,16 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
   // Ref so the interval callback can always see the latest pending count
   const pendingCountRef     = useRef(0)
   const isAutoAnalyzingRef  = useRef(false)
+  // Guards against double-refresh when manual sync triggers auto-analyze
+  const isSyncingRef        = useRef(false)
+  // Incremented after each sync/reanalyze to force-remount scroll containers
+  const [refreshKey, setRefreshKey] = useState(0)
   // Ref on the detail card — used for document-level click-outside detection
   const detailRef = useRef<HTMLDivElement>(null)
 
   // Auto-analyze: runs when there are unanalyzed emails, no manual run needed
   const runAutoAnalyze = useCallback(async () => {
-    if (isAutoAnalyzingRef.current) return
+    if (isAutoAnalyzingRef.current || isSyncingRef.current) return
     isAutoAnalyzingRef.current = true
     try {
       await reanalyzeEmails(50, undefined)
@@ -607,11 +611,15 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
 
   function handleSync() {
     setSyncMsg(null)
+    isSyncingRef.current = true
     startSyncTransition(async () => {
       const res = await syncEmails()
-      if (res.error) { setSyncMsg(`Error: ${res.error}`); return }
+      if (res.error) { setSyncMsg(`Error: ${res.error}`); isSyncingRef.current = false; return }
       setSyncMsg(res.synced > 0 ? `+${res.synced} new` : 'Up to date')
+      setRefreshKey(k => k + 1)
       router.refresh()
+      // Allow auto-analyze to fire again after the refresh settles
+      setTimeout(() => { isSyncingRef.current = false }, 3000)
     })
   }
 
@@ -626,6 +634,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
       const res = await reanalyzeEmails(50, targetIds)
       if (res.error) { setAnalyzeMsg(`Error: ${res.error}`); return }
       setAnalyzeMsg(res.reanalyzed > 0 ? `Analysed ${res.reanalyzed}` : 'All analysed')
+      setRefreshKey(k => k + 1)
       router.refresh()
     })
   }
@@ -882,7 +891,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
         </div>
 
         {/* Priority-sorted list */}
-        <div className="flex-1 overflow-y-auto">
+        <div key={refreshKey} className="flex-1 overflow-y-auto">
           {visible.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-3 p-6 text-center">
               <div className="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-white/5 flex items-center justify-center">
@@ -1031,7 +1040,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 space-y-7">
+            <div key={refreshKey} className="flex-1 overflow-y-auto p-5 space-y-7">
 
               {/* ── Full-width Detail Card (shown when email is selected) ── */}
               {selectedTriageEmail && (
