@@ -451,13 +451,23 @@ function DetailCard({ t, allEmails, actioned, onAction, onDismiss, onDelete, onC
           </div>
         )}
 
-        {/* AI user prompt callout */}
-        {email.ai_user_prompt && (
+        {/* CRM context banner — shown when a deal is matched (overrides ai_user_prompt) */}
+        {t.matchedDeal ? (
+          <div className="rounded-xl bg-[#61c2ad]/10 dark:bg-[#61c2ad]/10 border border-[#61c2ad]/30 px-4 py-3 flex items-start gap-2.5">
+            <RefreshCw className="w-4 h-4 text-[#61c2ad] shrink-0 mt-0.5" />
+            <p className="text-sm text-gray-900 dark:text-gray-100 font-medium leading-relaxed">
+              Ongoing deal: <span className="text-[#3d9585] dark:text-[#61c2ad] font-semibold">{t.matchedDeal.title}</span>
+              {email.ai_user_prompt && !email.ai_user_prompt.toLowerCase().includes('create') && (
+                <span className="text-gray-500 dark:text-gray-400 font-normal"> — {email.ai_user_prompt}</span>
+              )}
+            </p>
+          </div>
+        ) : email.ai_user_prompt ? (
           <div className="rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 px-4 py-3 flex items-start gap-2.5">
             <Sparkles className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
             <p className="text-sm text-gray-900 dark:text-gray-100 font-medium leading-relaxed">{email.ai_user_prompt}</p>
           </div>
-        )}
+        ) : null}
 
         {/* AI Summary */}
         {!email.ai_analyzed_at ? (

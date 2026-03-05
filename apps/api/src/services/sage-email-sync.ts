@@ -147,14 +147,19 @@ async function analyzeEmail(
   subject: string,
   bodyText: string,
   priorSummaries: string[] = [],
+  crmContext?: { contactName?: string; dealTitle?: string; dealStage?: string },
 ): Promise<EmailAnalysis | null> {
   const threadContext = priorSummaries.length > 0
     ? `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nPREVIOUS EMAILS IN THIS THREAD (actual content, newest first):\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n${priorSummaries.map((s, i) => `[Prior email ${i + 1}]\n${s}`).join('\n\n')}\n\n⚠️ CRITICAL INSTRUCTION: You are analysing the LATEST email below in the context of this full thread. Your summary MUST include all relevant details mentioned across ALL prior emails — including specific numbers (e.g. SKU counts, quantities), timelines, budgets, company details, or intent signals — even if those details are NOT repeated in the latest email. Do NOT write "No timeline mentioned" if a timeline was stated in a prior email.\n`
     : ''
 
+  const crmSection = crmContext?.dealTitle
+    ? `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nCRM CONTEXT — this sender is already in the pipeline:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nContact: ${crmContext.contactName ?? from}\nOpen deal: "${crmContext.dealTitle}"${crmContext.dealStage ? ` (stage: ${crmContext.dealStage})` : ''}\n\n⚠️ IMPORTANT: A deal already exists for this contact. Do NOT suggest creating a lead. Your user_prompt should reference the existing deal and suggest the next step (e.g. update the deal, follow up, move to next stage). Action should be "reply_draft" not "create_lead".\n`
+    : ''
+
   const prompt = `You are an Email Triage & Pipeline Assistant inside Appalix CRM.
 Analyse the email below and return ONLY a single valid JSON object (no markdown, no explanation, no code fences).
-${threadContext}
+${threadContext}${crmSection}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PRIORITY RULES — assign exactly one:
@@ -534,11 +539,34 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
               // Prior context is best-effort; don't block analysis
             }
 
+            // Look up open deal for this contact (CRM context for AI)
+            let crmContext: { contactName?: string; dealTitle?: string; dealStage?: string } | undefined
+            if (contactId) {
+              try {
+                const { data: openDeal } = await supabase
+                  .from('sage_deals')
+                  .select('title, stage:sage_pipeline_stages(name)')
+                  .eq('workspace_id', workspaceId)
+                  .eq('contact_id', contactId)
+                  .eq('status', 'open')
+                  .order('created_at', { ascending: false })
+                  .limit(1)
+                  .single()
+                if (openDeal) {
+                  const stageName = Array.isArray(openDeal.stage)
+                    ? (openDeal.stage[0] as { name: string } | undefined)?.name
+                    : (openDeal.stage as { name: string } | null)?.name
+                  crmContext = { contactName: fromName ?? undefined, dealTitle: openDeal.title, dealStage: stageName ?? undefined }
+                }
+              } catch { /* best-effort */ }
+            }
+
             const analysis = await analyzeEmail(
               `${fromName} <${fromAddress}>`,
               subject,
               bodyText,
               priorSummaries,
+              crmContext,
             )
 
             if (analysis) {
