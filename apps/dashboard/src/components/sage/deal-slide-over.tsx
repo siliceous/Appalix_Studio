@@ -200,7 +200,6 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
   const contactType    = (contact?.contact_type as string | null) ?? null
   const contactSource  = (contact?.source       as string | null) ?? null
   const contactTags    = Array.isArray(contact?.tags) ? (contact!.tags as string[]) : []
-  const contactNotes   = (contact?.notes        as string | null) ?? null
   const contactCreated = (contact?.created_at   as string | null) ?? null
   const contactStreet  = (contact?.street       as string | null) ?? null
   const contactCity    = (contact?.city         as string | null) ?? null
@@ -490,12 +489,6 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                             </div>
                           </div>
                         )}
-                        {contactNotes && (
-                          <div className="px-3.5 py-2.5">
-                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Notes</p>
-                            <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{contactNotes}</p>
-                          </div>
-                        )}
                       </div>
                     </div>
                   )}
@@ -507,6 +500,57 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                       <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{dealDesc}</p>
                     </div>
                   )}
+
+                  {/* Follow ups — recent activity + email updates, oldest first */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
+                        <Clock className="w-3 h-3" /> Follow ups
+                        {activities.length > 0 && (
+                          <span className="ml-1 px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400 text-[10px] font-bold">{activities.length}</span>
+                        )}
+                      </p>
+                      {activities.length > 0 && (
+                        <button
+                          onClick={() => setActiveTab('activity')}
+                          className="text-[10px] text-brand-600 dark:text-[#61c2ad] hover:underline flex items-center gap-0.5"
+                        >
+                          View all <ChevronRight className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                    {activities.length === 0 ? (
+                      <p className="text-xs text-gray-400 dark:text-gray-500 italic">No follow ups yet — log a call, note or email activity.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {[...activities]
+                          .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                          .slice(-8)
+                          .map(act => {
+                            const Icon = ACTIVITY_ICONS[act.type as ActivityType] ?? FileText
+                            const colorCls = ACTIVITY_COLORS[act.type as ActivityType] ?? 'text-gray-500 bg-gray-100 dark:bg-white/5'
+                            return (
+                              <div key={act.id} className="flex items-start gap-2.5">
+                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${colorCls}`}>
+                                  <Icon className="w-3 h-3" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-baseline justify-between gap-2">
+                                    <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
+                                      {act.title || ACTIVITY_LABELS[act.type as ActivityType]}
+                                    </p>
+                                    <span className="text-[10px] text-gray-400 shrink-0 tabular-nums">{formatDateTime(act.created_at)}</span>
+                                  </div>
+                                  {act.body && (
+                                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2 leading-relaxed">{act.body}</p>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Deal tags */}
                   {dealTags.length > 0 && (

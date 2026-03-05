@@ -78,7 +78,7 @@ const PRIORITY_STYLE = {
 } as const
 
 const PRIORITY_DOT = {
-  high:   'bg-red-500',
+  high:   'bg-[#61c2ad]',
   medium: 'bg-amber-400',
   low:    'bg-gray-300 dark:bg-gray-600',
 } as const
@@ -123,7 +123,7 @@ export function EmailInbox({
   const [loadingInvoiceId, setLoadingInvoiceId] = useState<string | null>(null)
   const [isGenProp,        setIsGenProp]        = useState(false)
   const [proposalError,    setProposalError]    = useState<string | null>(null)
-  const [showQuoted,        setShowQuoted]        = useState(false)
+  const [showQuotedIds,     setShowQuotedIds]     = useState<Set<string>>(new Set())
   const [selectedThreadKey, setSelectedThreadKey] = useState<string | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -151,8 +151,8 @@ export function EmailInbox({
     return () => clearInterval(interval)
   }, [])
 
-  // Reset quoted view when switching emails
-  useEffect(() => { setShowQuoted(false) }, [selected?.id])
+  // Reset per-message quoted view when switching threads
+  useEffect(() => { setShowQuotedIds(new Set()) }, [selectedThreadKey])
 
   const [isPending,    startSyncTransition]    = useTransition()
   const [isChecking,   startCheckTransition]   = useTransition()
@@ -896,12 +896,17 @@ export function EmailInbox({
                           {quoted && (
                             <>
                               <button
-                                onClick={() => setShowQuoted(v => !v)}
+                                onClick={() => setShowQuotedIds(prev => {
+                                  const next = new Set(prev)
+                                  if (next.has(msg.id)) next.delete(msg.id)
+                                  else next.add(msg.id)
+                                  return next
+                                })}
                                 className="mt-3 flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                                 <span className="tracking-widest">•••</span>
-                                <span className="ml-1">{showQuoted ? 'Hide quoted text' : 'Show quoted text'}</span>
+                                <span className="ml-1">{showQuotedIds.has(msg.id) ? 'Hide quoted text' : 'Show quoted text'}</span>
                               </button>
-                              {showQuoted && (
+                              {showQuotedIds.has(msg.id) && (
                                 <div className="mt-3 pl-3 border-l-2 border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-500 text-xs whitespace-pre-wrap leading-6">
                                   {quoted}
                                 </div>

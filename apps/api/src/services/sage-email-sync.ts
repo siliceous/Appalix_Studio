@@ -146,9 +146,15 @@ async function analyzeEmail(
   from: string,
   subject: string,
   bodyText: string,
+  priorSummaries: string[] = [],
 ): Promise<EmailAnalysis | null> {
+  const threadContext = priorSummaries.length > 0
+    ? `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nCONVERSATION HISTORY (previous emails from this sender, newest first):\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n${priorSummaries.map((s, i) => `[${i + 1}] ${s}`).join('\n')}\n\nIMPORTANT: The analysis below must account for ALL information in the conversation history above. If timeline, budget, or intent was stated in a previous message, carry it forward into your summary and priority even if not repeated in the latest email.\n`
+    : ''
+
   const prompt = `You are an Email Triage & Pipeline Assistant inside Appalix CRM.
 Analyse the email below and return ONLY a single valid JSON object (no markdown, no explanation, no code fences).
+${threadContext}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PRIORITY RULES — assign exactly one:
@@ -496,10 +502,41 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
 
           // AI analysis (non-blocking per email — best effort)
           try {
+            // Fetch prior AI summaries for this contact/sender to give thread context
+            const priorSummaries: string[] = []
+            try {
+              let priorQuery = supabase
+                .from('sage_emails')
+                .select('ai_summary, subject, received_at')
+                .eq('workspace_id', workspaceId)
+                .eq('direction', 'inbound')
+                .not('ai_summary', 'is', null)
+                .order('received_at', { ascending: false })
+                .limit(5)
+
+              if (contactId) {
+                priorQuery = priorQuery.eq('contact_id', contactId)
+              } else {
+                priorQuery = priorQuery.ilike('from_address', fromAddress)
+              }
+
+              const { data: priorEmails } = await priorQuery
+              if (priorEmails) {
+                for (const pe of priorEmails) {
+                  if (pe.ai_summary) {
+                    priorSummaries.push(`Subject: ${pe.subject} — ${pe.ai_summary}`)
+                  }
+                }
+              }
+            } catch {
+              // Prior context is best-effort; don't block analysis
+            }
+
             const analysis = await analyzeEmail(
               `${fromName} <${fromAddress}>`,
               subject,
               bodyText,
+              priorSummaries,
             )
 
             if (analysis) {
@@ -566,7 +603,7 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
 export async function reanalyzePendingEmails(workspaceId: string, batchSize = 50, emailIds?: string[]): Promise<number> {
   let query = supabase
     .from('sage_emails')
-    .select('id, from_name, from_address, subject, body_text')
+    .select('id, from_name, from_address, subject, body_text, contact_id')
     .eq('workspace_id', workspaceId)
     .eq('direction', 'inbound')
 
@@ -584,16 +621,44 @@ export async function reanalyzePendingEmails(workspaceId: string, batchSize = 50
 
   let reanalyzed = 0
 
-  for (const email of emails as { id: string; from_name: string | null; from_address: string; subject: string; body_text: string | null }[]) {
+  for (const email of emails as { id: string; from_name: string | null; from_address: string; subject: string; body_text: string | null; contact_id?: string | null }[]) {
     try {
       const fromName    = email.from_name ?? email.from_address
       const fromAddress = email.from_address
       const bodyText    = email.body_text ?? ''
 
+      // Fetch prior summaries for thread context
+      const priorSummaries: string[] = []
+      try {
+        let priorQuery = supabase
+          .from('sage_emails')
+          .select('ai_summary, subject')
+          .eq('workspace_id', workspaceId)
+          .eq('direction', 'inbound')
+          .neq('id', email.id)
+          .not('ai_summary', 'is', null)
+          .order('received_at', { ascending: false })
+          .limit(5)
+
+        if (email.contact_id) {
+          priorQuery = priorQuery.eq('contact_id', email.contact_id)
+        } else {
+          priorQuery = priorQuery.ilike('from_address', fromAddress)
+        }
+
+        const { data: priorEmails } = await priorQuery
+        if (priorEmails) {
+          for (const pe of priorEmails) {
+            if (pe.ai_summary) priorSummaries.push(`Subject: ${pe.subject} — ${pe.ai_summary}`)
+          }
+        }
+      } catch { /* best-effort */ }
+
       const analysis = await analyzeEmail(
         `${fromName} <${fromAddress}>`,
         email.subject,
         bodyText,
+        priorSummaries,
       )
 
       if (analysis) {
