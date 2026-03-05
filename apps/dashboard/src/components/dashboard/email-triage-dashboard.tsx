@@ -245,24 +245,31 @@ function TriageCard({ t, isDone, actionLabel, isChecked, isSelected, onSelect, o
 // ─── Full-width Detail Card ────────────────────────────────────────────────────
 
 interface DetailCardProps {
-  t:          TriageEmail
-  actioned:   Map<string, string>
-  onAction:   (t: TriageEmail, mode: 'lead' | 'ticket' | 'deal_note') => void
-  onDismiss:  (id: string) => void
-  onDelete:   (id: string) => void
-  onClose:    () => void
-  onAnalyze:  (id: string) => void
-  isDeleting: boolean
-  isAnalyzing: boolean
+  t:             TriageEmail
+  allEmails:     TriageEmail[]
+  actioned:      Map<string, string>
+  onAction:      (t: TriageEmail, mode: 'lead' | 'ticket' | 'deal_note') => void
+  onDismiss:     (id: string) => void
+  onDelete:      (id: string) => void
+  onClose:       () => void
+  onAnalyze:     (id: string) => void
+  isDeleting:    boolean
+  isAnalyzing:   boolean
 }
 
-function DetailCard({ t, actioned, onAction, onDismiss, onDelete, onClose, onAnalyze, isDeleting, isAnalyzing }: DetailCardProps) {
+function DetailCard({ t, allEmails, actioned, onAction, onDismiss, onDelete, onClose, onAnalyze, isDeleting, isAnalyzing }: DetailCardProps) {
   const [activeDraft, setActiveDraft] = useState(0)
   const { email, recommendation, meeting } = t
   const entities  = email.ai_entities
   const drafts    = email.ai_reply_drafts ?? []
   const isDone    = actioned.has(email.id)
   const actionLabel = actioned.get(email.id)
+
+  // Related emails from the same sender (excluding current, newest first)
+  const relatedEmails = allEmails
+    .filter(te => te.email.id !== email.id && te.email.from_address.toLowerCase() === email.from_address.toLowerCase())
+    .sort((a, b) => new Date(b.email.received_at).getTime() - new Date(a.email.received_at).getTime())
+    .slice(0, 5)
 
   function handlePrimaryAction() {
     if (recommendation === 'create_lead')    onAction(t, 'lead')
@@ -542,6 +549,37 @@ function DetailCard({ t, actioned, onAction, onDismiss, onDelete, onClose, onAna
             </>
           )}
         </div>
+
+        {/* Email History — previous emails from this sender */}
+        {relatedEmails.length > 0 && (
+          <div className="pt-2 border-t dark:border-white/8">
+            <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+              <Clock className="w-3 h-3" /> Email history ({relatedEmails.length})
+            </p>
+            <div className="space-y-1.5">
+              {relatedEmails.map(te => (
+                <div key={te.email.id} className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-white/[0.03] border dark:border-white/6">
+                  <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5">
+                    {te.email.ai_priority && (
+                      <span className={cn('w-2 h-2 rounded-full', PRIORITY_DOT[te.email.ai_priority])} />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{te.email.subject}</p>
+                      <span className="text-[10px] text-gray-400 shrink-0 tabular-nums">
+                        {formatDate(te.email.received_at)}
+                      </span>
+                    </div>
+                    {te.email.ai_summary && (
+                      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 line-clamp-1">{te.email.ai_summary}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -823,6 +861,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
   }
 
   const detailCardProps = {
+    allEmails:   visible,
     actioned,
     onAction:    openModal,
     onDismiss:   dismiss,

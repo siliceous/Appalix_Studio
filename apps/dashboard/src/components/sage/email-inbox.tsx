@@ -1,11 +1,11 @@
 'use client'
 
-import React, { useState, useEffect, useTransition, useRef } from 'react'
+import React, { useState, useEffect, useTransition, useRef, useMemo } from 'react'
 import Link from 'next/link'
 import {
   Mail, RefreshCw, Send, Sparkles, Star, Inbox,
   Loader2, AlertCircle, Paperclip, Receipt, FileText, X, ArrowRight,
-  Pencil, Search, Trash2, Reply, Forward, FolderInput, MoreHorizontal,
+  Pencil, Search, Trash2, Reply, Forward, FolderInput,
 } from 'lucide-react'
 import {
   syncEmails, quickCheckEmails, sendEmail, rewriteEmail,
@@ -123,7 +123,8 @@ export function EmailInbox({
   const [loadingInvoiceId, setLoadingInvoiceId] = useState<string | null>(null)
   const [isGenProp,        setIsGenProp]        = useState(false)
   const [proposalError,    setProposalError]    = useState<string | null>(null)
-  const [showQuoted,       setShowQuoted]       = useState(false)
+  const [showQuoted,        setShowQuoted]        = useState(false)
+  const [selectedThreadKey, setSelectedThreadKey] = useState<string | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -177,6 +178,53 @@ export function EmailInbox({
     e.subject.toLowerCase().includes(search.toLowerCase()),
   )
 
+  // ── Thread grouping (group by contact_id or from/to address) ───────────────
+  function threadKey(e: SageEmail) {
+    return e.direction === 'inbound'
+      ? (e.contact_id ?? e.from_address.toLowerCase())
+      : (e.contact_id ?? e.to_address.toLowerCase())
+  }
+
+  const threads = useMemo(() => {
+    const groups = new Map<string, SageEmail[]>()
+    for (const email of filteredEmails) {
+      const key = threadKey(email)
+      const group = groups.get(key) ?? []
+      group.push(email)
+      groups.set(key, group)
+    }
+    return Array.from(groups.entries())
+      .map(([key, msgs]) => {
+        const sorted = [...msgs].sort((a, b) => new Date(b.received_at).getTime() - new Date(a.received_at).getTime())
+        const latest = sorted[0]
+        return {
+          key,
+          emails: sorted,
+          latest,
+          count: sorted.length,
+          unreadCount: sorted.filter(e => !e.is_read && e.direction === 'inbound').length,
+          displayName: latest.direction === 'inbound'
+            ? (latest.from_name ?? latest.from_address)
+            : (latest.to_address),
+        }
+      })
+      .sort((a, b) => new Date(b.latest.received_at).getTime() - new Date(a.latest.received_at).getTime())
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredEmails])
+
+  // All emails for the selected thread (both directions, newest first)
+  const activeThreadEmails = useMemo(() => {
+    if (!selectedThreadKey) return []
+    return emails
+      .filter(e => {
+        if ((e.is_trashed ?? false) && mailView !== 'trash') return false
+        if (!(e.is_trashed ?? false) && mailView === 'trash') return false
+        return threadKey(e) === selectedThreadKey
+      })
+      .sort((a, b) => new Date(b.received_at).getTime() - new Date(a.received_at).getTime())
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emails, selectedThreadKey, mailView])
+
   const counts = {
     inbox:  emails.filter(e => e.direction === 'inbound'  && !(e.is_trashed ?? false)).length,
     sent:   emails.filter(e => e.direction === 'outbound' && !(e.is_trashed ?? false)).length,
@@ -189,8 +237,9 @@ export function EmailInbox({
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
-  function openEmail(email: SageEmail) {
-    setSelected(email)
+  function openThread(key: string, latestEmail: SageEmail) {
+    setSelectedThreadKey(key)
+    setSelected(latestEmail)
     setComposeMode(null)
     setShowMoveMenu(false)
     setSendResult(null)
@@ -638,9 +687,9 @@ export function EmailInbox({
           </button>
         </div>
 
-        {/* Email rows */}
+        {/* Thread rows */}
         <div className="flex-1 overflow-y-auto bg-white dark:bg-[#1a1a1a]">
-          {filteredEmails.length === 0 ? (
+          {threads.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-400 py-12">
               <Mail className="w-10 h-10 opacity-20" />
               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -656,11 +705,12 @@ export function EmailInbox({
               )}
             </div>
           ) : (
-            filteredEmails.map(email => {
-              const isSelected = selected?.id === email.id
-              const isUnread   = !email.is_read && email.direction === 'inbound'
+            threads.map(thread => {
+              const isSelected  = selectedThreadKey === thread.key
+              const hasUnread   = thread.unreadCount > 0
+              const prio        = thread.latest.ai_priority
               return (
-                <button key={email.id} onClick={() => openEmail(email)}
+                <button key={thread.key} onClick={() => openThread(thread.key, thread.latest)}
                   className={cn(
                     'w-full text-left border-b dark:border-white/5 transition-colors',
                     isSelected
@@ -670,31 +720,38 @@ export function EmailInbox({
                   <div className="flex items-center pl-3 pr-4 py-3 gap-2.5">
                     {/* Priority dot */}
                     <span className={cn('w-2 h-2 rounded-full shrink-0',
-                      email.ai_priority ? PRIORITY_DOT[email.ai_priority] : 'invisible')} />
+                      prio ? PRIORITY_DOT[prio] : 'invisible')} />
                     {/* Star */}
-                    <button onClick={e => handleToggleStar(email, e)} className="shrink-0">
+                    <button onClick={e => handleToggleStar(thread.latest, e)} className="shrink-0">
                       <Star className={cn('w-4 h-4 transition-colors',
-                        email.is_starred ? 'text-amber-400 fill-amber-400' : 'text-gray-200 dark:text-gray-700 hover:text-amber-300')} />
+                        thread.latest.is_starred ? 'text-amber-400 fill-amber-400' : 'text-gray-200 dark:text-gray-700 hover:text-amber-300')} />
                     </button>
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-baseline justify-between gap-2 mb-0.5">
-                        <span className={cn('text-sm leading-snug truncate',
-                          isUnread ? 'font-bold text-gray-900 dark:text-gray-50' : 'font-medium text-gray-600 dark:text-gray-400')}>
-                          {email.direction === 'outbound' ? `To: ${email.to_address}` : (email.from_name ?? email.from_address)}
-                        </span>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className={cn('text-sm leading-snug truncate',
+                            hasUnread ? 'font-bold text-gray-900 dark:text-gray-50' : 'font-medium text-gray-600 dark:text-gray-400')}>
+                            {thread.displayName}
+                          </span>
+                          {thread.count > 1 && (
+                            <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-white/8 px-1.5 py-0.5 rounded-full shrink-0">
+                              {thread.count}
+                            </span>
+                          )}
+                        </div>
                         <span className={cn('text-[11px] shrink-0 tabular-nums',
-                          isUnread ? 'font-semibold text-gray-700 dark:text-gray-300' : 'text-gray-400')}>
-                          {formatDate(email.received_at)}
+                          hasUnread ? 'font-semibold text-gray-700 dark:text-gray-300' : 'text-gray-400')}>
+                          {formatDate(thread.latest.received_at)}
                         </span>
                       </div>
                       <div className="flex items-center gap-1 text-xs truncate">
-                        <span className={cn('truncate', isUnread ? 'font-semibold text-gray-800 dark:text-gray-200' : 'text-gray-500 dark:text-gray-500')}>
-                          {email.subject}
+                        <span className={cn('truncate', hasUnread ? 'font-semibold text-gray-800 dark:text-gray-200' : 'text-gray-500 dark:text-gray-500')}>
+                          {thread.latest.subject}
                         </span>
-                        {email.ai_summary && (
+                        {thread.latest.ai_summary && (
                           <span className="text-gray-400 dark:text-gray-600 truncate shrink-0 max-w-[100px]">
-                            — {email.ai_summary}
+                            — {thread.latest.ai_summary}
                           </span>
                         )}
                       </div>
@@ -725,71 +782,39 @@ export function EmailInbox({
           </div>
 
         ) : selected ? (
-          /* ── Email Detail ── */
+          /* ── Conversation / Thread Detail ── */
           <div className="flex-1 flex overflow-hidden">
             <div className="flex-1 flex flex-col overflow-hidden">
 
-              {/* ── Email header ── */}
-              <div className="px-6 py-5 border-b dark:border-white/8 shrink-0">
-                {/* Subject */}
-                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 leading-snug">
-                  {selected.subject}
-                </h2>
-
-                {/* Sender row + action bar */}
+              {/* ── Thread header ── */}
+              <div className="px-6 py-4 border-b dark:border-white/8 shrink-0">
                 <div className="flex items-start justify-between gap-4">
-                  {/* Sender info */}
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-full bg-brand-100 dark:bg-[#ec732e]/20 flex items-center justify-center shrink-0">
-                      <span className="text-sm font-bold text-brand-600 dark:text-[#ec732e]">
-                        {(selected.from_name ?? selected.from_address).charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 leading-tight">
-                        {selected.direction === 'outbound' ? 'You' : (selected.from_name ?? selected.from_address)}
-                        {selected.from_name && selected.direction === 'inbound' && (
-                          <span className="text-xs text-gray-400 font-normal ml-1.5">&lt;{selected.from_address}&gt;</span>
-                        )}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5">to {selected.to_address}</p>
-                    </div>
+                  <div className="min-w-0">
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 leading-snug truncate">
+                      {selected.subject}
+                    </h2>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {activeThreadEmails.length > 1
+                        ? `${activeThreadEmails.length} messages · ${selected.from_name ?? selected.from_address}`
+                        : (selected.from_name ?? selected.from_address)}
+                    </p>
                   </div>
-
-                  {/* ── Top-right action bar ── */}
+                  {/* Action bar */}
                   <div className="flex items-center gap-1 shrink-0">
-                    {/* Received time */}
-                    <span className="text-xs text-gray-400 dark:text-gray-500 mr-1 whitespace-nowrap">
-                      {formatFull(selected.received_at)}
-                    </span>
-
-                    {/* Star */}
-                    <button onClick={e => handleToggleStar(selected, e)} title="Star"
-                      className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
-                      <Star className={cn('w-4 h-4', selected.is_starred ? 'text-amber-400 fill-amber-400' : 'text-gray-400')} />
-                    </button>
-
-                    {/* Priority badge */}
                     {selected.ai_priority && (
                       <span className={cn('flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wide border', PRIORITY_STYLE[selected.ai_priority])}>
                         <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT[selected.ai_priority])} />
                         {selected.ai_priority}
                       </span>
                     )}
-
-                    {/* Reply */}
                     <button onClick={() => openReply('reply')} title="Reply"
                       className={cn('p-1.5 rounded-lg transition-colors', composeMode === 'reply' ? 'bg-brand-100 dark:bg-[#ec732e]/15 text-brand-600 dark:text-[#ec732e]' : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400')}>
                       <Reply className="w-4 h-4" />
                     </button>
-
-                    {/* Forward */}
                     <button onClick={() => openReply('forward')} title="Forward"
                       className={cn('p-1.5 rounded-lg transition-colors', composeMode === 'forward' ? 'bg-brand-100 dark:bg-[#ec732e]/15 text-brand-600 dark:text-[#ec732e]' : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400')}>
                       <Forward className="w-4 h-4" />
                     </button>
-
-                    {/* Move to folder */}
                     <div className="relative">
                       <button onClick={() => setShowMoveMenu(v => !v)} title="Move to folder"
                         className={cn('p-1.5 rounded-lg transition-colors', showMoveMenu ? 'bg-gray-100 dark:bg-white/5' : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400')}>
@@ -810,47 +835,97 @@ export function EmailInbox({
                         </div>
                       )}
                     </div>
-
-                    {/* Delete */}
                     <button onClick={() => handleTrash(selected)} title="Move to Trash"
                       className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-gray-400 hover:text-red-500 transition-colors">
                       <Trash2 className="w-4 h-4" />
-                    </button>
-
-                    {/* More */}
-                    <button title="More actions"
-                      className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 transition-colors">
-                      <MoreHorizontal className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* Email body */}
-              <div className="flex-1 overflow-y-auto px-6 py-5">
-                <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-7 max-w-2xl">
-                  {splitQuotedText(selected.body_text ?? '')[0] || '(No plain text body)'}
-                  {splitQuotedText(selected.body_text ?? '')[1] && (
-                    <>
-                      <button
-                        onClick={() => setShowQuoted(v => !v)}
-                        className="mt-3 flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                      >
-                        <span className="tracking-widest">•••</span>
-                        <span className="ml-1">{showQuoted ? 'Hide quoted text' : 'Show quoted text'}</span>
-                      </button>
-                      {showQuoted && (
-                        <div className="mt-3 pl-3 border-l-2 border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-500 text-xs whitespace-pre-wrap leading-6">
-                          {splitQuotedText(selected.body_text ?? '')[1]}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
+              {/* ── Conversation messages ── */}
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                {activeThreadEmails.map((msg, idx) => {
+                  const isOutbound  = msg.direction === 'outbound'
+                  const isLast      = idx === activeThreadEmails.length - 1
+                  const [visible, quoted] = splitQuotedText(msg.body_text ?? '')
+                  const senderLabel = isOutbound ? 'You' : (msg.from_name ?? msg.from_address)
+                  const initial     = senderLabel.charAt(0).toUpperCase()
 
-                {/* Gmail-style Reply / Forward buttons at end of email body */}
+                  return (
+                    <div key={msg.id} className={cn(
+                      'rounded-2xl border overflow-hidden',
+                      isLast
+                        ? 'border-gray-200 dark:border-white/10 shadow-sm'
+                        : 'border-gray-100 dark:border-white/6 bg-gray-50/50 dark:bg-white/[0.02]',
+                    )}>
+                      {/* Message header */}
+                      <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/8">
+                        <div className={cn(
+                          'w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold',
+                          isOutbound
+                            ? 'bg-brand-100 dark:bg-[#61c2ad]/15 text-brand-700 dark:text-[#61c2ad]'
+                            : 'bg-orange-100 dark:bg-[#ec732e]/20 text-orange-600 dark:text-[#ec732e]',
+                        )}>
+                          {initial}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">
+                            {senderLabel}
+                            {!isOutbound && msg.from_name && (
+                              <span className="text-gray-400 font-normal ml-1">&lt;{msg.from_address}&gt;</span>
+                            )}
+                          </p>
+                          <p className="text-[10px] text-gray-400">to {msg.to_address}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {msg.ai_priority && (
+                            <span className={cn('w-2 h-2 rounded-full', PRIORITY_DOT[msg.ai_priority])} title={msg.ai_priority} />
+                          )}
+                          <span className="text-[11px] text-gray-400 tabular-nums">{formatFull(msg.received_at)}</span>
+                          <button onClick={e => handleToggleStar(msg, e)} className="shrink-0">
+                            <Star className={cn('w-3.5 h-3.5 transition-colors',
+                              msg.is_starred ? 'text-amber-400 fill-amber-400' : 'text-gray-200 dark:text-gray-700 hover:text-amber-300')} />
+                          </button>
+                        </div>
+                      </div>
+                      {/* Message body */}
+                      <div className="px-4 py-4 bg-white dark:bg-[#1a1a1a]">
+                        <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-7 max-w-2xl">
+                          {visible || '(No body)'}
+                          {quoted && (
+                            <>
+                              <button
+                                onClick={() => setShowQuoted(v => !v)}
+                                className="mt-3 flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                                <span className="tracking-widest">•••</span>
+                                <span className="ml-1">{showQuoted ? 'Hide quoted text' : 'Show quoted text'}</span>
+                              </button>
+                              {showQuoted && (
+                                <div className="mt-3 pl-3 border-l-2 border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-500 text-xs whitespace-pre-wrap leading-6">
+                                  {quoted}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                        {/* AI summary for this message */}
+                        {msg.ai_summary && (
+                          <div className="mt-3 px-3 py-2 bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10 rounded-xl border border-[#61c2ad]/20">
+                            <p className="text-[10px] font-bold text-[#3d9585] dark:text-[#61c2ad] uppercase tracking-wide mb-0.5 flex items-center gap-1">
+                              <Sparkles className="w-3 h-3" /> AI Summary
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">{msg.ai_summary}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+
+                {/* Reply / Forward buttons at end of thread */}
                 {!composeMode && (
-                  <div className="flex gap-3 mt-8 mb-2">
+                  <div className="flex gap-3 py-2">
                     <button onClick={() => openReply('reply')}
                       className="flex items-center gap-2 px-5 py-2 border dark:border-white/10 rounded-full text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                       <Reply className="w-4 h-4" /> Reply
@@ -879,7 +954,7 @@ export function EmailInbox({
               )}
             </div>
 
-            {/* ── AI insights sidebar ── */}
+            {/* ── AI insights sidebar (latest message) ── */}
             {(selected.ai_insights?.length || selected.ai_summary) && (
               <div className="w-56 shrink-0 border-l dark:border-white/8 bg-gray-50 dark:bg-white/2 overflow-y-auto p-4 space-y-4">
                 <div className="flex items-center gap-2">

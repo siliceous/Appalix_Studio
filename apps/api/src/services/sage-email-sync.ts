@@ -307,7 +307,7 @@ ${bodyText.slice(0, 3000)}`
 }
 
 // ---------------------------------------------------------------------------
-// Contact auto-link
+// Contact / deal auto-link helpers
 // ---------------------------------------------------------------------------
 
 async function findContactByEmail(workspaceId: string, email: string): Promise<string | null> {
@@ -320,6 +320,20 @@ async function findContactByEmail(workspaceId: string, email: string): Promise<s
     .single()
 
   return data?.id ?? null
+}
+
+async function findOpenDealByContact(workspaceId: string, contactId: string): Promise<{ id: string } | null> {
+  const { data } = await supabase
+    .from('sage_deals')
+    .select('id')
+    .eq('workspace_id', workspaceId)
+    .eq('contact_id', contactId)
+    .eq('status', 'open')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  return data ?? null
 }
 
 // ---------------------------------------------------------------------------
@@ -507,6 +521,25 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
                   ai_analyzed_at:  new Date().toISOString(),
                 })
                 .eq('id', inserted.id)
+
+              // Auto-create deal activity when a high/medium email arrives for a contact with an open deal
+              if (contactId && analysis.summary && (analysis.priority === 'high' || analysis.priority === 'medium')) {
+                try {
+                  const deal = await findOpenDealByContact(workspaceId, contactId)
+                  if (deal) {
+                    await supabase.from('sage_deal_activities').insert({
+                      workspace_id: workspaceId,
+                      deal_id:      deal.id,
+                      type:         'note',
+                      title:        `Email: ${subject}`,
+                      body:         analysis.summary,
+                      created_by:   null,
+                    })
+                  }
+                } catch {
+                  // Don't block email sync on deal activity failure
+                }
+              }
             }
           } catch {
             // AI analysis failure doesn't block email sync
