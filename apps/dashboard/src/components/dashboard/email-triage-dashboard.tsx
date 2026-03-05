@@ -574,6 +574,12 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
   // Ref on the detail card — used for document-level click-outside detection
   const detailRef = useRef<HTMLDivElement>(null)
 
+  // Scroll <main> to top after every refresh so stale content never peeks below
+  useEffect(() => {
+    const main = document.querySelector('main')
+    if (main) main.scrollTop = 0
+  }, [refreshKey])
+
   // Auto-analyze: runs when there are unanalyzed emails, no manual run needed
   const runAutoAnalyze = useCallback(async () => {
     if (isAutoAnalyzingRef.current || isSyncingRef.current) return
@@ -587,20 +593,26 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
     }
   }, [router])
 
-  // Auto-refresh every 60 s — only ONE refresh per tick (never double-refresh)
+  // Auto-sync + auto-analyze every 60 s — syncs IMAP, then analyzes pending, single refresh
   useEffect(() => {
-    const id = setInterval(() => {
+    const id = setInterval(async () => {
       if (isSyncingRef.current || isAutoAnalyzingRef.current) return
-      if (pendingCountRef.current > 0) {
-        // runAutoAnalyze handles the refresh + refreshKey internally
-        void runAutoAnalyze()
-      } else {
+      isSyncingRef.current = true
+      try {
+        const syncRes = await syncEmails()
+        if (!syncRes.error && syncRes.synced > 0) {
+          setSyncMsg(`+${syncRes.synced} new`)
+        }
+        // Always re-analyze after sync (catches new + existing pending)
+        await reanalyzeEmails(50, undefined)
         setRefreshKey(k => k + 1)
         router.refresh()
+      } finally {
+        isSyncingRef.current = false
       }
     }, 60_000)
     return () => clearInterval(id)
-  }, [router, runAutoAnalyze])
+  }, [router])
 
   // Click-outside to close the detail card
   useEffect(() => {
@@ -759,7 +771,13 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
         return
       }
 
-      if (result?.error) setModalError(result.error)
+      if (result?.error) {
+        setModalError(result.error)
+      } else {
+        // Pair with refreshKey so scroll containers remount cleanly
+        setRefreshKey(k => k + 1)
+        router.refresh()
+      }
     })
   }
 
