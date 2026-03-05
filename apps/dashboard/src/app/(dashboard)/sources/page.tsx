@@ -83,7 +83,7 @@ export default async function SourcesPage() {
           {sources.map((source) => {
             const status = STATUS_META[source.status] ?? STATUS_META.pending
             return (
-              <div key={source.id} className="flex items-center gap-4 px-5 py-4">
+              <div key={source.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors">
                 {/* Icon */}
                 <div className="w-9 h-9 rounded-lg bg-brand-50 flex items-center justify-center shrink-0">
                   {TYPE_ICON[source.type] ?? <Link className="w-4 h-4 text-brand-600" />}
