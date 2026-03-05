@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
-import { Sparkles, Send, ChevronLeft, Mic, MicOff, Minus, Square, X, Maximize2 } from 'lucide-react'
+import { Sparkles, Send, Mic, MicOff, X } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -13,7 +13,7 @@ interface SageRightPanelProps {
   workspaceId: string
 }
 
-type PanelState = 'normal' | 'minimized' | 'floating' | 'closed'
+type PanelState = 'floating' | 'closed'
 
 function getContextLabel(pathname: string): string {
   if (pathname.includes('/sage/contacts/')) return 'Contact context'
@@ -35,7 +35,7 @@ const STARTER_PROMPTS = [
 
 export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
   const pathname    = usePathname()
-  const [panelState, setPanelState] = useState<PanelState>('normal')
+  const [panelState, setPanelState] = useState<PanelState>('closed')
   const [messages,   setMessages]   = useState<Message[]>([])
   const [input,      setInput]      = useState('')
   const [loading,    setLoading]    = useState(false)
@@ -54,7 +54,7 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (panelState === 'minimized' || panelState === 'closed') return
+      if (panelState === 'closed') return
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       if (e.key === 'm' || e.key === 'M') toggleVoice()
@@ -166,52 +166,29 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
     document.addEventListener('mouseup',   onUp)
   }
 
-  // ── Closed — floating reopen button ──────────────────────────────────────
+  // ── Closed — floating sparkles button ────────────────────────────────────
   if (panelState === 'closed') {
     return (
       <button
-        onClick={() => setPanelState('normal')}
+        onClick={() => setPanelState('floating')}
         title="Open Sage AI"
-        className="fixed bottom-6 right-6 z-50 w-11 h-11 rounded-full bg-brand-600 hover:bg-brand-700 shadow-lg flex items-center justify-center transition-colors"
+        className="fixed bottom-6 right-6 z-[100] w-11 h-11 rounded-full bg-brand-600 hover:bg-brand-700 shadow-lg flex items-center justify-center transition-colors"
       >
         <Sparkles className="w-5 h-5 text-white" />
       </button>
     )
   }
 
-  // ── Minimized — thin strip ────────────────────────────────────────────────
-  if (panelState === 'minimized') {
-    return (
-      <div className="w-10 shrink-0 border-l dark:border-white/8 bg-white dark:bg-[#232323] flex flex-col items-center py-4 gap-4">
-        <button
-          onClick={() => setPanelState('normal')}
-          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
-          title="Restore Sage AI"
-        >
-          <ChevronLeft className="w-4 h-4 text-gray-400" />
-        </button>
-        <div className="rotate-90 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider whitespace-nowrap mt-4">
-          Sage AI
-        </div>
-      </div>
-    )
-  }
-
-  // ── Normal or Floating ────────────────────────────────────────────────────
-  const isFloating = panelState === 'floating'
-
+  // ── Floating window ───────────────────────────────────────────────────────
   return (
     <div
-      className={isFloating
-        ? 'fixed z-[100] w-[420px] bg-white dark:bg-[#232323] rounded-2xl border border-gray-200 dark:border-white/10 shadow-2xl flex flex-col overflow-hidden'
-        : 'w-80 shrink-0 border-l dark:border-white/8 bg-white dark:bg-[#232323] flex flex-col shadow-[-4px_0_16px_rgba(0,0,0,0.06)] dark:shadow-[-4px_0_16px_rgba(0,0,0,0.25)] transition-all duration-200'
-      }
-      style={isFloating ? { left: floatPos.x, top: floatPos.y, height: 580 } : undefined}
+      className="fixed z-[100] w-[420px] bg-white dark:bg-[#232323] rounded-2xl border border-gray-200 dark:border-white/10 shadow-2xl flex flex-col overflow-hidden"
+      style={{ left: floatPos.x, top: floatPos.y, height: 580 }}
     >
-      {/* Header — doubles as drag handle when floating */}
+      {/* Header — drag handle */}
       <div
-        className={`flex items-center gap-2 px-4 py-3 border-b border-[#61c2ad]/20 dark:border-[#61c2ad]/15 bg-[#61c2ad]/[0.08] dark:bg-[#61c2ad]/10 shrink-0 ${isFloating ? 'cursor-grab active:cursor-grabbing select-none' : ''}`}
-        onMouseDown={isFloating ? startDrag : undefined}
+        className="flex items-center gap-2 px-4 py-3 border-b border-[#61c2ad]/20 dark:border-[#61c2ad]/15 bg-[#61c2ad]/[0.08] dark:bg-[#61c2ad]/10 shrink-0 cursor-grab active:cursor-grabbing select-none"
+        onMouseDown={startDrag}
       >
         <div className="w-6 h-6 rounded-md bg-brand-50 dark:bg-[#61c2ad]/10 flex items-center justify-center">
           <Sparkles className="w-3.5 h-3.5 text-brand-600 dark:text-[#61c2ad]" />
@@ -220,34 +197,13 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
           <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">Sage AI</p>
           <p className="text-[10px] text-gray-400 truncate">{getContextLabel(pathname)}</p>
         </div>
-
-        {/* Window controls */}
-        <div className="flex items-center gap-0.5">
-          <button
-            onClick={() => setPanelState('minimized')}
-            title="Minimise"
-            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
-          >
-            <Minus className="w-3.5 h-3.5 text-gray-400" />
-          </button>
-          <button
-            onClick={() => setPanelState(isFloating ? 'normal' : 'floating')}
-            title={isFloating ? 'Dock panel' : 'Float window'}
-            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
-          >
-            {isFloating
-              ? <Square className="w-3 h-3 text-gray-400" />
-              : <Maximize2 className="w-3.5 h-3.5 text-gray-400" />
-            }
-          </button>
-          <button
-            onClick={() => setPanelState('closed')}
-            title="Close"
-            className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 transition-colors"
-          >
-            <X className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
-          </button>
-        </div>
+        <button
+          onClick={() => setPanelState('closed')}
+          title="Close"
+          className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+        >
+          <X className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
+        </button>
       </div>
 
       {/* Messages */}
