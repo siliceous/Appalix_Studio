@@ -5,10 +5,11 @@ import {
   X, Trophy, XCircle, FileText, Phone, Users, CheckSquare,
   Clock, Check, ChevronRight, ExternalLink, Building2, Tag,
   DollarSign, AlertCircle, Mail, Globe, MapPin,
-  User, Lock, ChevronDown,
+  User, Lock, ChevronDown, Pencil,
 } from 'lucide-react'
 import { getDealDetail, addDealActivity, completeDealTask } from '@/app/actions/sage'
 import { WonLostModal } from './won-lost-modal'
+import { ContactEditModal } from './contact-edit-modal'
 import type { SageDealActivity } from '@/lib/types'
 
 type ActivityType = 'note' | 'call' | 'meeting' | 'task'
@@ -108,8 +109,9 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
   const [formTitle,     setFormTitle]     = useState('')
   const [formBody,      setFormBody]      = useState('')
   const [formDue,       setFormDue]       = useState('')
-  const [wonLostMode,   setWonLostMode]   = useState<'won' | 'lost' | null>(null)
-  const [isPending,     startTransition]  = useTransition()
+  const [wonLostMode,      setWonLostMode]      = useState<'won' | 'lost' | null>(null)
+  const [editingContactId, setEditingContactId] = useState<string | null>(null)
+  const [isPending,        startTransition]     = useTransition()
   const slideRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -224,7 +226,7 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
       {/* Slide-over panel */}
       <div
         ref={slideRef}
-        className={`fixed top-0 right-0 h-full w-[540px] max-w-full bg-white dark:bg-[#1e1e1e] border-l dark:border-white/8 z-50 flex flex-col shadow-2xl transition-transform duration-300 ${
+        className={`fixed top-0 right-80 h-full w-[520px] max-w-[calc(100vw-320px)] bg-white dark:bg-[#1e1e1e] border-l dark:border-white/8 z-50 flex flex-col shadow-2xl transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -406,9 +408,18 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                           )}
                         </div>
                         {contactId && (
-                          <a href={`/sage/contacts/${contactId}`} className="p-1.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] hover:bg-gray-100 dark:hover:bg-white/8 rounded-lg transition-colors">
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </a>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => setEditingContactId(contactId)}
+                              className="p-1.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] hover:bg-gray-100 dark:hover:bg-white/8 rounded-lg transition-colors"
+                              title="Edit contact"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <a href={`/sage/contacts/${contactId}`} className="p-1.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] hover:bg-gray-100 dark:hover:bg-white/8 rounded-lg transition-colors">
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          </div>
                         )}
                       </div>
 
@@ -747,6 +758,17 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
           mode={wonLostMode}
           onClose={() => setWonLostMode(null)}
           onConfirm={handleWonLostConfirm}
+        />
+      )}
+
+      {editingContactId && (
+        <ContactEditModal
+          contactId={editingContactId}
+          onClose={() => setEditingContactId(null)}
+          onSaved={() => {
+            setEditingContactId(null)
+            if (dealId) getDealDetail(dealId).then(res => { setDeal(res.deal); setActivities(res.activities) })
+          }}
         />
       )}
     </>
