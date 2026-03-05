@@ -47,6 +47,7 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
   const dragRef        = useRef<{ ox: number; oy: number; mx: number; my: number } | null>(null)
   const floatReady     = useRef(false)
   const [floatPos,     setFloatPos] = useState({ x: 40, y: 100 })
+  const [winSize,      setWinSize]  = useState({ w: 420, h: 580 })
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -67,6 +68,7 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
   useEffect(() => {
     if (panelState === 'floating' && !floatReady.current) {
       floatReady.current = true
+      setWinSize({ w: 420, h: 580 })
       setFloatPos({ x: window.innerWidth - 440, y: window.innerHeight - 620 })
     }
     if (panelState !== 'floating') floatReady.current = false
@@ -154,9 +156,28 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
     const start = { ox: floatPos.x, oy: floatPos.y, mx: e.clientX, my: e.clientY }
     function onMove(ev: MouseEvent) {
       setFloatPos({
-        x: Math.max(0, Math.min(window.innerWidth  - 420, start.ox + ev.clientX - start.mx)),
-        y: Math.max(0, Math.min(window.innerHeight - 580, start.oy + ev.clientY - start.my)),
+        x: Math.max(0, Math.min(window.innerWidth  - winSize.w, start.ox + ev.clientX - start.mx)),
+        y: Math.max(0, Math.min(window.innerHeight - winSize.h, start.oy + ev.clientY - start.my)),
       })
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup',   onUp)
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup',   onUp)
+  }
+
+  function startResize(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    const fixR = floatPos.x + winSize.w
+    const fixB = floatPos.y + winSize.h
+    function onMove(ev: MouseEvent) {
+      const newX = Math.min(ev.clientX, fixR - 280)
+      const newY = Math.min(ev.clientY, fixB - 220)
+      setFloatPos({ x: Math.max(0, newX), y: Math.max(0, newY) })
+      setWinSize({ w: fixR - Math.max(0, newX), h: fixB - Math.max(0, newY) })
     }
     function onUp() {
       document.removeEventListener('mousemove', onMove)
@@ -182,9 +203,21 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
   // ── Floating window ───────────────────────────────────────────────────────
   return (
     <div
-      className="fixed z-[100] w-[420px] bg-white dark:bg-[#232323] rounded-2xl border border-gray-200 dark:border-white/10 shadow-2xl flex flex-col overflow-hidden"
-      style={{ left: floatPos.x, top: floatPos.y, height: 580 }}
+      className="fixed z-[100] bg-white dark:bg-[#232323] rounded-2xl border border-gray-200 dark:border-white/10 shadow-2xl flex flex-col overflow-hidden"
+      style={{ left: floatPos.x, top: floatPos.y, width: winSize.w, height: winSize.h }}
     >
+      {/* Top-left resize handle */}
+      <div
+        onMouseDown={startResize}
+        title="Resize"
+        className="absolute top-0 left-0 w-5 h-5 z-10 cursor-nw-resize flex items-start justify-start p-1 group"
+      >
+        <svg width="10" height="10" viewBox="0 0 10 10" className="text-gray-300 dark:text-gray-600 group-hover:text-brand-400 dark:group-hover:text-[#61c2ad] transition-colors">
+          <line x1="1" y1="9" x2="9" y2="1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          <line x1="1" y1="5" x2="5" y2="1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      </div>
+
       {/* Header — drag handle */}
       <div
         className="flex items-center gap-2 px-4 py-3 border-b border-[#61c2ad]/20 dark:border-[#61c2ad]/15 bg-[#61c2ad]/[0.08] dark:bg-[#61c2ad]/10 shrink-0 cursor-grab active:cursor-grabbing select-none"
