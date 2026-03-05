@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient }  from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 
@@ -193,7 +193,16 @@ export async function sendEmail(opts: {
     })
     const data = await res.json() as { ok?: boolean; error?: string }
     if (!res.ok) return { ok: false, error: data.error ?? 'Send failed' }
+
+    // Mark the source email as read — it's been handled (replied to)
+    // This prevents it from re-appearing in triage on next page load
+    if (opts.replyToEmailId) {
+      const admin = createAdminClient()
+      await admin.from('sage_emails').update({ is_read: true }).eq('id', opts.replyToEmailId)
+    }
+
     revalidatePath('/sage/emails')
+    revalidatePath('/dashboard')
     return { ok: true }
   } catch {
     return { ok: false, error: 'Could not reach API' }

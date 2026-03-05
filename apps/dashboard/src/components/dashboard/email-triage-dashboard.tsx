@@ -304,6 +304,10 @@ function DetailCard({ t, allEmails, actioned, onAction, onDismiss, onDelete, onC
     if (result.ok) {
       setSent(true)
       setNoteText(composeBody.slice(0, 300))
+      // No deal to log against → auto-dismiss after 2s
+      if (!t.matchedDeal) {
+        setTimeout(() => { onDismiss(email.id); onClose() }, 2000)
+      }
     } else {
       setSendError(result.error ?? 'Send failed')
     }
@@ -316,6 +320,8 @@ function DetailCard({ t, allEmails, actioned, onAction, onDismiss, onDelete, onC
     await triageAddDealNote(dealId, noteText)
     setIsLoggingNote(false)
     setNoteSaved(true)
+    // Email fully actioned — remove from triage after brief confirmation
+    setTimeout(() => { onDismiss(email.id); onClose() }, 1500)
   }
 
   // Related emails from the same sender (excluding current, newest first)

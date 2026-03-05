@@ -92,6 +92,7 @@ export default async function DashboardPage({
         .eq('workspace_id', workspaceId)
         .eq('direction', 'inbound')
         .eq('is_trashed', false)   // exclude user-deleted emails
+        .eq('is_read', false)      // exclude emails already replied-to / actioned
         .order('received_at', { ascending: false })
         .limit(50),
 
