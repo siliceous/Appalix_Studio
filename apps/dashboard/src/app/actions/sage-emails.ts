@@ -179,33 +179,46 @@ export async function sendEmail(opts: {
   if (!workspaceId) return { ok: false, error: 'Not authenticated' }
 
   try {
-    const res = await fetch(`${API_BASE}/sage/emails/send`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Service-Key': SERVICE_KEY },
-      body:    JSON.stringify({
-        workspace_id:      workspaceId,
-        to:                opts.to,
-        subject:           opts.subject,
-        body:              opts.body,
-        reply_to_email_id: opts.replyToEmailId,
-        attachments:       opts.attachments,
-      }),
-    })
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 30_000)
+
+    let res: Response
+    try {
+      res = await fetch(`${API_BASE}/sage/emails/send`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Service-Key': SERVICE_KEY },
+        body:    JSON.stringify({
+          workspace_id:      workspaceId,
+          to:                opts.to,
+          subject:           opts.subject,
+          body:              opts.body,
+          reply_to_email_id: opts.replyToEmailId,
+          attachments:       opts.attachments,
+        }),
+        signal: controller.signal,
+      })
+    } finally {
+      clearTimeout(timeout)
+    }
+
     const data = await res.json() as { ok?: boolean; error?: string }
     if (!res.ok) return { ok: false, error: data.error ?? 'Send failed' }
 
-    // Mark the source email as read — it's been handled (replied to)
-    // This prevents it from re-appearing in triage on next page load
+    // Mark the source email as read so it doesn't re-appear in triage on next load.
+    // Do NOT revalidatePath('/dashboard') here — that forces a router refresh which
+    // unmounts the triage card and kills the Update popup before the user can interact.
     if (opts.replyToEmailId) {
       const admin = createAdminClient()
       await admin.from('sage_emails').update({ is_read: true }).eq('id', opts.replyToEmailId)
     }
 
     revalidatePath('/sage/emails')
-    revalidatePath('/dashboard')
     return { ok: true }
-  } catch {
-    return { ok: false, error: 'Could not reach API' }
+  } catch (err) {
+    const msg = err instanceof Error && err.name === 'AbortError'
+      ? 'Request timed out — the mail server took too long to respond'
+      : 'Could not reach API'
+    return { ok: false, error: msg }
   }
 }
 

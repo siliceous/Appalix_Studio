@@ -247,6 +247,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
   const [noteText,       setNoteText]       = useState('')
   const [noteSaved,      setNoteSaved]      = useState(false)
   const [isSendingEmail, setIsSendingEmail] = useState(false)
+  const [sendSlow,       setSendSlow]       = useState(false)
   const [isLoggingNote,  setIsLoggingNote]  = useState(false)
   const [isRewriting,    setIsRewriting]    = useState(false)
   const [sendError,      setSendError]      = useState<string | null>(null)
@@ -256,6 +257,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
   // Reset compose state when switching to a different email
   useEffect(() => {
     setSent(false)
+    setSendSlow(false)
     setNoteText('')
     setNoteSaved(false)
     setSendError(null)
@@ -265,7 +267,10 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
   async function handleSendReply() {
     if (!composeBody.trim()) return
     setIsSendingEmail(true)
+    setSendSlow(false)
     setSendError(null)
+    // Show "taking longer than usual" message after 6 seconds
+    const slowTimer = setTimeout(() => setSendSlow(true), 6000)
     const subjectPrefix = /^Re:/i.test(email.subject) ? '' : 'Re: '
     const result = await sendEmail({
       to:             email.from_address,
@@ -273,7 +278,9 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
       body:           composeBody,
       replyToEmailId: email.id,
     })
+    clearTimeout(slowTimer)
     setIsSendingEmail(false)
+    setSendSlow(false)
     if (result.ok) {
       setSent(true)
       setNoteText(composeBody.slice(0, 300))
@@ -559,7 +566,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
               <textarea
                 value={composeBody}
                 onChange={e => setComposeBody(e.target.value)}
-                rows={11}
+                rows={14}
                 className="w-full text-sm text-gray-800 dark:text-gray-200 leading-relaxed bg-transparent resize-none outline-none"
               />
             </div>
@@ -579,14 +586,21 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
               >
                 <X className="w-3 h-3" /> Ignore
               </button>
-              <button
-                onClick={handleSendReply}
-                disabled={isSendingEmail || !composeBody.trim()}
-                className="flex items-center gap-1.5 px-4 py-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-[11px] font-semibold rounded-lg transition-colors"
-              >
-                {isSendingEmail ? <Loader2 className="w-3 h-3 animate-spin" /> : <ArrowRight className="w-3 h-3" />}
-                Send Reply
-              </button>
+              <div className="flex items-center gap-2">
+                {sendSlow && (
+                  <span className="text-[11px] text-amber-500 dark:text-amber-400 animate-pulse">
+                    Still sending…
+                  </span>
+                )}
+                <button
+                  onClick={handleSendReply}
+                  disabled={isSendingEmail || !composeBody.trim()}
+                  className="flex items-center gap-1.5 px-4 py-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-[11px] font-semibold rounded-lg transition-colors"
+                >
+                  {isSendingEmail ? <Loader2 className="w-3 h-3 animate-spin" /> : <ArrowRight className="w-3 h-3" />}
+                  Send Reply
+                </button>
+              </div>
             </div>
           </div>
         )}

@@ -268,7 +268,8 @@ export async function triageAddDealNote(
     })
     // Also log to general activity log
     await logActivity(workspaceId, 'deal', dealId, 'note_added', { note })
-    revalidatePath('/dashboard')
+    // Do NOT revalidatePath('/dashboard') — that forces a router refresh which would
+    // unmount the triage card and kill the confirmation UI before the user sees it.
     revalidatePath('/sage/pipelines')
     return {}
   } catch (err) {
