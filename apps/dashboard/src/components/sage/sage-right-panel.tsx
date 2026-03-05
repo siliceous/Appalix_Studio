@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
-import { Sparkles, Send, ChevronRight, ChevronLeft, Mic, MicOff } from 'lucide-react'
+import { Sparkles, Send, ChevronLeft, Mic, MicOff, Minus, Square, X, Maximize2 } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -12,6 +12,8 @@ interface Message {
 interface SageRightPanelProps {
   workspaceId: string
 }
+
+type PanelState = 'normal' | 'minimized' | 'expanded' | 'closed'
 
 function getContextLabel(pathname: string): string {
   if (pathname.includes('/sage/contacts/')) return 'Contact context'
@@ -33,11 +35,11 @@ const STARTER_PROMPTS = [
 
 export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
   const pathname    = usePathname()
-  const [collapsed, setCollapsed]  = useState(false)
-  const [messages,  setMessages]   = useState<Message[]>([])
-  const [input,     setInput]      = useState('')
-  const [loading,   setLoading]    = useState(false)
-  const [listening, setListening]  = useState(false)
+  const [panelState, setPanelState] = useState<PanelState>('normal')
+  const [messages,   setMessages]   = useState<Message[]>([])
+  const [input,      setInput]      = useState('')
+  const [loading,    setLoading]    = useState(false)
+  const [listening,  setListening]  = useState(false)
   const bottomRef      = useRef<HTMLDivElement>(null)
   const textareaRef    = useRef<HTMLTextAreaElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,7 +51,7 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (collapsed) return
+      if (panelState === 'minimized' || panelState === 'closed') return
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       if (e.key === 'm' || e.key === 'M') toggleVoice()
@@ -57,7 +59,7 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collapsed, listening])
+  }, [panelState, listening])
 
   const send = useCallback(async (text: string) => {
     const trimmed = text.trim()
@@ -128,7 +130,7 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
         textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px'
       }
     }
-    rec.onend  = () => setListening(false)
+    rec.onend   = () => setListening(false)
     rec.onerror = () => setListening(false)
 
     recognitionRef.current = rec
@@ -136,14 +138,27 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
     setListening(true)
   }
 
-  // Collapsed state — just show a thin strip
-  if (collapsed) {
+  // ── Closed — floating reopen button ──────────────────────────────────────
+  if (panelState === 'closed') {
+    return (
+      <button
+        onClick={() => setPanelState('normal')}
+        title="Open Sage AI"
+        className="fixed bottom-6 right-6 z-50 w-11 h-11 rounded-full bg-brand-600 hover:bg-brand-700 shadow-lg flex items-center justify-center transition-colors"
+      >
+        <Sparkles className="w-5 h-5 text-white" />
+      </button>
+    )
+  }
+
+  // ── Minimized — thin strip ────────────────────────────────────────────────
+  if (panelState === 'minimized') {
     return (
       <div className="w-10 shrink-0 border-l dark:border-white/8 bg-white dark:bg-[#232323] flex flex-col items-center py-4 gap-4">
         <button
-          onClick={() => setCollapsed(false)}
+          onClick={() => setPanelState('normal')}
           className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
-          title="Open Sage AI"
+          title="Restore Sage AI"
         >
           <ChevronLeft className="w-4 h-4 text-gray-400" />
         </button>
@@ -154,8 +169,11 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
     )
   }
 
+  // ── Normal or Expanded ────────────────────────────────────────────────────
+  const isExpanded = panelState === 'expanded'
+
   return (
-    <div className="w-80 shrink-0 border-l dark:border-white/8 bg-white dark:bg-[#232323] flex flex-col shadow-[-4px_0_16px_rgba(0,0,0,0.06)] dark:shadow-[-4px_0_16px_rgba(0,0,0,0.25)]">
+    <div className={`${isExpanded ? 'w-[520px]' : 'w-80'} shrink-0 border-l dark:border-white/8 bg-white dark:bg-[#232323] flex flex-col shadow-[-4px_0_16px_rgba(0,0,0,0.06)] dark:shadow-[-4px_0_16px_rgba(0,0,0,0.25)] transition-all duration-200`}>
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-[#61c2ad]/20 dark:border-[#61c2ad]/15 bg-[#61c2ad]/[0.08] dark:bg-[#61c2ad]/10 shrink-0">
         <div className="w-6 h-6 rounded-md bg-brand-50 dark:bg-[#61c2ad]/10 flex items-center justify-center">
@@ -165,12 +183,34 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
           <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">Sage AI</p>
           <p className="text-[10px] text-gray-400 truncate">{getContextLabel(pathname)}</p>
         </div>
-        <button
-          onClick={() => setCollapsed(true)}
-          className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
-        >
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-        </button>
+
+        {/* Window controls */}
+        <div className="flex items-center gap-0.5">
+          <button
+            onClick={() => setPanelState('minimized')}
+            title="Minimise"
+            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+          >
+            <Minus className="w-3.5 h-3.5 text-gray-400" />
+          </button>
+          <button
+            onClick={() => setPanelState(isExpanded ? 'normal' : 'expanded')}
+            title={isExpanded ? 'Restore' : 'Expand'}
+            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+          >
+            {isExpanded
+              ? <Square className="w-3 h-3 text-gray-400" />
+              : <Maximize2 className="w-3.5 h-3.5 text-gray-400" />
+            }
+          </button>
+          <button
+            onClick={() => setPanelState('closed')}
+            title="Close"
+            className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 transition-colors"
+          >
+            <X className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
+          </button>
+        </div>
       </div>
 
       {/* Messages */}
@@ -193,10 +233,7 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
         {messages.map((m, i) => (
           <div
             key={i}
-            className={m.role === 'user'
-              ? 'flex justify-end'
-              : 'flex justify-start'
-            }
+            className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}
           >
             <div
               className={`max-w-[90%] rounded-xl px-3 py-2 text-xs leading-relaxed ${
