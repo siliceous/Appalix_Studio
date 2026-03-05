@@ -526,9 +526,9 @@
     .then(function (d) {
       if (d.welcome_message) welcomeMessage = d.welcome_message;
       if (d.bot_name) botName = d.bot_name;
-      var skinId = d.skin || 'light';
+      var skinId = d.skin || 'appalix_lite';
       if (skinId === 'custom') {
-        skinVars = Object.assign({}, SKINS.light);
+        skinVars = Object.assign({}, SKINS.appalix_lite);
         if (d.accent_color) {
           skinVars['--apx-accent']      = d.accent_color;
           skinVars['--apx-user-bubble'] = d.accent_color;
@@ -536,7 +536,7 @@
         }
         if (d.header_color) skinVars['--apx-header-bg'] = d.header_color;
       } else {
-        skinVars = SKINS[skinId] || SKINS.light;
+        skinVars = SKINS[skinId] || SKINS.appalix_lite;
       }
       render();
     })

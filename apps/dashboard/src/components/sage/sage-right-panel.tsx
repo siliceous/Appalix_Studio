@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
-import { Sparkles, Send, Mic, MicOff, X } from 'lucide-react'
+import { Sparkles, Send, Mic, MicOff, X, Minimize2, Expand } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -13,7 +13,7 @@ interface SageRightPanelProps {
   workspaceId: string
 }
 
-type PanelState = 'floating' | 'closed'
+type PanelState = 'floating' | 'expanded' | 'closed'
 
 function getContextLabel(pathname: string): string {
   if (pathname.includes('/sage/contacts/')) return 'Contact context'
@@ -44,7 +44,6 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
   const textareaRef    = useRef<HTMLTextAreaElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null)
-  const dragRef        = useRef<{ ox: number; oy: number; mx: number; my: number } | null>(null)
   const floatReady     = useRef(false)
   const [floatPos,     setFloatPos] = useState({ x: 40, y: 100 })
   const [winSize,      setWinSize]  = useState({ w: 420, h: 580 })
@@ -66,13 +65,28 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
   }, [panelState, listening])
 
   useEffect(() => {
-    if (panelState === 'floating' && !floatReady.current) {
+    if ((panelState === 'floating' || panelState === 'expanded') && !floatReady.current) {
       floatReady.current = true
-      setWinSize({ w: 420, h: 580 })
-      setFloatPos({ x: window.innerWidth - 440, y: window.innerHeight - 620 })
+      if (panelState === 'expanded') {
+        setWinSize({ w: Math.min(620, window.innerWidth - 32), h: Math.min(window.innerHeight - 32, 820) })
+        setFloatPos({ x: window.innerWidth - Math.min(620, window.innerWidth - 32) - 16, y: 16 })
+      } else {
+        setWinSize({ w: 420, h: 580 })
+        setFloatPos({ x: window.innerWidth - 440, y: window.innerHeight - 620 })
+      }
     }
-    if (panelState !== 'floating') floatReady.current = false
+    if (panelState === 'closed') floatReady.current = false
   }, [panelState])
+
+  function toggleExpand() {
+    if (panelState === 'expanded') {
+      floatReady.current = false
+      setPanelState('floating')
+    } else {
+      floatReady.current = false
+      setPanelState('expanded')
+    }
+  }
 
   const send = useCallback(async (text: string) => {
     const trimmed = text.trim()
@@ -231,8 +245,17 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
           <p className="text-[10px] text-gray-400 truncate">{getContextLabel(pathname)}</p>
         </div>
         <button
-          onClick={() => setPanelState('closed')}
-          title="Close"
+          onClick={toggleExpand}
+          title={panelState === 'expanded' ? 'Restore' : 'Expand'}
+          className="p-1 rounded hover:bg-white/20 dark:hover:bg-white/10 transition-colors"
+        >
+          {panelState === 'expanded'
+            ? <Minimize2 className="w-3.5 h-3.5 text-gray-400" />
+            : <Expand    className="w-3.5 h-3.5 text-gray-400" />}
+        </button>
+        <button
+          onClick={() => { setPanelState('closed') }}
+          title="Minimise"
           className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
         >
           <X className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
