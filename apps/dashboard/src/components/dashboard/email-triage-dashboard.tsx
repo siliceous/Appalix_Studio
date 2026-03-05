@@ -566,37 +566,36 @@ function DetailCard({ t, allEmails, actioned, onAction, onDismiss, onDelete, onC
           </div>
         )}
 
-        {/* Reply + Update strip */}
+        {/* Reply draft — draft text + Send button only */}
         {drafts.length > 0 && !sent && (
           <div className="rounded-xl border dark:border-white/8 overflow-hidden">
-            {/* Single-row: tone picker + Send */}
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-white/3">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-white/3 border-b dark:border-white/8">
               <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Reply</span>
-              <div className="flex items-center gap-1 flex-1">
-                {drafts.map((d, i) => (
-                  <button key={i}
-                    onClick={() => { setActiveDraft(i); setComposeBody(d.body) }}
-                    className={cn('text-[11px] px-2.5 py-1 rounded-lg font-medium transition-colors',
-                      activeDraft === i ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/8')}>
-                    {d.tone}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={handleSendReply}
-                disabled={isSendingEmail || !composeBody.trim()}
-                className="flex items-center gap-1.5 px-4 py-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-[11px] font-semibold rounded-lg transition-colors shrink-0"
-              >
-                {isSendingEmail ? <Loader2 className="w-3 h-3 animate-spin" /> : <ArrowRight className="w-3 h-3" />}
-                Send
-              </button>
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">AI Reply Draft</span>
+            </div>
+            <div className="px-4 py-3 bg-white dark:bg-[#232323]">
+              <textarea
+                value={composeBody}
+                onChange={e => setComposeBody(e.target.value)}
+                rows={5}
+                className="w-full text-sm text-gray-800 dark:text-gray-200 leading-relaxed bg-transparent resize-none outline-none"
+              />
             </div>
             {sendError && (
               <div className="px-4 py-2 bg-red-50 dark:bg-red-500/10 border-t border-red-200 dark:border-red-500/20 text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-2">
                 <X className="w-3 h-3 shrink-0" /> {sendError}
               </div>
             )}
+            <div className="px-4 py-2.5 border-t dark:border-white/8 bg-gray-50 dark:bg-white/3 flex justify-end">
+              <button
+                onClick={handleSendReply}
+                disabled={isSendingEmail || !composeBody.trim()}
+                className="flex items-center gap-1.5 px-4 py-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-[11px] font-semibold rounded-lg transition-colors"
+              >
+                {isSendingEmail ? <Loader2 className="w-3 h-3 animate-spin" /> : <ArrowRight className="w-3 h-3" />}
+                Send Reply
+              </button>
+            </div>
           </div>
         )}
 
