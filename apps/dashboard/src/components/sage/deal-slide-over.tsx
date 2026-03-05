@@ -501,7 +501,7 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                     </div>
                   )}
 
-                  {/* Follow ups — recent activity + email updates, oldest first */}
+                  {/* Follow ups — newest first */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
@@ -524,8 +524,8 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                     ) : (
                       <div className="space-y-2">
                         {[...activities]
-                          .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-                          .slice(-8)
+                          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                          .slice(0, 8)
                           .map(act => {
                             const Icon = ACTIVITY_ICONS[act.type as ActivityType] ?? FileText
                             const colorCls = ACTIVITY_COLORS[act.type as ActivityType] ?? 'text-gray-500 bg-gray-100 dark:bg-white/5'
