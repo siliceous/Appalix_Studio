@@ -4,7 +4,8 @@ import { useState, useEffect, useTransition, useRef } from 'react'
 import {
   X, Trophy, XCircle, FileText, Phone, Users, CheckSquare,
   Clock, Check, ChevronRight, ExternalLink, Building2, Tag,
-  Calendar, DollarSign, AlertCircle,
+  DollarSign, AlertCircle, Mail, Globe, MapPin,
+  User, Lock, ChevronDown,
 } from 'lucide-react'
 import { getDealDetail, addDealActivity, completeDealTask } from '@/app/actions/sage'
 import { WonLostModal } from './won-lost-modal'
@@ -26,7 +27,7 @@ const ACTIVITY_ICONS: Record<ActivityType, React.ElementType> = {
 
 const ACTIVITY_LABELS: Record<ActivityType, string> = {
   note:    'Note',
-  call:    'Call',
+  call:    'Phone Call',
   meeting: 'Meeting',
   task:    'Task',
 }
@@ -38,21 +39,17 @@ const ACTIVITY_COLORS: Record<ActivityType, string> = {
   task:    'text-amber-500 bg-amber-50 dark:bg-amber-500/10',
 }
 
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  const days = Math.floor(hrs / 24)
-  if (days < 7) return `${days}d ago`
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
-
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function formatDateTime(iso: string | null | undefined): string {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit',
+  })
 }
 
 function formatCurrency(value: number | null, currency: string): string {
@@ -60,9 +57,37 @@ function formatCurrency(value: number | null, currency: string): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(value)
 }
 
+function daysSince(iso: string | null | undefined): number {
+  if (!iso) return 0
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
+}
+
+function groupActivitiesByDate(activities: SageDealActivity[]) {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const thisWeekStart = new Date(today)
+  thisWeekStart.setDate(today.getDate() - today.getDay())
+
+  const groups: { label: string; items: SageDealActivity[] }[] = []
+  const buckets: Record<string, SageDealActivity[]> = { Today: [], 'This Week': [], Earlier: [] }
+
+  for (const a of activities) {
+    const d = new Date(a.created_at)
+    const day = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+    if (day >= today) buckets['Today'].push(a)
+    else if (day >= thisWeekStart) buckets['This Week'].push(a)
+    else buckets['Earlier'].push(a)
+  }
+
+  for (const label of ['Today', 'This Week', 'Earlier']) {
+    if (buckets[label].length > 0) groups.push({ label, items: buckets[label] })
+  }
+  return groups
+}
+
 const PRIORITY_BADGE: Record<string, string> = {
   high:   'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20',
-  medium: 'bg-amber-50 dark:bg-amber-500/10 text-amber-500/75 dark:text-amber-400/75 border border-amber-200 dark:border-amber-500/25',
+  medium: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/25',
   low:    'bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-white/10',
 }
 
@@ -73,19 +98,20 @@ const STATUS_BADGE: Record<string, string> = {
 }
 
 export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
-  const [deal,       setDeal]       = useState<Record<string, unknown> & { contact: Record<string, unknown> | null } | null>(null)
-  const [activities, setActivities] = useState<SageDealActivity[]>([])
-  const [loading,    setLoading]    = useState(false)
-  const [activeTab,  setActiveTab]  = useState<'overview' | 'activity'>('overview')
-  const [addType,    setAddType]    = useState<ActivityType | null>(null)
-  const [formTitle,  setFormTitle]  = useState('')
-  const [formBody,   setFormBody]   = useState('')
-  const [formDue,    setFormDue]    = useState('')
-  const [wonLostMode, setWonLostMode] = useState<'won' | 'lost' | null>(null)
-  const [isPending,  startTransition] = useTransition()
+  const [deal,          setDeal]          = useState<Record<string, unknown> & { contact: Record<string, unknown> | null } | null>(null)
+  const [activities,    setActivities]    = useState<SageDealActivity[]>([])
+  const [loading,       setLoading]       = useState(false)
+  const [activeTab,     setActiveTab]     = useState<'overview' | 'activity'>('overview')
+  const [addType,       setAddType]       = useState<ActivityType>('note')
+  const [showTypeMenu,  setShowTypeMenu]  = useState(false)
+  const [showAddForm,   setShowAddForm]   = useState(false)
+  const [formTitle,     setFormTitle]     = useState('')
+  const [formBody,      setFormBody]      = useState('')
+  const [formDue,       setFormDue]       = useState('')
+  const [wonLostMode,   setWonLostMode]   = useState<'won' | 'lost' | null>(null)
+  const [isPending,     startTransition]  = useTransition()
   const slideRef = useRef<HTMLDivElement>(null)
 
-  // Fetch deal detail when dealId changes
   useEffect(() => {
     if (!dealId) { setDeal(null); setActivities([]); return }
     setLoading(true)
@@ -97,24 +123,21 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
     })
   }, [dealId])
 
-  // Escape to close
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
   function resetForm() {
-    setAddType(null)
+    setShowAddForm(false)
     setFormTitle('')
     setFormBody('')
     setFormDue('')
   }
 
   function handleSubmitActivity() {
-    if (!addType || !dealId) return
+    if (!dealId) return
     startTransition(async () => {
       const result = await addDealActivity(dealId, addType, formTitle, formBody, formDue || undefined)
       if (!result.error) {
@@ -137,54 +160,71 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
 
   function handleWonLostConfirm() {
     setWonLostMode(null)
-    // Refresh deal
     if (dealId) {
-      getDealDetail(dealId).then(res => {
-        setDeal(res.deal)
-        setActivities(res.activities)
-      })
+      getDealDetail(dealId).then(res => { setDeal(res.deal); setActivities(res.activities) })
     }
   }
 
   const isOpen = !!dealId
-
   if (!isOpen) return null
 
   const contact = deal?.contact as Record<string, unknown> | null
   const stage   = deal?.stage   as Record<string, unknown> | null
 
-  // Typed extractions — Record<string,unknown> &&-expressions produce `unknown`, not ReactNode
-  const dealTitle      = (deal?.title       as string       ) ?? ''
-  const dealValue      = (deal?.value       as number | null) ?? null
-  const dealCurrency   = (deal?.currency    as string       ) ?? 'USD'
-  const dealStatus     = (deal?.status      as string       ) ?? ''
-  const dealPriority   = (deal?.priority    as string | null) ?? null
-  const dealCloseDate  = (deal?.close_date  as string | null) ?? null
-  const dealSource     = (deal?.source      as string | null) ?? null
+  const dealTitle      = (deal?.title          as string       ) ?? ''
+  const dealValue      = (deal?.value          as number | null) ?? null
+  const dealCurrency   = (deal?.currency       as string       ) ?? 'USD'
+  const dealStatus     = (deal?.status         as string       ) ?? ''
+  const dealPriority   = (deal?.priority       as string | null) ?? null
+  const dealCloseDate  = (deal?.close_date     as string | null) ?? null
+  const dealSource     = (deal?.source         as string | null) ?? null
   const dealWinPct     = (deal?.win_percentage as number | null) ?? null
-  const dealWonAt      = (deal?.won_at      as string | null) ?? null
-  const dealLostReason = (deal?.lost_reason as string | null) ?? null
-  const dealDesc       = (deal?.description as string | null) ?? null
-  const dealTags       = Array.isArray(deal?.tags) ? (deal!.tags as string[]) : ([] as string[])
-  const dealPipelineId = (deal?.pipeline_id as string | null) ?? null
+  const dealWonAt      = (deal?.won_at         as string | null) ?? null
+  const dealLostReason = (deal?.lost_reason    as string | null) ?? null
+  const dealDesc       = (deal?.description    as string | null) ?? null
+  const dealTags       = Array.isArray(deal?.tags) ? (deal!.tags as string[]) : []
+  const dealPipelineId = (deal?.pipeline_id    as string | null) ?? null
+  const dealCreatedAt  = (deal?.created_at     as string | null) ?? null
+
+  // Contact fields (all of them)
+  const contactId      = (contact?.id           as string | null) ?? null
   const contactName    = (contact?.name         as string | null) ?? null
   const contactEmail   = (contact?.email        as string | null) ?? null
   const contactPhone   = (contact?.phone        as string | null) ?? null
   const contactCompany = (contact?.company_name as string | null) ?? null
-  const contactId      = (contact?.id           as string | null) ?? null
+  const contactTitle   = (contact?.title        as string | null) ?? null
+  const contactWebsite = (contact?.website_url  as string | null) ?? null
+  const contactGoal    = (contact?.business_goal as string | null) ?? null
+  const contactType    = (contact?.contact_type as string | null) ?? null
+  const contactSource  = (contact?.source       as string | null) ?? null
+  const contactTags    = Array.isArray(contact?.tags) ? (contact!.tags as string[]) : []
+  const contactNotes   = (contact?.notes        as string | null) ?? null
+  const contactCreated = (contact?.created_at   as string | null) ?? null
+  const contactStreet  = (contact?.street       as string | null) ?? null
+  const contactCity    = (contact?.city         as string | null) ?? null
+  const contactState   = (contact?.state        as string | null) ?? null
+  const contactZip     = (contact?.zip          as string | null) ?? null
+  const contactCountry = (contact?.country      as string | null) ?? null
+
+  const addressParts = [contactStreet, contactCity, contactState, contactZip, contactCountry].filter(Boolean)
+  const fullAddress  = addressParts.length > 0 ? addressParts.join(', ') : null
+
+  // Activity stats
+  const lastActivity   = activities[0]?.created_at ?? null
+  const inactiveDays   = lastActivity ? daysSince(lastActivity) : daysSince(dealCreatedAt)
+  const daysInStage    = daysSince(dealCreatedAt)
+
+  const activityGroups = groupActivitiesByDate(activities)
 
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/30 z-40 transition-opacity"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/30 z-40 transition-opacity" onClick={onClose} />
 
       {/* Slide-over panel */}
       <div
         ref={slideRef}
-        className={`fixed top-0 right-0 h-full w-[520px] max-w-full bg-white dark:bg-[#1e1e1e] border-l dark:border-white/8 z-50 flex flex-col shadow-2xl transition-transform duration-300 ${
+        className={`fixed top-0 right-0 h-full w-[540px] max-w-full bg-white dark:bg-[#1e1e1e] border-l dark:border-white/8 z-50 flex flex-col shadow-2xl transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -195,29 +235,27 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
         ) : (
           <>
             {/* Header */}
-            <div className="px-5 pt-5 pb-4 border-b dark:border-white/8 shrink-0">
-              <div className="flex items-start gap-3">
+            <div className="px-5 pt-5 pb-0 border-b dark:border-white/8 shrink-0">
+              <div className="flex items-start gap-3 mb-4">
+                {/* Avatar */}
+                <div className="w-10 h-10 rounded-xl bg-brand-100 dark:bg-[#61c2ad]/15 flex items-center justify-center shrink-0">
+                  <span className="text-sm font-bold text-brand-700 dark:text-[#61c2ad]">
+                    {dealTitle.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 leading-snug">
-                    {dealTitle}
-                  </h2>
-                  {contact && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-                      {contactName}
-                      {contactCompany && ` · ${contactCompany}`}
+                  <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 leading-snug">{dealTitle}</h2>
+                  {contactName && (
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {contactName}{contactCompany ? ` · ${contactCompany}` : ''}
                     </p>
                   )}
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
                     {dealValue && (
-                      <span className="flex items-center gap-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      <span className="flex items-center gap-1 text-sm font-bold text-gray-900 dark:text-gray-100">
                         <DollarSign className="w-3.5 h-3.5 text-gray-400" />
                         {formatCurrency(dealValue, dealCurrency)}
-                      </span>
-                    )}
-                    {dealCloseDate && (
-                      <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                        <Calendar className="w-3 h-3" />
-                        Close {new Date(dealCloseDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </span>
                     )}
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium capitalize ${STATUS_BADGE[dealStatus] ?? ''}`}>
@@ -232,24 +270,20 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
-                  {/* Won button */}
                   {dealStatus !== 'won' && (
                     <button
                       onClick={() => setWonLostMode('won')}
                       className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10 hover:bg-green-100 dark:hover:bg-green-500/20 rounded-lg border border-green-200 dark:border-green-500/20 transition-colors"
                     >
-                      <Trophy className="w-3 h-3" />
-                      Won
+                      <Trophy className="w-3 h-3" /> Won
                     </button>
                   )}
-                  {/* Lost button */}
                   {dealStatus !== 'lost' && (
                     <button
                       onClick={() => setWonLostMode('lost')}
                       className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg border border-red-200 dark:border-red-500/20 transition-colors"
                     >
-                      <XCircle className="w-3 h-3" />
-                      Lost
+                      <XCircle className="w-3 h-3" /> Lost
                     </button>
                   )}
                   <button
@@ -262,20 +296,20 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
               </div>
 
               {/* Tabs */}
-              <div className="flex gap-1 mt-4">
+              <div className="flex gap-0 border-b-0">
                 {(['overview', 'activity'] as const).map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-4 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${
+                    className={`px-4 py-2 text-xs font-semibold capitalize transition-colors border-b-2 ${
                       activeTab === tab
-                        ? 'bg-brand-50 dark:bg-[#ec732e]/10 text-brand-700 dark:text-[#ec732e]'
-                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5'
+                        ? 'border-brand-600 dark:border-[#61c2ad] text-brand-700 dark:text-[#61c2ad]'
+                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                     }`}
                   >
                     {tab}
                     {tab === 'activity' && activities.length > 0 && (
-                      <span className="ml-1.5 text-[10px] bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-400 px-1 rounded">
+                      <span className="ml-1.5 text-[10px] bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded-full">
                         {activities.length}
                       </span>
                     )}
@@ -286,9 +320,12 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto">
+
+              {/* ── OVERVIEW TAB ── */}
               {activeTab === 'overview' && (
                 <div className="p-5 space-y-5">
-                  {/* Won/Lost info */}
+
+                  {/* Won/Lost banner */}
                   {dealStatus === 'won' && dealWonAt && (
                     <div className="p-3 bg-green-50 dark:bg-green-500/10 rounded-xl border border-green-200 dark:border-green-500/20 flex items-center gap-2">
                       <Trophy className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" />
@@ -303,79 +340,156 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                       <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
                       <div>
                         <p className="text-sm font-semibold text-red-600 dark:text-red-400">Deal Lost</p>
-                        {dealLostReason && (
-                          <p className="text-xs text-red-500/70 dark:text-red-400/70">Reason: {dealLostReason}</p>
-                        )}
+                        {dealLostReason && <p className="text-xs text-red-500/70 dark:text-red-400/70">Reason: {dealLostReason}</p>}
                       </div>
                     </div>
                   )}
 
-                  {/* Details grid */}
-                  <div className="grid grid-cols-2 gap-3">
-                    {stage && (
-                      <div className="p-3 bg-gray-50 dark:bg-white/[0.03] rounded-xl border dark:border-white/8">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1">Stage</p>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{stage.name as string}</p>
-                      </div>
-                    )}
-                    {dealSource && (
-                      <div className="p-3 bg-gray-50 dark:bg-white/[0.03] rounded-xl border dark:border-white/8">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1">Source</p>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 capitalize">{dealSource}</p>
-                      </div>
-                    )}
-                    {dealWinPct != null && (
-                      <div className="p-3 bg-gray-50 dark:bg-white/[0.03] rounded-xl border dark:border-white/8">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1">Win %</p>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{dealWinPct}%</p>
-                      </div>
-                    )}
-                    {dealCloseDate && (
-                      <div className="p-3 bg-gray-50 dark:bg-white/[0.03] rounded-xl border dark:border-white/8">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1">Close Date</p>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{formatDate(dealCloseDate)}</p>
-                      </div>
-                    )}
+                  {/* Lead created timestamp (locked) */}
+                  <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-white/[0.03] rounded-xl border dark:border-white/8">
+                    <Lock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Lead Created</p>
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mt-0.5">{formatDateTime(dealCreatedAt)}</p>
+                    </div>
+                    <span className="text-[10px] text-gray-300 dark:text-gray-600 italic">locked</span>
                   </div>
 
-                  {/* Contact card */}
+                  {/* Deal details grid */}
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-2">Deal Details</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {stage && (
+                        <div className="p-2.5 bg-gray-50 dark:bg-white/[0.03] rounded-xl border dark:border-white/8">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-0.5">Stage</p>
+                          <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{stage.name as string}</p>
+                        </div>
+                      )}
+                      {dealCloseDate && (
+                        <div className="p-2.5 bg-gray-50 dark:bg-white/[0.03] rounded-xl border dark:border-white/8">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-0.5">Close Date</p>
+                          <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{formatDate(dealCloseDate)}</p>
+                        </div>
+                      )}
+                      {dealSource && (
+                        <div className="p-2.5 bg-gray-50 dark:bg-white/[0.03] rounded-xl border dark:border-white/8">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-0.5">Source</p>
+                          <p className="text-xs font-medium text-gray-900 dark:text-gray-100 capitalize">{dealSource}</p>
+                        </div>
+                      )}
+                      {dealWinPct != null && (
+                        <div className="p-2.5 bg-gray-50 dark:bg-white/[0.03] rounded-xl border dark:border-white/8">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-0.5">Win %</p>
+                          <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{dealWinPct}%</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Contact — full fields */}
                   {contact && contactName && (
-                    <div className="p-3.5 bg-gray-50 dark:bg-white/[0.03] rounded-xl border dark:border-white/8">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-2">Contact</p>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-[#ec732e]/15 flex items-center justify-center shrink-0">
-                          <span className="text-xs font-semibold text-brand-600 dark:text-[#ec732e]">
+                    <div className="rounded-xl border dark:border-white/8 overflow-hidden">
+                      {/* Contact header */}
+                      <div className="flex items-center gap-3 px-3.5 py-3 bg-gray-50 dark:bg-white/[0.03] border-b dark:border-white/8">
+                        <div className="w-9 h-9 rounded-full bg-brand-100 dark:bg-[#61c2ad]/15 flex items-center justify-center shrink-0">
+                          <span className="text-sm font-bold text-brand-700 dark:text-[#61c2ad]">
                             {contactName.charAt(0).toUpperCase()}
                           </span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{contactName}</p>
-                          {contactEmail && (
-                            <p className="text-xs text-gray-400 truncate">{contactEmail}</p>
-                          )}
-                          {contactPhone && (
-                            <p className="text-xs text-gray-400">{contactPhone}</p>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{contactName}</p>
+                          {contactTitle && <p className="text-xs text-gray-400">{contactTitle}</p>}
+                          {contactType && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-50 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad] font-medium capitalize">
+                              {contactType.replace(/_/g, ' ')}
+                            </span>
                           )}
                         </div>
                         {contactId && (
-                          <a
-                            href={`/sage/contacts/${contactId}`}
-                            className="text-gray-400 hover:text-brand-600 dark:hover:text-[#ec732e] transition-colors"
-                          >
+                          <a href={`/sage/contacts/${contactId}`} className="p-1.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] hover:bg-gray-100 dark:hover:bg-white/8 rounded-lg transition-colors">
                             <ExternalLink className="w-3.5 h-3.5" />
                           </a>
                         )}
                       </div>
-                      {contactCompany && (
-                        <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-500 dark:text-gray-400">
-                          <Building2 className="w-3 h-3" />
-                          {contactCompany}
-                        </div>
-                      )}
+
+                      {/* Contact fields list */}
+                      <div className="divide-y dark:divide-white/8">
+                        {contactEmail && (
+                          <div className="flex items-center gap-2.5 px-3.5 py-2.5">
+                            <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                            <a href={`mailto:${contactEmail}`} className="text-xs text-gray-700 dark:text-gray-300 hover:text-brand-600 dark:hover:text-[#61c2ad] transition-colors truncate">{contactEmail}</a>
+                          </div>
+                        )}
+                        {contactPhone && (
+                          <div className="flex items-center gap-2.5 px-3.5 py-2.5">
+                            <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                            <a href={`tel:${contactPhone}`} className="text-xs text-gray-700 dark:text-gray-300 hover:text-brand-600 dark:hover:text-[#61c2ad] transition-colors">{contactPhone}</a>
+                          </div>
+                        )}
+                        {contactCompany && (
+                          <div className="flex items-center gap-2.5 px-3.5 py-2.5">
+                            <Building2 className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                            <span className="text-xs text-gray-700 dark:text-gray-300">{contactCompany}</span>
+                          </div>
+                        )}
+                        {contactWebsite && (
+                          <div className="flex items-center gap-2.5 px-3.5 py-2.5">
+                            <Globe className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                            <a href={contactWebsite.startsWith('http') ? contactWebsite : `https://${contactWebsite}`} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-700 dark:text-gray-300 hover:text-brand-600 dark:hover:text-[#61c2ad] transition-colors truncate">
+                              {contactWebsite}
+                            </a>
+                          </div>
+                        )}
+                        {fullAddress && (
+                          <div className="flex items-start gap-2.5 px-3.5 py-2.5">
+                            <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" />
+                            <span className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{fullAddress}</span>
+                          </div>
+                        )}
+                        {contactGoal && (
+                          <div className="flex items-start gap-2.5 px-3.5 py-2.5">
+                            <User className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">Business Goal</p>
+                              <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{contactGoal}</p>
+                            </div>
+                          </div>
+                        )}
+                        {contactSource && (
+                          <div className="flex items-center gap-2.5 px-3.5 py-2.5">
+                            <Tag className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                            <span className="text-[10px] text-gray-400 uppercase tracking-wide">Source</span>
+                            <span className="text-xs text-gray-700 dark:text-gray-300 capitalize ml-1">{contactSource}</span>
+                          </div>
+                        )}
+                        {contactCreated && (
+                          <div className="flex items-center gap-2.5 px-3.5 py-2.5">
+                            <Clock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                            <span className="text-[10px] text-gray-400 uppercase tracking-wide">Contact created</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">{formatDate(contactCreated)}</span>
+                          </div>
+                        )}
+                        {contactTags.length > 0 && (
+                          <div className="flex items-start gap-2.5 px-3.5 py-2.5">
+                            <Tag className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" />
+                            <div className="flex flex-wrap gap-1">
+                              {contactTags.map(t => (
+                                <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400">{t}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {contactNotes && (
+                          <div className="px-3.5 py-2.5">
+                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Notes</p>
+                            <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{contactNotes}</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 
-                  {/* Description */}
+                  {/* Deal description */}
                   {dealDesc && (
                     <div>
                       <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1.5">Description</p>
@@ -383,107 +497,162 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                     </div>
                   )}
 
-                  {/* Tags */}
+                  {/* Deal tags */}
                   {dealTags.length > 0 && (
                     <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1.5 flex items-center gap-1">
-                        <Tag className="w-3 h-3" /> Tags
-                      </p>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1.5">Tags</p>
                       <div className="flex flex-wrap gap-1.5">
                         {dealTags.map(tag => (
-                          <span key={tag} className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 rounded-full">
-                            {tag}
-                          </span>
+                          <span key={tag} className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 rounded-full">{tag}</span>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {/* View in Pipelines */}
                   {dealPipelineId && (
-                    <a
-                      href={`/sage/pipelines/${dealPipelineId}`}
-                      className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-brand-600 dark:hover:text-[#ec732e] transition-colors"
-                    >
+                    <a href={`/sage/pipelines/${dealPipelineId}`} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] transition-colors">
                       View in Pipeline <ChevronRight className="w-3.5 h-3.5" />
                     </a>
                   )}
                 </div>
               )}
 
+              {/* ── ACTIVITY TAB ── */}
               {activeTab === 'activity' && (
                 <div className="p-5 space-y-4">
-                  {/* Add activity buttons */}
-                  <div className="flex gap-1.5 flex-wrap">
-                    {(['note', 'call', 'meeting', 'task'] as ActivityType[]).map(type => {
-                      const Icon = ACTIVITY_ICONS[type]
-                      return (
-                        <button
-                          key={type}
-                          onClick={() => setAddType(addType === type ? null : type)}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                            addType === type
-                              ? 'border-brand-400 bg-brand-50 dark:bg-[#ec732e]/10 text-brand-700 dark:text-[#ec732e]'
-                              : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
-                          }`}
-                        >
-                          <Icon className="w-3.5 h-3.5" />
-                          + {ACTIVITY_LABELS[type]}
-                        </button>
-                      )
-                    })}
+
+                  {/* Stats strip */}
+                  <div className="grid grid-cols-4 gap-0 rounded-xl border dark:border-white/8 overflow-hidden">
+                    {[
+                      { label: 'Interactions',    value: activities.length },
+                      { label: 'Last Contacted',  value: lastActivity ? formatDate(lastActivity) : 'Never' },
+                      { label: 'Inactive Days',   value: inactiveDays },
+                      { label: 'Days in Stage',   value: daysInStage },
+                    ].map((stat, i) => (
+                      <div key={i} className={`px-3 py-3 text-center ${i < 3 ? 'border-r dark:border-white/8' : ''} bg-gray-50 dark:bg-white/[0.02]`}>
+                        <p className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-none">{stat.value}</p>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 leading-tight">{stat.label}</p>
+                      </div>
+                    ))}
                   </div>
 
-                  {/* Inline add form */}
-                  {addType && (
-                    <div className="p-4 bg-gray-50 dark:bg-white/[0.03] rounded-xl border dark:border-white/8 space-y-3">
-                      <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                        Log {ACTIVITY_LABELS[addType]}
-                      </p>
-                      {addType === 'task' && (
-                        <input
-                          type="text"
-                          value={formTitle}
-                          onChange={e => setFormTitle(e.target.value)}
-                          placeholder="Task title…"
-                          className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                        />
-                      )}
-                      <textarea
-                        value={formBody}
-                        onChange={e => setFormBody(e.target.value)}
-                        rows={3}
-                        placeholder={addType === 'note' ? 'Write a note…' : addType === 'call' ? 'Call summary…' : addType === 'meeting' ? 'Meeting notes…' : 'Task description…'}
-                        className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-brand-500"
-                      />
-                      {addType === 'task' && (
-                        <div>
-                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Due date (optional)</label>
-                          <input
-                            type="datetime-local"
-                            value={formDue}
-                            onChange={e => setFormDue(e.target.value)}
-                            className="px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                          />
-                        </div>
-                      )}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={resetForm}
-                          className="px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={handleSubmitActivity}
-                          disabled={isPending || (!formBody.trim() && !formTitle.trim())}
-                          className="px-4 py-1.5 text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg disabled:opacity-50 transition-colors"
-                        >
-                          {isPending ? 'Saving…' : 'Save'}
-                        </button>
-                      </div>
+                  {/* Log Activity section */}
+                  <div className="rounded-xl border dark:border-white/8 overflow-hidden">
+                    {/* Log Activity / Create Note sub-tabs */}
+                    <div className="flex border-b dark:border-white/8">
+                      <button
+                        onClick={() => { setShowAddForm(true); setAddType('call') }}
+                        className={`flex-1 px-4 py-2.5 text-xs font-semibold transition-colors ${
+                          showAddForm && addType !== 'note'
+                            ? 'text-brand-700 dark:text-[#61c2ad] border-b-2 border-brand-600 dark:border-[#61c2ad]'
+                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                        }`}
+                      >
+                        Log Activity
+                      </button>
+                      <button
+                        onClick={() => { setShowAddForm(true); setAddType('note') }}
+                        className={`flex-1 px-4 py-2.5 text-xs font-semibold transition-colors ${
+                          showAddForm && addType === 'note'
+                            ? 'text-brand-700 dark:text-[#61c2ad] border-b-2 border-brand-600 dark:border-[#61c2ad]'
+                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                        }`}
+                      >
+                        Create Note
+                      </button>
                     </div>
-                  )}
+
+                    {showAddForm && (
+                      <div className="p-3 bg-white dark:bg-[#252525] space-y-2.5">
+                        {/* Activity type dropdown (only for Log Activity) */}
+                        {addType !== 'note' && (
+                          <div className="relative">
+                            <button
+                              onClick={() => setShowTypeMenu(v => !v)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
+                            >
+                              {ACTIVITY_LABELS[addType]}
+                              <ChevronDown className="w-3 h-3 text-gray-400" />
+                            </button>
+                            {showTypeMenu && (
+                              <div className="absolute top-full left-0 mt-1 w-40 bg-white dark:bg-[#2a2a2a] border dark:border-white/10 rounded-xl shadow-lg z-10 py-1">
+                                {(['call', 'meeting', 'task'] as ActivityType[]).map(t => (
+                                  <button
+                                    key={t}
+                                    onClick={() => { setAddType(t); setShowTypeMenu(false) }}
+                                    className={`w-full text-left px-3 py-2 text-xs transition-colors ${
+                                      addType === t
+                                        ? 'text-brand-700 dark:text-[#61c2ad] bg-brand-50 dark:bg-[#61c2ad]/10'
+                                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
+                                    }`}
+                                  >
+                                    {ACTIVITY_LABELS[t]}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {addType === 'task' && (
+                          <input
+                            type="text"
+                            value={formTitle}
+                            onChange={e => setFormTitle(e.target.value)}
+                            placeholder="Task title…"
+                            className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                          />
+                        )}
+
+                        <textarea
+                          value={formBody}
+                          onChange={e => setFormBody(e.target.value)}
+                          rows={3}
+                          placeholder={
+                            addType === 'note' ? 'Write a note…'
+                            : addType === 'call' ? 'Call summary…'
+                            : addType === 'meeting' ? 'Meeting notes…'
+                            : 'Task description…'
+                          }
+                          className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        />
+
+                        {addType === 'task' && (
+                          <div>
+                            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Due date (optional)</label>
+                            <input
+                              type="datetime-local"
+                              value={formDue}
+                              onChange={e => setFormDue(e.target.value)}
+                              className="px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:[color-scheme:dark]"
+                            />
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-2 justify-end">
+                          <button onClick={resetForm} className="px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleSubmitActivity}
+                            disabled={isPending || (!formBody.trim() && !formTitle.trim())}
+                            className="px-4 py-1.5 text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg disabled:opacity-50 transition-colors"
+                          >
+                            {isPending ? 'Saving…' : 'Save'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {!showAddForm && (
+                      <button
+                        onClick={() => { setShowAddForm(true); setAddType('call') }}
+                        className="w-full px-4 py-3 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors text-left"
+                      >
+                        Click here to add a note or log activity…
+                      </button>
+                    )}
+                  </div>
 
                   {/* Timeline */}
                   {activities.length === 0 ? (
@@ -493,61 +662,75 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                       <p className="text-xs text-gray-300 dark:text-gray-600 mt-1">Log a note, call, meeting, or task above.</p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      {activities.map(activity => {
-                        const Icon = ACTIVITY_ICONS[activity.type]
-                        const colorClass = ACTIVITY_COLORS[activity.type]
-                        const isTask = activity.type === 'task'
-                        const isDone = !!activity.completed_at
+                    <div className="space-y-5">
+                      {activityGroups.map(group => (
+                        <div key={group.label}>
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-2">{group.label}</p>
+                          <div className="space-y-2">
+                            {group.items.map(activity => {
+                              const Icon      = ACTIVITY_ICONS[activity.type]
+                              const colorClass = ACTIVITY_COLORS[activity.type]
+                              const isTask    = activity.type === 'task'
+                              const isDone    = !!activity.completed_at
 
-                        return (
-                          <div
-                            key={activity.id}
-                            className={`flex gap-3 p-3.5 rounded-xl border transition-colors ${
-                              isDone
-                                ? 'bg-gray-50/50 dark:bg-white/[0.02] border-gray-100 dark:border-white/5 opacity-60'
-                                : 'bg-white dark:bg-[#252525] border-gray-100 dark:border-white/8'
-                            }`}
-                          >
-                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${colorClass}`}>
-                              {isDone ? <Check className="w-3.5 h-3.5" /> : <Icon className="w-3.5 h-3.5" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2">
-                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 capitalize">
-                                  {ACTIVITY_LABELS[activity.type]}
-                                  {isDone && ' · Completed'}
-                                </p>
-                                <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0">{timeAgo(activity.created_at)}</span>
-                              </div>
-                              {activity.title && (
-                                <p className={`text-sm font-medium mt-0.5 ${isDone ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200'}`}>
-                                  {activity.title}
-                                </p>
-                              )}
-                              {activity.body && (
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 leading-relaxed whitespace-pre-wrap">{activity.body}</p>
-                              )}
-                              {activity.due_at && !isDone && (
-                                <p className="text-[10px] text-amber-500 dark:text-amber-400 mt-1 flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  Due {formatDate(activity.due_at)}
-                                </p>
-                              )}
-                              {isTask && !isDone && (
-                                <button
-                                  onClick={() => handleCompleteTask(activity.id)}
-                                  disabled={isPending}
-                                  className="mt-2 flex items-center gap-1 text-[10px] font-medium text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 disabled:opacity-50 transition-colors"
+                              return (
+                                <div
+                                  key={activity.id}
+                                  className={`flex gap-3 p-3.5 rounded-xl border transition-colors ${
+                                    isDone
+                                      ? 'bg-gray-50/50 dark:bg-white/[0.02] border-gray-100 dark:border-white/5 opacity-60'
+                                      : 'bg-white dark:bg-[#252525] border-gray-100 dark:border-white/8'
+                                  }`}
                                 >
-                                  <Check className="w-3 h-3" />
-                                  Mark complete
-                                </button>
-                              )}
-                            </div>
+                                  {/* User avatar */}
+                                  <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-white/10 flex items-center justify-center shrink-0 text-[10px] font-bold text-gray-600 dark:text-gray-300">
+                                    M
+                                  </div>
+                                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${colorClass}`}>
+                                    {isDone ? <Check className="w-3 h-3" /> : <Icon className="w-3 h-3" />}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                        {activity.type === 'call' ? 'You logged a Phone Call'
+                                          : activity.type === 'meeting' ? 'You logged a Meeting'
+                                          : activity.type === 'task' ? (isDone ? 'Task completed' : 'Task added')
+                                          : 'Note added'}
+                                        {isDone && ' · Done'}
+                                      </p>
+                                      <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0 tabular-nums">
+                                        {new Date(activity.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                                      </span>
+                                    </div>
+                                    {activity.title && (
+                                      <p className={`text-xs mt-0.5 font-medium ${isDone ? 'line-through text-gray-400' : 'text-gray-800 dark:text-gray-200'}`}>
+                                        {activity.title}
+                                      </p>
+                                    )}
+                                    {activity.body && (
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{activity.body}</p>
+                                    )}
+                                    {activity.due_at && !isDone && (
+                                      <p className="text-[10px] text-amber-500 mt-1 flex items-center gap-1">
+                                        <Clock className="w-3 h-3" /> Due {formatDate(activity.due_at)}
+                                      </p>
+                                    )}
+                                    {isTask && !isDone && (
+                                      <button
+                                        onClick={() => handleCompleteTask(activity.id)}
+                                        disabled={isPending}
+                                        className="mt-1.5 flex items-center gap-1 text-[10px] font-medium text-green-600 dark:text-green-400 hover:text-green-700 disabled:opacity-50 transition-colors"
+                                      >
+                                        <Check className="w-3 h-3" /> Mark complete
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              )
+                            })}
                           </div>
-                        )
-                      })}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -557,7 +740,6 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
         )}
       </div>
 
-      {/* Won/Lost modal */}
       {wonLostMode && deal && (
         <WonLostModal
           dealId={dealId!}

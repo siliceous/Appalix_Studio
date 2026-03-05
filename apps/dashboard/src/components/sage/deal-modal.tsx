@@ -1,8 +1,9 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { X, Loader2 } from 'lucide-react'
 import { createDeal } from '@/app/actions/sage'
+import { DatePicker } from './date-picker'
 import type { SageContact, SagePipelineStage, SagePipeline } from '@/lib/types'
 
 interface DealModalProps {
@@ -30,6 +31,7 @@ export function DealModal({
   onClose,
 }: DealModalProps) {
   const [pending, startTransition] = useTransition()
+  const [closeDate, setCloseDate] = useState('')
 
   function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -312,10 +314,10 @@ export function DealModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={LABEL_CLS}>Close Date</label>
-              <input
+              <DatePicker
                 name="close_date"
-                type="date"
-                className={`${FIELD_CLS} dark:[color-scheme:dark]`}
+                value={closeDate}
+                onChange={setCloseDate}
               />
             </div>
             <div>

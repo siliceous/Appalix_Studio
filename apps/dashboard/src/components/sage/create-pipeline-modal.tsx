@@ -146,7 +146,7 @@ export function CreatePipelineModal({ onClose }: CreatePipelineModalProps) {
         {/* Step 1 — pick template */}
         {step === 'pick' && (
           <>
-            <div className="p-6 grid grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto">
+            <div className="p-5 grid grid-cols-3 gap-2.5">
               {TEMPLATES.map(t => {
                 const Icon = t.icon
                 const isSelected = selected === t.key
@@ -154,29 +154,29 @@ export function CreatePipelineModal({ onClose }: CreatePipelineModalProps) {
                   <button
                     key={t.key}
                     onClick={() => setSelected(t.key)}
-                    className={`relative text-left p-4 rounded-xl border-2 transition-all duration-150 ${
+                    className={`relative text-left p-3 rounded-xl border-2 transition-all duration-150 ${
                       isSelected
                         ? 'border-brand-500 dark:border-[#61c2ad] bg-brand-50 dark:bg-[#61c2ad]/12 shadow-sm'
                         : 'border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/4 hover:border-gray-300 dark:hover:border-white/20 hover:bg-white dark:hover:bg-white/7'
                     }`}
                   >
                     {isSelected && (
-                      <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-brand-600 dark:bg-[#61c2ad] flex items-center justify-center shrink-0">
-                        <Check className="w-3 h-3 text-white dark:text-[#1c1c1c]" />
+                      <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-brand-600 dark:bg-[#61c2ad] flex items-center justify-center shrink-0">
+                        <Check className="w-2.5 h-2.5 text-white dark:text-[#1c1c1c]" />
                       </div>
                     )}
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-3 ${t.color}`}>
-                      <Icon className="w-4 h-4" />
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center mb-2 ${t.color}`}>
+                      <Icon className="w-3.5 h-3.5" />
                     </div>
-                    <p className={`text-sm font-semibold mb-1 pr-6 ${isSelected ? 'text-brand-800 dark:text-[#61c2ad]' : 'text-gray-900 dark:text-gray-100'}`}>
+                    <p className={`text-xs font-semibold mb-0.5 pr-4 leading-snug ${isSelected ? 'text-brand-800 dark:text-[#61c2ad]' : 'text-gray-900 dark:text-gray-100'}`}>
                       {t.name}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 leading-relaxed">{t.description}</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-2 leading-relaxed">{t.description}</p>
                     <div className="flex flex-wrap gap-1">
                       {t.stages.map(s => (
                         <span
                           key={s}
-                          className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                          className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
                             isSelected
                               ? 'bg-brand-100 dark:bg-[#61c2ad]/20 text-brand-700 dark:text-[#61c2ad]'
                               : 'bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-400'

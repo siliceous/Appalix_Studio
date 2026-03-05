@@ -424,7 +424,7 @@ export async function getDealDetail(dealId: string): Promise<{
 
   const { data: deal, error: dealErr } = await admin
     .from('sage_deals')
-    .select('*, contact:sage_contacts(id, name, email, phone, company_name), stage:sage_pipeline_stages(id, name, color)')
+    .select('*, contact:sage_contacts(id, name, email, phone, company_name, title, website_url, business_goal, street, city, state, zip, country, contact_type, source, tags, notes, created_at), stage:sage_pipeline_stages(id, name, color)')
     .eq('id', dealId)
     .eq('workspace_id', workspaceId)
     .single()

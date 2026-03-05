@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Plus, GripVertical, Search, SlidersHorizontal, ArrowUpDown, Settings2 } from 'lucide-react'
+import { Plus, GripVertical, Search, SlidersHorizontal, ArrowUpDown, Settings2, UserPlus } from 'lucide-react'
 import { moveDeal } from '@/app/actions/sage'
 import { DealModal } from './deal-modal'
 import { ManageStagesModal } from './manage-stages-modal'
 import { DealSlideOver } from './deal-slide-over'
+import { ContactPickerModal } from './contact-picker-modal'
 import type { SageDeal, SagePipelineStage, SageContact, SagePipeline } from '@/lib/types'
 
 type DealWithContact = SageDeal & {
@@ -35,14 +36,16 @@ export function PipelineBoard({
   allPipelines,
   ownerName,
 }: PipelineBoardProps) {
-  const [deals,            setDeals]            = useState<DealWithContact[]>(initialDeals)
-  const [stages,           setStages]           = useState<SagePipelineStage[]>(initialStages)
-  const [dragId,           setDragId]           = useState<string | null>(null)
-  const [dragOverStage,    setDragOverStage]    = useState<string | null>(null)
-  const [showDealModal,    setShowDealModal]    = useState(false)
-  const [showManageStages, setShowManageStages] = useState(false)
-  const [defaultStage,     setDefaultStage]     = useState<string | undefined>()
-  const [selectedDealId,   setSelectedDealId]   = useState<string | null>(null)
+  const [deals,              setDeals]              = useState<DealWithContact[]>(initialDeals)
+  const [stages,             setStages]             = useState<SagePipelineStage[]>(initialStages)
+  const [dragId,             setDragId]             = useState<string | null>(null)
+  const [dragOverStage,      setDragOverStage]      = useState<string | null>(null)
+  const [showDealModal,      setShowDealModal]      = useState(false)
+  const [showManageStages,   setShowManageStages]   = useState(false)
+  const [showContactPicker,  setShowContactPicker]  = useState(false)
+  const [defaultStage,       setDefaultStage]       = useState<string | undefined>()
+  const [defaultContactId,   setDefaultContactId]   = useState<string | undefined>()
+  const [selectedDealId,     setSelectedDealId]     = useState<string | null>(null)
 
   // Header controls
   const [searchQuery,      setSearchQuery]      = useState('')
@@ -263,14 +266,23 @@ export function PipelineBoard({
           Manage Stages
         </button>
 
-        {/* Add a Lead */}
-        <button
-          onClick={() => openAddDeal()}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition-colors ml-auto"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Add a Lead
-        </button>
+        {/* Add a Contact + Add a Lead */}
+        <div className="flex items-center gap-2 ml-auto">
+          <button
+            onClick={() => setShowContactPicker(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-brand-400 dark:border-[#61c2ad]/50 text-brand-700 dark:text-[#61c2ad] hover:bg-brand-50 dark:hover:bg-[#61c2ad]/10 transition-colors"
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            Add a Contact
+          </button>
+          <button
+            onClick={() => openAddDeal()}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Add a Lead
+          </button>
+        </div>
       </div>
 
       {/* Kanban */}
@@ -366,15 +378,6 @@ export function PipelineBoard({
                   </div>
                 )}
               </div>
-
-              {/* Add deal */}
-              <button
-                onClick={() => openAddDeal(stage.id)}
-                className="mt-2 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-[#3d9585] dark:text-[#61c2ad] hover:bg-[#61c2ad]/10 dark:hover:bg-[#61c2ad]/15 transition-colors w-full"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add deal
-              </button>
             </div>
           )
         })}
@@ -388,10 +391,23 @@ export function PipelineBoard({
           allPipelines={allPipelines}
           ownerName={ownerName}
           defaultStageId={defaultStage}
+          defaultContactId={defaultContactId}
           onClose={() => {
             setShowDealModal(false)
             setDefaultStage(undefined)
+            setDefaultContactId(undefined)
           }}
+        />
+      )}
+
+      {showContactPicker && (
+        <ContactPickerModal
+          contacts={contacts}
+          onSelect={contactId => {
+            setDefaultContactId(contactId)
+            setShowDealModal(true)
+          }}
+          onClose={() => setShowContactPicker(false)}
         />
       )}
 
