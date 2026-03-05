@@ -41,6 +41,26 @@ function formatFull(iso: string) {
   return new Date(iso).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
+// Splits email body into [visible, quoted] parts
+function splitQuotedText(body: string): [string, string] {
+  const lines = body.split('\n')
+  const quotePatterns = [
+    /^>+\s?/,                                      // > quoted lines
+    /^On .+ wrote:\s*$/,                           // On [date], [name] wrote:
+    /^-+\s*Original Message\s*-+/i,               // --- Original Message ---
+    /^-+\s*Forwarded Message\s*-+/i,
+    /^_{5,}/,                                      // __________
+    /^From:\s+.+@/i,                               // From: someone@
+    /^Sent:\s+/i,
+  ]
+  for (let i = 0; i < lines.length; i++) {
+    if (quotePatterns.some(p => p.test(lines[i].trim()))) {
+      return [lines.slice(0, i).join('\n').trimEnd(), lines.slice(i).join('\n')]
+    }
+  }
+  return [body, '']
+}
+
 function formatCurrency(amount: number, currency: string) {
   return new Intl.NumberFormat('en-US', {
     style: 'currency', currency: currency.toUpperCase(), maximumFractionDigits: 2,
@@ -103,6 +123,7 @@ export function EmailInbox({
   const [loadingInvoiceId, setLoadingInvoiceId] = useState<string | null>(null)
   const [isGenProp,        setIsGenProp]        = useState(false)
   const [proposalError,    setProposalError]    = useState<string | null>(null)
+  const [showQuoted,       setShowQuoted]       = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -782,7 +803,23 @@ export function EmailInbox({
               {/* Email body */}
               <div className="flex-1 overflow-y-auto px-6 py-5">
                 <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-7 max-w-2xl">
-                  {selected.body_text ?? '(No plain text body)'}
+                  {splitQuotedText(selected.body_text ?? '')[0] || '(No plain text body)'}
+                  {splitQuotedText(selected.body_text ?? '')[1] && (
+                    <>
+                      <button
+                        onClick={() => setShowQuoted(v => !v)}
+                        className="mt-3 flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                      >
+                        <span className="tracking-widest">•••</span>
+                        <span className="ml-1">{showQuoted ? 'Hide quoted text' : 'Show quoted text'}</span>
+                      </button>
+                      {showQuoted && (
+                        <div className="mt-3 pl-3 border-l-2 border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-500 text-xs whitespace-pre-wrap leading-6">
+                          {splitQuotedText(selected.body_text ?? '')[1]}
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
 
                 {/* Gmail-style Reply / Forward buttons at end of email body */}
