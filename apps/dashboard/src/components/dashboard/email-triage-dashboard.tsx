@@ -556,89 +556,83 @@ function DetailCard({ t, allEmails, actioned, onAction, onDismiss, onDelete, onC
           </div>
         )}
 
-        {/* Reply drafts */}
-        {drafts.length > 0 && (
+        {/* Reply + Update strip */}
+        {drafts.length > 0 && !sent && (
           <div className="rounded-xl border dark:border-white/8 overflow-hidden">
-            {/* Tone tabs */}
-            <div className="flex items-center gap-1 px-4 py-2.5 border-b dark:border-white/8 bg-gray-50 dark:bg-white/3">
-              <Mail className="w-3.5 h-3.5 text-gray-400 mr-1.5" />
-              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mr-2">Reply</span>
-              {drafts.map((d, i) => (
-                <button key={i}
-                  onClick={() => { setActiveDraft(i); if (!sent) setComposeBody(d.body) }}
-                  className={cn('text-[11px] px-2.5 py-1 rounded-lg font-medium transition-colors',
-                    activeDraft === i ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/8')}>
-                  {d.tone}
-                </button>
-              ))}
+            {/* Single-row: tone picker + Send */}
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-white/3">
+              <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Reply</span>
+              <div className="flex items-center gap-1 flex-1">
+                {drafts.map((d, i) => (
+                  <button key={i}
+                    onClick={() => { setActiveDraft(i); setComposeBody(d.body) }}
+                    className={cn('text-[11px] px-2.5 py-1 rounded-lg font-medium transition-colors',
+                      activeDraft === i ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/8')}>
+                    {d.tone}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={handleSendReply}
+                disabled={isSendingEmail || !composeBody.trim()}
+                className="flex items-center gap-1.5 px-4 py-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-[11px] font-semibold rounded-lg transition-colors shrink-0"
+              >
+                {isSendingEmail ? <Loader2 className="w-3 h-3 animate-spin" /> : <ArrowRight className="w-3 h-3" />}
+                Send
+              </button>
             </div>
-
-            {!sent ? (
-              <>
-                {/* Editable compose area */}
-                <div className="px-4 py-3 bg-white dark:bg-[#232323]">
-                  <textarea
-                    value={composeBody}
-                    onChange={e => setComposeBody(e.target.value)}
-                    rows={6}
-                    className="w-full text-sm text-gray-800 dark:text-gray-200 leading-relaxed bg-transparent resize-none outline-none"
-                  />
-                </div>
-                {sendError && (
-                  <div className="px-4 py-2 bg-red-50 dark:bg-red-500/10 border-t border-red-200 dark:border-red-500/20 text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-2">
-                    <X className="w-3 h-3 shrink-0" /> {sendError}
-                  </div>
-                )}
-                <div className="px-4 py-2.5 border-t dark:border-white/8 bg-gray-50 dark:bg-white/3 flex items-center justify-between gap-2">
-                  <div className="ml-auto">
-                    <button
-                      onClick={handleSendReply}
-                      disabled={isSendingEmail || !composeBody.trim()}
-                      className="flex items-center gap-1.5 px-4 py-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-[11px] font-semibold rounded-lg transition-colors"
-                    >
-                      {isSendingEmail
-                        ? <Loader2 className="w-3 h-3 animate-spin" />
-                        : <ArrowRight className="w-3 h-3" />}
-                      Send
-                    </button>
-                  </div>
-                </div>
-              </>
-            ) : (
-              /* Post-send: confirmation + log note */
-              <div className="bg-white dark:bg-[#232323]">
-                <div className="px-4 py-2.5 flex items-center gap-2 border-b dark:border-white/8 bg-green-50 dark:bg-green-500/10">
-                  <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                  <span className="text-[11px] font-medium text-green-700 dark:text-green-400">Reply sent</span>
-                </div>
-                {t.matchedDeal && !noteSaved && (
-                  <div className="px-4 py-3 space-y-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Log follow-up note</p>
-                    <textarea
-                      value={noteText}
-                      onChange={e => setNoteText(e.target.value)}
-                      rows={3}
-                      placeholder="Add a note about this reply..."
-                      className="w-full text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/8 rounded-lg px-3 py-2 resize-none outline-none focus:ring-1 focus:ring-brand-500"
-                    />
-                    <button
-                      onClick={handleLogNote}
-                      disabled={isLoggingNote || !noteText.trim()}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-[11px] font-semibold rounded-lg transition-colors"
-                    >
-                      {isLoggingNote ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-                      Log note
-                    </button>
-                  </div>
-                )}
-                {noteSaved && (
-                  <div className="px-4 py-2.5 flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-brand-500" />
-                    <span className="text-[11px] text-gray-500 dark:text-gray-400">Note logged in Follow ups</span>
-                  </div>
-                )}
+            {sendError && (
+              <div className="px-4 py-2 bg-red-50 dark:bg-red-500/10 border-t border-red-200 dark:border-red-500/20 text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-2">
+                <X className="w-3 h-3 shrink-0" /> {sendError}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Post-send: deal update popup */}
+        {sent && t.matchedDeal && !noteSaved && (
+          <div className="rounded-xl border border-brand-200 dark:border-brand-500/30 overflow-hidden bg-white dark:bg-[#232323]">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-brand-50 dark:bg-brand-500/10 border-b border-brand-100 dark:border-brand-500/20">
+              <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400 shrink-0" />
+              <span className="text-[11px] font-medium text-green-700 dark:text-green-400">Reply sent</span>
+              <span className="text-[11px] text-gray-400 mx-1">·</span>
+              <span className="text-[11px] font-semibold text-brand-700 dark:text-brand-400">
+                Update: {t.matchedDeal.title}
+              </span>
+            </div>
+            <div className="px-4 py-3 space-y-2.5">
+              <textarea
+                value={noteText}
+                onChange={e => setNoteText(e.target.value)}
+                rows={2}
+                className="w-full text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/8 rounded-lg px-3 py-2 resize-none outline-none focus:ring-1 focus:ring-brand-500"
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleLogNote}
+                  disabled={isLoggingNote || !noteText.trim()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-[11px] font-semibold rounded-lg transition-colors"
+                >
+                  {isLoggingNote ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                  Update
+                </button>
+                <button
+                  onClick={() => { onDismiss(email.id); onClose() }}
+                  className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  Skip →
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Post-send: no deal → already auto-dismissed; show brief sent state */}
+        {sent && !t.matchedDeal && (
+          <div className="rounded-xl border border-green-200 dark:border-green-500/20 px-4 py-2.5 flex items-center gap-2 bg-green-50 dark:bg-green-500/10">
+            <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+            <span className="text-[11px] font-medium text-green-700 dark:text-green-400">Reply sent — removing from triage…</span>
           </div>
         )}
 
