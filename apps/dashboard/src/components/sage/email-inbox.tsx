@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useTransition, useRef } from 'react'
+import React, { useState, useEffect, useTransition, useRef } from 'react'
 import Link from 'next/link'
 import {
   Mail, RefreshCw, Send, Sparkles, Star, Inbox,
@@ -126,6 +126,32 @@ export function EmailInbox({
   const [showQuoted,       setShowQuoted]       = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // ── 60-second polling ──────────────────────────────────────────────────────
+  useEffect(() => {
+    // Request notification permission on mount
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+
+    const interval = setInterval(async () => {
+      const result = await quickCheckEmails()
+      if (!result.error && result.synced > 0) {
+        window.location.reload()
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          new Notification('Sage — New Email', {
+            body: `${result.synced} new email${result.synced === 1 ? '' : 's'} received`,
+            icon: '/logo.png',
+          })
+        }
+      }
+    }, 60_000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  // Reset quoted view when switching emails
+  useEffect(() => { setShowQuoted(false) }, [selected?.id])
 
   const [isPending,    startSyncTransition]    = useTransition()
   const [isChecking,   startCheckTransition]   = useTransition()
