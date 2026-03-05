@@ -11,7 +11,7 @@ import {
   Calendar, MapPin, Users, Clock,
 } from 'lucide-react'
 import { triageCreateLead, triageCreateTicket, triageAddDealNote } from '@/app/actions/sage-triage'
-import { syncEmails, deleteTriageEmails, reanalyzeEmails } from '@/app/actions/sage-emails'
+import { syncEmails, deleteTriageEmails, reanalyzeEmails, sendEmail } from '@/app/actions/sage-emails'
 import type { SageEmail, SageMeeting } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -258,12 +258,64 @@ interface DetailCardProps {
 }
 
 function DetailCard({ t, allEmails, actioned, onAction, onDismiss, onDelete, onClose, onAnalyze, isDeleting, isAnalyzing }: DetailCardProps) {
-  const [activeDraft, setActiveDraft] = useState(0)
+  const [activeDraft,    setActiveDraft]    = useState(0)
+  const [composeBody,    setComposeBody]    = useState('')
+  const [sent,           setSent]           = useState(false)
+  const [noteText,       setNoteText]       = useState('')
+  const [noteSaved,      setNoteSaved]      = useState(false)
+  const [isSendingEmail, setIsSendingEmail] = useState(false)
+  const [isLoggingNote,  setIsLoggingNote]  = useState(false)
+  const [sendError,      setSendError]      = useState<string | null>(null)
+
   const { email, recommendation, meeting } = t
   const entities  = email.ai_entities
   const drafts    = email.ai_reply_drafts ?? []
   const isDone    = actioned.has(email.id)
   const actionLabel = actioned.get(email.id)
+
+  // Reset compose state when switching to a different email
+  useEffect(() => {
+    setSent(false)
+    setNoteText('')
+    setNoteSaved(false)
+    setSendError(null)
+    setActiveDraft(0)
+    setComposeBody(drafts[0]?.body ?? '')
+  }, [email.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync textarea when tone tab changes (only before sending)
+  useEffect(() => {
+    if (!sent) setComposeBody(drafts[activeDraft]?.body ?? '')
+  }, [activeDraft]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleSendReply() {
+    if (!composeBody.trim()) return
+    setIsSendingEmail(true)
+    setSendError(null)
+    const subjectPrefix = /^Re:/i.test(email.subject) ? '' : 'Re: '
+    const result = await sendEmail({
+      to:             email.from_address,
+      subject:        subjectPrefix + email.subject,
+      body:           composeBody,
+      replyToEmailId: email.id,
+    })
+    setIsSendingEmail(false)
+    if (result.ok) {
+      setSent(true)
+      setNoteText(composeBody.slice(0, 300))
+    } else {
+      setSendError(result.error ?? 'Send failed')
+    }
+  }
+
+  async function handleLogNote() {
+    const dealId = t.matchedDeal?.id
+    if (!dealId || !noteText.trim()) return
+    setIsLoggingNote(true)
+    await triageAddDealNote(dealId, noteText)
+    setIsLoggingNote(false)
+    setNoteSaved(true)
+  }
 
   // Related emails from the same sender (excluding current, newest first)
   const relatedEmails = allEmails
@@ -500,25 +552,82 @@ function DetailCard({ t, allEmails, actioned, onAction, onDismiss, onDelete, onC
         {/* Reply drafts */}
         {drafts.length > 0 && (
           <div className="rounded-xl border dark:border-white/8 overflow-hidden">
+            {/* Tone tabs */}
             <div className="flex items-center gap-1 px-4 py-2.5 border-b dark:border-white/8 bg-gray-50 dark:bg-white/3">
               <Mail className="w-3.5 h-3.5 text-gray-400 mr-1.5" />
               <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mr-2">Reply</span>
               {drafts.map((d, i) => (
-                <button key={i} onClick={() => setActiveDraft(i)}
+                <button key={i}
+                  onClick={() => { setActiveDraft(i); if (!sent) setComposeBody(d.body) }}
                   className={cn('text-[11px] px-2.5 py-1 rounded-lg font-medium transition-colors',
                     activeDraft === i ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/8')}>
                   {d.tone}
                 </button>
               ))}
             </div>
-            <div className="px-5 py-4 bg-white dark:bg-[#232323]">
-              <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">{drafts[activeDraft]?.body}</p>
-            </div>
-            <div className="px-4 py-2.5 border-t dark:border-white/8 bg-gray-50 dark:bg-white/3 flex justify-end">
-              <Link href="/sage/emails" className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
-                Open email client to send <ArrowRight className="w-2.5 h-2.5" />
-              </Link>
-            </div>
+
+            {!sent ? (
+              <>
+                {/* Editable compose area */}
+                <div className="px-4 py-3 bg-white dark:bg-[#232323]">
+                  <textarea
+                    value={composeBody}
+                    onChange={e => setComposeBody(e.target.value)}
+                    rows={6}
+                    className="w-full text-sm text-gray-800 dark:text-gray-200 leading-relaxed bg-transparent resize-none outline-none"
+                  />
+                </div>
+                <div className="px-4 py-2.5 border-t dark:border-white/8 bg-gray-50 dark:bg-white/3 flex items-center justify-between gap-2">
+                  {sendError && <p className="text-xs text-red-500">{sendError}</p>}
+                  <div className="ml-auto">
+                    <button
+                      onClick={handleSendReply}
+                      disabled={isSendingEmail || !composeBody.trim()}
+                      className="flex items-center gap-1.5 px-4 py-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-[11px] font-semibold rounded-lg transition-colors"
+                    >
+                      {isSendingEmail
+                        ? <Loader2 className="w-3 h-3 animate-spin" />
+                        : <ArrowRight className="w-3 h-3" />}
+                      Send
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Post-send: confirmation + log note */
+              <div className="bg-white dark:bg-[#232323]">
+                <div className="px-4 py-2.5 flex items-center gap-2 border-b dark:border-white/8 bg-green-50 dark:bg-green-500/10">
+                  <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                  <span className="text-[11px] font-medium text-green-700 dark:text-green-400">Reply sent</span>
+                </div>
+                {t.matchedDeal && !noteSaved && (
+                  <div className="px-4 py-3 space-y-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Log follow-up note</p>
+                    <textarea
+                      value={noteText}
+                      onChange={e => setNoteText(e.target.value)}
+                      rows={3}
+                      placeholder="Add a note about this reply..."
+                      className="w-full text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/8 rounded-lg px-3 py-2 resize-none outline-none focus:ring-1 focus:ring-brand-500"
+                    />
+                    <button
+                      onClick={handleLogNote}
+                      disabled={isLoggingNote || !noteText.trim()}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-[11px] font-semibold rounded-lg transition-colors"
+                    >
+                      {isLoggingNote ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                      Log note
+                    </button>
+                  </div>
+                )}
+                {noteSaved && (
+                  <div className="px-4 py-2.5 flex items-center gap-2">
+                    <Check className="w-3.5 h-3.5 text-brand-500" />
+                    <span className="text-[11px] text-gray-500 dark:text-gray-400">Note logged in Follow ups</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
