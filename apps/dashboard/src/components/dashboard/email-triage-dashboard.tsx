@@ -258,18 +258,19 @@ interface DetailCardProps {
 }
 
 function DetailCard({ t, allEmails, actioned, onAction, onDismiss, onDelete, onClose, onAnalyze, isDeleting, isAnalyzing }: DetailCardProps) {
+  const { email, recommendation, meeting } = t
+  const entities  = email.ai_entities
+  const drafts    = email.ai_reply_drafts ?? []
+
   const [activeDraft,    setActiveDraft]    = useState(0)
-  const [composeBody,    setComposeBody]    = useState('')
+  // Lazy init so the textarea and Send button are ready immediately on first render
+  const [composeBody,    setComposeBody]    = useState(() => drafts[0]?.body ?? '')
   const [sent,           setSent]           = useState(false)
   const [noteText,       setNoteText]       = useState('')
   const [noteSaved,      setNoteSaved]      = useState(false)
   const [isSendingEmail, setIsSendingEmail] = useState(false)
   const [isLoggingNote,  setIsLoggingNote]  = useState(false)
   const [sendError,      setSendError]      = useState<string | null>(null)
-
-  const { email, recommendation, meeting } = t
-  const entities  = email.ai_entities
-  const drafts    = email.ai_reply_drafts ?? []
   const isDone    = actioned.has(email.id)
   const actionLabel = actioned.get(email.id)
 
@@ -577,8 +578,12 @@ function DetailCard({ t, allEmails, actioned, onAction, onDismiss, onDelete, onC
                     className="w-full text-sm text-gray-800 dark:text-gray-200 leading-relaxed bg-transparent resize-none outline-none"
                   />
                 </div>
+                {sendError && (
+                  <div className="px-4 py-2 bg-red-50 dark:bg-red-500/10 border-t border-red-200 dark:border-red-500/20 text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-2">
+                    <X className="w-3 h-3 shrink-0" /> {sendError}
+                  </div>
+                )}
                 <div className="px-4 py-2.5 border-t dark:border-white/8 bg-gray-50 dark:bg-white/3 flex items-center justify-between gap-2">
-                  {sendError && <p className="text-xs text-red-500">{sendError}</p>}
                   <div className="ml-auto">
                     <button
                       onClick={handleSendReply}
