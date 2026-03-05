@@ -580,18 +580,23 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
     isAutoAnalyzingRef.current = true
     try {
       await reanalyzeEmails(50, undefined)
+      setRefreshKey(k => k + 1)
       router.refresh()
     } finally {
       isAutoAnalyzingRef.current = false
     }
   }, [router])
 
-  // Auto-refresh every 60 s; also trigger analysis if pending emails exist
+  // Auto-refresh every 60 s — only ONE refresh per tick (never double-refresh)
   useEffect(() => {
     const id = setInterval(() => {
-      router.refresh()
+      if (isSyncingRef.current || isAutoAnalyzingRef.current) return
       if (pendingCountRef.current > 0) {
+        // runAutoAnalyze handles the refresh + refreshKey internally
         void runAutoAnalyze()
+      } else {
+        setRefreshKey(k => k + 1)
+        router.refresh()
       }
     }, 60_000)
     return () => clearInterval(id)
@@ -647,6 +652,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
       setDismissed(prev => new Set([...prev, ...ids]))
       setSelectedIds(new Set())
       if (ids.includes(selectedEmailId)) setSelectedEmailId('')
+      setRefreshKey(k => k + 1)
       router.refresh()
     })
   }
@@ -656,6 +662,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
       await deleteTriageEmails([emailId])
       setDismissed(prev => new Set([...prev, emailId]))
       if (emailId === selectedEmailId) setSelectedEmailId('')
+      setRefreshKey(k => k + 1)
       router.refresh()
     })
   }
@@ -792,6 +799,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
       } else if (res.reanalyzed === 0) {
         setAnalyzeMsg('Analysis returned no results — check API logs')
       }
+      setRefreshKey(k => k + 1)
       router.refresh()
     })
   }
