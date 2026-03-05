@@ -177,9 +177,8 @@
     '  background:var(--apx-bg);border:1px solid var(--apx-border);',
     '  box-shadow:0 8px 40px rgba(0,0,0,.18);',
     '  z-index:2147483647;font-family:system-ui,-apple-system,sans-serif;font-size:14px;',
-    '  transition:top .25s ease,right .25s ease,bottom .25s ease;',
+    '  transition:width .25s ease,height .25s ease,right .25s ease;',
     '}',
-    '.window.expanded{bottom:auto;}',
     '.resize-grip{width:14px;height:14px;cursor:nw-resize;opacity:.3;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:opacity .15s;margin-right:-2px;}',
     '.resize-grip:hover{opacity:.7;}',
     '.header{',
@@ -271,7 +270,9 @@
 
     var winStyle = 'display:' + (isOpen ? 'flex' : 'none');
     if (isExpanded) {
-      winStyle += ';width:520px;max-width:calc(100vw - 32px);height:calc(100vh - 32px);top:16px;right:16px';
+      // Grow upward from the bottom anchor — no position jump
+      winStyle += ';width:' + Math.min(520, window.innerWidth - 48) + 'px'
+               + ';height:' + (window.innerHeight - 106) + 'px';
     } else {
       if (userWidth)  winStyle += ';width:'  + userWidth  + 'px';
       if (userHeight) winStyle += ';height:' + userHeight + 'px';

@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
-import { Sparkles, Send, Mic, MicOff, X, Minimize2, Expand } from 'lucide-react'
+import { Sparkles, Send, Mic, MicOff, X, Minimize2, Expand, Paperclip } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -42,6 +42,7 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
   const [listening,  setListening]  = useState(false)
   const bottomRef      = useRef<HTMLDivElement>(null)
   const textareaRef    = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef   = useRef<HTMLInputElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null)
   const floatReady     = useRef(false)
@@ -129,6 +130,21 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
     setInput(e.target.value)
     e.target.style.height = 'auto'
     e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    if (file.size > 512000) {
+      setInput(prev => prev + (prev ? ' ' : '') + '[File too large — max 500 KB]')
+      return
+    }
+    setInput(prev => prev + (prev ? ' ' : '') + '[File: ' + file.name + ']')
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px'
+    }
   }
 
   function toggleVoice() {
@@ -314,6 +330,14 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
       {/* Input */}
       <div className="p-3 border-t border-[#61c2ad]/20 dark:border-[#61c2ad]/15 bg-[#61c2ad]/[0.08] dark:bg-[#61c2ad]/10 shrink-0">
         <div className="flex items-end gap-2 bg-gray-50 dark:bg-white/5 rounded-xl border dark:border-white/8 px-3 py-2">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            title="Attach file"
+            className="shrink-0 w-6 h-6 rounded-lg flex items-center justify-center transition-colors text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] hover:bg-gray-100 dark:hover:bg-white/10"
+          >
+            <Paperclip className="w-3 h-3" />
+          </button>
+          <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} />
           <textarea
             ref={textareaRef}
             rows={1}
