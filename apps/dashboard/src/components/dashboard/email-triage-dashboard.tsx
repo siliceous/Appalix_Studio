@@ -5,13 +5,13 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Mail, AlertCircle, ArrowRight, Sparkles,
-  Plus, RefreshCw, Ticket, UserPlus, RotateCcw,
+  Plus, RefreshCw, UserPlus,
   Check, X, ChevronRight, Loader2, Trash2,
   Phone, Globe, Tag, Brain,
   Calendar, MapPin, Users, Clock,
 } from 'lucide-react'
 import { triageCreateLead, triageCreateTicket, triageAddDealNote } from '@/app/actions/sage-triage'
-import { syncEmails, deleteTriageEmails, reanalyzeEmails, sendEmail } from '@/app/actions/sage-emails'
+import { syncEmails, deleteTriageEmails, reanalyzeEmails, sendEmail, rewriteEmail } from '@/app/actions/sage-emails'
 import type { SageEmail, SageMeeting } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -69,27 +69,6 @@ function formatDate(iso: string) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-function recLabel(r: TriageRecommendation, t: TriageEmail): string {
-  if (r === 'create_lead')     return 'Create Lead'
-  if (r === 'update_lead')     return `Update: ${t.matchedDeal?.title ?? 'Deal'}`
-  if (r === 'reopen_account')  return `Reopen: ${t.matchedContact?.name ?? 'Contact'}`
-  if (r === 'create_ticket')   return 'Create Ticket'
-  return 'Ignore'
-}
-
-function recIcon(r: TriageRecommendation) {
-  if (r === 'create_lead')    return <UserPlus className="w-3.5 h-3.5" />
-  if (r === 'update_lead')    return <RefreshCw className="w-3.5 h-3.5" />
-  if (r === 'reopen_account') return <RotateCcw className="w-3.5 h-3.5" />
-  if (r === 'create_ticket')  return <Ticket className="w-3.5 h-3.5" />
-  return <X className="w-3.5 h-3.5" />
-}
-
-function recColor(r: TriageRecommendation): string {
-  if (r === 'create_ticket') return 'bg-sky-500 hover:bg-sky-600 text-white'
-  if (r === 'ignore')        return 'bg-gray-200 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-white/10'
-  return 'bg-blue-600 hover:bg-blue-700 text-white'
-}
 
 function categoryClass(cat: string): string {
   if (cat === 'Sales')        return 'bg-teal-50 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-200 dark:border-teal-500/20'
@@ -257,12 +236,11 @@ interface DetailCardProps {
   isAnalyzing:   boolean
 }
 
-function DetailCard({ t, allEmails, actioned, onAction, onDismiss, onDelete, onClose, onAnalyze, isDeleting, isAnalyzing }: DetailCardProps) {
-  const { email, recommendation, meeting } = t
+function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, isDeleting, isAnalyzing }: DetailCardProps) {
+  const { email, meeting } = t
   const entities  = email.ai_entities
   const drafts    = email.ai_reply_drafts ?? []
 
-  const [activeDraft,    setActiveDraft]    = useState(0)
   // Lazy init so the textarea and Send button are ready immediately on first render
   const [composeBody,    setComposeBody]    = useState(() => drafts[0]?.body ?? '')
   const [sent,           setSent]           = useState(false)
@@ -270,6 +248,7 @@ function DetailCard({ t, allEmails, actioned, onAction, onDismiss, onDelete, onC
   const [noteSaved,      setNoteSaved]      = useState(false)
   const [isSendingEmail, setIsSendingEmail] = useState(false)
   const [isLoggingNote,  setIsLoggingNote]  = useState(false)
+  const [isRewriting,    setIsRewriting]    = useState(false)
   const [sendError,      setSendError]      = useState<string | null>(null)
   const isDone    = actioned.has(email.id)
   const actionLabel = actioned.get(email.id)
@@ -280,14 +259,8 @@ function DetailCard({ t, allEmails, actioned, onAction, onDismiss, onDelete, onC
     setNoteText('')
     setNoteSaved(false)
     setSendError(null)
-    setActiveDraft(0)
     setComposeBody(drafts[0]?.body ?? '')
   }, [email.id]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Sync textarea when tone tab changes (only before sending)
-  useEffect(() => {
-    if (!sent) setComposeBody(drafts[activeDraft]?.body ?? '')
-  }, [activeDraft]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSendReply() {
     if (!composeBody.trim()) return
@@ -324,18 +297,19 @@ function DetailCard({ t, allEmails, actioned, onAction, onDismiss, onDelete, onC
     setTimeout(() => { onDismiss(email.id); onClose() }, 1500)
   }
 
+  async function handleRewrite() {
+    if (!composeBody.trim() || isRewriting) return
+    setIsRewriting(true)
+    const result = await rewriteEmail({ emailId: email.id, body: composeBody, instruction: 'Rewrite this reply to be clear, professional and concise.' })
+    setIsRewriting(false)
+    if (result.body) setComposeBody(result.body)
+  }
+
   // Related emails from the same sender (excluding current, newest first)
   const relatedEmails = allEmails
     .filter(te => te.email.id !== email.id && te.email.from_address.toLowerCase() === email.from_address.toLowerCase())
     .sort((a, b) => new Date(b.email.received_at).getTime() - new Date(a.email.received_at).getTime())
     .slice(0, 5)
-
-  function handlePrimaryAction() {
-    if (recommendation === 'create_lead')    onAction(t, 'lead')
-    if (recommendation === 'create_ticket')  onAction(t, 'ticket')
-    if (recommendation === 'update_lead')    onAction(t, 'deal_note')
-    if (recommendation === 'reopen_account') onAction(t, 'lead')
-  }
 
   function formatMeetingTime(iso: string | null) {
     if (!iso) return null
@@ -566,27 +540,50 @@ function DetailCard({ t, allEmails, actioned, onAction, onDismiss, onDelete, onC
           </div>
         )}
 
-        {/* Reply draft — draft text + Send button only */}
+        {/* Reply draft */}
         {drafts.length > 0 && !sent && (
           <div className="rounded-xl border dark:border-white/8 overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-white/3 border-b dark:border-white/8">
-              <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">AI Reply Draft</span>
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-white/3 border-b dark:border-white/8">
+              <div className="flex items-center gap-2">
+                <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">AI Reply Draft</span>
+              </div>
+              <button
+                onClick={handleRewrite}
+                disabled={isRewriting || !composeBody.trim()}
+                className="flex items-center gap-1 text-[11px] font-medium text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:opacity-40 transition-colors"
+              >
+                {isRewriting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                AI Rewrite
+              </button>
             </div>
+
+            {/* Editable draft */}
             <div className="px-4 py-3 bg-white dark:bg-[#232323]">
               <textarea
                 value={composeBody}
                 onChange={e => setComposeBody(e.target.value)}
-                rows={5}
+                rows={11}
                 className="w-full text-sm text-gray-800 dark:text-gray-200 leading-relaxed bg-transparent resize-none outline-none"
               />
             </div>
+
+            {/* Error */}
             {sendError && (
               <div className="px-4 py-2 bg-red-50 dark:bg-red-500/10 border-t border-red-200 dark:border-red-500/20 text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-2">
                 <X className="w-3 h-3 shrink-0" /> {sendError}
               </div>
             )}
-            <div className="px-4 py-2.5 border-t dark:border-white/8 bg-gray-50 dark:bg-white/3 flex justify-end">
+
+            {/* Actions — Send + Ignore only */}
+            <div className="px-4 py-2.5 border-t dark:border-white/8 bg-gray-50 dark:bg-white/3 flex items-center justify-between gap-2">
+              <button
+                onClick={() => { onDismiss(email.id); onClose() }}
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-medium bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 border border-gray-200 dark:border-white/8 transition-colors"
+              >
+                <X className="w-3 h-3" /> Ignore
+              </button>
               <button
                 onClick={handleSendReply}
                 disabled={isSendingEmail || !composeBody.trim()}
@@ -606,9 +603,7 @@ function DetailCard({ t, allEmails, actioned, onAction, onDismiss, onDelete, onC
               <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400 shrink-0" />
               <span className="text-[11px] font-medium text-green-700 dark:text-green-400">Reply sent</span>
               <span className="text-[11px] text-gray-400 mx-1">·</span>
-              <span className="text-[11px] font-semibold text-brand-700 dark:text-brand-400">
-                Update: {t.matchedDeal.title}
-              </span>
+              <span className="text-[11px] font-semibold text-brand-700 dark:text-brand-400">Update: {t.matchedDeal.title}</span>
             </div>
             <div className="px-4 py-3 space-y-2.5">
               <textarea
@@ -637,7 +632,7 @@ function DetailCard({ t, allEmails, actioned, onAction, onDismiss, onDelete, onC
           </div>
         )}
 
-        {/* Post-send: no deal → already auto-dismissed; show brief sent state */}
+        {/* Post-send: no deal → brief confirmation then auto-dismissed */}
         {sent && !t.matchedDeal && (
           <div className="rounded-xl border border-green-200 dark:border-green-500/20 px-4 py-2.5 flex items-center gap-2 bg-green-50 dark:bg-green-500/10">
             <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
@@ -645,33 +640,13 @@ function DetailCard({ t, allEmails, actioned, onAction, onDismiss, onDelete, onC
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 flex-wrap pt-1">
-          {isDone ? (
-            <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded-xl">
-              <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
-              <span className="text-sm font-medium text-green-700 dark:text-green-400">{actionLabel}</span>
-            </div>
-          ) : (
-            <>
-              {recommendation !== 'ignore' && (
-                <button
-                  onClick={handlePrimaryAction}
-                  className={cn('flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors', recColor(recommendation))}
-                >
-                  {recIcon(recommendation)}
-                  {recLabel(recommendation, t)}
-                </button>
-              )}
-              <button
-                onClick={() => onDismiss(email.id)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 border border-gray-200 dark:border-white/8 transition-colors"
-              >
-                <X className="w-3.5 h-3.5" /> Ignore
-              </button>
-            </>
-          )}
-        </div>
+        {/* Actioned state (lead/ticket created) */}
+        {isDone && (
+          <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded-xl">
+            <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+            <span className="text-sm font-medium text-green-700 dark:text-green-400">{actionLabel}</span>
+          </div>
+        )}
 
         {/* Email History — previous emails from this sender */}
         {relatedEmails.length > 0 && (
