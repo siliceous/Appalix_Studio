@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect }      from 'next/navigation'
 import type { Metadata } from 'next'
 import type { WorkspaceMember, SageEmail, SageTicket, SageContact, SageMeeting, Bot as BotRow, Conversation } from '@/lib/types'
+import type { SageForm, SageFormSubmission } from '@/app/actions/sage-forms'
 import { EmailTriageDashboard, type TriageEmail, type TriageRecommendation } from '@/components/dashboard/email-triage-dashboard'
 import { BotTriageDashboard, type TriageConversation } from '@/components/dashboard/bots-triage-dashboard'
 import { TicketsDashboard } from '@/components/dashboard/tickets-dashboard'
@@ -91,6 +92,8 @@ export default async function DashboardPage({
   let triageEmails:        TriageEmail[] = []
   let triageConversations: TriageConversation[] = []
   let tickets: (SageTicket & { contact: Pick<SageContact, 'id' | 'name' | 'email'> | null })[] = []
+  let forms:       SageForm[] = []
+  let submissions: SageFormSubmission[] = []
 
   if (tab === 'email') {
     // Parallel data fetches
@@ -262,8 +265,25 @@ export default async function DashboardPage({
       .order('created_at', { ascending: false })
       .limit(50)
     tickets = (data ?? []) as (SageTicket & { contact: Pick<SageContact, 'id' | 'name' | 'email'> | null })[]
+  } else if (tab === 'forms') {
+    const [formsRes, submissionsRes] = await Promise.all([
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any)
+        .from('sage_forms')
+        .select('id, name, description, is_active, created_at')
+        .eq('workspace_id', workspaceId)
+        .order('created_at', { ascending: false }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any)
+        .from('sage_form_submissions')
+        .select('id, form_id, fields, ai_priority, ai_summary, ai_insights, ai_action, ai_entities, ai_analyzed_at, actioned_at, action_type, created_at')
+        .eq('workspace_id', workspaceId)
+        .order('created_at', { ascending: false })
+        .limit(200),
+    ])
+    forms       = (formsRes.data       ?? []) as SageForm[]
+    submissions = (submissionsRes.data ?? []) as SageFormSubmission[]
   }
-  // tab === 'forms' → no data needed (placeholder)
 
   return (
     // Break out of the layout's p-8 to claim the full viewport height
@@ -281,7 +301,7 @@ export default async function DashboardPage({
           <TicketsDashboard tickets={tickets} />
         )}
         {tab === 'forms' && (
-          <FormsDashboard />
+          <FormsDashboard forms={forms} submissions={submissions} />
         )}
       </div>
     </div>

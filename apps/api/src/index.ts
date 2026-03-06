@@ -19,6 +19,7 @@ import { chatRoutes }        from './routes/chat/index.js'
 import { copilotRoutes }     from './routes/copilot/index.js'
 import { sageEmailRoutes }  from './routes/sage/emails.js'
 import { botRoutes }        from './routes/bots/index.js'
+import { formRoutes }       from './routes/forms/index.js'
 import { startIdleManager, stopIdleManager } from './services/sage-email-idle.js'
 
 const server = Fastify({
@@ -100,7 +101,8 @@ await server.register(copilotRoutes, { prefix: '/copilot' })
 await server.register(sageEmailRoutes, { prefix: '/sage/emails' })
 
 // Bot conversation routes (AI analysis — service-key auth)
-await server.register(botRoutes, { prefix: '/bots' })
+await server.register(botRoutes,  { prefix: '/bots' })
+await server.register(formRoutes, { prefix: '/forms' })
 
 // ---------------------------------------------------------------
 // Error handler
