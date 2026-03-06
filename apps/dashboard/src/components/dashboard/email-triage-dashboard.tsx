@@ -11,7 +11,7 @@ import {
   Calendar, MapPin, Users, Clock,
 } from 'lucide-react'
 import { triageCreateLead, triageCreateTicket, triageAddDealNote } from '@/app/actions/sage-triage'
-import { syncEmails, deleteTriageEmails, reanalyzeEmails, sendEmail, rewriteEmail } from '@/app/actions/sage-emails'
+import { syncEmails, deleteTriageEmails, reanalyzeEmails, sendEmail, rewriteEmail, markEmailRead } from '@/app/actions/sage-emails'
 import type { SageEmail, SageMeeting } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -688,7 +688,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
                   Update
                 </button>
                 <button
-                  onClick={() => { onDismiss(email.id); onClose() }}
+                  onClick={() => { void markEmailRead(email.id); onDismiss(email.id); onClose() }}
                   className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                   Skip →
@@ -706,7 +706,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
               <span className="text-[11px] font-medium text-green-700 dark:text-green-400">Reply sent</span>
             </div>
             <button
-              onClick={() => { onDismiss(email.id); onClose() }}
+              onClick={() => { void markEmailRead(email.id); onDismiss(email.id); onClose() }}
               className="text-[11px] font-semibold text-green-700 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 transition-colors"
             >
               Done →
@@ -722,7 +722,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
               <span className="text-[11px] font-medium text-brand-700 dark:text-[#61c2ad]">Note logged in Follow ups</span>
             </div>
             <button
-              onClick={() => { onDismiss(email.id); onClose() }}
+              onClick={() => { void markEmailRead(email.id); onDismiss(email.id); onClose() }}
               className="text-[11px] font-semibold text-brand-700 dark:text-[#61c2ad] hover:opacity-70 transition-opacity"
             >
               Done →

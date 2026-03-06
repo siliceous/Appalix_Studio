@@ -208,15 +208,11 @@ export async function sendEmail(opts: {
     const data = await res.json() as { ok?: boolean; error?: string }
     if (!res.ok) return { ok: false, error: data.error ?? 'Send failed' }
 
-    // Mark the source email as read so it doesn't re-appear in triage on next load.
-    // Do NOT revalidatePath('/dashboard') here — that forces a router refresh which
-    // unmounts the triage card and kills the Update popup before the user can interact.
-    if (opts.replyToEmailId) {
-      const admin = createAdminClient()
-      await admin.from('sage_emails').update({ is_read: true }).eq('id', opts.replyToEmailId)
-    }
-
-    revalidatePath('/sage/emails')
+    // NOTE: We deliberately do NOT mark is_read=true here.
+    // Next.js auto-refreshes the current route after any server action, which
+    // would cause the dashboard to re-fetch emails filtered by is_read=false,
+    // unmounting the DetailCard and killing the Update popup before the user
+    // can interact. Instead, markEmailRead() is called when the user clicks Done.
     return { ok: true }
   } catch (err) {
     const msg = err instanceof Error && err.name === 'AbortError'
@@ -224,6 +220,17 @@ export async function sendEmail(opts: {
       : 'Could not reach API'
     return { ok: false, error: msg }
   }
+}
+
+/**
+ * Mark a triage email as read (is_read=true) so it no longer appears in triage.
+ * Called explicitly when the user dismisses the post-send popup ("Done").
+ */
+export async function markEmailRead(emailId: string): Promise<void> {
+  const admin = createAdminClient()
+  await admin.from('sage_emails').update({ is_read: true }).eq('id', emailId)
+  revalidatePath('/dashboard')
+  revalidatePath('/sage/emails')
 }
 
 /**
