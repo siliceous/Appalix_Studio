@@ -88,9 +88,15 @@ export function ContactModal({ contact, onClose, onSaved }: ContactModalProps) {
                   </select>
                 </div>
               </div>
-              <div>
-                <label className={labelCls}>Value <span className="text-gray-400 font-normal">(estimated)</span></label>
-                <input name="value" type="number" min="0" step="0.01" placeholder="0.00" defaultValue={contact?.value ?? ''} className={inputCls} />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Tags <span className="text-gray-400 font-normal">(comma-sep)</span></label>
+                  <input name="tags" type="text" placeholder="hot-lead, enterprise" defaultValue={contact?.tags?.join(', ') ?? ''} className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Value <span className="text-gray-400 font-normal">(estimated)</span></label>
+                  <input name="value" type="number" min="0" step="0.01" placeholder="0.00" defaultValue={contact?.value ?? ''} className={inputCls} />
+                </div>
               </div>
             </div>
           </div>
@@ -184,12 +190,6 @@ export function ContactModal({ contact, onClose, onSaved }: ContactModalProps) {
                     <option value="team">Individuals (My Team)</option>
                     <option value="only_me">Only Me</option>
                   </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={labelCls}>Tags <span className="text-gray-400 font-normal">(comma-sep)</span></label>
-                  <input name="tags" type="text" placeholder="hot-lead, enterprise" defaultValue={contact?.tags?.join(', ') ?? ''} className={inputCls} />
                 </div>
               </div>
               <div>
