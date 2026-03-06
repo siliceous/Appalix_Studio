@@ -381,17 +381,6 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
               <span className="text-xs text-gray-400">
                 {new Date(email.received_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
               </span>
-              <span className="text-gray-200 dark:text-white/15 mx-0.5">·</span>
-              <a
-                href={buildCalendarLink(emailProvider, email.from_address, email.from_name ?? '', email.subject, email.ai_summary)}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
-              >
-                <Calendar className="w-3 h-3 shrink-0" />
-                Schedule Meeting
-              </a>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -588,12 +577,16 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
               <span className="text-sm text-gray-600 dark:text-gray-400 truncate flex-1">
                 {/^Re:/i.test(email.subject) ? email.subject : `Re: ${email.subject}`}
               </span>
-              {t.matchedDeal && (
-                <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#61c2ad]/15 border border-[#61c2ad]/30 text-[#3d9585] dark:text-[#61c2ad] font-medium shrink-0">
-                  <RefreshCw className="w-2.5 h-2.5" />
-                  {t.matchedDeal.title}
-                </span>
-              )}
+              <a
+                href={buildCalendarLink(emailProvider, email.from_address, email.from_name ?? '', email.subject, email.ai_summary)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-medium shrink-0 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors"
+              >
+                <Calendar className="w-2.5 h-2.5 shrink-0" />
+                Schedule Meeting
+              </a>
             </div>
 
             {/* Rich text editor — toolbar hidden, rendered in footer instead */}
