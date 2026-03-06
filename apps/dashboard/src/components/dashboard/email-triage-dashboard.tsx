@@ -486,9 +486,17 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
           <div className="rounded-xl bg-gray-50 dark:bg-white/[0.03] border border-gray-200 dark:border-white/10 overflow-hidden">
             {/* Summary */}
             <div className="px-4 pt-3.5 pb-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Brain className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">AI Summary</span>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <Brain className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                  <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">AI Summary</span>
+                </div>
+                {t.matchedDeal && (
+                  <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#61c2ad]/15 border border-[#61c2ad]/30 text-[#3d9585] dark:text-[#61c2ad] font-medium shrink-0">
+                    <RefreshCw className="w-2.5 h-2.5" />
+                    {t.matchedDeal.title}
+                  </span>
+                )}
               </div>
               {email.ai_summary ? (
                 <p className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed">{email.ai_summary}</p>
