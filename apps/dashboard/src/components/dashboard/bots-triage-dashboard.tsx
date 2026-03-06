@@ -49,153 +49,6 @@ function sortByPriority(a: TriageConversation, b: TriageConversation): number {
   return tb - ta
 }
 
-// ─── Triage Card (grid view) ───────────────────────────────────────────────
-
-interface CardProps {
-  tc:          TriageConversation
-  isDone:      boolean
-  actionLabel: string | undefined
-  isSelected:  boolean
-  isChecked:   boolean
-  onSelect:    (id: string) => void
-  onCheck:     (id: string, checked: boolean) => void
-  onRename:    (id: string, title: string) => void
-}
-
-function ConvCard({ tc, isDone, actionLabel, isSelected, isChecked, onSelect, onCheck, onRename }: CardProps) {
-  const { conversation, botName } = tc
-  const platform = conversation.platform
-  const meta     = platform ? PLATFORM_META[platform] : null
-
-  const [isEditing, setIsEditing] = useState(false)
-  const [editValue, setEditValue] = useState(conversation.title ?? '')
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  function startEdit(e: React.MouseEvent) {
-    e.stopPropagation()
-    setEditValue(conversation.title ?? '')
-    setIsEditing(true)
-    setTimeout(() => inputRef.current?.select(), 0)
-  }
-
-  function commitEdit() {
-    setIsEditing(false)
-    const trimmed = editValue.trim()
-    if (trimmed !== (conversation.title ?? '')) onRename(conversation.id, trimmed)
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter')  { e.preventDefault(); commitEdit() }
-    if (e.key === 'Escape') { setIsEditing(false); setEditValue(conversation.title ?? '') }
-  }
-
-  return (
-    <div
-      onClick={e => { if (!isEditing) { e.stopPropagation(); onSelect(isSelected ? '' : conversation.id) } }}
-      className={cn(
-        'flex flex-col bg-white dark:bg-[#232323] rounded-xl border transition-all cursor-pointer hover:shadow-sm',
-        isSelected
-          ? 'ring-2 ring-blue-400/40 dark:ring-blue-400/30 border-blue-200 dark:border-blue-500/30'
-          : isDone
-            ? 'border-green-200 dark:border-green-500/20'
-            : conversation.ai_priority === 'high'
-              ? 'border-[#61c2ad]/50 dark:border-[#61c2ad]/35'
-              : conversation.ai_priority === 'medium'
-                ? 'border-amber-200 dark:border-amber-500/25'
-                : conversation.ai_priority === 'low'
-                  ? 'border-transparent'
-                  : 'border-gray-200 dark:border-white/8',
-      )}
-    >
-      {/* Top row: checkbox + badges + time */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-2">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <input
-            type="checkbox"
-            checked={isChecked}
-            onChange={e => { e.stopPropagation(); onCheck(conversation.id, e.target.checked) }}
-            onClick={e => e.stopPropagation()}
-            className="w-3.5 h-3.5 rounded accent-orange-500 shrink-0 cursor-pointer"
-          />
-          {conversation.ai_priority ? (
-            <span className={cn('flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border', PRIORITY_BADGE[conversation.ai_priority])}>
-              <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT[conversation.ai_priority])} />
-              {conversation.ai_priority}
-            </span>
-          ) : (
-            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/5 text-gray-500 border border-gray-200 dark:border-white/8 font-medium">
-              <Brain className="w-2.5 h-2.5" /> Pending
-            </span>
-          )}
-          {/* Bot badge */}
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 font-medium truncate max-w-[90px]">
-            {botName}
-          </span>
-          {isDone && (
-            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/20 font-medium">
-              <Check className="w-2.5 h-2.5" /> {actionLabel}
-            </span>
-          )}
-        </div>
-        <span className="text-[10px] text-gray-400 shrink-0">
-          {conversation.last_activity_at ? timeAgo(conversation.last_activity_at) : ''}
-        </span>
-      </div>
-
-      {/* Title + platform + message count */}
-      <div className="px-4 pb-3">
-        <div className="flex items-center gap-2">
-          <div className={cn(
-            'w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-sm',
-            conversation.ai_priority === 'high'   ? 'bg-[#61c2ad]/15 dark:bg-[#61c2ad]/20'
-            : conversation.ai_priority === 'medium' ? 'bg-amber-100 dark:bg-amber-500/15'
-            : 'bg-gray-100 dark:bg-white/5',
-          )}>
-            <Bot className={cn('w-3.5 h-3.5',
-              conversation.ai_priority === 'high'   ? 'text-[#61c2ad]'
-              : conversation.ai_priority === 'medium' ? 'text-amber-600 dark:text-amber-400'
-              : 'text-gray-400'
-            )} />
-          </div>
-          <div className="min-w-0 flex-1">
-            {isEditing ? (
-              <input
-                ref={inputRef}
-                value={editValue}
-                onChange={e => setEditValue(e.target.value)}
-                onBlur={commitEdit}
-                onKeyDown={handleKeyDown}
-                onClick={e => e.stopPropagation()}
-                className="w-full text-sm font-semibold bg-white dark:bg-[#2a2a2a] border border-blue-400 dark:border-blue-500 rounded px-1.5 py-0.5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                autoFocus
-              />
-            ) : (
-              <div className="flex items-center gap-1 group/title">
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                  {conversation.title ?? 'Untitled conversation'}
-                </p>
-                <button
-                  onClick={startEdit}
-                  title="Rename"
-                  className="shrink-0 opacity-0 group-hover/title:opacity-100 transition-opacity text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <Pencil className="w-3 h-3" />
-                </button>
-              </div>
-            )}
-            <p className="text-[11px] text-gray-400">
-              {conversation.message_count ?? 0} messages
-              {meta ? ` · ${meta.label}` : ''}
-            </p>
-          </div>
-        </div>
-        {conversation.ai_summary && (
-          <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1.5 line-clamp-1 italic">{conversation.ai_summary}</p>
-        )}
-      </div>
-    </div>
-  )
-}
 
 // ─── Detail Card ──────────────────────────────────────────────────────────────
 
@@ -435,6 +288,7 @@ export function BotTriageDashboard({ triageConversations }: Props) {
   const [modalMode,        setModalMode]        = useState<'lead' | 'ticket' | null>(null)
   const [modalTc,          setModalTc]          = useState<TriageConversation | null>(null)
   const [selectedId,       setSelectedId]       = useState<string>('')
+  const [selectedBotName,  setSelectedBotName]  = useState<string | null>(null)
   const [checkedIds,       setCheckedIds]       = useState<Set<string>>(new Set())
   const [isPending,          startTransition]          = useTransition()
   const [isAnalyzing,        startAnalyzeTransition]   = useTransition()
@@ -589,422 +443,309 @@ export function BotTriageDashboard({ triageConversations }: Props) {
     })
   }
 
-  const visible       = triageConversations.filter(tc => !dismissed.has(tc.conversation.id))
-  const highConvs     = visible.filter(tc => tc.conversation.ai_priority === 'high')
-  const medConvs      = visible.filter(tc => tc.conversation.ai_priority === 'medium')
-  const lowConvs      = visible.filter(tc => tc.conversation.ai_priority === 'low')
-  const pendingConvs  = visible.filter(tc => !tc.conversation.ai_analyzed_at)
-  const unanalyzedCount = pendingConvs.length
+  const visible         = triageConversations.filter(tc => !dismissed.has(tc.conversation.id))
+  const highConvs       = visible.filter(tc => tc.conversation.ai_priority === 'high')
+  const medConvs        = visible.filter(tc => tc.conversation.ai_priority === 'medium')
+  const unanalyzedCount = visible.filter(tc => !tc.conversation.ai_analyzed_at).length
 
   // Keep pendingCountRef in sync and auto-trigger
   useEffect(() => {
     const prev = pendingCountRef.current
     pendingCountRef.current = unanalyzedCount
-    if (unanalyzedCount > 0 && unanalyzedCount !== prev) {
-      void runAutoAnalyze()
-    }
+    if (unanalyzedCount > 0 && unanalyzedCount !== prev) void runAutoAnalyze()
   }, [unanalyzedCount, runAutoAnalyze])
 
-  const sortedVisible      = [...visible].sort(sortByPriority)
-  const selectedTc         = selectedId ? visible.find(tc => tc.conversation.id === selectedId) ?? null : null
+  const sortedVisible = [...visible].sort(sortByPriority)
+  const selectedTc    = selectedId ? visible.find(tc => tc.conversation.id === selectedId) ?? null : null
 
-  const gridHigh    = highConvs.filter(tc => tc.conversation.id !== selectedId)
-  const gridMed     = medConvs.filter(tc => tc.conversation.id !== selectedId)
-  const gridLow     = lowConvs.filter(tc => tc.conversation.id !== selectedId)
-  const gridPending = pendingConvs.filter(tc => tc.conversation.id !== selectedId)
+  // Derive bot list for column 1
+  const botMap2 = new Map<string, { name: string; total: number; highCount: number }>()
+  for (const tc of visible) {
+    const e = botMap2.get(tc.botName)
+    if (e) { e.total++; if (tc.conversation.ai_priority === 'high') e.highCount++ }
+    else botMap2.set(tc.botName, { name: tc.botName, total: 1, highCount: tc.conversation.ai_priority === 'high' ? 1 : 0 })
+  }
+  const botList = [...botMap2.values()]
+
+  // Filter conversations by selected bot
+  const convListVisible = selectedBotName
+    ? [...visible.filter(tc => tc.botName === selectedBotName)].sort(sortByPriority)
+    : sortedVisible
 
   return (
     <div className="flex flex-1 overflow-hidden">
 
-      {/* ─── LEFT: Priority-sorted conversation list ─────────────────────── */}
-      <aside className="w-[260px] shrink-0 flex flex-col border-r dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
-
-        {/* Header */}
-        <div className="px-4 py-3 border-b dark:border-white/8 shrink-0">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Bot className="w-4 h-4 text-blue-500 shrink-0" />
-              <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Bot Triage</h2>
-            </div>
-            <button
-              onClick={handleAnalyze}
-              disabled={isAnalyzing}
-              className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-50 transition-colors"
-            >
-              {isAnalyzing
-                ? <Loader2 className="w-3 h-3 animate-spin" />
-                : <Sparkles className="w-3 h-3" />}
-              {isAnalyzing ? 'Analysing…' : 'Analyse'}
-            </button>
+      {/* ─── COLUMN 1: Bot list ───────────────────────────────────────────── */}
+      <aside className="w-[168px] shrink-0 flex flex-col border-r dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
+        <div className="px-3 py-3 border-b dark:border-white/8 shrink-0 flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <Bot className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+            <h2 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide">Bots</h2>
           </div>
-
-          {/* Status badges */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {highConvs.length > 0 && (
-              <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#61c2ad]/10 text-[#3a9e8a] dark:text-[#61c2ad] font-semibold border border-[#61c2ad]/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#61c2ad]" />{highConvs.length} High
-              </span>
-            )}
-            {medConvs.length > 0 && (
-              <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-500/75 dark:text-amber-400/75 font-semibold border border-amber-200/70 dark:border-amber-500/18">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />{medConvs.length} Medium
-              </span>
-            )}
-          </div>
-          {(analyzeMsg && !isAnalyzing) && (
-            <p className={cn('text-[11px] mt-1 font-medium', analyzeMsg.startsWith('Error') ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
-              {analyzeMsg}
-            </p>
-          )}
+          <button
+            onClick={handleAnalyze}
+            disabled={isAnalyzing}
+            title={isAnalyzing ? 'Analysing…' : 'Analyse conversations'}
+            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-50 transition-colors"
+          >
+            {isAnalyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+          </button>
         </div>
 
-        {/* List */}
+        {analyzeMsg && !isAnalyzing && (
+          <p className={cn('text-[10px] px-3 py-1.5 font-medium border-b dark:border-white/8', analyzeMsg.startsWith('Error') ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
+            {analyzeMsg}
+          </p>
+        )}
+
         <div className="flex-1 overflow-y-auto">
-          {visible.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full gap-3 p-6 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-white/5 flex items-center justify-center">
-                <Bot className="w-5 h-5 text-gray-300 dark:text-gray-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No conversations yet</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Create a bot to get started</p>
+          {/* "All Bots" row */}
+          <div
+            onClick={() => { setSelectedBotName(null); setSelectedId('') }}
+            className={cn(
+              'px-3 py-2.5 cursor-pointer border-b border-gray-100 dark:border-white/5 transition-colors',
+              !selectedBotName ? 'bg-white dark:bg-[#1e1e1e]' : 'hover:bg-gray-100/60 dark:hover:bg-white/3',
+            )}
+          >
+            <p className={cn('text-xs font-semibold', !selectedBotName ? 'text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400')}>All Bots</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <p className="text-[10px] text-gray-400">{visible.length} convs</p>
+              {highConvs.length > 0 && <span className="text-[10px] font-bold text-[#61c2ad]">· {highConvs.length}H</span>}
+              {medConvs.length > 0 && <span className="text-[10px] font-bold text-amber-400">· {medConvs.length}M</span>}
+            </div>
+          </div>
+
+          {botList.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-32 gap-2 p-4 text-center">
+              <Bot className="w-5 h-5 text-gray-300 dark:text-gray-600" />
+              <p className="text-[11px] text-gray-400">No bots yet</p>
+            </div>
+          ) : botList.map(bot => (
+            <div
+              key={bot.name}
+              onClick={() => { setSelectedBotName(bot.name); setSelectedId('') }}
+              className={cn(
+                'px-3 py-2.5 cursor-pointer border-b border-gray-100 dark:border-white/5 transition-colors',
+                selectedBotName === bot.name ? 'bg-white dark:bg-[#1e1e1e]' : 'hover:bg-gray-100/60 dark:hover:bg-white/3',
+              )}
+            >
+              <p className={cn('text-xs font-medium truncate', selectedBotName === bot.name ? 'text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400')}>
+                {bot.name}
+              </p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <p className="text-[10px] text-gray-400">{bot.total} convs</p>
+                {bot.highCount > 0 && <span className="text-[10px] font-bold text-[#61c2ad]">· {bot.highCount}H</span>}
               </div>
             </div>
-          ) : (
-            sortedVisible.map(tc => {
-              const { conversation } = tc
-              const isActive  = selectedId === conversation.id
-              const priority  = conversation.ai_priority
-              return (
-                <div
-                  key={conversation.id}
-                  onClick={() => setSelectedId(isActive ? '' : conversation.id)}
-                  className={cn(
-                    'flex items-stretch border-l-[3px] transition-colors cursor-pointer',
-                    isActive
-                      ? priority === 'high'
-                        ? 'border-l-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10'
-                        : priority === 'medium'
-                          ? 'border-l-amber-400 bg-amber-50 dark:bg-amber-500/8'
-                          : priority === 'low'
-                            ? 'border-l-gray-400 bg-gray-100 dark:bg-white/5'
-                            : 'border-l-blue-400 bg-blue-50 dark:bg-blue-500/8'
-                      : 'border-l-transparent hover:bg-white dark:hover:bg-white/3',
-                  )}
-                >
-                  <div className="flex-1 min-w-0 px-3 py-2.5">
-                    <div className="flex items-start gap-2">
-                      <span className={cn('mt-1.5 w-2 h-2 rounded-full shrink-0',
-                        priority ? PRIORITY_DOT[priority] : 'bg-gray-200 dark:bg-white/20')} />
-                      <div className="flex-1 min-w-0">
-                        <span className={cn('text-xs font-semibold truncate block',
-                          actioned.has(conversation.id) ? 'text-gray-400' : 'text-gray-800 dark:text-gray-200')}>
-                          {conversation.title ?? 'Untitled'}
-                        </span>
-                        <p className="text-[11px] text-gray-400 truncate">{tc.botName}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center pr-3 shrink-0">
-                    <span className="text-[10px] text-gray-400">
-                      {conversation.last_activity_at ? timeAgo(conversation.last_activity_at) : ''}
-                    </span>
-                  </div>
-                </div>
-              )
-            })
-          )}
+          ))}
         </div>
 
-        {/* Footer */}
-        <div className="px-3 py-3 border-t dark:border-white/8 shrink-0">
-          <Link href="/bots"
-            className="flex items-center justify-center gap-1.5 w-full py-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-white dark:hover:bg-white/5 rounded-xl transition-colors">
-            All Conversations <ChevronRight className="w-3.5 h-3.5" />
+        <div className="px-3 py-2.5 border-t dark:border-white/8 shrink-0">
+          <Link href="/bots" className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+            All bots <ChevronRight className="w-3 h-3" />
           </Link>
         </div>
       </aside>
 
-      {/* ─── CENTER: Detail view + card grid ──────────────────────────────── */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-[#1c1c1c]">
-
-        {triageConversations.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-gray-400 p-8">
-            <div className="w-20 h-20 rounded-3xl bg-gray-100 dark:bg-white/5 flex items-center justify-center">
-              <Bot className="w-9 h-9 opacity-20" />
-            </div>
-            <div className="text-center space-y-1">
-              <p className="text-base font-semibold text-gray-600 dark:text-gray-300">No bot conversations yet</p>
-              <p className="text-sm text-gray-400 dark:text-gray-500 max-w-sm">
-                Create a bot and connect it to a platform to start chatting.
-              </p>
-            </div>
-            <Link href="/bots/new"
-              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors">
-              <Bot className="w-4 h-4 shrink-0" />
-              Create a Bot
-            </Link>
+      {/* ─── COLUMN 2: Conversation list ─────────────────────────────────── */}
+      <aside className="w-[240px] shrink-0 flex flex-col border-r dark:border-white/8 bg-gray-50/50 dark:bg-[#191919] overflow-hidden">
+        <div className="px-3 py-2.5 border-b dark:border-white/8 shrink-0 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate max-w-[140px]">
+              {selectedBotName ?? 'All Conversations'}
+            </p>
+            <p className="text-[10px] text-gray-400">{convListVisible.length} conversation{convListVisible.length !== 1 ? 's' : ''}</p>
           </div>
+          {checkedIds.size > 0 && (
+            <button
+              onClick={handleDeleteSelected}
+              disabled={isDeleting}
+              className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 border border-red-200 dark:border-red-500/20 disabled:opacity-50 transition-colors"
+            >
+              {isDeleting ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Trash2 className="w-2.5 h-2.5" />}
+              {isDeleting ? '…' : `Del ${checkedIds.size}`}
+            </button>
+          )}
+        </div>
 
+        <div className="flex-1 overflow-y-auto">
+          {convListVisible.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full gap-2 p-4 text-center">
+              <Bot className="w-6 h-6 text-gray-300 dark:text-gray-600" />
+              <p className="text-xs text-gray-400">
+                {triageConversations.length === 0 ? 'No conversations yet' : 'No conversations for this bot'}
+              </p>
+              {triageConversations.length === 0 && (
+                <Link href="/bots/new" className="text-xs text-blue-500 hover:underline">Create a bot →</Link>
+              )}
+            </div>
+          ) : convListVisible.map(tc => {
+            const { conversation } = tc
+            const isActive  = selectedId === conversation.id
+            const priority  = conversation.ai_priority
+            return (
+              <div
+                key={conversation.id}
+                onClick={() => setSelectedId(isActive ? '' : conversation.id)}
+                className={cn(
+                  'flex items-stretch border-l-[3px] border-b border-gray-100 dark:border-white/4 transition-colors cursor-pointer',
+                  isActive
+                    ? priority === 'high'   ? 'border-l-[#61c2ad] bg-white dark:bg-[#1e1e1e]'
+                    : priority === 'medium' ? 'border-l-amber-400 bg-white dark:bg-[#1e1e1e]'
+                    : priority === 'low'    ? 'border-l-gray-400  bg-white dark:bg-[#1e1e1e]'
+                    :                         'border-l-blue-400   bg-white dark:bg-[#1e1e1e]'
+                    : 'border-l-transparent hover:bg-white dark:hover:bg-white/3',
+                )}
+              >
+                <div className="flex-1 min-w-0 px-3 py-2.5">
+                  <div className="flex items-start gap-2">
+                    <div className="flex flex-col items-center gap-0.5 pt-1 shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={checkedIds.has(conversation.id)}
+                        onChange={e => { e.stopPropagation(); setCheckedIds(prev => { const n = new Set(prev); e.target.checked ? n.add(conversation.id) : n.delete(conversation.id); return n }) }}
+                        onClick={e => e.stopPropagation()}
+                        className="w-3 h-3 rounded accent-orange-500 cursor-pointer"
+                      />
+                      <span className={cn('w-1.5 h-1.5 rounded-full mt-0.5', priority ? PRIORITY_DOT[priority] : 'bg-gray-200 dark:bg-white/20')} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className={cn('text-xs font-semibold truncate', actioned.has(conversation.id) ? 'text-gray-400' : 'text-gray-800 dark:text-gray-200')}>
+                        {conversation.title ?? 'Untitled'}
+                      </p>
+                      <p className="text-[10px] text-gray-400">
+                        {conversation.message_count ?? 0} msgs · {conversation.last_activity_at ? timeAgo(conversation.last_activity_at) : ''}
+                      </p>
+                      {!selectedBotName && (
+                        <p className="text-[10px] text-blue-400/80 truncate">{tc.botName}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </aside>
+
+      {/* ─── COLUMN 3: Detail triage card ────────────────────────────────── */}
+      <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#1a1a1a]">
+        {!selectedTc ? (
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 p-8 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-white/5 flex items-center justify-center">
+              <Bot className="w-6 h-6 text-gray-300 dark:text-gray-600" />
+            </div>
+            <p className="text-sm text-gray-400 dark:text-gray-500">Select a conversation to view the AI triage</p>
+          </div>
         ) : (
           <>
-            {/* ── Toolbar ── */}
-            <div className="flex items-center gap-3 px-5 py-2.5 border-b dark:border-white/8 shrink-0 bg-white dark:bg-[#1e1e1e]">
-              <input
-                type="checkbox"
-                checked={checkedIds.size === visible.length && visible.length > 0}
-                ref={el => { if (el) el.indeterminate = checkedIds.size > 0 && checkedIds.size < visible.length }}
-                onChange={e => {
-                  if (e.target.checked) setCheckedIds(new Set(visible.map(tc => tc.conversation.id)))
-                  else setCheckedIds(new Set())
-                }}
-                className="w-3.5 h-3.5 rounded accent-orange-500 cursor-pointer"
+            <div ref={detailRef} className="flex-1 overflow-y-auto p-5">
+              <DetailCard
+                tc={selectedTc}
+                actioned={actioned}
+                onAction={openModal}
+                onDismiss={dismiss}
+                onClose={() => setSelectedId('')}
+                onAnalyze={handleAnalyzeOne}
+                onRename={handleRename}
+                isAnalyzing={isAnalyzing}
               />
-              <span className="text-xs text-gray-500 dark:text-gray-400 flex-1 select-none">
-                {checkedIds.size > 0 ? `${checkedIds.size} selected` : `${visible.length} conversation${visible.length !== 1 ? 's' : ''}`}
-              </span>
-              {checkedIds.size > 0 && (
-                <button
-                  onClick={handleDeleteSelected}
-                  disabled={isDeleting}
-                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 border border-red-200 dark:border-red-500/20 font-medium disabled:opacity-50 transition-colors"
-                >
-                  {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-                  {isDeleting ? 'Deleting…' : `Delete ${checkedIds.size}`}
-                </button>
-              )}
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 space-y-7">
-
-              {/* Detail card */}
-              {selectedTc && (
-                <div ref={detailRef}>
-                  <DetailCard
-                    tc={selectedTc}
-                    actioned={actioned}
-                    onAction={openModal}
-                    onDismiss={dismiss}
-                    onClose={() => setSelectedId('')}
-                    onAnalyze={handleAnalyzeOne}
-                    onRename={handleRename}
-                    isAnalyzing={isAnalyzing}
-                  />
+            {/* ── Modal ── */}
+            {modalMode && modalTc && (
+              <div className="border-t dark:border-white/8 bg-white dark:bg-[#1e1e1e] p-5 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                      {modalMode === 'lead' ? 'Create Lead' : 'Create Support Ticket'}
+                    </h3>
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                      From: {modalTc.conversation.title ?? 'Untitled'} · {modalTc.botName}
+                    </p>
+                  </div>
+                  <button onClick={() => setModalMode(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-              )}
 
-              {/* Divider */}
-              {selectedTc && (gridHigh.length + gridMed.length + gridLow.length + gridPending.length) > 0 && (
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-px bg-gray-200 dark:bg-white/8" />
-                  <span className="text-[11px] text-gray-400 font-medium whitespace-nowrap">Other conversations</span>
-                  <div className="flex-1 h-px bg-gray-200 dark:bg-white/8" />
+                {modalMode === 'lead' && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-500 block mb-1">Name *</label>
+                      <input value={mName} onChange={e => setMName(e.target.value)}
+                        className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-500 block mb-1">Email</label>
+                      <input value={mEmail} onChange={e => setMEmail(e.target.value)}
+                        className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-500 block mb-1">Company</label>
+                      <input value={mCompany} onChange={e => setMCompany(e.target.value)} placeholder="Optional"
+                        className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-500 block mb-1">Deal Title *</label>
+                      <input value={mDealTitle} onChange={e => setMDealTitle(e.target.value)}
+                        className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-[11px] font-semibold text-gray-500 block mb-1">Notes</label>
+                      <textarea value={mNotes} onChange={e => setMNotes(e.target.value)} rows={2}
+                        className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none" />
+                    </div>
+                  </div>
+                )}
+
+                {modalMode === 'ticket' && (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] font-semibold text-gray-500 block mb-1">Contact Name</label>
+                        <input value={mName} onChange={e => setMName(e.target.value)}
+                          className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-gray-500 block mb-1">Priority</label>
+                        <select value={mPriority} onChange={e => setMPriority(e.target.value as 'low'|'medium'|'high'|'urgent')}
+                          className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none">
+                          <option value="low">Low</option>
+                          <option value="medium">Medium</option>
+                          <option value="high">High</option>
+                          <option value="urgent">Urgent</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-500 block mb-1">Title *</label>
+                      <input value={mDealTitle} onChange={e => setMDealTitle(e.target.value)}
+                        className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-500 block mb-1">Description</label>
+                      <textarea value={mNotes} onChange={e => setMNotes(e.target.value)} rows={2}
+                        className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none" />
+                    </div>
+                  </div>
+                )}
+
+                {modalError && <p className="text-xs text-red-500 mt-2">{modalError}</p>}
+
+                <div className="flex items-center gap-2 mt-4">
+                  <button onClick={handleModalSubmit} disabled={isPending}
+                    className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-60">
+                    {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                    {modalMode === 'lead' ? 'Save Lead' : 'Create Ticket'}
+                  </button>
+                  <button onClick={() => setModalMode(null)} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                    Cancel
+                  </button>
                 </div>
-              )}
-
-              {/* ── HIGH ── */}
-              {gridHigh.length > 0 && (
-                <section>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="w-2 h-2 rounded-full bg-[#61c2ad] shrink-0" />
-                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#3a9e8a] dark:text-[#61c2ad]">
-                      High Priority · {gridHigh.length}
-                    </h3>
-                    <div className="flex-1 h-px bg-[#61c2ad]/30 dark:bg-[#61c2ad]/20" />
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
-                    {gridHigh.map(tc => (
-                      <ConvCard key={tc.conversation.id} tc={tc}
-                        isDone={actioned.has(tc.conversation.id)} actionLabel={actioned.get(tc.conversation.id)}
-                        isSelected={selectedId === tc.conversation.id}
-                        isChecked={checkedIds.has(tc.conversation.id)}
-                        onSelect={id => setSelectedId(selectedId === id ? '' : id)}
-                        onCheck={(id, checked) => setCheckedIds(prev => { const next = new Set(prev); checked ? next.add(id) : next.delete(id); return next })}
-                        onRename={handleRename}
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* ── MEDIUM ── */}
-              {gridMed.length > 0 && (
-                <section>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-amber-500/75 dark:text-amber-400/75">
-                      Medium · {gridMed.length}
-                    </h3>
-                    <div className="flex-1 h-px bg-amber-200/60 dark:bg-amber-500/15" />
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
-                    {gridMed.map(tc => (
-                      <ConvCard key={tc.conversation.id} tc={tc}
-                        isDone={actioned.has(tc.conversation.id)} actionLabel={actioned.get(tc.conversation.id)}
-                        isSelected={selectedId === tc.conversation.id}
-                        isChecked={checkedIds.has(tc.conversation.id)}
-                        onSelect={id => setSelectedId(selectedId === id ? '' : id)}
-                        onCheck={(id, checked) => setCheckedIds(prev => { const next = new Set(prev); checked ? next.add(id) : next.delete(id); return next })}
-                        onRename={handleRename}
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* ── LOW ── */}
-              {gridLow.length > 0 && (
-                <section>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-600 shrink-0" />
-                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-                      Low · {gridLow.length}
-                    </h3>
-                    <div className="flex-1 h-px bg-gray-200 dark:bg-white/8" />
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
-                    {gridLow.map(tc => (
-                      <ConvCard key={tc.conversation.id} tc={tc}
-                        isDone={actioned.has(tc.conversation.id)} actionLabel={actioned.get(tc.conversation.id)}
-                        isSelected={selectedId === tc.conversation.id}
-                        isChecked={checkedIds.has(tc.conversation.id)}
-                        onSelect={id => setSelectedId(selectedId === id ? '' : id)}
-                        onCheck={(id, checked) => setCheckedIds(prev => { const next = new Set(prev); checked ? next.add(id) : next.delete(id); return next })}
-                        onRename={handleRename}
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* ── PENDING ── */}
-              {gridPending.length > 0 && (
-                <section>
-                  <div className="flex items-center gap-2 mb-3">
-                    <button
-                      onClick={handleAnalyze}
-                      disabled={isAnalyzing}
-                      className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:opacity-50 transition-colors group"
-                    >
-                      {isAnalyzing
-                        ? <Loader2 className="w-3 h-3 shrink-0 animate-spin" />
-                        : <Brain className="w-3 h-3 shrink-0 group-hover:scale-110 transition-transform" />}
-                      {isAnalyzing ? 'Analysing…' : `Pending Analysis · ${gridPending.length}`}
-                    </button>
-                    <div className="flex-1 h-px bg-blue-200 dark:bg-blue-500/20" />
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
-                    {gridPending.map(tc => (
-                      <ConvCard key={tc.conversation.id} tc={tc}
-                        isDone={actioned.has(tc.conversation.id)} actionLabel={actioned.get(tc.conversation.id)}
-                        isSelected={selectedId === tc.conversation.id}
-                        isChecked={checkedIds.has(tc.conversation.id)}
-                        onSelect={id => setSelectedId(selectedId === id ? '' : id)}
-                        onCheck={(id, checked) => setCheckedIds(prev => { const next = new Set(prev); checked ? next.add(id) : next.delete(id); return next })}
-                        onRename={handleRename}
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
-            </div>
+              </div>
+            )}
           </>
-        )}
-
-        {/* ── Modal ── */}
-        {modalMode && modalTc && (
-          <div className="border-t dark:border-white/8 bg-white dark:bg-[#1e1e1e] p-5 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                  {modalMode === 'lead' ? 'Create Lead' : 'Create Support Ticket'}
-                </h3>
-                <p className="text-[11px] text-gray-400 mt-0.5">
-                  From: {modalTc.conversation.title ?? 'Untitled'} · {modalTc.botName}
-                </p>
-              </div>
-              <button onClick={() => setModalMode(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Lead form */}
-            {modalMode === 'lead' && (
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[11px] font-semibold text-gray-500 block mb-1">Name *</label>
-                  <input value={mName} onChange={e => setMName(e.target.value)}
-                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="text-[11px] font-semibold text-gray-500 block mb-1">Email</label>
-                  <input value={mEmail} onChange={e => setMEmail(e.target.value)}
-                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="text-[11px] font-semibold text-gray-500 block mb-1">Company</label>
-                  <input value={mCompany} onChange={e => setMCompany(e.target.value)} placeholder="Optional"
-                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="text-[11px] font-semibold text-gray-500 block mb-1">Deal Title *</label>
-                  <input value={mDealTitle} onChange={e => setMDealTitle(e.target.value)}
-                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                </div>
-                <div className="col-span-2">
-                  <label className="text-[11px] font-semibold text-gray-500 block mb-1">Notes</label>
-                  <textarea value={mNotes} onChange={e => setMNotes(e.target.value)} rows={2}
-                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none" />
-                </div>
-              </div>
-            )}
-
-            {/* Ticket form */}
-            {modalMode === 'ticket' && (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-500 block mb-1">Contact Name</label>
-                    <input value={mName} onChange={e => setMName(e.target.value)}
-                      className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-500 block mb-1">Priority</label>
-                    <select value={mPriority} onChange={e => setMPriority(e.target.value as 'low'|'medium'|'high'|'urgent')}
-                      className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none">
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                      <option value="urgent">Urgent</option>
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-[11px] font-semibold text-gray-500 block mb-1">Title *</label>
-                  <input value={mDealTitle} onChange={e => setMDealTitle(e.target.value)}
-                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="text-[11px] font-semibold text-gray-500 block mb-1">Description</label>
-                  <textarea value={mNotes} onChange={e => setMNotes(e.target.value)} rows={2}
-                    className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none" />
-                </div>
-              </div>
-            )}
-
-            {modalError && <p className="text-xs text-red-500 mt-2">{modalError}</p>}
-
-            <div className="flex items-center gap-2 mt-4">
-              <button onClick={handleModalSubmit} disabled={isPending}
-                className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-60">
-                {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                {modalMode === 'lead' ? 'Save Lead' : 'Create Ticket'}
-              </button>
-              <button onClick={() => setModalMode(null)} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-                Cancel
-              </button>
-            </div>
-          </div>
         )}
       </div>
     </div>
