@@ -9,6 +9,7 @@ import {
   Check, X, ChevronRight, Loader2, Trash2,
   Phone, Globe, Tag, Brain,
   Calendar, MapPin, Users, Clock,
+  Maximize2, Minimize2,
 } from 'lucide-react'
 import { triageCreateLead, triageCreateTicket, triageAddDealNote } from '@/app/actions/sage-triage'
 import { syncEmails, deleteTriageEmails, reanalyzeEmails, sendEmail, rewriteEmail, markEmailRead } from '@/app/actions/sage-emails'
@@ -242,10 +243,14 @@ function TriageCard({ t, isDone, actionLabel, isChecked, isSelected, onSelect, o
 
 // ─── Full-width Detail Card ────────────────────────────────────────────────────
 
+type ModalSize = 'sm' | 'md' | 'lg'
+
 interface DetailCardProps {
   t:             TriageEmail
   allEmails:     TriageEmail[]
   actioned:      Map<string, string>
+  modalSize?:    ModalSize
+  onResize?:     () => void
   onAction:      (t: TriageEmail, mode: 'lead' | 'ticket' | 'deal_note') => void
   onDismiss:     (id: string) => void
   onDelete:      (id: string) => void
@@ -256,7 +261,7 @@ interface DetailCardProps {
   emailProvider: 'gmail' | 'microsoft' | null
 }
 
-function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, isDeleting, isAnalyzing, emailProvider }: DetailCardProps) {
+function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, isDeleting, isAnalyzing, emailProvider, modalSize, onResize }: DetailCardProps) {
   const { email, meeting } = t
   const entities  = email.ai_entities
   const drafts    = email.ai_reply_drafts ?? []
@@ -406,6 +411,15 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
             >
               {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
             </button>
+            {onResize && (
+              <button
+                onClick={e => { e.stopPropagation(); onResize() }}
+                title={modalSize === 'sm' ? 'Original size' : modalSize === 'md' ? 'Full width' : 'Small'}
+                className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+              >
+                {modalSize === 'lg' ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </button>
+            )}
             <button
               onClick={e => { e.stopPropagation(); onClose() }}
               title="Close"
@@ -750,6 +764,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
   const [modalMode,       setModalMode]       = useState<'lead' | 'ticket' | 'deal_note' | null>(null)
   const [modalEmail,      setModalEmail]      = useState<TriageEmail | null>(null)
   const [selectedEmailId, setSelectedEmailId] = useState<string>('')
+  const [modalSize,       setModalSize]       = useState<ModalSize>('md')
   const [isPending,         startTransition]          = useTransition()
   const [isSyncing,         startSyncTransition]      = useTransition()
   const [isDeleting,        startDeleteTransition]    = useTransition()
@@ -1047,6 +1062,8 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
     isDeleting,
     isAnalyzing:  isReanalyzing,
     emailProvider,
+    modalSize,
+    onResize:     () => setModalSize(s => s === 'sm' ? 'md' : s === 'md' ? 'lg' : 'sm'),
   }
 
   return (
@@ -1516,7 +1533,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
         >
           <div
             ref={detailRef}
-            className="w-full max-w-2xl mb-12"
+            className={`w-full mb-12 transition-all duration-200 ${modalSize === 'sm' ? 'max-w-lg' : modalSize === 'lg' ? 'max-w-5xl' : 'max-w-2xl'}`}
             onClick={e => e.stopPropagation()}
           >
             <DetailCard t={selectedTriageEmail} {...detailCardProps} />
