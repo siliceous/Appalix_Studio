@@ -286,11 +286,9 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
   // Lazy init so the textarea and Send button are ready immediately on first render
   const [composeBody,    setComposeBody]    = useState(() => drafts[0]?.body ?? '')
   const [sent,           setSent]           = useState(false)
-  const [noteText,       setNoteText]       = useState('')
   const [noteSaved,      setNoteSaved]      = useState(false)
   const [isSendingEmail, setIsSendingEmail] = useState(false)
   const [sendSlow,       setSendSlow]       = useState(false)
-  const [isLoggingNote,  setIsLoggingNote]  = useState(false)
   const [isRewriting,    setIsRewriting]    = useState(false)
   const [sendError,      setSendError]      = useState<string | null>(null)
   const isDone    = actioned.has(email.id)
@@ -300,7 +298,6 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
   useEffect(() => {
     setSent(false)
     setSendSlow(false)
-    setNoteText('')
     setNoteSaved(false)
     setSendError(null)
     setComposeBody(drafts[0]?.body ?? '')
@@ -325,20 +322,14 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
     setSendSlow(false)
     if (result.ok) {
       setSent(true)
-      setNoteText(composeBody.slice(0, 300))
+      // Auto-log a note to the deal immediately — no popup needed
+      if (t.matchedDeal?.id) {
+        await triageAddDealNote(t.matchedDeal.id, composeBody.slice(0, 300))
+        setNoteSaved(true)
+      }
     } else {
       setSendError(result.error ?? 'Send failed')
     }
-  }
-
-  async function handleLogNote() {
-    const dealId = t.matchedDeal?.id
-    if (!dealId || !noteText.trim()) return
-    setIsLoggingNote(true)
-    await triageAddDealNote(dealId, noteText)
-    setIsLoggingNote(false)
-    setNoteSaved(true)
-    // Stay visible so user can confirm the note was saved — they dismiss manually
   }
 
   async function handleRewrite() {
@@ -662,41 +653,6 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
           </div>
         )}
 
-        {/* Post-send: deal update popup */}
-        {sent && t.matchedDeal && !noteSaved && (
-          <div className="rounded-xl border border-brand-200 dark:border-brand-500/30 overflow-hidden bg-white dark:bg-[#232323]">
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-brand-50 dark:bg-brand-500/10 border-b border-brand-100 dark:border-brand-500/20">
-              <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400 shrink-0" />
-              <span className="text-[11px] font-medium text-green-700 dark:text-green-400">Reply sent</span>
-              <span className="text-[11px] text-gray-400 mx-1">·</span>
-              <span className="text-[11px] font-semibold text-brand-700 dark:text-brand-400">Update: {t.matchedDeal.title}</span>
-            </div>
-            <div className="px-4 py-3 space-y-2.5">
-              <textarea
-                value={noteText}
-                onChange={e => setNoteText(e.target.value)}
-                rows={2}
-                className="w-full text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/8 rounded-lg px-3 py-2 resize-none outline-none focus:ring-1 focus:ring-brand-500"
-              />
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleLogNote}
-                  disabled={isLoggingNote || !noteText.trim()}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-[11px] font-semibold rounded-lg transition-colors"
-                >
-                  {isLoggingNote ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                  Update
-                </button>
-                <button
-                  onClick={() => { void markEmailRead(email.id); onDismiss(email.id); onClose() }}
-                  className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                >
-                  Skip →
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Post-send: no deal → confirmation with manual dismiss */}
         {sent && !t.matchedDeal && (
@@ -719,7 +675,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
           <div className="rounded-xl border border-brand-200 dark:border-brand-500/30 px-4 py-2.5 flex items-center justify-between gap-2 bg-brand-50 dark:bg-brand-500/10">
             <div className="flex items-center gap-2">
               <Check className="w-3.5 h-3.5 text-brand-600 dark:text-[#61c2ad]" />
-              <span className="text-[11px] font-medium text-brand-700 dark:text-[#61c2ad]">Note logged in Follow ups</span>
+              <span className="text-[11px] font-medium text-brand-700 dark:text-[#61c2ad]">Reply sent · Note logged in Follow ups</span>
             </div>
             <button
               onClick={() => { void markEmailRead(email.id); onDismiss(email.id); onClose() }}
