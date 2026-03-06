@@ -88,6 +88,10 @@ export function ContactModal({ contact, onClose, onSaved }: ContactModalProps) {
                   </select>
                 </div>
               </div>
+              <div>
+                <label className={labelCls}>Value <span className="text-gray-400 font-normal">(estimated)</span></label>
+                <input name="value" type="number" min="0" step="0.01" placeholder="0.00" defaultValue={contact?.value ?? ''} className={inputCls} />
+              </div>
             </div>
           </div>
 

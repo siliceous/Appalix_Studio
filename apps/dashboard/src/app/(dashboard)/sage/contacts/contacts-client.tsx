@@ -194,11 +194,14 @@ export function ContactsClient({ contacts: initial }: ContactsClientProps) {
       case 'website_url': return c.website_url
         ? <a href={c.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-brand-600 dark:text-[#61c2ad] hover:underline"><Globe className="w-3 h-3 shrink-0" /><span className="truncate max-w-32">{c.website_url.replace(/^https?:\/\//, '')}</span></a>
         : <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
-      case 'deal_value': return c.deal_value
-        ? <span className="text-xs font-semibold text-brand-600 dark:text-[#61c2ad] tabular-nums whitespace-nowrap">
-            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(c.deal_value)}
-          </span>
-        : <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
+      case 'deal_value': {
+        const display = c.value ?? c.deal_value
+        return display
+          ? <span className="text-xs font-semibold text-brand-600 dark:text-[#61c2ad] tabular-nums whitespace-nowrap">
+              {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(display)}
+            </span>
+          : <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
+      }
       default: return null
     }
   }

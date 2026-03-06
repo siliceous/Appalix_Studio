@@ -71,10 +71,12 @@ export async function createContact(formData: FormData) {
   const tagsRaw       = (formData.get('tags') as string | null)?.trim() || ''
   const tags          = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : []
   const source        = ((formData.get('source') as string | null)?.trim() || 'manual')
+  const valueRaw      = (formData.get('value') as string | null)?.trim()
+  const value         = valueRaw ? parseFloat(valueRaw) : null
 
   const { data, error } = await admin
     .from('sage_contacts')
-    .insert({ workspace_id: workspaceId, name, email, phone, title, contact_type, company_name, website_url, business_goal, street, city, state, zip, country, visibility, notes, tags, source })
+    .insert({ workspace_id: workspaceId, name, email, phone, title, contact_type, company_name, website_url, business_goal, street, city, state, zip, country, visibility, notes, tags, source, value })
     .select('*')
     .single()
 
@@ -108,10 +110,12 @@ export async function updateContact(id: string, formData: FormData) {
   const tagsRaw       = (formData.get('tags') as string | null)?.trim() || ''
   const tags          = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : []
   const source        = ((formData.get('source') as string | null)?.trim() || 'manual')
+  const valueRaw      = (formData.get('value') as string | null)?.trim()
+  const value         = valueRaw ? parseFloat(valueRaw) : null
 
   const { data, error } = await admin
     .from('sage_contacts')
-    .update({ name, email, phone, title, contact_type, company_name, website_url, business_goal, street, city, state, zip, country, visibility, notes, tags, source, updated_at: new Date().toISOString() })
+    .update({ name, email, phone, title, contact_type, company_name, website_url, business_goal, street, city, state, zip, country, visibility, notes, tags, source, value, updated_at: new Date().toISOString() })
     .eq('id', id)
     .eq('workspace_id', workspaceId)
     .select('*')

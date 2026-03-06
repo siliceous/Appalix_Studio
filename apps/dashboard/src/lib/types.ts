@@ -237,6 +237,7 @@ export interface SageContact {
   source:                 SageContactSource
   tags:                   string[]
   notes:                  string | null
+  value:                  number | null
   created_at:             string
   updated_at:             string
   // joined
