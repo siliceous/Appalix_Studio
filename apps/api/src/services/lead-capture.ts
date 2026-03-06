@@ -40,8 +40,9 @@ export function extractName(messages: { content: string }[]): string | null {
 }
 
 export interface LeadData {
-  email?: string
-  phone?: string
+  email?:   string
+  phone?:   string
+  company?: string
 }
 
 /**
@@ -54,6 +55,56 @@ export function extractLeadData(text: string): LeadData {
     email: emails?.[0],
     phone: phones?.[0]?.replace(/\s+/g, ' ').trim(),
   }
+}
+
+const COMPANY_PATTERNS = [
+  /\b(?:i work (?:at|for)|work(?:ing)? (?:at|for)|from|with|at)\s+([A-Z][A-Za-z0-9& ,.''-]{1,50}?)(?:\s*[.,!?]|$)/i,
+  /\bcompany[:\s]+([A-Z][A-Za-z0-9& ,.''-]{1,50})(?:\s*[.,!?]|$)/i,
+  /\borganis?ation[:\s]+([A-Z][A-Za-z0-9& ,.''-]{1,50})(?:\s*[.,!?]|$)/i,
+  /\bbusiness[:\s]+([A-Z][A-Za-z0-9& ,.''-]{1,50})(?:\s*[.,!?]|$)/i,
+]
+
+const COMPANY_FALSE_POSITIVES = /^(a|an|the|here|there|home|work|online|my|our|your|this|that|it|us|them)$/i
+
+function extractCompanyFromText(text: string): string | null {
+  for (const pattern of COMPANY_PATTERNS) {
+    const match = text.match(pattern)
+    if (match?.[1]) {
+      const candidate = match[1].trim().replace(/[.,!?]+$/, '').trim()
+      if (candidate.length > 1 && !COMPANY_FALSE_POSITIVES.test(candidate)) {
+        return candidate
+      }
+    }
+  }
+  return null
+}
+
+/**
+ * Scan the full conversation history for email, phone, and company.
+ * Collects the first confident match for each field across all messages.
+ */
+export function extractAllLeadData(messages: { content: string }[]): LeadData {
+  let email:   string | undefined
+  let phone:   string | undefined
+  let company: string | undefined
+
+  for (const msg of messages) {
+    if (!email) {
+      const emails = msg.content.match(EMAIL_RE)
+      if (emails?.[0]) email = emails[0]
+    }
+    if (!phone) {
+      const phones = msg.content.match(PHONE_RE)
+      if (phones?.[0]) phone = phones[0].replace(/\s+/g, ' ').trim()
+    }
+    if (!company) {
+      const found = extractCompanyFromText(msg.content)
+      if (found) company = found
+    }
+    if (email && phone && company) break
+  }
+
+  return { email, phone, company }
 }
 
 export interface LeadWebhookPayload {

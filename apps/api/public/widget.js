@@ -255,6 +255,26 @@
       .replace(/\n/g, '<br>');
   }
 
+  // Render message text: escape HTML, then convert markdown links and bare URLs to <a> tags
+  function renderText(str) {
+    var escaped = String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+    // Markdown links: [label](url)
+    escaped = escaped.replace(
+      /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--apx-accent);text-decoration:underline;">$1</a>'
+    );
+    // Bare URLs not already inside an href
+    escaped = escaped.replace(
+      /(?<!href=")(https?:\/\/[^\s<"]+)/g,
+      '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--apx-accent);text-decoration:underline;">$1</a>'
+    );
+    return escaped.replace(/\n/g, '<br>');
+  }
+
   function applySkin(vars) {
     var el = shadow.querySelector('#apx-skin');
     if (!el) { el = document.createElement('style'); el.id = 'apx-skin'; shadow.prepend(el); }
@@ -279,7 +299,7 @@
     }
 
     var msgsHtml = messages.map(function (m) {
-      return '<div class="msg ' + m.role + '"><div class="bubble">' + esc(m.text) + '</div></div>';
+      return '<div class="msg ' + m.role + '"><div class="bubble">' + renderText(m.text) + '</div></div>';
     }).join('');
 
     if (pendingTyping) {

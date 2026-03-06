@@ -12,7 +12,11 @@ interface SageLeadInput {
   name:           string
   email?:         string
   phone?:         string
+  company?:       string
 }
+
+// In-process guard: prevent concurrent duplicate creation for the same conversation
+const pendingConversations = new Set<string>()
 
 export async function createSageLeadFromChat({
   workspaceId,
@@ -20,7 +24,15 @@ export async function createSageLeadFromChat({
   name,
   email,
   phone,
+  company,
 }: SageLeadInput): Promise<void> {
+  // In-process dedup: skip if another concurrent call for this conversation is running
+  if (pendingConversations.has(conversationId)) {
+    console.log(`[sage-lead] Skipping duplicate call for conversation ${conversationId}`)
+    return
+  }
+  pendingConversations.add(conversationId)
+
   try {
     // 1. Upsert contact — match by email if provided, otherwise always insert
     let contactId: string | null = null
@@ -32,7 +44,7 @@ export async function createSageLeadFromChat({
         .eq('workspace_id', workspaceId)
         .eq('email', email)
         .limit(1)
-        .single()
+        .maybeSingle()
 
       if (existing) {
         contactId = (existing as { id: string }).id
@@ -46,8 +58,9 @@ export async function createSageLeadFromChat({
           workspace_id:           workspaceId,
           source_conversation_id: conversationId,
           name,
-          email:  email  ?? null,
-          phone:  phone  ?? null,
+          email:        email   ?? null,
+          phone:        phone   ?? null,
+          company_name: company ?? null,
           source: 'chat',
           tags:   [],
         })
@@ -68,7 +81,7 @@ export async function createSageLeadFromChat({
       .eq('workspace_id', workspaceId)
       .order('created_at', { ascending: true })
       .limit(1)
-      .single()
+      .maybeSingle()
 
     if (!pipeline) {
       // No pipeline yet — skip deal creation silently
@@ -82,7 +95,7 @@ export async function createSageLeadFromChat({
       .eq('pipeline_id', pipelineId)
       .order('position', { ascending: true })
       .limit(1)
-      .single()
+      .maybeSingle()
 
     const stageId = stage ? (stage as { id: string }).id : null
 
@@ -93,7 +106,7 @@ export async function createSageLeadFromChat({
       .eq('workspace_id', workspaceId)
       .eq('source_conversation_id', conversationId)
       .limit(1)
-      .single()
+      .maybeSingle()
 
     if (existingDeal) return   // already created
 
@@ -136,5 +149,7 @@ export async function createSageLeadFromChat({
     console.log(`[sage-lead] Created contact ${contactId} + deal ${dealId} for conversation ${conversationId}`)
   } catch (err) {
     console.error('[sage-lead] Unexpected error:', err instanceof Error ? err.message : String(err))
+  } finally {
+    pendingConversations.delete(conversationId)
   }
 }

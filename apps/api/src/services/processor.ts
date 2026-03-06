@@ -4,7 +4,7 @@ import { recordUsage } from '../lib/usage.js'
 import { callClaude, buildSystemPrompt } from './ai/claude.js'
 import { retrieveContext, buildRagContext } from './rag/retrieval.js'
 import { runAgent } from './agent/runner.js'
-import { extractLeadData, extractName, routeLeadToProvider } from './lead-capture.js'
+import { extractLeadData, extractAllLeadData, extractName, routeLeadToProvider } from './lead-capture.js'
 import { createSageLeadFromChat } from './sage-lead.js'
 import {
   detectHandoffIntent,
@@ -139,18 +139,19 @@ export async function processMessage(
   // 4b. Sage internal contact + lead auto-creation (fire-and-forget)
   // ---------------------------------------------------------------
   {
-    const lead = extractLeadData(text)
+    const history4b = await getRecentMessages(conversationId, 20)
+    const allMessages = [...history4b.map(m => ({ content: m.content })), { content: text }]
+    const lead = extractAllLeadData(allMessages)
     if (lead.email || lead.phone) {
-      const history = await getRecentMessages(conversationId, 20)
-      const allMessages = [...history.map(m => ({ content: m.content })), { content: text }]
       const name = extractName(allMessages)
       if (name) {
         void createSageLeadFromChat({
           workspaceId,
           conversationId,
           name,
-          email: lead.email,
-          phone: lead.phone,
+          email:   lead.email,
+          phone:   lead.phone,
+          company: lead.company,
         })
       }
     }
