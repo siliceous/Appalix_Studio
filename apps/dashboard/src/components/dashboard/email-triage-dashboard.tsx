@@ -322,10 +322,11 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
     setSendSlow(false)
     if (result.ok) {
       setSent(true)
-      // Auto-log a note to the deal immediately — no popup needed
+      // Fire-and-forget note logging — don't block the "Reply sent" banner on it
       if (t.matchedDeal?.id) {
-        await triageAddDealNote(t.matchedDeal.id, composeBody.slice(0, 300))
-        setNoteSaved(true)
+        const dealId = t.matchedDeal.id
+        const note   = composeBody.slice(0, 300)
+        triageAddDealNote(dealId, note).then(() => setNoteSaved(true))
       }
     } else {
       setSendError(result.error ?? 'Send failed')
@@ -653,6 +654,16 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
           </div>
         )}
 
+
+        {/* Post-send: deal exists but note still logging */}
+        {sent && t.matchedDeal && !noteSaved && (
+          <div className="rounded-xl border border-green-200 dark:border-green-500/20 px-4 py-2.5 flex items-center gap-2 bg-green-50 dark:bg-green-500/10">
+            <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400 shrink-0" />
+            <span className="text-[11px] font-medium text-green-700 dark:text-green-400">Reply sent</span>
+            <Loader2 className="w-3 h-3 text-gray-400 animate-spin ml-1" />
+            <span className="text-[11px] text-gray-400">Logging note…</span>
+          </div>
+        )}
 
         {/* Post-send: no deal → confirmation with manual dismiss */}
         {sent && !t.matchedDeal && (
