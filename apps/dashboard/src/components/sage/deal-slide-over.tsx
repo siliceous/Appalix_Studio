@@ -7,7 +7,7 @@ import {
   DollarSign, AlertCircle, Mail, Globe, MapPin,
   User, Lock, ChevronDown, Pencil, Bell,
 } from 'lucide-react'
-import { getDealDetail, addDealActivity, completeDealTask, addDealReminder, getDealReminders, updateDeal } from '@/app/actions/sage'
+import { getDealDetail, addDealActivity, completeDealTask, addDealReminder, getDealReminders, updateDeal, deleteDeal } from '@/app/actions/sage'
 import { WonLostModal } from './won-lost-modal'
 import { ContactEditModal } from './contact-edit-modal'
 import type { SageDealActivity } from '@/lib/types'
@@ -117,6 +117,8 @@ export function DealSlideOver({ dealId, onClose, openEditForm, onDealUpdated }: 
   const [editingContactId, setEditingContactId] = useState<string | null>(null)
   const [showEditForm,     setShowEditForm]     = useState(openEditForm ?? false)
   const [editSaving,       setEditSaving]       = useState(false)
+  const [confirmDelete,    setConfirmDelete]    = useState(false)
+  const [deleting,         setDeleting]         = useState(false)
   const [isPending,        startTransition]     = useTransition()
   const slideRef = useRef<HTMLDivElement>(null)
 
@@ -433,12 +435,47 @@ export function DealSlideOver({ dealId, onClose, openEditForm, onDealUpdated }: 
                   <textarea name="description" rows={2} defaultValue={dealDesc ?? ''} placeholder="Add notes…" className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad] resize-none" />
                 </div>
                 <div className="flex gap-2 pt-1">
-                  <button type="button" onClick={() => setShowEditForm(false)} className="flex-1 px-3 py-1.5 text-xs border dark:border-white/10 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
-                    Cancel
-                  </button>
-                  <button type="submit" disabled={editSaving} className="flex-1 px-3 py-1.5 text-xs bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-60">
-                    {editSaving ? 'Saving…' : 'Save Changes'}
-                  </button>
+                  {confirmDelete ? (
+                    <>
+                      <span className="flex-1 text-xs text-red-600 dark:text-red-400 flex items-center">Delete this deal?</span>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDelete(false)}
+                        className="px-3 py-1.5 text-xs border dark:border-white/10 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                      >
+                        No
+                      </button>
+                      <button
+                        type="button"
+                        disabled={deleting}
+                        onClick={async () => {
+                          if (!dealId) return
+                          setDeleting(true)
+                          await deleteDeal(dealId)
+                          onClose()
+                        }}
+                        className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-60"
+                      >
+                        {deleting ? 'Deleting…' : 'Yes, delete'}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDelete(true)}
+                        className="px-3 py-1.5 text-xs border border-red-200 dark:border-red-500/20 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                      >
+                        Delete
+                      </button>
+                      <button type="button" onClick={() => { setShowEditForm(false); setConfirmDelete(false) }} className="flex-1 px-3 py-1.5 text-xs border dark:border-white/10 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+                        Cancel
+                      </button>
+                      <button type="submit" disabled={editSaving} className="flex-1 px-3 py-1.5 text-xs bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-60">
+                        {editSaving ? 'Saving…' : 'Save'}
+                      </button>
+                    </>
+                  )}
                 </div>
               </form>
             )}

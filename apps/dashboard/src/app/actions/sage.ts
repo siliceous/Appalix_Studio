@@ -702,3 +702,17 @@ export async function markReminderSent(reminderId: string): Promise<void> {
     .eq('id', reminderId)
     .eq('workspace_id', workspaceId)
 }
+
+
+export async function deleteDeal(dealId: string): Promise<{ error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('sage_deals')
+    .delete()
+    .eq('id', dealId)
+    .eq('workspace_id', workspaceId)
+  if (error) return { error: error.message }
+  revalidatePath('/sage/pipelines')
+  return {}
+}
