@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, GripVertical, Search, SlidersHorizontal, ArrowUpDown, Settings2, Pencil } from 'lucide-react'
+import { Plus, GripVertical, Search, SlidersHorizontal, ArrowUpDown, Settings2, Pencil, LayoutList, KanbanSquare } from 'lucide-react'
 import { moveDeal } from '@/app/actions/sage'
 import { DealModal } from './deal-modal'
 import { ManageStagesModal } from './manage-stages-modal'
@@ -67,6 +67,7 @@ export function PipelineBoard({
   const [showFilterMenu,   setShowFilterMenu]   = useState(false)
   const [filterStatuses,   setFilterStatuses]   = useState<FilterStatus[]>([])
   const [filterPriorities, setFilterPriorities] = useState<FilterPriority[]>([])
+  const [viewMode,         setViewMode]         = useState<'kanban' | 'list'>('kanban')
 
   function formatCurrency(value: number | null, currency: string) {
     if (!value) return null
@@ -265,6 +266,24 @@ export function PipelineBoard({
           )}
         </div>
 
+        {/* View toggle */}
+        <div className="flex items-center border dark:border-white/10 rounded-lg overflow-hidden">
+          <button
+            onClick={() => setViewMode('kanban')}
+            title="Kanban view"
+            className={`p-1.5 transition-colors ${viewMode === 'kanban' ? 'bg-brand-50 dark:bg-[#61c2ad]/15 text-brand-600 dark:text-[#61c2ad]' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'}`}
+          >
+            <KanbanSquare className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            title="List view"
+            className={`p-1.5 transition-colors border-l dark:border-white/10 ${viewMode === 'list' ? 'bg-brand-50 dark:bg-[#61c2ad]/15 text-brand-600 dark:text-[#61c2ad]' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'}`}
+          >
+            <LayoutList className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
         {/* Manage Stages */}
         <button
           onClick={() => setShowManageStages(true)}
@@ -286,8 +305,83 @@ export function PipelineBoard({
         </div>
       </div>
 
+      {/* List view */}
+      {viewMode === 'list' && (
+        <div
+          className="flex-1 overflow-y-auto px-6 py-4"
+          onClick={() => { setShowSortMenu(false); setShowFilterMenu(false) }}
+        >
+          {visibleDeals.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+              <KanbanSquare className="w-10 h-10 mb-3 text-gray-300 dark:text-gray-600" />
+              <p className="text-sm">No deals match your filters.</p>
+            </div>
+          ) : (
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b dark:border-white/8 text-left">
+                  {['Deal', 'Contact', 'Stage', 'Value', 'Priority', 'Status', 'Close Date'].map(h => (
+                    <th key={h} className="pb-2 pr-4 text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 whitespace-nowrap">{h}</th>
+                  ))}
+                  <th className="pb-2" />
+                </tr>
+              </thead>
+              <tbody>
+                {visibleDeals.map(deal => {
+                  const stageName = stages.find(s => s.id === deal.stage_id)?.name ?? '—'
+                  const dot = activityDot(deal.id, deal.created_at, dealLastActivity)
+                  return (
+                    <tr
+                      key={deal.id}
+                      onClick={() => setSelectedDealId(deal.id)}
+                      className="border-b dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/[0.03] cursor-pointer transition-colors group/row"
+                    >
+                      <td className="py-3 pr-4">
+                        <div className="flex items-center gap-2">
+                          <span title={dot.tip} className={`w-2 h-2 rounded-full shrink-0 ${dot.cls}`} />
+                          <span className="font-medium text-gray-900 dark:text-gray-100 truncate max-w-[180px]">{deal.title}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 pr-4 text-xs text-gray-500 dark:text-gray-400 truncate max-w-[140px]">
+                        {deal.contact?.name ?? deal.company_name ?? '—'}
+                      </td>
+                      <td className="py-3 pr-4">
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#61c2ad]/10 text-[#3d9585] dark:text-[#61c2ad] font-medium whitespace-nowrap">{stageName}</span>
+                      </td>
+                      <td className="py-3 pr-4 text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                        {deal.value ? formatCurrency(deal.value, deal.currency) : <span className="text-gray-300 dark:text-gray-600 font-normal">—</span>}
+                      </td>
+                      <td className="py-3 pr-4">
+                        {deal.priority ? (
+                          <span className={`text-[10px] font-semibold uppercase ${priorityColors[deal.priority]}`}>{deal.priority}</span>
+                        ) : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>}
+                      </td>
+                      <td className="py-3 pr-4">
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${statusColors[deal.status] ?? ''}`}>{deal.status}</span>
+                      </td>
+                      <td className="py-3 pr-4 text-xs text-gray-400 whitespace-nowrap">
+                        {deal.close_date ? new Date(deal.close_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                      </td>
+                      <td className="py-3">
+                        <button
+                          onClick={e => { e.stopPropagation(); setOpenEditOnDealId(deal.id); setSelectedDealId(deal.id) }}
+                          className="opacity-0 group-hover/row:opacity-100 p-1 text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] rounded transition-all"
+                          title="Edit deal"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
       {/* Kanban */}
-      <div
+      {viewMode === 'kanban' && <div
         className="flex gap-4 h-full overflow-x-auto px-6 py-5 pb-8"
         onClick={() => { setShowSortMenu(false); setShowFilterMenu(false) }}
       >
@@ -401,7 +495,7 @@ export function PipelineBoard({
             </div>
           )
         })}
-      </div>
+      </div>}
 
       {showDealModal && (
         <DealModal
