@@ -7,8 +7,8 @@ import { Mail, Bot, Ticket, ClipboardList } from 'lucide-react'
 const TABS = [
   { id: 'email',   label: 'Email',   icon: Mail },
   { id: 'bots',    label: 'Bots',    icon: Bot },
-  { id: 'tickets', label: 'Tickets', icon: Ticket },
   { id: 'forms',   label: 'Forms',   icon: ClipboardList },
+  { id: 'tickets', label: 'Tickets', icon: Ticket },
 ] as const
 
 export function OverviewTabBar({ activeTab }: { activeTab: string }) {

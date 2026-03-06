@@ -168,21 +168,6 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
           </button>
         </div>
 
-        {showNewForm && (
-          <div className="px-3 py-2 border-b border-gray-200 dark:border-white/8 shrink-0 flex gap-1.5">
-            <input
-              autoFocus
-              value={newFormName}
-              onChange={e => setNewFormName(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') void handleCreateForm(); if (e.key === 'Escape') setShowNewForm(false) }}
-              placeholder="Form name…"
-              className="flex-1 px-2 py-1 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            />
-            <button onClick={() => void handleCreateForm()} className="px-2 py-1 text-xs bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors">
-              Add
-            </button>
-          </div>
-        )}
 
         <div className="flex-1 overflow-y-auto">
           {forms.length === 0 ? (
@@ -491,6 +476,51 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
           </div>
         )}
       </div>
+
+      {/* ── Create form modal ────────────────────────────────────── */}
+      {showNewForm && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white dark:bg-[#232323] rounded-2xl border dark:border-white/8 shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between px-5 py-4 border-b dark:border-white/8">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Create a new form</h3>
+              <button onClick={() => setShowNewForm(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors">
+                <X className="w-4 h-4 text-gray-400" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Form name</label>
+                <input
+                  autoFocus
+                  value={newFormName}
+                  onChange={e => setNewFormName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') void handleCreateForm(); if (e.key === 'Escape') setShowNewForm(false) }}
+                  placeholder="e.g. Contact Us, Demo Request…"
+                  className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+              <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
+                Once created, you&apos;ll get an embed snippet to add this form to any webpage. Submissions land here and are AI-triaged automatically.
+              </p>
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => setShowNewForm(false)}
+                  className="flex-1 px-4 py-2 text-sm border dark:border-white/10 text-gray-600 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => void handleCreateForm()}
+                  disabled={!newFormName.trim()}
+                  className="flex-1 px-4 py-2 text-sm bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50"
+                >
+                  Create form
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Embed code overlay ───────────────────────────────────── */}
       {showEmbed && (
