@@ -385,6 +385,29 @@ export async function moveDeal(dealId: string, stageId: string) {
   revalidatePath('/sage/pipelines')
 }
 
+export async function updateDeal(dealId: string, formData: FormData) {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+
+  const title       = (formData.get('title') as string).trim()
+  const valueRaw    = (formData.get('value') as string | null)?.trim()
+  const value       = valueRaw ? parseFloat(valueRaw) : null
+  const currency    = (formData.get('currency') as string | null) || 'USD'
+  const closeDate   = (formData.get('close_date') as string | null)?.trim() || null
+  const priority    = (formData.get('priority') as string | null)?.trim() || null
+  const description = (formData.get('description') as string | null)?.trim() || null
+
+  const { error } = await admin
+    .from('sage_deals')
+    .update({ title, value, currency, close_date: closeDate, priority: priority || null, description, updated_at: new Date().toISOString() })
+    .eq('id', dealId)
+    .eq('workspace_id', workspaceId)
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/sage/pipelines')
+}
+
 export async function updateDealStatus(
   dealId:     string,
   status:     SageDealStatus,

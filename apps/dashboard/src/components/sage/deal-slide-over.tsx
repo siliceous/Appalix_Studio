@@ -7,7 +7,7 @@ import {
   DollarSign, AlertCircle, Mail, Globe, MapPin,
   User, Lock, ChevronDown, Pencil, Bell,
 } from 'lucide-react'
-import { getDealDetail, addDealActivity, completeDealTask, addDealReminder, getDealReminders } from '@/app/actions/sage'
+import { getDealDetail, addDealActivity, completeDealTask, addDealReminder, getDealReminders, updateDeal } from '@/app/actions/sage'
 import { WonLostModal } from './won-lost-modal'
 import { ContactEditModal } from './contact-edit-modal'
 import type { SageDealActivity } from '@/lib/types'
@@ -113,6 +113,8 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
   const [formDue,       setFormDue]       = useState('')
   const [wonLostMode,      setWonLostMode]      = useState<'won' | 'lost' | null>(null)
   const [editingContactId, setEditingContactId] = useState<string | null>(null)
+  const [showEditForm,     setShowEditForm]     = useState(false)
+  const [editSaving,       setEditSaving]       = useState(false)
   const [isPending,        startTransition]     = useTransition()
   const slideRef = useRef<HTMLDivElement>(null)
 
@@ -330,6 +332,13 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                     </button>
                   )}
                   <button
+                    onClick={() => setShowEditForm(v => !v)}
+                    title="Edit deal"
+                    className={`p-1.5 rounded-lg transition-colors ${showEditForm ? 'bg-brand-50 dark:bg-[#61c2ad]/10 text-brand-600 dark:text-[#61c2ad]' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8'}`}
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
                     onClick={onClose}
                     className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 rounded-lg transition-colors"
                   >
@@ -360,6 +369,66 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                 ))}
               </div>
             </div>
+
+            {/* Inline edit form */}
+            {showEditForm && (
+              <form
+                onSubmit={async e => {
+                  e.preventDefault()
+                  if (!dealId) return
+                  setEditSaving(true)
+                  await updateDeal(dealId, new FormData(e.currentTarget))
+                  const res = await getDealDetail(dealId)
+                  setDeal(res.deal)
+                  setEditSaving(false)
+                  setShowEditForm(false)
+                }}
+                className="border-b dark:border-white/8 px-5 py-4 bg-gray-50 dark:bg-white/[0.02] space-y-3"
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1">Edit Deal</p>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Title</label>
+                  <input name="title" type="text" required defaultValue={dealTitle} className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Value</label>
+                    <input name="value" type="number" min="0" step="0.01" defaultValue={dealValue ?? ''} placeholder="0.00" className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Currency</label>
+                    <select name="currency" defaultValue={dealCurrency} className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]">
+                      <option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option>
+                      <option value="AUD">AUD</option><option value="CAD">CAD</option><option value="NZD">NZD</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Close Date</label>
+                    <input name="close_date" type="date" defaultValue={dealCloseDate ?? ''} className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad] dark:[color-scheme:dark]" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Priority</label>
+                    <select name="priority" defaultValue={dealPriority ?? ''} className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]">
+                      <option value="">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Description</label>
+                  <textarea name="description" rows={2} defaultValue={dealDesc ?? ''} placeholder="Add notes…" className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad] resize-none" />
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button type="button" onClick={() => setShowEditForm(false)} className="flex-1 px-3 py-1.5 text-xs border dark:border-white/10 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+                    Cancel
+                  </button>
+                  <button type="submit" disabled={editSaving} className="flex-1 px-3 py-1.5 text-xs bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-60">
+                    {editSaving ? 'Saving…' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
+            )}
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto">
