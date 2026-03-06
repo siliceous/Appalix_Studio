@@ -15,12 +15,13 @@ type DealWithContact = SageDeal & {
 }
 
 interface PipelineBoardProps {
-  pipelineId:   string
-  stages:       SagePipelineStage[]
-  deals:        DealWithContact[]
-  contacts:     Pick<SageContact, 'id' | 'name'>[]
-  allPipelines: Pick<SagePipeline, 'id' | 'name'>[]
-  ownerName:    string
+  pipelineId:        string
+  stages:            SagePipelineStage[]
+  deals:             DealWithContact[]
+  contacts:          Pick<SageContact, 'id' | 'name'>[]
+  allPipelines:      Pick<SagePipeline, 'id' | 'name'>[]
+  ownerName:         string
+  dealLastActivity:  Record<string, string>  // dealId → ISO timestamp of last activity
 }
 
 type SortKey = 'none' | 'value_desc' | 'close_date' | 'created_desc' | 'priority'
@@ -29,6 +30,16 @@ type FilterPriority = 'low' | 'medium' | 'high'
 
 const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 }
 
+// Activity status dot: how long since the last logged activity on a deal
+function activityDot(dealId: string, dealCreatedAt: string, lastActivity: Record<string, string>) {
+  const lastAt   = lastActivity[dealId] ?? dealCreatedAt
+  const hoursAgo = (Date.now() - new Date(lastAt).getTime()) / 3_600_000
+  if (hoursAgo < 12)  return { cls: 'bg-green-400',  tip: `Last activity ${Math.floor(hoursAgo)}h ago` }
+  if (hoursAgo < 24)  return { cls: 'bg-yellow-400', tip: `${Math.floor(hoursAgo)}h since last activity — follow up soon` }
+  if (hoursAgo < 36)  return { cls: 'bg-amber-500',  tip: `${Math.floor(hoursAgo)}h without activity — overdue` }
+  return               { cls: 'bg-red-500',           tip: `${Math.floor(hoursAgo)}h without activity — gone cold` }
+}
+
 export function PipelineBoard({
   pipelineId,
   stages: initialStages,
@@ -36,6 +47,7 @@ export function PipelineBoard({
   contacts,
   allPipelines,
   ownerName,
+  dealLastActivity,
 }: PipelineBoardProps) {
   const [deals,              setDeals]              = useState<DealWithContact[]>(initialDeals)
   const [stages,             setStages]             = useState<SagePipelineStage[]>(initialStages)
@@ -339,6 +351,16 @@ export function PipelineBoard({
                       <GripVertical className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 mt-0.5 shrink-0" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1 group/title">
+                          {/* Activity status dot */}
+                          {(() => {
+                            const dot = activityDot(deal.id, deal.created_at, dealLastActivity)
+                            return (
+                              <span
+                                title={dot.tip}
+                                className={`w-2 h-2 rounded-full shrink-0 ${dot.cls}`}
+                              />
+                            )
+                          })()}
                           <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-snug flex-1">{deal.title}</p>
                           {deal.contact && (
                             <button

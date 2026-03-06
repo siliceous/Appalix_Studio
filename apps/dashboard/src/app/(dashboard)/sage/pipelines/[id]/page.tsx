@@ -33,7 +33,7 @@ export default async function PipelineBoardPage({ params }: { params: Promise<{ 
     supabase.from('sage_pipelines').select('*').eq('id', id).eq('workspace_id', workspaceId).single(),
     supabase.from('sage_pipeline_stages').select('*').eq('pipeline_id', id).order('position'),
     supabase.from('sage_deals')
-      .select('id, title, value, currency, status, stage_id, close_date, priority, company_name, contact:sage_contacts(id, name)')
+      .select('id, title, value, currency, status, stage_id, close_date, priority, company_name, created_at, contact:sage_contacts(id, name)')
       .eq('pipeline_id', id)
       .eq('workspace_id', workspaceId)
       .order('created_at'),
@@ -49,6 +49,20 @@ export default async function PipelineBoardPage({ params }: { params: Promise<{ 
   const contacts     = (contactsRaw     ?? []) as Pick<SageContact, 'id' | 'name'>[]
   const allPipelines = (allPipelinesRaw ?? []) as Pick<SagePipeline, 'id' | 'name'>[]
   const ownerName    = user.email ?? 'You'
+
+  // Fetch most recent activity timestamp per deal for the activity status dot
+  const dealIds = deals.map(d => d.id)
+  const dealLastActivity: Record<string, string> = {}
+  if (dealIds.length > 0) {
+    const { data: activityRows } = await supabase
+      .from('sage_deal_activities')
+      .select('deal_id, created_at')
+      .in('deal_id', dealIds)
+      .order('created_at', { ascending: false })
+    for (const a of (activityRows ?? []) as { deal_id: string; created_at: string }[]) {
+      if (!dealLastActivity[a.deal_id]) dealLastActivity[a.deal_id] = a.created_at
+    }
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -82,6 +96,7 @@ export default async function PipelineBoardPage({ params }: { params: Promise<{ 
             contacts={contacts}
             allPipelines={allPipelines}
             ownerName={ownerName}
+            dealLastActivity={dealLastActivity}
           />
         )}
       </div>

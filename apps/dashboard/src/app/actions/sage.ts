@@ -592,3 +592,64 @@ export async function disconnectSageIntegration(provider: string) {
   if (error) throw new Error(error.message)
   revalidatePath('/sage/integrations')
 }
+
+// ---------------------------------------------------------------
+// Reminders
+// ---------------------------------------------------------------
+
+export async function addDealReminder(
+  dealId: string,
+  title:  string,
+  note:   string | null,
+  dueAt:  string,  // ISO datetime string
+): Promise<{ id?: string; error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('sage_reminders')
+    .insert({ workspace_id: workspaceId, deal_id: dealId, title: title.trim(), note: note?.trim() || null, due_at: dueAt })
+    .select('id')
+    .single()
+  if (error) return { error: error.message }
+  revalidatePath('/sage/pipelines')
+  return { id: data.id }
+}
+
+export async function getDealReminders(dealId: string): Promise<{ id: string; title: string; note: string | null; due_at: string }[]> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('sage_reminders')
+    .select('id, title, note, due_at')
+    .eq('workspace_id', workspaceId)
+    .eq('deal_id', dealId)
+    .eq('is_sent', false)
+    .order('due_at', { ascending: true })
+  return (data ?? []) as { id: string; title: string; note: string | null; due_at: string }[]
+}
+
+export async function getUpcomingReminders(): Promise<{ id: string; title: string; note: string | null; due_at: string; deal_id: string | null }[]> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+  const now       = new Date()
+  const lookahead = new Date(now.getTime() + 2 * 60 * 60 * 1000) // 2-hour lookahead window
+  const { data } = await admin
+    .from('sage_reminders')
+    .select('id, title, note, due_at, deal_id')
+    .eq('workspace_id', workspaceId)
+    .eq('is_sent', false)
+    .gte('due_at', now.toISOString())
+    .lte('due_at', lookahead.toISOString())
+    .order('due_at', { ascending: true })
+  return (data ?? []) as { id: string; title: string; note: string | null; due_at: string; deal_id: string | null }[]
+}
+
+export async function markReminderSent(reminderId: string): Promise<void> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+  await admin
+    .from('sage_reminders')
+    .update({ is_sent: true, sent_at: new Date().toISOString() })
+    .eq('id', reminderId)
+    .eq('workspace_id', workspaceId)
+}

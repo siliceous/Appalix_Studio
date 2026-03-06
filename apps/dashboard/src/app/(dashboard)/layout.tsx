@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/layout/sidebar'
 import { SageRightPanel } from '@/components/sage/sage-right-panel'
+import { ReminderWatcher } from '@/components/reminder-watcher'
 import { createWorkspace } from '@/app/actions/workspace'
 import type { Workspace } from '@/lib/types'
 
@@ -64,6 +65,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {children}
       </main>
       <SageRightPanel workspaceId={workspace.id} />
+      <ReminderWatcher />
     </div>
   )
 }

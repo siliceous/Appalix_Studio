@@ -5,12 +5,14 @@ import {
   X, Trophy, XCircle, FileText, Phone, Users, CheckSquare,
   Clock, Check, ChevronRight, ExternalLink, Building2, Tag,
   DollarSign, AlertCircle, Mail, Globe, MapPin,
-  User, Lock, ChevronDown, Pencil,
+  User, Lock, ChevronDown, Pencil, Bell, BellRing,
 } from 'lucide-react'
-import { getDealDetail, addDealActivity, completeDealTask } from '@/app/actions/sage'
+import { getDealDetail, addDealActivity, completeDealTask, addDealReminder, getDealReminders } from '@/app/actions/sage'
 import { WonLostModal } from './won-lost-modal'
 import { ContactEditModal } from './contact-edit-modal'
 import type { SageDealActivity } from '@/lib/types'
+
+type DealReminder = { id: string; title: string; note: string | null; due_at: string }
 
 type ActivityType = 'note' | 'call' | 'meeting' | 'task'
 
@@ -114,13 +116,25 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
   const [isPending,        startTransition]     = useTransition()
   const slideRef = useRef<HTMLDivElement>(null)
 
+  // Reminder state
+  const [reminders,       setReminders]       = useState<DealReminder[]>([])
+  const [showReminderForm, setShowReminderForm] = useState(false)
+  const [reminderTitle,   setReminderTitle]   = useState('')
+  const [reminderNote,    setReminderNote]    = useState('')
+  const [reminderDue,     setReminderDue]     = useState('')
+  const [reminderSaving,  setReminderSaving]  = useState(false)
+
   useEffect(() => {
-    if (!dealId) { setDeal(null); setActivities([]); return }
+    if (!dealId) { setDeal(null); setActivities([]); setReminders([]); return }
     setLoading(true)
     setActiveTab('overview')
-    getDealDetail(dealId).then(res => {
-      setDeal(res.deal)
-      setActivities(res.activities)
+    Promise.all([
+      getDealDetail(dealId),
+      getDealReminders(dealId),
+    ]).then(([detail, rems]) => {
+      setDeal(detail.deal)
+      setActivities(detail.activities)
+      setReminders(rems)
       setLoading(false)
     })
   }, [dealId])
@@ -165,6 +179,25 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
     if (dealId) {
       getDealDetail(dealId).then(res => { setDeal(res.deal); setActivities(res.activities) })
     }
+  }
+
+  async function handleSubmitReminder() {
+    if (!dealId || !reminderTitle.trim() || !reminderDue) return
+    setReminderSaving(true)
+    // Request browser notification permission on first reminder
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      await Notification.requestPermission()
+    }
+    const res = await addDealReminder(dealId, reminderTitle, reminderNote || null, new Date(reminderDue).toISOString())
+    if (!res.error) {
+      const updated = await getDealReminders(dealId)
+      setReminders(updated)
+      setShowReminderForm(false)
+      setReminderTitle('')
+      setReminderNote('')
+      setReminderDue('')
+    }
+    setReminderSaving(false)
   }
 
   const isOpen = !!dealId
@@ -593,11 +626,11 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
 
                   {/* Log Activity section */}
                   <div className="rounded-xl border dark:border-white/8 overflow-hidden">
-                    {/* Log Activity / Create Note sub-tabs */}
+                    {/* Log Activity / Create Note / Set Reminder sub-tabs */}
                     <div className="flex border-b dark:border-white/8">
                       <button
-                        onClick={() => { setShowAddForm(true); setAddType('call') }}
-                        className={`flex-1 px-4 py-2.5 text-xs font-semibold transition-colors ${
+                        onClick={() => { setShowAddForm(true); setShowReminderForm(false); setAddType('call') }}
+                        className={`flex-1 px-3 py-2.5 text-xs font-semibold transition-colors ${
                           showAddForm && addType !== 'note'
                             ? 'text-brand-700 dark:text-[#61c2ad] border-b-2 border-brand-600 dark:border-[#61c2ad]'
                             : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
@@ -606,14 +639,30 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                         Log Activity
                       </button>
                       <button
-                        onClick={() => { setShowAddForm(true); setAddType('note') }}
-                        className={`flex-1 px-4 py-2.5 text-xs font-semibold transition-colors ${
+                        onClick={() => { setShowAddForm(true); setShowReminderForm(false); setAddType('note') }}
+                        className={`flex-1 px-3 py-2.5 text-xs font-semibold transition-colors ${
                           showAddForm && addType === 'note'
                             ? 'text-brand-700 dark:text-[#61c2ad] border-b-2 border-brand-600 dark:border-[#61c2ad]'
                             : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                         }`}
                       >
                         Create Note
+                      </button>
+                      <button
+                        onClick={() => { setShowReminderForm(true); setShowAddForm(false) }}
+                        className={`flex-1 px-3 py-2.5 text-xs font-semibold transition-colors flex items-center justify-center gap-1 ${
+                          showReminderForm
+                            ? 'text-amber-600 dark:text-amber-400 border-b-2 border-amber-500 dark:border-amber-400'
+                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                        }`}
+                      >
+                        <Bell className="w-3 h-3" />
+                        Reminder
+                        {reminders.length > 0 && (
+                          <span className="ml-0.5 text-[10px] bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1 py-0.5 rounded-full leading-none">
+                            {reminders.length}
+                          </span>
+                        )}
                       </button>
                     </div>
 
@@ -699,7 +748,77 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                       </div>
                     )}
 
-                    {!showAddForm && (
+                    {/* Reminder form */}
+                    {showReminderForm && (
+                      <div className="p-3 bg-white dark:bg-[#252525] space-y-2.5">
+                        <input
+                          type="text"
+                          value={reminderTitle}
+                          onChange={e => setReminderTitle(e.target.value)}
+                          placeholder="What do you need to do?"
+                          className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        />
+                        <textarea
+                          value={reminderNote}
+                          onChange={e => setReminderNote(e.target.value)}
+                          rows={2}
+                          placeholder="Extra notes (optional)…"
+                          className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        />
+                        <div>
+                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Remind me at</label>
+                          <input
+                            type="datetime-local"
+                            value={reminderDue}
+                            onChange={e => setReminderDue(e.target.value)}
+                            className="px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-400 dark:[color-scheme:dark]"
+                          />
+                          <p className="text-[10px] text-gray-400 mt-1">You'll get a pop-up 10 min before</p>
+                        </div>
+                        <div className="flex items-center gap-2 justify-end">
+                          <button
+                            onClick={() => { setShowReminderForm(false); setReminderTitle(''); setReminderNote(''); setReminderDue('') }}
+                            className="px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleSubmitReminder}
+                            disabled={reminderSaving || !reminderTitle.trim() || !reminderDue}
+                            className="px-4 py-1.5 text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white rounded-lg disabled:opacity-50 transition-colors"
+                          >
+                            {reminderSaving ? 'Saving…' : 'Set Reminder'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Upcoming reminders list */}
+                    {showReminderForm && reminders.length > 0 && (
+                      <div className="border-t dark:border-white/8 divide-y dark:divide-white/8">
+                        {reminders.map(r => {
+                          const due    = new Date(r.due_at)
+                          const msLeft = due.getTime() - Date.now()
+                          const minLeft = Math.round(msLeft / 60_000)
+                          const timeStr = due.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+                          const urgent  = minLeft <= 60
+                          return (
+                            <div key={r.id} className="flex items-start gap-2.5 px-3.5 py-3">
+                              <BellRing className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${urgent ? 'text-amber-500' : 'text-gray-400'}`} />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{r.title}</p>
+                                {r.note && <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">{r.note}</p>}
+                                <p className={`text-[10px] mt-0.5 ${urgent ? 'text-amber-500 font-medium' : 'text-gray-400'}`}>
+                                  {timeStr}{minLeft > 0 && minLeft <= 1440 ? ` · in ${minLeft < 60 ? `${minLeft}m` : `${Math.round(minLeft / 60)}h`}` : ''}
+                                </p>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {!showAddForm && !showReminderForm && (
                       <button
                         onClick={() => { setShowAddForm(true); setAddType('call') }}
                         className="w-full px-4 py-3 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors text-left"
