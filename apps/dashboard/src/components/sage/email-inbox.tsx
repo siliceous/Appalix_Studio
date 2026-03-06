@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   Mail, RefreshCw, Send, Sparkles, Star, Inbox,
   Loader2, AlertCircle, Paperclip, Receipt, FileText, X, ArrowRight,
-  Pencil, Search, Trash2, Reply, Forward, FolderInput,
+  Pencil, Search, Trash2, Reply, Forward, FolderInput, Calendar,
 } from 'lucide-react'
 import {
   syncEmails, quickCheckEmails, sendEmail, rewriteEmail,
@@ -39,6 +39,43 @@ function formatDate(iso: string) {
 
 function formatFull(iso: string) {
   return new Date(iso).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
+}
+
+function buildCalendarLink(
+  provider: 'gmail' | 'microsoft' | null,
+  senderEmail: string,
+  senderName: string,
+  emailSubject: string,
+  aiSummary?: string | null,
+): string {
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  tomorrow.setHours(10, 0, 0, 0)
+  const end = new Date(tomorrow.getTime() + 30 * 60 * 1000)
+  const title = `Call with ${senderName || senderEmail}`
+  const body  = `Re: ${emailSubject}${aiSummary ? `\n\n${aiSummary}` : ''}`
+
+  if (provider === 'microsoft') {
+    const params = new URLSearchParams({
+      path: '/calendar/action/compose',
+      rru:  'addevent',
+      subject:  title,
+      body,
+      startdt: tomorrow.toISOString(),
+      enddt:   end.toISOString(),
+      to:      senderEmail,
+    })
+    return `https://outlook.office.com/calendar/0/deeplink/compose?${params.toString()}`
+  }
+
+  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')
+  return (
+    `https://calendar.google.com/calendar/render?action=TEMPLATE` +
+    `&text=${encodeURIComponent(title)}` +
+    `&details=${encodeURIComponent(body)}` +
+    `&add=${encodeURIComponent(senderEmail)}` +
+    `&dates=${fmt(tomorrow)}/${fmt(end)}`
+  )
 }
 
 // Splits email body into [visible, quoted] parts
@@ -90,12 +127,14 @@ interface EmailInboxProps {
   workspaceId:     string
   stripeConnected?: boolean
   contactDeals?:   Record<string, { id: string; title: string }[]>
+  emailProvider?:  'gmail' | 'microsoft' | null
 }
 
 export function EmailInbox({
   initialEmails,
   stripeConnected = false,
   contactDeals    = {},
+  emailProvider   = null,
 }: EmailInboxProps) {
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -807,6 +846,15 @@ export function EmailInbox({
                         {selected.ai_priority}
                       </span>
                     )}
+                    <a
+                      href={buildCalendarLink(emailProvider, selected.from_address, selected.from_name ?? '', selected.subject, selected.ai_summary)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={emailProvider === 'microsoft' ? 'Schedule in Outlook Calendar' : 'Schedule in Google Calendar'}
+                      className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400 transition-colors"
+                    >
+                      <Calendar className="w-4 h-4" />
+                    </a>
                     <button onClick={() => openReply('reply')} title="Reply"
                       className={cn('p-1.5 rounded-lg transition-colors', composeMode === 'reply' ? 'bg-brand-100 dark:bg-[#ec732e]/15 text-brand-600 dark:text-[#ec732e]' : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400')}>
                       <Reply className="w-4 h-4" />

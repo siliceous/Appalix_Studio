@@ -33,8 +33,9 @@ export interface TriageEmail {
 }
 
 interface Props {
-  triageEmails: TriageEmail[]
-  workspaceId:  string
+  triageEmails:  TriageEmail[]
+  workspaceId:   string
+  emailProvider: 'gmail' | 'microsoft' | null
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -69,6 +70,46 @@ function formatDate(iso: string) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
+
+// ─── Calendar link builder ─────────────────────────────────────────────────────
+
+function buildCalendarLink(
+  provider: 'gmail' | 'microsoft' | null,
+  senderEmail: string,
+  senderName: string,
+  emailSubject: string,
+  aiSummary?: string | null,
+): string {
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  tomorrow.setHours(10, 0, 0, 0)
+  const end = new Date(tomorrow.getTime() + 30 * 60 * 1000)
+  const title = `Call with ${senderName || senderEmail}`
+  const body  = `Re: ${emailSubject}${aiSummary ? `\n\n${aiSummary}` : ''}`
+
+  if (provider === 'microsoft') {
+    const params = new URLSearchParams({
+      path: '/calendar/action/compose',
+      rru:  'addevent',
+      subject:  title,
+      body,
+      startdt: tomorrow.toISOString(),
+      enddt:   end.toISOString(),
+      to:      senderEmail,
+    })
+    return `https://outlook.office.com/calendar/0/deeplink/compose?${params.toString()}`
+  }
+
+  // Default: Google Calendar
+  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')
+  return (
+    `https://calendar.google.com/calendar/render?action=TEMPLATE` +
+    `&text=${encodeURIComponent(title)}` +
+    `&details=${encodeURIComponent(body)}` +
+    `&add=${encodeURIComponent(senderEmail)}` +
+    `&dates=${fmt(tomorrow)}/${fmt(end)}`
+  )
+}
 
 function categoryClass(cat: string): string {
   if (cat === 'Sales')        return 'bg-teal-50 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-200 dark:border-teal-500/20'
@@ -234,9 +275,10 @@ interface DetailCardProps {
   onAnalyze:     (id: string) => void
   isDeleting:    boolean
   isAnalyzing:   boolean
+  emailProvider: 'gmail' | 'microsoft' | null
 }
 
-function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, isDeleting, isAnalyzing }: DetailCardProps) {
+function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, isDeleting, isAnalyzing, emailProvider }: DetailCardProps) {
   const { email, meeting } = t
   const entities  = email.ai_entities
   const drafts    = email.ai_reply_drafts ?? []
@@ -542,6 +584,21 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
           </div>
         )}
 
+        {/* Schedule Meeting button */}
+        <div>
+          <a
+            href={buildCalendarLink(emailProvider, email.from_address, email.from_name ?? '', email.subject, email.ai_summary)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            className="inline-flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-500/20 transition-colors"
+          >
+            <Calendar className="w-3 h-3 shrink-0" />
+            Schedule Meeting
+            {emailProvider === 'microsoft' ? ' · Outlook' : ' · Google'}
+          </a>
+        </div>
+
         {/* Reply draft */}
         {drafts.length > 0 && !sent && (
           <div className="rounded-xl border dark:border-white/8 overflow-hidden">
@@ -718,7 +775,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export function EmailTriageDashboard({ triageEmails }: Props) {
+export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
   const router = useRouter()
   const [dismissed,       setDismissed]       = useState<Set<string>>(new Set())
   const [actioned,        setActioned]        = useState<Map<string, string>>(new Map())
@@ -992,15 +1049,16 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
   }
 
   const detailCardProps = {
-    allEmails:   visible,
+    allEmails:    visible,
     actioned,
-    onAction:    openModal,
-    onDismiss:   dismiss,
-    onDelete:    handleDeleteOne,
-    onClose:     () => setSelectedEmailId(''),
-    onAnalyze:   handleAnalyzeOne,
+    onAction:     openModal,
+    onDismiss:    dismiss,
+    onDelete:     handleDeleteOne,
+    onClose:      () => setSelectedEmailId(''),
+    onAnalyze:    handleAnalyzeOne,
     isDeleting,
-    isAnalyzing: isReanalyzing,
+    isAnalyzing:  isReanalyzing,
+    emailProvider,
   }
 
   return (

@@ -37,6 +37,17 @@ export default async function SageEmailsPage() {
 
   const emails = (emailsRaw ?? []) as SageEmail[]
 
+  // Detect connected email provider for calendar link generation
+  const { data: emailIntegration } = await supabase
+    .from('sage_integrations')
+    .select('provider')
+    .eq('workspace_id', workspaceId)
+    .in('provider', ['gmail', 'microsoft'])
+    .eq('status', 'connected')
+    .limit(1)
+    .maybeSingle()
+  const emailProvider = ((emailIntegration as { provider?: string } | null)?.provider ?? null) as 'gmail' | 'microsoft' | null
+
   // Check if Stripe is connected
   const { data: stripeIntegration } = await supabase
     .from('sage_integrations')
@@ -69,6 +80,7 @@ export default async function SageEmailsPage() {
       workspaceId={workspaceId}
       stripeConnected={stripeConnected}
       contactDeals={contactDeals}
+      emailProvider={emailProvider}
     />
   )
 }
