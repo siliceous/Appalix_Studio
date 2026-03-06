@@ -352,7 +352,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
   return (
     <div
       className={cn(
-        'bg-white dark:bg-[#232323] rounded-2xl border shadow-sm',
+        'flex flex-col h-full bg-white dark:bg-[#232323] rounded-2xl border shadow-sm overflow-hidden',
         email.ai_priority === 'high'
           ? 'border-blue-200 dark:border-blue-500/25'
           : email.ai_priority === 'medium'
@@ -432,7 +432,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
       </div>
 
       {/* ── Content ── */}
-      <div className="px-6 pb-6 pt-5 border-t dark:border-white/8 space-y-5">
+      <div className="flex-1 overflow-y-auto px-6 pb-6 pt-5 border-t dark:border-white/8 space-y-5">
 
         {/* Meeting details card — shown when a .ics was parsed from this email */}
         {meeting && (
@@ -603,7 +603,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
             <RichTextEditor
               ref={editorRef}
               placeholder="Write your reply…"
-              minHeight={380}
+              minHeight={180}
               onChange={html => {
                 const div = document.createElement('div')
                 div.innerHTML = html
@@ -1528,12 +1528,12 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
       {/* ─── Email detail floating modal overlay ─────────────────────────────── */}
       {selectedTriageEmail && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 dark:bg-black/65 backdrop-blur-[2px] p-6 pt-12"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/65 backdrop-blur-[2px] p-4"
           onClick={() => setSelectedEmailId('')}
         >
           <div
             ref={detailRef}
-            className={`w-full mb-12 transition-all duration-200 ${modalSize === 'sm' ? 'max-w-lg' : modalSize === 'lg' ? 'max-w-5xl' : 'max-w-2xl'}`}
+            className={`w-full h-[92vh] flex flex-col transition-all duration-200 ${modalSize === 'sm' ? 'max-w-2xl' : modalSize === 'lg' ? 'max-w-[95vw]' : 'max-w-4xl'}`}
             onClick={e => e.stopPropagation()}
           >
             <DetailCard t={selectedTriageEmail} {...detailCardProps} />
