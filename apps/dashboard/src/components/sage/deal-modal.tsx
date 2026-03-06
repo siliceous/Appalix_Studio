@@ -7,16 +7,13 @@ import { DatePicker } from './date-picker'
 import type { SageContact, SagePipelineStage, SagePipeline } from '@/lib/types'
 
 interface DealModalProps {
-  pipelineId:        string
-  stages:            SagePipelineStage[]
-  contacts:          Pick<SageContact, 'id' | 'name'>[]
-  allPipelines:      Pick<SagePipeline, 'id' | 'name'>[]
-  ownerName:         string
-  defaultStageId?:    string
-  defaultContactId?:  string
-  defaultTitle?:      string
-  defaultCompany?:    string
-  onClose:            () => void
+  pipelineId:     string
+  stages:         SagePipelineStage[]
+  contacts:       Pick<SageContact, 'id' | 'name'>[]
+  allPipelines:   Pick<SagePipeline, 'id' | 'name'>[]
+  ownerName:      string
+  defaultStageId?: string
+  onClose:        () => void
 }
 
 const FIELD_CLS = 'w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]'
@@ -29,9 +26,6 @@ export function DealModal({
   allPipelines,
   ownerName,
   defaultStageId,
-  defaultContactId,
-  defaultTitle,
-  defaultCompany,
   onClose,
 }: DealModalProps) {
   const [pending, startTransition] = useTransition()
@@ -53,7 +47,7 @@ export function DealModal({
 
       <div className="relative bg-white dark:bg-[#232323] rounded-2xl border dark:border-white/8 shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b dark:border-white/8 shrink-0">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Add a New Item</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Add an Opportunity</h2>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
             <X className="w-4 h-4 text-gray-500" />
           </button>
@@ -70,7 +64,6 @@ export function DealModal({
               required
               autoFocus
               placeholder="e.g. Acme Corp — Enterprise plan"
-              defaultValue={defaultTitle ?? ''}
               className={FIELD_CLS}
             />
           </div>
@@ -102,13 +95,22 @@ export function DealModal({
           {/* Primary Contact + Company (2 col) */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={LABEL_CLS}>Primary Contact</label>
-              <select name="contact_id" defaultValue={defaultContactId ?? ''} className={FIELD_CLS}>
-                <option value="">No contact</option>
+              <label className={LABEL_CLS}>
+                Contact <span className="text-gray-400 font-normal">(existing or new)</span>
+              </label>
+              <input
+                name="contact_name"
+                type="text"
+                list="deal-modal-contacts"
+                placeholder="Type a name…"
+                className={FIELD_CLS}
+                autoComplete="off"
+              />
+              <datalist id="deal-modal-contacts">
                 {contacts.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                  <option key={c.id} value={c.name} />
                 ))}
-              </select>
+              </datalist>
             </div>
             <div>
               <label className={LABEL_CLS}>Company</label>
@@ -116,7 +118,6 @@ export function DealModal({
                 name="company_name"
                 type="text"
                 placeholder="e.g. Acme Corp"
-                defaultValue={defaultCompany ?? ''}
                 className={FIELD_CLS}
               />
             </div>

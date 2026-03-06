@@ -321,7 +321,29 @@ export async function createDeal(formData: FormData) {
   const title         = (formData.get('title') as string).trim()
   const pipelineId    = (formData.get('pipeline_id') as string | null) || null
   const stageId       = (formData.get('stage_id') as string | null) || null
-  const contactId     = (formData.get('contact_id') as string | null) || null
+  const contactName   = (formData.get('contact_name') as string | null)?.trim() || null
+
+  // Resolve contact: match existing by name (case-insensitive), or auto-create new
+  let contactId: string | null = null
+  if (contactName) {
+    const { data: existing } = await admin
+      .from('sage_contacts')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .ilike('name', contactName)
+      .limit(1)
+      .maybeSingle()
+    if (existing) {
+      contactId = (existing as { id: string }).id
+    } else {
+      const { data: created } = await admin
+        .from('sage_contacts')
+        .insert({ workspace_id: workspaceId, name: contactName, source: 'manual', contact_type: 'potential_customer', visibility: 'everyone' })
+        .select('id')
+        .single()
+      if (created) contactId = (created as { id: string }).id
+    }
+  }
   const valueRaw      = (formData.get('value') as string | null)?.trim()
   const value         = valueRaw ? parseFloat(valueRaw) : null
   const currency      = (formData.get('currency') as string | null) || 'USD'

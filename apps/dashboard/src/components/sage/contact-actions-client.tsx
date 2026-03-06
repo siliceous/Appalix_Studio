@@ -81,7 +81,6 @@ export function ContactActionsClient({
           contacts={[{ id: contact.id, name: contact.name }]}
           allPipelines={allPipelines}
           ownerName={ownerName}
-          defaultContactId={contact.id}
           onClose={() => setShowDeal(false)}
         />
       )}
