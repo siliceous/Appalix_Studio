@@ -543,56 +543,77 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                     </div>
                   )}
 
-                  {/* Follow ups — newest first */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
-                        <Clock className="w-3 h-3" /> Follow ups
-                        {activities.length > 0 && (
-                          <span className="ml-1 px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400 text-[10px] font-bold">{activities.length}</span>
-                        )}
-                      </p>
-                      {activities.length > 0 && (
-                        <button
-                          onClick={() => setActiveTab('activity')}
-                          className="text-[10px] text-brand-600 dark:text-[#61c2ad] hover:underline flex items-center gap-0.5"
-                        >
-                          View all <ChevronRight className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
-                    {activities.length === 0 ? (
-                      <p className="text-xs text-gray-400 dark:text-gray-500 italic">No follow ups yet — log a call, note or email activity.</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {[...activities]
-                          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                          .slice(0, 8)
-                          .map(act => {
-                            const Icon = ACTIVITY_ICONS[act.type as ActivityType] ?? FileText
-                            const colorCls = ACTIVITY_COLORS[act.type as ActivityType] ?? 'text-gray-500 bg-gray-100 dark:bg-white/5'
-                            return (
-                              <div key={act.id} className="flex items-start gap-2.5">
-                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${colorCls}`}>
-                                  <Icon className="w-3 h-3" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-baseline justify-between gap-2">
-                                    <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
-                                      {act.title || ACTIVITY_LABELS[act.type as ActivityType]}
-                                    </p>
-                                    <span className="text-[10px] text-gray-400 shrink-0 tabular-nums">{formatDateTime(act.created_at)}</span>
+                  {/* Pending Tasks — overdue Set Activities */}
+                  {(() => {
+                    const now = Date.now()
+                    const overdue = activities.filter(a =>
+                      a.due_at && !a.completed_at && new Date(a.due_at).getTime() < now
+                    ).sort((a, b) => new Date(a.due_at!).getTime() - new Date(b.due_at!).getTime())
+
+                    function overdueUrgency(dueAt: string) {
+                      const msOverdue = now - new Date(dueAt).getTime()
+                      const days = msOverdue / 86400000
+                      if (days > 3)  return { bar: 'bg-red-500',    text: 'text-red-600 dark:text-red-400',    label: 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20' }
+                      if (days > 1)  return { bar: 'bg-amber-500',  text: 'text-amber-600 dark:text-amber-400', label: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/25' }
+                      return           { bar: 'bg-yellow-400',  text: 'text-yellow-600 dark:text-yellow-400', label: 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-500/25' }
+                    }
+
+                    return (
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
+                            <AlertCircle className="w-3 h-3" /> Pending Tasks
+                            {overdue.length > 0 && (
+                              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400 text-[10px] font-bold">{overdue.length}</span>
+                            )}
+                          </p>
+                          {overdue.length > 0 && (
+                            <button
+                              onClick={() => setActiveTab('activity')}
+                              className="text-[10px] text-brand-600 dark:text-[#61c2ad] hover:underline flex items-center gap-0.5"
+                            >
+                              View all <ChevronRight className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                        {overdue.length === 0 ? (
+                          <p className="text-xs text-gray-400 dark:text-gray-500 italic">No overdue tasks — you&apos;re all caught up.</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {overdue.map(act => {
+                              const Icon = ACTIVITY_ICONS[act.type as ActivityType] ?? FileText
+                              const urgency = overdueUrgency(act.due_at!)
+                              return (
+                                <div key={act.id} className="flex items-start gap-2.5 rounded-lg border dark:border-white/8 p-2.5 bg-gray-50 dark:bg-white/[0.02]">
+                                  <div className={`w-1 self-stretch rounded-full shrink-0 ${urgency.bar}`} />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-1.5 mb-0.5">
+                                      <Icon className={`w-3 h-3 shrink-0 ${urgency.text}`} />
+                                      <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate flex-1">
+                                        {act.title || ACTIVITY_LABELS[act.type as ActivityType]}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-2 mt-1">
+                                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${urgency.label}`}>
+                                        Due {formatDate(act.due_at)}
+                                      </span>
+                                      <button
+                                        onClick={() => handleCompleteTask(act.id)}
+                                        disabled={isPending}
+                                        className="flex items-center gap-1 text-[10px] text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] transition-colors disabled:opacity-50"
+                                      >
+                                        <Check className="w-3 h-3" /> Done
+                                      </button>
+                                    </div>
                                   </div>
-                                  {act.body && (
-                                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2 leading-relaxed">{act.body}</p>
-                                  )}
                                 </div>
-                              </div>
-                            )
-                          })}
+                              )
+                            })}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    )
+                  })()}
 
                   {/* Deal tags */}
                   {dealTags.length > 0 && (
