@@ -851,7 +851,7 @@ export function EmailInbox({
                       target="_blank"
                       rel="noopener noreferrer"
                       title={emailProvider === 'microsoft' ? 'Schedule in Outlook Calendar' : 'Schedule in Google Calendar'}
-                      className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400 transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 transition-colors"
                     >
                       <Calendar className="w-4 h-4" />
                     </a>

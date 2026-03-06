@@ -591,9 +591,9 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
             target="_blank"
             rel="noopener noreferrer"
             onClick={e => e.stopPropagation()}
-            className="inline-flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-white/5 border dark:border-white/8 text-gray-600 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-500/20 transition-colors"
+            className="inline-flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/15 transition-colors"
           >
-            <Calendar className="w-3 h-3 shrink-0" />
+            <Calendar className="w-3 h-3 shrink-0 text-emerald-500 dark:text-emerald-400" />
             Schedule Meeting
             {emailProvider === 'microsoft' ? ' · Outlook' : ' · Google'}
           </a>
