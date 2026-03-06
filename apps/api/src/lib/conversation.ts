@@ -90,8 +90,24 @@ export async function appendMessage(params: {
 
   if (error) throw new Error(`Failed to append message: ${error.message}`)
 
-  // Increment message_count atomically and refresh last_activity_at
-  await supabase.rpc('increment_conversation_message_count', { p_id: conversationId })
+  // Increment message_count and refresh last_activity_at.
+  // Try the atomic RPC first; if it fails, fall back to a direct read-increment-write.
+  const { error: rpcErr } = await supabase.rpc('increment_conversation_message_count', { p_id: conversationId })
+  if (rpcErr) {
+    console.warn('[conversation] RPC increment failed, using fallback:', rpcErr.message)
+    const { data: conv } = await supabase
+      .from('conversations')
+      .select('message_count')
+      .eq('id', conversationId)
+      .single()
+    await supabase
+      .from('conversations')
+      .update({
+        message_count:    ((conv as { message_count: number } | null)?.message_count ?? 0) + 1,
+        last_activity_at: new Date().toISOString(),
+      })
+      .eq('id', conversationId)
+  }
 
   return data.id
 }
