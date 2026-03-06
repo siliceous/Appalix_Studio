@@ -673,17 +673,15 @@ export function EmailInbox({
             ))}
 
             {/* Schedule Meeting */}
-            {composeTo && (
-              <a
-                href={buildCalendarLink(emailProvider, composeTo, '', composeSubj)}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={emailProvider === 'microsoft' ? 'Schedule in Outlook Calendar' : 'Schedule in Google Calendar'}
-                className="p-2 rounded-lg text-emerald-500 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors"
-              >
-                <Calendar className="w-4 h-4" />
-              </a>
-            )}
+            <a
+              href={buildCalendarLink(emailProvider, composeTo, '', composeSubj)}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={emailProvider === 'microsoft' ? 'Schedule in Outlook Calendar' : 'Schedule in Google Calendar'}
+              className="p-2 rounded-lg text-emerald-500 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors"
+            >
+              <Calendar className="w-4 h-4" />
+            </a>
 
             {/* AI Rewrite */}
             <button onClick={() => setShowRewrite(v => !v)}
