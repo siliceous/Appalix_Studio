@@ -34,24 +34,59 @@ export async function createSageLeadFromChat({
   pendingConversations.add(conversationId)
 
   try {
-    // 1. Upsert contact — match by email if provided, otherwise always insert
+    // 1. Find existing contact: email → name → phone (priority order)
+    //    If matched, update their record with any new info.
+    //    Only create a new contact if no match found.
+    type ContactRow = { id: string }
     let contactId: string | null = null
 
+    // 1a. Match by email (most reliable)
     if (email) {
-      const { data: existing } = await supabase
+      const { data } = await supabase
         .from('sage_contacts')
         .select('id')
         .eq('workspace_id', workspaceId)
-        .eq('email', email)
+        .ilike('email', email.trim())
         .limit(1)
         .maybeSingle()
-
-      if (existing) {
-        contactId = (existing as { id: string }).id
-      }
+      if (data) contactId = (data as ContactRow).id
     }
 
+    // 1b. Match by name (case-insensitive) if email didn't match
     if (!contactId) {
+      const { data } = await supabase
+        .from('sage_contacts')
+        .select('id')
+        .eq('workspace_id', workspaceId)
+        .ilike('name', name.trim())
+        .limit(1)
+        .maybeSingle()
+      if (data) contactId = (data as ContactRow).id
+    }
+
+    // 1c. Match by phone if neither email nor name matched
+    if (!contactId && phone) {
+      const { data } = await supabase
+        .from('sage_contacts')
+        .select('id')
+        .eq('workspace_id', workspaceId)
+        .ilike('phone', phone.trim())
+        .limit(1)
+        .maybeSingle()
+      if (data) contactId = (data as ContactRow).id
+    }
+
+    if (contactId) {
+      // Update existing contact with any newly provided fields
+      const updates: Record<string, string> = {}
+      if (email)   updates.email        = email
+      if (phone)   updates.phone        = phone
+      if (company) updates.company_name = company
+      if (Object.keys(updates).length > 0) {
+        await supabase.from('sage_contacts').update(updates).eq('id', contactId)
+      }
+    } else {
+      // Create new contact
       const { data: newContact, error } = await supabase
         .from('sage_contacts')
         .insert({
@@ -71,7 +106,7 @@ export async function createSageLeadFromChat({
         console.error('[sage-lead] Failed to create contact:', error.message)
         return
       }
-      contactId = (newContact as { id: string }).id
+      contactId = (newContact as ContactRow).id
     }
 
     // 2. Find the first pipeline + first stage for this workspace
