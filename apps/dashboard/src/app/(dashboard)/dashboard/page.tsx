@@ -77,6 +77,17 @@ export default async function DashboardPage({
 
   // ── Per-tab data fetching ─────────────────────────────────────────────────
 
+  // Detect connected email provider for calendar link generation
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: emailIntegration } = await (supabase as any)
+    .from('sage_integrations')
+    .select('provider')
+    .eq('workspace_id', workspaceId)
+    .in('provider', ['gmail', 'microsoft'])
+    .eq('status', 'connected')
+    .limit(1)
+    .maybeSingle()
+  const emailProvider = ((emailIntegration as { provider?: string } | null)?.provider ?? null) as 'gmail' | 'microsoft' | null
 
   let triageEmails:        TriageEmail[] = []
   let triageConversations: TriageConversation[] = []
@@ -281,7 +292,7 @@ export default async function DashboardPage({
 
       <div className="flex flex-1 overflow-hidden">
         {tab === 'email' && (
-          <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} />
+          <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} />
         )}
         {tab === 'bots' && (
           <BotTriageDashboard triageConversations={triageConversations} />

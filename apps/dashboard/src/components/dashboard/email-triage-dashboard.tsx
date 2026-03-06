@@ -39,6 +39,7 @@ export interface TriageEmail {
 interface Props {
   triageEmails:  TriageEmail[]
   workspaceId:   string
+  emailProvider: 'gmail' | 'microsoft' | null
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -74,6 +75,45 @@ function formatDate(iso: string) {
 }
 
 
+// ─── Calendar link builder ─────────────────────────────────────────────────────
+
+function buildCalendarLink(
+  provider: 'gmail' | 'microsoft' | null,
+  senderEmail: string,
+  senderName: string,
+  emailSubject: string,
+  aiSummary?: string | null,
+): string {
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  tomorrow.setHours(10, 0, 0, 0)
+  const end = new Date(tomorrow.getTime() + 30 * 60 * 1000)
+  const title = `Call with ${senderName || senderEmail}`
+  const body  = `Re: ${emailSubject}${aiSummary ? `\n\n${aiSummary}` : ''}`
+
+  if (provider === 'microsoft') {
+    const params = new URLSearchParams({
+      path: '/calendar/action/compose',
+      rru:  'addevent',
+      subject:  title,
+      body,
+      startdt: tomorrow.toISOString(),
+      enddt:   end.toISOString(),
+      to:      senderEmail,
+    })
+    return `https://outlook.office.com/calendar/0/deeplink/compose?${params.toString()}`
+  }
+
+  // Default: Google Calendar
+  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')
+  return (
+    `https://calendar.google.com/calendar/render?action=TEMPLATE` +
+    `&text=${encodeURIComponent(title)}` +
+    `&details=${encodeURIComponent(body)}` +
+    `&add=${encodeURIComponent(senderEmail)}` +
+    `&dates=${fmt(tomorrow)}/${fmt(end)}`
+  )
+}
 
 function categoryClass(cat: string): string {
   if (cat === 'Sales')        return 'bg-teal-50 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-200 dark:border-teal-500/20'
@@ -220,9 +260,10 @@ interface DetailCardProps {
   onAnalyze:     (id: string) => void
   isDeleting:    boolean
   isAnalyzing:   boolean
+  emailProvider: 'gmail' | 'microsoft' | null
 }
 
-function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, isDeleting, isAnalyzing, modalSize, onResize }: DetailCardProps) {
+function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, isDeleting, isAnalyzing, emailProvider, modalSize, onResize }: DetailCardProps) {
   const { email, meeting } = t
   const entities  = email.ai_entities
   const drafts    = email.ai_reply_drafts ?? []
@@ -340,6 +381,17 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
               <span className="text-xs text-gray-400">
                 {new Date(email.received_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
               </span>
+              <span className="text-gray-200 dark:text-white/15 mx-0.5">·</span>
+              <a
+                href={buildCalendarLink(emailProvider, email.from_address, email.from_name ?? '', email.subject, email.ai_summary)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+              >
+                <Calendar className="w-3 h-3 shrink-0" />
+                Schedule Meeting
+              </a>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -731,7 +783,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export function EmailTriageDashboard({ triageEmails }: Props) {
+export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
   const router = useRouter()
   const [dismissed,       setDismissed]       = useState<Set<string>>(new Set())
   const [actioned,        setActioned]        = useState<Map<string, string>>(new Map())
@@ -1035,6 +1087,7 @@ export function EmailTriageDashboard({ triageEmails }: Props) {
     onAnalyze:    handleAnalyzeOne,
     isDeleting,
     isAnalyzing:  isReanalyzing,
+    emailProvider,
     modalSize,
     onResize:     () => setModalSize(s => s === 'sm' ? 'md' : s === 'md' ? 'lg' : 'sm'),
   }
