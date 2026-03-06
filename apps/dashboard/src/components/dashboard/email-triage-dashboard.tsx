@@ -577,6 +577,13 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
                 {email.from_name ? `${email.from_name} <${email.from_address}>` : email.from_address}
               </span>
             </div>
+            {/* Subject: */}
+            <div className="flex items-center gap-2 px-5 py-2.5 bg-gray-50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/8">
+              <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide w-5 shrink-0">Re</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                {/^Re:/i.test(email.subject) ? email.subject : `Re: ${email.subject}`}
+              </span>
+            </div>
 
             {/* Rich text editor */}
             <RichTextEditor
@@ -801,16 +808,14 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
     return () => clearInterval(id)
   }, [router])
 
-  // Click-outside to close the detail card
+  // Escape key to close the modal
   useEffect(() => {
     if (!selectedEmailId) return
-    function handleMouseDown(e: MouseEvent) {
-      if (detailRef.current && !detailRef.current.contains(e.target as Node)) {
-        setSelectedEmailId('')
-      }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setSelectedEmailId('')
     }
-    document.addEventListener('mousedown', handleMouseDown)
-    return () => document.removeEventListener('mousedown', handleMouseDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
   }, [selectedEmailId])
 
   function handleSync() {
@@ -1011,11 +1016,11 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
     return true
   })
 
-  // Emails that appear in the grid below the detail card (exclude the selected one)
-  const gridHigh    = highEmails.filter(t => t.email.id !== selectedEmailId)
-  const gridMed     = medEmails.filter(t => t.email.id !== selectedEmailId)
-  const gridLow     = lowEmails.filter(t => t.email.id !== selectedEmailId)
-  const gridPending = pendingEmails.filter(t => t.email.id !== selectedEmailId)
+  // All emails shown in the grid — selected one highlighted, detail shown in modal
+  const gridHigh    = highEmails
+  const gridMed     = medEmails
+  const gridLow     = lowEmails
+  const gridPending = pendingEmails
 
   function handleAnalyzeOne(emailId: string) {
     setAnalyzeMsg(null)
@@ -1288,22 +1293,6 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
 
             <div key={refreshKey} className="flex-1 overflow-y-auto p-5 space-y-7">
 
-              {/* ── Full-width Detail Card (shown when email is selected) ── */}
-              {selectedTriageEmail && (
-                <div ref={detailRef}>
-                  <DetailCard t={selectedTriageEmail} {...detailCardProps} />
-                </div>
-              )}
-
-              {/* ── Divider between detail and remaining grid ── */}
-              {selectedTriageEmail && (gridHigh.length + gridMed.length + gridLow.length + gridPending.length) > 0 && (
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-px bg-gray-200 dark:bg-white/8" />
-                  <span className="text-[11px] text-gray-400 font-medium whitespace-nowrap">Other emails</span>
-                  <div className="flex-1 h-px bg-gray-200 dark:bg-white/8" />
-                </div>
-              )}
-
               {/* ── HIGH ── */}
               {gridHigh.length > 0 && (
                 <section>
@@ -1518,6 +1507,22 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
           </div>
         )}
       </div>
+
+      {/* ─── Email detail floating modal overlay ─────────────────────────────── */}
+      {selectedTriageEmail && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 dark:bg-black/65 backdrop-blur-[2px] p-6 pt-12"
+          onClick={() => setSelectedEmailId('')}
+        >
+          <div
+            ref={detailRef}
+            className="w-full max-w-2xl mb-12"
+            onClick={e => e.stopPropagation()}
+          >
+            <DetailCard t={selectedTriageEmail} {...detailCardProps} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
