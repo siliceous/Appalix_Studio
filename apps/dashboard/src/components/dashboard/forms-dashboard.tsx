@@ -8,7 +8,7 @@ import {
   Mail, Phone, Building2, MessageSquare, Tag,
 } from 'lucide-react'
 import {
-  createForm, deleteForm, analyzeFormSubmissions,
+  deleteForm, analyzeFormSubmissions,
   formSubmissionCreateLead, formSubmissionCreateTicket, markSubmissionActioned,
   type SageForm, type SageFormSubmission,
 } from '@/app/actions/sage-forms'
@@ -51,8 +51,6 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
   const [selectedFormId, setSelectedFormId] = useState<string | null>(initialForms[0]?.id ?? null)
   const [selectedId,     setSelectedId]     = useState<string | null>(null)
   const [done,           setDone]           = useState<Set<string>>(new Set())
-  const [showNewForm,    setShowNewForm]     = useState(false)
-  const [newFormName,    setNewFormName]     = useState('')
   const [showEmbed,      setShowEmbed]       = useState<string | null>(null)
   const [isPending,      startTransition]    = useTransition()
   const [isAnalyzing,    setIsAnalyzing]     = useState(false)
@@ -94,17 +92,6 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
     await analyzeFormSubmissions(selectedFormId ?? undefined)
     router.refresh()
     setIsAnalyzing(false)
-  }
-
-  async function handleCreateForm() {
-    if (!newFormName.trim()) return
-    const result = await createForm({ name: newFormName.trim() })
-    if (result.form) {
-      setForms(prev => [result.form!, ...prev])
-      setSelectedFormId(result.form!.id)
-      setNewFormName('')
-      setShowNewForm(false)
-    }
   }
 
   async function handleDeleteForm(formId: string) {
@@ -161,7 +148,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
         <div className="px-4 py-3 border-b border-gray-200 dark:border-white/8 flex items-center justify-between shrink-0">
           <h2 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">Forms</h2>
           <button
-            onClick={() => setShowNewForm(v => !v)}
+            onClick={() => router.push('/forms/sources')}
             className="w-5 h-5 rounded-md flex items-center justify-center bg-brand-600 hover:bg-brand-700 text-white transition-colors"
           >
             <Plus className="w-3 h-3" />
@@ -174,7 +161,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
             <div className="flex flex-col items-center justify-center h-full p-4 text-center">
               <ClipboardList className="w-6 h-6 text-gray-300 dark:text-gray-600 mb-2" />
               <p className="text-xs text-gray-400">No forms yet</p>
-              <button onClick={() => setShowNewForm(true)} className="mt-2 text-xs text-brand-600 dark:text-[#61c2ad] hover:underline">
+              <button onClick={() => router.push('/forms/sources')} className="mt-2 text-xs text-brand-600 dark:text-[#61c2ad] hover:underline">
                 Create your first form
               </button>
             </div>
@@ -304,7 +291,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
                   <p className="text-xs text-gray-400 mb-3 leading-relaxed">
                     Embed it on your website to capture leads. Submissions are AI-triaged automatically — just like email.
                   </p>
-                  <button onClick={() => setShowNewForm(true)} className="px-4 py-2 text-xs bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors">
+                  <button onClick={() => router.push('/forms/sources')} className="px-4 py-2 text-xs bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors">
                     New Form
                   </button>
                 </>
@@ -476,51 +463,6 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
           </div>
         )}
       </div>
-
-      {/* ── Create form modal ────────────────────────────────────── */}
-      {showNewForm && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white dark:bg-[#232323] rounded-2xl border dark:border-white/8 shadow-2xl w-full max-w-md">
-            <div className="flex items-center justify-between px-5 py-4 border-b dark:border-white/8">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Create a new form</h3>
-              <button onClick={() => setShowNewForm(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors">
-                <X className="w-4 h-4 text-gray-400" />
-              </button>
-            </div>
-            <div className="p-5 space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Form name</label>
-                <input
-                  autoFocus
-                  value={newFormName}
-                  onChange={e => setNewFormName(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') void handleCreateForm(); if (e.key === 'Escape') setShowNewForm(false) }}
-                  placeholder="e.g. Contact Us, Demo Request…"
-                  className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
-                Once created, you&apos;ll get an embed snippet to add this form to any webpage. Submissions land here and are AI-triaged automatically.
-              </p>
-              <div className="flex gap-2 pt-1">
-                <button
-                  onClick={() => setShowNewForm(false)}
-                  className="flex-1 px-4 py-2 text-sm border dark:border-white/10 text-gray-600 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => void handleCreateForm()}
-                  disabled={!newFormName.trim()}
-                  className="flex-1 px-4 py-2 text-sm bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50"
-                >
-                  Create form
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Embed code overlay ───────────────────────────────────── */}
       {showEmbed && (
