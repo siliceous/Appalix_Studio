@@ -93,6 +93,43 @@ function parseIcs(raw: string): ParsedMeeting | null {
 }
 
 // ---------------------------------------------------------------------------
+// Calendar notification detection — Layer 1 filter
+// ---------------------------------------------------------------------------
+
+// Subject prefixes used by Google Calendar and Outlook when a recipient
+// accepts/declines/etc. a meeting invite
+const CALENDAR_RESPONSE_RE = /^(Accepted|Declined|Tentative|Cancelled|Updated Invitation|Invitation|Re:.*\bmeeting\b)[\s:]/i
+
+// Known sending addresses for calendar notification emails
+const CALENDAR_NOTIFICATION_SENDERS = new Set([
+  'calendar-notification@google.com',
+  'calendar-notification@googlemail.com',
+  'noreply@calendar.google.com',
+  'calendar@google.com',
+  'invitations@microsoft.com',
+  'no-reply@microsoft.com',
+])
+
+/**
+ * Returns true when an email is a calendar system notification (acceptance,
+ * decline, cancellation, etc.) that should never appear in the AI triage queue.
+ */
+function isCalendarNotification(
+  subject:     string,
+  fromAddress: string,
+  hasIcsPart:  boolean,
+): boolean {
+  const lcFrom = fromAddress.toLowerCase()
+  // Definitive: known calendar notification sender
+  if (CALENDAR_NOTIFICATION_SENDERS.has(lcFrom)) return true
+  // Strong signal: subject matches calendar response pattern
+  if (CALENDAR_RESPONSE_RE.test(subject)) return true
+  // Heuristic: has ICS attachment AND subject looks like a calendar reply
+  if (hasIcsPart && /\b(accepted|declined|tentative|cancelled)\b/i.test(subject)) return true
+  return false
+}
+
+// ---------------------------------------------------------------------------
 // Provider config
 // ---------------------------------------------------------------------------
 
@@ -219,6 +256,8 @@ ACTION RULES — assign exactly one:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 EDGE CASES — apply before general rules:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Calendar responses (subject starts with "Accepted:", "Declined:", "Tentative:", "Cancelled:", or is a Google/Outlook calendar notification) → always Low, action="ignore", summary=null, reply_drafts=[]
+• Out-of-office / auto-reply (contains "I am out of office", "automatic reply", "auto-reply", "on vacation", "on leave") → always Low, action="ignore"
 • Newsletters / unsubscribe emails → always Low, summary=null, reply_drafts=[]
 • Vendor / cold pitch (someone selling to you) → always Low, action="ignore"
 • Forwarded email → analyse the ORIGINAL sender's content, not the forwarder
@@ -435,6 +474,15 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
           const receivedAt  = parsed.date?.toISOString() ?? new Date().toISOString()
           const threadId    = parsed.references?.[0] ?? null
 
+          // Layer 1: calendar notification filter — detect ICS before dedup check
+          const attachments0   = parsed.attachments ?? []
+          const hasIcsPart     = attachments0.some(
+            a => a.contentType === 'text/calendar' ||
+                 a.contentType === 'application/ics' ||
+                 (a.filename ?? '').toLowerCase().endsWith('.ics'),
+          )
+          const calendarEmail  = isCalendarNotification(subject, fromAddress, hasIcsPart)
+
           // Check for existing email (deduplication)
           const { data: existing } = await supabase
             .from('sage_emails')
@@ -448,7 +496,8 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
           // Auto-link contact
           const contactId = fromAddress ? await findContactByEmail(workspaceId, fromAddress) : null
 
-          // Insert email row
+          // Insert email row — calendar notifications inserted as is_read=true so
+          // they are stored for reference but never appear in the triage queue
           const { data: inserted } = await supabase
             .from('sage_emails')
             .insert({
@@ -464,6 +513,7 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
               body_html:    bodyHtml,
               received_at:  receivedAt,
               direction:    'inbound',
+              is_read:      calendarEmail,   // skip triage for calendar notifications
             })
             .select('id')
             .single()
@@ -471,6 +521,9 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
           if (!inserted) continue
 
           synced++
+
+          // Skip AI analysis for calendar notifications — they're already read-flagged
+          if (calendarEmail) continue
 
           // Parse .ics calendar attachment (if present) → store as meeting
           try {

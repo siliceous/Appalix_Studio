@@ -882,8 +882,12 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
   }
 
   function dismiss(emailId: string) {
-    setDismissed(prev => new Set([...prev, emailId]))
-    if (emailId === selectedEmailId) setSelectedEmailId('')
+    // Dismiss all emails from the same sender/contact in one go
+    const t   = visible.find(x => x.email.id === emailId)
+    const key = t?.matchedContact?.id ?? t?.email.from_address ?? emailId
+    const groupIds = senderGroupMap.get(key) ?? [emailId]
+    setDismissed(prev => new Set([...prev, ...groupIds]))
+    if (groupIds.includes(selectedEmailId)) setSelectedEmailId('')
   }
 
   // Modal form state
@@ -994,6 +998,24 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
 
   const sortedVisible       = [...visible].sort(sortByPriority)
   const selectedTriageEmail = selectedEmailId ? visible.find(t => t.email.id === selectedEmailId) ?? null : null
+
+  // ── Contact grouping: one card per sender, primary = highest priority ───────
+  // Key = contact_id when matched (groups multiple email addresses from same CRM
+  // contact), else from_address (groups follow-ups on the same sender)
+  const senderGroupMap = new Map<string, string[]>() // key → [emailId, ...]
+  for (const t of sortedVisible) {
+    const key = t.matchedContact?.id ?? t.email.from_address
+    if (!senderGroupMap.has(key)) senderGroupMap.set(key, [])
+    senderGroupMap.get(key)!.push(t.email.id)
+  }
+  // Deduplicated list: one entry per sender (first occurrence = highest priority)
+  const seenSenders  = new Set<string>()
+  const dedupedSorted = sortedVisible.filter(t => {
+    const key = t.matchedContact?.id ?? t.email.from_address
+    if (seenSenders.has(key)) return false
+    seenSenders.add(key)
+    return true
+  })
 
   // Emails that appear in the grid below the detail card (exclude the selected one)
   const gridHigh    = highEmails.filter(t => t.email.id !== selectedEmailId)
@@ -1132,10 +1154,12 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
               </button>
             </div>
           ) : (
-            sortedVisible.map(t => {
-              const isChecked = selectedIds.has(t.email.id)
-              const isActive  = selectedEmailId === t.email.id
-              const priority  = t.email.ai_priority
+            dedupedSorted.map(t => {
+              const isChecked  = selectedIds.has(t.email.id)
+              const isActive   = selectedEmailId === t.email.id
+              const priority   = t.email.ai_priority
+              const groupKey   = t.matchedContact?.id ?? t.email.from_address
+              const groupCount = (senderGroupMap.get(groupKey) ?? []).length
               return (
                 <div
                   key={t.email.id}
@@ -1158,10 +1182,17 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
                       <span className={cn('mt-1.5 w-2 h-2 rounded-full shrink-0',
                         priority ? PRIORITY_DOT[priority] : 'bg-gray-200 dark:bg-white/20')} />
                       <div className="flex-1 min-w-0">
-                        <span className={cn('text-xs font-semibold truncate block',
-                          actioned.has(t.email.id) ? 'text-gray-400' : 'text-gray-800 dark:text-gray-200')}>
-                          {t.email.from_name ?? t.email.from_address}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={cn('text-xs font-semibold truncate',
+                            actioned.has(t.email.id) ? 'text-gray-400' : 'text-gray-800 dark:text-gray-200')}>
+                            {t.email.from_name ?? t.email.from_address}
+                          </span>
+                          {groupCount > 1 && (
+                            <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 leading-none">
+                              +{groupCount - 1}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[11px] text-gray-400 truncate">{t.email.subject}</p>
                       </div>
                     </div>

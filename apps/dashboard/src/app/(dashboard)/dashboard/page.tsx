@@ -197,6 +197,12 @@ export default async function DashboardPage({
       return { email, recommendation, matchedContact, matchedDeal, meeting }
     })
 
+    // Layer 3: filter out calendar notifications that slipped through sync
+    const CALENDAR_SUBJECT_TRIAGE_RE = /^(Accepted|Declined|Tentative|Cancelled|Updated Invitation|Invitation):?\s/i
+    triageEmails = triageEmails.filter(
+      t => !CALENDAR_SUBJECT_TRIAGE_RE.test(t.email.subject ?? ''),
+    )
+
     // Sort: high → medium → low → pending (unanalyzed)
     const P: Record<string, number> = { high: 0, medium: 1, low: 2 }
     triageEmails.sort((a, b) => {
