@@ -55,57 +55,51 @@ export async function triageCreateLead(data: {
   const admin = createAdminClient()
 
   try {
-    // 1. Upsert contact (match by email if possible)
+    // 1. Find or create contact: email → name (phone not available in email triage)
+    type CR = { id: string }
     let contactId: string
+    let isNew = false
 
+    let existing: CR | null = null
     if (data.email) {
-      const { data: existing } = await admin
-        .from('sage_contacts')
-        .select('id')
-        .eq('workspace_id', workspaceId)
-        .ilike('email', data.email)
-        .limit(1)
-        .single()
+      const { data: byEmail } = await admin.from('sage_contacts').select('id')
+        .eq('workspace_id', workspaceId).ilike('email', data.email).limit(1).maybeSingle()
+      if (byEmail) existing = byEmail as CR
+    }
+    if (!existing) {
+      const { data: byName } = await admin.from('sage_contacts').select('id')
+        .eq('workspace_id', workspaceId).ilike('name', data.name.trim()).limit(1).maybeSingle()
+      if (byName) existing = byName as CR
+    }
 
-      if (existing) {
-        contactId = (existing as { id: string }).id
-      } else {
-        const { data: created, error: contactErr } = await admin
-          .from('sage_contacts')
-          .insert({
-            workspace_id:  workspaceId,
-            name:          data.name,
-            email:         data.email.toLowerCase(),
-            company_name:  data.company ?? null,
-            notes:         data.notes ?? null,
-            source:        'manual',
-            contact_type:  'potential_customer',
-            tags:          [],
-          })
-          .select('id')
-          .single()
-        if (contactErr || !created) return { error: contactErr?.message ?? 'Failed to create contact' }
-        contactId = (created as { id: string }).id
-      }
+    if (existing) {
+      contactId = existing.id
+      const upd: Record<string, string> = {}
+      if (data.email)   upd.email        = data.email.toLowerCase()
+      if (data.company) upd.company_name = data.company
+      if (data.notes)   upd.notes        = data.notes
+      if (Object.keys(upd).length > 0) await admin.from('sage_contacts').update(upd).eq('id', contactId)
     } else {
+      isNew = true
       const { data: created, error: contactErr } = await admin
         .from('sage_contacts')
         .insert({
           workspace_id:  workspaceId,
           name:          data.name,
+          email:         data.email?.toLowerCase() ?? null,
           company_name:  data.company ?? null,
           notes:         data.notes ?? null,
-          source:        'manual',
+          source:        'email',
           contact_type:  'potential_customer',
           tags:          [],
         })
         .select('id')
         .single()
       if (contactErr || !created) return { error: contactErr?.message ?? 'Failed to create contact' }
-      contactId = (created as { id: string }).id
+      contactId = (created as CR).id
     }
 
-    await logActivity(workspaceId, 'contact', contactId, 'contact_created', { source: 'email_triage' })
+    if (isNew) await logActivity(workspaceId, 'contact', contactId, 'contact_created', { source: 'email_triage' })
 
     // 2. Find first pipeline + first stage
     const { data: pipeline } = await admin
@@ -184,35 +178,41 @@ export async function triageCreateTicket(data: {
   const admin = createAdminClient()
 
   try {
-    // Find or create contact
+    // Find or create contact: email → name
+    type CR = { id: string }
     let contactId: string | null = null
 
+    let existing: CR | null = null
     if (data.contactEmail) {
-      const { data: existing } = await admin
-        .from('sage_contacts')
-        .select('id')
-        .eq('workspace_id', workspaceId)
-        .ilike('email', data.contactEmail)
-        .limit(1)
-        .single()
+      const { data: byEmail } = await admin.from('sage_contacts').select('id')
+        .eq('workspace_id', workspaceId).ilike('email', data.contactEmail).limit(1).maybeSingle()
+      if (byEmail) existing = byEmail as CR
+    }
+    if (!existing && data.contactName) {
+      const { data: byName } = await admin.from('sage_contacts').select('id')
+        .eq('workspace_id', workspaceId).ilike('name', data.contactName.trim()).limit(1).maybeSingle()
+      if (byName) existing = byName as CR
+    }
 
-      if (existing) {
-        contactId = (existing as { id: string }).id
-      } else {
-        const { data: created } = await admin
-          .from('sage_contacts')
-          .insert({
-            workspace_id: workspaceId,
-            name:         data.contactName,
-            email:        data.contactEmail.toLowerCase(),
-            source:       'manual',
-            contact_type: 'potential_customer',
-            tags:         [],
-          })
-          .select('id')
-          .single()
-        contactId = (created as { id: string } | null)?.id ?? null
-      }
+    if (existing) {
+      contactId = existing.id
+      const upd: Record<string, string> = {}
+      if (data.contactEmail) upd.email = data.contactEmail.toLowerCase()
+      if (Object.keys(upd).length > 0) await admin.from('sage_contacts').update(upd).eq('id', contactId)
+    } else if (data.contactEmail || data.contactName) {
+      const { data: created } = await admin
+        .from('sage_contacts')
+        .insert({
+          workspace_id: workspaceId,
+          name:         data.contactName,
+          email:        data.contactEmail?.toLowerCase() ?? null,
+          source:       'email',
+          contact_type: 'potential_customer',
+          tags:         [],
+        })
+        .select('id')
+        .single()
+      contactId = (created as CR | null)?.id ?? null
     }
 
     const { data: ticket, error: ticketErr } = await admin

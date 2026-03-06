@@ -74,6 +74,26 @@ export async function createContact(formData: FormData) {
   const valueRaw      = (formData.get('value') as string | null)?.trim()
   const value         = valueRaw ? parseFloat(valueRaw) : null
 
+  // Dedup check: email → name → phone before insert
+  type CR = { id: string }
+  let dupId: string | null = null
+  if (email) {
+    const { data: d } = await admin.from('sage_contacts').select('id')
+      .eq('workspace_id', workspaceId).ilike('email', email).limit(1).maybeSingle()
+    if (d) dupId = (d as CR).id
+  }
+  if (!dupId && name) {
+    const { data: d } = await admin.from('sage_contacts').select('id')
+      .eq('workspace_id', workspaceId).ilike('name', name.trim()).limit(1).maybeSingle()
+    if (d) dupId = (d as CR).id
+  }
+  if (!dupId && phone) {
+    const { data: d } = await admin.from('sage_contacts').select('id')
+      .eq('workspace_id', workspaceId).ilike('phone', phone.trim()).limit(1).maybeSingle()
+    if (d) dupId = (d as CR).id
+  }
+  if (dupId) throw new Error('A contact with the same email, name, or phone already exists.')
+
   const { data, error } = await admin
     .from('sage_contacts')
     .insert({ workspace_id: workspaceId, name, email, phone, title, contact_type, company_name, website_url, business_goal, street, city, state, zip, country, visibility, notes, tags, source, value })

@@ -509,32 +509,35 @@ export async function sageCreateLead(
 ): Promise<string> {
   const { name, email, phone, company, dealTitle, notes, source } = opts
 
-  // 1. Upsert contact — match by email if available, else by name, else create
+  // 1. Find or create contact: email → name → phone, update if found
+  type CR = { id: string }
   let contactId: string | null = null
 
   if (email) {
-    const { data: byEmail } = await supabase
-      .from('sage_contacts')
-      .select('id')
-      .eq('workspace_id', workspaceId)
-      .ilike('email', email)
-      .limit(1)
-      .maybeSingle()
-    if (byEmail) contactId = (byEmail as { id: string }).id
+    const { data } = await supabase.from('sage_contacts').select('id')
+      .eq('workspace_id', workspaceId).ilike('email', email).limit(1).maybeSingle()
+    if (data) contactId = (data as CR).id
+  }
+  if (!contactId) {
+    const { data } = await supabase.from('sage_contacts').select('id')
+      .eq('workspace_id', workspaceId).ilike('name', name).limit(1).maybeSingle()
+    if (data) contactId = (data as CR).id
+  }
+  if (!contactId && phone) {
+    const { data } = await supabase.from('sage_contacts').select('id')
+      .eq('workspace_id', workspaceId).ilike('phone', phone).limit(1).maybeSingle()
+    if (data) contactId = (data as CR).id
   }
 
-  if (!contactId) {
-    const { data: byName } = await supabase
-      .from('sage_contacts')
-      .select('id')
-      .eq('workspace_id', workspaceId)
-      .ilike('name', name)
-      .limit(1)
-      .maybeSingle()
-    if (byName) contactId = (byName as { id: string }).id
-  }
-
-  if (!contactId) {
+  if (contactId) {
+    // Update existing contact with newly provided fields
+    const upd: Record<string, string> = {}
+    if (email)   upd.email        = email
+    if (phone)   upd.phone        = phone
+    if (company) upd.company_name = company
+    if (notes)   upd.notes        = notes
+    if (Object.keys(upd).length > 0) await supabase.from('sage_contacts').update(upd).eq('id', contactId)
+  } else {
     const { data: created, error: cErr } = await supabase
       .from('sage_contacts')
       .insert({
@@ -552,7 +555,7 @@ export async function sageCreateLead(
       .select('id')
       .single()
     if (cErr || !created) return `Failed to create contact: ${cErr?.message ?? 'unknown error'}`
-    contactId = (created as { id: string }).id
+    contactId = (created as CR).id
   }
 
   // 2. Find first pipeline + first stage

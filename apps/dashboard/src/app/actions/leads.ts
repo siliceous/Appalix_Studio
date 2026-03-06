@@ -165,24 +165,53 @@ export async function moveLeadToPipeline(leadId: string): Promise<void> {
   if (!stageRaw) throw new Error('Pipeline has no stages.')
   const stageId = (stageRaw as { id: string }).id
 
-  // Create SageContact
-  const { data: contactRaw } = await admin
-    .from('sage_contacts')
-    .insert({
-      workspace_id: workspaceId,
-      name:         lead.name,
-      email:        lead.email,
-      phone:        lead.phone,
-      company_name: lead.company,
-      title:        lead.job_title,
-      website_url:  lead.website,
-      source:       'import',
-      tags:         ['lead_ad', lead.source_platform],
-    })
-    .select('id')
-    .single()
+  // Find or create SageContact: email → name → phone
+  type CR = { id: string }
+  let contactId: string | null = null
+  let existingContact: CR | null = null
 
-  const contactId = contactRaw ? (contactRaw as { id: string }).id : null
+  if (lead.email) {
+    const { data } = await admin.from('sage_contacts').select('id')
+      .eq('workspace_id', workspaceId).ilike('email', lead.email).limit(1).maybeSingle()
+    if (data) existingContact = data as CR
+  }
+  if (!existingContact && lead.name) {
+    const { data } = await admin.from('sage_contacts').select('id')
+      .eq('workspace_id', workspaceId).ilike('name', lead.name.trim()).limit(1).maybeSingle()
+    if (data) existingContact = data as CR
+  }
+  if (!existingContact && lead.phone) {
+    const { data } = await admin.from('sage_contacts').select('id')
+      .eq('workspace_id', workspaceId).ilike('phone', lead.phone.trim()).limit(1).maybeSingle()
+    if (data) existingContact = data as CR
+  }
+
+  if (existingContact) {
+    contactId = existingContact.id
+    const upd: Record<string, string | string[]> = {}
+    if (lead.email)    upd.email        = lead.email
+    if (lead.phone)    upd.phone        = lead.phone
+    if (lead.company)  upd.company_name = lead.company
+    if (lead.job_title) upd.title       = lead.job_title
+    if (Object.keys(upd).length > 0) await admin.from('sage_contacts').update(upd).eq('id', contactId)
+  } else {
+    const { data: contactRaw } = await admin
+      .from('sage_contacts')
+      .insert({
+        workspace_id: workspaceId,
+        name:         lead.name,
+        email:        lead.email,
+        phone:        lead.phone,
+        company_name: lead.company,
+        title:        lead.job_title,
+        website_url:  lead.website,
+        source:       'import',
+        tags:         ['lead_ad', lead.source_platform],
+      })
+      .select('id')
+      .single()
+    contactId = contactRaw ? (contactRaw as CR).id : null
+  }
 
   // Create SageDeal
   const PLATFORM_LABELS: Record<string, string> = {
