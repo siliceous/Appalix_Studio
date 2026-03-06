@@ -66,6 +66,7 @@ export function PipelineBoard({
   const [defaultTitle,       setDefaultTitle]       = useState<string | undefined>()
   const [defaultCompany,     setDefaultCompany]     = useState<string | undefined>()
   const [selectedDealId,     setSelectedDealId]     = useState<string | null>(null)
+  const [openEditOnDealId,   setOpenEditOnDealId]   = useState<string | null>(null)
 
   // Header controls
   const [searchQuery,      setSearchQuery]      = useState('')
@@ -363,15 +364,13 @@ export function PipelineBoard({
                             )
                           })()}
                           <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-snug flex-1">{deal.title}</p>
-                          {deal.contact && (
-                            <button
-                              onClick={e => { e.stopPropagation(); setEditingContactId(deal.contact!.id) }}
-                              className="opacity-0 group-hover/title:opacity-100 p-0.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] rounded transition-all shrink-0"
-                              title="Edit contact"
-                            >
-                              <Pencil className="w-3 h-3" />
-                            </button>
-                          )}
+                          <button
+                            onClick={e => { e.stopPropagation(); setOpenEditOnDealId(deal.id); setSelectedDealId(deal.id) }}
+                            className="opacity-0 group-hover/title:opacity-100 p-0.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] rounded transition-all shrink-0"
+                            title="Edit deal"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
                         </div>
                         {deal.contact && (
                           <p className="text-xs text-gray-400 mt-0.5 truncate">{deal.contact.name}</p>
@@ -480,7 +479,14 @@ export function PipelineBoard({
 
       <DealSlideOver
         dealId={selectedDealId}
-        onClose={() => setSelectedDealId(null)}
+        openEditForm={openEditOnDealId === selectedDealId && openEditOnDealId !== null}
+        onClose={() => { setSelectedDealId(null); setOpenEditOnDealId(null) }}
+        onDealUpdated={(id, changes) => {
+          setDeals(prev => prev.map(d => d.id === id
+            ? { ...d, ...changes, priority: changes.priority as 'low' | 'medium' | 'high' | null }
+            : d
+          ))
+        }}
       />
 
       {editingContactId && (

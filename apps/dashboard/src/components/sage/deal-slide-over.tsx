@@ -17,8 +17,10 @@ type DealReminder = { id: string; title: string; note: string | null; due_at: st
 type ActivityType = 'note' | 'call' | 'meeting' | 'task'
 
 interface DealSlideOverProps {
-  dealId:  string | null
-  onClose: () => void
+  dealId:          string | null
+  onClose:         () => void
+  openEditForm?:   boolean
+  onDealUpdated?:  (dealId: string, changes: { title: string; value: number | null; currency: string; close_date: string | null; priority: string | null }) => void
 }
 
 const ACTIVITY_ICONS: Record<ActivityType, React.ElementType> = {
@@ -100,7 +102,7 @@ const STATUS_BADGE: Record<string, string> = {
   lost: 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400',
 }
 
-export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
+export function DealSlideOver({ dealId, onClose, openEditForm, onDealUpdated }: DealSlideOverProps) {
   const [deal,          setDeal]          = useState<Record<string, unknown> & { contact: Record<string, unknown> | null } | null>(null)
   const [activities,    setActivities]    = useState<SageDealActivity[]>([])
   const [loading,       setLoading]       = useState(false)
@@ -113,7 +115,7 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
   const [formDue,       setFormDue]       = useState('')
   const [wonLostMode,      setWonLostMode]      = useState<'won' | 'lost' | null>(null)
   const [editingContactId, setEditingContactId] = useState<string | null>(null)
-  const [showEditForm,     setShowEditForm]     = useState(false)
+  const [showEditForm,     setShowEditForm]     = useState(openEditForm ?? false)
   const [editSaving,       setEditSaving]       = useState(false)
   const [isPending,        startTransition]     = useTransition()
   const slideRef = useRef<HTMLDivElement>(null)
@@ -377,11 +379,22 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                   e.preventDefault()
                   if (!dealId) return
                   setEditSaving(true)
-                  await updateDeal(dealId, new FormData(e.currentTarget))
+                  const fd = new FormData(e.currentTarget)
+                  await updateDeal(dealId, fd)
                   const res = await getDealDetail(dealId)
                   setDeal(res.deal)
                   setEditSaving(false)
                   setShowEditForm(false)
+                  if (onDealUpdated) {
+                    const valRaw = fd.get('value') as string | null
+                    onDealUpdated(dealId, {
+                      title:      (fd.get('title') as string).trim(),
+                      value:      valRaw ? parseFloat(valRaw) : null,
+                      currency:   (fd.get('currency') as string) || 'USD',
+                      close_date: (fd.get('close_date') as string) || null,
+                      priority:   (fd.get('priority') as string) || null,
+                    })
+                  }
                 }}
                 className="border-b dark:border-white/8 px-5 py-4 bg-gray-50 dark:bg-white/[0.02] space-y-3"
               >
