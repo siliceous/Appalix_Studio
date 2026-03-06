@@ -22,6 +22,7 @@ export default async function AutomationSettingsPage({
     .from('workspace_members')
     .select('workspace_id, role, workspaces(plan, automation_config)')
     .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
     .limit(1)
     .single()
 

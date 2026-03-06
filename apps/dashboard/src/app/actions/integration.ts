@@ -14,6 +14,7 @@ export async function createIntegration(formData: FormData) {
     .from('workspace_members')
     .select('workspace_id')
     .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
     .limit(1)
     .single()
   const membership = membershipRaw as { workspace_id: string } | null
@@ -105,6 +106,7 @@ export async function setIntegrationStatus(
     .from('workspace_members')
     .select('workspace_id')
     .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
     .limit(1)
     .single()
   const membership = membershipRaw as { workspace_id: string } | null
@@ -129,6 +131,7 @@ export async function deleteIntegration(integrationId: string) {
     .from('workspace_members')
     .select('workspace_id')
     .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
     .limit(1)
     .single()
   const membership = membershipRaw as { workspace_id: string } | null
@@ -154,6 +157,7 @@ export async function updateIntegration(integrationId: string, formData: FormDat
     .from('workspace_members')
     .select('workspace_id')
     .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
     .limit(1)
     .single()
   const membership = membershipRaw as { workspace_id: string } | null

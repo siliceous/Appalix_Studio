@@ -15,6 +15,7 @@ export default async function SageEmailsPage() {
     .from('workspace_members')
     .select('workspace_id, workspaces(plan)')
     .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
     .limit(1)
     .single()
 

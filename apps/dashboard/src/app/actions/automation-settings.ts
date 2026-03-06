@@ -12,6 +12,7 @@ export async function saveAutomationSettings(formData: FormData) {
     .from('workspace_members')
     .select('workspace_id, role')
     .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
     .limit(1)
     .single()
 

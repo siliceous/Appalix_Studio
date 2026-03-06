@@ -14,6 +14,7 @@ async function getWorkspaceId() {
     .from('workspace_members')
     .select('workspace_id')
     .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
     .limit(1)
     .single()
   const membership = raw as { workspace_id: string } | null

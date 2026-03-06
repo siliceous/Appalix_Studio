@@ -12,6 +12,7 @@ export async function deleteConversation(conversationId: string) {
     .from('workspace_members')
     .select('workspace_id')
     .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
     .limit(1)
     .single()
   const membership = membershipRaw as { workspace_id: string } | null
@@ -36,6 +37,7 @@ export async function renameConversation(conversationId: string, title: string) 
     .from('workspace_members')
     .select('workspace_id')
     .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
     .limit(1)
     .single()
   const membership = membershipRaw as { workspace_id: string } | null

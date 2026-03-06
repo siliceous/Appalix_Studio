@@ -15,6 +15,7 @@ export default async function ContactsPage() {
     .from('workspace_members')
     .select('workspace_id')
     .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
     .limit(1)
     .single()
 

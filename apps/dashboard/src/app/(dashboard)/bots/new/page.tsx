@@ -180,7 +180,7 @@ export default function NewBotPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       const { data: membership } = await supabase
-        .from('workspace_members').select('workspace_id').eq('user_id', user.id).limit(1).single()
+        .from('workspace_members').select('workspace_id').eq('user_id', user.id).order('created_at', { ascending: true }).limit(1).single()
       if (!membership) return
       const { data: ws } = await supabase
         .from('workspaces').select('plan').eq('id', (membership as { workspace_id: string }).workspace_id).single()
@@ -223,7 +223,7 @@ export default function NewBotPage() {
     if (!user) { router.push('/login'); return }
 
     const { data: membershipRaw } = await supabase
-      .from('workspace_members').select('workspace_id').eq('user_id', user.id).limit(1).single()
+      .from('workspace_members').select('workspace_id').eq('user_id', user.id).order('created_at', { ascending: true }).limit(1).single()
     const membership = membershipRaw as { workspace_id: string } | null
     if (!membership) { setError('No workspace found'); setSaving(false); return }
 

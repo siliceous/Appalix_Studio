@@ -16,6 +16,7 @@ export default async function UpgradePage() {
     .from('workspace_members')
     .select('workspaces(plan, stripe_subscription_id)')
     .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
     .limit(1)
     .single()
 
