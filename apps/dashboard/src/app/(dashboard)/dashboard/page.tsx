@@ -197,11 +197,27 @@ export default async function DashboardPage({
       return { email, recommendation, matchedContact, matchedDeal, meeting }
     })
 
-    // Layer 3: filter out calendar notifications that slipped through sync
-    const CALENDAR_SUBJECT_TRIAGE_RE = /^(Accepted|Declined|Tentative|Cancelled|Updated Invitation|Invitation):?\s/i
-    triageEmails = triageEmails.filter(
-      t => !CALENDAR_SUBJECT_TRIAGE_RE.test(t.email.subject ?? ''),
-    )
+    // Layer 3: permanently suppress calendar notifications that slipped through
+    // Covers: subject pattern, known sender addresses, and AI classification
+    const CALENDAR_SUBJECT_RE3 = /^(Accepted|Declined|Tentative|Cancelled|Updated Invitation|Invitation):?\s/i
+    const CALENDAR_SENDERS_RE3 = new Set([
+      'calendar-notification@google.com',
+      'calendar-notification@googlemail.com',
+      'noreply@calendar.google.com',
+      'calendar@google.com',
+      'invitations@microsoft.com',
+    ])
+    const isCalendarEmail = (e: { subject: string | null; from_address: string; ai_category?: string | null; ai_action?: string | null }) =>
+      CALENDAR_SUBJECT_RE3.test(e.subject ?? '') ||
+      CALENDAR_SENDERS_RE3.has((e.from_address ?? '').toLowerCase()) ||
+      (e.ai_category === 'Meeting' && e.ai_action === 'ignore')
+
+    const calendarIds = triageEmails.filter(t => isCalendarEmail(t.email)).map(t => t.email.id)
+    triageEmails = triageEmails.filter(t => !isCalendarEmail(t.email))
+
+    // Mark the suppressed emails as read so they never resurface — fire-and-forget
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (calendarIds.length > 0) void (supabase as any).from('sage_emails').update({ is_read: true }).in('id', calendarIds)
 
     // Sort: high → medium → low → pending (unanalyzed)
     const P: Record<string, number> = { high: 0, medium: 1, low: 2 }

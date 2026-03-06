@@ -117,12 +117,13 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
   const slideRef = useRef<HTMLDivElement>(null)
 
   // Reminder state
-  const [reminders,       setReminders]       = useState<DealReminder[]>([])
-  const [showReminderForm, setShowReminderForm] = useState(false)
-  const [reminderTitle,   setReminderTitle]   = useState('')
-  const [reminderNote,    setReminderNote]    = useState('')
-  const [reminderDue,     setReminderDue]     = useState('')
-  const [reminderSaving,  setReminderSaving]  = useState(false)
+  const [reminders,        setReminders]        = useState<DealReminder[]>([])
+  const [showReminderForm, setShowReminderForm]  = useState(false)
+  const [reminderTitle,    setReminderTitle]    = useState('')
+  const [reminderNote,     setReminderNote]     = useState('')
+  const [reminderDue,      setReminderDue]      = useState('')
+  const [reminderSaving,   setReminderSaving]   = useState(false)
+  const [reminderSaved,    setReminderSaved]    = useState(false)
 
   useEffect(() => {
     if (!dealId) { setDeal(null); setActivities([]); setReminders([]); return }
@@ -192,10 +193,15 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
     if (!res.error) {
       const updated = await getDealReminders(dealId)
       setReminders(updated)
-      setShowReminderForm(false)
       setReminderTitle('')
       setReminderNote('')
       setReminderDue('')
+      setReminderSaved(true)
+      // Show success state for 2.5 s then close the form
+      setTimeout(() => {
+        setReminderSaved(false)
+        setShowReminderForm(false)
+      }, 2500)
     }
     setReminderSaving(false)
   }
@@ -751,45 +757,59 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                     {/* Reminder form */}
                     {showReminderForm && (
                       <div className="p-3 bg-white dark:bg-[#252525] space-y-2.5">
-                        <input
-                          type="text"
-                          value={reminderTitle}
-                          onChange={e => setReminderTitle(e.target.value)}
-                          placeholder="What do you need to do?"
-                          className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                        />
-                        <textarea
-                          value={reminderNote}
-                          onChange={e => setReminderNote(e.target.value)}
-                          rows={2}
-                          placeholder="Extra notes (optional)…"
-                          className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-amber-400"
-                        />
-                        <div>
-                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Remind me at</label>
-                          <input
-                            type="datetime-local"
-                            value={reminderDue}
-                            onChange={e => setReminderDue(e.target.value)}
-                            className="px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-400 dark:[color-scheme:dark]"
-                          />
-                          <p className="text-[10px] text-gray-400 mt-1">You'll get a pop-up 10 min before</p>
-                        </div>
-                        <div className="flex items-center gap-2 justify-end">
-                          <button
-                            onClick={() => { setShowReminderForm(false); setReminderTitle(''); setReminderNote(''); setReminderDue('') }}
-                            className="px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={handleSubmitReminder}
-                            disabled={reminderSaving || !reminderTitle.trim() || !reminderDue}
-                            className="px-4 py-1.5 text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white rounded-lg disabled:opacity-50 transition-colors"
-                          >
-                            {reminderSaving ? 'Saving…' : 'Set Reminder'}
-                          </button>
-                        </div>
+                        {/* Success confirmation */}
+                        {reminderSaved && (
+                          <div className="flex items-center gap-2 px-3 py-2.5 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded-xl">
+                            <Check className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" />
+                            <div>
+                              <p className="text-xs font-semibold text-green-700 dark:text-green-400">Reminder set!</p>
+                              <p className="text-[11px] text-green-600/70 dark:text-green-400/70 mt-0.5">You'll be notified 10 min before.</p>
+                            </div>
+                          </div>
+                        )}
+                        {!reminderSaved && (
+                          <>
+                            <input
+                              type="text"
+                              value={reminderTitle}
+                              onChange={e => setReminderTitle(e.target.value)}
+                              placeholder="What do you need to do?"
+                              className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                            />
+                            <textarea
+                              value={reminderNote}
+                              onChange={e => setReminderNote(e.target.value)}
+                              rows={2}
+                              placeholder="Extra notes (optional)…"
+                              className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-amber-400"
+                            />
+                            <div>
+                              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Remind me at</label>
+                              <input
+                                type="datetime-local"
+                                value={reminderDue}
+                                onChange={e => setReminderDue(e.target.value)}
+                                className="px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-400 dark:[color-scheme:dark]"
+                              />
+                              <p className="text-[10px] text-gray-400 mt-1">You'll get a pop-up 10 min before</p>
+                            </div>
+                            <div className="flex items-center gap-2 justify-end">
+                              <button
+                                onClick={() => { setShowReminderForm(false); setReminderTitle(''); setReminderNote(''); setReminderDue('') }}
+                                className="px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={handleSubmitReminder}
+                                disabled={reminderSaving || !reminderTitle.trim() || !reminderDue}
+                                className="px-4 py-1.5 text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white rounded-lg disabled:opacity-50 transition-colors"
+                              >
+                                {reminderSaving ? 'Saving…' : 'Set Reminder'}
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
 
