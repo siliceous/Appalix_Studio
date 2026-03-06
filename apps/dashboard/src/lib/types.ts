@@ -241,6 +241,7 @@ export interface SageContact {
   updated_at:             string
   // joined
   company?:               SageCompany | null
+  deal_value?:            number | null
 }
 
 export interface SagePipeline {
