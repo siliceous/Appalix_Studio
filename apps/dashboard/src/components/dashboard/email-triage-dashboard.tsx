@@ -14,6 +14,7 @@ import { triageCreateLead, triageCreateTicket, triageAddDealNote } from '@/app/a
 import { syncEmails, deleteTriageEmails, reanalyzeEmails, sendEmail, rewriteEmail, markEmailRead } from '@/app/actions/sage-emails'
 import type { SageEmail, SageMeeting } from '@/lib/types'
 import { cn } from '@/lib/utils'
+import { RichTextEditor, type RichTextEditorRef, type EmailAttachment } from '@/components/sage/rich-text-editor'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -283,8 +284,11 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
   const entities  = email.ai_entities
   const drafts    = email.ai_reply_drafts ?? []
 
-  // Lazy init so the textarea and Send button are ready immediately on first render
+  const editorRef = useRef<RichTextEditorRef>(null)
+
+  // Lazy init so the editor and Send button are ready immediately on first render
   const [composeBody,    setComposeBody]    = useState(() => drafts[0]?.body ?? '')
+  const [attachments,    setAttachments]    = useState<EmailAttachment[]>([])
   const [sent,           setSent]           = useState(false)
   const [noteSaved,      setNoteSaved]      = useState(false)
   const [isSendingEmail, setIsSendingEmail] = useState(false)
@@ -300,11 +304,16 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
     setSendSlow(false)
     setNoteSaved(false)
     setSendError(null)
-    setComposeBody(drafts[0]?.body ?? '')
+    setAttachments([])
+    const draft = drafts[0]?.body ?? ''
+    setComposeBody(draft)
+    editorRef.current?.setHtml(draft.replace(/\n/g, '<br>'))
   }, [email.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSendReply() {
-    if (!composeBody.trim()) return
+    const htmlBody = editorRef.current?.getHtml() ?? ''
+    const plainText = editorRef.current?.getPlainText() ?? ''
+    if (!plainText.trim()) return
     setIsSendingEmail(true)
     setSendSlow(false)
     setSendError(null)
@@ -314,7 +323,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
     const result = await sendEmail({
       to:             email.from_address,
       subject:        subjectPrefix + email.subject,
-      body:           composeBody,
+      body:           htmlBody || plainText,
       replyToEmailId: email.id,
     })
     clearTimeout(slowTimer)
@@ -325,7 +334,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
       // Fire-and-forget note logging — don't block the "Reply sent" banner on it
       if (t.matchedDeal?.id) {
         const dealId = t.matchedDeal.id
-        const note   = composeBody.slice(0, 300)
+        const note   = plainText.slice(0, 300)
         triageAddDealNote(dealId, note).then(() => setNoteSaved(true))
       }
     } else {
@@ -334,11 +343,16 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
   }
 
   async function handleRewrite() {
-    if (!composeBody.trim() || isRewriting) return
+    const plainText = editorRef.current?.getPlainText() ?? composeBody
+    if (!plainText.trim() || isRewriting) return
     setIsRewriting(true)
-    const result = await rewriteEmail({ emailId: email.id, body: composeBody, instruction: 'Rewrite this reply to be clear, professional and concise.' })
+    const result = await rewriteEmail({ emailId: email.id, body: plainText, instruction: 'Rewrite this reply to be clear, professional and concise.' })
     setIsRewriting(false)
-    if (result.body) setComposeBody(result.body)
+    if (result.body) {
+      const html = result.body.replace(/\n/g, '<br>')
+      editorRef.current?.setHtml(html)
+      setComposeBody(result.body)
+    }
   }
 
   // Related emails from the same sender (excluding current, newest first)
@@ -594,31 +608,34 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
         {/* Reply draft */}
         {drafts.length > 0 && !sent && (
           <div className="rounded-xl border dark:border-white/8 overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-white/3 border-b dark:border-white/8">
-              <div className="flex items-center gap-2">
-                <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">AI Reply Draft</span>
-              </div>
-              <button
-                onClick={handleRewrite}
-                disabled={isRewriting || !composeBody.trim()}
-                className="flex items-center gap-1 text-[11px] font-medium text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:opacity-40 transition-colors"
-              >
-                {isRewriting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                AI Rewrite
-              </button>
-            </div>
 
-            {/* Editable draft */}
-            <div className="px-4 py-3 bg-white dark:bg-[#232323]">
-              <textarea
-                value={composeBody}
-                onChange={e => setComposeBody(e.target.value)}
-                rows={14}
-                className="w-full text-sm text-gray-800 dark:text-gray-200 leading-relaxed bg-transparent resize-none outline-none"
-              />
-            </div>
+            {/* Rich text editor with Gmail-style toolbar */}
+            <RichTextEditor
+              ref={editorRef}
+              placeholder="Write your reply…"
+              minHeight={220}
+              onChange={html => {
+                const div = document.createElement('div')
+                div.innerHTML = html
+                setComposeBody(div.innerText)
+              }}
+              onAttach={files => setAttachments(prev => [...prev, ...files])}
+            />
+
+            {/* Attachment chips */}
+            {attachments.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 px-4 py-2 border-t dark:border-white/8 bg-gray-50 dark:bg-white/[0.02]">
+                {attachments.map((att, i) => (
+                  <span key={i} className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg bg-gray-100 dark:bg-white/8 border dark:border-white/10 text-gray-600 dark:text-gray-300">
+                    <Mail className="w-3 h-3 text-gray-400 shrink-0" />
+                    <span className="max-w-[140px] truncate">{att.filename}</span>
+                    <button onClick={() => setAttachments(prev => prev.filter((_, j) => j !== i))} className="ml-0.5 text-gray-400 hover:text-red-500 transition-colors">
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
 
             {/* Error */}
             {sendError && (
@@ -627,8 +644,8 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
               </div>
             )}
 
-            {/* Actions — Send + Ignore only */}
-            <div className="px-4 py-2.5 border-t dark:border-white/8 bg-gray-50 dark:bg-white/3 flex items-center justify-between gap-2">
+            {/* Actions footer */}
+            <div className="px-4 py-2.5 border-t dark:border-white/8 bg-gray-50 dark:bg-white/[0.02] flex items-center justify-between gap-2">
               <button
                 onClick={() => { onDismiss(email.id); onClose() }}
                 className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-medium bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 border border-gray-200 dark:border-white/8 transition-colors"
@@ -636,6 +653,14 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
                 <X className="w-3 h-3" /> Ignore
               </button>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRewrite}
+                  disabled={isRewriting || !composeBody.trim()}
+                  className="flex items-center gap-1 text-[11px] font-medium text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:opacity-40 transition-colors"
+                >
+                  {isRewriting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                  AI Rewrite
+                </button>
                 {sendSlow && (
                   <span className="text-[11px] text-amber-500 dark:text-amber-400 animate-pulse">
                     Still sending…
