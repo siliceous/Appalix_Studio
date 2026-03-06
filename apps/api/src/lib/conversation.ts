@@ -90,11 +90,8 @@ export async function appendMessage(params: {
 
   if (error) throw new Error(`Failed to append message: ${error.message}`)
 
-  // Refresh last_activity_at
-  await supabase
-    .from('conversations')
-    .update({ last_activity_at: new Date().toISOString() })
-    .eq('id', conversationId)
+  // Increment message_count atomically and refresh last_activity_at
+  await supabase.rpc('increment_conversation_message_count', { p_id: conversationId })
 
   return data.id
 }
