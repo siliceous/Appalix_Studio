@@ -16,7 +16,7 @@ interface EmailAttachment { filename: string; contentType: string; dataBase64: s
 
 interface SyncBody      { workspace_id: string; limit?: number }
 interface ReanalyzeBody { workspace_id: string; batch_size?: number; email_ids?: string[] }
-interface SendBody      { workspace_id: string; to: string; subject: string; body: string; reply_to_email_id?: string; attachments?: EmailAttachment[] }
+interface SendBody      { workspace_id: string; to: string; cc?: string; bcc?: string; subject: string; body: string; reply_to_email_id?: string; attachments?: EmailAttachment[] }
 interface RewriteBody   { workspace_id: string; body: string; instruction?: string }
 
 function authCheck(req: { headers: Record<string, string | string[] | undefined> }): boolean {
@@ -71,13 +71,13 @@ export async function sageEmailRoutes(fastify: FastifyInstance) {
   fastify.post<{ Body: SendBody }>('/send', async (request, reply) => {
     if (!authCheck(request)) return reply.status(401).send({ error: 'Unauthorised' })
 
-    const { workspace_id, to, subject, body, reply_to_email_id, attachments } = request.body
+    const { workspace_id, to, cc, bcc, subject, body, reply_to_email_id, attachments } = request.body
     if (!workspace_id || !to || !subject || !body) {
       return reply.status(400).send({ error: 'workspace_id, to, subject, body are required' })
     }
 
     try {
-      await sendEmailSMTP({ workspaceId: workspace_id, to, subject, body, replyToEmailId: reply_to_email_id, attachments })
+      await sendEmailSMTP({ workspaceId: workspace_id, to, cc, bcc, subject, body, replyToEmailId: reply_to_email_id, attachments })
       return reply.send({ ok: true })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Send failed'

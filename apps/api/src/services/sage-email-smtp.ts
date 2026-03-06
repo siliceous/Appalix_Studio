@@ -19,6 +19,8 @@ interface EmailAttachment {
 interface SendEmailOptions {
   workspaceId:     string
   to:              string
+  cc?:             string
+  bcc?:            string
   subject:         string
   body:            string
   replyToEmailId?: string  // sage_emails.id of the email being replied to
@@ -48,7 +50,7 @@ function getSmtpCreds(provider: string, config: Record<string, string>): SmtpCre
 }
 
 export async function sendEmailSMTP(opts: SendEmailOptions): Promise<void> {
-  const { workspaceId, to, subject, body, replyToEmailId, attachments } = opts
+  const { workspaceId, to, cc, bcc, subject, body, replyToEmailId, attachments } = opts
 
   // Load connected email integration
   const { data: integrations } = await supabase
@@ -85,6 +87,8 @@ export async function sendEmailSMTP(opts: SendEmailOptions): Promise<void> {
   const info = await transporter.sendMail({
     from:        `"Sage CRM" <${creds.user}>`,
     to,
+    ...(cc  ? { cc }  : {}),
+    ...(bcc ? { bcc } : {}),
     subject,
     text:        body,
     attachments: attachments?.map(a => ({

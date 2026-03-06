@@ -168,6 +168,8 @@ export async function markEmailTrashed(emailId: string, trashed: boolean): Promi
  */
 export async function sendEmail(opts: {
   to:              string
+  cc?:             string
+  bcc?:            string
   subject:         string
   body:            string
   replyToEmailId?: string
@@ -190,6 +192,8 @@ export async function sendEmail(opts: {
         body:    JSON.stringify({
           workspace_id:      workspaceId,
           to:                opts.to,
+          cc:                opts.cc  || undefined,
+          bcc:               opts.bcc || undefined,
           subject:           opts.subject,
           body:              opts.body,
           reply_to_email_id: opts.replyToEmailId,

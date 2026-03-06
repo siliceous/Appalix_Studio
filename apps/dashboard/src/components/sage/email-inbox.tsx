@@ -146,6 +146,10 @@ export function EmailInbox({
   const [showMoveMenu, setShowMoveMenu] = useState(false)
 
   const [composeTo,   setComposeTo]   = useState('')
+  const [composeCc,   setComposeCc]   = useState('')
+  const [composeBcc,  setComposeBcc]  = useState('')
+  const [showCc,      setShowCc]      = useState(false)
+  const [showBcc,     setShowBcc]     = useState(false)
   const [composeSubj, setComposeSubj] = useState('')
   const [composeBody, setComposeBody] = useState('')
   const [activeDraft, setActiveDraft] = useState(0)
@@ -434,7 +438,11 @@ export function EmailInbox({
     setSendResult(null)
     startSendTransition(async () => {
       const result = await sendEmail({
-        to: composeTo, subject: composeSubj, body: composeBody,
+        to: composeTo,
+        cc:  composeCc  || undefined,
+        bcc: composeBcc || undefined,
+        subject: composeSubj,
+        body: composeBody,
         replyToEmailId: (composeMode === 'reply' || composeMode === 'forward') ? selected?.id : undefined,
         attachments: attachments.length > 0 ? attachments : undefined,
       })
@@ -443,6 +451,10 @@ export function EmailInbox({
       } else {
         setSendResult('Sent.')
         setComposeBody('')
+        setComposeCc('')
+        setComposeBcc('')
+        setShowCc(false)
+        setShowBcc(false)
         setAttachments([])
         const sent: SageEmail = {
           id: crypto.randomUUID(), workspace_id: selected?.workspace_id ?? '',
@@ -515,7 +527,41 @@ export function EmailInbox({
               placeholder="recipient@email.com"
               className="flex-1 text-sm bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none"
             />
+            <div className="flex items-center gap-1 shrink-0">
+              {!showCc && (
+                <button onClick={() => setShowCc(true)} className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 px-1.5 py-0.5 rounded transition-colors">Cc</button>
+              )}
+              {!showBcc && (
+                <button onClick={() => setShowBcc(true)} className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 px-1.5 py-0.5 rounded transition-colors">Bcc</button>
+              )}
+            </div>
           </div>
+          {/* CC */}
+          {showCc && (
+            <div className="flex items-center gap-2 border-b dark:border-white/8 pb-2.5">
+              <span className="text-[11px] font-semibold text-gray-400 w-7 shrink-0">Cc</span>
+              <input
+                value={composeCc}
+                onChange={e => setComposeCc(e.target.value)}
+                placeholder="cc@email.com"
+                className="flex-1 text-sm bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none"
+              />
+              <button onClick={() => { setShowCc(false); setComposeCc('') }} className="text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 shrink-0"><X className="w-3.5 h-3.5" /></button>
+            </div>
+          )}
+          {/* BCC */}
+          {showBcc && (
+            <div className="flex items-center gap-2 border-b dark:border-white/8 pb-2.5">
+              <span className="text-[11px] font-semibold text-gray-400 w-7 shrink-0">Bcc</span>
+              <input
+                value={composeBcc}
+                onChange={e => setComposeBcc(e.target.value)}
+                placeholder="bcc@email.com"
+                className="flex-1 text-sm bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none"
+              />
+              <button onClick={() => { setShowBcc(false); setComposeBcc('') }} className="text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 shrink-0"><X className="w-3.5 h-3.5" /></button>
+            </div>
+          )}
           {/* Subject */}
           <div className="flex items-center gap-2 border-b dark:border-white/8 pb-2.5">
             <span className="text-[11px] font-semibold text-gray-400 w-7 shrink-0">Sub</span>
@@ -625,6 +671,19 @@ export function EmailInbox({
                 {isGenProp ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
               </button>
             ))}
+
+            {/* Schedule Meeting */}
+            {composeTo && (
+              <a
+                href={buildCalendarLink(emailProvider, composeTo, '', composeSubj)}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={emailProvider === 'microsoft' ? 'Schedule in Outlook Calendar' : 'Schedule in Google Calendar'}
+                className="p-2 rounded-lg text-emerald-500 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors"
+              >
+                <Calendar className="w-4 h-4" />
+              </a>
+            )}
 
             {/* AI Rewrite */}
             <button onClick={() => setShowRewrite(v => !v)}
