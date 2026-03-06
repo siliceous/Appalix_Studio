@@ -1533,7 +1533,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
         >
           <div
             ref={detailRef}
-            className={`w-full h-[92vh] flex flex-col transition-all duration-200 ${modalSize === 'sm' ? 'max-w-2xl' : modalSize === 'lg' ? 'max-w-[95vw]' : 'max-w-4xl'}`}
+            className={`w-full h-[92vh] flex flex-col transition-all duration-200 ${modalSize === 'sm' ? 'max-w-3xl' : modalSize === 'lg' ? 'max-w-[95vw]' : 'max-w-6xl'}`}
             onClick={e => e.stopPropagation()}
           >
             <DetailCard t={selectedTriageEmail} {...detailCardProps} />
