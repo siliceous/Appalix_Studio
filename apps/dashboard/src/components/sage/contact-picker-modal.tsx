@@ -4,9 +4,11 @@ import { useState } from 'react'
 import { X, Search, User } from 'lucide-react'
 import type { SageContact } from '@/lib/types'
 
+type PickableContact = Pick<SageContact, 'id' | 'name' | 'company_name'>
+
 interface ContactPickerModalProps {
-  contacts:   Pick<SageContact, 'id' | 'name'>[]
-  onSelect:   (contactId: string) => void
+  contacts:   PickableContact[]
+  onSelect:   (contact: PickableContact) => void
   onClose:    () => void
 }
 
@@ -58,7 +60,7 @@ export function ContactPickerModal({ contacts, onSelect, onClose }: ContactPicke
           ) : filtered.map(contact => (
             <button
               key={contact.id}
-              onClick={() => { onSelect(contact.id); onClose() }}
+              onClick={() => { onSelect(contact); onClose() }}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-brand-50 dark:hover:bg-[#61c2ad]/8 transition-colors text-left"
             >
               <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-[#61c2ad]/15 flex items-center justify-center shrink-0">
@@ -66,7 +68,12 @@ export function ContactPickerModal({ contacts, onSelect, onClose }: ContactPicke
                   {contact.name.charAt(0).toUpperCase()}
                 </span>
               </div>
-              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{contact.name}</span>
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{contact.name}</p>
+                {contact.company_name && (
+                  <p className="text-xs text-gray-400">{contact.company_name}</p>
+                )}
+              </div>
             </button>
           ))}
         </div>

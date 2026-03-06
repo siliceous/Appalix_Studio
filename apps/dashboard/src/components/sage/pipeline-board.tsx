@@ -9,6 +9,7 @@ import { ManageStagesModal } from './manage-stages-modal'
 import { DealSlideOver } from './deal-slide-over'
 import { ContactPickerModal } from './contact-picker-modal'
 import { ContactEditModal } from './contact-edit-modal'
+import { ContactModal } from './contact-modal'
 import type { SageDeal, SagePipelineStage, SageContact, SagePipeline } from '@/lib/types'
 
 type DealWithContact = SageDeal & {
@@ -19,7 +20,7 @@ interface PipelineBoardProps {
   pipelineId:        string
   stages:            SagePipelineStage[]
   deals:             DealWithContact[]
-  contacts:          Pick<SageContact, 'id' | 'name'>[]
+  contacts:          Pick<SageContact, 'id' | 'name' | 'company_name'>[]
   allPipelines:      Pick<SagePipeline, 'id' | 'name'>[]
   ownerName:         string
   dealLastActivity:  Record<string, string>  // dealId → ISO timestamp of last activity
@@ -58,9 +59,12 @@ export function PipelineBoard({
   const [showDealModal,      setShowDealModal]      = useState(false)
   const [showManageStages,   setShowManageStages]   = useState(false)
   const [showContactPicker,  setShowContactPicker]  = useState(false)
+  const [showNewContact,     setShowNewContact]     = useState(false)
   const [editingContactId,   setEditingContactId]   = useState<string | null>(null)
   const [defaultStage,       setDefaultStage]       = useState<string | undefined>()
   const [defaultContactId,   setDefaultContactId]   = useState<string | undefined>()
+  const [defaultTitle,       setDefaultTitle]       = useState<string | undefined>()
+  const [defaultCompany,     setDefaultCompany]     = useState<string | undefined>()
   const [selectedDealId,     setSelectedDealId]     = useState<string | null>(null)
 
   // Header controls
@@ -146,11 +150,6 @@ export function PipelineBoard({
     setDragOverStage(null)
     setDeals(prev => prev.map(d => d.id === dealId ? { ...d, stage_id: stageId } : d))
     moveDeal(dealId, stageId).catch(() => setDeals(initialDeals))
-  }
-
-  function openAddDeal(stageId?: string) {
-    setDefaultStage(stageId)
-    setShowDealModal(true)
   }
 
   function toggleFilterStatus(s: FilterStatus) {
@@ -285,14 +284,14 @@ export function PipelineBoard({
         {/* Add a Contact + Add a Lead */}
         <div className="flex items-center gap-2 ml-auto">
           <button
-            onClick={() => setShowContactPicker(true)}
+            onClick={() => setShowNewContact(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-brand-400 dark:border-[#61c2ad]/50 text-brand-700 dark:text-[#61c2ad] hover:bg-brand-50 dark:hover:bg-[#61c2ad]/10 transition-colors"
           >
             <UserPlus className="w-3.5 h-3.5" />
             Add a Contact
           </button>
           <button
-            onClick={() => openAddDeal()}
+            onClick={() => setShowContactPicker(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -429,10 +428,14 @@ export function PipelineBoard({
           ownerName={ownerName}
           defaultStageId={defaultStage}
           defaultContactId={defaultContactId}
+          defaultTitle={defaultTitle}
+          defaultCompany={defaultCompany}
           onClose={() => {
             setShowDealModal(false)
             setDefaultStage(undefined)
             setDefaultContactId(undefined)
+            setDefaultTitle(undefined)
+            setDefaultCompany(undefined)
             router.refresh()
           }}
         />
@@ -441,11 +444,21 @@ export function PipelineBoard({
       {showContactPicker && (
         <ContactPickerModal
           contacts={contacts}
-          onSelect={contactId => {
-            setDefaultContactId(contactId)
+          onSelect={contact => {
+            setDefaultContactId(contact.id)
+            setDefaultTitle(contact.name)
+            setDefaultCompany(contact.company_name ?? undefined)
+            setShowContactPicker(false)
             setShowDealModal(true)
           }}
           onClose={() => setShowContactPicker(false)}
+        />
+      )}
+
+      {showNewContact && (
+        <ContactModal
+          onClose={() => setShowNewContact(false)}
+          onSaved={() => { setShowNewContact(false); router.refresh() }}
         />
       )}
 
