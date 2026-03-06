@@ -5,7 +5,7 @@ import {
   X, Trophy, XCircle, FileText, Phone, Users, CheckSquare,
   Clock, Check, ChevronRight, ExternalLink, Building2, Tag,
   DollarSign, AlertCircle, Mail, Globe, MapPin,
-  User, Lock, ChevronDown, Pencil, Bell, BellRing,
+  User, Lock, ChevronDown, Pencil, Bell,
 } from 'lucide-react'
 import { getDealDetail, addDealActivity, completeDealTask, addDealReminder, getDealReminders } from '@/app/actions/sage'
 import { WonLostModal } from './won-lost-modal'
@@ -116,14 +116,16 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
   const [isPending,        startTransition]     = useTransition()
   const slideRef = useRef<HTMLDivElement>(null)
 
-  // Reminder state
-  const [reminders,        setReminders]        = useState<DealReminder[]>([])
-  const [showReminderForm, setShowReminderForm]  = useState(false)
-  const [reminderTitle,    setReminderTitle]    = useState('')
-  const [reminderNote,     setReminderNote]     = useState('')
-  const [reminderDue,      setReminderDue]      = useState('')
-  const [reminderSaving,   setReminderSaving]   = useState(false)
-  const [reminderSaved,    setReminderSaved]    = useState(false)
+  // Set Activity state (future-dated planned activity + notification)
+  const [reminders,          setReminders]          = useState<DealReminder[]>([])
+  const [showReminderForm,   setShowReminderForm]   = useState(false)
+  const [reminderTitle,      setReminderTitle]      = useState('')
+  const [reminderNote,       setReminderNote]       = useState('')
+  const [reminderDue,        setReminderDue]        = useState('')
+  const [reminderType,       setReminderType]       = useState<ActivityType>('call')
+  const [reminderSaving,     setReminderSaving]     = useState(false)
+  const [reminderSaved,      setReminderSaved]      = useState(false)
+  const [showReminderTypeMenu, setShowReminderTypeMenu] = useState(false)
 
   useEffect(() => {
     if (!dealId) { setDeal(null); setActivities([]); setReminders([]); return }
@@ -185,24 +187,25 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
   async function handleSubmitReminder() {
     if (!dealId || !reminderTitle.trim() || !reminderDue) return
     setReminderSaving(true)
-    // Request browser notification permission on first reminder
+    // Request browser notification permission on first use
     if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
       await Notification.requestPermission()
     }
-    const res = await addDealReminder(dealId, reminderTitle, reminderNote || null, new Date(reminderDue).toISOString())
-    if (!res.error) {
-      const updated = await getDealReminders(dealId)
-      setReminders(updated)
-      setReminderTitle('')
-      setReminderNote('')
-      setReminderDue('')
-      setReminderSaved(true)
-      // Show success state for 2.5 s then close the form
-      setTimeout(() => {
-        setReminderSaved(false)
-        setShowReminderForm(false)
-      }, 2500)
-    }
+    const dueIso = new Date(reminderDue).toISOString()
+    // Save as a deal activity (shows in timeline) + reminder (fires notification)
+    await Promise.all([
+      addDealActivity(dealId, reminderType, reminderTitle, reminderNote || undefined, dueIso),
+      addDealReminder(dealId, reminderTitle, reminderNote || null, dueIso),
+    ])
+    const [detail, rems] = await Promise.all([getDealDetail(dealId), getDealReminders(dealId)])
+    setActivities(detail.activities)
+    setReminders(rems)
+    setReminderTitle('')
+    setReminderNote('')
+    setReminderDue('')
+    setReminderType('call')
+    setReminderSaved(true)
+    setTimeout(() => { setReminderSaved(false); setShowReminderForm(false) }, 2500)
     setReminderSaving(false)
   }
 
@@ -632,8 +635,24 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
 
                   {/* Log Activity section */}
                   <div className="rounded-xl border dark:border-white/8 overflow-hidden">
-                    {/* Log Activity / Create Note / Set Reminder sub-tabs */}
+                    {/* Log Activity | Set Activity | Create Note */}
                     <div className="flex border-b dark:border-white/8">
+                      <button
+                        onClick={() => { setShowReminderForm(true); setShowAddForm(false) }}
+                        className={`flex-1 px-3 py-2.5 text-xs font-semibold transition-colors flex items-center justify-center gap-1 ${
+                          showReminderForm
+                            ? 'text-amber-600 dark:text-amber-400 border-b-2 border-amber-500 dark:border-amber-400'
+                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                        }`}
+                      >
+                        <Bell className="w-3 h-3" />
+                        Set Activity
+                        {reminders.length > 0 && (
+                          <span className="ml-0.5 text-[10px] bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1 py-0.5 rounded-full leading-none">
+                            {reminders.length}
+                          </span>
+                        )}
+                      </button>
                       <button
                         onClick={() => { setShowAddForm(true); setShowReminderForm(false); setAddType('call') }}
                         className={`flex-1 px-3 py-2.5 text-xs font-semibold transition-colors ${
@@ -653,22 +672,6 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                         }`}
                       >
                         Create Note
-                      </button>
-                      <button
-                        onClick={() => { setShowReminderForm(true); setShowAddForm(false) }}
-                        className={`flex-1 px-3 py-2.5 text-xs font-semibold transition-colors flex items-center justify-center gap-1 ${
-                          showReminderForm
-                            ? 'text-amber-600 dark:text-amber-400 border-b-2 border-amber-500 dark:border-amber-400'
-                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                        }`}
-                      >
-                        <Bell className="w-3 h-3" />
-                        Reminder
-                        {reminders.length > 0 && (
-                          <span className="ml-0.5 text-[10px] bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1 py-0.5 rounded-full leading-none">
-                            {reminders.length}
-                          </span>
-                        )}
                       </button>
                     </div>
 
@@ -754,45 +757,77 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                       </div>
                     )}
 
-                    {/* Reminder form */}
+                    {/* Set Activity form */}
                     {showReminderForm && (
                       <div className="p-3 bg-white dark:bg-[#252525] space-y-2.5">
-                        {/* Success confirmation */}
-                        {reminderSaved && (
+                        {reminderSaved ? (
                           <div className="flex items-center gap-2 px-3 py-2.5 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded-xl">
                             <Check className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" />
                             <div>
-                              <p className="text-xs font-semibold text-green-700 dark:text-green-400">Reminder set!</p>
-                              <p className="text-[11px] text-green-600/70 dark:text-green-400/70 mt-0.5">You'll be notified 10 min before.</p>
+                              <p className="text-xs font-semibold text-green-700 dark:text-green-400">Activity scheduled!</p>
+                              <p className="text-[11px] text-green-600/70 dark:text-green-400/70 mt-0.5">Added to timeline · you'll be notified 10 min before.</p>
                             </div>
                           </div>
-                        )}
-                        {!reminderSaved && (
+                        ) : (
                           <>
+                            {/* Activity type selector */}
+                            <div className="relative">
+                              <button
+                                onClick={() => setShowReminderTypeMenu(v => !v)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
+                              >
+                                {ACTIVITY_LABELS[reminderType]}
+                                <ChevronDown className="w-3 h-3 text-gray-400" />
+                              </button>
+                              {showReminderTypeMenu && (
+                                <div className="absolute top-full left-0 mt-1 w-40 bg-white dark:bg-[#2a2a2a] border dark:border-white/10 rounded-xl shadow-lg z-10 py-1">
+                                  {(['call', 'meeting', 'task'] as ActivityType[]).map(t => (
+                                    <button
+                                      key={t}
+                                      onClick={() => { setReminderType(t); setShowReminderTypeMenu(false) }}
+                                      className={`w-full text-left px-3 py-2 text-xs transition-colors ${
+                                        reminderType === t
+                                          ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10'
+                                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
+                                      }`}
+                                    >
+                                      {ACTIVITY_LABELS[t]}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Subject */}
                             <input
                               type="text"
                               value={reminderTitle}
                               onChange={e => setReminderTitle(e.target.value)}
-                              placeholder="What do you need to do?"
+                              placeholder="Subject (e.g. Follow up call with John)"
                               className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
                             />
+
+                            {/* Body */}
                             <textarea
                               value={reminderNote}
                               onChange={e => setReminderNote(e.target.value)}
                               rows={2}
-                              placeholder="Extra notes (optional)…"
+                              placeholder="Details / agenda (optional)…"
                               className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-amber-400"
                             />
+
+                            {/* Scheduled time */}
                             <div>
-                              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Remind me at</label>
+                              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Scheduled for</label>
                               <input
                                 type="datetime-local"
                                 value={reminderDue}
                                 onChange={e => setReminderDue(e.target.value)}
                                 className="px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-400 dark:[color-scheme:dark]"
                               />
-                              <p className="text-[10px] text-gray-400 mt-1">You'll get a pop-up 10 min before</p>
+                              <p className="text-[10px] text-gray-400 mt-1">Appears in timeline · pop-up reminder 10 min before</p>
                             </div>
+
                             <div className="flex items-center gap-2 justify-end">
                               <button
                                 onClick={() => { setShowReminderForm(false); setReminderTitle(''); setReminderNote(''); setReminderDue('') }}
@@ -805,36 +840,11 @@ export function DealSlideOver({ dealId, onClose }: DealSlideOverProps) {
                                 disabled={reminderSaving || !reminderTitle.trim() || !reminderDue}
                                 className="px-4 py-1.5 text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white rounded-lg disabled:opacity-50 transition-colors"
                               >
-                                {reminderSaving ? 'Saving…' : 'Set Reminder'}
+                                {reminderSaving ? 'Scheduling…' : 'Schedule Activity'}
                               </button>
                             </div>
                           </>
                         )}
-                      </div>
-                    )}
-
-                    {/* Upcoming reminders list */}
-                    {showReminderForm && reminders.length > 0 && (
-                      <div className="border-t dark:border-white/8 divide-y dark:divide-white/8">
-                        {reminders.map(r => {
-                          const due    = new Date(r.due_at)
-                          const msLeft = due.getTime() - Date.now()
-                          const minLeft = Math.round(msLeft / 60_000)
-                          const timeStr = due.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
-                          const urgent  = minLeft <= 60
-                          return (
-                            <div key={r.id} className="flex items-start gap-2.5 px-3.5 py-3">
-                              <BellRing className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${urgent ? 'text-amber-500' : 'text-gray-400'}`} />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{r.title}</p>
-                                {r.note && <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">{r.note}</p>}
-                                <p className={`text-[10px] mt-0.5 ${urgent ? 'text-amber-500 font-medium' : 'text-gray-400'}`}>
-                                  {timeStr}{minLeft > 0 && minLeft <= 1440 ? ` · in ${minLeft < 60 ? `${minLeft}m` : `${Math.round(minLeft / 60)}h`}` : ''}
-                                </p>
-                              </div>
-                            </div>
-                          )
-                        })}
                       </div>
                     )}
 
