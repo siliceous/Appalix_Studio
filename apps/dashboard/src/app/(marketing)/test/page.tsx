@@ -1,7 +1,5 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { MarketingNavbar } from '@/components/marketing/navbar'
-import { MarketingFooter } from '@/components/marketing/footer'
 import { FadeUp, ScrollReveal } from '@/components/marketing/animate'
 
 export const metadata: Metadata = {
@@ -125,11 +123,10 @@ const FAQS = [
 
 export default function TestLandingPage() {
   return (
-    <div className="bg-[#1c1c1c] min-h-screen text-white">
-      <MarketingNavbar />
+    <div className="pt-24">
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
-      <section className="relative pt-36 pb-24 px-6 overflow-hidden">
+      <section className="relative py-20 px-6 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-[#61c2ad]/15 rounded-full blur-[140px] pointer-events-none" />
 
         <div className="relative max-w-4xl mx-auto text-center">
@@ -195,7 +192,10 @@ export default function TestLandingPage() {
         <div className="max-w-5xl mx-auto">
           <ScrollReveal className="text-center mb-12">
             <p className="text-xs text-[#61c2ad] uppercase tracking-widest font-semibold mb-3">Why leads go cold</p>
-            <h2 className="text-2xl sm:text-3xl font-bold">Your leads are scattered. Your pipeline is manual.<br className="hidden sm:block" /> Things fall through the gaps.</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold">
+              Your leads are scattered. Your pipeline is manual.<br className="hidden sm:block" />
+              Things fall through the gaps.
+            </h2>
           </ScrollReveal>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {PROBLEMS.map((p, i) => (
@@ -211,7 +211,7 @@ export default function TestLandingPage() {
         </div>
       </section>
 
-      {/* ── How it works ─────────────────────────────────────────────── */}
+      {/* ── Flow diagram ─────────────────────────────────────────────── */}
       <section className="py-24 px-6 border-t border-white/5">
         <div className="max-w-5xl mx-auto">
           <ScrollReveal className="text-center mb-14">
@@ -224,7 +224,88 @@ export default function TestLandingPage() {
             </p>
           </ScrollReveal>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {/* Flow diagram — sources → engine → outputs */}
+          <ScrollReveal delay={0.1}>
+            <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-8">
+
+              {/* Row 1 — Source nodes */}
+              <div className="flex flex-wrap justify-center gap-3 mb-6">
+                {[
+                  { icon: '📋', label: 'Web Forms' },
+                  { icon: '📧', label: 'Email Inbox' },
+                  { icon: '💬', label: 'Chatbots' },
+                  { icon: '📣', label: 'Google Ads' },
+                  { icon: '📘', label: 'Meta Ads' },
+                ].map(src => (
+                  <div key={src.label} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-300 font-medium">
+                    <span>{src.icon}</span>
+                    {src.label}
+                  </div>
+                ))}
+              </div>
+
+              {/* Arrows down */}
+              <div className="flex justify-center mb-1">
+                <svg width="320" height="32" viewBox="0 0 320 32" fill="none" className="opacity-30">
+                  {[40, 100, 160, 220, 280].map(x => (
+                    <g key={x}>
+                      <line x1={x} y1="0" x2={x} y2="20" stroke="#61c2ad" strokeWidth="1.5" strokeDasharray="3 2"/>
+                      <line x1={x} y1="20" x2="160" y2="28" stroke="#61c2ad" strokeWidth="1" strokeDasharray="3 2"/>
+                    </g>
+                  ))}
+                  <polygon points="156,25 164,25 160,32" fill="#61c2ad" opacity="0.6"/>
+                </svg>
+              </div>
+
+              {/* Engine box */}
+              <div className="flex justify-center mb-1">
+                <div className="relative px-8 py-5 rounded-2xl border border-[#61c2ad]/40 bg-[#61c2ad]/[0.08] text-center min-w-[280px]">
+                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#61c2ad] text-black font-bold uppercase tracking-widest">AI Engine</span>
+                  </div>
+                  <p className="text-[#61c2ad] font-bold text-base mb-1">Appalix AI</p>
+                  <div className="flex flex-wrap justify-center gap-2 mt-2">
+                    {['Reads context', 'Scores lead', 'Tags intent', 'Suggests action'].map(t => (
+                      <span key={t} className="text-[11px] px-2.5 py-1 rounded-full bg-white/5 border border-[#61c2ad]/20 text-gray-300">{t}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrows down to outputs */}
+              <div className="flex justify-center mb-1">
+                <svg width="320" height="32" viewBox="0 0 320 32" fill="none" className="opacity-30">
+                  <line x1="160" y1="0" x2="160" y2="6" stroke="#61c2ad" strokeWidth="1.5" strokeDasharray="3 2"/>
+                  {[60, 130, 190, 260].map(x => (
+                    <g key={x}>
+                      <line x1="160" y1="6" x2={x} y2="20" stroke="#61c2ad" strokeWidth="1" strokeDasharray="3 2"/>
+                      <line x1={x} y1="20" x2={x} y2="28" stroke="#61c2ad" strokeWidth="1.5" strokeDasharray="3 2"/>
+                      <polygon points={`${x-4},25 ${x+4},25 ${x},32`} fill="#61c2ad" opacity="0.6"/>
+                    </g>
+                  ))}
+                </svg>
+              </div>
+
+              {/* Row 3 — Output nodes */}
+              <div className="flex flex-wrap justify-center gap-3">
+                {[
+                  { icon: '📌', label: 'Pipeline', color: 'border-[#61c2ad]/30 bg-[#61c2ad]/[0.06]' },
+                  { icon: '🔔', label: 'Team alert', color: 'border-[#61c2ad]/30 bg-[#61c2ad]/[0.06]' },
+                  { icon: '🔗', label: 'CRM sync', color: 'border-[#61c2ad]/30 bg-[#61c2ad]/[0.06]' },
+                  { icon: '✉️', label: 'Follow-up draft', color: 'border-[#61c2ad]/30 bg-[#61c2ad]/[0.06]' },
+                ].map(out => (
+                  <div key={out.label} className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm text-[#61c2ad] font-medium ${out.color}`}>
+                    <span>{out.icon}</span>
+                    {out.label}
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          </ScrollReveal>
+
+          {/* 3-step cards below */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-8">
             {STEPS.map((s, i) => (
               <ScrollReveal key={s.step} delay={i * 0.12}>
                 <div className="relative p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-[#61c2ad]/30 transition-colors group h-full">
@@ -273,10 +354,9 @@ export default function TestLandingPage() {
       <section className="py-24 px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
 
-          {/* Left — mock pipeline + inbox */}
+          {/* Left — mock lead inbox */}
           <ScrollReveal>
             <div className="rounded-2xl bg-[#232323] border border-white/10 overflow-hidden shadow-2xl">
-              {/* Header */}
               <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/10 bg-[#1e1e1e]">
                 <div className="w-7 h-7 rounded-lg bg-[#61c2ad]/20 border border-[#61c2ad]/30 flex items-center justify-center">
                   <span className="text-[#61c2ad] text-xs font-bold">✦</span>
@@ -291,13 +371,12 @@ export default function TestLandingPage() {
                 </div>
               </div>
 
-              {/* Lead cards */}
               <div className="p-4 space-y-3">
                 {[
                   { source: 'Meta Lead Ad', name: 'Sarah Chen', score: 92, tag: 'High intent', color: 'text-green-400', dot: 'bg-green-400' },
                   { source: 'Gmail inbox', name: 'James Okafor', score: 74, tag: 'Qualified', color: 'text-[#61c2ad]', dot: 'bg-[#61c2ad]' },
                   { source: 'Website chatbot', name: 'Priya Mehta', score: 61, tag: 'Follow up', color: 'text-yellow-400', dot: 'bg-yellow-400' },
-                ].map((lead) => (
+                ].map(lead => (
                   <div key={lead.name} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:border-white/10 transition-colors">
                     <div className={`w-2 h-2 rounded-full shrink-0 ${lead.dot}`} />
                     <div className="flex-1 min-w-0">
@@ -312,7 +391,6 @@ export default function TestLandingPage() {
                 ))}
               </div>
 
-              {/* Sage message */}
               <div className="px-4 pb-4">
                 <div className="flex gap-2.5 items-start bg-[#61c2ad]/[0.08] border border-[#61c2ad]/20 rounded-xl p-3">
                   <span className="text-[#61c2ad] text-xs font-bold shrink-0 mt-0.5">✦</span>
@@ -333,7 +411,8 @@ export default function TestLandingPage() {
               Your AI that never misses a lead — and always knows what to do next
             </h2>
             <p className="text-gray-400 leading-relaxed">
-              Sage is Appalix&apos;s built-in AI assistant. It reads your emails, scores your form leads, tracks your pipeline, and tells your team exactly what to do next — all from inside your dashboard.
+              Sage is Appalix&apos;s built-in AI assistant. It reads your emails, scores your form leads,
+              tracks your pipeline, and tells your team exactly what to do next — all from inside your dashboard.
             </p>
             <ul className="space-y-3">
               {[
@@ -469,7 +548,7 @@ export default function TestLandingPage() {
       <section className="py-24 px-6 border-t border-white/5">
         <ScrollReveal>
           <div className="relative max-w-4xl mx-auto text-center">
-            <div className="absolute inset-0 bg-[#61c2ad]/8 rounded-3xl blur-3xl pointer-events-none" />
+            <div className="absolute inset-0 bg-[#61c2ad]/[0.05] rounded-3xl blur-3xl pointer-events-none" />
             <div className="relative p-12 rounded-3xl border border-[#61c2ad]/20 bg-white/[0.02]">
               <h2 className="text-3xl sm:text-4xl font-bold mb-4">
                 Every lead deserves a fast follow-up.<br className="hidden sm:block" />
@@ -500,7 +579,6 @@ export default function TestLandingPage() {
         </ScrollReveal>
       </section>
 
-      <MarketingFooter />
     </div>
   )
 }
