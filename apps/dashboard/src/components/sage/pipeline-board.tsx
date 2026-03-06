@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { Plus, GripVertical, Search, SlidersHorizontal, ArrowUpDown, Settings2, UserPlus, Pencil } from 'lucide-react'
 import { moveDeal } from '@/app/actions/sage'
 import { DealModal } from './deal-modal'
@@ -49,6 +50,7 @@ export function PipelineBoard({
   ownerName,
   dealLastActivity,
 }: PipelineBoardProps) {
+  const router = useRouter()
   const [deals,              setDeals]              = useState<DealWithContact[]>(initialDeals)
   const [stages,             setStages]             = useState<SagePipelineStage[]>(initialStages)
   const [dragId,             setDragId]             = useState<string | null>(null)
@@ -431,6 +433,7 @@ export function PipelineBoard({
             setShowDealModal(false)
             setDefaultStage(undefined)
             setDefaultContactId(undefined)
+            router.refresh()
           }}
         />
       )}
