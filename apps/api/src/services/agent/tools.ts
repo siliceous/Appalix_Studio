@@ -13,6 +13,7 @@ import {
   sageUpdateDeal,
   sageLogNote,
   sageSetReminder,
+  sageCreateLead,
   sageSearchContacts,
   sageSearchEmails,
   sageDraftReply,
@@ -410,6 +411,23 @@ export const BUILT_IN_TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name:        'sage_create_lead',
+    description: 'Create a new contact and a deal on the pipeline board simultaneously. Use whenever the user (or an email/bot/form context) provides enough info to create a lead — name is required, email/phone/company are optional. If the contact already exists (matched by email or name) it will be linked rather than duplicated.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        name:       { type: 'string',  description: 'Full name of the contact / lead.' },
+        email:      { type: 'string',  description: 'Email address (optional but recommended for deduplication).' },
+        phone:      { type: 'string',  description: 'Phone number (optional).' },
+        company:    { type: 'string',  description: 'Company or organisation name (optional).' },
+        deal_title: { type: 'string',  description: 'Title for the deal card on the pipeline board. Defaults to the contact name if not provided.' },
+        notes:      { type: 'string',  description: 'Any additional notes or context about this lead.' },
+        source:     { type: 'string',  description: 'Where this lead came from: chat | email | form | manual. Defaults to "chat".' },
+      },
+      required: ['name'],
+    },
+  },
+  {
     name:        'sage_check_feature_status',
     description: 'Check whether a specific feature or integration is configured for this workspace. Call this (1) at the start of a guided setup to know which steps are already done, and (2) after each step to verify the user completed it before moving on. Features: gmail, microsoft, stripe, slack, whatsapp, facebook, telegram, google-chat, zapier, hubspot, salesforce, monday, intercom, zoho, freshdesk, zendesk, has_pipelines, has_contacts, has_deals, has_bots, has_sources, has_widget.',
     input_schema: {
@@ -477,6 +495,12 @@ export interface ToolInput {
   // sage guide tools
   topic?:           string
   feature?:         string
+  // sage_create_lead
+  name?:            string
+  phone?:           string
+  company?:         string
+  notes?:           string
+  source?:          string
 }
 
 export async function executeTool(
@@ -610,6 +634,19 @@ export async function executeTool(
     case 'sage_draft_reply': {
       if (!input.email_id) return 'Error: email_id is required.'
       return sageDraftReply(ctx.workspaceId, input.email_id)
+    }
+
+    case 'sage_create_lead': {
+      if (!input.name) return 'Error: name is required to create a lead.'
+      return sageCreateLead(ctx.workspaceId, {
+        name:       input.name,
+        email:      input.email      ?? null,
+        phone:      input.phone      ?? null,
+        company:    input.company    ?? null,
+        dealTitle:  input.deal_title ?? null,
+        notes:      input.notes      ?? null,
+        source:     input.source     ?? 'chat',
+      })
     }
 
     case 'sage_get_guide': {

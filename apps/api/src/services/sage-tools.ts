@@ -490,3 +490,127 @@ export async function sageSearchContacts(
     })
     .join('\n')
 }
+
+// ---------------------------------------------------------------------------
+// 8. sage_create_lead  (contact + deal, from AI context)
+// ---------------------------------------------------------------------------
+
+export async function sageCreateLead(
+  workspaceId: string,
+  opts: {
+    name:        string
+    email?:      string | null
+    phone?:      string | null
+    company?:    string | null
+    dealTitle?:  string | null
+    notes?:      string | null
+    source?:     string | null
+  },
+): Promise<string> {
+  const { name, email, phone, company, dealTitle, notes, source } = opts
+
+  // 1. Upsert contact — match by email if available, else by name, else create
+  let contactId: string | null = null
+
+  if (email) {
+    const { data: byEmail } = await supabase
+      .from('sage_contacts')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .ilike('email', email)
+      .limit(1)
+      .maybeSingle()
+    if (byEmail) contactId = (byEmail as { id: string }).id
+  }
+
+  if (!contactId) {
+    const { data: byName } = await supabase
+      .from('sage_contacts')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .ilike('name', name)
+      .limit(1)
+      .maybeSingle()
+    if (byName) contactId = (byName as { id: string }).id
+  }
+
+  if (!contactId) {
+    const { data: created, error: cErr } = await supabase
+      .from('sage_contacts')
+      .insert({
+        workspace_id:  workspaceId,
+        name,
+        email:         email  ?? null,
+        phone:         phone  ?? null,
+        company_name:  company ?? null,
+        notes:         notes  ?? null,
+        source:        source ?? 'chat',
+        contact_type:  'potential_customer',
+        visibility:    'everyone',
+        tags:          [],
+      })
+      .select('id')
+      .single()
+    if (cErr || !created) return `Failed to create contact: ${cErr?.message ?? 'unknown error'}`
+    contactId = (created as { id: string }).id
+  }
+
+  // 2. Find first pipeline + first stage
+  const { data: pipeline } = await supabase
+    .from('sage_pipelines')
+    .select('id')
+    .eq('workspace_id', workspaceId)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  if (!pipeline) {
+    return `Contact "${name}" created (id: ${contactId}), but no pipeline found — create a pipeline first so the deal can be placed on the board.`
+  }
+  const pipelineId = (pipeline as { id: string }).id
+
+  const { data: stage } = await supabase
+    .from('sage_pipeline_stages')
+    .select('id')
+    .eq('pipeline_id', pipelineId)
+    .order('position', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+  const stageId = stage ? (stage as { id: string }).id : null
+
+  // 3. Create deal
+  const title = dealTitle?.trim() || name
+  const { data: deal, error: dErr } = await supabase
+    .from('sage_deals')
+    .insert({
+      workspace_id: workspaceId,
+      pipeline_id:  pipelineId,
+      stage_id:     stageId,
+      contact_id:   contactId,
+      title,
+      source:       source ?? 'chat',
+      status:       'open',
+      currency:     'USD',
+      visibility:   'everyone',
+      description:  notes ?? null,
+      company_name: company ?? null,
+      tags:         [],
+    })
+    .select('id')
+    .single()
+
+  if (dErr || !deal) return `Contact created but failed to create deal: ${dErr?.message ?? 'unknown error'}`
+  const dealId = (deal as { id: string }).id
+
+  // 4. Log activity
+  await supabase.from('sage_activity_log').insert({
+    workspace_id: workspaceId,
+    entity_type:  'deal',
+    entity_id:    dealId,
+    event_type:   'deal_created',
+    payload:      { title, source: source ?? 'chat', contact_id: contactId },
+    user_id:      null,
+  })
+
+  return `Created contact "${name}" (id: ${contactId}) and deal "${title}" (id: ${dealId}) — it is now on the pipeline board in the first stage.`
+}
