@@ -243,6 +243,7 @@ export default async function EditIntegrationPage({
             twilioToken={       (cfg.handoff_twilio_token      as string) ?? ''}
             twilioFrom={        (cfg.handoff_twilio_from       as string) ?? ''}
             twilioTo={          (cfg.handoff_twilio_to         as string) ?? ''}
+            whatsappNumber={    (cfg.handoff_whatsapp_number   as string) ?? ''}
           />
         </div>
 

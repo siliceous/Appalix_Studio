@@ -10,6 +10,7 @@ import {
   detectHandoffIntent,
   sendHandoffNotification,
   isHandoffConfigured,
+  buildWaLink,
   HANDOFF_SYSTEM_INJECTION,
   type HandoffChannelConfig,
 } from './handoff.js'
@@ -86,6 +87,7 @@ export async function processMessage(
     twilio_token:      integrationConfig.handoff_twilio_token as string | undefined,
     twilio_from:       integrationConfig.handoff_twilio_from as string | undefined,
     twilio_to:         integrationConfig.handoff_twilio_to as string | undefined,
+    whatsapp_number:   integrationConfig.handoff_whatsapp_number as string | undefined,
   }
 
   // ---------------------------------------------------------------
@@ -214,8 +216,12 @@ export async function processMessage(
     ? `\n\nCURRENT TIME: The user's local time is ${new Date(msg.clientTime).toLocaleString('en-AU', { timeZone: msg.clientTimezone ?? undefined, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}. Use this when answering questions about the current time, date, or scheduling.`
     : ''
 
+  const waLinkInjection = (handoffTriggered && handoffCfg.channel === 'whatsapp_link' && handoffCfg.whatsapp_number)
+    ? `\n\n6. Include this clickable link in your reply so the visitor can start a WhatsApp chat immediately: [Chat on WhatsApp →](${buildWaLink(handoffCfg.whatsapp_number, 'Hi, I need some help')})`
+    : ''
+
   const basePrompt = handoffTriggered
-    ? `${bot.system_prompt ?? ''}\n\n${HANDOFF_SYSTEM_INJECTION}${languageInjection}${timeInjection}`.trim()
+    ? `${bot.system_prompt ?? ''}\n\n${HANDOFF_SYSTEM_INJECTION}${waLinkInjection}${languageInjection}${timeInjection}`.trim()
     : `${bot.system_prompt ?? ''}\n\n${sensitivityInjection}${languageInjection}${timeInjection}`.trim()
 
   const systemPrompt = buildSystemPrompt(basePrompt, ragContext)

@@ -6,8 +6,9 @@
  *  • slack      — Incoming Webhook (rich block message)
  *  • discord    — Server Webhook (rich embed)
  *  • telegram   — Bot API (sendMessage with HTML)
- *  • whatsapp   — Twilio WhatsApp API
- *  • generic    — Plain JSON POST (Zapier, Make, Teams, Messenger via bridge, etc.)
+ *  • whatsapp      — Twilio WhatsApp API
+ *  • whatsapp_link — wa.me click-to-chat link injected into bot reply (no API needed)
+ *  • generic       — Plain JSON POST (Zapier, Make, Teams, Messenger via bridge, etc.)
  */
 
 // ---------------------------------------------------------------
@@ -63,7 +64,7 @@ The visitor has asked to speak with a human agent. You MUST:
 // Channel types
 // ---------------------------------------------------------------
 
-export type HandoffChannel = 'slack' | 'discord' | 'telegram' | 'whatsapp' | 'generic'
+export type HandoffChannel = 'slack' | 'discord' | 'telegram' | 'whatsapp' | 'whatsapp_link' | 'generic'
 
 export interface HandoffChannelConfig {
   channel:           HandoffChannel
@@ -81,6 +82,18 @@ export interface HandoffChannelConfig {
   twilio_from?:      string
   /** Your agent/team WhatsApp number e.g. whatsapp:+15551234567 */
   twilio_to?:        string
+  /** Phone number for wa.me link e.g. 61412345678 (digits only, no +) */
+  whatsapp_number?:  string
+}
+
+/**
+ * Build a wa.me click-to-chat URL.
+ * Returns the URL string (no network request — the bot includes it in its reply).
+ */
+export function buildWaLink(number: string, prefillText?: string): string {
+  const clean = number.replace(/\D/g, '')
+  const encoded = prefillText ? `?text=${encodeURIComponent(prefillText)}` : ''
+  return `https://wa.me/${clean}${encoded}`
 }
 
 // ---------------------------------------------------------------
@@ -239,6 +252,11 @@ export async function sendHandoffNotification(
           await postWhatsApp(cfg.twilio_sid, cfg.twilio_token, cfg.twilio_from, cfg.twilio_to, payload)
         break
 
+      case 'whatsapp_link':
+        // No outbound API call — the wa.me link is injected into the bot reply via HANDOFF_SYSTEM_INJECTION
+        console.log(`[handoff] whatsapp_link: wa.me link will be included in bot reply for conversation=${payload.conversationId}`)
+        break
+
       case 'generic':
       default:
         if (cfg.webhook_url) await postGeneric(cfg.webhook_url, payload)
@@ -262,6 +280,8 @@ export function isHandoffConfigured(cfg: HandoffChannelConfig): boolean {
       return !!(cfg.telegram_token && cfg.telegram_chat_id)
     case 'whatsapp':
       return !!(cfg.twilio_sid && cfg.twilio_token && cfg.twilio_from && cfg.twilio_to)
+    case 'whatsapp_link':
+      return !!cfg.whatsapp_number
     default:
       return false
   }

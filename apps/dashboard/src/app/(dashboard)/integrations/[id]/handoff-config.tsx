@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-type HandoffChannel = 'slack' | 'discord' | 'telegram' | 'whatsapp' | 'generic'
+type HandoffChannel = 'slack' | 'discord' | 'telegram' | 'whatsapp' | 'whatsapp_link' | 'generic'
 
 const CHANNELS: {
   value:       HandoffChannel
@@ -29,9 +29,15 @@ const CHANNELS: {
     placeholder: '',
   },
   {
+    value:       'whatsapp_link',
+    label:       'WhatsApp (click-to-chat)',
+    desc:        'The bot sends the visitor a wa.me link so they can start a WhatsApp chat with you directly. No API keys needed — just your phone number.',
+    placeholder: '',
+  },
+  {
     value:       'whatsapp',
     label:       'WhatsApp (Twilio)',
-    desc:        "Send a WhatsApp message to your team's number via Twilio.",
+    desc:        "Send a WhatsApp message to your team's number via Twilio API. Requires a Twilio account.",
     placeholder: '',
   },
   {
@@ -43,18 +49,19 @@ const CHANNELS: {
 ]
 
 interface Props {
-  channel:         string
-  webhookUrl:      string
-  telegramToken:   string
-  telegramChatId:  string
-  twilioSid:       string
-  twilioToken:     string
-  twilioFrom:      string
-  twilioTo:        string
+  channel:          string
+  webhookUrl:       string
+  telegramToken:    string
+  telegramChatId:   string
+  twilioSid:        string
+  twilioToken:      string
+  twilioFrom:       string
+  twilioTo:         string
+  whatsappNumber:   string
 }
 
 export function HandoffConfig(props: Props) {
-  const [ch, setCh] = useState<HandoffChannel>((props.channel || 'generic') as HandoffChannel)
+  const [ch, setCh] = useState<HandoffChannel>((props.channel || 'whatsapp_link') as HandoffChannel)
   const info = CHANNELS.find((c) => c.value === ch)!
 
   const inputCls =
@@ -145,6 +152,28 @@ export function HandoffConfig(props: Props) {
             </p>
           </div>
         </>
+      )}
+
+      {/* WhatsApp click-to-chat (wa.me) */}
+      {ch === 'whatsapp_link' && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            Your WhatsApp number
+          </label>
+          <input
+            type="tel"
+            name="handoff_whatsapp_number"
+            defaultValue={props.whatsappNumber}
+            placeholder="61412345678"
+            className={monoInputCls}
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Enter your number in international format <strong>without</strong> the + sign (e.g. <span className="font-mono bg-gray-100 dark:bg-white/10 px-1 rounded">61412345678</span> for Australia).
+            When a visitor asks to speak with a human, the bot will include a{' '}
+            <span className="font-mono bg-gray-100 dark:bg-white/10 px-1 rounded">Chat on WhatsApp →</span> link in its reply.
+            No Twilio account or API keys needed.
+          </p>
+        </div>
       )}
 
       {/* WhatsApp via Twilio */}

@@ -189,6 +189,7 @@ export async function updateIntegration(integrationId: string, formData: FormDat
   const handoffTwilioToken     = (formData.get('handoff_twilio_token')      as string | null)?.trim()
   const handoffTwilioFrom      = (formData.get('handoff_twilio_from')       as string | null)?.trim()
   const handoffTwilioTo        = (formData.get('handoff_twilio_to')         as string | null)?.trim()
+  const handoffWhatsappNumber  = (formData.get('handoff_whatsapp_number')   as string | null)?.trim()?.replace(/\D/g, '') || null
   const telegramBotTokenUpdate = (formData.get('telegram_bot_token_update') as string | null)?.trim()
 
   // Merge all config fields into existing JSONB config
@@ -239,8 +240,9 @@ export async function updateIntegration(integrationId: string, formData: FormDat
   setOrDel('handoff_telegram_chat_id', handoffTelegramChatId)
   setOrDel('handoff_twilio_sid',       handoffTwilioSid)
   setOrDel('handoff_twilio_token',     handoffTwilioToken)
-  setOrDel('handoff_twilio_from',      handoffTwilioFrom)
-  setOrDel('handoff_twilio_to',        handoffTwilioTo)
+  setOrDel('handoff_twilio_from',       handoffTwilioFrom)
+  setOrDel('handoff_twilio_to',         handoffTwilioTo)
+  setOrDel('handoff_whatsapp_number',   handoffWhatsappNumber)
 
   // Telegram bot token update (only if explicitly submitted)
   if (telegramBotTokenUpdate !== null && telegramBotTokenUpdate !== undefined) {
