@@ -7,7 +7,7 @@ import {
   DollarSign, AlertCircle, Mail, Globe, MapPin,
   User, Lock, ChevronDown, Pencil, Bell,
 } from 'lucide-react'
-import { getDealDetail, addDealActivity, completeDealTask, addDealReminder, getDealReminders, updateDeal, deleteDeal } from '@/app/actions/sage'
+import { getDealDetail, addDealActivity, completeDealTask, addDealReminder, getDealReminders, updateDeal, deleteDeal, moveDeal } from '@/app/actions/sage'
 import { WonLostModal } from './won-lost-modal'
 import { ContactEditModal } from './contact-edit-modal'
 import type { SageDealActivity } from '@/lib/types'
@@ -20,7 +20,8 @@ interface DealSlideOverProps {
   dealId:          string | null
   onClose:         () => void
   openEditForm?:   boolean
-  onDealUpdated?:  (dealId: string, changes: { title: string; value: number | null; currency: string; close_date: string | null; priority: string | null }) => void
+  stages?:         { id: string; name: string }[]
+  onDealUpdated?:  (dealId: string, changes: { title: string; value: number | null; currency: string; close_date: string | null; priority: string | null; stage_id?: string }) => void
 }
 
 const ACTIVITY_ICONS: Record<ActivityType, React.ElementType> = {
@@ -102,7 +103,7 @@ const STATUS_BADGE: Record<string, string> = {
   lost: 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400',
 }
 
-export function DealSlideOver({ dealId, onClose, openEditForm, onDealUpdated }: DealSlideOverProps) {
+export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpdated }: DealSlideOverProps) {
   const [deal,          setDeal]          = useState<Record<string, unknown> & { contact: Record<string, unknown> | null } | null>(null)
   const [activities,    setActivities]    = useState<SageDealActivity[]>([])
   const [loading,       setLoading]       = useState(false)
@@ -382,7 +383,11 @@ export function DealSlideOver({ dealId, onClose, openEditForm, onDealUpdated }: 
                   if (!dealId) return
                   setEditSaving(true)
                   const fd = new FormData(e.currentTarget)
+                  const newStageId = (fd.get('stage_id') as string) || null
                   await updateDeal(dealId, fd)
+                  if (newStageId && newStageId !== (deal?.stage_id as string)) {
+                    await moveDeal(dealId, newStageId)
+                  }
                   const res = await getDealDetail(dealId)
                   setDeal(res.deal)
                   setEditSaving(false)
@@ -395,6 +400,7 @@ export function DealSlideOver({ dealId, onClose, openEditForm, onDealUpdated }: 
                       currency:   (fd.get('currency') as string) || 'USD',
                       close_date: (fd.get('close_date') as string) || null,
                       priority:   (fd.get('priority') as string) || null,
+                      stage_id:   newStageId ?? undefined,
                     })
                   }
                 }}
@@ -430,6 +436,14 @@ export function DealSlideOver({ dealId, onClose, openEditForm, onDealUpdated }: 
                     </select>
                   </div>
                 </div>
+                {stages && stages.length > 0 && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Stage</label>
+                    <select name="stage_id" defaultValue={(deal?.stage_id as string) ?? ''} className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]">
+                      {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Description</label>
                   <textarea name="description" rows={2} defaultValue={dealDesc ?? ''} placeholder="Add notes…" className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad] resize-none" />
@@ -524,7 +538,24 @@ export function DealSlideOver({ dealId, onClose, openEditForm, onDealUpdated }: 
                       {stage && (
                         <div className="p-2.5 bg-gray-50 dark:bg-white/[0.03] rounded-xl border dark:border-white/8">
                           <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-0.5">Stage</p>
-                          <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{stage.name as string}</p>
+                          {stages && stages.length > 0 ? (
+                            <select
+                              value={(deal?.stage_id as string) ?? ''}
+                              onChange={async e => {
+                                if (!dealId) return
+                                const newStageId = e.target.value
+                                await moveDeal(dealId, newStageId)
+                                const res = await getDealDetail(dealId)
+                                setDeal(res.deal)
+                                if (onDealUpdated) onDealUpdated(dealId, { title: dealTitle, value: dealValue, currency: dealCurrency, close_date: dealCloseDate, priority: dealPriority, stage_id: newStageId })
+                              }}
+                              className="w-full text-xs font-medium text-gray-900 dark:text-gray-100 bg-transparent border-none p-0 focus:outline-none cursor-pointer"
+                            >
+                              {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                            </select>
+                          ) : (
+                            <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{stage.name as string}</p>
+                          )}
                         </div>
                       )}
                       {dealCloseDate && (

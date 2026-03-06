@@ -328,7 +328,6 @@ export function PipelineBoard({
               </thead>
               <tbody>
                 {visibleDeals.map(deal => {
-                  const stageName = stages.find(s => s.id === deal.stage_id)?.name ?? '—'
                   const dot = activityDot(deal.id, deal.created_at, dealLastActivity)
                   return (
                     <tr
@@ -345,8 +344,18 @@ export function PipelineBoard({
                       <td className="py-3 pr-4 text-xs text-gray-500 dark:text-gray-400 truncate max-w-[140px]">
                         {deal.contact?.name ?? deal.company_name ?? '—'}
                       </td>
-                      <td className="py-3 pr-4">
-                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#61c2ad]/10 text-[#3d9585] dark:text-[#61c2ad] font-medium whitespace-nowrap">{stageName}</span>
+                      <td className="py-3 pr-4" onClick={e => e.stopPropagation()}>
+                        <select
+                          value={deal.stage_id ?? ''}
+                          onChange={async e => {
+                            const newStageId = e.target.value
+                            setDeals(prev => prev.map(d => d.id === deal.id ? { ...d, stage_id: newStageId } : d))
+                            moveDeal(deal.id, newStageId).catch(() => setDeals(initialDeals))
+                          }}
+                          className="text-[11px] px-2 py-0.5 rounded-full bg-[#61c2ad]/10 text-[#3d9585] dark:text-[#61c2ad] font-medium cursor-pointer border-none focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/40 hover:bg-[#61c2ad]/20 transition-colors appearance-none"
+                        >
+                          {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                        </select>
                       </td>
                       <td className="py-3 pr-4 text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
                         {deal.value ? formatCurrency(deal.value, deal.currency) : <span className="text-gray-300 dark:text-gray-600 font-normal">—</span>}
@@ -532,11 +541,12 @@ export function PipelineBoard({
 
       <DealSlideOver
         dealId={selectedDealId}
+        stages={stages}
         openEditForm={openEditOnDealId === selectedDealId && openEditOnDealId !== null}
         onClose={() => { setSelectedDealId(null); setOpenEditOnDealId(null) }}
         onDealUpdated={(id, changes) => {
           setDeals(prev => prev.map(d => d.id === id
-            ? { ...d, ...changes, priority: changes.priority as 'low' | 'medium' | 'high' | null }
+            ? { ...d, ...changes, priority: changes.priority as 'low' | 'medium' | 'high' | null, stage_id: changes.stage_id ?? d.stage_id }
             : d
           ))
         }}
