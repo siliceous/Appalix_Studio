@@ -10,6 +10,8 @@ import {
   Phone, Globe, Tag, Brain,
   Calendar, MapPin, Users, Clock,
   Maximize2, Minimize2,
+  Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify,
+  List, ListOrdered, Link2, Paperclip, Palette,
 } from 'lucide-react'
 import { triageCreateLead, triageCreateTicket, triageAddDealNote } from '@/app/actions/sage-triage'
 import { syncEmails, deleteTriageEmails, reanalyzeEmails, sendEmail, rewriteEmail, markEmailRead } from '@/app/actions/sage-emails'
@@ -584,26 +586,26 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
         {drafts.length > 0 && !sent && (
           <div className="rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden shadow-sm">
 
-            {/* To: header */}
-            <div className="flex items-center gap-2 px-5 py-3 bg-gray-50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/8">
+            {/* To / Subject headers — compressed */}
+            <div className="flex items-center gap-2 px-5 py-1.5 bg-gray-50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/8">
               <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide w-5 shrink-0">To</span>
               <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
                 {email.from_name ? `${email.from_name} <${email.from_address}>` : email.from_address}
               </span>
             </div>
-            {/* Subject: */}
-            <div className="flex items-center gap-2 px-5 py-2.5 bg-gray-50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/8">
+            <div className="flex items-center gap-2 px-5 py-1.5 bg-gray-50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/8">
               <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide w-5 shrink-0">Re</span>
               <span className="text-sm text-gray-600 dark:text-gray-400 truncate">
                 {/^Re:/i.test(email.subject) ? email.subject : `Re: ${email.subject}`}
               </span>
             </div>
 
-            {/* Rich text editor */}
+            {/* Rich text editor — toolbar hidden, rendered in footer instead */}
             <RichTextEditor
               ref={editorRef}
               placeholder="Write your reply…"
-              minHeight={180}
+              hideToolbar
+              minHeight={260}
               onChange={html => {
                 const div = document.createElement('div')
                 div.innerHTML = html
@@ -634,19 +636,47 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
               </div>
             )}
 
-            {/* Actions footer */}
-            <div className="px-5 py-3.5 border-t border-gray-100 dark:border-white/8 bg-gray-50 dark:bg-white/[0.02] flex items-center justify-between gap-3">
+            {/* Actions footer — Ignore | toolbar | AI Rewrite + Send */}
+            <div className="px-3 py-2 border-t border-gray-100 dark:border-white/8 bg-gray-50 dark:bg-white/[0.02] flex items-center gap-2">
+              {/* Ignore */}
               <button
                 onClick={() => { onDismiss(email.id); onClose() }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium bg-white dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 transition-colors shrink-0"
               >
                 <X className="w-3 h-3" /> Ignore
               </button>
-              <div className="flex items-center gap-3">
+
+              {/* ── Inline toolbar ── */}
+              {(() => {
+                const tb = 'flex items-center justify-center w-6 h-6 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors shrink-0'
+                const sep = <span className="w-px h-4 bg-gray-200 dark:bg-white/10 mx-0.5 shrink-0" />
+                return (
+                  <div className="flex items-center flex-1 overflow-x-auto gap-0 min-w-0">
+                    <button type="button" title="Bold" className={tb} onMouseDown={e => { e.preventDefault(); editorRef.current?.exec('bold') }}><Bold className="w-3.5 h-3.5" strokeWidth={2.5} /></button>
+                    <button type="button" title="Italic" className={tb} onMouseDown={e => { e.preventDefault(); editorRef.current?.exec('italic') }}><Italic className="w-3.5 h-3.5" /></button>
+                    <button type="button" title="Underline" className={tb} onMouseDown={e => { e.preventDefault(); editorRef.current?.exec('underline') }}><Underline className="w-3.5 h-3.5" /></button>
+                    {sep}
+                    <button type="button" title="Font color" className={tb} onMouseDown={e => e.preventDefault()} onClick={() => editorRef.current?.triggerColorPicker()}><Palette className="w-3.5 h-3.5" /></button>
+                    {sep}
+                    <button type="button" title="Align left" className={tb} onMouseDown={e => { e.preventDefault(); editorRef.current?.exec('justifyLeft') }}><AlignLeft className="w-3.5 h-3.5" /></button>
+                    <button type="button" title="Align center" className={tb} onMouseDown={e => { e.preventDefault(); editorRef.current?.exec('justifyCenter') }}><AlignCenter className="w-3.5 h-3.5" /></button>
+                    <button type="button" title="Align right" className={tb} onMouseDown={e => { e.preventDefault(); editorRef.current?.exec('justifyRight') }}><AlignRight className="w-3.5 h-3.5" /></button>
+                    <button type="button" title="Justify" className={tb} onMouseDown={e => { e.preventDefault(); editorRef.current?.exec('justifyFull') }}><AlignJustify className="w-3.5 h-3.5" /></button>
+                    {sep}
+                    <button type="button" title="Bullet list" className={tb} onMouseDown={e => { e.preventDefault(); editorRef.current?.exec('insertUnorderedList') }}><List className="w-3.5 h-3.5" /></button>
+                    <button type="button" title="Numbered list" className={tb} onMouseDown={e => { e.preventDefault(); editorRef.current?.exec('insertOrderedList') }}><ListOrdered className="w-3.5 h-3.5" /></button>
+                    {sep}
+                    <button type="button" title="Insert link" className={tb} onMouseDown={e => { e.preventDefault(); editorRef.current?.insertLink() }}><Link2 className="w-3.5 h-3.5" /></button>
+                    <button type="button" title="Attach file" className={tb} onMouseDown={e => e.preventDefault()} onClick={() => editorRef.current?.openFilePicker()}><Paperclip className="w-3.5 h-3.5" /></button>
+                  </div>
+                )
+              })()}
+
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={handleRewrite}
                   disabled={isRewriting || !composeBody.trim()}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 disabled:opacity-40 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 disabled:opacity-40 transition-colors"
                 >
                   {isRewriting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                   AI Rewrite

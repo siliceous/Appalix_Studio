@@ -10,10 +10,14 @@ import { cn } from '@/lib/utils'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface RichTextEditorRef {
-  getHtml:       () => string
-  getPlainText:  () => string
-  setHtml:       (html: string) => void
-  focus:         () => void
+  getHtml:            () => string
+  getPlainText:       () => string
+  setHtml:            (html: string) => void
+  focus:              () => void
+  exec:               (command: string, value?: string) => void
+  insertLink:         () => void
+  openFilePicker:     () => void
+  triggerColorPicker: () => void
 }
 
 export interface EmailAttachment {
@@ -37,6 +41,7 @@ interface Props {
   onAttach?:        (files: EmailAttachment[]) => void
   placeholder?:     string
   minHeight?:       number
+  hideToolbar?:     boolean
   stripeConnected?: boolean
   onStripeInvoice?: () => Promise<{ invoices?: StripeInvoice[]; error?: string }>
   onAttachInvoice?: (invoiceId: string) => Promise<{ attachment?: EmailAttachment; error?: string }>
@@ -164,7 +169,7 @@ function StripePickerPanel({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export const RichTextEditor = forwardRef<RichTextEditorRef, Props>(
-  function RichTextEditor({ onChange, onAttach, placeholder, minHeight = 220, stripeConnected, onStripeInvoice, onAttachInvoice }, ref) {
+  function RichTextEditor({ onChange, onAttach, placeholder, minHeight = 220, hideToolbar, stripeConnected, onStripeInvoice, onAttachInvoice }, ref) {
     const editorRef    = useRef<HTMLDivElement>(null)
     const colorInputRef = useRef<HTMLInputElement>(null)
     const fileInputRef  = useRef<HTMLInputElement>(null)
@@ -185,7 +190,11 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, Props>(
           onChange?.(html)
         }
       },
-      focus: () => editorRef.current?.focus(),
+      focus:              () => editorRef.current?.focus(),
+      exec:               (command: string, value?: string) => { editorRef.current?.focus(); document.execCommand(command, false, value); onChange?.(editorRef.current?.innerHTML ?? '') },
+      insertLink:         () => insertLink(),
+      openFilePicker:     () => fileInputRef.current?.click(),
+      triggerColorPicker: () => colorInputRef.current?.click(),
     }))
 
     const exec = useCallback((command: string, value?: string) => {
@@ -269,7 +278,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, Props>(
     return (
       <div>
         {/* ── Toolbar ── */}
-        <div className="flex items-center gap-0 px-2 py-1.5 bg-gray-50 dark:bg-white/[0.03] border-b dark:border-white/8 flex-wrap gap-y-1">
+        {!hideToolbar && <div className="flex items-center gap-0 px-2 py-1.5 bg-gray-50 dark:bg-white/[0.03] border-b dark:border-white/8 flex-wrap gap-y-1">
 
           {/* Font family */}
           <select
@@ -451,7 +460,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, Props>(
               />
             )}
           </div>
-        </div>
+        </div>}
 
         {/* ── Editor area ── */}
         <div
