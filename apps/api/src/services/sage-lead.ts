@@ -109,7 +109,30 @@ export async function createSageLeadFromChat({
       contactId = (newContact as ContactRow).id
     }
 
-    // 2. Find the first pipeline + first stage for this workspace
+    // 2. Check if this contact already has any open deal
+    const { data: existingDeal } = await supabase
+      .from('sage_deals')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .eq('contact_id', contactId)
+      .eq('status', 'open')
+      .limit(1)
+      .maybeSingle()
+
+    if (existingDeal) {
+      // Update the existing deal — link this conversation so activity is tracked
+      const dealId = (existingDeal as { id: string }).id
+      await supabase
+        .from('sage_deals')
+        .update({ source_conversation_id: conversationId })
+        .eq('id', dealId)
+        .is('source_conversation_id', null)   // only overwrite if not already linked
+
+      console.log(`[sage-lead] Updated existing deal ${dealId} for contact ${contactId}`)
+      return
+    }
+
+    // 3. No open deal — find first pipeline + stage and create one
     const { data: pipeline } = await supabase
       .from('sage_pipelines')
       .select('id')
@@ -118,10 +141,8 @@ export async function createSageLeadFromChat({
       .limit(1)
       .maybeSingle()
 
-    if (!pipeline) {
-      // No pipeline yet — skip deal creation silently
-      return
-    }
+    if (!pipeline) return  // No pipeline yet — skip silently
+
     const pipelineId = (pipeline as { id: string }).id
 
     const { data: stage } = await supabase
@@ -134,7 +155,7 @@ export async function createSageLeadFromChat({
 
     const stageId = stage ? (stage as { id: string }).id : null
 
-    // 3. Check if a deal already exists — from this conversation OR for this contact (open chat deal)
+    // Guard: don't create a duplicate if this exact conversation already made a deal
     const { data: existingByConv } = await supabase
       .from('sage_deals')
       .select('id')
@@ -143,19 +164,7 @@ export async function createSageLeadFromChat({
       .limit(1)
       .maybeSingle()
 
-    if (existingByConv) return   // already created for this session
-
-    const { data: existingByContact } = await supabase
-      .from('sage_deals')
-      .select('id')
-      .eq('workspace_id', workspaceId)
-      .eq('contact_id', contactId)
-      .eq('source', 'chat')
-      .eq('status', 'open')
-      .limit(1)
-      .maybeSingle()
-
-    if (existingByContact) return   // contact already has an open chat lead
+    if (existingByConv) return
 
     // 4. Create the deal
     const { data: deal, error: dealError } = await supabase
