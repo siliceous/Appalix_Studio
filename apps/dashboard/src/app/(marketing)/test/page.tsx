@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { FadeUp, ScrollReveal } from '@/components/marketing/animate'
+import { LeadFlowDiagram, QualificationLoop } from '@/components/marketing/lead-flow-diagram'
 
 export const metadata: Metadata = {
   title: 'Appalix — AI Lead Capture & Pipeline Management from Every Channel',
@@ -224,84 +225,9 @@ export default function TestLandingPage() {
             </p>
           </ScrollReveal>
 
-          {/* Flow diagram — sources → engine → outputs */}
+          {/* Animated flow diagram */}
           <ScrollReveal delay={0.1}>
-            <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-8">
-
-              {/* Row 1 — Source nodes */}
-              <div className="flex flex-wrap justify-center gap-3 mb-6">
-                {[
-                  { icon: '📋', label: 'Web Forms' },
-                  { icon: '📧', label: 'Email Inbox' },
-                  { icon: '💬', label: 'Chatbots' },
-                  { icon: '📣', label: 'Google Ads' },
-                  { icon: '📘', label: 'Meta Ads' },
-                ].map(src => (
-                  <div key={src.label} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-300 font-medium">
-                    <span>{src.icon}</span>
-                    {src.label}
-                  </div>
-                ))}
-              </div>
-
-              {/* Arrows down */}
-              <div className="flex justify-center mb-1">
-                <svg width="320" height="32" viewBox="0 0 320 32" fill="none" className="opacity-30">
-                  {[40, 100, 160, 220, 280].map(x => (
-                    <g key={x}>
-                      <line x1={x} y1="0" x2={x} y2="20" stroke="#61c2ad" strokeWidth="1.5" strokeDasharray="3 2"/>
-                      <line x1={x} y1="20" x2="160" y2="28" stroke="#61c2ad" strokeWidth="1" strokeDasharray="3 2"/>
-                    </g>
-                  ))}
-                  <polygon points="156,25 164,25 160,32" fill="#61c2ad" opacity="0.6"/>
-                </svg>
-              </div>
-
-              {/* Engine box */}
-              <div className="flex justify-center mb-1">
-                <div className="relative px-8 py-5 rounded-2xl border border-[#61c2ad]/40 bg-[#61c2ad]/[0.08] text-center min-w-[280px]">
-                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#61c2ad] text-black font-bold uppercase tracking-widest">AI Engine</span>
-                  </div>
-                  <p className="text-[#61c2ad] font-bold text-base mb-1">Appalix AI</p>
-                  <div className="flex flex-wrap justify-center gap-2 mt-2">
-                    {['Reads context', 'Scores lead', 'Tags intent', 'Suggests action'].map(t => (
-                      <span key={t} className="text-[11px] px-2.5 py-1 rounded-full bg-white/5 border border-[#61c2ad]/20 text-gray-300">{t}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Arrows down to outputs */}
-              <div className="flex justify-center mb-1">
-                <svg width="320" height="32" viewBox="0 0 320 32" fill="none" className="opacity-30">
-                  <line x1="160" y1="0" x2="160" y2="6" stroke="#61c2ad" strokeWidth="1.5" strokeDasharray="3 2"/>
-                  {[60, 130, 190, 260].map(x => (
-                    <g key={x}>
-                      <line x1="160" y1="6" x2={x} y2="20" stroke="#61c2ad" strokeWidth="1" strokeDasharray="3 2"/>
-                      <line x1={x} y1="20" x2={x} y2="28" stroke="#61c2ad" strokeWidth="1.5" strokeDasharray="3 2"/>
-                      <polygon points={`${x-4},25 ${x+4},25 ${x},32`} fill="#61c2ad" opacity="0.6"/>
-                    </g>
-                  ))}
-                </svg>
-              </div>
-
-              {/* Row 3 — Output nodes */}
-              <div className="flex flex-wrap justify-center gap-3">
-                {[
-                  { icon: '📌', label: 'Pipeline', color: 'border-[#61c2ad]/30 bg-[#61c2ad]/[0.06]' },
-                  { icon: '🔔', label: 'Team alert', color: 'border-[#61c2ad]/30 bg-[#61c2ad]/[0.06]' },
-                  { icon: '🔗', label: 'CRM sync', color: 'border-[#61c2ad]/30 bg-[#61c2ad]/[0.06]' },
-                  { icon: '✉️', label: 'Follow-up draft', color: 'border-[#61c2ad]/30 bg-[#61c2ad]/[0.06]' },
-                ].map(out => (
-                  <div key={out.label} className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm text-[#61c2ad] font-medium ${out.color}`}>
-                    <span>{out.icon}</span>
-                    {out.label}
-                  </div>
-                ))}
-              </div>
-
-            </div>
+            <LeadFlowDiagram />
           </ScrollReveal>
 
           {/* 3-step cards below */}
@@ -347,6 +273,22 @@ export default function TestLandingPage() {
               </ScrollReveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── Qualification loop ───────────────────────────────────────── */}
+      <section className="py-24 px-6 border-t border-white/5">
+        <div className="max-w-5xl mx-auto">
+          <ScrollReveal className="text-center mb-14">
+            <p className="text-xs text-[#61c2ad] uppercase tracking-widest font-semibold mb-3">AI qualification process</p>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">How every lead gets scored and acted on</h2>
+            <p className="text-gray-400 max-w-xl mx-auto text-sm leading-relaxed">
+              The moment a lead arrives from any channel, Appalix AI runs it through a continuous qualification loop — so your team only deals with leads that are ready.
+            </p>
+          </ScrollReveal>
+          <ScrollReveal delay={0.1}>
+            <QualificationLoop />
+          </ScrollReveal>
         </div>
       </section>
 
