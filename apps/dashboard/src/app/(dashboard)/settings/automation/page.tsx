@@ -40,7 +40,7 @@ export default async function AutomationSettingsPage({
 
   if (!PRO_PLANS.includes(plan)) {
     return (
-      <div className="max-w-2xl space-y-6">
+      <div className="max-w-2xl mx-auto space-y-6">
         <Header title="Automation" description="AI task automation settings" />
         <section className="bg-white rounded-xl border p-6 text-center">
           <div className="w-12 h-12 rounded-full bg-brand-50 flex items-center justify-center mx-auto mb-4">
@@ -64,7 +64,7 @@ export default async function AutomationSettingsPage({
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       <Header title="Automation" description="Configure AI-triggered email sending, documents, and approvals" />
 
       {saved && (

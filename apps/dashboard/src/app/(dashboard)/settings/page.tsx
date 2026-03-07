@@ -36,7 +36,7 @@ export default async function SettingsPage() {
   const members = (rawMembers ?? []) as Pick<WorkspaceMember, 'id' | 'role' | 'accepted_at' | 'created_at'>[]
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       <Header title="Settings" description="Workspace configuration and billing" />
 
       {/* Workspace info */}

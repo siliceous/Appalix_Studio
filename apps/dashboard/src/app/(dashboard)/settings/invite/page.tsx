@@ -11,7 +11,7 @@ export default function InvitePage() {
   const [state, formAction] = useActionState(inviteWorkspaceMember, initialState)
 
   return (
-    <div className="max-w-lg space-y-6">
+    <div className="max-w-lg mx-auto space-y-6">
       <div className="flex items-center gap-2">
         <a href="/settings" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
           Settings
