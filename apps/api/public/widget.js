@@ -265,12 +265,12 @@
     // Markdown links: [label](url)
     escaped = escaped.replace(
       /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
-      '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--apx-accent);text-decoration:underline;">$1</a>'
+      '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--apx-accent,#3b82f6);text-decoration:underline;font-weight:500;">$1</a>'
     );
     // Bare URLs not already inside an href
     escaped = escaped.replace(
       /(?<!href=")(https?:\/\/[^\s<"]+)/g,
-      '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--apx-accent);text-decoration:underline;">$1</a>'
+      '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--apx-accent,#3b82f6);text-decoration:underline;font-weight:500;">$1</a>'
     );
     return escaped.replace(/\n/g, '<br>');
   }
@@ -521,6 +521,9 @@
     messages.push({ role: 'user', text: text });
     pendingTyping = true;
     render();
+    // Re-focus input after render() rebuilds the shadow DOM
+    var refocusInput = shadow.getElementById('apx-input');
+    if (refocusInput) refocusInput.focus();
 
     fetch(apiBase + '/chat/' + integrationId, {
       method: 'POST',
@@ -533,11 +536,13 @@
         var reply = d.reply || d.message || d.text || 'Sorry, I could not process that.';
         messages.push({ role: 'bot', text: reply });
         render();
+        var ri = shadow.getElementById('apx-input'); if (ri) ri.focus();
       })
       .catch(function () {
         pendingTyping = false;
         messages.push({ role: 'bot', text: 'Sorry, something went wrong. Please try again.' });
         render();
+        var ri = shadow.getElementById('apx-input'); if (ri) ri.focus();
       });
   }
 

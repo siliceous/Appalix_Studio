@@ -144,7 +144,9 @@ export async function processMessage(
     const history4b = await getRecentMessages(conversationId, 20)
     const allMessages = [...history4b.map(m => ({ content: m.content })), { content: text }]
     const lead = extractAllLeadData(allMessages)
-    if (lead.email || lead.phone) {
+    // Require email for auto-creation — phone-only contacts can't be deduped
+    // reliably against AI-extracted names and cause duplicates in triage.
+    if (lead.email) {
       const name = extractName(allMessages)
       if (name) {
         void createSageLeadFromChat({
