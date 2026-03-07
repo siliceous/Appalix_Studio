@@ -49,17 +49,18 @@ function sortByRecency(a: TriageConversation, b: TriageConversation): number {
 // ─── Detail Card ──────────────────────────────────────────────────────────────
 
 interface DetailCardProps {
-  tc:          TriageConversation
-  actioned:    Map<string, string>
-  onAction:    (tc: TriageConversation, mode: 'lead' | 'ticket') => void
-  onDismiss:   (id: string) => void
-  onClose:     () => void
-  onAnalyze:   (id: string) => void
-  onRename:    (id: string, title: string) => void
-  isAnalyzing: boolean
+  tc:             TriageConversation
+  actioned:       Map<string, string>
+  onAction:       (tc: TriageConversation, mode: 'lead' | 'ticket') => void
+  onDismiss:      (id: string) => void
+  onClose:        () => void
+  onAnalyze:      (id: string) => void
+  onRename:       (id: string, title: string) => void
+  isAnalyzing:    boolean
+  isCreatingLead: boolean
 }
 
-function DetailCard({ tc, actioned, onAction, onDismiss, onClose, onAnalyze, onRename, isAnalyzing }: DetailCardProps) {
+function DetailCard({ tc, actioned, onAction, onDismiss, onClose, onAnalyze, onRename, isAnalyzing, isCreatingLead }: DetailCardProps) {
   const { conversation, botName } = tc
   const entities   = conversation.ai_entities
   const isDone     = actioned.has(conversation.id)
@@ -248,9 +249,13 @@ function DetailCard({ tc, actioned, onAction, onDismiss, onClose, onAnalyze, onR
               {action === 'create_lead' && (
                 <button
                   onClick={() => onAction(tc, 'lead')}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                  disabled={isCreatingLead}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-60"
                 >
-                  <UserPlus className="w-3.5 h-3.5" /> Create Lead
+                  {isCreatingLead
+                    ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Creating…</>
+                    : <><UserPlus className="w-3.5 h-3.5" /> Create Lead</>
+                  }
                 </button>
               )}
               {action === 'create_ticket' && (
@@ -651,8 +656,16 @@ const [mDealTitle, setMDealTitle] = useState('')
                 onAnalyze={handleAnalyzeOne}
                 onRename={handleRename}
                 isAnalyzing={isAnalyzing}
+                isCreatingLead={isPending}
               />
             </div>
+
+            {/* ── Inline error (shown when lead creation fails without modal) ── */}
+            {modalError && !modalMode && (
+              <div className="border-t dark:border-white/8 px-5 py-3 shrink-0 bg-red-50 dark:bg-red-500/10">
+                <p className="text-xs text-red-600 dark:text-red-400">{modalError}</p>
+              </div>
+            )}
 
             {/* ── Modal ── */}
             {modalMode && modalTc && (
