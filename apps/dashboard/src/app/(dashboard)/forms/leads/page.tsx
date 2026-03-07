@@ -31,7 +31,7 @@ export default async function AllLeadsPage() {
   const leads = (leadsRaw ?? []) as Lead[]
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-5xl mx-auto p-8">
       <Header
         title="All Leads"
         description="Leads captured from connected ad platforms"
