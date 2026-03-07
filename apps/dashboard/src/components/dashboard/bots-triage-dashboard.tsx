@@ -38,12 +38,8 @@ const PRIORITY_BADGE: Record<string, string> = {
   low:    'bg-gray-100 dark:bg-white/5 text-gray-500 border-gray-200 dark:border-white/10',
 }
 
-const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 }
 
-function sortByPriority(a: TriageConversation, b: TriageConversation): number {
-  const pa = a.conversation.ai_priority ? (PRIORITY_ORDER[a.conversation.ai_priority] ?? 3) : 3
-  const pb = b.conversation.ai_priority ? (PRIORITY_ORDER[b.conversation.ai_priority] ?? 3) : 3
-  if (pa !== pb) return pa - pb
+function sortByRecency(a: TriageConversation, b: TriageConversation): number {
   const ta = a.conversation.last_activity_at ? new Date(a.conversation.last_activity_at).getTime() : 0
   const tb = b.conversation.last_activity_at ? new Date(b.conversation.last_activity_at).getTime() : 0
   return tb - ta
@@ -383,8 +379,7 @@ export function BotTriageDashboard({ triageConversations }: Props) {
   // Modal form state
   const [mName,      setMName]      = useState('')
   const [mEmail,     setMEmail]     = useState('')
-  const [mCompany,   setMCompany]   = useState('')
-  const [mDealTitle, setMDealTitle] = useState('')
+const [mDealTitle, setMDealTitle] = useState('')
   const [mNotes,     setMNotes]     = useState('')
   const [mPriority,  setMPriority]  = useState<'low' | 'medium' | 'high' | 'urgent'>('medium')
   const [modalError, setModalError] = useState<string | null>(null)
@@ -395,50 +390,52 @@ export function BotTriageDashboard({ triageConversations }: Props) {
     setModalTc(tc)
     setMName(c.ai_entities?.name ?? '')
     setMEmail(c.ai_entities?.email ?? '')
-    setMCompany('')
     setMDealTitle(c.title ?? `Chat from ${tc.botName}`)
     setMNotes(c.ai_summary ?? '')
-    if (mode === 'ticket') {
-      setMPriority(c.ai_priority === 'high' ? 'urgent' : c.ai_priority === 'medium' ? 'high' : 'medium')
-    }
+    setMPriority(c.ai_priority === 'high' ? 'urgent' : c.ai_priority === 'medium' ? 'high' : 'medium')
     setModalMode(mode)
   }
 
+  // Create lead directly from ai_entities — no modal
+  function handleAction(tc: TriageConversation, mode: 'lead' | 'ticket') {
+    if (mode === 'ticket') { openModal(tc, 'ticket'); return }
+    const c = tc.conversation
+    const entities = c.ai_entities as { name?: string; email?: string; phone?: string; product_interest?: string } | null
+    startTransition(async () => {
+      setModalError(null)
+      const result = await triageCreateLead({
+        name:           entities?.name ?? '',
+        email:          entities?.email ?? '',
+        phone:          entities?.phone,
+        dealTitle:      entities?.product_interest ?? c.title ?? `Chat via ${tc.botName}`,
+        notes:          c.ai_summary ?? undefined,
+        conversationId: c.id,
+        source:         'chat',
+      })
+      if (!result.error) {
+        setActioned(prev => new Map(prev).set(c.id, 'Lead created'))
+      } else {
+        setModalError(result.error ?? 'Failed to create lead')
+      }
+    })
+  }
+
   function handleModalSubmit() {
-    if (!modalTc) return
+    if (!modalTc || modalMode !== 'ticket') return
     startTransition(async () => {
       setModalError(null)
       const convId = modalTc.conversation.id
-      let result: { error?: string }
-
-      if (modalMode === 'lead') {
-        result = await triageCreateLead({
-          name:      mName,
-          email:     mEmail,
-          company:   mCompany || undefined,
-          dealTitle: mDealTitle,
-          notes:     mNotes || undefined,
-        })
-        if (!result.error) {
-          setActioned(prev => new Map(prev).set(convId, 'Lead created'))
-          setModalMode(null)
-        }
-      } else if (modalMode === 'ticket') {
-        result = await triageCreateTicket({
-          title:        mDealTitle,
-          description:  mNotes,
-          contactEmail: mEmail,
-          contactName:  mName,
-          priority:     mPriority,
-        })
-        if (!result.error) {
-          setActioned(prev => new Map(prev).set(convId, 'Ticket created'))
-          setModalMode(null)
-        }
-      } else {
-        return
+      const result = await triageCreateTicket({
+        title:        mDealTitle,
+        description:  mNotes,
+        contactEmail: mEmail,
+        contactName:  mName,
+        priority:     mPriority,
+      })
+      if (!result.error) {
+        setActioned(prev => new Map(prev).set(convId, 'Ticket created'))
+        setModalMode(null)
       }
-
       if (result?.error) setModalError(result.error)
     })
   }
@@ -455,7 +452,7 @@ export function BotTriageDashboard({ triageConversations }: Props) {
     if (unanalyzedCount > 0 && unanalyzedCount !== prev) void runAutoAnalyze()
   }, [unanalyzedCount, runAutoAnalyze])
 
-  const sortedVisible = [...visible].sort(sortByPriority)
+  const sortedVisible = [...visible].sort(sortByRecency)
   const selectedTc    = selectedId ? visible.find(tc => tc.conversation.id === selectedId) ?? null : null
 
   // Derive bot list for column 1
@@ -469,7 +466,7 @@ export function BotTriageDashboard({ triageConversations }: Props) {
 
   // Filter conversations by selected bot
   const convListVisible = selectedBotName
-    ? [...visible.filter(tc => tc.botName === selectedBotName)].sort(sortByPriority)
+    ? [...visible.filter(tc => tc.botName === selectedBotName)].sort(sortByRecency)
     : sortedVisible
 
   return (
@@ -643,7 +640,7 @@ export function BotTriageDashboard({ triageConversations }: Props) {
               <DetailCard
                 tc={selectedTc}
                 actioned={actioned}
-                onAction={openModal}
+                onAction={handleAction}
                 onDismiss={dismiss}
                 onClose={() => setSelectedId('')}
                 onAnalyze={handleAnalyzeOne}
@@ -668,36 +665,6 @@ export function BotTriageDashboard({ triageConversations }: Props) {
                     <X className="w-4 h-4" />
                   </button>
                 </div>
-
-                {modalMode === 'lead' && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[11px] font-semibold text-gray-500 block mb-1">Name *</label>
-                      <input value={mName} onChange={e => setMName(e.target.value)}
-                        className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-semibold text-gray-500 block mb-1">Email</label>
-                      <input value={mEmail} onChange={e => setMEmail(e.target.value)}
-                        className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-semibold text-gray-500 block mb-1">Company</label>
-                      <input value={mCompany} onChange={e => setMCompany(e.target.value)} placeholder="Optional"
-                        className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-semibold text-gray-500 block mb-1">Deal Title *</label>
-                      <input value={mDealTitle} onChange={e => setMDealTitle(e.target.value)}
-                        className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="text-[11px] font-semibold text-gray-500 block mb-1">Notes</label>
-                      <textarea value={mNotes} onChange={e => setMNotes(e.target.value)} rows={2}
-                        className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none" />
-                    </div>
-                  </div>
-                )}
 
                 {modalMode === 'ticket' && (
                   <div className="space-y-3">

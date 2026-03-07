@@ -44,11 +44,14 @@ async function logActivity(
  * Called when user clicks "Create Lead" after reviewing the pre-filled modal.
  */
 export async function triageCreateLead(data: {
-  name:       string
-  email:      string
-  company?:   string
-  dealTitle:  string
-  notes?:     string
+  name:            string
+  email:           string
+  phone?:          string
+  company?:        string
+  dealTitle:       string
+  notes?:          string
+  conversationId?: string
+  source?:         'email' | 'chat'
 }): Promise<{ contactId?: string; dealId?: string; error?: string }> {
   const workspaceId = await getWorkspaceId()
   if (!workspaceId) return { error: 'Not authenticated' }
@@ -88,9 +91,10 @@ export async function triageCreateLead(data: {
           workspace_id:  workspaceId,
           name:          data.name,
           email:         data.email?.toLowerCase() ?? null,
+          phone:         data.phone ?? null,
           company_name:  data.company ?? null,
           notes:         data.notes ?? null,
-          source:        'email',
+          source:        data.source ?? 'email',
           contact_type:  'potential_customer',
           tags:          [],
         })
@@ -134,7 +138,8 @@ export async function triageCreateLead(data: {
         stage_id:     stageId,
         contact_id:   contactId,
         title:        data.dealTitle,
-        source:       'email',
+        source:                  data.source ?? 'email',
+        source_conversation_id:  data.conversationId ?? null,
         status:       'open',
         currency:     'USD',
         tags:         [],
