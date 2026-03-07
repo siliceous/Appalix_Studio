@@ -46,7 +46,7 @@ export default async function ConversationsPage({
   const conversations = (rawConversations ?? []) as ConvRow[]
 
   return (
-    <div>
+    <div className="max-w-5xl mx-auto">
       <Header title="Conversations" description="All conversations across every platform" />
 
       {/* Filters */}

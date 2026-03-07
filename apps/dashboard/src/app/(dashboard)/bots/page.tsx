@@ -78,7 +78,7 @@ export default async function BotsPage() {
   ]
 
   return (
-    <div>
+    <div className="max-w-5xl mx-auto">
       <Header
         title="Bots"
         description="Configure AI agents and connect them to platforms"

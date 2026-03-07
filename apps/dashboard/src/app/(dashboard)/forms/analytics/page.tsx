@@ -69,7 +69,7 @@ export default async function AnalyticsPage() {
   ]
 
   return (
-    <div className="p-8">
+    <div className="max-w-5xl mx-auto">
       <Header
         title="Form Analytics"
         description="Lead performance across all connected platforms"

@@ -90,7 +90,7 @@ export default async function AnalyticsPage() {
   const successRate   = totalRuns > 0 ? Math.round((completedRuns / totalRuns) * 100) : null
 
   return (
-    <div>
+    <div className="max-w-5xl mx-auto">
       <Header title="Analytics" description="Usage and performance over the last 30 days" />
 
       {/* Top stats */}

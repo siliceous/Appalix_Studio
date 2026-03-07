@@ -53,7 +53,7 @@ export default async function SourcesPage() {
   const hasActiveJobs = sources.some((s) => s.status === 'pending' || s.status === 'processing')
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       {hasActiveJobs && <SourcesPoller />}
       <Header
         title="Knowledge Base"
