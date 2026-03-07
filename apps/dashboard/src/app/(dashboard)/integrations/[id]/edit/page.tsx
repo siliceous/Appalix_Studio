@@ -70,7 +70,7 @@ export default async function EditIntegrationPage({
   const tgWebhookSecret = (cfg.webhook_secret_token as string | undefined) ?? ''
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl mx-auto">
       <Header
         title="Edit integration"
         description={`${PLATFORM_META[integration.platform]?.label ?? integration.platform} — ${integration.name}`}

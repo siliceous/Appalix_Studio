@@ -35,7 +35,7 @@ export default async function NewIntegrationPage({
   const selected = (validPlatforms.includes(qp ?? '') ? qp : 'web_widget') as Platform
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl mx-auto">
       <Header title="Add integration" description="Connect your bot to a messaging platform" />
 
       <form action={createIntegration} className="space-y-6">

@@ -39,7 +39,7 @@ export default async function IntegrationSetupPage({
   const meta = PLATFORM_META[integration.platform]
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl mx-auto">
       <Header
         title={integration.name}
         description="Setup guide and credentials for this integration"

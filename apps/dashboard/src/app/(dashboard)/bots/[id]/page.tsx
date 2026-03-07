@@ -44,7 +44,7 @@ export default async function BotDetailPage({ params }: { params: Promise<{ id: 
   const recentRuns = (recentRunsRaw ?? []) as Pick<AgentRun, 'id' | 'status' | 'steps' | 'tokens_input' | 'tokens_output' | 'duration_ms' | 'started_at'>[]
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       <Header
         title={bot.name}
         description={bot.description ?? undefined}

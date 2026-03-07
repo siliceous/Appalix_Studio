@@ -61,8 +61,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
       {/* Subtle green ambient glow in dark mode */}
       <div className="pointer-events-none fixed top-0 left-60 right-0 h-[300px] dark:bg-[#61c2ad]/[0.03] blur-[80px] hidden dark:block" />
       <Sidebar workspace={workspace} />
-      <main className="flex-1 p-8 overflow-auto bg-gray-50 dark:bg-[#1c1c1c]">
-        {children}
+      <main className="flex-1 overflow-auto bg-gray-50 dark:bg-[#1c1c1c] pl-[200px] pr-8 py-8">
+        <div className="max-w-5xl mx-auto">
+          {children}
+        </div>
       </main>
       <SageRightPanel workspaceId={workspace.id} />
       <ReminderWatcher />
