@@ -24,7 +24,7 @@ export default async function EditBotPage({ params }: { params: Promise<{ id: st
   const action = updateBot.bind(null, id)
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl">
       <Header
         title={`Edit — ${bot.name}`}
         description="Update bot configuration, system prompt, and feature toggles"

@@ -238,7 +238,7 @@ export default function NewBotPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl">
       <Header title="New bot" description="Configure your AI agent" />
 
       <form onSubmit={handleSubmit} className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 divide-y dark:divide-white/10">

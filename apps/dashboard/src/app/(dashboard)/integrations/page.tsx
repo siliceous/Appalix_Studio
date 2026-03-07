@@ -51,7 +51,7 @@ export default async function IntegrationsPage() {
   const connectedPlatforms = new Set(integrations?.map((i) => i.platform))
 
   return (
-    <div>
+    <div className="max-w-5xl mx-auto">
       <Header
         title="Integrations"
         description="Connect your bots to messaging platforms"
