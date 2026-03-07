@@ -52,6 +52,7 @@ export async function triageCreateLead(data: {
   notes?:          string
   conversationId?: string
   source?:         'email' | 'chat'
+  productInterest?: string
 }): Promise<{ contactId?: string; dealId?: string; error?: string }> {
   const workspaceId = await getWorkspaceId()
   if (!workspaceId) return { error: 'Not authenticated' }

@@ -4,8 +4,7 @@ import { recordUsage } from '../lib/usage.js'
 import { callClaude, buildSystemPrompt } from './ai/claude.js'
 import { retrieveContext, buildRagContext } from './rag/retrieval.js'
 import { runAgent } from './agent/runner.js'
-import { extractLeadData, extractAllLeadData, extractName, routeLeadToProvider } from './lead-capture.js'
-import { createSageLeadFromChat } from './sage-lead.js'
+import { extractLeadData, routeLeadToProvider } from './lead-capture.js'
 import {
   detectHandoffIntent,
   sendHandoffNotification,
@@ -134,30 +133,6 @@ export async function processMessage(
         message:        text,
         timestamp:      new Date().toISOString(),
       })
-    }
-  }
-
-  // ---------------------------------------------------------------
-  // 4b. Sage internal contact + lead auto-creation (fire-and-forget)
-  // ---------------------------------------------------------------
-  {
-    const history4b = await getRecentMessages(conversationId, 20)
-    const allMessages = [...history4b.map(m => ({ content: m.content })), { content: text }]
-    const lead = extractAllLeadData(allMessages)
-    // Require email for auto-creation — phone-only contacts can't be deduped
-    // reliably against AI-extracted names and cause duplicates in triage.
-    if (lead.email) {
-      const name = extractName(allMessages)
-      if (name) {
-        void createSageLeadFromChat({
-          workspaceId,
-          conversationId,
-          name,
-          email:   lead.email,
-          phone:   lead.phone,
-          company: lead.company,
-        })
-      }
     }
   }
 
