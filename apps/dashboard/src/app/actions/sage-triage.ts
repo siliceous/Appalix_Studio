@@ -80,6 +80,8 @@ export async function triageCreateLead(data: {
       contactId = existing.id
       const upd: Record<string, string> = {}
       if (data.email)   upd.email        = data.email.toLowerCase()
+      if (data.name)    upd.name         = data.name
+      if (data.phone)   upd.phone        = data.phone
       if (data.company) upd.company_name = data.company
       if (data.notes)   upd.notes        = data.notes
       if (Object.keys(upd).length > 0) await admin.from('sage_contacts').update(upd).eq('id', contactId)
@@ -106,7 +108,31 @@ export async function triageCreateLead(data: {
 
     if (isNew) await logActivity(workspaceId, 'contact', contactId, 'contact_created', { source: 'email_triage' })
 
-    // 2. Find first pipeline + first stage
+    // 2. Check for existing open deal — if found, link conversation and return (no duplicate)
+    const { data: openDeal } = await admin
+      .from('sage_deals')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .eq('contact_id', contactId)
+      .eq('status', 'open')
+      .limit(1)
+      .maybeSingle()
+
+    if (openDeal) {
+      const dealId = (openDeal as { id: string }).id
+      if (data.conversationId) {
+        await admin.from('sage_deals')
+          .update({ source_conversation_id: data.conversationId })
+          .eq('id', dealId)
+          .is('source_conversation_id', null)
+      }
+      revalidatePath('/dashboard')
+      revalidatePath('/sage/pipelines')
+      revalidatePath('/sage/contacts')
+      return { contactId, dealId }
+    }
+
+    // 3. Find first pipeline + first stage
     const { data: pipeline } = await admin
       .from('sage_pipelines')
       .select('id')

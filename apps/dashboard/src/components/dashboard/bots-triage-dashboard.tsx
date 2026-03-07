@@ -401,6 +401,10 @@ const [mDealTitle, setMDealTitle] = useState('')
     if (mode === 'ticket') { openModal(tc, 'ticket'); return }
     const c = tc.conversation
     const entities = c.ai_entities as { name?: string; email?: string; phone?: string; product_interest?: string } | null
+    if (!entities?.name && !entities?.email && !entities?.phone) {
+      setModalError('No contact data found — analyse this conversation first.')
+      return
+    }
     startTransition(async () => {
       setModalError(null)
       const result = await triageCreateLead({
@@ -414,6 +418,7 @@ const [mDealTitle, setMDealTitle] = useState('')
       })
       if (!result.error) {
         setActioned(prev => new Map(prev).set(c.id, 'Lead created'))
+        setTimeout(() => dismiss(c.id), 1500)
       } else {
         setModalError(result.error ?? 'Failed to create lead')
       }

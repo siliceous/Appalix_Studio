@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useTransition, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   X, Trophy, XCircle, FileText, Phone, Users, CheckSquare,
   Clock, Check, ChevronRight, ExternalLink, Building2, Tag,
@@ -104,6 +105,7 @@ const STATUS_BADGE: Record<string, string> = {
 }
 
 export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpdated }: DealSlideOverProps) {
+  const router = useRouter()
   const [deal,          setDeal]          = useState<Record<string, unknown> & { contact: Record<string, unknown> | null } | null>(null)
   const [activities,    setActivities]    = useState<SageDealActivity[]>([])
   const [loading,       setLoading]       = useState(false)
@@ -466,6 +468,7 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                           if (!dealId) return
                           setDeleting(true)
                           await deleteDeal(dealId)
+                          router.refresh()
                           onClose()
                         }}
                         className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-60"
