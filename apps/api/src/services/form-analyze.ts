@@ -71,8 +71,13 @@ OUTPUT — return ONLY this JSON, nothing else:
 }`
 
   try {
-    const raw = await callClaude({ model: 'claude-haiku-4-5-20251001', maxTokens: 600, prompt })
-    const jsonMatch = raw.match(/\{[\s\S]*\}/)
+    const result = await callClaude({
+      model:        'claude-haiku-4-5-20251001',
+      maxTokens:    600,
+      systemPrompt: 'You are a CRM assistant. Respond only with valid JSON.',
+      messages:     [{ role: 'user', content: prompt }],
+    })
+    const jsonMatch = result.content.match(/\{[\s\S]*\}/)
     if (!jsonMatch) return
 
     const analysis = JSON.parse(jsonMatch[0]) as FormAnalysis
