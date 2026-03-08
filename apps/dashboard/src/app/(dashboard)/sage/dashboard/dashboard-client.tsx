@@ -9,8 +9,10 @@ import {
   Plus, Kanban, CheckSquare, Zap, RefreshCw, Calendar,
   ChevronDown, X, Copy, ExternalLink, CheckCircle2, User,
   Phone, Building2, Sparkles, LayoutList, LayoutGrid,
+  Send, Reply, Loader2,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
+import { sendEmail } from '@/app/actions/sage-emails'
 import type { SageEmail, Conversation, Lead, SageTicket } from '@/lib/types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -113,20 +115,24 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
 type PopupState = { kind: 'email' | 'bot' | 'form' | 'ticket'; id: string }
 
 function ItemPopup({
-  popup, sageAuto, workspaceId, onClose,
+  popup, workspaceId, onClose,
 }: {
   popup: PopupState
-  sageAuto: boolean
   workspaceId: string
   onClose: () => void
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [data, setData]               = useState<any>(null)
   const [loading, setLoading]         = useState(true)
-  const [replyText, setReplyText]     = useState('')
-  const [copied, setCopied]           = useState(false)
   const [actionBusy, setActionBusy]   = useState(false)
   const [actionDone, setActionDone]   = useState<'contact' | 'ticket' | null>(null)
+
+  // Reply compose state (email only)
+  const [showReply, setShowReply]     = useState(false)
+  const [replyBody, setReplyBody]     = useState('')
+  const [sending, setSending]         = useState(false)
+  const [sendResult, setSendResult]   = useState<string | null>(null)
+  const [copied, setCopied]           = useState(false)
 
   // Escape to close
   useEffect(() => {
@@ -137,7 +143,7 @@ function ItemPopup({
 
   // Fetch full item
   useEffect(() => {
-    setData(null); setLoading(true); setActionDone(null)
+    setData(null); setLoading(true); setActionDone(null); setShowReply(false); setSendResult(null)
     const supabase = createClient()
     const go = async () => {
       if (popup.kind === 'email') {
@@ -146,7 +152,7 @@ function ItemPopup({
           .eq('id', popup.id).single()
         setData(d)
         const draft = (d as SageEmail | null)?.ai_reply_drafts?.[0]?.body ?? ''
-        setReplyText(draft)
+        setReplyBody(draft)
       } else if (popup.kind === 'bot') {
         const { data: d } = await supabase.from('conversations')
           .select('id, title, platform, message_count, last_activity_at, ai_priority, ai_summary, ai_insights, ai_entities, bot:bots(name)')
@@ -168,7 +174,7 @@ function ItemPopup({
     go()
   }, [popup.id, popup.kind])
 
-  async function createContact(name: string, email?: string | null, phone?: string | null, company?: string | null) {
+  async function createLead(name: string, email?: string | null, phone?: string | null, company?: string | null) {
     setActionBusy(true)
     const supabase = createClient()
     await (supabase as any).from('sage_contacts').insert({
@@ -191,8 +197,22 @@ function ItemPopup({
     setActionBusy(false); setActionDone('ticket')
   }
 
+  async function handleSendReply() {
+    if (!data || !replyBody.trim()) return
+    setSending(true); setSendResult(null)
+    const e = data as SageEmail
+    const result = await sendEmail({
+      to: e.from_address,
+      subject: `Re: ${e.subject}`,
+      body: replyBody,
+      replyToEmailId: e.id,
+    })
+    setSending(false)
+    setSendResult(result.ok ? 'sent' : (result.error ?? 'error'))
+  }
+
   function copyReply() {
-    navigator.clipboard.writeText(replyText)
+    navigator.clipboard.writeText(replyBody)
     setCopied(true); setTimeout(() => setCopied(false), 2000)
   }
 
@@ -202,13 +222,13 @@ function ItemPopup({
   const label   = { email: 'Email Summary', bot: 'Chat Summary', form: 'Lead Details', ticket: 'Ticket Summary' }[popup.kind]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm"
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/50 backdrop-blur-sm"
       onClick={onClose}>
-      <div className="relative w-full sm:max-w-lg bg-white dark:bg-[#2a2a2a] rounded-t-2xl sm:rounded-2xl shadow-2xl border-t sm:border dark:border-white/12 max-h-[92vh] flex flex-col"
+      <div className="relative w-full sm:max-w-2xl bg-white dark:bg-[#2a2a2a] rounded-t-2xl sm:rounded-2xl shadow-2xl border-t sm:border dark:border-white/12 max-h-[92vh] flex flex-col"
         onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b dark:border-white/10 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b dark:border-white/10 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${iconCls}`}>
               <Icon className={`w-4 h-4 ${iconCol}`} />
@@ -216,13 +236,25 @@ function ItemPopup({
             <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{label}</h2>
             <Sparkles className="w-3.5 h-3.5 text-[#61c2ad]" />
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors">
-            <X className="w-4 h-4 text-gray-400" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Quick-action buttons in header for email */}
+            {popup.kind === 'email' && !loading && data && (
+              <button
+                onClick={() => setShowReply(v => !v)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showReply ? 'bg-[#61c2ad] text-white' : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/12'}`}
+              >
+                <Reply className="w-3.5 h-3.5" />
+                Reply
+              </button>
+            )}
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors">
+              <X className="w-4 h-4 text-gray-400" />
+            </button>
+          </div>
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto flex-1 p-5 space-y-4">
+        <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
           {loading ? (
             <div className="flex items-center justify-center py-16">
               <RefreshCw className="w-5 h-5 text-gray-300 animate-spin" />
@@ -236,55 +268,101 @@ function ItemPopup({
                 const e = data as SageEmail
                 return (
                   <>
-                    <div className="space-y-1">
-                      <p className="text-xs text-gray-400">From</p>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{e.from_name ?? e.from_address}</p>
-                      {e.from_name && <p className="text-xs text-gray-500">{e.from_address}</p>}
+                    {/* From / Subject row */}
+                    <div className="flex items-start gap-4">
+                      <div className="w-9 h-9 rounded-full bg-green-100 dark:bg-green-500/15 flex items-center justify-center shrink-0 text-xs font-bold text-green-600 dark:text-green-400">
+                        {(e.from_name ?? e.from_address).charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{e.from_name ?? e.from_address}</p>
+                        {e.from_name && <p className="text-xs text-gray-400">{e.from_address}</p>}
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">{e.subject}</p>
+                      </div>
+                      {e.ai_priority && (
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0"
+                          style={{ background: `${P_COLORS[e.ai_priority] ?? '#9ca3af'}20`, color: P_COLORS[e.ai_priority] ?? '#9ca3af' }}>
+                          {e.ai_priority}
+                        </span>
+                      )}
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-xs text-gray-400">Subject</p>
-                      <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">{e.subject}</p>
-                    </div>
+
+                    {/* AI Summary */}
                     {e.ai_summary && (
-                      <div className="bg-[#61c2ad]/8 border border-[#61c2ad]/20 rounded-xl p-3.5">
-                        <p className="text-[11px] text-[#61c2ad] font-semibold mb-1 uppercase tracking-wide">AI Summary</p>
+                      <div className="bg-[#61c2ad]/8 border border-[#61c2ad]/20 rounded-xl p-4">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <Sparkles className="w-3 h-3 text-[#61c2ad]" />
+                          <p className="text-[11px] text-[#61c2ad] font-bold uppercase tracking-wide">AI Summary</p>
+                        </div>
                         <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">{e.ai_summary}</p>
                       </div>
                     )}
+
+                    {/* Key Insights */}
                     {(e.ai_insights ?? []).length > 0 && (
-                      <div>
-                        <p className="text-xs text-gray-400 mb-1.5">Key Insights</p>
-                        <ul className="space-y-1">
+                      <div className="bg-gray-50 dark:bg-white/4 rounded-xl p-4">
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2.5">Key Insights</p>
+                        <ul className="space-y-2">
                           {(e.ai_insights ?? []).map((ins, i) => (
-                            <li key={i} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-300">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#61c2ad] mt-1.5 shrink-0" />{ins}
+                            <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#61c2ad] mt-2 shrink-0" />{ins}
                             </li>
                           ))}
                         </ul>
                       </div>
                     )}
+
+                    {/* Entity chips */}
                     {e.ai_entities && Object.values(e.ai_entities).some(Boolean) && (
                       <div className="flex flex-wrap gap-2">
-                        {e.ai_entities.name    && <span className="flex items-center gap-1 text-xs bg-gray-100 dark:bg-white/8 px-2 py-1 rounded-lg"><User className="w-3 h-3 text-gray-400" />{e.ai_entities.name}</span>}
-                        {e.ai_entities.company && <span className="flex items-center gap-1 text-xs bg-gray-100 dark:bg-white/8 px-2 py-1 rounded-lg"><Building2 className="w-3 h-3 text-gray-400" />{e.ai_entities.company}</span>}
+                        {e.ai_entities.name    && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><User className="w-3 h-3 text-gray-400" />{e.ai_entities.name}</span>}
+                        {e.ai_entities.company && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Building2 className="w-3 h-3 text-gray-400" />{e.ai_entities.company}</span>}
                       </div>
                     )}
-                    {/* Reply draft */}
-                    <div>
-                      <p className="text-xs text-gray-400 mb-1.5">Reply draft</p>
-                      <textarea
-                        rows={4}
-                        value={replyText}
-                        onChange={e2 => setReplyText(e2.target.value)}
-                        placeholder="Write your reply…"
-                        className="w-full text-sm bg-gray-50 dark:bg-white/5 border dark:border-white/10 rounded-xl px-3 py-2.5 text-gray-800 dark:text-gray-200 resize-none focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
-                      />
-                      <button onClick={copyReply}
-                        className="mt-1.5 flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#61c2ad] transition-colors">
-                        {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-                        {copied ? 'Copied!' : 'Copy draft'}
-                      </button>
-                    </div>
+
+                    {/* Inline Reply compose */}
+                    {showReply && (
+                      <div className="rounded-2xl border dark:border-white/10 overflow-hidden bg-gray-50 dark:bg-white/3">
+                        <div className="flex items-center justify-between px-4 py-2.5 border-b dark:border-white/8 bg-white dark:bg-white/5">
+                          <div className="flex items-center gap-2">
+                            <Reply className="w-3.5 h-3.5 text-[#61c2ad]" />
+                            <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">Reply to {e.from_name ?? e.from_address}</span>
+                          </div>
+                          <button onClick={() => setShowReply(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <div className="p-4 space-y-3">
+                          <textarea
+                            rows={6}
+                            value={replyBody}
+                            onChange={ev => setReplyBody(ev.target.value)}
+                            placeholder="Write your reply…"
+                            className="w-full text-sm bg-white dark:bg-[#1a1a1a] border dark:border-white/10 rounded-xl px-3 py-2.5 text-gray-800 dark:text-gray-200 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
+                          />
+                          <div className="flex items-center gap-2 pt-1 border-t dark:border-white/8">
+                            <button
+                              onClick={handleSendReply}
+                              disabled={sending || !replyBody.trim() || sendResult === 'sent'}
+                              className="flex items-center gap-1.5 px-4 py-2 bg-[#61c2ad] hover:bg-[#4fa898] text-white text-xs font-semibold rounded-xl transition-colors disabled:opacity-50"
+                            >
+                              {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                              {sending ? 'Sending…' : sendResult === 'sent' ? 'Sent!' : 'Send'}
+                            </button>
+                            <button onClick={copyReply}
+                              className="flex items-center gap-1.5 px-3 py-2 text-xs text-gray-500 dark:text-gray-400 hover:text-[#61c2ad] transition-colors rounded-xl hover:bg-gray-100 dark:hover:bg-white/8">
+                              {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                              {copied ? 'Copied!' : 'Copy'}
+                            </button>
+                            {sendResult && sendResult !== 'sent' && (
+                              <p className="text-xs text-red-500 ml-1">Error: {sendResult}</p>
+                            )}
+                            {sendResult === 'sent' && (
+                              <p className="flex items-center gap-1 text-xs text-green-500 ml-1"><CheckCircle2 className="w-3.5 h-3.5" /> Reply sent</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </>
                 )
               })()}
@@ -295,6 +373,9 @@ function ItemPopup({
                 return (
                   <>
                     <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center shrink-0 text-xs font-bold text-blue-600 dark:text-blue-400">
+                        <MessageSquare className="w-4 h-4" />
+                      </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{c.title ?? 'Untitled conversation'}</p>
                         <p className="text-xs text-gray-400 mt-0.5">
@@ -304,18 +385,21 @@ function ItemPopup({
                       </div>
                     </div>
                     {c.ai_summary && (
-                      <div className="bg-blue-50/60 dark:bg-blue-500/8 border border-blue-200/60 dark:border-blue-500/20 rounded-xl p-3.5">
-                        <p className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold mb-1 uppercase tracking-wide">AI Summary</p>
+                      <div className="bg-blue-50/60 dark:bg-blue-500/8 border border-blue-200/60 dark:border-blue-500/20 rounded-xl p-4">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <Sparkles className="w-3 h-3 text-blue-500" />
+                          <p className="text-[11px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wide">AI Summary</p>
+                        </div>
                         <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">{c.ai_summary}</p>
                       </div>
                     )}
                     {(c.ai_insights ?? []).length > 0 && (
-                      <div>
-                        <p className="text-xs text-gray-400 mb-1.5">Key Insights</p>
-                        <ul className="space-y-1">
+                      <div className="bg-gray-50 dark:bg-white/4 rounded-xl p-4">
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2.5">Key Insights</p>
+                        <ul className="space-y-2">
                           {(c.ai_insights ?? []).map((ins, i) => (
-                            <li key={i} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-300">
-                              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />{ins}
+                            <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-2 shrink-0" />{ins}
                             </li>
                           ))}
                         </ul>
@@ -323,12 +407,12 @@ function ItemPopup({
                     )}
                     {c.ai_entities && (Object.values(c.ai_entities) as (string | string[] | undefined)[]).some(Boolean) && (
                       <div>
-                        <p className="text-xs text-gray-400 mb-1.5">Contact details</p>
+                        <p className="text-xs text-gray-400 mb-2">Contact details extracted</p>
                         <div className="flex flex-wrap gap-2">
-                          {c.ai_entities.name  && <span className="flex items-center gap-1 text-xs bg-gray-100 dark:bg-white/8 px-2 py-1 rounded-lg"><User className="w-3 h-3 text-gray-400" />{c.ai_entities.name}</span>}
-                          {c.ai_entities.email && <span className="flex items-center gap-1 text-xs bg-gray-100 dark:bg-white/8 px-2 py-1 rounded-lg"><Mail className="w-3 h-3 text-gray-400" />{c.ai_entities.email}</span>}
-                          {c.ai_entities.phone && <span className="flex items-center gap-1 text-xs bg-gray-100 dark:bg-white/8 px-2 py-1 rounded-lg"><Phone className="w-3 h-3 text-gray-400" />{c.ai_entities.phone}</span>}
-                          {c.ai_entities.product_interest && <span className="text-xs bg-gray-100 dark:bg-white/8 px-2 py-1 rounded-lg">{c.ai_entities.product_interest}</span>}
+                          {c.ai_entities.name  && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><User className="w-3 h-3 text-gray-400" />{c.ai_entities.name}</span>}
+                          {c.ai_entities.email && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Mail className="w-3 h-3 text-gray-400" />{c.ai_entities.email}</span>}
+                          {c.ai_entities.phone && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Phone className="w-3 h-3 text-gray-400" />{c.ai_entities.phone}</span>}
+                          {c.ai_entities.product_interest && <span className="text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300">{c.ai_entities.product_interest}</span>}
                         </div>
                       </div>
                     )}
@@ -341,19 +425,22 @@ function ItemPopup({
                 const l = data as Lead
                 return (
                   <>
-                    <div className="flex items-center justify-between">
-                      <div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-purple-100 dark:bg-purple-500/15 flex items-center justify-center shrink-0 text-xs font-bold text-purple-600 dark:text-purple-400">
+                        {l.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{l.name}</p>
                         <p className="text-xs text-gray-400 mt-0.5">{l.source_platform} · {timeAgo(l.created_at)}</p>
                       </div>
                       {l.lead_score && (
-                        <span className="text-xs font-semibold px-2 py-1 rounded-full"
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full shrink-0"
                           style={{ background: `${P_COLORS[l.lead_score]}20`, color: P_COLORS[l.lead_score] }}>
-                          {l.lead_score} score
+                          {l.lead_score}
                         </span>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-2.5">
                       {[
                         { label: 'Email',    value: l.email,         icon: Mail },
                         { label: 'Phone',    value: l.phone,         icon: Phone },
@@ -377,20 +464,25 @@ function ItemPopup({
                 const t = data as SageTicket & { contact: { name: string; email: string | null } | null }
                 return (
                   <>
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t.title}</p>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                          style={{ background: `${P_COLORS[t.priority] ?? '#9ca3af'}20`, color: P_COLORS[t.priority] ?? '#9ca3af' }}>
-                          {t.priority}
-                        </span>
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400">
-                          {t.status}
-                        </span>
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-500/15 flex items-center justify-center shrink-0">
+                        <TicketIcon className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t.title}</p>
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                            style={{ background: `${P_COLORS[t.priority] ?? '#9ca3af'}20`, color: P_COLORS[t.priority] ?? '#9ca3af' }}>
+                            {t.priority}
+                          </span>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400">
+                            {t.status}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     {t.contact && (
-                      <div className="flex items-center gap-2 bg-gray-50 dark:bg-white/5 rounded-xl p-3">
+                      <div className="flex items-center gap-2.5 bg-gray-50 dark:bg-white/5 rounded-xl p-3">
                         <User className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                         <div>
                           <p className="text-xs font-medium text-gray-800 dark:text-gray-200">{t.contact.name}</p>
@@ -399,8 +491,8 @@ function ItemPopup({
                       </div>
                     )}
                     {t.description && (
-                      <div className="bg-orange-50/60 dark:bg-orange-500/8 border border-orange-200/60 dark:border-orange-500/20 rounded-xl p-3.5">
-                        <p className="text-[11px] text-orange-600 dark:text-orange-400 font-semibold mb-1 uppercase tracking-wide">Description</p>
+                      <div className="bg-orange-50/60 dark:bg-orange-500/8 border border-orange-200/60 dark:border-orange-500/20 rounded-xl p-4">
+                        <p className="text-[11px] text-orange-600 dark:text-orange-400 font-bold uppercase tracking-wide mb-2">Description</p>
                         <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">{t.description}</p>
                       </div>
                     )}
@@ -412,7 +504,7 @@ function ItemPopup({
               {actionDone && (
                 <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10 rounded-xl px-4 py-3">
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  {actionDone === 'contact' ? 'Contact created successfully.' : 'Ticket created successfully.'}
+                  {actionDone === 'contact' ? 'Lead created successfully.' : 'Ticket created successfully.'}
                 </div>
               )}
             </>
@@ -421,67 +513,70 @@ function ItemPopup({
 
         {/* Footer actions */}
         {!loading && data && (
-          <div className="px-5 py-4 border-t dark:border-white/10 shrink-0 flex flex-wrap items-center gap-2">
-            {/* Primary navigation link */}
-            <Link
-              href={popup.kind === 'email' ? '/sage/emails' : popup.kind === 'bot' ? `/conversations/${popup.id}` : popup.kind === 'form' ? '/forms/leads' : '/sage/tickets'}
-              className="flex items-center gap-1.5 text-xs font-medium text-[#61c2ad] hover:text-[#4fa898] transition-colors"
-              onClick={onClose}
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              {popup.kind === 'email' ? 'Open in Inbox' : popup.kind === 'bot' ? 'View Conversation' : popup.kind === 'form' ? 'View in Leads' : 'View Ticket'}
-            </Link>
-
-            {/* Create actions when Sage Auto is OFF */}
-            {!sageAuto && !actionDone && (
-              <>
-                <span className="text-gray-300 dark:text-white/15">·</span>
+          <div className="px-6 py-4 border-t dark:border-white/10 shrink-0">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Create Lead */}
+              {!actionDone && (
                 <button
                   disabled={actionBusy}
                   onClick={() => {
                     if (popup.kind === 'email') {
                       const e = data as SageEmail
-                      createContact(e.ai_entities?.name ?? e.from_name ?? e.from_address, e.ai_entities?.email ?? e.from_address, null, e.ai_entities?.company)
+                      createLead(e.ai_entities?.name ?? e.from_name ?? e.from_address, e.ai_entities?.email ?? e.from_address, null, e.ai_entities?.company)
                     } else if (popup.kind === 'bot') {
                       const c = data as Conversation
-                      createContact(c.ai_entities?.name ?? c.title ?? 'Contact', c.ai_entities?.email, c.ai_entities?.phone)
+                      createLead(c.ai_entities?.name ?? c.title ?? 'Contact', c.ai_entities?.email, c.ai_entities?.phone)
                     } else if (popup.kind === 'form') {
                       const l = data as Lead
-                      createContact(l.name, l.email, l.phone, l.company)
+                      createLead(l.name, l.email, l.phone, l.company)
                     } else {
                       const t = data as SageTicket & { contact: { name: string; email: string | null } | null }
-                      if (t.contact) createContact(t.contact.name, t.contact.email)
+                      if (t.contact) createLead(t.contact.name, t.contact.email)
                     }
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-500/20 rounded-lg transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#61c2ad] hover:bg-[#4fa898] text-white rounded-xl transition-colors disabled:opacity-50"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  Create Contact
+                  {actionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                  Create Lead
                 </button>
+              )}
 
-                {popup.kind !== 'form' && (
-                  <button
-                    disabled={actionBusy}
-                    onClick={() => {
-                      if (popup.kind === 'email') {
-                        const e = data as SageEmail
-                        createTicket(e.subject, e.ai_summary, 'medium')
-                      } else if (popup.kind === 'bot') {
-                        const c = data as Conversation
-                        createTicket(c.title ?? 'Support ticket', c.ai_summary, 'medium')
-                      } else {
-                        const t = data as SageTicket
-                        createTicket(t.title, t.description, t.priority)
-                      }
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20 rounded-lg transition-colors disabled:opacity-50"
-                  >
-                    <TicketIcon className="w-3.5 h-3.5" />
-                    Create Ticket
-                  </button>
-                )}
-              </>
-            )}
+              {/* Create Ticket (not for forms) */}
+              {!actionDone && popup.kind !== 'form' && (
+                <button
+                  disabled={actionBusy}
+                  onClick={() => {
+                    if (popup.kind === 'email') {
+                      const e = data as SageEmail
+                      createTicket(e.subject, e.ai_summary, 'medium')
+                    } else if (popup.kind === 'bot') {
+                      const c = data as Conversation
+                      createTicket(c.title ?? 'Support ticket', c.ai_summary, 'medium')
+                    } else {
+                      const t = data as SageTicket
+                      createTicket(t.title, t.description, t.priority)
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20 border border-orange-200 dark:border-orange-500/20 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  {actionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <TicketIcon className="w-3.5 h-3.5" />}
+                  Create Ticket
+                </button>
+              )}
+
+              {/* Spacer */}
+              <div className="flex-1" />
+
+              {/* Open in page */}
+              <Link
+                href={popup.kind === 'email' ? '/sage/emails' : popup.kind === 'bot' ? `/conversations/${popup.id}` : popup.kind === 'form' ? '/forms/leads' : '/sage/tickets'}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-[#61c2ad] hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors border dark:border-white/8"
+                onClick={onClose}
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                {popup.kind === 'email' ? 'Open in Inbox' : popup.kind === 'bot' ? 'View Conversation' : popup.kind === 'form' ? 'View in Leads' : 'View Ticket'}
+              </Link>
+            </div>
           </div>
         )}
       </div>
@@ -600,7 +695,6 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
       {popup && (
         <ItemPopup
           popup={popup}
-          sageAuto={sageAuto}
           workspaceId={workspaceId}
           onClose={() => setPopup(null)}
         />
