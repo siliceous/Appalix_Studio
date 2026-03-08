@@ -792,10 +792,15 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
       </div>
 
       {/* Sage Auto banner */}
-      {sageAuto && (
+      {sageAuto ? (
         <div className="mb-5 flex items-center gap-2 text-xs text-[#4fa898] dark:text-[#61c2ad] bg-[#61c2ad]/8 border border-[#61c2ad]/20 rounded-xl px-4 py-2.5">
           <Zap className="w-3.5 h-3.5 shrink-0" />
           <span><strong>Sage Auto is ON</strong> — AI is collecting from all channels, summarising, and automatically creating contacts &amp; updating your pipeline.</span>
+        </div>
+      ) : (
+        <div className="mb-5 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/8 rounded-xl px-4 py-2.5">
+          <Zap className="w-3.5 h-3.5 shrink-0 text-gray-400" />
+          <span><strong className="text-gray-600 dark:text-gray-300">Sage Auto is OFF</strong> — AI continues collecting and summarising conversations from all channels, while you review them and decide the next action.</span>
         </div>
       )}
 
