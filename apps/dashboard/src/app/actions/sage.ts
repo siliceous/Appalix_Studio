@@ -582,7 +582,7 @@ export async function createTicket(formData: FormData) {
   const name           = (formData.get('name') as string | null)?.trim() || null
   const email          = (formData.get('email') as string | null)?.trim() || null
   const phone          = (formData.get('phone') as string | null)?.trim() || null
-  const occurred_at    = (formData.get('occurred_at') as string | null) || null
+  const occurred_at    = new Date().toISOString()
   const description    = (formData.get('description') as string | null)?.trim() || null
   const priority       = (formData.get('priority') as SageTicketPriority | null) || 'medium'
   const contactId      = (formData.get('contact_id') as string | null) || null
