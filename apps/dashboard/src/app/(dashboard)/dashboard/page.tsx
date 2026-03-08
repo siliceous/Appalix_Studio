@@ -77,10 +77,6 @@ export default async function DashboardPage({
   if (!membership) redirect('/login')
   const workspaceId = membership.workspace_id
 
-  // ── Overview greeting ─────────────────────────────────────────────────────
-  const hour = new Date().getUTCHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-
   // ── Per-tab data fetching ─────────────────────────────────────────────────
 
   // Detect connected email provider for calendar link generation
@@ -298,7 +294,7 @@ export default async function DashboardPage({
 
       {tab === 'overview' ? (
         <div className="flex-1 overflow-y-auto p-8">
-          <SageDashboardClient workspaceId={workspaceId} greeting={greeting} />
+          <SageDashboardClient workspaceId={workspaceId} />
         </div>
       ) : (
         <div className="flex flex-1 overflow-hidden">

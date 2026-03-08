@@ -16,7 +16,7 @@ import { sendEmail } from '@/app/actions/sage-emails'
 import type { SageEmail, Conversation, Lead, SageTicket } from '@/lib/types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-type DatePreset = 'today' | 'yesterday' | '7d' | '30d'
+type DatePreset = 'today' | 'yesterday' | '7d' | '30d' | 'custom'
 
 interface RawEmail   { id: string; from_name: string | null; from_address: string; subject: string; received_at: string; ai_priority: string | null; ai_summary: string | null }
 interface RawBot     { id: string; title: string | null; platform: string | null; message_count: number; last_activity_at: string; ai_priority: string | null; bot: { name: string } | null }
@@ -45,7 +45,7 @@ const P_BG: Record<string, string> = {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function getRange(preset: DatePreset): { from: string; to: string } {
+function getRange(preset: DatePreset, customFrom?: string, customTo?: string): { from: string; to: string } {
   const now   = new Date()
   const today = new Date(now); today.setHours(0, 0, 0, 0)
   switch (preset) {
@@ -57,6 +57,13 @@ function getRange(preset: DatePreset): { from: string; to: string } {
     }
     case '7d':  { const s = new Date(today); s.setDate(s.getDate() - 7);  return { from: s.toISOString(), to: now.toISOString() } }
     case '30d': { const s = new Date(today); s.setDate(s.getDate() - 30); return { from: s.toISOString(), to: now.toISOString() } }
+    case 'custom': {
+      if (customFrom && customTo) {
+        const f = new Date(customFrom + 'T00:00:00'); const t = new Date(customTo + 'T23:59:59')
+        return { from: f.toISOString(), to: t.toISOString() }
+      }
+      return { from: today.toISOString(), to: now.toISOString() }
+    }
   }
 }
 
@@ -628,8 +635,14 @@ function ItemPopup({
 }
 
 // ── Main dashboard component ──────────────────────────────────────────────────
-export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: string; greeting: string }) {
+export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
   const [dateRange,  setDateRange]  = useState<DatePreset>('today')
+  const [customFrom, setCustomFrom] = useState<string>('')
+  const [customTo,   setCustomTo]   = useState<string>('')
+  const greeting = useMemo(() => {
+    const h = new Date().getHours()
+    return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
+  }, [])
   const [sageAuto,   setSageAuto]   = useState(true)
   const [loading,    setLoading]    = useState(true)
   const [emails,     setEmails]     = useState<RawEmail[]>([])
@@ -652,7 +665,7 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
 
   const handleDateChange = (v: DatePreset) => {
     setDateRange(v)
-    localStorage.setItem('sage-range', v)
+    if (v !== 'custom') localStorage.setItem('sage-range', v)
   }
   const toggleSageAuto = () => {
     const next = !sageAuto
@@ -662,8 +675,9 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
+    if (dateRange === 'custom' && (!customFrom || !customTo)) return
     setLoading(true)
-    const { from, to } = getRange(dateRange)
+    const { from, to } = getRange(dateRange, customFrom, customTo)
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sbAny = supabase as any
@@ -699,7 +713,7 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
     setTickets((tR.data ?? []) as RawTicket[])
     setTasks((xR.data  ?? []) as RawTask[])
     setLoading(false)
-  }, [dateRange, workspaceId])
+  }, [dateRange, customFrom, customTo, workspaceId])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -755,7 +769,7 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
             {[
               { href: '/sage/contacts',  label: 'Add Contact', Icon: Plus,           cls: 'bg-[#61c2ad] hover:bg-[#4fa898] text-white shadow-sm' },
               { href: '/sage/emails',    label: 'Inbox',       Icon: Mail,           cls: 'bg-white dark:bg-white/8 hover:bg-gray-50 dark:hover:bg-white/12 border dark:border-white/10 text-gray-700 dark:text-gray-300' },
-              { href: '/conversations',  label: 'Bot Chats',   Icon: MessageSquare,  cls: 'bg-white dark:bg-white/8 hover:bg-gray-50 dark:hover:bg-white/12 border dark:border-white/10 text-gray-700 dark:text-gray-300' },
+              { href: '/conversations',  label: 'Bot Conv.',   Icon: MessageSquare,  cls: 'bg-white dark:bg-white/8 hover:bg-gray-50 dark:hover:bg-white/12 border dark:border-white/10 text-gray-700 dark:text-gray-300' },
               { href: '/forms/leads',    label: 'Forms',       Icon: FileText,       cls: 'bg-white dark:bg-white/8 hover:bg-gray-50 dark:hover:bg-white/12 border dark:border-white/10 text-gray-700 dark:text-gray-300' },
               { href: '/sage/pipelines', label: 'Pipelines',   Icon: Kanban,         cls: 'bg-white dark:bg-white/8 hover:bg-gray-50 dark:hover:bg-white/12 border dark:border-white/10 text-gray-700 dark:text-gray-300' },
             ].map(({ href, label, Icon: Ic, cls }) => (
@@ -768,15 +782,29 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
 
         <div className="flex items-center gap-3 flex-wrap">
           {/* Date range */}
-          <div className="relative">
-            <select value={dateRange} onChange={e => handleDateChange(e.target.value as DatePreset)}
-              className="appearance-none bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 cursor-pointer">
-              <option value="today">Today</option>
-              <option value="yesterday">Yesterday</option>
-              <option value="7d">Last 7 days</option>
-              <option value="30d">Last 30 days</option>
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <select value={dateRange} onChange={e => handleDateChange(e.target.value as DatePreset)}
+                className="appearance-none bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 cursor-pointer">
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+                <option value="custom">Choose...</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            </div>
+            {dateRange === 'custom' && (
+              <div className="flex items-center gap-1.5">
+                <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
+                  className="bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
+                  placeholder="dd/mm/yyyy" />
+                <span className="text-xs text-gray-400">to</span>
+                <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
+                  className="bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
+                  placeholder="dd/mm/yyyy" />
+              </div>
+            )}
           </div>
 
           {/* Sage Auto */}
@@ -861,34 +889,34 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
               </div>
             </div>
             {/* Type icon counts — clickable in both views; in grid view also brings that tablet to top */}
-            <div className="flex items-center gap-3 text-[11px] text-gray-400">
+            <div className="flex items-center gap-3 text-xs">
               <button
                 onClick={() => { setFeedView('grid'); setTopType('email') }}
-                className={`flex items-center gap-1 hover:text-blue-500 transition-colors ${topType === 'email' && feedView === 'grid' ? 'text-blue-500 font-semibold' : ''}`}
+                className={`flex items-center gap-1 text-blue-500 hover:text-blue-600 transition-colors ${topType === 'email' && feedView === 'grid' ? 'font-semibold' : ''}`}
                 title="Emails"
               >
-                <Mail className="w-3 h-3" />{emails.length}
+                <Mail className="w-3.5 h-3.5" />{emails.length}
               </button>
               <button
                 onClick={() => { setFeedView('grid'); setTopType('bot') }}
-                className={`flex items-center gap-1 hover:text-purple-500 transition-colors ${topType === 'bot' && feedView === 'grid' ? 'text-purple-500 font-semibold' : ''}`}
+                className={`flex items-center gap-1 text-purple-500 hover:text-purple-600 transition-colors ${topType === 'bot' && feedView === 'grid' ? 'font-semibold' : ''}`}
                 title="Bot chats"
               >
-                <MessageSquare className="w-3 h-3" />{bots.length}
+                <MessageSquare className="w-3.5 h-3.5" />{bots.length}
               </button>
               <button
                 onClick={() => { setFeedView('grid'); setTopType('form') }}
-                className={`flex items-center gap-1 hover:text-green-500 transition-colors ${topType === 'form' && feedView === 'grid' ? 'text-green-500 font-semibold' : ''}`}
+                className={`flex items-center gap-1 text-green-500 hover:text-green-600 transition-colors ${topType === 'form' && feedView === 'grid' ? 'font-semibold' : ''}`}
                 title="Form submissions"
               >
-                <FileText className="w-3 h-3" />{forms.length}
+                <FileText className="w-3.5 h-3.5" />{forms.length}
               </button>
               <button
                 onClick={() => { setFeedView('grid'); setTopType('ticket') }}
-                className={`flex items-center gap-1 hover:text-yellow-500 transition-colors ${topType === 'ticket' && feedView === 'grid' ? 'text-yellow-500 font-semibold' : ''}`}
+                className={`flex items-center gap-1 text-yellow-500 hover:text-yellow-600 transition-colors ${topType === 'ticket' && feedView === 'grid' ? 'font-semibold' : ''}`}
                 title="Tickets"
               >
-                <TicketIcon className="w-3 h-3" />{tickets.length}
+                <TicketIcon className="w-3.5 h-3.5" />{tickets.length}
               </button>
             </div>
           </div>
@@ -911,17 +939,17 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
                     const e = item.data
                     return (
                       <div key={timeKey} onClick={() => setPopup({ kind: 'email', id: e.id })}
-                        className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
+                        className="flex items-start gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
                         <PriorityDot priority={e.ai_priority ?? 'low'} pulse={e.ai_priority === 'high'} />
-                        <div className="w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center shrink-0">
-                          <Mail className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                        <div className="w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center shrink-0">
+                          <Mail className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{e.from_name ?? e.from_address}</p>
-                          <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{e.subject}</p>
-                          {e.ai_summary && <p className="text-[10px] text-gray-400 italic truncate mt-0.5">{e.ai_summary}</p>}
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{e.from_name ?? e.from_address}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{e.subject}</p>
+                          {e.ai_summary && <p className="text-[11px] text-gray-400 italic truncate mt-0.5">{e.ai_summary}</p>}
                         </div>
-                        <span className="text-[10px] text-gray-400 shrink-0">{timeLabel}</span>
+                        <span className="text-xs text-gray-400 shrink-0">{timeLabel}</span>
                       </div>
                     )
                   }
@@ -929,18 +957,18 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
                     const b = item.data
                     return (
                       <div key={timeKey} onClick={() => setPopup({ kind: 'bot', id: b.id })}
-                        className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
+                        className="flex items-start gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
                         <PriorityDot priority={b.ai_priority ?? 'low'} pulse={b.ai_priority === 'high'} />
-                        <div className="w-5 h-5 rounded-md bg-purple-100 dark:bg-purple-500/15 flex items-center justify-center shrink-0">
-                          <MessageSquare className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                        <div className="w-6 h-6 rounded-md bg-purple-100 dark:bg-purple-500/15 flex items-center justify-center shrink-0">
+                          <MessageSquare className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{b.title ?? 'Untitled conversation'}</p>
-                          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{b.title ?? 'Untitled conversation'}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
                             {b.bot?.name && <span className="font-medium">{b.bot.name} · </span>}{b.message_count} msgs
                           </p>
                         </div>
-                        <span className="text-[10px] text-gray-400 shrink-0">{timeLabel}</span>
+                        <span className="text-xs text-gray-400 shrink-0">{timeLabel}</span>
                       </div>
                     )
                   }
@@ -948,16 +976,16 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
                     const f = item.data
                     return (
                       <div key={timeKey} onClick={() => setPopup({ kind: 'form', id: f.id })}
-                        className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
+                        className="flex items-start gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
                         <PriorityDot priority={f.lead_score ?? 'low'} />
-                        <div className="w-5 h-5 rounded-md bg-green-100 dark:bg-green-500/15 flex items-center justify-center shrink-0">
-                          <FileText className="w-3 h-3 text-green-600 dark:text-green-400" />
+                        <div className="w-6 h-6 rounded-md bg-green-100 dark:bg-green-500/15 flex items-center justify-center shrink-0">
+                          <FileText className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{f.name}</p>
-                          <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{f.company ?? f.email ?? f.source_platform}</p>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{f.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{f.company ?? f.email ?? f.source_platform}</p>
                         </div>
-                        <span className="text-[10px] text-gray-400 shrink-0">{timeLabel}</span>
+                        <span className="text-xs text-gray-400 shrink-0">{timeLabel}</span>
                       </div>
                     )
                   }
@@ -965,16 +993,16 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
                     const t = item.data
                     return (
                       <div key={timeKey} onClick={() => setPopup({ kind: 'ticket', id: t.id })}
-                        className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
+                        className="flex items-start gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
                         <PriorityDot priority={t.priority} pulse={t.priority === 'high' || t.priority === 'urgent'} />
-                        <div className="w-5 h-5 rounded-md bg-yellow-100 dark:bg-yellow-500/15 flex items-center justify-center shrink-0">
-                          <TicketIcon className="w-3 h-3 text-yellow-600 dark:text-yellow-400" />
+                        <div className="w-6 h-6 rounded-md bg-yellow-100 dark:bg-yellow-500/15 flex items-center justify-center shrink-0">
+                          <TicketIcon className="w-3.5 h-3.5 text-yellow-600 dark:text-yellow-400" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{t.title}</p>
-                          {t.contact && <p className="text-[11px] text-gray-500 dark:text-gray-400">{t.contact.name}</p>}
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{t.title}</p>
+                          {t.contact && <p className="text-xs text-gray-500 dark:text-gray-400">{t.contact.name}</p>}
                         </div>
-                        <span className="text-[10px] text-gray-400 shrink-0">{timeLabel}</span>
+                        <span className="text-xs text-gray-400 shrink-0">{timeLabel}</span>
                       </div>
                     )
                   }
@@ -1139,11 +1167,11 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
         <div className="xl:col-span-1 bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col">
           <div className="px-5 py-4 border-b dark:border-white/8 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <CheckSquare className="w-4 h-4 text-[#61c2ad]" />
+              <CheckSquare className="w-4 h-4 text-gray-400" />
               <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Pending Tasks</h2>
             </div>
             {tasks.length > 0 && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#61c2ad]/10 text-[#61c2ad]">{tasks.length}</span>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400">{tasks.length}</span>
             )}
           </div>
 
@@ -1161,20 +1189,20 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
                   ? `/sage/pipelines/${task.deal.pipeline_id}?deal=${task.deal_id}`
                   : '/sage/pipelines'
                 return (
-                  <div key={task.id} className="flex items-start gap-0 px-5 py-3.5 group hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
+                  <div key={task.id} className="flex items-start gap-0 px-5 py-4 group hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
                     <Link href={pipelineUrl} className="flex-1 min-w-0 pr-2">
-                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate group-hover:text-[#61c2ad] transition-colors">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
                         {task.title ?? 'Untitled task'}
                       </p>
                       {task.deal && (
-                        <p className="text-[11px] text-[#61c2ad] truncate mt-0.5">{task.deal.title}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{task.deal.title}</p>
                       )}
                       {task.body && (
-                        <p className="text-[10px] text-gray-400 italic truncate mt-0.5">{task.body}</p>
+                        <p className="text-[11px] text-gray-400 italic truncate mt-0.5">{task.body}</p>
                       )}
                       {task.due_at && (
-                        <span className={`flex items-center gap-1 text-[10px] font-medium mt-1 ${overdue(task.due_at) ? 'text-red-500' : 'text-gray-400'}`}>
-                          <Calendar className="w-2.5 h-2.5" />
+                        <span className={`flex items-center gap-1 text-xs font-medium mt-1 ${overdue(task.due_at) ? 'text-red-500' : 'text-gray-400'}`}>
+                          <Calendar className="w-3 h-3" />
                           {new Date(task.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           {overdue(task.due_at) && ' · overdue'}
                         </span>
@@ -1185,11 +1213,11 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
                       onClick={e => markTaskDone(task.id, e)}
                       disabled={doneBusy === task.id}
                       title="Mark as done"
-                      className="shrink-0 p-1.5 rounded-lg text-gray-300 dark:text-gray-600 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 transition-colors disabled:opacity-50 mt-0.5"
+                      className="shrink-0 w-5 h-5 mt-0.5 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 hover:text-green-600 text-transparent transition-colors disabled:opacity-50"
                     >
                       {doneBusy === task.id
-                        ? <RefreshCw className="w-4 h-4 animate-spin" />
-                        : <CheckCircle2 className="w-4 h-4" />}
+                        ? <RefreshCw className="w-3 h-3 text-gray-400 animate-spin" />
+                        : <CheckCircle2 className="w-3 h-3" />}
                     </button>
                   </div>
                 )

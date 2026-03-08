@@ -22,12 +22,9 @@ export default async function SageDashboardPage() {
   const membership = membershipRaw as Pick<WorkspaceMember, 'workspace_id'> | null
   if (!membership) redirect('/login')
 
-  const hour = new Date().getUTCHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-
   return (
     <div className="p-8">
-      <SageDashboardClient workspaceId={membership.workspace_id} greeting={greeting} />
+      <SageDashboardClient workspaceId={membership.workspace_id} />
     </div>
   )
 }
