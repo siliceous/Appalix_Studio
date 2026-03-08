@@ -32,6 +32,11 @@ const config: Config = {
   // from categoryClass() so Tailwind JIT must be told explicitly to include them
   // Also safelist triage list-item active-state classes used in nested ternaries
   safelist: [
+    // SubpageToolbar pill button active states
+    'bg-blue-500/12','dark:bg-blue-500/12','dark:text-blue-300','dark:border-blue-500/25','border-blue-200/80',
+    'bg-purple-500/12','dark:bg-purple-500/12','dark:text-purple-300','dark:border-purple-500/25','border-purple-200/80',
+    'bg-green-500/12','dark:bg-green-500/12','dark:text-green-300','dark:border-green-500/25','border-green-200/80',
+    'bg-amber-500/12','dark:bg-amber-500/12','dark:text-amber-300','dark:border-amber-500/25','border-amber-200/80',
     // Triage list item — active selection backgrounds (bots / forms / tickets)
     'border-l-[3px]',
     'border-l-transparent',

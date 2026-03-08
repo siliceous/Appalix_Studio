@@ -80,35 +80,35 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
     })
   }
 
-  const PAGES: { key: SubpageSource; label: string; href: string; Icon: React.ElementType; activeColor: string; hoverColor: string }[] = [
-    { key: 'email',   label: 'Email',   href: '/dashboard/email',   Icon: Mail,          activeColor: 'text-blue-600 dark:text-blue-400 border-blue-500',    hoverColor: 'hover:text-blue-500 dark:hover:text-blue-400' },
-    { key: 'bots',    label: 'Bots',    href: '/dashboard/bots',    Icon: MessageSquare, activeColor: 'text-purple-600 dark:text-purple-400 border-purple-500', hoverColor: 'hover:text-purple-500 dark:hover:text-purple-400' },
-    { key: 'forms',   label: 'Forms',   href: '/dashboard/forms',   Icon: FileText,      activeColor: 'text-green-600 dark:text-green-400 border-green-500',   hoverColor: 'hover:text-green-500 dark:hover:text-green-400' },
-    { key: 'tickets', label: 'Tickets', href: '/dashboard/tickets', Icon: TicketIcon,    activeColor: 'text-yellow-600 dark:text-yellow-400 border-yellow-500', hoverColor: 'hover:text-yellow-500 dark:hover:text-yellow-400' },
+  const PAGES: { key: SubpageSource; label: string; href: string; Icon: React.ElementType; activeCls: string; hoverCls: string }[] = [
+    { key: 'email',   label: 'Email',   href: '/dashboard/email',   Icon: Mail,          activeCls: 'bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-500/12 dark:text-blue-300 dark:border-blue-500/25',    hoverCls: 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/6 hover:text-blue-600 dark:hover:text-blue-400' },
+    { key: 'bots',    label: 'Bots',    href: '/dashboard/bots',    Icon: MessageSquare, activeCls: 'bg-purple-50 text-purple-700 border-purple-200/80 dark:bg-purple-500/12 dark:text-purple-300 dark:border-purple-500/25', hoverCls: 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/6 hover:text-purple-600 dark:hover:text-purple-400' },
+    { key: 'forms',   label: 'Forms',   href: '/dashboard/forms',   Icon: FileText,      activeCls: 'bg-green-50 text-green-700 border-green-200/80 dark:bg-green-500/12 dark:text-green-300 dark:border-green-500/25',   hoverCls: 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/6 hover:text-green-600 dark:hover:text-green-400' },
+    { key: 'tickets', label: 'Tickets', href: '/dashboard/tickets', Icon: TicketIcon,    activeCls: 'bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-500/12 dark:text-amber-300 dark:border-amber-500/25', hoverCls: 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/6 hover:text-amber-600 dark:hover:text-amber-400' },
   ]
 
   return (
-    <nav className="px-4 border-b dark:border-white/8 bg-white dark:bg-[#1c1c1c] flex items-center justify-between shrink-0 gap-4 min-h-[44px]">
-      {/* Overview link + page tabs */}
-      <div className="flex items-stretch gap-1">
+    <nav className="px-4 border-b dark:border-white/8 bg-white dark:bg-[#1c1c1c] flex items-center justify-between shrink-0 gap-4 min-h-[52px]">
+      {/* Overview link + page pill buttons */}
+      <div className="flex items-center gap-1.5">
         <Link
           href="/dashboard"
-          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors shrink-0 px-2 mr-1"
+          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors shrink-0 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/6 mr-0.5"
         >
           <LayoutDashboard className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Overview</span>
         </Link>
-        <div className="w-px self-stretch bg-gray-200 dark:bg-white/8 my-2" />
-        {/* Sibling page tabs */}
+        <div className="w-px h-5 bg-gray-200 dark:bg-white/10" />
+        {/* Sibling page pill buttons */}
         {PAGES.map(p => (
           <Link
             key={p.key}
             href={p.href}
             className={[
-              'flex items-center gap-1.5 px-3 text-xs font-medium border-b-2 -mb-px transition-colors whitespace-nowrap self-stretch',
+              'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl border transition-colors whitespace-nowrap',
               sourceKey === p.key
-                ? `${p.activeColor} font-semibold`
-                : `border-transparent text-gray-400 dark:text-gray-500 ${p.hoverColor}`,
+                ? p.activeCls
+                : `border-transparent ${p.hoverCls}`,
             ].join(' ')}
           >
             <p.Icon className="w-3.5 h-3.5 shrink-0" />
