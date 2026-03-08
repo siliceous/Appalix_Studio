@@ -73,15 +73,15 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Forms',
     pro: true,
     items: [
-      { href: '/forms/leads',     label: 'All Leads',  icon: Inbox },
-      { href: '/forms/sources',   label: 'Sources',    icon: Rss },
-      { href: '/forms/analytics', label: 'Campaign Analytics',  icon: PieChart },
+      { href: '/forms/leads',   label: 'All Leads', icon: Inbox },
+      { href: '/forms/sources', label: 'Sources',   icon: Rss },
     ],
   },
   {
     items: [
-      { href: '/analytics', label: 'Analytics', icon: BarChart2 },
-      { href: '/settings',  label: 'Settings',  icon: Settings },
+      { href: '/analytics',       label: 'Analytics',          icon: BarChart2 },
+      { href: '/forms/analytics', label: 'Campaign Analytics', icon: PieChart, sub: true },
+      { href: '/settings',        label: 'Settings',           icon: Settings },
     ],
   },
 ]
@@ -202,9 +202,9 @@ export function Sidebar({ workspace }: SidebarProps) {
                     const active = isActive(href)
 
                     const linkCls = cn(
-                      'flex items-center gap-3 rounded-lg transition-colors w-full',
+                      'flex items-center gap-3 rounded-lg transition-[padding,background-color,color] duration-200 w-full',
                       sub
-                        ? 'pl-7 pr-2 py-1.5 text-xs'
+                        ? 'px-2 group-hover:pl-7 pr-2 py-1.5 text-xs'
                         : 'px-2 py-2 text-sm',
                       active
                         ? 'bg-brand-50 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad] font-medium'
@@ -215,7 +215,7 @@ export function Sidebar({ workspace }: SidebarProps) {
 
                     const content = (
                       <>
-                        <Icon className={cn('shrink-0', sub ? 'w-3.5 h-3.5' : 'w-5 h-5')} />
+                        <Icon className={cn('shrink-0', sub ? 'w-4 h-4' : 'w-5 h-5')} />
                         <span className="overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-75 whitespace-nowrap">
                           {label}
                         </span>
