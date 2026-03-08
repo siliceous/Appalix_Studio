@@ -42,7 +42,21 @@ export function TicketsClient({ tickets: initialTickets, contacts }: TicketsClie
   const [deleting,    setDeleting]    = useState<string | null>(null)
   const [slideTicket, setSlideTicket] = useState<TicketWithContact | null>(null)
 
-  const filtered = filter === 'all' ? tickets : tickets.filter(t => t.status === filter)
+  // Sort: open (unactioned) oldest first → in_progress/pending → resolved/closed
+  function sortTickets(list: TicketWithContact[]) {
+    const rank = (s: string) => s === 'open' ? 0 : (s === 'in_progress' || s === 'pending') ? 1 : 2
+    return [...list].sort((a, b) => {
+      const rd = rank(a.status) - rank(b.status)
+      if (rd !== 0) return rd
+      // Within the same rank: open = oldest first (ASC), others = newest first (DESC)
+      const asc = rank(a.status) === 0
+      return asc
+        ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
+  }
+
+  const filtered = sortTickets(filter === 'all' ? tickets : tickets.filter(t => t.status === filter))
 
   async function handleStatusChange(id: string, status: SageTicketStatus) {
     setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t))
