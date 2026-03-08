@@ -125,7 +125,7 @@ export const BUILT_IN_TOOLS: Anthropic.Tool[] = [
   // ── Pro+ automation tools ────────────────────────────────────────
   {
     name:        'send_email',
-    description: 'Send an email to one or more recipients. Only use when the user EXPLICITLY asks you to send an email. Do NOT use this automatically after creating a ticket, creating a lead, or any other action — only send when directly instructed by the user.',
+    description: 'Send an email to one or more recipients. Use when the user explicitly asks to email something, or to send a confirmation/notification after completing an action (e.g. ticket created, appointment booked) if the recipient is known.',
     input_schema: {
       type: 'object',
       properties: {
