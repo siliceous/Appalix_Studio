@@ -72,7 +72,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
         integrationId: integration.id,
         workspaceId:   integration.workspace_id,
         botId:         integration.bot_id!,
-        platform:      'web_widget' as const,
+        platform:      (integration.platform as 'web_widget' | 'wordpress'),
         config:        cfg as Record<string, string>,
       }
 
