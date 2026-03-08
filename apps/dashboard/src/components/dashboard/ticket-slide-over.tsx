@@ -212,22 +212,32 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
                 </div>
               </div>
 
-              {/* Contact card */}
-              {ticket.contact && (
+              {/* Contact info card */}
+              {(ticket.name || ticket.email || ticket.phone || ticket.contact) && (
                 <div className="p-3.5 rounded-xl border border-gray-100 dark:border-white/8 bg-gray-50 dark:bg-white/3">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-2">
-                    Contact
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-2.5">
+                    Contact Info
                   </p>
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-[#61c2ad]/10 flex items-center justify-center shrink-0">
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-[#61c2ad]/10 flex items-center justify-center shrink-0 mt-0.5">
                       <User className="w-4 h-4 text-brand-600 dark:text-[#61c2ad]" />
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{ticket.contact.name}</p>
-                      {ticket.contact.email && (
-                        <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
-                          <Mail className="w-2.5 h-2.5" />
-                          {ticket.contact.email}
+                    <div className="space-y-1 min-w-0">
+                      {(ticket.name ?? ticket.contact?.name) && (
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {ticket.name ?? ticket.contact?.name}
+                        </p>
+                      )}
+                      {(ticket.email ?? ticket.contact?.email) && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                          <Mail className="w-3 h-3 shrink-0" />
+                          {ticket.email ?? ticket.contact?.email}
+                        </p>
+                      )}
+                      {ticket.phone && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                          <Phone className="w-3 h-3 shrink-0" />
+                          {ticket.phone}
                         </p>
                       )}
                     </div>
@@ -266,6 +276,15 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
                     {timeAgo(ticket.created_at)}
                   </p>
                 </div>
+                {ticket.occurred_at && (
+                  <div className="p-3 rounded-xl border border-gray-100 dark:border-white/8 bg-gray-50 dark:bg-white/2 col-span-2">
+                    <p className="text-[10px] text-gray-400 mb-1">Issue occurred</p>
+                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                      <Clock className="w-3 h-3" />
+                      {new Date(ticket.occurred_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    </p>
+                  </div>
+                )}
               </div>
 
             </div>

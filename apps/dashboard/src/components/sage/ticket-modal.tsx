@@ -49,6 +49,45 @@ export function TicketModal({ contacts, onClose }: TicketModalProps) {
             />
           </div>
 
+          {/* Email + Phone */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                Email
+              </label>
+              <input
+                name="email"
+                type="email"
+                placeholder="customer@example.com"
+                className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                Phone
+              </label>
+              <input
+                name="phone"
+                type="tel"
+                placeholder="+1 555 000 0000"
+                className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+              />
+            </div>
+          </div>
+          <p className="text-[11px] text-gray-400 -mt-2">At least an email or phone number is required.</p>
+
+          {/* Date & Time of issue */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Date &amp; Time <span className="text-gray-400 font-normal">(when issue occurred)</span>
+            </label>
+            <input
+              name="occurred_at"
+              type="datetime-local"
+              className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+            />
+          </div>
+
           {/* Title */}
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
