@@ -334,12 +334,14 @@ ${bodyText.slice(0, 3000)}`
       model:        'claude-haiku-4-5-20251001',  // fast + cheap for bulk analysis
       systemPrompt: 'You are a precise JSON generator. Output only the JSON object requested.',
       messages:     [{ role: 'user', content: prompt }],
-      maxTokens:    1024,
+      maxTokens:    4096,  // reply_drafts alone can be 1000+ tokens; 1024 causes truncation → parse failure
       temperature:  0.2,
     })
 
-    // Strip markdown fences in case the model wraps the JSON (e.g. ```json ... ```)
-    const cleaned = result.content.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '')
+    // Extract the first {...} block — handles markdown fences, leading prose, trailing text
+    const raw    = result.content.trim()
+    const match  = raw.match(/\{[\s\S]*\}/)
+    const cleaned = match ? match[0] : raw
     const json = JSON.parse(cleaned) as EmailAnalysis
     if (!json.priority || !json.action) return null
     // Normalise: support both old `entities` key and new `extracted` key

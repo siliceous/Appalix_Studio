@@ -21,6 +21,7 @@ import { sageEmailRoutes }  from './routes/sage/emails.js'
 import { botRoutes }        from './routes/bots/index.js'
 import { formRoutes }       from './routes/forms/index.js'
 import { startIdleManager, stopIdleManager } from './services/sage-email-idle.js'
+import { reanalyzePendingEmails }            from './services/sage-email-sync.js'
 
 const server = Fastify({
   logger: {
@@ -174,6 +175,41 @@ try {
   // loop immediately syncs it — no manual "Sync" button needed.
   // ---------------------------------------------------------------
   void startIdleManager()
+
+  // ---------------------------------------------------------------
+  // Email re-analysis poller
+  // Catches emails whose AI analysis failed silently (e.g. Claude API
+  // error, JSON truncation) — they sit with ai_priority = null.
+  // Runs once on startup and every 10 minutes to backfill them.
+  // ---------------------------------------------------------------
+  async function pollUnanalyzedEmails() {
+    try {
+      // Find all workspaces that have unanalyzed inbound emails
+      const { data: rows } = await supabase
+        .from('sage_emails')
+        .select('workspace_id')
+        .eq('direction', 'inbound')
+        .is('ai_analyzed_at', null)
+        .limit(100)
+
+      if (!rows || rows.length === 0) return
+
+      const workspaceIds = [...new Set(rows.map(r => r.workspace_id as string))]
+      console.log(`[email-poller] found unanalyzed emails in ${workspaceIds.length} workspace(s)`)
+
+      for (const wsId of workspaceIds) {
+        reanalyzePendingEmails(wsId, 20).catch((err: unknown) => {
+          console.error(`[email-poller] reanalyze failed for workspace=${wsId}:`, err)
+        })
+      }
+    } catch (err) {
+      console.error('[email-poller] error:', err)
+    }
+  }
+
+  // Run once on startup, then every 10 minutes
+  void pollUnanalyzedEmails()
+  setInterval(pollUnanalyzedEmails, 10 * 60 * 1000)
 
   // Graceful shutdown — release IMAP connections before process exits
   const shutdown = () => { stopIdleManager(); process.exit(0) }
