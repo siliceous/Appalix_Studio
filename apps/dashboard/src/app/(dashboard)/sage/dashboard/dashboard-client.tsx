@@ -239,16 +239,15 @@ function ItemPopup({
             <Sparkles className="w-3.5 h-3.5 text-[#61c2ad]" />
           </div>
           <div className="flex items-center gap-2">
-            {/* Email Triage link in header — only when not in reply mode */}
-            {popup.kind === 'email' && !loading && data && !showReply && (
-              <Link
-                href="/sage/emails"
-                onClick={onClose}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/12 transition-colors"
+            {/* Quick-action buttons in header for email */}
+            {popup.kind === 'email' && !loading && data && (
+              <button
+                onClick={() => setShowReply(v => { if (!v) setShowInsights(false); return !v; })}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showReply ? 'bg-[#61c2ad] text-white' : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/12'}`}
               >
-                <ExternalLink className="w-3.5 h-3.5" />
-                Email Triage
-              </Link>
+                <Reply className="w-3.5 h-3.5" />
+                Reply
+              </button>
             )}
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors">
               <X className="w-4 h-4 text-gray-400" />
@@ -345,8 +344,8 @@ function ItemPopup({
                       </div>
                     )}
 
-                    {/* Key Insights — collapsible, hidden entirely when reply compose is open */}
-                    {(e.ai_insights ?? []).length > 0 && !showReply && (
+                    {/* Key Insights — collapsible, collapsed by default when reply is open */}
+                    {(e.ai_insights ?? []).length > 0 && (
                       <div className="bg-gray-50 dark:bg-white/4 rounded-xl overflow-hidden">
                         <button
                           onClick={() => setShowInsights(v => !v)}
@@ -530,7 +529,7 @@ function ItemPopup({
             <div className="flex items-center gap-2">
 
               {sageAuto ? (
-                /* ── Sage Auto ON: Dismiss + [Reply for email] + Open Pipeline ── */
+                /* ── Sage Auto ON: Dismiss + Open Pipeline ── */
                 <>
                   <button
                     onClick={onClose}
@@ -540,15 +539,6 @@ function ItemPopup({
                     Dismiss
                   </button>
                   <div className="flex-1" />
-                  {popup.kind === 'email' && !showReply && (
-                    <button
-                      onClick={() => { setShowReply(true); setShowInsights(false) }}
-                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-gray-100 dark:bg-white/8 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-white/12 rounded-xl transition-colors"
-                    >
-                      <Reply className="w-3.5 h-3.5" />
-                      Reply
-                    </button>
-                  )}
                   <Link
                     href="/sage/pipelines"
                     onClick={onClose}
@@ -559,7 +549,7 @@ function ItemPopup({
                   </Link>
                 </>
               ) : (
-                /* ── Sage Auto OFF: Create Lead + Create Ticket + Reply (email) or Triage link ── */
+                /* ── Sage Auto OFF: Create Lead + Create Ticket + Triage link ── */
                 <>
                   {!actionDone && (
                     <button
@@ -610,33 +600,22 @@ function ItemPopup({
 
                   <div className="flex-1" />
 
-                  {/* Email: Reply button; other types: Triage link */}
-                  {popup.kind === 'email' ? (
-                    !showReply && (
-                      <button
-                        onClick={() => { setShowReply(true); setShowInsights(false) }}
-                        className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-gray-100 dark:bg-white/8 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-white/12 rounded-xl transition-colors"
-                      >
-                        <Reply className="w-3.5 h-3.5" />
-                        Reply
-                      </button>
-                    )
-                  ) : (
-                    <Link
-                      href={
-                        popup.kind === 'bot'  ? '/sage/bots' :
-                        popup.kind === 'form' ? '/sage/forms' :
-                                               '/sage/tickets'
-                      }
-                      className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-[#61c2ad] hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors border dark:border-white/8"
-                      onClick={onClose}
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      {popup.kind === 'bot'  ? 'Bot Triage' :
-                       popup.kind === 'form' ? 'Form Triage' :
-                                              'Ticket Triage'}
-                    </Link>
-                  )}
+                  <Link
+                    href={
+                      popup.kind === 'email' ? '/sage/emails' :
+                      popup.kind === 'bot'   ? '/sage/bots' :
+                      popup.kind === 'form'  ? '/sage/forms' :
+                                              '/sage/tickets'
+                    }
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-[#61c2ad] hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors border dark:border-white/8"
+                    onClick={onClose}
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    {popup.kind === 'email' ? 'Email Triage' :
+                     popup.kind === 'bot'   ? 'Bot Triage' :
+                     popup.kind === 'form'  ? 'Form Triage' :
+                                             'Ticket Triage'}
+                  </Link>
                 </>
               )}
 
