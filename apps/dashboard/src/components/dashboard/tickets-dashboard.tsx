@@ -82,10 +82,13 @@ export function TicketsDashboard({ tickets }: { tickets: TicketRow[] }) {
                 key={ticket.id}
                 onClick={() => setSelectedId(ticket.id)}
                 className={[
-                  'w-full text-left px-4 py-3 transition-colors',
+                  'w-full text-left px-4 py-3 transition-colors border-l-[3px]',
                   isSelected
-                    ? 'bg-gray-100/80 dark:bg-white/6'
-                    : 'hover:bg-gray-100/60 dark:hover:bg-white/4',
+                    ? ticket.priority === 'urgent' ? 'border-l-red-500 bg-red-50 dark:bg-red-500/8'
+                    : ticket.priority === 'high'   ? 'border-l-orange-400 bg-orange-50 dark:bg-orange-500/8'
+                    : ticket.priority === 'medium' ? 'border-l-amber-400 bg-amber-50 dark:bg-amber-500/8'
+                    :                                'border-l-gray-400 bg-gray-100 dark:bg-white/5'
+                    : 'border-l-transparent hover:bg-white dark:hover:bg-white/3',
                 ].join(' ')}
               >
                 <div className="flex items-start gap-2.5">

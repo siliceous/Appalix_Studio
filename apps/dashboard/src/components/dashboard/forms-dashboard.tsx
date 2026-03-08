@@ -173,8 +173,8 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
                 key={form.id}
                 onClick={() => setSelectedFormId(form.id)}
                 className={cn(
-                  'group flex items-center gap-2 px-3 py-2.5 cursor-pointer border-b border-gray-100 dark:border-white/5 transition-colors',
-                  active ? 'bg-gray-100/80 dark:bg-white/6' : 'hover:bg-gray-100/60 dark:hover:bg-white/3'
+                  'group flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors border-l-[3px]',
+                  active ? 'border-l-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10' : 'border-l-transparent hover:bg-white dark:hover:bg-white/3'
                 )}
               >
                 <div className="flex-1 min-w-0">
@@ -247,8 +247,13 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
                 key={sub.id}
                 onClick={() => setSelectedId(sub.id)}
                 className={cn(
-                  'px-3 py-2.5 border-b border-gray-100 dark:border-white/5 cursor-pointer transition-colors',
-                  selectedId === sub.id ? 'bg-gray-100/80 dark:bg-white/6' : 'hover:bg-gray-100/60 dark:hover:bg-white/3'
+                  'px-3 py-2.5 cursor-pointer transition-colors border-l-[3px]',
+                  selectedId === sub.id
+                    ? sub.ai_priority === 'high'   ? 'border-l-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10'
+                    : sub.ai_priority === 'medium' ? 'border-l-amber-400 bg-amber-50 dark:bg-amber-500/8'
+                    : sub.ai_priority === 'low'    ? 'border-l-gray-400  bg-gray-100 dark:bg-white/5'
+                    :                                'border-l-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10'
+                    : 'border-l-transparent hover:bg-white dark:hover:bg-white/3'
                 )}
               >
                 <div className="flex items-start gap-2">
