@@ -534,6 +534,96 @@ Task: Identify any NEW products, services, or customer segments described in the
 }
 
 // ---------------------------------------------------------------------------
+// CRM contact targeted IMAP search helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Searches the currently selected mailbox for emails FROM each CRM contact
+ * with an open deal. Inserts any that aren't already in the DB.
+ * Called for both INBOX and [Gmail]/All Mail so archived emails aren't missed.
+ */
+async function searchAndSyncContactEmails(
+  client:       ImapFlow,
+  workspaceId:  string,
+  contactPairs: { email: string; contactId: string }[],
+  since:        Date,
+  userEmail:    string,
+): Promise<number> {
+  let count = 0
+
+  for (const { email: contactEmail, contactId } of contactPairs) {
+    try {
+      const foundUids = ((await client.search(
+        { from: contactEmail, since },
+        { uid: true },
+      )) ?? []) as number[]
+
+      if (foundUids.length === 0) continue
+
+      const top50       = [...foundUids].sort((a, b) => b - a).slice(0, 50)
+      const contactMsgs = client.fetch(top50.join(','), { uid: true, source: true }, { uid: true })
+
+      const contactRaws: Buffer[] = []
+      for await (const msg of contactMsgs) {
+        if (msg.source) contactRaws.push(msg.source)
+      }
+
+      for (const contactRaw of contactRaws) {
+        try {
+          const parsed = await simpleParser(contactRaw)
+          const msgId  = parsed.messageId ?? `generated-crm-${Date.now()}-${Math.random()}`
+
+          const { data: alreadyExists } = await supabase
+            .from('sage_emails')
+            .select('id')
+            .eq('workspace_id', workspaceId)
+            .eq('message_id', msgId)
+            .single()
+
+          if (alreadyExists) continue
+
+          const fromAddress = (parsed.from?.value?.[0]?.address ?? '').toLowerCase()
+          const fromName    = parsed.from?.value?.[0]?.name ?? fromAddress
+          const toAddress   = parsed.to && !Array.isArray(parsed.to)
+            ? (parsed.to.value?.[0]?.address ?? userEmail)
+            : userEmail
+
+          const { data: ins } = await supabase
+            .from('sage_emails')
+            .insert({
+              workspace_id: workspaceId,
+              contact_id:   contactId,
+              message_id:   msgId,
+              thread_id:    parsed.references?.[0] ?? null,
+              from_address: fromAddress,
+              from_name:    fromName,
+              to_address:   toAddress,
+              subject:      parsed.subject ?? '(no subject)',
+              body_text:    parsed.text ?? '',
+              body_html:    parsed.html ?? null,
+              received_at:  parsed.date?.toISOString() ?? new Date().toISOString(),
+              direction:    'inbound',
+              is_read:      false,
+              // ai_analyzed_at intentionally null → 1-min poller picks it up
+            })
+            .select('id')
+            .single()
+
+          if (ins) {
+            count++
+            console.log(`[email-sync] CRM targeted: synced "${parsed.subject ?? ''}" from ${contactEmail}`)
+          }
+        } catch { /* skip malformed message */ }
+      }
+    } catch (err) {
+      console.error(`[email-sync] CRM search failed for ${contactEmail}:`, (err as Error).message)
+    }
+  }
+
+  return count
+}
+
+// ---------------------------------------------------------------------------
 // Main sync function
 // ---------------------------------------------------------------------------
 
@@ -580,6 +670,27 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
   await client.connect()
 
   let synced = 0
+
+  // Pre-fetch CRM contacts with open deals so we can search for their emails
+  // in BOTH the INBOX and [Gmail]/All Mail (for archived emails).
+  type DealRow = { contact_id: string; sage_contacts: { email: string | null }[] }
+  const { data: openDeals } = await supabase
+    .from('sage_deals')
+    .select('contact_id, sage_contacts!inner(email)')
+    .eq('workspace_id', workspaceId)
+    .eq('status', 'open')
+
+  const contactPairs = [...new Map(
+    ((openDeals ?? []) as unknown as DealRow[])
+      .filter(d => d.sage_contacts?.[0]?.email)
+      .map(d => [d.contact_id, {
+        email:     d.sage_contacts[0].email!.toLowerCase(),
+        contactId: d.contact_id,
+      }]),
+  ).values()]
+
+  const since180 = new Date()
+  since180.setDate(since180.getDate() - 180)  // look back 6 months
 
   try {
     const lock = await client.getMailboxLock('INBOX')
@@ -828,108 +939,40 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
         }
       }
 
-      // ── Targeted sync for CRM contacts with open deals ──────────────────────
+      // ── Targeted sync for CRM contacts with open deals (INBOX pass) ─────────
       // Searches IMAP by FROM address so emails that predate the sequence-range
       // window (i.e. older than the last `limit` messages) are not missed.
-      try {
-        type DealRow = { contact_id: string; sage_contacts: { email: string | null }[] }
-        const { data: openDeals } = await supabase
-          .from('sage_deals')
-          .select('contact_id, sage_contacts!inner(email)')
-          .eq('workspace_id', workspaceId)
-          .eq('status', 'open')
-
-        const contactPairs = [...new Map(
-          ((openDeals ?? []) as unknown as DealRow[])
-            .filter(d => d.sage_contacts?.[0]?.email)
-            .map(d => [d.contact_id, {
-              email:     d.sage_contacts[0].email!.toLowerCase(),
-              contactId: d.contact_id,
-            }]),
-        ).values()]
-
-        if (contactPairs.length > 0) {
-          const since180 = new Date()
-          since180.setDate(since180.getDate() - 180)  // look back 6 months
-
-          for (const { email: contactEmail, contactId } of contactPairs) {
-            try {
-              const foundUids = (await client.search(
-                { from: contactEmail, since: since180 },
-                { uid: true },
-              ) ?? []) as number[]
-
-              if (foundUids.length === 0) continue
-
-              // Fetch newest 50 UIDs from this contact
-              const top50 = [...foundUids].sort((a, b) => b - a).slice(0, 50)
-              const contactMsgs = client.fetch(top50.join(','), { uid: true, source: true }, { uid: true })
-
-              const contactRaws: Buffer[] = []
-              for await (const msg of contactMsgs) {
-                if (msg.source) contactRaws.push(msg.source)
-              }
-
-              for (const contactRaw of contactRaws) {
-                try {
-                  const parsed   = await simpleParser(contactRaw)
-                  const msgId    = parsed.messageId ?? `generated-crm-${Date.now()}-${Math.random()}`
-
-                  const { data: alreadyExists } = await supabase
-                    .from('sage_emails')
-                    .select('id')
-                    .eq('workspace_id', workspaceId)
-                    .eq('message_id', msgId)
-                    .single()
-
-                  if (alreadyExists) continue
-
-                  const fromAddress = (parsed.from?.value?.[0]?.address ?? '').toLowerCase()
-                  const fromName    = parsed.from?.value?.[0]?.name ?? fromAddress
-                  const toAddress   = parsed.to && !Array.isArray(parsed.to)
-                    ? (parsed.to.value?.[0]?.address ?? creds.auth.user)
-                    : creds.auth.user
-
-                  const { data: ins } = await supabase
-                    .from('sage_emails')
-                    .insert({
-                      workspace_id: workspaceId,
-                      contact_id:   contactId,
-                      message_id:   msgId,
-                      thread_id:    parsed.references?.[0] ?? null,
-                      from_address: fromAddress,
-                      from_name:    fromName,
-                      to_address:   toAddress,
-                      subject:      parsed.subject ?? '(no subject)',
-                      body_text:    parsed.text ?? '',
-                      body_html:    parsed.html ?? null,
-                      received_at:  parsed.date?.toISOString() ?? new Date().toISOString(),
-                      direction:    'inbound',
-                      is_read:      false,
-                      // ai_analyzed_at intentionally null → poller picks it up within 1 min
-                    })
-                    .select('id')
-                    .single()
-
-                  if (ins) {
-                    synced++
-                    console.log(`[email-sync] CRM targeted: synced email from ${contactEmail} for workspace=${workspaceId}`)
-                  }
-                } catch { /* skip malformed */ }
-              }
-            } catch (err) {
-              console.error(`[email-sync] CRM targeted sync failed for ${contactEmail}:`, (err as Error).message)
-            }
-          }
+      if (contactPairs.length > 0) {
+        try {
+          synced += await searchAndSyncContactEmails(client, workspaceId, contactPairs, since180, creds.auth.user)
+        } catch (err) {
+          console.error(`[email-sync] CRM INBOX targeted sync error for workspace=${workspaceId}:`, (err as Error).message)
         }
-      } catch (err) {
-        console.error(`[email-sync] CRM contact targeted sync error for workspace=${workspaceId}:`, (err as Error).message)
       }
       // ─────────────────────────────────────────────────────────────────────────
 
     } finally {
       lock.release()
     }
+
+    // ── Targeted sync for CRM contacts — [Gmail]/All Mail pass ───────────────
+    // Gmail archives emails out of INBOX into [Gmail]/All Mail.  Searching only
+    // INBOX misses any email that was archived/labeled.  We open the All Mail
+    // mailbox and run the same FROM-address search so nothing is lost.
+    if (provider === 'gmail' && contactPairs.length > 0) {
+      try {
+        const allMailLock = await client.getMailboxLock('[Gmail]/All Mail')
+        try {
+          synced += await searchAndSyncContactEmails(client, workspaceId, contactPairs, since180, creds.auth.user)
+        } finally {
+          allMailLock.release()
+        }
+      } catch (err) {
+        console.error(`[email-sync] [Gmail]/All Mail targeted sync error for workspace=${workspaceId}:`, (err as Error).message)
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
   } finally {
     await client.logout()
   }
