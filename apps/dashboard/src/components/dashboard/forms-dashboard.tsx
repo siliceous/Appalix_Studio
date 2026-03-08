@@ -144,7 +144,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
     <div className="flex flex-1 overflow-hidden relative">
 
       {/* ── Left panel — form list ─────────────────────────────── */}
-      <aside className="w-[220px] shrink-0 flex flex-col border-r border-gray-100 dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
+      <aside className="w-[220px] shrink-0 flex flex-col border-r border-gray-200 dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100 dark:border-white/8 flex items-center justify-between shrink-0">
           <h2 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">Forms</h2>
           <button
@@ -174,7 +174,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
                 onClick={() => setSelectedFormId(form.id)}
                 className={cn(
                   'group flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors border-l-[3px]',
-                  active ? 'border-l-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10' : 'border-l-transparent hover:bg-white dark:hover:bg-white/3'
+                  active ? 'border-l-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/15' : 'border-l-transparent hover:bg-white dark:hover:bg-white/3'
                 )}
               >
                 <div className="flex-1 min-w-0">
@@ -206,7 +206,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
       </aside>
 
       {/* ── Centre panel — submission list ──────────────────────── */}
-      <div className="w-[240px] shrink-0 flex flex-col border-r border-gray-100 dark:border-white/8 bg-gray-50/40 dark:bg-[#191919] overflow-hidden">
+      <div className="w-[240px] shrink-0 flex flex-col border-r border-gray-200 dark:border-white/8 bg-gray-50/40 dark:bg-[#191919] overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100 dark:border-white/8 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate max-w-[120px]">
@@ -249,10 +249,10 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
                 className={cn(
                   'px-3 py-2.5 cursor-pointer transition-colors border-l-[3px]',
                   selectedId === sub.id
-                    ? sub.ai_priority === 'high'   ? 'border-l-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10'
-                    : sub.ai_priority === 'medium' ? 'border-l-amber-400 bg-amber-50 dark:bg-amber-500/8'
-                    : sub.ai_priority === 'low'    ? 'border-l-gray-400  bg-gray-100 dark:bg-white/5'
-                    :                                'border-l-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10'
+                    ? sub.ai_priority === 'high'   ? 'border-l-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/15'
+                    : sub.ai_priority === 'medium' ? 'border-l-amber-400 bg-amber-50 dark:bg-amber-500/15'
+                    : sub.ai_priority === 'low'    ? 'border-l-gray-400  bg-gray-100 dark:bg-white/8'
+                    :                                'border-l-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/15'
                     : 'border-l-transparent hover:bg-white dark:hover:bg-white/3'
                 )}
               >

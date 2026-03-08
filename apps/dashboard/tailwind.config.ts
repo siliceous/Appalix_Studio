@@ -41,7 +41,7 @@ const config: Config = {
     // Triage list item — active selection backgrounds (bots / forms / tickets)
     'border-l-[3px]',
     'border-l-transparent',
-    'border-l-[#61c2ad]','bg-[#61c2ad]/8','dark:bg-[#61c2ad]/10',
+    'border-l-[#61c2ad]','bg-[#61c2ad]/8','dark:bg-[#61c2ad]/10','dark:bg-[#61c2ad]/15',
     'border-l-amber-400','bg-amber-50','dark:bg-amber-500/15',
     'border-l-gray-400','bg-gray-100','dark:bg-white/8',
     'border-l-red-500','bg-red-50','dark:bg-red-500/15',
