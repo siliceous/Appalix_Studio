@@ -59,7 +59,7 @@ export function TicketsDashboard({ tickets }: { tickets: TicketRow[] }) {
   return (
     <div className="flex flex-1 overflow-hidden">
       {/* Left panel — ticket list */}
-      <aside className="w-[280px] shrink-0 flex flex-col border-r border-gray-100 dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
+      <aside className="w-[280px] shrink-0 flex flex-col border-r border-gray-200 dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
         {/* Header */}
         <div className="px-4 py-3 border-b border-gray-100 dark:border-white/8 flex items-center justify-between shrink-0">
           <h2 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">
@@ -84,10 +84,10 @@ export function TicketsDashboard({ tickets }: { tickets: TicketRow[] }) {
                 className={[
                   'w-full text-left px-4 py-3 transition-colors border-l-[3px]',
                   isSelected
-                    ? ticket.priority === 'urgent' ? 'border-l-red-500 bg-red-50 dark:bg-red-500/8'
-                    : ticket.priority === 'high'   ? 'border-l-orange-400 bg-orange-50 dark:bg-orange-500/8'
-                    : ticket.priority === 'medium' ? 'border-l-amber-400 bg-amber-50 dark:bg-amber-500/8'
-                    :                                'border-l-gray-400 bg-gray-100 dark:bg-white/5'
+                    ? ticket.priority === 'urgent' ? 'border-l-red-500 bg-red-50 dark:bg-red-500/15'
+                    : ticket.priority === 'high'   ? 'border-l-orange-400 bg-orange-50 dark:bg-orange-500/15'
+                    : ticket.priority === 'medium' ? 'border-l-amber-400 bg-amber-50 dark:bg-amber-500/15'
+                    :                                'border-l-gray-400 bg-gray-100 dark:bg-white/8'
                     : 'border-l-transparent hover:bg-white dark:hover:bg-white/3',
                 ].join(' ')}
               >
