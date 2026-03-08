@@ -129,11 +129,12 @@ function ItemPopup({
   const [actionDone, setActionDone]   = useState<'contact' | 'ticket' | null>(null)
 
   // Reply compose state (email only)
-  const [showReply, setShowReply]     = useState(false)
-  const [replyBody, setReplyBody]     = useState('')
-  const [sending, setSending]         = useState(false)
-  const [sendResult, setSendResult]   = useState<string | null>(null)
-  const [copied, setCopied]           = useState(false)
+  const [showReply, setShowReply]       = useState(false)
+  const [showInsights, setShowInsights] = useState(true)
+  const [replyBody, setReplyBody]       = useState('')
+  const [sending, setSending]           = useState(false)
+  const [sendResult, setSendResult]     = useState<string | null>(null)
+  const [copied, setCopied]             = useState(false)
 
   // Escape to close
   useEffect(() => {
@@ -241,7 +242,7 @@ function ItemPopup({
             {/* Quick-action buttons in header for email */}
             {popup.kind === 'email' && !loading && data && (
               <button
-                onClick={() => setShowReply(v => !v)}
+                onClick={() => setShowReply(v => { if (!v) setShowInsights(false); return !v; })}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showReply ? 'bg-[#61c2ad] text-white' : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/12'}`}
               >
                 <Reply className="w-3.5 h-3.5" />
@@ -298,29 +299,7 @@ function ItemPopup({
                       </div>
                     )}
 
-                    {/* Key Insights */}
-                    {(e.ai_insights ?? []).length > 0 && (
-                      <div className="bg-gray-50 dark:bg-white/4 rounded-xl p-4">
-                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2.5">Key Insights</p>
-                        <ul className="space-y-2">
-                          {(e.ai_insights ?? []).map((ins, i) => (
-                            <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#61c2ad] mt-2 shrink-0" />{ins}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Entity chips */}
-                    {e.ai_entities && Object.values(e.ai_entities).some(Boolean) && (
-                      <div className="flex flex-wrap gap-2">
-                        {e.ai_entities.name    && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><User className="w-3 h-3 text-gray-400" />{e.ai_entities.name}</span>}
-                        {e.ai_entities.company && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Building2 className="w-3 h-3 text-gray-400" />{e.ai_entities.company}</span>}
-                      </div>
-                    )}
-
-                    {/* Inline Reply compose */}
+                    {/* Inline Reply compose — sits right after AI Summary */}
                     {showReply && (
                       <div className="rounded-2xl border dark:border-white/10 overflow-hidden bg-gray-50 dark:bg-white/3">
                         <div className="flex items-center justify-between px-4 py-2.5 border-b dark:border-white/8 bg-white dark:bg-white/5">
@@ -334,11 +313,11 @@ function ItemPopup({
                         </div>
                         <div className="p-4 space-y-3">
                           <textarea
-                            rows={6}
+                            rows={10}
                             value={replyBody}
                             onChange={ev => setReplyBody(ev.target.value)}
                             placeholder="Write your reply…"
-                            className="w-full text-sm bg-white dark:bg-[#1a1a1a] border dark:border-white/10 rounded-xl px-3 py-2.5 text-gray-800 dark:text-gray-200 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
+                            className="w-full text-sm bg-white dark:bg-[#1a1a1a] border dark:border-white/10 rounded-xl px-3 py-3 text-gray-800 dark:text-gray-200 placeholder-gray-400 resize-y min-h-[160px] focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 leading-relaxed"
                           />
                           <div className="flex items-center gap-2 pt-1 border-t dark:border-white/8">
                             <button
@@ -362,6 +341,38 @@ function ItemPopup({
                             )}
                           </div>
                         </div>
+                      </div>
+                    )}
+
+                    {/* Key Insights — collapsible, collapsed by default when reply is open */}
+                    {(e.ai_insights ?? []).length > 0 && (
+                      <div className="bg-gray-50 dark:bg-white/4 rounded-xl overflow-hidden">
+                        <button
+                          onClick={() => setShowInsights(v => !v)}
+                          className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-100 dark:hover:bg-white/6 transition-colors"
+                        >
+                          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Key Insights</p>
+                          <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${showInsights ? 'rotate-180' : ''}`} />
+                        </button>
+                        {showInsights && (
+                          <div className="px-4 pb-4">
+                            <ul className="space-y-2">
+                              {(e.ai_insights ?? []).map((ins, i) => (
+                                <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#61c2ad] mt-2 shrink-0" />{ins}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Entity chips */}
+                    {e.ai_entities && Object.values(e.ai_entities).some(Boolean) && (
+                      <div className="flex flex-wrap gap-2">
+                        {e.ai_entities.name    && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><User className="w-3 h-3 text-gray-400" />{e.ai_entities.name}</span>}
+                        {e.ai_entities.company && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Building2 className="w-3 h-3 text-gray-400" />{e.ai_entities.company}</span>}
                       </div>
                     )}
                   </>
