@@ -1050,15 +1050,28 @@ export async function reanalyzePendingEmails(workspaceId: string, batchSize = 50
         }
       } catch { /* best-effort */ }
 
-      // Look up open deal for CRM context
+      // Look up open deal for CRM context.
+      // If contact_id is null (email synced before contact was created, or match missed),
+      // fall back to finding the contact by from_address and updating the email row.
       let crmContext: { contactName?: string; dealTitle?: string; dealStage?: string } | undefined
-      if (email.contact_id) {
-        try {
+      let resolvedContactId = email.contact_id ?? null
+      try {
+        if (!resolvedContactId) {
+          resolvedContactId = await findContactByEmail(workspaceId, fromAddress)
+          if (resolvedContactId) {
+            // Patch the email row so future re-analyses don't need to re-resolve
+            await supabase
+              .from('sage_emails')
+              .update({ contact_id: resolvedContactId })
+              .eq('id', email.id)
+          }
+        }
+        if (resolvedContactId) {
           const { data: openDeal } = await supabase
             .from('sage_deals')
             .select('title, stage:sage_pipeline_stages(name)')
             .eq('workspace_id', workspaceId)
-            .eq('contact_id', email.contact_id)
+            .eq('contact_id', resolvedContactId)
             .eq('status', 'open')
             .order('created_at', { ascending: false })
             .limit(1)
@@ -1069,8 +1082,8 @@ export async function reanalyzePendingEmails(workspaceId: string, batchSize = 50
               : (openDeal.stage as { name: string } | null)?.name
             crmContext = { contactName: fromName ?? undefined, dealTitle: openDeal.title, dealStage: stageName ?? undefined }
           }
-        } catch { /* best-effort */ }
-      }
+        }
+      } catch { /* best-effort */ }
 
       const analysis = await analyzeEmail(
         `${fromName} <${fromAddress}>`,
