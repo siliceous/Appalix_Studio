@@ -827,6 +827,106 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
           // Skip malformed messages
         }
       }
+
+      // ── Targeted sync for CRM contacts with open deals ──────────────────────
+      // Searches IMAP by FROM address so emails that predate the sequence-range
+      // window (i.e. older than the last `limit` messages) are not missed.
+      try {
+        type DealRow = { contact_id: string; sage_contacts: { email: string | null }[] }
+        const { data: openDeals } = await supabase
+          .from('sage_deals')
+          .select('contact_id, sage_contacts!inner(email)')
+          .eq('workspace_id', workspaceId)
+          .eq('status', 'open')
+
+        const contactPairs = [...new Map(
+          ((openDeals ?? []) as unknown as DealRow[])
+            .filter(d => d.sage_contacts?.[0]?.email)
+            .map(d => [d.contact_id, {
+              email:     d.sage_contacts[0].email!.toLowerCase(),
+              contactId: d.contact_id,
+            }]),
+        ).values()]
+
+        if (contactPairs.length > 0) {
+          const since180 = new Date()
+          since180.setDate(since180.getDate() - 180)  // look back 6 months
+
+          for (const { email: contactEmail, contactId } of contactPairs) {
+            try {
+              const foundUids = (await client.search(
+                { from: contactEmail, since: since180 },
+                { uid: true },
+              ) ?? []) as number[]
+
+              if (foundUids.length === 0) continue
+
+              // Fetch newest 50 UIDs from this contact
+              const top50 = [...foundUids].sort((a, b) => b - a).slice(0, 50)
+              const contactMsgs = client.fetch(top50.join(','), { uid: true, source: true }, { uid: true })
+
+              const contactRaws: Buffer[] = []
+              for await (const msg of contactMsgs) {
+                if (msg.source) contactRaws.push(msg.source)
+              }
+
+              for (const contactRaw of contactRaws) {
+                try {
+                  const parsed   = await simpleParser(contactRaw)
+                  const msgId    = parsed.messageId ?? `generated-crm-${Date.now()}-${Math.random()}`
+
+                  const { data: alreadyExists } = await supabase
+                    .from('sage_emails')
+                    .select('id')
+                    .eq('workspace_id', workspaceId)
+                    .eq('message_id', msgId)
+                    .single()
+
+                  if (alreadyExists) continue
+
+                  const fromAddress = (parsed.from?.value?.[0]?.address ?? '').toLowerCase()
+                  const fromName    = parsed.from?.value?.[0]?.name ?? fromAddress
+                  const toAddress   = parsed.to && !Array.isArray(parsed.to)
+                    ? (parsed.to.value?.[0]?.address ?? creds.auth.user)
+                    : creds.auth.user
+
+                  const { data: ins } = await supabase
+                    .from('sage_emails')
+                    .insert({
+                      workspace_id: workspaceId,
+                      contact_id:   contactId,
+                      message_id:   msgId,
+                      thread_id:    parsed.references?.[0] ?? null,
+                      from_address: fromAddress,
+                      from_name:    fromName,
+                      to_address:   toAddress,
+                      subject:      parsed.subject ?? '(no subject)',
+                      body_text:    parsed.text ?? '',
+                      body_html:    parsed.html ?? null,
+                      received_at:  parsed.date?.toISOString() ?? new Date().toISOString(),
+                      direction:    'inbound',
+                      is_read:      false,
+                      // ai_analyzed_at intentionally null → poller picks it up within 1 min
+                    })
+                    .select('id')
+                    .single()
+
+                  if (ins) {
+                    synced++
+                    console.log(`[email-sync] CRM targeted: synced email from ${contactEmail} for workspace=${workspaceId}`)
+                  }
+                } catch { /* skip malformed */ }
+              }
+            } catch (err) {
+              console.error(`[email-sync] CRM targeted sync failed for ${contactEmail}:`, (err as Error).message)
+            }
+          }
+        }
+      } catch (err) {
+        console.error(`[email-sync] CRM contact targeted sync error for workspace=${workspaceId}:`, (err as Error).message)
+      }
+      // ─────────────────────────────────────────────────────────────────────────
+
     } finally {
       lock.release()
     }
@@ -842,6 +942,15 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
 // ---------------------------------------------------------------------------
 
 export async function reanalyzePendingEmails(workspaceId: string, batchSize = 50, emailIds?: string[]): Promise<number> {
+  // Fetch business description so re-analysis uses the latest profile
+  const { data: wsData } = await supabase
+    .from('workspaces')
+    .select('sage_business_description')
+    .eq('id', workspaceId)
+    .single()
+  const businessDescription = (wsData as { sage_business_description?: string | null } | null)
+    ?.sage_business_description ?? null
+
   let query = supabase
     .from('sage_emails')
     .select('id, from_name, from_address, subject, body_text, contact_id')
@@ -898,11 +1007,35 @@ export async function reanalyzePendingEmails(workspaceId: string, batchSize = 50
         }
       } catch { /* best-effort */ }
 
+      // Look up open deal for CRM context
+      let crmContext: { contactName?: string; dealTitle?: string; dealStage?: string } | undefined
+      if (email.contact_id) {
+        try {
+          const { data: openDeal } = await supabase
+            .from('sage_deals')
+            .select('title, stage:sage_pipeline_stages(name)')
+            .eq('workspace_id', workspaceId)
+            .eq('contact_id', email.contact_id)
+            .eq('status', 'open')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+          if (openDeal) {
+            const stageName = Array.isArray(openDeal.stage)
+              ? (openDeal.stage[0] as { name: string } | undefined)?.name
+              : (openDeal.stage as { name: string } | null)?.name
+            crmContext = { contactName: fromName ?? undefined, dealTitle: openDeal.title, dealStage: stageName ?? undefined }
+          }
+        } catch { /* best-effort */ }
+      }
+
       const analysis = await analyzeEmail(
         `${fromName} <${fromAddress}>`,
         email.subject,
         bodyText,
         priorSummaries,
+        crmContext,
+        businessDescription,
       )
 
       if (analysis) {

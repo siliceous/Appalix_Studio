@@ -115,6 +115,30 @@ export async function saveBusinessProfile(formData: FormData): Promise<{ error?:
     .eq('id', membership.workspace_id)
 
   if (error) return { error: error.message }
+
+  // Reset AI analysis for recent emails so the 1-minute poller re-analyzes
+  // them with the new business description (last 100 inbound emails).
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: recentEmails } = await (supabase as any)
+      .from('sage_emails')
+      .select('id')
+      .eq('workspace_id', membership.workspace_id)
+      .eq('direction', 'inbound')
+      .not('ai_analyzed_at', 'is', null)
+      .order('received_at', { ascending: false })
+      .limit(100)
+
+    if (recentEmails && recentEmails.length > 0) {
+      const ids = (recentEmails as { id: string }[]).map(e => e.id)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
+        .from('sage_emails')
+        .update({ ai_analyzed_at: null })
+        .in('id', ids)
+    }
+  } catch { /* best-effort — don't fail the save if this errors */ }
+
   return {}
 }
 
