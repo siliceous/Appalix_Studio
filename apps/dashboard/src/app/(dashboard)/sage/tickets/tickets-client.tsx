@@ -18,9 +18,11 @@ const PRIORITY_CONFIG: Record<string, { label: string; color: string }> = {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  open:     { label: 'Open',     color: 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400' },
-  pending:  { label: 'Pending',  color: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400' },
-  resolved: { label: 'Resolved', color: 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400' },
+  open:        { label: 'Open',        color: 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400' },
+  in_progress: { label: 'In Progress', color: 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400' },
+  pending:     { label: 'Pending',     color: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400' },
+  resolved:    { label: 'Resolved',    color: 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400' },
+  closed:      { label: 'Closed',      color: 'bg-gray-100 text-gray-600 dark:bg-white/8 dark:text-gray-400' },
 }
 
 const FILTERS: Array<{ label: string; value: string }> = [

@@ -23,11 +23,11 @@ type TicketWithContact = SageTicket & {
 const STATUS_FLOW: SageTicketStatus[] = ['open', 'in_progress', 'pending', 'resolved', 'closed']
 
 const STATUS_STYLES: Record<SageTicketStatus, { badge: string; label: string }> = {
-  open:        { badge: 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',      label: 'Open' },
-  in_progress: { badge: 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400', label: 'In Progress' },
-  pending:     { badge: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',   label: 'Pending' },
-  resolved:    { badge: 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400',   label: 'Resolved' },
-  closed:      { badge: 'bg-gray-100 text-gray-600 dark:bg-white/8 dark:text-gray-400',          label: 'Closed' },
+  open:        { badge: 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400', label: 'Open' },
+  in_progress: { badge: 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400',     label: 'In Progress' },
+  pending:     { badge: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',     label: 'Pending' },
+  resolved:    { badge: 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',         label: 'Resolved' },
+  closed:      { badge: 'bg-gray-100 text-gray-600 dark:bg-white/8 dark:text-gray-400',            label: 'Closed' },
 }
 
 const PRIORITY_STYLES: Record<string, { badge: string; label: string }> = {
