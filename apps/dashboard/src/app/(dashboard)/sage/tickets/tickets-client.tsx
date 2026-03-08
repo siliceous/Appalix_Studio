@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { Ticket, Plus, Trash2, Mail, Pencil } from 'lucide-react'
+import { useState, useTransition } from 'react'
+import { Ticket, Plus, Trash2, Mail, Pencil, Merge, X, Loader2 } from 'lucide-react'
 import { TicketModal } from '@/components/sage/ticket-modal'
 import { TicketSlideOver } from '@/components/dashboard/ticket-slide-over'
-import { updateTicketStatus, deleteTicket } from '@/app/actions/sage'
+import { updateTicketStatus, deleteTicket, mergeTickets } from '@/app/actions/sage'
 import { timeAgo } from '@/lib/utils'
 import type { SageTicket, SageContact, SageTicketStatus } from '@/lib/types'
 
@@ -39,11 +39,45 @@ interface TicketsClientProps {
 }
 
 export function TicketsClient({ tickets: initialTickets, contacts, triageMode = false }: TicketsClientProps) {
-  const [tickets,     setTickets]     = useState(initialTickets)
-  const [filter,      setFilter]      = useState('all')
-  const [showModal,   setShowModal]   = useState(false)
-  const [deleting,    setDeleting]    = useState<string | null>(null)
-  const [slideTicket, setSlideTicket] = useState<TicketWithContact | null>(null)
+  const [tickets,      setTickets]      = useState(initialTickets)
+  const [filter,       setFilter]       = useState('all')
+  const [showModal,    setShowModal]    = useState(false)
+  const [deleting,     setDeleting]     = useState<string | null>(null)
+  const [slideTicket,  setSlideTicket]  = useState<TicketWithContact | null>(null)
+  const [selectedIds,  setSelectedIds]  = useState<Set<string>>(new Set())
+  const [showMerge,    setShowMerge]    = useState(false)
+  const [primaryId,    setPrimaryId]    = useState<string | null>(null)
+  const [merging,      startMerge]      = useTransition()
+
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set())
+    setShowMerge(false)
+    setPrimaryId(null)
+  }
+
+  async function handleMerge() {
+    if (!primaryId) return
+    const dupes = [...selectedIds].filter(id => id !== primaryId)
+    startMerge(async () => {
+      await mergeTickets(primaryId, dupes)
+      setTickets(prev => {
+        const kept = prev.find(t => t.id === primaryId)
+        const removed = new Set(dupes)
+        return prev
+          .filter(t => !removed.has(t.id))
+          .map(t => t.id === primaryId && kept ? { ...kept } : t)
+      })
+      clearSelection()
+    })
+  }
 
   // Sort: open (unactioned) oldest first → in_progress/pending → resolved/closed
   function sortTickets(list: TicketWithContact[]) {
@@ -81,8 +115,59 @@ export function TicketsClient({ tickets: initialTickets, contacts, triageMode = 
     }
   }
 
+  const selectedTickets = tickets.filter(t => selectedIds.has(t.id))
+
   return (
     <div className="max-w-5xl mx-auto p-8">
+      {/* Merge modal */}
+      {showMerge && selectedIds.size >= 2 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={clearSelection} />
+          <div className="relative bg-white dark:bg-[#232323] rounded-2xl border dark:border-white/8 shadow-2xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Merge {selectedIds.size} Tickets</h2>
+              <button onClick={clearSelection} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors">
+                <X className="w-4 h-4 text-gray-400" />
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Choose the primary ticket to keep. The others will be closed and their content appended to it.</p>
+            <div className="space-y-2 mb-5">
+              {selectedTickets.map(t => (
+                <label key={t.id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${primaryId === t.id ? 'border-brand-500 dark:border-[#61c2ad] bg-brand-50 dark:bg-[#61c2ad]/8' : 'border-gray-200 dark:border-white/8 hover:bg-gray-50 dark:hover:bg-white/3'}`}>
+                  <input
+                    type="radio"
+                    name="primary"
+                    value={t.id}
+                    checked={primaryId === t.id}
+                    onChange={() => setPrimaryId(t.id)}
+                    className="mt-0.5 accent-brand-600"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{t.title}</p>
+                    {(t.name || t.contact?.name) && (
+                      <p className="text-xs text-gray-400 mt-0.5">{t.name ?? t.contact?.name}</p>
+                    )}
+                  </div>
+                </label>
+              ))}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={clearSelection} className="flex-1 px-4 py-2 text-sm border dark:border-white/10 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={handleMerge}
+                disabled={!primaryId || merging}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors disabled:opacity-60"
+              >
+                {merging ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Merge className="w-3.5 h-3.5" />}
+                {merging ? 'Merging…' : 'Merge'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
@@ -91,13 +176,29 @@ export function TicketsClient({ tickets: initialTickets, contacts, triageMode = 
             {tickets.filter(t => t.status === 'open').length} open · {tickets.length} total
           </p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          New Ticket
-        </button>
+        <div className="flex items-center gap-2">
+          {selectedIds.size >= 2 && (
+            <button
+              onClick={() => { setPrimaryId([...selectedIds][0]); setShowMerge(true) }}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-xl transition-colors"
+            >
+              <Merge className="w-4 h-4" />
+              Merge {selectedIds.size}
+            </button>
+          )}
+          {selectedIds.size > 0 && (
+            <button onClick={clearSelection} className="flex items-center gap-1.5 px-3 py-2 text-sm border dark:border-white/10 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+              <X className="w-3.5 h-3.5" /> Clear
+            </button>
+          )}
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            New Ticket
+          </button>
+        </div>
       </div>
 
       {/* Filter tabs */}
@@ -140,8 +241,16 @@ export function TicketsClient({ tickets: initialTickets, contacts, triageMode = 
               const pc = PRIORITY_CONFIG[ticket.priority] ?? PRIORITY_CONFIG.medium
               const sc = STATUS_CONFIG[ticket.status] ?? STATUS_CONFIG.open
 
+              const isSelected = selectedIds.has(ticket.id)
               return (
-                <div key={ticket.id} className="flex items-start gap-4 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
+                <div key={ticket.id} className={`flex items-start gap-4 px-5 py-4 transition-colors ${isSelected ? 'bg-amber-50 dark:bg-amber-500/8' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}>
+                  {/* Checkbox */}
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => toggleSelect(ticket.id)}
+                    className="mt-1 shrink-0 w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-amber-500 cursor-pointer"
+                  />
                   {/* Priority dot */}
                   <div className="mt-0.5 shrink-0">
                     <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full font-medium ${pc.color}`}>

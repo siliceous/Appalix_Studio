@@ -638,6 +638,49 @@ export async function updateTicketStatus(id: string, status: SageTicketStatus) {
   revalidatePath('/dashboard')
 }
 
+export async function mergeTickets(primaryId: string, duplicateIds: string[]): Promise<{ error?: string }> {
+  if (duplicateIds.length === 0) return {}
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+
+  // Fetch duplicate tickets to fold their content into the primary
+  const { data: dupes } = await admin
+    .from('sage_tickets')
+    .select('id, title, description')
+    .in('id', duplicateIds)
+    .eq('workspace_id', workspaceId)
+
+  const { data: primary } = await admin
+    .from('sage_tickets')
+    .select('description')
+    .eq('id', primaryId)
+    .eq('workspace_id', workspaceId)
+    .single()
+
+  const appendedNotes = (dupes ?? [])
+    .map(d => `[Merged] ${d.title}${d.description ? '\n' + d.description : ''}`)
+    .join('\n\n')
+  const newDescription = [primary?.description, appendedNotes].filter(Boolean).join('\n\n---\n\n')
+
+  const { error: updateErr } = await admin
+    .from('sage_tickets')
+    .update({ description: newDescription, updated_at: new Date().toISOString() })
+    .eq('id', primaryId)
+    .eq('workspace_id', workspaceId)
+  if (updateErr) return { error: updateErr.message }
+
+  const { error: closeErr } = await admin
+    .from('sage_tickets')
+    .update({ status: 'closed', updated_at: new Date().toISOString() })
+    .in('id', duplicateIds)
+    .eq('workspace_id', workspaceId)
+  if (closeErr) return { error: closeErr.message }
+
+  revalidatePath('/sage/tickets')
+  revalidatePath('/dashboard/tickets')
+  return {}
+}
+
 export async function deleteTicket(id: string) {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
