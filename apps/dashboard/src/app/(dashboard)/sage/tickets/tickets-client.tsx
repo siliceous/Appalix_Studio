@@ -31,11 +31,12 @@ const FILTERS: Array<{ label: string; value: string }> = [
 ]
 
 interface TicketsClientProps {
-  tickets:  TicketWithContact[]
-  contacts: Pick<SageContact, 'id' | 'name'>[]
+  tickets:    TicketWithContact[]
+  contacts:   Pick<SageContact, 'id' | 'name'>[]
+  triageMode?: boolean   // when true, auto-remove resolved/closed on status change
 }
 
-export function TicketsClient({ tickets: initialTickets, contacts }: TicketsClientProps) {
+export function TicketsClient({ tickets: initialTickets, contacts, triageMode = false }: TicketsClientProps) {
   const [tickets,     setTickets]     = useState(initialTickets)
   const [filter,      setFilter]      = useState('all')
   const [showModal,   setShowModal]   = useState(false)
@@ -59,7 +60,11 @@ export function TicketsClient({ tickets: initialTickets, contacts }: TicketsClie
   const filtered = sortTickets(filter === 'all' ? tickets : tickets.filter(t => t.status === filter))
 
   async function handleStatusChange(id: string, status: SageTicketStatus) {
-    setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t))
+    if (triageMode && (status === 'resolved' || status === 'closed')) {
+      setTickets(prev => prev.filter(t => t.id !== id))
+    } else {
+      setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t))
+    }
     await updateTicketStatus(id, status)
   }
 
@@ -200,9 +205,14 @@ export function TicketsClient({ tickets: initialTickets, contacts }: TicketsClie
       <TicketSlideOver
         ticket={slideTicket}
         onClose={() => setSlideTicket(null)}
-        onStatusChanged={(id, status) =>
-          setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t))
-        }
+        onStatusChanged={(id, status) => {
+          if (triageMode && (status === 'resolved' || status === 'closed')) {
+            setSlideTicket(null)
+            setTickets(prev => prev.filter(t => t.id !== id))
+          } else {
+            setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t))
+          }
+        }}
       />
     </div>
   )
