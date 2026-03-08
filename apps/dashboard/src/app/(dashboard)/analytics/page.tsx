@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { formatTokens, formatCost, PLATFORM_META } from '@/lib/utils'
 import type { Metadata } from 'next'
-import type { UsageEvent, Conversation, AgentRun } from '@/lib/types'
+import type { UsageEvent, Conversation, AgentRun, Lead } from '@/lib/types'
 
 export const metadata: Metadata = { title: 'Analytics' }
 
@@ -26,8 +26,8 @@ export default async function AnalyticsPage() {
     { data: convByPlatformRaw },
     { count: totalMessages },
     { data: agentRunStatsRaw },
+    { data: leadsRaw },
   ] = await Promise.all([
-    // Daily token usage — last 30 days
     supabase
       .from('usage_events')
       .select('created_at, tokens_input, tokens_output, cost_usd, event_type')
@@ -35,59 +35,90 @@ export default async function AnalyticsPage() {
       .gte('created_at', thirtyDaysAgo)
       .order('created_at', { ascending: true }),
 
-    // Conversations grouped by platform (last 30d)
     supabase
       .from('conversations')
       .select('platform')
       .eq('workspace_id', workspaceId)
       .gte('created_at', thirtyDaysAgo),
 
-    // Total messages (all time)
     supabase
       .from('messages')
       .select('*', { count: 'exact', head: true })
       .eq('workspace_id', workspaceId),
 
-    // Agent run success rate (last 7d)
     supabase
       .from('agent_runs')
       .select('status')
       .eq('workspace_id', workspaceId)
       .gte('started_at', sevenDaysAgo),
+
+    supabase
+      .from('leads')
+      .select('source_platform, campaign_name, lead_score, pipeline_stage, created_at')
+      .eq('workspace_id', workspaceId)
+      .order('created_at', { ascending: false }),
   ])
 
   const usageEvents    = (usageEventsRaw   ?? []) as Pick<UsageEvent,   'created_at' | 'tokens_input' | 'tokens_output' | 'cost_usd' | 'event_type'>[]
   const convByPlatform = (convByPlatformRaw ?? []) as Pick<Conversation, 'platform'>[]
   const agentRunStats  = (agentRunStatsRaw  ?? []) as Pick<AgentRun,     'status'>[]
+  const leads          = (leadsRaw          ?? []) as Pick<Lead, 'source_platform' | 'campaign_name' | 'lead_score' | 'pipeline_stage' | 'created_at'>[]
 
-  // Aggregate usage by day
+  // ── Bot analytics ───────────────────────────────────────────
   const dailyMap = new Map<string, { tokens: number; cost: number }>()
-  usageEvents?.forEach((e) => {
+  usageEvents.forEach((e) => {
     const day = e.created_at.slice(0, 10)
     const prev = dailyMap.get(day) ?? { tokens: 0, cost: 0 }
-    dailyMap.set(day, {
-      tokens: prev.tokens + e.tokens_input + e.tokens_output,
-      cost:   prev.cost + Number(e.cost_usd),
-    })
+    dailyMap.set(day, { tokens: prev.tokens + e.tokens_input + e.tokens_output, cost: prev.cost + Number(e.cost_usd) })
   })
   const dailyData = Array.from(dailyMap.entries()).map(([day, v]) => ({ day, ...v }))
 
-  const totalTokens = usageEvents?.reduce((s, e) => s + e.tokens_input + e.tokens_output, 0) ?? 0
-  const totalCost   = usageEvents?.reduce((s, e) => s + Number(e.cost_usd), 0) ?? 0
+  const totalTokens = usageEvents.reduce((s, e) => s + e.tokens_input + e.tokens_output, 0)
+  const totalCost   = usageEvents.reduce((s, e) => s + Number(e.cost_usd), 0)
 
-  // Platform breakdown
   const platformMap = new Map<string, number>()
-  convByPlatform?.forEach((c) => {
+  convByPlatform.forEach((c) => {
     const p = c.platform ?? 'unknown'
     platformMap.set(p, (platformMap.get(p) ?? 0) + 1)
   })
-  const platformData = Array.from(platformMap.entries())
-    .sort((a, b) => b[1] - a[1])
+  const platformData = Array.from(platformMap.entries()).sort((a, b) => b[1] - a[1])
 
-  // Agent run success rate
-  const totalRuns     = agentRunStats?.length ?? 0
-  const completedRuns = agentRunStats?.filter((r) => r.status === 'completed').length ?? 0
+  const totalRuns     = agentRunStats.length
+  const completedRuns = agentRunStats.filter((r) => r.status === 'completed').length
   const successRate   = totalRuns > 0 ? Math.round((completedRuns / totalRuns) * 100) : null
+
+  // ── Campaign analytics ──────────────────────────────────────
+  const total          = leads.length
+  const now            = new Date()
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+  const thisMonth      = leads.filter(l => new Date(l.created_at) >= thisMonthStart).length
+  const inPipeline     = leads.filter(l => l.pipeline_stage === 'crm_pipeline').length
+
+  const byPlatform = leads.reduce<Record<string, number>>((acc, l) => {
+    acc[l.source_platform] = (acc[l.source_platform] ?? 0) + 1
+    return acc
+  }, {})
+
+  const byScore = leads.reduce<Record<string, number>>((acc, l) => {
+    const key = l.lead_score ?? 'unscored'
+    acc[key] = (acc[key] ?? 0) + 1
+    return acc
+  }, {})
+
+  const byCampaign = leads.reduce<Record<string, number>>((acc, l) => {
+    const key = l.campaign_name ?? 'Unknown Campaign'
+    acc[key] = (acc[key] ?? 0) + 1
+    return acc
+  }, {})
+  const topCampaigns = Object.entries(byCampaign).sort((a, b) => b[1] - a[1]).slice(0, 10)
+
+  const PLATFORM_LABEL: Record<string, string> = { meta: 'Meta Ads', google_ads: 'Google Ads' }
+  const SCORE_COLOR: Record<string, string> = {
+    high:     'bg-emerald-500',
+    medium:   'bg-amber-400',
+    low:      'bg-gray-300 dark:bg-gray-600',
+    unscored: 'bg-gray-200 dark:bg-gray-700',
+  }
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -101,18 +132,18 @@ export default async function AnalyticsPage() {
           { label: 'Total messages',       value: (totalMessages ?? 0).toLocaleString() },
           { label: 'Agent success rate',   value: successRate != null ? `${successRate}%` : '—' },
         ].map(({ label, value }) => (
-          <div key={label} className="bg-white rounded-xl border p-5">
+          <div key={label} className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/8 p-5">
             <p className="text-xs text-gray-500 mb-1">{label}</p>
-            <p className="text-2xl font-semibold text-gray-900">{value}</p>
+            <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{value}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-10">
         {/* Daily token usage table */}
-        <div className="xl:col-span-2 bg-white rounded-xl border">
-          <div className="px-5 py-4 border-b">
-            <h2 className="text-sm font-semibold text-gray-900">Daily token usage</h2>
+        <div className="xl:col-span-2 bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/8">
+          <div className="px-5 py-4 border-b dark:border-white/8">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Daily token usage</h2>
           </div>
           {dailyData.length === 0 ? (
             <p className="px-5 py-8 text-sm text-gray-400 text-center">No usage data yet.</p>
@@ -120,18 +151,18 @@ export default async function AnalyticsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-gray-50">
+                  <tr className="border-b dark:border-white/8 bg-gray-50 dark:bg-white/5">
                     <th className="text-left px-5 py-2.5 text-xs font-medium text-gray-500">Date</th>
                     <th className="text-right px-5 py-2.5 text-xs font-medium text-gray-500">Tokens</th>
                     <th className="text-right px-5 py-2.5 text-xs font-medium text-gray-500">Cost</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody className="divide-y dark:divide-white/5">
                   {dailyData.slice(-14).reverse().map((row) => (
-                    <tr key={row.day} className="hover:bg-gray-50">
-                      <td className="px-5 py-2.5 text-gray-700">{row.day}</td>
-                      <td className="px-5 py-2.5 text-right text-gray-700">{formatTokens(row.tokens)}</td>
-                      <td className="px-5 py-2.5 text-right text-gray-700">{formatCost(row.cost)}</td>
+                    <tr key={row.day} className="hover:bg-gray-50 dark:hover:bg-white/3">
+                      <td className="px-5 py-2.5 text-gray-700 dark:text-gray-300">{row.day}</td>
+                      <td className="px-5 py-2.5 text-right text-gray-700 dark:text-gray-300">{formatTokens(row.tokens)}</td>
+                      <td className="px-5 py-2.5 text-right text-gray-700 dark:text-gray-300">{formatCost(row.cost)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -141,16 +172,16 @@ export default async function AnalyticsPage() {
         </div>
 
         {/* Platform breakdown */}
-        <div className="bg-white rounded-xl border">
-          <div className="px-5 py-4 border-b">
-            <h2 className="text-sm font-semibold text-gray-900">By platform (30d)</h2>
+        <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/8">
+          <div className="px-5 py-4 border-b dark:border-white/8">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">By platform (30d)</h2>
           </div>
           {platformData.length === 0 ? (
             <p className="px-5 py-8 text-sm text-gray-400 text-center">No data yet.</p>
           ) : (
             <div className="px-5 py-4 space-y-3">
               {platformData.map(([platform, count]) => {
-                const total = convByPlatform?.length ?? 1
+                const total = convByPlatform.length ?? 1
                 const pct   = Math.round((count / total) * 100)
                 const meta  = PLATFORM_META[platform as keyof typeof PLATFORM_META]
                 return (
@@ -161,11 +192,8 @@ export default async function AnalyticsPage() {
                       </span>
                       <span className="text-gray-500 text-xs">{count} ({pct}%)</span>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-1.5">
-                      <div
-                        className="bg-brand-500 h-1.5 rounded-full transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
+                    <div className="w-full bg-gray-100 dark:bg-white/8 rounded-full h-1.5">
+                      <div className="bg-brand-500 h-1.5 rounded-full transition-all" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 )
@@ -173,6 +201,126 @@ export default async function AnalyticsPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* ── Campaign Analytics ──────────────────────────────────── */}
+      <div className="border-t dark:border-white/8 pt-8">
+        <div className="mb-6">
+          <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Campaign Analytics</h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Lead performance across all connected platforms</p>
+        </div>
+
+        {total === 0 ? (
+          <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/8 flex flex-col items-center justify-center py-16 text-center">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">No data yet</p>
+            <p className="text-xs text-gray-400 max-w-xs">Analytics will appear once you start receiving leads from connected platforms.</p>
+          </div>
+        ) : (
+          <>
+            {/* Lead stat cards */}
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+              {[
+                { label: 'Total Leads',     value: total,                    sub: 'all time' },
+                { label: 'This Month',      value: thisMonth,                sub: `${total - thisMonth} older` },
+                { label: 'High Priority',   value: byScore['high'] ?? 0,     sub: total ? `${Math.round(((byScore['high'] ?? 0) / total) * 100)}% of leads` : '—' },
+                { label: 'In CRM Pipeline', value: inPipeline,               sub: total ? `${Math.round((inPipeline / total) * 100)}% converted` : '—' },
+              ].map(s => (
+                <div key={s.label} className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/8 p-5">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{s.label}</p>
+                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{s.value}</p>
+                  {s.sub && <p className="text-xs text-gray-400 mt-1">{s.sub}</p>}
+                </div>
+              ))}
+            </div>
+
+            {/* Full-width campaign table + side panels */}
+            <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/8">
+              <div className="grid grid-cols-1 xl:grid-cols-3 divide-y xl:divide-y-0 xl:divide-x dark:divide-white/8">
+
+                {/* Top Campaigns — spans 2 cols */}
+                <div className="xl:col-span-2">
+                  <div className="px-5 py-4 border-b dark:border-white/8">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Top Campaigns</h3>
+                  </div>
+                  {topCampaigns.length === 0 ? (
+                    <p className="px-5 py-8 text-sm text-gray-400 text-center">No campaign data yet.</p>
+                  ) : (
+                    <div className="divide-y dark:divide-white/5">
+                      {topCampaigns.map(([campaign, count]) => (
+                        <div key={campaign} className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{campaign}</p>
+                          </div>
+                          <div className="w-24 bg-gray-100 dark:bg-white/8 rounded-full h-1.5 shrink-0">
+                            <div
+                              className="bg-brand-500 dark:bg-[#61c2ad] h-1.5 rounded-full"
+                              style={{ width: `${Math.round((count / total) * 100)}%` }}
+                            />
+                          </div>
+                          <div className="text-right shrink-0 w-12">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{count}</p>
+                            <p className="text-xs text-gray-400">{Math.round((count / total) * 100)}%</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Side: Platform + Score */}
+                <div className="divide-y dark:divide-white/8">
+                  <div className="px-5 py-4">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Leads by Platform</h3>
+                    <div className="space-y-3">
+                      {Object.entries(byPlatform).map(([platform, count]) => (
+                        <div key={platform}>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                              {PLATFORM_LABEL[platform] ?? platform}
+                            </span>
+                            <span className="text-xs text-gray-400">{count}</span>
+                          </div>
+                          <div className="h-1.5 rounded-full bg-gray-100 dark:bg-white/8">
+                            <div
+                              className="h-1.5 rounded-full bg-brand-500 dark:bg-[#61c2ad]"
+                              style={{ width: `${Math.round((count / total) * 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="px-5 py-4">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Score Breakdown</h3>
+                    <div className="space-y-3">
+                      {(['high', 'medium', 'low', 'unscored'] as const).map(score => {
+                        const count = byScore[score] ?? 0
+                        if (count === 0) return null
+                        const labels: Record<string, string> = { high: 'High', medium: 'Medium', low: 'Low', unscored: 'Unscored' }
+                        return (
+                          <div key={score}>
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <div className={`w-2 h-2 rounded-full shrink-0 ${SCORE_COLOR[score]}`} />
+                              <div className="flex-1 flex items-center justify-between">
+                                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{labels[score]}</span>
+                                <span className="text-xs text-gray-400">{count} ({Math.round((count / total) * 100)}%)</span>
+                              </div>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-gray-100 dark:bg-white/8">
+                              <div className={`h-1.5 rounded-full ${SCORE_COLOR[score]}`} style={{ width: `${Math.round((count / total) * 100)}%` }} />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

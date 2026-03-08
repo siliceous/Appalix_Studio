@@ -20,7 +20,6 @@ import {
   FileText,
   Inbox,
   Rss,
-  PieChart,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -79,9 +78,8 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     items: [
-      { href: '/analytics',       label: 'Analytics',          icon: BarChart2 },
-      { href: '/forms/analytics', label: 'Campaign Analytics', icon: PieChart, sub: true },
-      { href: '/settings',        label: 'Settings',           icon: Settings },
+      { href: '/analytics', label: 'Analytics', icon: BarChart2 },
+      { href: '/settings',  label: 'Settings',  icon: Settings },
     ],
   },
 ]
