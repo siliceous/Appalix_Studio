@@ -185,9 +185,14 @@ async function analyzeEmail(
   bodyText: string,
   priorSummaries: string[] = [],
   crmContext?: { contactName?: string; dealTitle?: string; dealStage?: string },
+  businessDescription?: string | null,
 ): Promise<EmailAnalysis | null> {
   const threadContext = priorSummaries.length > 0
     ? `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nPREVIOUS EMAILS IN THIS THREAD (actual content, newest first):\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n${priorSummaries.map((s, i) => `[Prior email ${i + 1}]\n${s}`).join('\n\n')}\n\n⚠️ CRITICAL INSTRUCTION: You are analysing the LATEST email below in the context of this full thread. Your summary MUST include all relevant details mentioned across ALL prior emails — including specific numbers (e.g. SKU counts, quantities), timelines, budgets, company details, or intent signals — even if those details are NOT repeated in the latest email. Do NOT write "No timeline mentioned" if a timeline was stated in a prior email.\n`
+    : ''
+
+  const businessSection = businessDescription?.trim()
+    ? `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nYOUR BUSINESS — use this to judge relevance:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n${businessDescription.trim()}\n\n⚠️ IMPORTANT: Any email from a prospect or customer asking about the products/services described above is relevant. Do NOT mark it LOW just because it lacks buying-intent keywords — classify as MEDIUM at minimum.\n`
     : ''
 
   const crmSection = crmContext?.dealTitle
@@ -196,7 +201,7 @@ async function analyzeEmail(
 
   const prompt = `You are an Email Triage & Pipeline Assistant inside Appalix CRM.
 Analyse the email below and return ONLY a single valid JSON object (no markdown, no explanation, no code fences).
-${threadContext}${crmSection}
+${businessSection}${threadContext}${crmSection}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PRIORITY RULES — assign exactly one:
@@ -393,6 +398,14 @@ async function findOpenDealByContact(workspaceId: string, contactId: string): Pr
 // ---------------------------------------------------------------------------
 
 export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): Promise<number> {
+  // 0. Fetch workspace business description for AI context
+  const { data: workspace } = await supabase
+    .from('workspaces')
+    .select('sage_business_description')
+    .eq('id', workspaceId)
+    .single()
+  const businessDescription = (workspace as { sage_business_description?: string | null } | null)?.sage_business_description ?? null
+
   // 1. Find a connected gmail or microsoft integration
   const { data: integrations } = await supabase
     .from('sage_integrations')
@@ -622,6 +635,7 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
               bodyText,
               priorSummaries,
               crmContext,
+              businessDescription,
             )
 
             if (analysis) {

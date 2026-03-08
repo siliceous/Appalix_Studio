@@ -163,6 +163,11 @@ async function syncActiveIntegrations() {
       const stop = startIdleForWorkspace(wsId, creds)
       activeLoops.set(wsId, stop)
       console.log(`[IDLE] started loop for workspace=${wsId} (${row.provider as string})`)
+
+      // Catch-up sync: fetch latest emails that may have arrived during downtime
+      syncEmailsForWorkspace(wsId, 50).catch((err: unknown) => {
+        console.error(`[IDLE] catch-up sync failed for workspace=${wsId}:`, (err as Error).message)
+      })
     }
   } catch (err) {
     console.error('[IDLE] manager sync error:', (err as Error).message)
