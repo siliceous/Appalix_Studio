@@ -72,7 +72,7 @@ export default async function FormsPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
-      <SubpageToolbar title="Forms" sourceKey="forms" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.forms_auto_enabled} />
+      <SubpageToolbar sourceKey="forms" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.forms_auto_enabled} />
       <div className="flex flex-1 overflow-hidden">
         <FormsDashboard forms={forms} submissions={submissions} />
       </div>

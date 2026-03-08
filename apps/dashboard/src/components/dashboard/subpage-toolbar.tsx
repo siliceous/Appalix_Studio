@@ -1,16 +1,15 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import React, { useState, useEffect, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
-import { LayoutDashboard, ChevronRight, ChevronDown, Zap } from 'lucide-react'
+import { LayoutDashboard, ChevronRight, ChevronDown, Zap, Mail, MessageSquare, FileText, Ticket as TicketIcon } from 'lucide-react'
 import { updateAutoSetting, type AutoSettings } from '@/app/actions/sage-auto-settings'
 
 export type SubpagePreset = 'all' | 'today' | 'yesterday' | '7d' | '30d' | 'custom'
 export type SubpageSource = 'email' | 'bots' | 'forms' | 'tickets'
 
 interface Props {
-  title:       string
   sourceKey:   SubpageSource
   preset:      SubpagePreset
   autoEnabled: boolean    // per-source setting from DB
@@ -41,7 +40,7 @@ const SOURCE_FIELD: Record<SubpageSource, keyof AutoSettings> = {
   tickets: 'tickets_auto_enabled',
 }
 
-export function SubpageToolbar({ title, sourceKey, preset, autoEnabled, customFrom, customTo }: Props) {
+export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, customTo }: Props) {
   const router   = useRouter()
   const pathname = usePathname()
   const [, startTransition] = useTransition()
@@ -81,19 +80,43 @@ export function SubpageToolbar({ title, sourceKey, preset, autoEnabled, customFr
     })
   }
 
+  const PAGES: { key: SubpageSource; label: string; href: string; Icon: React.ElementType; activeColor: string; hoverColor: string }[] = [
+    { key: 'email',   label: 'Email',   href: '/dashboard/email',   Icon: Mail,          activeColor: 'text-blue-600 dark:text-blue-400 border-blue-500',    hoverColor: 'hover:text-blue-500 dark:hover:text-blue-400' },
+    { key: 'bots',    label: 'Bots',    href: '/dashboard/bots',    Icon: MessageSquare, activeColor: 'text-purple-600 dark:text-purple-400 border-purple-500', hoverColor: 'hover:text-purple-500 dark:hover:text-purple-400' },
+    { key: 'forms',   label: 'Forms',   href: '/dashboard/forms',   Icon: FileText,      activeColor: 'text-green-600 dark:text-green-400 border-green-500',   hoverColor: 'hover:text-green-500 dark:hover:text-green-400' },
+    { key: 'tickets', label: 'Tickets', href: '/dashboard/tickets', Icon: TicketIcon,    activeColor: 'text-yellow-600 dark:text-yellow-400 border-yellow-500', hoverColor: 'hover:text-yellow-500 dark:hover:text-yellow-400' },
+  ]
+
   return (
-    <nav className="px-6 py-2.5 border-b dark:border-white/8 bg-white dark:bg-[#1c1c1c] flex items-center justify-between shrink-0">
-      {/* Breadcrumb */}
+    <nav className="px-6 border-b dark:border-white/8 bg-white dark:bg-[#1c1c1c] flex items-center justify-between shrink-0 gap-4">
+      {/* Breadcrumb + page tabs */}
       <div className="flex items-center gap-1.5">
         <Link
           href="/dashboard"
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors shrink-0"
         >
           <LayoutDashboard className="w-3.5 h-3.5" />
-          Overview
+          <span className="hidden sm:inline">Overview</span>
         </Link>
-        <ChevronRight className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600" />
-        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{title}</span>
+        <ChevronRight className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 shrink-0" />
+        {/* Sibling page tabs */}
+        <div className="flex items-center">
+          {PAGES.map(p => (
+            <Link
+              key={p.key}
+              href={p.href}
+              className={[
+                'flex items-center gap-1.5 px-3 py-3.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap',
+                sourceKey === p.key
+                  ? `${p.activeColor} font-semibold`
+                  : `border-transparent text-gray-400 dark:text-gray-500 ${p.hoverColor}`,
+              ].join(' ')}
+            >
+              <p.Icon className="w-3.5 h-3.5 shrink-0" />
+              {p.label}
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* Controls */}
