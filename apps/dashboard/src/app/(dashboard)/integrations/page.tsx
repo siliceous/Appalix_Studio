@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/header'
 import { Plug, Plus } from 'lucide-react'
 import { PLATFORM_META, formatDate } from '@/lib/utils'
 import { IntegrationActions } from './integration-actions'
+import { IntegrationsClient } from '@/app/(dashboard)/sage/integrations/integrations-client'
 import type { Metadata } from 'next'
 import type { Platform, Integration } from '@/lib/types'
 
@@ -41,14 +42,19 @@ export default async function IntegrationsPage() {
   const membership = membershipRaw as { workspace_id: string } | null
   if (!membership) redirect('/login')
 
-  const { data: rawIntegrations } = await supabase
-    .from('integrations')
-    .select('*, bots(name)')
-    .eq('workspace_id', membership.workspace_id)
-    .order('created_at', { ascending: false })
+  const [{ data: rawIntegrations }, { data: sageIntegrationsRaw }] = await Promise.all([
+    supabase.from('integrations').select('*, bots(name)').eq('workspace_id', membership.workspace_id).order('created_at', { ascending: false }),
+    supabase.from('sage_integrations').select('provider, status').eq('workspace_id', membership.workspace_id),
+  ])
   const integrations = (rawIntegrations ?? []) as IntegrationRow[]
 
   const connectedPlatforms = new Set(integrations?.map((i) => i.platform))
+
+  const sageConnected = new Set<string>(
+    (sageIntegrationsRaw ?? [])
+      .filter((r: { provider: string; status: string }) => r.status === 'connected')
+      .map((r: { provider: string; status: string }) => r.provider)
+  )
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -115,10 +121,13 @@ export default async function IntegrationsPage() {
                   <div className={`mt-0.5 px-2 py-1 rounded-md text-xs font-medium shrink-0 ${PLATFORM_META[platform]?.color}`}>
                     {PLATFORM_META[platform]?.label}
                   </div>
-                  <p className="text-xs text-gray-500 leading-relaxed flex-1">{desc}</p>
-                  {connected && (
-                    <span className="text-xs text-green-600 font-medium shrink-0">Connected</span>
-                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border border-purple-200 dark:border-purple-500/25">Bot</span>
+                      {connected && <span className="text-xs text-green-600 font-medium">Connected</span>}
+                    </div>
+                    <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-4 pt-1">
                   <a
@@ -149,7 +158,10 @@ export default async function IntegrationsPage() {
                 {crm.emoji}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{crm.name}</p>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{crm.name}</p>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border border-purple-200 dark:border-purple-500/25">Bot</span>
+                </div>
                 <p className="text-xs text-gray-500 leading-relaxed mt-0.5">{crm.desc}</p>
                 <a href={crm.guide} className="text-xs text-brand-600 hover:text-brand-700 font-medium mt-1.5 inline-block">
                   Setup guide →
@@ -158,6 +170,20 @@ export default async function IntegrationsPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Divider */}
+      <div className="my-10 border-t dark:border-white/8" />
+
+      {/* Sage integrations — payments, email, automation, ticketing, marketing */}
+      <section>
+        <div className="mb-6">
+          <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Sage Integrations</h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Connect external services to power payments, email, automation, and ticketing from Sage.
+          </p>
+        </div>
+        <IntegrationsClient connected={sageConnected} standalone={false} />
       </section>
     </div>
   )

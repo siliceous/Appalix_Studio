@@ -169,10 +169,11 @@ const CATEGORY_LABELS: Record<string, string> = {
 }
 
 interface IntegrationsClientProps {
-  connected: Set<string>
+  connected:  Set<string>
+  standalone?: boolean  // false when embedded inside another page
 }
 
-export function IntegrationsClient({ connected: initialConnected }: IntegrationsClientProps) {
+export function IntegrationsClient({ connected: initialConnected, standalone = true }: IntegrationsClientProps) {
   const [connected,   setConnected]  = useState<Set<string>>(initialConnected)
   const [expanded,    setExpanded]   = useState<string | null>(null)
   const [pending,     startTransition] = useTransition()
@@ -218,13 +219,15 @@ export function IntegrationsClient({ connected: initialConnected }: Integrations
   const categories = ['payments', 'automation', 'email', 'tickets', 'email_marketing'] as const
 
   return (
-    <div className="p-8 max-w-3xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Integrations</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Connect external services to power payments, email, automation, and ticketing from Sage.
-        </p>
-      </div>
+    <div className={standalone ? 'p-8 max-w-3xl mx-auto' : ''}>
+      {standalone && (
+        <div className="mb-8">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Integrations</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Connect external services to power payments, email, automation, and ticketing from Sage.
+          </p>
+        </div>
+      )}
 
       {categories.map(category => {
         const cards = INTEGRATIONS.filter(i => i.category === category)
@@ -258,8 +261,11 @@ export function IntegrationsClient({ connected: initialConnected }: Integrations
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{integration.name}</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-[#61c2ad]/12 text-[#3a9e8a] dark:text-[#61c2ad] border border-[#61c2ad]/25">
+                            Sage
+                          </span>
                           {isConnected && (
                             <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-brand-50 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad] font-medium">
                               <Check className="w-2.5 h-2.5" /> Connected
