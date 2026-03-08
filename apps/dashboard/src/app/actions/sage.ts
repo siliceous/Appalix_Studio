@@ -614,6 +614,8 @@ export async function updateTicketStatus(id: string, status: SageTicketStatus) {
 
   await logActivity(workspaceId, 'ticket', id, 'status_changed', { status })
   revalidatePath('/sage/tickets')
+  revalidatePath('/dashboard/tickets')
+  revalidatePath('/dashboard')
 }
 
 export async function deleteTicket(id: string) {

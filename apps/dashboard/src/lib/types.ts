@@ -193,7 +193,7 @@ export interface UsageEvent {
 // Sage CRM types
 // ---------------------------------------------------------------
 
-export type SageTicketStatus        = 'open' | 'pending' | 'resolved'
+export type SageTicketStatus        = 'open' | 'in_progress' | 'pending' | 'resolved' | 'closed'
 export type SageTicketPriority      = 'low' | 'medium' | 'high' | 'urgent'
 export type SageDealStatus          = 'open' | 'won' | 'lost'
 export type SageContactSource       = 'chat' | 'manual' | 'import'
@@ -294,6 +294,19 @@ export interface SageDeal {
   contact?:               Pick<SageContact, 'id' | 'name' | 'email'> | null
   company?:               Pick<SageCompany, 'id' | 'name'> | null
   stage?:                 Pick<SagePipelineStage, 'id' | 'name' | 'color'> | null
+}
+
+export interface SageTicketActivity {
+  id:           string
+  workspace_id: string
+  ticket_id:    string
+  type:         'note' | 'call' | 'meeting' | 'task'
+  title:        string | null
+  body:         string | null
+  due_at:       string | null
+  completed_at: string | null
+  created_by:   string | null
+  created_at:   string
 }
 
 export interface SageDealActivity {
