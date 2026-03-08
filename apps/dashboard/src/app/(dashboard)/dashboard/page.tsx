@@ -8,6 +8,7 @@ import { BotTriageDashboard, type TriageConversation } from '@/components/dashbo
 import { TicketsDashboard } from '@/components/dashboard/tickets-dashboard'
 import { FormsDashboard }   from '@/components/dashboard/forms-dashboard'
 import { OverviewTabBar }   from '@/components/dashboard/overview-tab-bar'
+import { SageDashboardClient } from '@/app/(dashboard)/sage/dashboard/dashboard-client'
 
 export const metadata: Metadata = { title: 'Overview' }
 
@@ -58,7 +59,7 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ tab?: string }>
 }) {
-  const { tab = 'email' } = await searchParams
+  const { tab = 'overview' } = await searchParams
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -75,6 +76,10 @@ export default async function DashboardPage({
   const membership = membershipRaw as Pick<WorkspaceMember, 'workspace_id'> | null
   if (!membership) redirect('/login')
   const workspaceId = membership.workspace_id
+
+  // ── Overview greeting ─────────────────────────────────────────────────────
+  const hour = new Date().getUTCHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   // ── Per-tab data fetching ─────────────────────────────────────────────────
 
@@ -291,20 +296,26 @@ export default async function DashboardPage({
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
       <OverviewTabBar activeTab={tab} />
 
-      <div className="flex flex-1 overflow-hidden">
-        {tab === 'email' && (
-          <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} />
-        )}
-        {tab === 'bots' && (
-          <BotTriageDashboard triageConversations={triageConversations} />
-        )}
-        {tab === 'tickets' && (
-          <TicketsDashboard tickets={tickets} />
-        )}
-        {tab === 'forms' && (
-          <FormsDashboard forms={forms} submissions={submissions} />
-        )}
-      </div>
+      {tab === 'overview' ? (
+        <div className="flex-1 overflow-y-auto p-8">
+          <SageDashboardClient workspaceId={workspaceId} greeting={greeting} />
+        </div>
+      ) : (
+        <div className="flex flex-1 overflow-hidden">
+          {tab === 'email' && (
+            <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} />
+          )}
+          {tab === 'bots' && (
+            <BotTriageDashboard triageConversations={triageConversations} />
+          )}
+          {tab === 'tickets' && (
+            <TicketsDashboard tickets={tickets} />
+          )}
+          {tab === 'forms' && (
+            <FormsDashboard forms={forms} submissions={submissions} />
+          )}
+        </div>
+      )}
     </div>
   )
 }

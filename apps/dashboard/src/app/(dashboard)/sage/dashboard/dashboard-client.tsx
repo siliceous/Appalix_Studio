@@ -218,9 +218,9 @@ function ItemPopup({
     setCopied(true); setTimeout(() => setCopied(false), 2000)
   }
 
-  const iconCls = { email: 'bg-green-100 dark:bg-green-500/15', bot: 'bg-blue-100 dark:bg-blue-500/15', form: 'bg-purple-100 dark:bg-purple-500/15', ticket: 'bg-orange-100 dark:bg-orange-500/15' }[popup.kind]
+  const iconCls = { email: 'bg-blue-100 dark:bg-blue-500/15', bot: 'bg-purple-100 dark:bg-purple-500/15', form: 'bg-green-100 dark:bg-green-500/15', ticket: 'bg-yellow-100 dark:bg-yellow-500/15' }[popup.kind]
   const Icon    = { email: Mail, bot: MessageSquare, form: FileText, ticket: TicketIcon }[popup.kind]
-  const iconCol = { email: 'text-green-600 dark:text-green-400', bot: 'text-blue-600 dark:text-blue-400', form: 'text-purple-600 dark:text-purple-400', ticket: 'text-orange-600 dark:text-orange-400' }[popup.kind]
+  const iconCol = { email: 'text-blue-600 dark:text-blue-400', bot: 'text-purple-600 dark:text-purple-400', form: 'text-green-600 dark:text-green-400', ticket: 'text-yellow-600 dark:text-yellow-400' }[popup.kind]
   const label   = { email: 'Email Summary', bot: 'Chat Summary', form: 'Lead Details', ticket: 'Ticket Summary' }[popup.kind]
 
   return (
@@ -802,12 +802,12 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
       {/* ── 4 Donut cards ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Emails',    sub: 'high & medium unread',  Icon: Mail,        iconCls: 'text-green-500',  segs: emailSegs,  total: emails.length  },
-          { label: 'Bot Chats', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-blue-500', segs: botSegs,    total: bots.length    },
-          { label: 'Forms',     sub: 'all submissions',       Icon: FileText,    iconCls: 'text-purple-500', segs: formSegs,   total: forms.length   },
-          { label: 'Tickets',   sub: 'all tickets',           Icon: TicketIcon,  iconCls: 'text-orange-500', segs: ticketSegs, total: tickets.length },
+          { label: 'Emails',    sub: 'high & medium unread',  Icon: Mail,        iconCls: 'text-blue-500',   segs: emailSegs,  total: emails.length,  href: '/dashboard?tab=email'   },
+          { label: 'Bot Chats', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-500', segs: botSegs,  total: bots.length,    href: '/dashboard?tab=bots'    },
+          { label: 'Forms',     sub: 'all submissions',       Icon: FileText,    iconCls: 'text-green-500',  segs: formSegs,   total: forms.length,   href: '/dashboard?tab=forms'   },
+          { label: 'Tickets',   sub: 'all tickets',           Icon: TicketIcon,  iconCls: 'text-yellow-500', segs: ticketSegs, total: tickets.length, href: '/dashboard?tab=tickets' },
         ].map(card => (
-          <div key={card.label} className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-4 flex flex-col items-center">
+          <Link key={card.label} href={card.href} className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-4 flex flex-col items-center hover:shadow-md hover:border-gray-300 dark:hover:border-white/15 transition-all cursor-pointer">
             <div className="w-full flex items-center justify-between mb-2">
               <div>
                 <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{card.label}</p>
@@ -824,7 +824,7 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
                 </span>
               ))}
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -859,28 +859,28 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
             <div className="flex items-center gap-3 text-[11px] text-gray-400">
               <button
                 onClick={() => { setFeedView('grid'); setTopType('email') }}
-                className={`flex items-center gap-1 hover:text-green-500 transition-colors ${topType === 'email' && feedView === 'grid' ? 'text-green-500 font-semibold' : ''}`}
+                className={`flex items-center gap-1 hover:text-blue-500 transition-colors ${topType === 'email' && feedView === 'grid' ? 'text-blue-500 font-semibold' : ''}`}
                 title="Emails"
               >
                 <Mail className="w-3 h-3" />{emails.length}
               </button>
               <button
                 onClick={() => { setFeedView('grid'); setTopType('bot') }}
-                className={`flex items-center gap-1 hover:text-blue-500 transition-colors ${topType === 'bot' && feedView === 'grid' ? 'text-blue-500 font-semibold' : ''}`}
+                className={`flex items-center gap-1 hover:text-purple-500 transition-colors ${topType === 'bot' && feedView === 'grid' ? 'text-purple-500 font-semibold' : ''}`}
                 title="Bot chats"
               >
                 <MessageSquare className="w-3 h-3" />{bots.length}
               </button>
               <button
                 onClick={() => { setFeedView('grid'); setTopType('form') }}
-                className={`flex items-center gap-1 hover:text-purple-500 transition-colors ${topType === 'form' && feedView === 'grid' ? 'text-purple-500 font-semibold' : ''}`}
+                className={`flex items-center gap-1 hover:text-green-500 transition-colors ${topType === 'form' && feedView === 'grid' ? 'text-green-500 font-semibold' : ''}`}
                 title="Form submissions"
               >
                 <FileText className="w-3 h-3" />{forms.length}
               </button>
               <button
                 onClick={() => { setFeedView('grid'); setTopType('ticket') }}
-                className={`flex items-center gap-1 hover:text-orange-500 transition-colors ${topType === 'ticket' && feedView === 'grid' ? 'text-orange-500 font-semibold' : ''}`}
+                className={`flex items-center gap-1 hover:text-yellow-500 transition-colors ${topType === 'ticket' && feedView === 'grid' ? 'text-yellow-500 font-semibold' : ''}`}
                 title="Tickets"
               >
                 <TicketIcon className="w-3 h-3" />{tickets.length}
@@ -908,8 +908,8 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
                       <div key={timeKey} onClick={() => setPopup({ kind: 'email', id: e.id })}
                         className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
                         <PriorityDot priority={e.ai_priority ?? 'low'} pulse={e.ai_priority === 'high'} />
-                        <div className="w-5 h-5 rounded-md bg-green-100 dark:bg-green-500/15 flex items-center justify-center shrink-0">
-                          <Mail className="w-3 h-3 text-green-600 dark:text-green-400" />
+                        <div className="w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center shrink-0">
+                          <Mail className="w-3 h-3 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{e.from_name ?? e.from_address}</p>
@@ -926,8 +926,8 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
                       <div key={timeKey} onClick={() => setPopup({ kind: 'bot', id: b.id })}
                         className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
                         <PriorityDot priority={b.ai_priority ?? 'low'} pulse={b.ai_priority === 'high'} />
-                        <div className="w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center shrink-0">
-                          <MessageSquare className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                        <div className="w-5 h-5 rounded-md bg-purple-100 dark:bg-purple-500/15 flex items-center justify-center shrink-0">
+                          <MessageSquare className="w-3 h-3 text-purple-600 dark:text-purple-400" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{b.title ?? 'Untitled conversation'}</p>
@@ -945,8 +945,8 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
                       <div key={timeKey} onClick={() => setPopup({ kind: 'form', id: f.id })}
                         className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
                         <PriorityDot priority={f.lead_score ?? 'low'} />
-                        <div className="w-5 h-5 rounded-md bg-purple-100 dark:bg-purple-500/15 flex items-center justify-center shrink-0">
-                          <FileText className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                        <div className="w-5 h-5 rounded-md bg-green-100 dark:bg-green-500/15 flex items-center justify-center shrink-0">
+                          <FileText className="w-3 h-3 text-green-600 dark:text-green-400" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{f.name}</p>
@@ -962,8 +962,8 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
                       <div key={timeKey} onClick={() => setPopup({ kind: 'ticket', id: t.id })}
                         className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
                         <PriorityDot priority={t.priority} pulse={t.priority === 'high' || t.priority === 'urgent'} />
-                        <div className="w-5 h-5 rounded-md bg-orange-100 dark:bg-orange-500/15 flex items-center justify-center shrink-0">
-                          <TicketIcon className="w-3 h-3 text-orange-600 dark:text-orange-400" />
+                        <div className="w-5 h-5 rounded-md bg-yellow-100 dark:bg-yellow-500/15 flex items-center justify-center shrink-0">
+                          <TicketIcon className="w-3 h-3 text-yellow-600 dark:text-yellow-400" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{t.title}</p>
@@ -994,9 +994,9 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
                   key: 'email',
                   label: 'Emails',
                   icon: <Mail className="w-3.5 h-3.5" />,
-                  accentClass: 'text-green-600 dark:text-green-400',
-                  borderClass: 'border-green-200 dark:border-green-500/20',
-                  bgClass: 'bg-green-50 dark:bg-green-500/8',
+                  accentClass: 'text-blue-600 dark:text-blue-400',
+                  borderClass: 'border-blue-200 dark:border-blue-500/20',
+                  bgClass: 'bg-blue-50 dark:bg-blue-500/8',
                   count: emails.length,
                   rows: emails.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No emails this period.</p>
@@ -1017,9 +1017,9 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
                   key: 'bot',
                   label: 'Bot Chats',
                   icon: <MessageSquare className="w-3.5 h-3.5" />,
-                  accentClass: 'text-blue-600 dark:text-blue-400',
-                  borderClass: 'border-blue-200 dark:border-blue-500/20',
-                  bgClass: 'bg-blue-50 dark:bg-blue-500/8',
+                  accentClass: 'text-purple-600 dark:text-purple-400',
+                  borderClass: 'border-purple-200 dark:border-purple-500/20',
+                  bgClass: 'bg-purple-50 dark:bg-purple-500/8',
                   count: bots.length,
                   rows: bots.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No bot chats this period.</p>
@@ -1041,9 +1041,9 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
                   key: 'form',
                   label: 'Form Submissions',
                   icon: <FileText className="w-3.5 h-3.5" />,
-                  accentClass: 'text-purple-600 dark:text-purple-400',
-                  borderClass: 'border-purple-200 dark:border-purple-500/20',
-                  bgClass: 'bg-purple-50 dark:bg-purple-500/8',
+                  accentClass: 'text-green-600 dark:text-green-400',
+                  borderClass: 'border-green-200 dark:border-green-500/20',
+                  bgClass: 'bg-green-50 dark:bg-green-500/8',
                   count: forms.length,
                   rows: forms.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No form submissions this period.</p>
@@ -1063,9 +1063,9 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
                   key: 'ticket',
                   label: 'Tickets',
                   icon: <TicketIcon className="w-3.5 h-3.5" />,
-                  accentClass: 'text-orange-600 dark:text-orange-400',
-                  borderClass: 'border-orange-200 dark:border-orange-500/20',
-                  bgClass: 'bg-orange-50 dark:bg-orange-500/8',
+                  accentClass: 'text-yellow-600 dark:text-yellow-400',
+                  borderClass: 'border-yellow-200 dark:border-yellow-500/20',
+                  bgClass: 'bg-yellow-50 dark:bg-yellow-500/8',
                   count: tickets.length,
                   rows: tickets.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No tickets this period.</p>

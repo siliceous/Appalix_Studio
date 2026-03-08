@@ -2,13 +2,14 @@
 
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
-import { Mail, Bot, Ticket, ClipboardList } from 'lucide-react'
+import { LayoutDashboard, Mail, Bot, Ticket, ClipboardList } from 'lucide-react'
 
 const TABS = [
-  { id: 'email',   label: 'Email',   icon: Mail },
-  { id: 'bots',    label: 'Bots',    icon: Bot },
-  { id: 'forms',   label: 'Forms',   icon: ClipboardList },
-  { id: 'tickets', label: 'Tickets', icon: Ticket },
+  { id: 'overview', label: 'Overview',  icon: LayoutDashboard },
+  { id: 'email',    label: 'Email',     icon: Mail },
+  { id: 'bots',     label: 'Bots',      icon: Bot },
+  { id: 'forms',    label: 'Forms',     icon: ClipboardList },
+  { id: 'tickets',  label: 'Tickets',   icon: Ticket },
 ] as const
 
 export function OverviewTabBar({ activeTab }: { activeTab: string }) {
@@ -24,7 +25,7 @@ export function OverviewTabBar({ activeTab }: { activeTab: string }) {
             key={id}
             onClick={() =>
               startTransition(() =>
-                router.push(id === 'email' ? '/dashboard' : `/dashboard?tab=${id}`)
+                router.push(id === 'overview' ? '/dashboard' : `/dashboard?tab=${id}`)
               )
             }
             className={[
