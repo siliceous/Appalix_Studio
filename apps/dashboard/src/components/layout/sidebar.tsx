@@ -16,9 +16,8 @@ import {
   Kanban,
   Users,
   Ticket,
-  Link2,
-  LayoutGrid,
   Mail,
+  FileText,
   Inbox,
   Rss,
   PieChart,
@@ -32,6 +31,7 @@ interface NavItem {
   href:  string
   label: string
   icon:  React.ElementType
+  sub?:  boolean  // renders indented under its parent group item
 }
 
 interface NavGroup {
@@ -43,7 +43,11 @@ interface NavGroup {
 const NAV_GROUPS: NavGroup[] = [
   {
     items: [
-      { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
+      { href: '/dashboard',         label: 'Overview',  icon: LayoutDashboard },
+      { href: '/dashboard/email',   label: 'Emails',    icon: Mail,        sub: true },
+      { href: '/dashboard/bots',    label: 'Bots',      icon: MessageSquare, sub: true },
+      { href: '/dashboard/forms',   label: 'Forms',     icon: FileText,    sub: true },
+      { href: '/dashboard/tickets', label: 'Tickets',   icon: Ticket,      sub: true },
     ],
   },
   {
@@ -59,12 +63,10 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Sage',
     pro: true,
     items: [
-      { href: '/sage/dashboard',    label: 'Dashboard',    icon: LayoutGrid },
-      { href: '/sage/pipelines',    label: 'Pipelines',    icon: Kanban },
-      { href: '/sage/contacts',     label: 'Contacts',     icon: Users },
-      { href: '/sage/emails',       label: 'Emails',       icon: Mail },
-      { href: '/sage/tickets',      label: 'Tickets',      icon: Ticket },
-      { href: '/sage/integrations', label: 'Integrations', icon: Link2 },
+      { href: '/sage/pipelines', label: 'Pipelines', icon: Kanban },
+      { href: '/sage/contacts',  label: 'Contacts',  icon: Users },
+      { href: '/sage/emails',    label: 'Emails',    icon: Mail },
+      { href: '/sage/tickets',   label: 'Tickets',   icon: Ticket },
     ],
   },
   {
@@ -196,11 +198,14 @@ export function Sidebar({ workspace }: SidebarProps) {
                 )}
 
                 <div className="space-y-0.5">
-                  {group.items.map(({ href, label, icon: Icon }) => {
+                  {group.items.map(({ href, label, icon: Icon, sub }) => {
                     const active = isActive(href)
 
                     const linkCls = cn(
-                      'flex items-center gap-3 px-2 py-2 rounded-lg text-sm transition-colors w-full',
+                      'flex items-center gap-3 rounded-lg transition-colors w-full',
+                      sub
+                        ? 'pl-7 pr-2 py-1.5 text-xs'
+                        : 'px-2 py-2 text-sm',
                       active
                         ? 'bg-brand-50 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad] font-medium'
                         : locked
@@ -210,8 +215,8 @@ export function Sidebar({ workspace }: SidebarProps) {
 
                     const content = (
                       <>
-                        <Icon className="w-5 h-5 shrink-0" />
-                        <span className="overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-75 whitespace-nowrap text-sm">
+                        <Icon className={cn('shrink-0', sub ? 'w-3.5 h-3.5' : 'w-5 h-5')} />
+                        <span className="overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-75 whitespace-nowrap">
                           {label}
                         </span>
                       </>
