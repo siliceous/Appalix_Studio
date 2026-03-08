@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { saveProfile } from '@/app/actions/profile'
+import OnboardingForm from './onboarding-form'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Welcome to Appalix' }
@@ -20,8 +20,8 @@ export default async function OnboardingPage() {
   if (existing) redirect('/dashboard')
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-lg">
 
         {/* Logo */}
         <div className="text-center mb-8">
@@ -30,59 +30,12 @@ export default async function OnboardingPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border p-8">
-          <h1 className="text-xl font-semibold text-gray-900 mb-1">Tell us about yourself</h1>
-          <p className="text-sm text-gray-500 mb-6">This takes 10 seconds. We&apos;ll never share your details.</p>
+          <h1 className="text-xl font-semibold text-gray-900 mb-1">Tell us about your business</h1>
+          <p className="text-sm text-gray-500 mb-6">
+            This helps Sage AI understand what you sell so it can prioritise your leads and emails correctly.
+          </p>
 
-          <form action={saveProfile} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-1">
-                  First name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="first_name"
-                  name="first_name"
-                  type="text"
-                  required
-                  autoFocus
-                  placeholder="Jane"
-                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Last name
-                </label>
-                <input
-                  id="last_name"
-                  name="last_name"
-                  type="text"
-                  placeholder="Smith"
-                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-1">
-                Company name
-              </label>
-              <input
-                id="company"
-                name="company"
-                type="text"
-                placeholder="Acme Inc."
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-2.5 px-4 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors"
-            >
-              Continue to dashboard →
-            </button>
-          </form>
+          <OnboardingForm />
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-4">

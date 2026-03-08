@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { DeleteWorkspaceButton } from '@/components/settings/delete-workspace-button'
 import { ThemeToggle } from '@/components/settings/theme-toggle'
+import { BusinessProfileSection } from '@/components/settings/business-profile-section'
+import { parseBusinessDescription } from '@/app/actions/profile'
 import { STATUS_COLORS, formatDate } from '@/lib/utils'
 import type { Metadata } from 'next'
 import type { Workspace, WorkspaceMember } from '@/lib/types'
@@ -35,9 +37,16 @@ export default async function SettingsPage() {
     .eq('workspace_id', workspace?.id ?? '')
   const members = (rawMembers ?? []) as Pick<WorkspaceMember, 'id' | 'role' | 'accepted_at' | 'created_at'>[]
 
+  const profileData = parseBusinessDescription(
+    (workspace as Workspace & { sage_business_description?: string | null }).sage_business_description ?? null
+  )
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <Header title="Settings" description="Workspace configuration and billing" />
+
+      {/* Business Profile */}
+      <BusinessProfileSection workspaceId={workspace.id} initialData={profileData} />
 
       {/* Workspace info */}
       <section className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 divide-y dark:divide-white/10">

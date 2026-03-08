@@ -46,6 +46,7 @@ export interface Workspace {
   trial_ends_at: string | null
   monthly_message_limit: number
   monthly_agent_run_limit: number
+  sage_business_description: string | null
   created_at: string
   updated_at: string
 }

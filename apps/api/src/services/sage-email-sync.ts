@@ -394,17 +394,159 @@ async function findOpenDealByContact(workspaceId: string, contactId: string): Pr
 }
 
 // ---------------------------------------------------------------------------
+// Auto-derive business description from the workspace's knowledge base
+// ---------------------------------------------------------------------------
+
+async function deriveBusinessDescription(workspaceId: string): Promise<string | null> {
+  try {
+    // Grab up to 12 chunks from the workspace knowledge base (varied sources)
+    const { data: chunks } = await supabase
+      .from('chunks')
+      .select('content')
+      .eq('workspace_id', workspaceId)
+      .order('created_at', { ascending: true })
+      .limit(12)
+
+    if (!chunks || chunks.length === 0) return null
+
+    const combinedText = (chunks as { content: string }[])
+      .map(c => c.content.slice(0, 400).replace(/\s+/g, ' ').trim())
+      .join('\n\n---\n\n')
+
+    const result = await callClaude({
+      model:        'claude-haiku-4-5-20251001',
+      systemPrompt: 'You are a business analyst. Output only the requested text, no preamble.',
+      messages: [{
+        role:    'user',
+        content: `Based on the following excerpts from a company's knowledge base, write a concise 2–3 sentence description of:
+1. What this business does
+2. What products or services it sells
+3. Who its target customers are
+
+Be specific. Use plain language. Do NOT say "the company" — just describe what they offer.
+
+Knowledge base excerpts:
+${combinedText}`,
+      }],
+      maxTokens:   300,
+      temperature: 0.1,
+    })
+
+    const description = result.content.trim()
+    if (!description) return null
+
+    // Cache it back on the workspace so we don't re-derive every sync
+    await supabase
+      .from('workspaces')
+      .update({ sage_business_description: description })
+      .eq('id', workspaceId)
+
+    console.log(`[email-sync] derived business description for workspace=${workspaceId}`)
+    return description
+  } catch {
+    return null
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Merge new KB content into existing business description after upload
+// ---------------------------------------------------------------------------
+
+/**
+ * Called automatically after a new knowledge base source is ingested.
+ * Reads the newly-added chunks, compares against the current business
+ * description, and asks Claude to add any NEW products/services/offerings
+ * not already mentioned. If nothing new is found, the description is left
+ * unchanged so manual edits are never overwritten.
+ */
+export async function refreshBusinessDescriptionFromKB(
+  workspaceId: string,
+  sourceId:    string,
+): Promise<void> {
+  try {
+    // Fetch current description
+    const { data: ws } = await supabase
+      .from('workspaces')
+      .select('sage_business_description')
+      .eq('id', workspaceId)
+      .single()
+
+    const current = (ws as { sage_business_description?: string | null } | null)
+      ?.sage_business_description?.trim() ?? null
+
+    // Grab chunks from the newly-ingested source (up to 12)
+    const { data: newChunks } = await supabase
+      .from('chunks')
+      .select('content')
+      .eq('workspace_id', workspaceId)
+      .eq('source_id', sourceId)
+      .order('chunk_index', { ascending: true })
+      .limit(12)
+
+    if (!newChunks || newChunks.length === 0) return
+
+    const newContent = (newChunks as { content: string }[])
+      .map(c => c.content.slice(0, 400).replace(/\s+/g, ' ').trim())
+      .join('\n\n---\n\n')
+
+    // If there is no existing description, do a full derive instead
+    if (!current) {
+      await deriveBusinessDescription(workspaceId)
+      return
+    }
+
+    const result = await callClaude({
+      model:        'claude-haiku-4-5-20251001',
+      systemPrompt: 'You are a business analyst. Output only the requested text, no preamble.',
+      messages: [{
+        role:    'user',
+        content: `You are updating a business profile description.
+
+CURRENT DESCRIPTION:
+${current}
+
+NEW KNOWLEDGE BASE CONTENT:
+${newContent}
+
+Task: Identify any NEW products, services, or customer segments described in the new content that are NOT already covered by the current description.
+- If there are new items: return the FULL updated description with them naturally incorporated (2–4 sentences max).
+- If there is nothing new: reply with exactly the word UNCHANGED and nothing else.`,
+      }],
+      maxTokens:   400,
+      temperature: 0.1,
+    })
+
+    const reply = result.content.trim()
+    if (!reply || reply.toUpperCase() === 'UNCHANGED') {
+      console.log(`[email-sync] KB refresh for workspace=${workspaceId}: no new offerings found`)
+      return
+    }
+
+    await supabase
+      .from('workspaces')
+      .update({ sage_business_description: reply })
+      .eq('id', workspaceId)
+
+    console.log(`[email-sync] KB refresh updated business description for workspace=${workspaceId}`)
+  } catch (err) {
+    console.error(`[email-sync] KB refresh error for workspace=${workspaceId}:`, (err as Error).message)
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Main sync function
 // ---------------------------------------------------------------------------
 
 export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): Promise<number> {
-  // 0. Fetch workspace business description for AI context
+  // 0. Fetch workspace business description for AI context.
+  //    If not set, auto-derive it from the knowledge base and cache it.
   const { data: workspace } = await supabase
     .from('workspaces')
     .select('sage_business_description')
     .eq('id', workspaceId)
     .single()
-  const businessDescription = (workspace as { sage_business_description?: string | null } | null)?.sage_business_description ?? null
+  const stored = (workspace as { sage_business_description?: string | null } | null)?.sage_business_description ?? null
+  const businessDescription = stored ?? await deriveBusinessDescription(workspaceId)
 
   // 1. Find a connected gmail or microsoft integration
   const { data: integrations } = await supabase

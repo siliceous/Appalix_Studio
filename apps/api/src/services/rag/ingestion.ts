@@ -2,6 +2,7 @@ import { createSign } from 'crypto'
 import { supabase } from '../../lib/supabase.js'
 import { embedBatch, chunkText } from './embeddings.js'
 import { recordUsage } from '../../lib/usage.js'
+import { refreshBusinessDescriptionFromKB } from '../sage-email-sync.js'
 
 /**
  * Accepts either a short-lived OAuth access token (ya29.…) or a full
@@ -138,6 +139,11 @@ export async function ingestSource(sourceId: string): Promise<void> {
     }).eq('id', sourceId)
 
     console.log(`[ingestion] source ${sourceId} ready — ${insertedCount} chunks`)
+
+    // Fire-and-forget: merge any new offerings into the workspace business description
+    refreshBusinessDescriptionFromKB(source.workspace_id as string, sourceId).catch((err: unknown) => {
+      console.error(`[ingestion] KB business description refresh failed for source=${sourceId}:`, (err as Error).message)
+    })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     await supabase.from('sources').update({
