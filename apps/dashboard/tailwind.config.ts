@@ -30,7 +30,17 @@ const config: Config = {
   },
   // Safelist all category badge colours — these are returned as dynamic strings
   // from categoryClass() so Tailwind JIT must be told explicitly to include them
+  // Also safelist triage list-item active-state classes used in nested ternaries
   safelist: [
+    // Triage list item — active selection backgrounds (bots / forms / tickets)
+    'border-l-[3px]',
+    'border-l-transparent',
+    'border-l-[#61c2ad]','bg-[#61c2ad]/8','dark:bg-[#61c2ad]/10',
+    'border-l-amber-400','bg-amber-50','dark:bg-amber-500/8',
+    'border-l-gray-400','bg-gray-100','dark:bg-white/5',
+    'border-l-red-500','bg-red-50','dark:bg-red-500/8',
+    'border-l-orange-400','bg-orange-50','dark:bg-orange-500/8',
+    'border-l-blue-400','bg-blue-50','dark:bg-blue-500/8',
     // teal (Sales)
     'bg-teal-50','text-teal-600','border-teal-200',
     'dark:bg-teal-500/10','dark:text-teal-400','dark:border-teal-500/20',
