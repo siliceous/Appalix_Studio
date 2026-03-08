@@ -5,21 +5,24 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { LayoutDashboard, ChevronRight, ChevronDown, Zap } from 'lucide-react'
 
-export type SubpagePreset = 'all' | 'today' | 'yesterday' | '7d' | '30d'
+export type SubpagePreset = 'all' | 'today' | 'yesterday' | '7d' | '30d' | 'custom'
 export type SubpageSource = 'email' | 'bots' | 'forms' | 'tickets'
 
 interface Props {
-  title:     string
-  sourceKey: SubpageSource
-  preset:    SubpagePreset
+  title:       string
+  sourceKey:   SubpageSource
+  preset:      SubpagePreset
+  customFrom?: string   // YYYY-MM-DD from URL
+  customTo?:   string   // YYYY-MM-DD from URL
 }
 
 const PRESETS: { value: SubpagePreset; label: string }[] = [
-  { value: 'all',       label: 'All time'    },
-  { value: 'today',     label: 'Today'       },
-  { value: 'yesterday', label: 'Yesterday'   },
-  { value: '7d',        label: 'Last 7 days' },
-  { value: '30d',       label: 'Last 30 days'},
+  { value: 'all',       label: 'All time'      },
+  { value: 'today',     label: 'Today'         },
+  { value: 'yesterday', label: 'Yesterday'     },
+  { value: '7d',        label: 'Last 7 days'   },
+  { value: '30d',       label: 'Last 30 days'  },
+  { value: 'custom',    label: 'Date range...' },
 ]
 
 const SOURCE_LABEL: Record<SubpageSource, string> = {
@@ -29,16 +32,24 @@ const SOURCE_LABEL: Record<SubpageSource, string> = {
   tickets: 'tickets',
 }
 
-export function SubpageToolbar({ title, sourceKey, preset }: Props) {
+export function SubpageToolbar({ title, sourceKey, preset, customFrom, customTo }: Props) {
   const router   = useRouter()
   const pathname = usePathname()
   const [, startTransition] = useTransition()
   const [autoEnabled, setAutoEnabled] = useState(true)
+  const [fromDate, setFromDate] = useState(customFrom ?? '')
+  const [toDate,   setToDate]   = useState(customTo   ?? '')
 
   useEffect(() => {
     const stored = localStorage.getItem(`sage-auto-${sourceKey}`)
     setAutoEnabled(stored !== 'false')
   }, [sourceKey])
+
+  // Keep date inputs in sync when URL params change
+  useEffect(() => {
+    setFromDate(customFrom ?? '')
+    setToDate(customTo   ?? '')
+  }, [customFrom, customTo])
 
   const toggleAuto = () => {
     const next = !autoEnabled
@@ -47,8 +58,20 @@ export function SubpageToolbar({ title, sourceKey, preset }: Props) {
   }
 
   const handlePresetChange = (value: SubpagePreset) => {
+    if (value === 'custom') {
+      // Switch to custom mode without navigating yet — show date inputs
+      startTransition(() => router.push(`${pathname}?preset=custom`))
+      return
+    }
     startTransition(() => {
       router.push(value === 'all' ? pathname : `${pathname}?preset=${value}`)
+    })
+  }
+
+  const applyCustomRange = () => {
+    if (!fromDate || !toDate) return
+    startTransition(() => {
+      router.push(`${pathname}?preset=custom&from=${fromDate}&to=${toDate}`)
     })
   }
 
@@ -69,16 +92,44 @@ export function SubpageToolbar({ title, sourceKey, preset }: Props) {
 
       {/* Controls */}
       <div className="flex items-center gap-2.5">
-        {/* Date preset */}
-        <div className="relative">
-          <select
-            value={preset}
-            onChange={e => handlePresetChange(e.target.value as SubpagePreset)}
-            className="appearance-none bg-gray-50 dark:bg-[#232323] border border-gray-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-300 rounded-lg pl-2.5 pr-6 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/40 cursor-pointer"
-          >
-            {PRESETS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
+        {/* Date preset + optional custom range inputs */}
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <select
+              value={preset}
+              onChange={e => handlePresetChange(e.target.value as SubpagePreset)}
+              className="appearance-none bg-gray-50 dark:bg-[#232323] border border-gray-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-300 rounded-lg pl-2.5 pr-6 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/40 cursor-pointer"
+            >
+              {PRESETS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
+          </div>
+
+          {preset === 'custom' && (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="date"
+                value={fromDate}
+                onChange={e => setFromDate(e.target.value)}
+                className="bg-gray-50 dark:bg-[#232323] border border-gray-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/40"
+              />
+              <span className="text-xs text-gray-400">→</span>
+              <input
+                type="date"
+                value={toDate}
+                min={fromDate || undefined}
+                onChange={e => setToDate(e.target.value)}
+                className="bg-gray-50 dark:bg-[#232323] border border-gray-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/40"
+              />
+              <button
+                onClick={applyCustomRange}
+                disabled={!fromDate || !toDate}
+                className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-[#61c2ad]/10 text-[#3a9e8a] dark:text-[#61c2ad] border border-[#61c2ad]/25 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#61c2ad]/20 transition-colors"
+              >
+                Apply
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Per-source Sage Auto toggle */}

@@ -7,7 +7,13 @@ import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpa
 
 export const metadata: Metadata = { title: 'Bot Conversations' }
 
-function getDateRange(preset: SubpagePreset): { from: string | null; to: string | null } {
+function getDateRange(preset: SubpagePreset, customFrom?: string, customTo?: string): { from: string | null; to: string | null } {
+  if (preset === 'custom') {
+    return {
+      from: customFrom ? new Date(customFrom).toISOString() : null,
+      to:   customTo   ? new Date(customTo + 'T23:59:59').toISOString() : null,
+    }
+  }
   const now = new Date()
   if (preset === 'today') {
     const from = new Date(now); from.setHours(0, 0, 0, 0)
@@ -29,10 +35,10 @@ function getDateRange(preset: SubpagePreset): { from: string | null; to: string 
   return { from: null, to: null }
 }
 
-export default async function BotsTriagePage({ searchParams }: { searchParams: Promise<{ preset?: string }> }) {
+export default async function BotsTriagePage({ searchParams }: { searchParams: Promise<{ preset?: string; from?: string; to?: string }> }) {
   const params = await searchParams
-  const preset = (['today','yesterday','7d','30d'].includes(params.preset ?? '') ? params.preset : 'all') as SubpagePreset
-  const { from: dateFrom, to: dateTo } = getDateRange(preset)
+  const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as SubpagePreset
+  const { from: dateFrom, to: dateTo } = getDateRange(preset, params.from, params.to)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -67,7 +73,7 @@ export default async function BotsTriagePage({ searchParams }: { searchParams: P
 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
-      <SubpageToolbar title="Bot Conversations" sourceKey="bots" preset={preset} />
+      <SubpageToolbar title="Bot Conversations" sourceKey="bots" preset={preset} customFrom={params.from} customTo={params.to} />
       <div className="flex flex-1 overflow-hidden">
         <BotTriageDashboard triageConversations={triageConversations} />
       </div>
