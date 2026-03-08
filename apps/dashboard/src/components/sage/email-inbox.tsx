@@ -11,6 +11,7 @@ import {
   syncEmails, quickCheckEmails, sendEmail, rewriteEmail,
   markEmailStarred, markEmailTrashed,
   fetchStripeInvoices, fetchStripeInvoicePDF, generateProposalPDF,
+  reanalyzeEmails,
 } from '@/app/actions/sage-emails'
 import type { SageEmail } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -197,10 +198,11 @@ export function EmailInbox({
   // Reset per-message quoted view when switching threads
   useEffect(() => { setShowQuotedIds(new Set()) }, [selectedThreadKey])
 
-  const [isPending,    startSyncTransition]    = useTransition()
-  const [isChecking,   startCheckTransition]   = useTransition()
-  const [isSending,    startSendTransition]    = useTransition()
-  const [isRewriting,  startRewriteTrans]      = useTransition()
+  const [isPending,      startSyncTransition]    = useTransition()
+  const [isChecking,     startCheckTransition]   = useTransition()
+  const [isSending,      startSendTransition]    = useTransition()
+  const [isRewriting,    startRewriteTrans]      = useTransition()
+  const [isReanalyzing,  startReanalyzeTrans]    = useTransition()
 
   // ── Derived ────────────────────────────────────────────────────────────────
 
@@ -330,6 +332,14 @@ export function EmailInbox({
     setActiveDraft(idx)
     const drafts = selected?.ai_reply_drafts ?? []
     if (drafts[idx]) setComposeBody(drafts[idx].body)
+  }
+
+  // Re-analyze a single email with fresh AI context
+  function handleReanalyze(emailId: string) {
+    startReanalyzeTrans(async () => {
+      await reanalyzeEmails(1, [emailId])
+      window.location.reload()
+    })
   }
 
   // Full sync (250 emails)
@@ -903,6 +913,14 @@ export function EmailInbox({
                         {selected.ai_priority}
                       </span>
                     )}
+                    <button
+                      onClick={() => handleReanalyze(selected.id)}
+                      disabled={isReanalyzing}
+                      title="Re-analyze with AI"
+                      className="p-1.5 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-500/10 text-purple-400 dark:text-purple-400 transition-colors disabled:opacity-40"
+                    >
+                      {isReanalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    </button>
                     <a
                       href={buildCalendarLink(emailProvider, selected.from_address, selected.from_name ?? '', selected.subject, selected.ai_summary)}
                       target="_blank"
