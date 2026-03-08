@@ -59,9 +59,9 @@ export function TicketsDashboard({ tickets }: { tickets: TicketRow[] }) {
   return (
     <div className="flex flex-1 overflow-hidden">
       {/* Left panel — ticket list */}
-      <aside className="w-[280px] shrink-0 flex flex-col border-r border-gray-200 dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
+      <aside className="w-[280px] shrink-0 flex flex-col border-r border-gray-100 dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
         {/* Header */}
-        <div className="px-4 py-3 border-b border-gray-200 dark:border-white/8 flex items-center justify-between shrink-0">
+        <div className="px-4 py-3 border-b border-gray-100 dark:border-white/8 flex items-center justify-between shrink-0">
           <h2 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">
             Tickets
           </h2>
@@ -84,8 +84,8 @@ export function TicketsDashboard({ tickets }: { tickets: TicketRow[] }) {
                 className={[
                   'w-full text-left px-4 py-3 transition-colors',
                   isSelected
-                    ? 'bg-white dark:bg-[#1e1e1e]'
-                    : 'hover:bg-gray-100/70 dark:hover:bg-white/4',
+                    ? 'bg-gray-100/80 dark:bg-white/6'
+                    : 'hover:bg-gray-100/60 dark:hover:bg-white/4',
                 ].join(' ')}
               >
                 <div className="flex items-start gap-2.5">
@@ -120,7 +120,7 @@ export function TicketsDashboard({ tickets }: { tickets: TicketRow[] }) {
       </aside>
 
       {/* Right panel — detail */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#1a1a1a]">
+      <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-[#1c1c1c]">
         {!selected ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">

@@ -144,8 +144,8 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
     <div className="flex flex-1 overflow-hidden relative">
 
       {/* ── Left panel — form list ─────────────────────────────── */}
-      <aside className="w-[220px] shrink-0 flex flex-col border-r border-gray-200 dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-200 dark:border-white/8 flex items-center justify-between shrink-0">
+      <aside className="w-[220px] shrink-0 flex flex-col border-r border-gray-100 dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
+        <div className="px-4 py-3 border-b border-gray-100 dark:border-white/8 flex items-center justify-between shrink-0">
           <h2 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">Forms</h2>
           <button
             onClick={() => router.push('/forms/sources')}
@@ -174,7 +174,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
                 onClick={() => setSelectedFormId(form.id)}
                 className={cn(
                   'group flex items-center gap-2 px-3 py-2.5 cursor-pointer border-b border-gray-100 dark:border-white/5 transition-colors',
-                  active ? 'bg-white dark:bg-[#1e1e1e]' : 'hover:bg-gray-100/60 dark:hover:bg-white/3'
+                  active ? 'bg-gray-100/80 dark:bg-white/6' : 'hover:bg-gray-100/60 dark:hover:bg-white/3'
                 )}
               >
                 <div className="flex-1 min-w-0">
@@ -206,8 +206,8 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
       </aside>
 
       {/* ── Centre panel — submission list ──────────────────────── */}
-      <div className="w-[240px] shrink-0 flex flex-col border-r border-gray-200 dark:border-white/8 bg-gray-50/40 dark:bg-[#191919] overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-200 dark:border-white/8 flex items-center justify-between shrink-0">
+      <div className="w-[240px] shrink-0 flex flex-col border-r border-gray-100 dark:border-white/8 bg-gray-50/40 dark:bg-[#191919] overflow-hidden">
+        <div className="px-4 py-3 border-b border-gray-100 dark:border-white/8 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate max-w-[120px]">
               {forms.find(f => f.id === selectedFormId)?.name ?? 'Submissions'}
@@ -248,7 +248,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
                 onClick={() => setSelectedId(sub.id)}
                 className={cn(
                   'px-3 py-2.5 border-b border-gray-100 dark:border-white/5 cursor-pointer transition-colors',
-                  selectedId === sub.id ? 'bg-white dark:bg-[#1e1e1e]' : 'hover:bg-gray-100/60 dark:hover:bg-white/3'
+                  selectedId === sub.id ? 'bg-gray-100/80 dark:bg-white/6' : 'hover:bg-gray-100/60 dark:hover:bg-white/3'
                 )}
               >
                 <div className="flex items-start gap-2">
@@ -277,7 +277,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
       </div>
 
       {/* ── Right panel — detail ─────────────────────────────────── */}
-      <div ref={detailRef} className="flex-1 bg-white dark:bg-[#1a1a1a] flex flex-col overflow-hidden">
+      <div ref={detailRef} className="flex-1 bg-gray-50 dark:bg-[#1c1c1c] flex flex-col overflow-hidden">
 
         {!selected ? (
           <div className="flex-1 flex items-center justify-center p-8">

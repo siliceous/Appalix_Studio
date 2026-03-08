@@ -93,7 +93,7 @@ function DetailCard({ tc, actioned, onAction, onDismiss, onClose, onAnalyze, onR
 
   return (
     <div className={cn(
-      'bg-white dark:bg-[#232323] rounded-2xl border shadow-sm',
+      'bg-white dark:bg-[#242424] rounded-2xl border shadow-sm',
       conversation.ai_priority === 'high'
         ? 'border-blue-200 dark:border-blue-500/25'
         : conversation.ai_priority === 'medium'
@@ -511,7 +511,7 @@ const [mDealTitle, setMDealTitle] = useState('')
             onClick={() => { setSelectedBotName(null); setSelectedId('') }}
             className={cn(
               'px-3 py-2.5 cursor-pointer border-b border-gray-100 dark:border-white/5 transition-colors',
-              !selectedBotName ? 'bg-white dark:bg-[#1e1e1e]' : 'hover:bg-gray-100/60 dark:hover:bg-white/3',
+              !selectedBotName ? 'bg-gray-100/80 dark:bg-white/6' : 'hover:bg-gray-100/60 dark:hover:bg-white/3',
             )}
           >
             <p className={cn('text-xs font-semibold', !selectedBotName ? 'text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400')}>All Bots</p>
@@ -533,7 +533,7 @@ const [mDealTitle, setMDealTitle] = useState('')
               onClick={() => { setSelectedBotName(bot.name); setSelectedId('') }}
               className={cn(
                 'px-3 py-2.5 cursor-pointer border-b border-gray-100 dark:border-white/5 transition-colors',
-                selectedBotName === bot.name ? 'bg-white dark:bg-[#1e1e1e]' : 'hover:bg-gray-100/60 dark:hover:bg-white/3',
+                selectedBotName === bot.name ? 'bg-gray-100/80 dark:bg-white/6' : 'hover:bg-gray-100/60 dark:hover:bg-white/3',
               )}
             >
               <p className={cn('text-xs font-medium truncate', selectedBotName === bot.name ? 'text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400')}>
@@ -597,11 +597,11 @@ const [mDealTitle, setMDealTitle] = useState('')
                 className={cn(
                   'flex items-stretch border-l-[3px] border-b border-gray-100 dark:border-white/4 transition-colors cursor-pointer',
                   isActive
-                    ? priority === 'high'   ? 'border-l-[#61c2ad] bg-white dark:bg-[#1e1e1e]'
-                    : priority === 'medium' ? 'border-l-amber-400 bg-white dark:bg-[#1e1e1e]'
-                    : priority === 'low'    ? 'border-l-gray-400  bg-white dark:bg-[#1e1e1e]'
-                    :                         'border-l-blue-400   bg-white dark:bg-[#1e1e1e]'
-                    : 'border-l-transparent hover:bg-white dark:hover:bg-white/3',
+                    ? priority === 'high'   ? 'border-l-[#61c2ad] bg-gray-100/80 dark:bg-white/6'
+                    : priority === 'medium' ? 'border-l-amber-400 bg-gray-100/80 dark:bg-white/6'
+                    : priority === 'low'    ? 'border-l-gray-400  bg-gray-100/80 dark:bg-white/6'
+                    :                         'border-l-blue-400   bg-gray-100/80 dark:bg-white/6'
+                    : 'border-l-transparent hover:bg-gray-100/60 dark:hover:bg-white/3',
                 )}
               >
                 <div className="flex-1 min-w-0 px-3 py-2.5">
@@ -636,7 +636,7 @@ const [mDealTitle, setMDealTitle] = useState('')
       </aside>
 
       {/* ─── COLUMN 3: Detail triage card ────────────────────────────────── */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#1a1a1a]">
+      <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-[#1c1c1c]">
         {!selectedTc ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 p-8 text-center">
             <div className="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-white/5 flex items-center justify-center">
@@ -669,7 +669,7 @@ const [mDealTitle, setMDealTitle] = useState('')
 
             {/* ── Modal ── */}
             {modalMode && modalTc && (
-              <div className="border-t dark:border-white/8 bg-white dark:bg-[#1e1e1e] p-5 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+              <div className="border-t dark:border-white/8 bg-gray-50 dark:bg-[#1c1c1c] p-5 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
