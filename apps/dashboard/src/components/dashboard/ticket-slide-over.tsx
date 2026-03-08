@@ -4,13 +4,13 @@ import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   X, FileText, Phone, Users, CheckSquare,
-  User, Mail, Clock, Bot, Loader2, Ticket as TicketIcon, Check,
+  User, Mail, Clock, Bot, Loader2, Ticket as TicketIcon, Check, Pencil,
 } from 'lucide-react'
 import {
   addTicketActivity, getTicketActivities, completeTicketTask,
   type TicketActivityType,
 } from '@/app/actions/sage-tickets'
-import { updateTicketStatus } from '@/app/actions/sage'
+import { updateTicketStatus, updateTicketContactInfo } from '@/app/actions/sage'
 import { timeAgo, cn } from '@/lib/utils'
 import type { SageTicket, SageContact, SageTicketStatus, SageTicketActivity } from '@/lib/types'
 
@@ -63,6 +63,11 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
   const [actDue,       setActDue]       = useState('')
   const [loadingActs,  setLoadingActs]  = useState(false)
   const [isPending,    startTransition] = useTransition()
+  const [editingContact, setEditingContact] = useState(false)
+  const [editName,  setEditName]  = useState('')
+  const [editEmail, setEditEmail] = useState('')
+  const [editPhone, setEditPhone] = useState('')
+  const [savingContact, setSavingContact] = useState(false)
 
   // Reset when ticket changes
   useEffect(() => {
@@ -213,37 +218,112 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
               </div>
 
               {/* Contact info card */}
-              {(ticket.name || ticket.email || ticket.phone || ticket.contact) && (
-                <div className="p-3.5 rounded-xl border border-gray-100 dark:border-white/8 bg-gray-50 dark:bg-white/3">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-2.5">
+              <div className="p-3.5 rounded-xl border border-gray-100 dark:border-white/8 bg-gray-50 dark:bg-white/3">
+                <div className="flex items-center justify-between mb-2.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
                     Contact Info
                   </p>
+                  {!editingContact && (
+                    <button
+                      onClick={() => {
+                        setEditName(ticket.name ?? ticket.contact?.name ?? '')
+                        setEditEmail(ticket.email ?? ticket.contact?.email ?? '')
+                        setEditPhone(ticket.phone ?? '')
+                        setEditingContact(true)
+                      }}
+                      className="p-1 rounded hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                      title="Edit contact info"
+                    >
+                      <Pencil className="w-3 h-3 text-gray-400" />
+                    </button>
+                  )}
+                </div>
+
+                {editingContact ? (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      placeholder="Name"
+                      value={editName}
+                      onChange={e => setEditName(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/50"
+                    />
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      value={editEmail}
+                      onChange={e => setEditEmail(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/50"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Phone"
+                      value={editPhone}
+                      onChange={e => setEditPhone(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/50"
+                    />
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        onClick={async () => {
+                          setSavingContact(true)
+                          await updateTicketContactInfo(ticket.id, {
+                            name:  editName.trim()  || null,
+                            email: editEmail.trim() || null,
+                            phone: editPhone.trim() || null,
+                          })
+                          ticket.name  = editName.trim()  || null
+                          ticket.email = editEmail.trim() || null
+                          ticket.phone = editPhone.trim() || null
+                          setSavingContact(false)
+                          setEditingContact(false)
+                          router.refresh()
+                        }}
+                        disabled={savingContact}
+                        className="flex-1 py-1.5 text-xs font-medium rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition-colors disabled:opacity-50"
+                      >
+                        {savingContact ? 'Saving…' : 'Save'}
+                      </button>
+                      <button
+                        onClick={() => setEditingContact(false)}
+                        className="flex-1 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
                   <div className="flex items-start gap-2.5">
                     <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-[#61c2ad]/10 flex items-center justify-center shrink-0 mt-0.5">
                       <User className="w-4 h-4 text-brand-600 dark:text-[#61c2ad]" />
                     </div>
                     <div className="space-y-1 min-w-0">
-                      {(ticket.name ?? ticket.contact?.name) && (
+                      {(ticket.name ?? ticket.contact?.name) ? (
                         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {ticket.name ?? ticket.contact?.name}
                         </p>
+                      ) : (
+                        <p className="text-xs text-gray-400 italic">No name</p>
                       )}
-                      {(ticket.email ?? ticket.contact?.email) && (
+                      {(ticket.email ?? ticket.contact?.email) ? (
                         <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
                           <Mail className="w-3 h-3 shrink-0" />
                           {ticket.email ?? ticket.contact?.email}
                         </p>
+                      ) : (
+                        <p className="text-xs text-gray-400 italic flex items-center gap-1.5"><Mail className="w-3 h-3 shrink-0" />No email</p>
                       )}
-                      {ticket.phone && (
+                      {ticket.phone ? (
                         <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
                           <Phone className="w-3 h-3 shrink-0" />
                           {ticket.phone}
                         </p>
+                      ) : (
+                        <p className="text-xs text-gray-400 italic flex items-center gap-1.5"><Phone className="w-3 h-3 shrink-0" />No phone</p>
                       )}
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
               {/* Description */}
               {ticket.description && (

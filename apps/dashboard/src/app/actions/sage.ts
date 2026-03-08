@@ -604,6 +604,22 @@ export async function createTicket(formData: FormData) {
   revalidatePath('/sage/tickets')
 }
 
+export async function updateTicketContactInfo(
+  id: string,
+  fields: { name?: string | null; email?: string | null; phone?: string | null; occurred_at?: string | null },
+): Promise<{ error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('sage_tickets')
+    .update({ ...fields, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('workspace_id', workspaceId)
+  if (error) return { error: error.message }
+  revalidatePath('/sage/tickets')
+  return {}
+}
+
 export async function updateTicketStatus(id: string, status: SageTicketStatus) {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
