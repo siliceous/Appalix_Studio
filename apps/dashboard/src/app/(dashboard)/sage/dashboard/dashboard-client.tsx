@@ -835,10 +835,10 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
       {/* ── 4 Donut cards ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Emails',    sub: 'high & medium unread',  Icon: Mail,        iconCls: 'text-blue-500',   segs: emailSegs,  total: emails.length,  href: '/dashboard?tab=email'   },
-          { label: 'Bot Chats', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-500', segs: botSegs,  total: bots.length,    href: '/dashboard?tab=bots'    },
-          { label: 'Forms',     sub: 'all submissions',       Icon: FileText,    iconCls: 'text-green-500',  segs: formSegs,   total: forms.length,   href: '/dashboard?tab=forms'   },
-          { label: 'Tickets',   sub: 'all tickets',           Icon: TicketIcon,  iconCls: 'text-yellow-500', segs: ticketSegs, total: tickets.length, href: '/dashboard?tab=tickets' },
+          { label: 'Emails',    sub: 'high & medium unread',  Icon: Mail,        iconCls: 'text-blue-500',   segs: emailSegs,  total: emails.length,  href: '/dashboard/email'   },
+          { label: 'Bot Chats', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-500', segs: botSegs,  total: bots.length,    href: '/dashboard/bots'    },
+          { label: 'Forms',     sub: 'all submissions',       Icon: FileText,    iconCls: 'text-green-500',  segs: formSegs,   total: forms.length,   href: '/dashboard/forms'   },
+          { label: 'Tickets',   sub: 'all tickets',           Icon: TicketIcon,  iconCls: 'text-yellow-500', segs: ticketSegs, total: tickets.length, href: '/dashboard/tickets' },
         ].map(card => (
           <Link key={card.label} href={card.href} className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-4 flex flex-col items-center hover:shadow-md hover:border-gray-300 dark:hover:border-white/15 transition-all cursor-pointer">
             <div className="w-full flex items-center justify-between mb-2">
