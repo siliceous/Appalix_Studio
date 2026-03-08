@@ -104,7 +104,7 @@ export function TicketsDashboard({ tickets: initialTickets }: { tickets: TicketR
                     <div className="flex-1 min-w-0">
                       {/* Contact name — first line */}
                       <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate leading-5">
-                        {ticket.contact?.name ?? 'Unknown'}
+                        {ticket.name ?? ticket.contact?.name ?? 'Unknown'}
                       </p>
                       {/* Ticket title — second line */}
                       <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate leading-4">
@@ -156,10 +156,10 @@ export function TicketsDashboard({ tickets: initialTickets }: { tickets: TicketR
               {/* Title row */}
               <div className="flex items-start justify-between gap-4 mb-1">
                 <div className="min-w-0">
-                  {selected.contact && (
+                  {(selected.name || selected.contact) && (
                     <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-0.5">
-                      {selected.contact.name}
-                      {selected.contact.email && (
+                      {selected.name ?? selected.contact?.name}
+                      {selected.contact?.email && (
                         <span className="font-normal text-gray-400 ml-1.5">{selected.contact.email}</span>
                       )}
                     </p>

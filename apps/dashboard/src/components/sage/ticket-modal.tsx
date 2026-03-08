@@ -35,6 +35,20 @@ export function TicketModal({ contacts, onClose }: TicketModalProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 overflow-y-auto">
+          {/* Name */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Customer Name
+            </label>
+            <input
+              name="name"
+              type="text"
+              autoFocus
+              placeholder="e.g. John Smith"
+              className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+            />
+          </div>
+
           {/* Title */}
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
@@ -44,7 +58,6 @@ export function TicketModal({ contacts, onClose }: TicketModalProps) {
               name="title"
               type="text"
               required
-              autoFocus
               placeholder="e.g. Login issue for Acme Corp"
               className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
             />

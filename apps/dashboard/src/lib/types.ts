@@ -328,6 +328,7 @@ export interface SageTicket {
   contact_id:        string | null
   deal_id:           string | null
   owner_id:          string | null
+  name:              string | null
   title:             string
   description:       string | null
   status:            SageTicketStatus

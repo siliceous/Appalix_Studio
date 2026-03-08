@@ -579,6 +579,7 @@ export async function createTicket(formData: FormData) {
   const admin = createAdminClient()
 
   const title          = (formData.get('title') as string).trim()
+  const name           = (formData.get('name') as string | null)?.trim() || null
   const description    = (formData.get('description') as string | null)?.trim() || null
   const priority       = (formData.get('priority') as SageTicketPriority | null) || 'medium'
   const contactId      = (formData.get('contact_id') as string | null) || null
@@ -588,7 +589,7 @@ export async function createTicket(formData: FormData) {
 
   const { data, error } = await admin
     .from('sage_tickets')
-    .insert({ workspace_id: workspaceId, title, description, priority, contact_id: contactId, deal_id: dealId, contact_method, related_url, status: 'open' })
+    .insert({ workspace_id: workspaceId, title, name, description, priority, contact_id: contactId, deal_id: dealId, contact_method, related_url, status: 'open' })
     .select('id')
     .single()
 
