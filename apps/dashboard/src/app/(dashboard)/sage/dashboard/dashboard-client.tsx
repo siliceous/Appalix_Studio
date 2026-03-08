@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { PieChart, Pie, Cell, Tooltip } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
@@ -8,10 +8,10 @@ import {
   Mail, MessageSquare, FileText, Ticket as TicketIcon,
   Plus, Kanban, CheckSquare, Zap, RefreshCw, Calendar,
   ChevronDown, X, Copy, ExternalLink, CheckCircle2, User,
-  Phone, Building2, Sparkles,
+  Phone, Building2, Sparkles, LayoutList, LayoutGrid,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
-import type { SageEmail, Conversation, Lead, SageTicket, SageContact } from '@/lib/types'
+import type { SageEmail, Conversation, Lead, SageTicket } from '@/lib/types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type DatePreset = 'today' | 'yesterday' | '7d' | '30d'
@@ -171,23 +171,23 @@ function ItemPopup({
   async function createContact(name: string, email?: string | null, phone?: string | null, company?: string | null) {
     setActionBusy(true)
     const supabase = createClient()
-    await supabase.from('sage_contacts').insert({
+    await (supabase as any).from('sage_contacts').insert({
       workspace_id: workspaceId, name,
       email: email ?? null, phone: phone ?? null,
       company_name: company ?? null, source: 'manual', tags: [],
-    } as Partial<SageContact>)
+    })
     setActionBusy(false); setActionDone('contact')
   }
 
   async function createTicket(title: string, desc?: string | null, priority?: string) {
     setActionBusy(true)
     const supabase = createClient()
-    await supabase.from('sage_tickets').insert({
+    await (supabase as any).from('sage_tickets').insert({
       workspace_id: workspaceId, title,
       description: desc ?? null,
-      priority: (priority ?? 'medium') as SageTicket['priority'],
+      priority: priority ?? 'medium',
       status: 'open',
-    } as Partial<SageTicket>)
+    })
     setActionBusy(false); setActionDone('ticket')
   }
 
@@ -501,6 +501,8 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
   const [tasks,      setTasks]      = useState<RawTask[]>([])
   const [popup,      setPopup]      = useState<PopupState | null>(null)
   const [doneBusy,   setDoneBusy]   = useState<string | null>(null)
+  const [feedView,   setFeedView]   = useState<'list' | 'grid'>('list')
+  const [topType,    setTopType]    = useState<'email' | 'bot' | 'form' | 'ticket' | null>(null)
 
   // Persist preferences
   useEffect(() => {
@@ -691,105 +693,302 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
       {/* ── 2 : 1 layout ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
 
-        {/* Left: timeline */}
+        {/* Left: activity feed */}
         <div className="xl:col-span-2 bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col">
+          {/* Header */}
           <div className="px-5 py-4 border-b dark:border-white/8 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Activity Feed</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Activity Feed</h2>
+              {/* List / Grid toggle */}
+              <div className="flex items-center gap-0.5 ml-2 bg-gray-100 dark:bg-white/6 rounded-lg p-0.5">
+                <button
+                  onClick={() => setFeedView('list')}
+                  className={`p-1 rounded-md transition-colors ${feedView === 'list' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+                  title="List view"
+                >
+                  <LayoutList className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setFeedView('grid')}
+                  className={`p-1 rounded-md transition-colors ${feedView === 'grid' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+                  title="Grid view"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+            {/* Type icon counts — clickable in both views; in grid view also brings that tablet to top */}
             <div className="flex items-center gap-3 text-[11px] text-gray-400">
-              <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{emails.length}</span>
-              <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" />{bots.length}</span>
-              <span className="flex items-center gap-1"><FileText className="w-3 h-3" />{forms.length}</span>
-              <span className="flex items-center gap-1"><TicketIcon className="w-3 h-3" />{tickets.length}</span>
+              <button
+                onClick={() => { setFeedView('grid'); setTopType('email') }}
+                className={`flex items-center gap-1 hover:text-green-500 transition-colors ${topType === 'email' && feedView === 'grid' ? 'text-green-500 font-semibold' : ''}`}
+                title="Emails"
+              >
+                <Mail className="w-3 h-3" />{emails.length}
+              </button>
+              <button
+                onClick={() => { setFeedView('grid'); setTopType('bot') }}
+                className={`flex items-center gap-1 hover:text-blue-500 transition-colors ${topType === 'bot' && feedView === 'grid' ? 'text-blue-500 font-semibold' : ''}`}
+                title="Bot chats"
+              >
+                <MessageSquare className="w-3 h-3" />{bots.length}
+              </button>
+              <button
+                onClick={() => { setFeedView('grid'); setTopType('form') }}
+                className={`flex items-center gap-1 hover:text-purple-500 transition-colors ${topType === 'form' && feedView === 'grid' ? 'text-purple-500 font-semibold' : ''}`}
+                title="Form submissions"
+              >
+                <FileText className="w-3 h-3" />{forms.length}
+              </button>
+              <button
+                onClick={() => { setFeedView('grid'); setTopType('ticket') }}
+                className={`flex items-center gap-1 hover:text-orange-500 transition-colors ${topType === 'ticket' && feedView === 'grid' ? 'text-orange-500 font-semibold' : ''}`}
+                title="Tickets"
+              >
+                <TicketIcon className="w-3 h-3" />{tickets.length}
+              </button>
             </div>
           </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-24"><RefreshCw className="w-5 h-5 text-gray-300 animate-spin" /></div>
-          ) : timeline.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 px-5 text-center">
-              <p className="text-sm text-gray-400">No activity for this period.</p>
-              <p className="text-xs text-gray-400 mt-1">Try selecting a wider date range.</p>
-            </div>
+          ) : feedView === 'list' ? (
+            /* ── LIST VIEW ──────────────────────────────────────────────── */
+            timeline.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 px-5 text-center">
+                <p className="text-sm text-gray-400">No activity for this period.</p>
+                <p className="text-xs text-gray-400 mt-1">Try selecting a wider date range.</p>
+              </div>
+            ) : (
+              <div className="divide-y dark:divide-white/8 overflow-y-auto max-h-[680px]">
+                {timeline.map(item => {
+                  const timeKey = `${item.kind}-${item.data.id}`
+                  const timeLabel = timeAgo(item.time)
+                  if (item.kind === 'email') {
+                    const e = item.data
+                    return (
+                      <div key={timeKey} onClick={() => setPopup({ kind: 'email', id: e.id })}
+                        className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
+                        <PriorityDot priority={e.ai_priority ?? 'low'} pulse={e.ai_priority === 'high'} />
+                        <div className="w-5 h-5 rounded-md bg-green-100 dark:bg-green-500/15 flex items-center justify-center shrink-0">
+                          <Mail className="w-3 h-3 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{e.from_name ?? e.from_address}</p>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{e.subject}</p>
+                          {e.ai_summary && <p className="text-[10px] text-gray-400 italic truncate mt-0.5">{e.ai_summary}</p>}
+                        </div>
+                        <span className="text-[10px] text-gray-400 shrink-0">{timeLabel}</span>
+                      </div>
+                    )
+                  }
+                  if (item.kind === 'bot') {
+                    const b = item.data
+                    return (
+                      <div key={timeKey} onClick={() => setPopup({ kind: 'bot', id: b.id })}
+                        className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
+                        <PriorityDot priority={b.ai_priority ?? 'low'} pulse={b.ai_priority === 'high'} />
+                        <div className="w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center shrink-0">
+                          <MessageSquare className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{b.title ?? 'Untitled conversation'}</p>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                            {b.bot?.name && <span className="font-medium">{b.bot.name} · </span>}{b.message_count} msgs
+                          </p>
+                        </div>
+                        <span className="text-[10px] text-gray-400 shrink-0">{timeLabel}</span>
+                      </div>
+                    )
+                  }
+                  if (item.kind === 'form') {
+                    const f = item.data
+                    return (
+                      <div key={timeKey} onClick={() => setPopup({ kind: 'form', id: f.id })}
+                        className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
+                        <PriorityDot priority={f.lead_score ?? 'low'} />
+                        <div className="w-5 h-5 rounded-md bg-purple-100 dark:bg-purple-500/15 flex items-center justify-center shrink-0">
+                          <FileText className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{f.name}</p>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{f.company ?? f.email ?? f.source_platform}</p>
+                        </div>
+                        <span className="text-[10px] text-gray-400 shrink-0">{timeLabel}</span>
+                      </div>
+                    )
+                  }
+                  if (item.kind === 'ticket') {
+                    const t = item.data
+                    return (
+                      <div key={timeKey} onClick={() => setPopup({ kind: 'ticket', id: t.id })}
+                        className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
+                        <PriorityDot priority={t.priority} pulse={t.priority === 'high' || t.priority === 'urgent'} />
+                        <div className="w-5 h-5 rounded-md bg-orange-100 dark:bg-orange-500/15 flex items-center justify-center shrink-0">
+                          <TicketIcon className="w-3 h-3 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{t.title}</p>
+                          {t.contact && <p className="text-[11px] text-gray-500 dark:text-gray-400">{t.contact.name}</p>}
+                        </div>
+                        <span className="text-[10px] text-gray-400 shrink-0">{timeLabel}</span>
+                      </div>
+                    )
+                  }
+                  return null
+                })}
+              </div>
+            )
           ) : (
-            <div className="divide-y dark:divide-white/8 overflow-y-auto max-h-[680px]">
-              {timeline.map(item => {
-                const timeKey = `${item.kind}-${item.data.id}`
-                const timeLabel = timeAgo(item.time)
+            /* ── GRID VIEW: 4 stacked tablets ───────────────────────────── */
+            (() => {
+              const allTablets: Array<{
+                key: 'email' | 'bot' | 'form' | 'ticket'
+                label: string
+                icon: React.ReactNode
+                accentClass: string
+                borderClass: string
+                bgClass: string
+                count: number
+                rows: React.ReactNode
+              }> = [
+                {
+                  key: 'email',
+                  label: 'Emails',
+                  icon: <Mail className="w-3.5 h-3.5" />,
+                  accentClass: 'text-green-600 dark:text-green-400',
+                  borderClass: 'border-green-200 dark:border-green-500/20',
+                  bgClass: 'bg-green-50 dark:bg-green-500/8',
+                  count: emails.length,
+                  rows: emails.length === 0
+                    ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No emails this period.</p>
+                    : emails.map(e => (
+                      <div key={e.id} onClick={() => setPopup({ kind: 'email', id: e.id })}
+                        className="flex items-start gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer border-b dark:border-white/6 last:border-0">
+                        <PriorityDot priority={e.ai_priority ?? 'low'} pulse={e.ai_priority === 'high'} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{e.from_name ?? e.from_address}</p>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{e.subject}</p>
+                          {e.ai_summary && <p className="text-[10px] text-gray-400 italic truncate mt-0.5">{e.ai_summary}</p>}
+                        </div>
+                        <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(e.received_at)}</span>
+                      </div>
+                    )),
+                },
+                {
+                  key: 'bot',
+                  label: 'Bot Chats',
+                  icon: <MessageSquare className="w-3.5 h-3.5" />,
+                  accentClass: 'text-blue-600 dark:text-blue-400',
+                  borderClass: 'border-blue-200 dark:border-blue-500/20',
+                  bgClass: 'bg-blue-50 dark:bg-blue-500/8',
+                  count: bots.length,
+                  rows: bots.length === 0
+                    ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No bot chats this period.</p>
+                    : bots.map(b => (
+                      <div key={b.id} onClick={() => setPopup({ kind: 'bot', id: b.id })}
+                        className="flex items-start gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer border-b dark:border-white/6 last:border-0">
+                        <PriorityDot priority={b.ai_priority ?? 'low'} pulse={b.ai_priority === 'high'} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{b.title ?? 'Untitled conversation'}</p>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                            {b.bot?.name && <span className="font-medium">{b.bot.name} · </span>}{b.message_count} msgs
+                          </p>
+                        </div>
+                        <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(b.last_activity_at)}</span>
+                      </div>
+                    )),
+                },
+                {
+                  key: 'form',
+                  label: 'Form Submissions',
+                  icon: <FileText className="w-3.5 h-3.5" />,
+                  accentClass: 'text-purple-600 dark:text-purple-400',
+                  borderClass: 'border-purple-200 dark:border-purple-500/20',
+                  bgClass: 'bg-purple-50 dark:bg-purple-500/8',
+                  count: forms.length,
+                  rows: forms.length === 0
+                    ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No form submissions this period.</p>
+                    : forms.map(f => (
+                      <div key={f.id} onClick={() => setPopup({ kind: 'form', id: f.id })}
+                        className="flex items-start gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer border-b dark:border-white/6 last:border-0">
+                        <PriorityDot priority={f.lead_score ?? 'low'} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{f.name}</p>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{f.company ?? f.email ?? f.source_platform}</p>
+                        </div>
+                        <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(f.created_at)}</span>
+                      </div>
+                    )),
+                },
+                {
+                  key: 'ticket',
+                  label: 'Tickets',
+                  icon: <TicketIcon className="w-3.5 h-3.5" />,
+                  accentClass: 'text-orange-600 dark:text-orange-400',
+                  borderClass: 'border-orange-200 dark:border-orange-500/20',
+                  bgClass: 'bg-orange-50 dark:bg-orange-500/8',
+                  count: tickets.length,
+                  rows: tickets.length === 0
+                    ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No tickets this period.</p>
+                    : tickets.map(t => (
+                      <div key={t.id} onClick={() => setPopup({ kind: 'ticket', id: t.id })}
+                        className="flex items-start gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer border-b dark:border-white/6 last:border-0">
+                        <PriorityDot priority={t.priority} pulse={t.priority === 'high' || t.priority === 'urgent'} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{t.title}</p>
+                          {t.contact && <p className="text-[11px] text-gray-500 dark:text-gray-400">{t.contact.name}</p>}
+                        </div>
+                        <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(t.created_at)}</span>
+                      </div>
+                    )),
+                },
+              ]
 
-                if (item.kind === 'email') {
-                  const e = item.data
-                  return (
-                    <div key={timeKey} onClick={() => setPopup({ kind: 'email', id: e.id })}
-                      className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
-                      <PriorityDot priority={e.ai_priority ?? 'low'} pulse={e.ai_priority === 'high'} />
-                      <div className="w-5 h-5 rounded-md bg-green-100 dark:bg-green-500/15 flex items-center justify-center shrink-0">
-                        <Mail className="w-3 h-3 text-green-600 dark:text-green-400" />
+              // Bring topType to front of the stack
+              const ordered = topType
+                ? [...allTablets.filter(t => t.key === topType), ...allTablets.filter(t => t.key !== topType)]
+                : allTablets
+
+              return (
+                <div className="flex flex-col gap-3 p-4 overflow-y-auto max-h-[700px]">
+                  {ordered.map(tablet => (
+                    <div
+                      key={tablet.key}
+                      className={`rounded-xl border overflow-hidden transition-all ${
+                        topType === tablet.key
+                          ? `${tablet.borderClass} ring-1 ring-inset ${tablet.borderClass}`
+                          : 'border-gray-100 dark:border-white/8'
+                      }`}
+                    >
+                      {/* Tablet header */}
+                      <div
+                        className={`px-4 py-2.5 flex items-center justify-between cursor-pointer ${
+                          topType === tablet.key ? tablet.bgClass : 'bg-gray-50 dark:bg-white/3'
+                        }`}
+                        onClick={() => setTopType(topType === tablet.key ? null : tablet.key)}
+                      >
+                        <div className={`flex items-center gap-2 text-xs font-semibold ${topType === tablet.key ? tablet.accentClass : 'text-gray-600 dark:text-gray-300'}`}>
+                          {tablet.icon}
+                          {tablet.label}
+                        </div>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                          topType === tablet.key
+                            ? `${tablet.bgClass} ${tablet.accentClass}`
+                            : 'bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400'
+                        }`}>
+                          {tablet.count}
+                        </span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{e.from_name ?? e.from_address}</p>
-                        <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{e.subject}</p>
-                        {e.ai_summary && <p className="text-[10px] text-gray-400 italic truncate mt-0.5">{e.ai_summary}</p>}
+                      {/* Tablet rows — collapsed unless active or first */}
+                      <div className={`overflow-y-auto transition-all ${topType === tablet.key || topType === null ? 'max-h-[240px]' : 'max-h-[120px]'}`}>
+                        {tablet.rows}
                       </div>
-                      <span className="text-[10px] text-gray-400 shrink-0">{timeLabel}</span>
                     </div>
-                  )
-                }
-                if (item.kind === 'bot') {
-                  const b = item.data
-                  return (
-                    <div key={timeKey} onClick={() => setPopup({ kind: 'bot', id: b.id })}
-                      className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
-                      <PriorityDot priority={b.ai_priority ?? 'low'} pulse={b.ai_priority === 'high'} />
-                      <div className="w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center shrink-0">
-                        <MessageSquare className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{b.title ?? 'Untitled conversation'}</p>
-                        <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                          {b.bot?.name && <span className="font-medium">{b.bot.name} · </span>}{b.message_count} msgs
-                        </p>
-                      </div>
-                      <span className="text-[10px] text-gray-400 shrink-0">{timeLabel}</span>
-                    </div>
-                  )
-                }
-                if (item.kind === 'form') {
-                  const f = item.data
-                  return (
-                    <div key={timeKey} onClick={() => setPopup({ kind: 'form', id: f.id })}
-                      className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
-                      <PriorityDot priority={f.lead_score ?? 'low'} />
-                      <div className="w-5 h-5 rounded-md bg-purple-100 dark:bg-purple-500/15 flex items-center justify-center shrink-0">
-                        <FileText className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{f.name}</p>
-                        <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{f.company ?? f.email ?? f.source_platform}</p>
-                      </div>
-                      <span className="text-[10px] text-gray-400 shrink-0">{timeLabel}</span>
-                    </div>
-                  )
-                }
-                if (item.kind === 'ticket') {
-                  const t = item.data
-                  return (
-                    <div key={timeKey} onClick={() => setPopup({ kind: 'ticket', id: t.id })}
-                      className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
-                      <PriorityDot priority={t.priority} pulse={t.priority === 'high' || t.priority === 'urgent'} />
-                      <div className="w-5 h-5 rounded-md bg-orange-100 dark:bg-orange-500/15 flex items-center justify-center shrink-0">
-                        <TicketIcon className="w-3 h-3 text-orange-600 dark:text-orange-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{t.title}</p>
-                        {t.contact && <p className="text-[11px] text-gray-500 dark:text-gray-400">{t.contact.name}</p>}
-                      </div>
-                      <span className="text-[10px] text-gray-400 shrink-0">{timeLabel}</span>
-                    </div>
-                  )
-                }
-                return null
-              })}
-            </div>
+                  ))}
+                </div>
+              )
+            })()
           )}
         </div>
 
