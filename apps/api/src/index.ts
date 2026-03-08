@@ -207,9 +207,9 @@ try {
     }
   }
 
-  // Run once on startup, then every 10 minutes
+  // Run once on startup, then every 1 minute
   void pollUnanalyzedEmails()
-  setInterval(pollUnanalyzedEmails, 10 * 60 * 1000)
+  setInterval(pollUnanalyzedEmails, 60 * 1000)
 
   // Graceful shutdown — release IMAP connections before process exits
   const shutdown = () => { stopIdleManager(); process.exit(0) }
