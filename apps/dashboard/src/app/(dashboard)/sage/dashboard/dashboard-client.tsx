@@ -115,9 +115,10 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
 type PopupState = { kind: 'email' | 'bot' | 'form' | 'ticket'; id: string }
 
 function ItemPopup({
-  popup, workspaceId, onClose,
+  popup, sageAuto, workspaceId, onClose,
 }: {
   popup: PopupState
+  sageAuto: boolean
   workspaceId: string
   onClose: () => void
 }) {
@@ -514,68 +515,99 @@ function ItemPopup({
         {/* Footer actions */}
         {!loading && data && (
           <div className="px-6 py-4 border-t dark:border-white/10 shrink-0">
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Create Lead */}
-              {!actionDone && (
-                <button
-                  disabled={actionBusy}
-                  onClick={() => {
-                    if (popup.kind === 'email') {
-                      const e = data as SageEmail
-                      createLead(e.ai_entities?.name ?? e.from_name ?? e.from_address, e.ai_entities?.email ?? e.from_address, null, e.ai_entities?.company)
-                    } else if (popup.kind === 'bot') {
-                      const c = data as Conversation
-                      createLead(c.ai_entities?.name ?? c.title ?? 'Contact', c.ai_entities?.email, c.ai_entities?.phone)
-                    } else if (popup.kind === 'form') {
-                      const l = data as Lead
-                      createLead(l.name, l.email, l.phone, l.company)
-                    } else {
-                      const t = data as SageTicket & { contact: { name: string; email: string | null } | null }
-                      if (t.contact) createLead(t.contact.name, t.contact.email)
+            <div className="flex items-center gap-2">
+
+              {sageAuto ? (
+                /* ── Sage Auto ON: Dismiss + Open Pipeline ── */
+                <>
+                  <button
+                    onClick={onClose}
+                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-gray-100 dark:bg-white/8 hover:bg-gray-200 dark:hover:bg-white/12 rounded-xl transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    Dismiss
+                  </button>
+                  <div className="flex-1" />
+                  <Link
+                    href="/sage/pipelines"
+                    onClick={onClose}
+                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#61c2ad] hover:bg-[#4fa898] text-white rounded-xl transition-colors"
+                  >
+                    <Kanban className="w-3.5 h-3.5" />
+                    Open Pipeline
+                  </Link>
+                </>
+              ) : (
+                /* ── Sage Auto OFF: Create Lead + Create Ticket + Triage link ── */
+                <>
+                  {!actionDone && (
+                    <button
+                      disabled={actionBusy}
+                      onClick={() => {
+                        if (popup.kind === 'email') {
+                          const e = data as SageEmail
+                          createLead(e.ai_entities?.name ?? e.from_name ?? e.from_address, e.ai_entities?.email ?? e.from_address, null, e.ai_entities?.company)
+                        } else if (popup.kind === 'bot') {
+                          const c = data as Conversation
+                          createLead(c.ai_entities?.name ?? c.title ?? 'Contact', c.ai_entities?.email, c.ai_entities?.phone)
+                        } else if (popup.kind === 'form') {
+                          const l = data as Lead
+                          createLead(l.name, l.email, l.phone, l.company)
+                        } else {
+                          const t = data as SageTicket & { contact: { name: string; email: string | null } | null }
+                          if (t.contact) createLead(t.contact.name, t.contact.email)
+                        }
+                      }}
+                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#61c2ad] hover:bg-[#4fa898] text-white rounded-xl transition-colors disabled:opacity-50"
+                    >
+                      {actionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                      Create Lead
+                    </button>
+                  )}
+
+                  {!actionDone && popup.kind !== 'form' && (
+                    <button
+                      disabled={actionBusy}
+                      onClick={() => {
+                        if (popup.kind === 'email') {
+                          const e = data as SageEmail
+                          createTicket(e.subject, e.ai_summary, 'medium')
+                        } else if (popup.kind === 'bot') {
+                          const c = data as Conversation
+                          createTicket(c.title ?? 'Support ticket', c.ai_summary, 'medium')
+                        } else {
+                          const t = data as SageTicket
+                          createTicket(t.title, t.description, t.priority)
+                        }
+                      }}
+                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20 border border-orange-200 dark:border-orange-500/20 rounded-xl transition-colors disabled:opacity-50"
+                    >
+                      {actionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <TicketIcon className="w-3.5 h-3.5" />}
+                      Create Ticket
+                    </button>
+                  )}
+
+                  <div className="flex-1" />
+
+                  <Link
+                    href={
+                      popup.kind === 'email' ? '/sage/emails' :
+                      popup.kind === 'bot'   ? '/sage/bots' :
+                      popup.kind === 'form'  ? '/sage/forms' :
+                                              '/sage/tickets'
                     }
-                  }}
-                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#61c2ad] hover:bg-[#4fa898] text-white rounded-xl transition-colors disabled:opacity-50"
-                >
-                  {actionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                  Create Lead
-                </button>
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-[#61c2ad] hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors border dark:border-white/8"
+                    onClick={onClose}
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    {popup.kind === 'email' ? 'Email Triage' :
+                     popup.kind === 'bot'   ? 'Bot Triage' :
+                     popup.kind === 'form'  ? 'Form Triage' :
+                                             'Ticket Triage'}
+                  </Link>
+                </>
               )}
 
-              {/* Create Ticket (not for forms) */}
-              {!actionDone && popup.kind !== 'form' && (
-                <button
-                  disabled={actionBusy}
-                  onClick={() => {
-                    if (popup.kind === 'email') {
-                      const e = data as SageEmail
-                      createTicket(e.subject, e.ai_summary, 'medium')
-                    } else if (popup.kind === 'bot') {
-                      const c = data as Conversation
-                      createTicket(c.title ?? 'Support ticket', c.ai_summary, 'medium')
-                    } else {
-                      const t = data as SageTicket
-                      createTicket(t.title, t.description, t.priority)
-                    }
-                  }}
-                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20 border border-orange-200 dark:border-orange-500/20 rounded-xl transition-colors disabled:opacity-50"
-                >
-                  {actionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <TicketIcon className="w-3.5 h-3.5" />}
-                  Create Ticket
-                </button>
-              )}
-
-              {/* Spacer */}
-              <div className="flex-1" />
-
-              {/* Open in page */}
-              <Link
-                href={popup.kind === 'email' ? '/sage/emails' : popup.kind === 'bot' ? `/conversations/${popup.id}` : popup.kind === 'form' ? '/forms/leads' : '/sage/tickets'}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-[#61c2ad] hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors border dark:border-white/8"
-                onClick={onClose}
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                {popup.kind === 'email' ? 'Open in Inbox' : popup.kind === 'bot' ? 'View Conversation' : popup.kind === 'form' ? 'View in Leads' : 'View Ticket'}
-              </Link>
             </div>
           </div>
         )}
@@ -695,6 +727,7 @@ export function SageDashboardClient({ workspaceId, greeting }: { workspaceId: st
       {popup && (
         <ItemPopup
           popup={popup}
+          sageAuto={sageAuto}
           workspaceId={workspaceId}
           onClose={() => setPopup(null)}
         />
