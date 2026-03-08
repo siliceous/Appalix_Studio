@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import { sendEmail } from '@/app/actions/sage-emails'
+import { updateAutoSetting, dismissFeedItem } from '@/app/actions/sage-auto-settings'
 import type { SageEmail, Conversation, Lead, SageTicket } from '@/lib/types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -652,25 +653,47 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
   const [tasks,      setTasks]      = useState<RawTask[]>([])
   const [popup,      setPopup]      = useState<PopupState | null>(null)
   const [doneBusy,   setDoneBusy]   = useState<string | null>(null)
-  const [feedView,   setFeedView]   = useState<'list' | 'grid'>('list')
-  const [topType,    setTopType]    = useState<'email' | 'bot' | 'form' | 'ticket' | null>(null)
+  const [feedView,    setFeedView]   = useState<'list' | 'grid'>('list')
+  const [topType,     setTopType]    = useState<'email' | 'bot' | 'form' | 'ticket' | null>(null)
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
 
-  // Persist preferences
+  // Load preferences + DB settings on mount
   useEffect(() => {
     const r = localStorage.getItem('sage-range')
-    const a = localStorage.getItem('sage-auto')
     if (r) setDateRange(r as DatePreset)
-    if (a !== null) setSageAuto(a !== 'false')
-  }, [])
+
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sbAny = supabase as any
+    sbAny.from('sage_workspace_settings')
+      .select('global_auto_enabled')
+      .eq('workspace_id', workspaceId)
+      .maybeSingle()
+      .then(({ data }: { data: { global_auto_enabled: boolean } | null }) => {
+        if (data != null) setSageAuto(data.global_auto_enabled ?? true)
+      })
+    sbAny.from('sage_feed_dismissals')
+      .select('source_type, source_id')
+      .eq('workspace_id', workspaceId)
+      .then(({ data }: { data: { source_type: string; source_id: string }[] | null }) => {
+        if (data) setDismissedIds(new Set(data.map(d => `${d.source_type}-${d.source_id}`)))
+      })
+  }, [workspaceId])
 
   const handleDateChange = (v: DatePreset) => {
     setDateRange(v)
     if (v !== 'custom') localStorage.setItem('sage-range', v)
   }
-  const toggleSageAuto = () => {
+  const toggleSageAuto = async () => {
     const next = !sageAuto
     setSageAuto(next)
-    localStorage.setItem('sage-auto', String(next))
+    await updateAutoSetting('global_auto_enabled', next)
+  }
+
+  const handleDismiss = async (kind: 'email' | 'bot' | 'form' | 'ticket', id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setDismissedIds(prev => new Set([...prev, `${kind}-${id}`]))
+    await dismissFeedItem(kind, id)
   }
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
@@ -741,7 +764,8 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
     ...bots.map(d    => ({ kind: 'bot'    as const, data: d, time: d.last_activity_at })),
     ...forms.map(d   => ({ kind: 'form'   as const, data: d, time: d.created_at      })),
     ...tickets.map(d => ({ kind: 'ticket' as const, data: d, time: d.created_at      })),
-  ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()), [emails, bots, forms, tickets])
+  ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+   .filter(item => !dismissedIds.has(`${item.kind}-${item.data.id}`)), [emails, bots, forms, tickets, dismissedIds])
 
   const overdue = (due: string | null) => !!due && new Date(due) < new Date()
 
@@ -939,7 +963,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                     const e = item.data
                     return (
                       <div key={timeKey} onClick={() => setPopup({ kind: 'email', id: e.id })}
-                        className="flex items-start gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
+                        className="group flex items-start gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
                         <PriorityDot priority={e.ai_priority ?? 'low'} pulse={e.ai_priority === 'high'} />
                         <div className="w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center shrink-0">
                           <Mail className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
@@ -950,6 +974,10 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                           {e.ai_summary && <p className="text-[11px] text-gray-400 italic truncate mt-0.5">{e.ai_summary}</p>}
                         </div>
                         <span className="text-xs text-gray-400 shrink-0">{timeLabel}</span>
+                        <button onClick={ev => handleDismiss('email', e.id, ev)} title="Dismiss"
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all shrink-0">
+                          <X className="w-3 h-3" />
+                        </button>
                       </div>
                     )
                   }
@@ -957,7 +985,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                     const b = item.data
                     return (
                       <div key={timeKey} onClick={() => setPopup({ kind: 'bot', id: b.id })}
-                        className="flex items-start gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
+                        className="group flex items-start gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
                         <PriorityDot priority={b.ai_priority ?? 'low'} pulse={b.ai_priority === 'high'} />
                         <div className="w-6 h-6 rounded-md bg-purple-100 dark:bg-purple-500/15 flex items-center justify-center shrink-0">
                           <MessageSquare className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
@@ -969,6 +997,10 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                           </p>
                         </div>
                         <span className="text-xs text-gray-400 shrink-0">{timeLabel}</span>
+                        <button onClick={ev => handleDismiss('bot', b.id, ev)} title="Dismiss"
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all shrink-0">
+                          <X className="w-3 h-3" />
+                        </button>
                       </div>
                     )
                   }
@@ -976,7 +1008,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                     const f = item.data
                     return (
                       <div key={timeKey} onClick={() => setPopup({ kind: 'form', id: f.id })}
-                        className="flex items-start gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
+                        className="group flex items-start gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
                         <PriorityDot priority={f.lead_score ?? 'low'} />
                         <div className="w-6 h-6 rounded-md bg-green-100 dark:bg-green-500/15 flex items-center justify-center shrink-0">
                           <FileText className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
@@ -986,6 +1018,10 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                           <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{f.company ?? f.email ?? f.source_platform}</p>
                         </div>
                         <span className="text-xs text-gray-400 shrink-0">{timeLabel}</span>
+                        <button onClick={ev => handleDismiss('form', f.id, ev)} title="Dismiss"
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all shrink-0">
+                          <X className="w-3 h-3" />
+                        </button>
                       </div>
                     )
                   }
@@ -993,7 +1029,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                     const t = item.data
                     return (
                       <div key={timeKey} onClick={() => setPopup({ kind: 'ticket', id: t.id })}
-                        className="flex items-start gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
+                        className="group flex items-start gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
                         <PriorityDot priority={t.priority} pulse={t.priority === 'high' || t.priority === 'urgent'} />
                         <div className="w-6 h-6 rounded-md bg-yellow-100 dark:bg-yellow-500/15 flex items-center justify-center shrink-0">
                           <TicketIcon className="w-3.5 h-3.5 text-yellow-600 dark:text-yellow-400" />
@@ -1003,6 +1039,10 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                           {t.contact && <p className="text-xs text-gray-500 dark:text-gray-400">{t.contact.name}</p>}
                         </div>
                         <span className="text-xs text-gray-400 shrink-0">{timeLabel}</span>
+                        <button onClick={ev => handleDismiss('ticket', t.id, ev)} title="Dismiss"
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all shrink-0">
+                          <X className="w-3 h-3" />
+                        </button>
                       </div>
                     )
                   }
@@ -1033,9 +1073,9 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   count: emails.length,
                   rows: emails.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No emails this period.</p>
-                    : emails.map(e => (
+                    : emails.filter(e => !dismissedIds.has(`email-${e.id}`)).map(e => (
                       <div key={e.id} onClick={() => setPopup({ kind: 'email', id: e.id })}
-                        className="flex items-start gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer border-b dark:border-white/6 last:border-0">
+                        className="group flex items-start gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer border-b dark:border-white/6 last:border-0">
                         <PriorityDot priority={e.ai_priority ?? 'low'} pulse={e.ai_priority === 'high'} />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{e.from_name ?? e.from_address}</p>
@@ -1043,6 +1083,10 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                           {e.ai_summary && <p className="text-[10px] text-gray-400 italic truncate mt-0.5">{e.ai_summary}</p>}
                         </div>
                         <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(e.received_at)}</span>
+                        <button onClick={ev => handleDismiss('email', e.id, ev)} title="Dismiss"
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all shrink-0">
+                          <X className="w-3 h-3" />
+                        </button>
                       </div>
                     )),
                 },
@@ -1056,9 +1100,9 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   count: bots.length,
                   rows: bots.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No bot chats this period.</p>
-                    : bots.map(b => (
+                    : bots.filter(b => !dismissedIds.has(`bot-${b.id}`)).map(b => (
                       <div key={b.id} onClick={() => setPopup({ kind: 'bot', id: b.id })}
-                        className="flex items-start gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer border-b dark:border-white/6 last:border-0">
+                        className="group flex items-start gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer border-b dark:border-white/6 last:border-0">
                         <PriorityDot priority={b.ai_priority ?? 'low'} pulse={b.ai_priority === 'high'} />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{b.title ?? 'Untitled conversation'}</p>
@@ -1067,6 +1111,10 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                           </p>
                         </div>
                         <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(b.last_activity_at)}</span>
+                        <button onClick={ev => handleDismiss('bot', b.id, ev)} title="Dismiss"
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all shrink-0">
+                          <X className="w-3 h-3" />
+                        </button>
                       </div>
                     )),
                 },
@@ -1080,15 +1128,19 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   count: forms.length,
                   rows: forms.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No form submissions this period.</p>
-                    : forms.map(f => (
+                    : forms.filter(f => !dismissedIds.has(`form-${f.id}`)).map(f => (
                       <div key={f.id} onClick={() => setPopup({ kind: 'form', id: f.id })}
-                        className="flex items-start gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer border-b dark:border-white/6 last:border-0">
+                        className="group flex items-start gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer border-b dark:border-white/6 last:border-0">
                         <PriorityDot priority={f.lead_score ?? 'low'} />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{f.name}</p>
                           <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{f.company ?? f.email ?? f.source_platform}</p>
                         </div>
                         <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(f.created_at)}</span>
+                        <button onClick={ev => handleDismiss('form', f.id, ev)} title="Dismiss"
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all shrink-0">
+                          <X className="w-3 h-3" />
+                        </button>
                       </div>
                     )),
                 },
@@ -1102,15 +1154,19 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   count: tickets.length,
                   rows: tickets.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No tickets this period.</p>
-                    : tickets.map(t => (
+                    : tickets.filter(t => !dismissedIds.has(`ticket-${t.id}`)).map(t => (
                       <div key={t.id} onClick={() => setPopup({ kind: 'ticket', id: t.id })}
-                        className="flex items-start gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer border-b dark:border-white/6 last:border-0">
+                        className="group flex items-start gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer border-b dark:border-white/6 last:border-0">
                         <PriorityDot priority={t.priority} pulse={t.priority === 'high' || t.priority === 'urgent'} />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{t.title}</p>
                           {t.contact && <p className="text-[11px] text-gray-500 dark:text-gray-400">{t.contact.name}</p>}
                         </div>
                         <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(t.created_at)}</span>
+                        <button onClick={ev => handleDismiss('ticket', t.id, ev)} title="Dismiss"
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all shrink-0">
+                          <X className="w-3 h-3" />
+                        </button>
                       </div>
                     )),
                 },

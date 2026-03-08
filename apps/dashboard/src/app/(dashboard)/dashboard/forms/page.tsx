@@ -5,6 +5,7 @@ import type { WorkspaceMember } from '@/lib/types'
 import type { SageForm, SageFormSubmission } from '@/app/actions/sage-forms'
 import { FormsDashboard } from '@/components/dashboard/forms-dashboard'
 import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
+import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 
 export const metadata: Metadata = { title: 'Forms' }
 
@@ -37,7 +38,7 @@ function getDateRange(preset: SubpagePreset, customFrom?: string, customTo?: str
 }
 
 export default async function FormsPage({ searchParams }: { searchParams: Promise<{ preset?: string; from?: string; to?: string }> }) {
-  const params = await searchParams
+  const [params, autoSettings] = await Promise.all([searchParams, getAutoSettings()])
   const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as SubpagePreset
   const { from: dateFrom, to: dateTo } = getDateRange(preset, params.from, params.to)
   const supabase = await createClient()
@@ -71,7 +72,7 @@ export default async function FormsPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
-      <SubpageToolbar title="Forms" sourceKey="forms" preset={preset} customFrom={params.from} customTo={params.to} />
+      <SubpageToolbar title="Forms" sourceKey="forms" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.forms_auto_enabled} />
       <div className="flex flex-1 overflow-hidden">
         <FormsDashboard forms={forms} submissions={submissions} />
       </div>

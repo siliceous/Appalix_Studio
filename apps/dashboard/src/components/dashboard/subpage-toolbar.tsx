@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { LayoutDashboard, ChevronRight, ChevronDown, Zap } from 'lucide-react'
+import { updateAutoSetting, type AutoSettings } from '@/app/actions/sage-auto-settings'
 
 export type SubpagePreset = 'all' | 'today' | 'yesterday' | '7d' | '30d' | 'custom'
 export type SubpageSource = 'email' | 'bots' | 'forms' | 'tickets'
@@ -12,8 +13,9 @@ interface Props {
   title:       string
   sourceKey:   SubpageSource
   preset:      SubpagePreset
-  customFrom?: string   // YYYY-MM-DD from URL
-  customTo?:   string   // YYYY-MM-DD from URL
+  autoEnabled: boolean    // per-source setting from DB
+  customFrom?: string     // YYYY-MM-DD from URL
+  customTo?:   string     // YYYY-MM-DD from URL
 }
 
 const PRESETS: { value: SubpagePreset; label: string }[] = [
@@ -32,34 +34,38 @@ const SOURCE_LABEL: Record<SubpageSource, string> = {
   tickets: 'tickets',
 }
 
-export function SubpageToolbar({ title, sourceKey, preset, customFrom, customTo }: Props) {
+const SOURCE_FIELD: Record<SubpageSource, keyof AutoSettings> = {
+  email:   'email_auto_enabled',
+  bots:    'bots_auto_enabled',
+  forms:   'forms_auto_enabled',
+  tickets: 'tickets_auto_enabled',
+}
+
+export function SubpageToolbar({ title, sourceKey, preset, autoEnabled, customFrom, customTo }: Props) {
   const router   = useRouter()
   const pathname = usePathname()
   const [, startTransition] = useTransition()
-  const [autoEnabled, setAutoEnabled] = useState(true)
-  const [fromDate, setFromDate] = useState(customFrom ?? '')
-  const [toDate,   setToDate]   = useState(customTo   ?? '')
+  const [localAuto, setLocalAuto] = useState(autoEnabled)
+  const [fromDate, setFromDate]   = useState(customFrom ?? '')
+  const [toDate,   setToDate]     = useState(customTo   ?? '')
 
-  useEffect(() => {
-    const stored = localStorage.getItem(`sage-auto-${sourceKey}`)
-    setAutoEnabled(stored !== 'false')
-  }, [sourceKey])
+  // Sync when server re-renders with updated prop
+  useEffect(() => { setLocalAuto(autoEnabled) }, [autoEnabled])
 
-  // Keep date inputs in sync when URL params change
   useEffect(() => {
     setFromDate(customFrom ?? '')
     setToDate(customTo   ?? '')
   }, [customFrom, customTo])
 
-  const toggleAuto = () => {
-    const next = !autoEnabled
-    setAutoEnabled(next)
-    localStorage.setItem(`sage-auto-${sourceKey}`, String(next))
+  const toggleAuto = async () => {
+    const next = !localAuto
+    setLocalAuto(next)  // optimistic
+    await updateAutoSetting(SOURCE_FIELD[sourceKey], next)
+    router.refresh()
   }
 
   const handlePresetChange = (value: SubpagePreset) => {
     if (value === 'custom') {
-      // Switch to custom mode without navigating yet — show date inputs
       startTransition(() => router.push(`${pathname}?preset=custom`))
       return
     }
@@ -136,20 +142,20 @@ export function SubpageToolbar({ title, sourceKey, preset, customFrom, customTo 
         <button
           onClick={toggleAuto}
           title={
-            autoEnabled
+            localAuto
               ? `Sage Auto ON — AI auto-processes ${SOURCE_LABEL[sourceKey]} into pipeline. Click to require manual review.`
               : `Sage Auto OFF — ${SOURCE_LABEL[sourceKey]} require manual review. Click to enable auto-processing.`
           }
           className={[
             'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all',
-            autoEnabled
+            localAuto
               ? 'bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10 border-[#61c2ad]/25 text-[#3a9e8a] dark:text-[#61c2ad]'
               : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-500',
           ].join(' ')}
         >
-          <Zap className={`w-3 h-3 ${autoEnabled ? 'text-[#61c2ad]' : 'text-gray-400'}`} />
+          <Zap className={`w-3 h-3 ${localAuto ? 'text-[#61c2ad]' : 'text-gray-400'}`} />
           <span>Auto</span>
-          <span className="font-bold">{autoEnabled ? 'ON' : 'OFF'}</span>
+          <span className="font-bold">{localAuto ? 'ON' : 'OFF'}</span>
         </button>
       </div>
     </nav>

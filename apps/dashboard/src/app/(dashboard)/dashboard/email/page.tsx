@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import type { WorkspaceMember, SageEmail, SageMeeting } from '@/lib/types'
 import { EmailTriageDashboard, type TriageEmail, type TriageRecommendation } from '@/components/dashboard/email-triage-dashboard'
 import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
+import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 
 export const metadata: Metadata = { title: 'Email Triage' }
 
@@ -68,7 +69,7 @@ function deriveRecommendation(
 }
 
 export default async function EmailTriagePage({ searchParams }: { searchParams: Promise<{ preset?: string; from?: string; to?: string }> }) {
-  const params = await searchParams
+  const [params, autoSettings] = await Promise.all([searchParams, getAutoSettings()])
   const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as SubpagePreset
   const { from: dateFrom, to: dateTo } = getDateRange(preset, params.from, params.to)
   const supabase = await createClient()
@@ -188,7 +189,7 @@ export default async function EmailTriagePage({ searchParams }: { searchParams: 
 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
-      <SubpageToolbar title="Email Triage" sourceKey="email" preset={preset} customFrom={params.from} customTo={params.to} />
+      <SubpageToolbar title="Email Triage" sourceKey="email" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.email_auto_enabled} />
       <div className="flex flex-1 overflow-hidden">
         <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} />
       </div>
