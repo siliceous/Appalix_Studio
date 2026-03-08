@@ -125,7 +125,7 @@ export const BUILT_IN_TOOLS: Anthropic.Tool[] = [
   // ── Pro+ automation tools ────────────────────────────────────────
   {
     name:        'send_email',
-    description: 'Send an email to one or more recipients. Use when the user explicitly asks to email something — a summary, report, recap, or notification — to a specific address.',
+    description: 'Send an email to one or more recipients. Only use when the user EXPLICITLY asks you to send an email. Do NOT use this automatically after creating a ticket, creating a lead, or any other action — only send when directly instructed by the user.',
     input_schema: {
       type: 'object',
       properties: {
@@ -551,10 +551,30 @@ export async function executeTool(
     }
 
     case 'create_support_ticket': {
-      // Stub — integrate with Zendesk / Freshdesk / Linear in production
-      const ticketId = `TKT-${Date.now().toString(36).toUpperCase()}`
-      console.log(`[tool:create_support_ticket] workspace=${ctx.workspaceId} subject="${input.subject}" priority=${input.priority ?? 'medium'}`)
-      return `Support ticket created successfully. Ticket ID: ${ticketId}. A human agent will follow up shortly.`
+      if (!input.subject) return 'Error: subject is required to create a support ticket.'
+      const priority = (['low', 'medium', 'high', 'urgent'].includes(input.priority ?? ''))
+        ? (input.priority as 'low' | 'medium' | 'high' | 'urgent')
+        : 'medium'
+
+      const { data: ticket, error: tErr } = await supabase
+        .from('sage_tickets')
+        .insert({
+          workspace_id:  ctx.workspaceId,
+          title:         input.subject as string,
+          description:   (input.description as string | undefined) ?? null,
+          priority,
+          status:        'open',
+        })
+        .select('id')
+        .single()
+
+      if (tErr || !ticket) {
+        console.error('[tool:create_support_ticket] DB insert failed:', tErr?.message)
+        return 'Failed to create support ticket. Please try again.'
+      }
+
+      const ticketRef = `TKT-${(ticket as { id: string }).id.replace(/-/g, '').slice(0, 8).toUpperCase()}`
+      return `Support ticket created. Ticket reference: ${ticketRef}. A human agent will review it shortly.`
     }
 
     // ── Pro+ automation tools ──────────────────────────────────────
