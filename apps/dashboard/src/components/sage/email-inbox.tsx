@@ -916,7 +916,7 @@ export function EmailInbox({
                     <button
                       onClick={() => handleReanalyze(selected.id)}
                       disabled={isReanalyzing}
-                      title="Re-analyze with AI"
+                      title="AI re-analyse"
                       className="p-1.5 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-500/10 text-purple-400 dark:text-purple-400 transition-colors disabled:opacity-40"
                     >
                       {isReanalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
