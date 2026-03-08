@@ -33,11 +33,10 @@ const config: Config = {
   // Also safelist triage list-item active-state classes used in nested ternaries
   safelist: [
     // SubpageToolbar pill button active states
-    'bg-blue-500/12','dark:bg-blue-500/12','dark:text-blue-300','dark:border-blue-500/25','border-blue-200/80',
-    'bg-purple-500/12','dark:bg-purple-500/12','dark:text-purple-300','dark:border-purple-500/25','border-purple-200/80',
-    'bg-green-500/12','dark:bg-green-500/12','dark:text-green-300','dark:border-green-500/25','border-green-200/80',
-    'bg-amber-500/12','dark:bg-amber-500/12','dark:text-amber-300','dark:border-amber-500/25','border-amber-200/80',
-    'bg-orange-500/15','dark:bg-orange-500/15','dark:text-orange-300','dark:border-orange-500/30','border-orange-200/80',
+    'bg-blue-100','text-blue-800','border-blue-300','dark:bg-blue-500/20','dark:text-blue-200','dark:border-blue-500/40',
+    'bg-purple-100','text-purple-800','border-purple-300','dark:bg-purple-500/20','dark:text-purple-200','dark:border-purple-500/40',
+    'bg-green-100','text-green-800','border-green-300','dark:bg-green-500/20','dark:text-green-200','dark:border-green-500/40',
+    'bg-orange-100','text-orange-800','border-orange-300','dark:bg-orange-500/20','dark:text-orange-200','dark:border-orange-500/40',
     // Triage list item — active selection backgrounds (bots / forms / tickets)
     'border-l-[3px]',
     'border-l-transparent',
