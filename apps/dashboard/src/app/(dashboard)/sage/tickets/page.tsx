@@ -26,7 +26,7 @@ export default async function TicketsPage() {
   const [{ data: ticketsRaw }, { data: contactsRaw }] = await Promise.all([
     supabase
       .from('sage_tickets')
-      .select('id, title, description, status, priority, created_at, contact:sage_contacts(id, name, email)')
+      .select('id, title, name, email, phone, occurred_at, description, status, priority, contact_method, created_at, updated_at, contact_id, deal_id, owner_id, related_url, external_provider, external_id, external_url, contact:sage_contacts(id, name, email)')
       .eq('workspace_id', workspaceId)
       .order('created_at', { ascending: false }),
     supabase
