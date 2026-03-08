@@ -3,10 +3,31 @@ import { redirect }     from 'next/navigation'
 import type { Metadata } from 'next'
 import type { WorkspaceMember, SageEmail, SageMeeting } from '@/lib/types'
 import { EmailTriageDashboard, type TriageEmail, type TriageRecommendation } from '@/components/dashboard/email-triage-dashboard'
-import Link from 'next/link'
-import { LayoutDashboard, ChevronRight } from 'lucide-react'
+import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
 
 export const metadata: Metadata = { title: 'Email Triage' }
+
+function getDateRange(preset: SubpagePreset): { from: string | null; to: string | null } {
+  const now = new Date()
+  if (preset === 'today') {
+    const from = new Date(now); from.setHours(0, 0, 0, 0)
+    return { from: from.toISOString(), to: null }
+  }
+  if (preset === 'yesterday') {
+    const from = new Date(now); from.setDate(from.getDate() - 1); from.setHours(0, 0, 0, 0)
+    const to   = new Date(now); to.setHours(0, 0, 0, 0)
+    return { from: from.toISOString(), to: to.toISOString() }
+  }
+  if (preset === '7d') {
+    const from = new Date(now); from.setDate(from.getDate() - 7)
+    return { from: from.toISOString(), to: null }
+  }
+  if (preset === '30d') {
+    const from = new Date(now); from.setDate(from.getDate() - 30)
+    return { from: from.toISOString(), to: null }
+  }
+  return { from: null, to: null }
+}
 
 const CONSUMER_DOMAINS = new Set([
   'gmail.com','yahoo.com','outlook.com','hotmail.com','icloud.com',
@@ -40,7 +61,10 @@ function deriveRecommendation(
   return 'create_lead'
 }
 
-export default async function EmailTriagePage() {
+export default async function EmailTriagePage({ searchParams }: { searchParams: Promise<{ preset?: string }> }) {
+  const params = await searchParams
+  const preset = (['today','yesterday','7d','30d'].includes(params.preset ?? '') ? params.preset : 'all') as SubpagePreset
+  const { from: dateFrom, to: dateTo } = getDateRange(preset)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -67,17 +91,20 @@ export default async function EmailTriagePage() {
     .maybeSingle()
   const emailProvider = ((emailIntegration as { provider?: string } | null)?.provider ?? null) as 'gmail' | 'microsoft' | null
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let emailQuery = (supabase as any)
+    .from('sage_emails')
+    .select('*, contact:sage_contacts(id, name, email)')
+    .eq('workspace_id', workspaceId)
+    .eq('direction', 'inbound')
+    .eq('is_trashed', false)
+    .eq('is_read', false)
+  if (dateFrom) emailQuery = emailQuery.gte('received_at', dateFrom)
+  if (dateTo)   emailQuery = emailQuery.lt('received_at', dateTo)
+  emailQuery = emailQuery.order('received_at', { ascending: false }).limit(50)
+
   const [emailsRes, contactsRes] = await Promise.all([
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any)
-      .from('sage_emails')
-      .select('*, contact:sage_contacts(id, name, email)')
-      .eq('workspace_id', workspaceId)
-      .eq('direction', 'inbound')
-      .eq('is_trashed', false)
-      .eq('is_read', false)
-      .order('received_at', { ascending: false })
-      .limit(50),
+    emailQuery,
     supabase
       .from('sage_contacts')
       .select('id, name, email')
@@ -155,14 +182,7 @@ export default async function EmailTriagePage() {
 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
-      <nav className="px-6 py-2.5 border-b dark:border-white/8 bg-white dark:bg-[#1c1c1c] flex items-center gap-1.5 shrink-0">
-        <Link href="/dashboard" className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
-          <LayoutDashboard className="w-3.5 h-3.5" />
-          Overview
-        </Link>
-        <ChevronRight className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600" />
-        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Email Triage</span>
-      </nav>
+      <SubpageToolbar title="Email Triage" sourceKey="email" preset={preset} />
       <div className="flex flex-1 overflow-hidden">
         <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} />
       </div>
