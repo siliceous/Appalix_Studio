@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Ticket, Plus, Trash2, Mail } from 'lucide-react'
+import { Ticket, Plus, Trash2, Mail, Pencil } from 'lucide-react'
 import { TicketModal } from '@/components/sage/ticket-modal'
+import { TicketSlideOver } from '@/components/dashboard/ticket-slide-over'
 import { updateTicketStatus, deleteTicket } from '@/app/actions/sage'
 import { timeAgo } from '@/lib/utils'
 import type { SageTicket, SageContact, SageTicketStatus } from '@/lib/types'
@@ -35,10 +36,11 @@ interface TicketsClientProps {
 }
 
 export function TicketsClient({ tickets: initialTickets, contacts }: TicketsClientProps) {
-  const [tickets,   setTickets]   = useState(initialTickets)
-  const [filter,    setFilter]    = useState('all')
-  const [showModal, setShowModal] = useState(false)
-  const [deleting,  setDeleting]  = useState<string | null>(null)
+  const [tickets,     setTickets]     = useState(initialTickets)
+  const [filter,      setFilter]      = useState('all')
+  const [showModal,   setShowModal]   = useState(false)
+  const [deleting,    setDeleting]    = useState<string | null>(null)
+  const [slideTicket, setSlideTicket] = useState<TicketWithContact | null>(null)
 
   const filtered = filter === 'all' ? tickets : tickets.filter(t => t.status === filter)
 
@@ -132,17 +134,17 @@ export function TicketsClient({ tickets: initialTickets, contacts }: TicketsClie
                     {ticket.description && (
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">{ticket.description}</p>
                     )}
-                    {ticket.contact && (
+                    {(ticket.name || ticket.contact) && (
                       <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-1">
                         <Mail className="w-3 h-3" />
-                        {ticket.contact.name}
-                        {ticket.contact.email && <span className="text-gray-300 dark:text-gray-600">· {ticket.contact.email}</span>}
+                        {ticket.name ?? ticket.contact?.name}
+                        {ticket.contact?.email && <span className="text-gray-300 dark:text-gray-600">· {ticket.contact.email}</span>}
                       </p>
                     )}
                     <p className="text-[11px] text-gray-400 mt-1">{timeAgo(ticket.created_at)}</p>
                   </div>
 
-                  {/* Status selector */}
+                  {/* Status selector + actions */}
                   <div className="shrink-0 flex items-center gap-2">
                     <select
                       value={ticket.status}
@@ -150,9 +152,19 @@ export function TicketsClient({ tickets: initialTickets, contacts }: TicketsClie
                       className={`text-xs px-2.5 py-1 rounded-lg font-medium border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad] ${sc.color}`}
                     >
                       <option value="open">Open</option>
+                      <option value="in_progress">In Progress</option>
                       <option value="pending">Pending</option>
                       <option value="resolved">Resolved</option>
+                      <option value="closed">Closed</option>
                     </select>
+
+                    <button
+                      onClick={() => setSlideTicket(ticket)}
+                      className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+                      title="Open detail"
+                    >
+                      <Pencil className="w-3.5 h-3.5 text-gray-400" />
+                    </button>
 
                     <button
                       onClick={() => handleDelete(ticket.id)}
@@ -170,6 +182,14 @@ export function TicketsClient({ tickets: initialTickets, contacts }: TicketsClie
       </div>
 
       {showModal && <TicketModal contacts={contacts} onClose={() => setShowModal(false)} />}
+
+      <TicketSlideOver
+        ticket={slideTicket}
+        onClose={() => setSlideTicket(null)}
+        onStatusChanged={(id, status) =>
+          setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t))
+        }
+      />
     </div>
   )
 }
