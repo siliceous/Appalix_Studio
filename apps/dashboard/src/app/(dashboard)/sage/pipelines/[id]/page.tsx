@@ -6,8 +6,15 @@ import { ChevronLeft } from 'lucide-react'
 import { PipelineBoard } from '@/components/sage/pipeline-board'
 import type { WorkspaceMember, SagePipeline, SagePipelineStage, SageDeal, SageContact } from '@/lib/types'
 
-export default async function PipelineBoardPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+export default async function PipelineBoardPage({
+  params,
+  searchParams,
+}: {
+  params:       Promise<{ id: string }>
+  searchParams: Promise<{ deal?: string }>
+}) {
+  const { id }             = await params
+  const { deal: initialDealId } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -98,6 +105,7 @@ export default async function PipelineBoardPage({ params }: { params: Promise<{ 
             allPipelines={allPipelines}
             ownerName={ownerName}
             dealLastActivity={dealLastActivity}
+            initialDealId={initialDealId}
           />
         )}
       </div>

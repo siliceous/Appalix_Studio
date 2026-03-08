@@ -21,6 +21,7 @@ interface PipelineBoardProps {
   allPipelines:      Pick<SagePipeline, 'id' | 'name'>[]
   ownerName:         string
   dealLastActivity:  Record<string, string>  // dealId → ISO timestamp of last activity
+  initialDealId?:    string                  // auto-open this deal's slide-over on mount
 }
 
 type SortKey = 'none' | 'value_desc' | 'close_date' | 'created_desc' | 'priority'
@@ -47,6 +48,7 @@ export function PipelineBoard({
   allPipelines,
   ownerName,
   dealLastActivity,
+  initialDealId,
 }: PipelineBoardProps) {
   const router = useRouter()
   const [deals,              setDeals]              = useState<DealWithContact[]>(initialDeals)
@@ -57,7 +59,7 @@ export function PipelineBoard({
   const [showManageStages,   setShowManageStages]   = useState(false)
 
   const [defaultStage,       setDefaultStage]       = useState<string | undefined>()
-  const [selectedDealId,     setSelectedDealId]     = useState<string | null>(null)
+  const [selectedDealId,     setSelectedDealId]     = useState<string | null>(initialDealId ?? null)
   const [openEditOnDealId,   setOpenEditOnDealId]   = useState<string | null>(null)
 
   // Header controls
