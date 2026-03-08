@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect }     from 'next/navigation'
 import type { Metadata } from 'next'
 import type { WorkspaceMember, SageTicket, SageContact } from '@/lib/types'
-import { TicketsDashboard } from '@/components/dashboard/tickets-dashboard'
+import { TicketsClient } from '@/app/(dashboard)/sage/tickets/tickets-client'
 import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 
@@ -57,20 +57,24 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
 
   let ticketsQuery = supabase
     .from('sage_tickets')
-    .select('*, contact:sage_contacts(id, name, email)')
+    .select('id, title, name, email, phone, occurred_at, description, status, priority, contact_method, created_at, updated_at, contact_id, deal_id, owner_id, related_url, external_provider, external_id, external_url, contact:sage_contacts(id, name, email)')
     .eq('workspace_id', workspaceId)
   if (dateFrom) ticketsQuery = ticketsQuery.gte('created_at', dateFrom)
   if (dateTo)   ticketsQuery = ticketsQuery.lt('created_at', dateTo)
-  ticketsQuery = ticketsQuery.order('created_at', { ascending: false }).limit(50)
+  ticketsQuery = ticketsQuery.order('created_at', { ascending: false })
 
-  const { data } = await ticketsQuery
-  const tickets = (data ?? []) as (SageTicket & { contact: Pick<SageContact, 'id' | 'name' | 'email'> | null })[]
+  const [{ data }, { data: contactsRaw }] = await Promise.all([
+    ticketsQuery,
+    supabase.from('sage_contacts').select('id, name').eq('workspace_id', workspaceId).order('name'),
+  ])
+  const tickets  = (data ?? []) as (SageTicket & { contact: Pick<SageContact, 'id' | 'name' | 'email'> | null })[]
+  const contacts = (contactsRaw ?? []) as Pick<SageContact, 'id' | 'name'>[]
 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
       <SubpageToolbar sourceKey="tickets" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.tickets_auto_enabled} />
-      <div className="flex flex-1 overflow-hidden">
-        <TicketsDashboard tickets={tickets} />
+      <div className="flex-1 overflow-y-auto">
+        <TicketsClient tickets={tickets} contacts={contacts} />
       </div>
     </div>
   )
