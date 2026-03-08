@@ -23,7 +23,8 @@ interface RawEmail   { id: string; from_name: string | null; from_address: strin
 interface RawBot     { id: string; title: string | null; platform: string | null; message_count: number; last_activity_at: string; ai_priority: string | null; bot: { name: string } | null }
 interface RawLead    { id: string; name: string; email: string | null; company: string | null; lead_score: string | null; source_platform: string; created_at: string }
 interface RawTicket  { id: string; title: string; priority: string; status: string; created_at: string; contact: { name: string } | null }
-interface RawTask    { id: string; title: string | null; body: string | null; due_at: string | null; deal_id: string; created_at: string; deal: { id: string; title: string; pipeline_id: string | null } | null }
+interface RawTask       { id: string; title: string | null; body: string | null; due_at: string | null; deal_id: string; created_at: string; deal: { id: string; title: string; pipeline_id: string | null } | null }
+interface RawTicketTask { id: string; title: string | null; body: string | null; due_at: string | null; ticket_id: string; created_at: string; ticket: { id: string; title: string } | null }
 
 type TItem =
   | { kind: 'email';  data: RawEmail;  time: string }
@@ -650,7 +651,8 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
   const [bots,       setBots]       = useState<RawBot[]>([])
   const [forms,      setForms]      = useState<RawLead[]>([])
   const [tickets,    setTickets]    = useState<RawTicket[]>([])
-  const [tasks,      setTasks]      = useState<RawTask[]>([])
+  const [tasks,        setTasks]        = useState<RawTask[]>([])
+  const [ticketTasks,  setTicketTasks]  = useState<RawTicketTask[]>([])
   const [popup,      setPopup]      = useState<PopupState | null>(null)
   const [doneBusy,   setDoneBusy]   = useState<string | null>(null)
   const [feedView,    setFeedView]   = useState<'list' | 'grid'>('list')
@@ -705,7 +707,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sbAny = supabase as any
 
-    const [eR, bR, fR, tR, xR] = await Promise.all([
+    const [eR, bR, fR, tR, xR, xtR] = await Promise.all([
       supabase.from('sage_emails')
         .select('id, from_name, from_address, subject, received_at, ai_priority, ai_summary')
         .eq('workspace_id', workspaceId).eq('direction', 'inbound').eq('is_read', false).eq('is_trashed', false)
@@ -728,13 +730,18 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
         .select('id, title, body, due_at, deal_id, created_at, deal:sage_deals(id, title, pipeline_id)')
         .eq('workspace_id', workspaceId).eq('type', 'task').is('completed_at', null)
         .order('due_at', { ascending: true }).limit(40),
+      sbAny.from('sage_ticket_activities')
+        .select('id, title, body, due_at, ticket_id, created_at, ticket:sage_tickets(id, title)')
+        .eq('workspace_id', workspaceId).eq('type', 'task').is('completed_at', null)
+        .order('due_at', { ascending: true }).limit(40),
     ])
 
     setEmails((eR.data ?? []) as RawEmail[])
     setBots((bR.data   ?? []) as RawBot[])
     setForms((fR.data  ?? []) as RawLead[])
     setTickets((tR.data ?? []) as RawTicket[])
-    setTasks((xR.data  ?? []) as RawTask[])
+    setTasks((xR.data   ?? []) as RawTask[])
+    setTicketTasks((xtR.data ?? []) as RawTicketTask[])
     setLoading(false)
   }, [dateRange, customFrom, customTo, workspaceId])
 
@@ -749,6 +756,18 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
     await (supabase as any).from('sage_deal_activities')
       .update({ completed_at: new Date().toISOString() }).eq('id', taskId)
     setTasks(prev => prev.filter(t => t.id !== taskId))
+    setDoneBusy(null)
+  }
+
+  // Mark ticket task done
+  async function markTicketTaskDone(taskId: string, e: React.MouseEvent) {
+    e.preventDefault(); e.stopPropagation()
+    setDoneBusy(taskId)
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('sage_ticket_activities')
+      .update({ completed_at: new Date().toISOString() }).eq('id', taskId)
+    setTicketTasks(prev => prev.filter(t => t.id !== taskId))
     setDoneBusy(null)
   }
 
@@ -1226,14 +1245,14 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
               <CheckSquare className="w-4 h-4 text-gray-400" />
               <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Pending Tasks</h2>
             </div>
-            {tasks.length > 0 && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400">{tasks.length}</span>
+            {(tasks.length + ticketTasks.length) > 0 && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400">{tasks.length + ticketTasks.length}</span>
             )}
           </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-24"><RefreshCw className="w-5 h-5 text-gray-300 animate-spin" /></div>
-          ) : tasks.length === 0 ? (
+          ) : tasks.length === 0 && ticketTasks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center px-5">
               <CheckSquare className="w-8 h-8 text-gray-200 dark:text-gray-700 mx-auto mb-2" />
               <p className="text-sm text-gray-400">All caught up!</p>
@@ -1264,7 +1283,6 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                         </span>
                       )}
                     </Link>
-                    {/* Done button */}
                     <button
                       onClick={e => markTaskDone(task.id, e)}
                       disabled={doneBusy === task.id}
@@ -1278,6 +1296,41 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   </div>
                 )
               })}
+              {ticketTasks.map(task => (
+                <div key={task.id} className="flex items-start gap-0 px-5 py-4 group hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
+                  <Link href="/sage/tickets" className="flex-1 min-w-0 pr-2">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400">Ticket</span>
+                    </div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
+                      {task.title ?? 'Untitled task'}
+                    </p>
+                    {task.ticket && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{task.ticket.title}</p>
+                    )}
+                    {task.body && (
+                      <p className="text-[11px] text-gray-400 italic truncate mt-0.5">{task.body}</p>
+                    )}
+                    {task.due_at && (
+                      <span className={`flex items-center gap-1 text-xs font-medium mt-1 ${overdue(task.due_at) ? 'text-red-500' : 'text-gray-400'}`}>
+                        <Calendar className="w-3 h-3" />
+                        {new Date(task.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        {overdue(task.due_at) && ' · overdue'}
+                      </span>
+                    )}
+                  </Link>
+                  <button
+                    onClick={e => markTicketTaskDone(task.id, e)}
+                    disabled={doneBusy === task.id}
+                    title="Mark as done"
+                    className="shrink-0 w-5 h-5 mt-0.5 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 hover:text-green-600 text-transparent transition-colors disabled:opacity-50"
+                  >
+                    {doneBusy === task.id
+                      ? <RefreshCw className="w-3 h-3 text-gray-400 animate-spin" />
+                      : <CheckCircle2 className="w-3 h-3" />}
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>
