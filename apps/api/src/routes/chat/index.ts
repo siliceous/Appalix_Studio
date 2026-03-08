@@ -76,8 +76,13 @@ export async function chatRoutes(fastify: FastifyInstance) {
         config:        cfg as Record<string, string>,
       }
 
-      const incoming = parseWebWidgetRequest(request.body as never, ctx)
+      const rawBody = request.body as Record<string, unknown>
+      // Normalise body: both web_widget and wordpress plugins send { message, session_id }
+      // Override platform on the parsed message so it matches the integration type
+      const incoming = parseWebWidgetRequest(rawBody as never, ctx)
       if (!incoming) return reply.status(400).send({ error: 'Missing message' })
+      // Stamp the correct platform (parseWebWidgetRequest hardcodes 'web_widget')
+      ;(incoming as { platform: string }).platform = ctx.platform
 
       try {
         const { reply: aiReply, conversationId } = await processMessage(incoming)
