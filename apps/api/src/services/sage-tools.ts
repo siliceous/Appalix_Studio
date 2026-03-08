@@ -558,7 +558,21 @@ export async function sageCreateLead(
     contactId = (created as CR).id
   }
 
-  // 2. Find first pipeline + first stage
+  // 2. Check for existing open deal on this contact — avoid duplicates
+  const { data: existingDeal } = await supabase
+    .from('sage_deals')
+    .select('id, title')
+    .eq('workspace_id', workspaceId)
+    .eq('contact_id', contactId)
+    .eq('status', 'open')
+    .limit(1)
+    .maybeSingle()
+
+  if (existingDeal) {
+    return `Contact "${name}" (id: ${contactId}) already has an open deal "${(existingDeal as { id: string; title: string }).title}" — no duplicate created.`
+  }
+
+  // 3. Find first pipeline + first stage
   const { data: pipeline } = await supabase
     .from('sage_pipelines')
     .select('id')
@@ -581,7 +595,7 @@ export async function sageCreateLead(
     .maybeSingle()
   const stageId = stage ? (stage as { id: string }).id : null
 
-  // 3. Create deal
+  // 4. Create deal
   const title = dealTitle?.trim() || name
   const { data: deal, error: dErr } = await supabase
     .from('sage_deals')
@@ -605,7 +619,7 @@ export async function sageCreateLead(
   if (dErr || !deal) return `Contact created but failed to create deal: ${dErr?.message ?? 'unknown error'}`
   const dealId = (deal as { id: string }).id
 
-  // 4. Log activity
+  // 5. Log activity
   await supabase.from('sage_activity_log').insert({
     workspace_id: workspaceId,
     entity_type:  'deal',
