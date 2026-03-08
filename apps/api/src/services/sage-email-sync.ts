@@ -196,7 +196,7 @@ async function analyzeEmail(
     : ''
 
   const crmSection = crmContext?.dealTitle
-    ? `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nCRM CONTEXT — this sender is already in the pipeline:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nContact: ${crmContext.contactName ?? from}\nOpen deal: "${crmContext.dealTitle}"${crmContext.dealStage ? ` (stage: ${crmContext.dealStage})` : ''}\n\n⚠️ IMPORTANT: A deal already exists for this contact. Do NOT suggest creating a lead. Your user_prompt should reference the existing deal and suggest the next step (e.g. update the deal, follow up, move to next stage). Action should be "reply_draft" not "create_lead".\n`
+    ? `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nCRM CONTEXT — this sender is already in the pipeline:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nContact: ${crmContext.contactName ?? from}\nOpen deal: "${crmContext.dealTitle}"${crmContext.dealStage ? ` (stage: ${crmContext.dealStage})` : ''}\n\n⚠️ IMPORTANT: A deal already exists for this contact. ALWAYS assign priority "high" — any email from an active pipeline contact is high priority regardless of email content. Do NOT suggest creating a lead. Your user_prompt should reference the existing deal and suggest the next step (e.g. update the deal, follow up, move to next stage). Action should be "reply_draft" not "create_lead".\n`
     : ''
 
   const prompt = `You are an Email Triage & Pipeline Assistant inside Appalix CRM.

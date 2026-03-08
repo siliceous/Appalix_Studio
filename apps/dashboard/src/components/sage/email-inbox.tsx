@@ -913,14 +913,18 @@ export function EmailInbox({
                         {selected.ai_priority}
                       </span>
                     )}
-                    <button
-                      onClick={() => handleReanalyze(selected.id)}
-                      disabled={isReanalyzing}
-                      title="AI re-analyse"
-                      className="p-1.5 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-500/10 text-purple-400 dark:text-purple-400 transition-colors disabled:opacity-40"
-                    >
-                      {isReanalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                    </button>
+                    <div className="relative group/reanalyze">
+                      <button
+                        onClick={() => handleReanalyze(selected.id)}
+                        disabled={isReanalyzing}
+                        className="p-1.5 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-500/10 text-purple-400 dark:text-purple-400 transition-colors disabled:opacity-40"
+                      >
+                        {isReanalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                      </button>
+                      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 whitespace-nowrap rounded bg-gray-800 dark:bg-gray-700 px-2 py-1 text-[11px] text-white opacity-0 group-hover/reanalyze:opacity-100 transition-opacity duration-75 z-50">
+                        AI re-analyse
+                      </span>
+                    </div>
                     <a
                       href={buildCalendarLink(emailProvider, selected.from_address, selected.from_name ?? '', selected.subject, selected.ai_summary)}
                       target="_blank"
