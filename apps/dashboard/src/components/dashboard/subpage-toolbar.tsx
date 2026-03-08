@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
-import { LayoutDashboard, ChevronRight, ChevronDown, Zap, Mail, MessageSquare, FileText, Ticket as TicketIcon } from 'lucide-react'
+import { LayoutDashboard, ChevronDown, Zap, Mail, MessageSquare, FileText, Ticket as TicketIcon } from 'lucide-react'
 import { updateAutoSetting, type AutoSettings } from '@/app/actions/sage-auto-settings'
 
 export type SubpagePreset = 'all' | 'today' | 'yesterday' | '7d' | '30d' | 'custom'
@@ -88,35 +88,33 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
   ]
 
   return (
-    <nav className="px-6 border-b dark:border-white/8 bg-white dark:bg-[#1c1c1c] flex items-center justify-between shrink-0 gap-4">
-      {/* Breadcrumb + page tabs */}
-      <div className="flex items-center gap-1.5">
+    <nav className="px-4 border-b dark:border-white/8 bg-white dark:bg-[#1c1c1c] flex items-center justify-between shrink-0 gap-4 min-h-[44px]">
+      {/* Overview link + page tabs */}
+      <div className="flex items-stretch gap-1">
         <Link
           href="/dashboard"
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors shrink-0"
+          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors shrink-0 px-2 mr-1"
         >
           <LayoutDashboard className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Overview</span>
         </Link>
-        <ChevronRight className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 shrink-0" />
+        <div className="w-px self-stretch bg-gray-200 dark:bg-white/8 my-2" />
         {/* Sibling page tabs */}
-        <div className="flex items-center">
-          {PAGES.map(p => (
-            <Link
-              key={p.key}
-              href={p.href}
-              className={[
-                'flex items-center gap-1.5 px-3 py-3.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap',
-                sourceKey === p.key
-                  ? `${p.activeColor} font-semibold`
-                  : `border-transparent text-gray-400 dark:text-gray-500 ${p.hoverColor}`,
-              ].join(' ')}
-            >
-              <p.Icon className="w-3.5 h-3.5 shrink-0" />
-              {p.label}
-            </Link>
-          ))}
-        </div>
+        {PAGES.map(p => (
+          <Link
+            key={p.key}
+            href={p.href}
+            className={[
+              'flex items-center gap-1.5 px-3 text-xs font-medium border-b-2 -mb-px transition-colors whitespace-nowrap self-stretch',
+              sourceKey === p.key
+                ? `${p.activeColor} font-semibold`
+                : `border-transparent text-gray-400 dark:text-gray-500 ${p.hoverColor}`,
+            ].join(' ')}
+          >
+            <p.Icon className="w-3.5 h-3.5 shrink-0" />
+            {p.label}
+          </Link>
+        ))}
       </div>
 
       {/* Controls */}
