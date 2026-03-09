@@ -902,7 +902,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
   const [customTo,   setCustomTo]   = useState<string>('')
   const greeting = useMemo(() => {
     const h = new Date().getHours()
-    return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
+    return h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening'
   }, [])
   const [sageAuto,   setSageAuto]   = useState(true)
   const [loading,    setLoading]    = useState(true)
