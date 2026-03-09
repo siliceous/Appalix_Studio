@@ -144,6 +144,10 @@ function ItemPopup({
   const [replyBody, setReplyBody]       = useState('')
   const [sending, setSending]           = useState(false)
   const [sendResult, setSendResult]     = useState<string | null>(null)
+  const [showCc, setShowCc]             = useState(false)
+  const [showBcc, setShowBcc]           = useState(false)
+  const [ccValue, setCcValue]           = useState('')
+  const [bccValue, setBccValue]         = useState('')
   const replyRef = useRef<HTMLDivElement>(null)
 
   function execFormat(cmd: string) {
@@ -334,16 +338,51 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                     {/* Inline Reply compose — sits right after AI Summary */}
                     {showReply && (
                       <div className="rounded-2xl border dark:border-white/10 overflow-hidden bg-white dark:bg-[#1e1e1e]">
-                        {/* Compose header */}
-                        <div className="flex items-center justify-between px-4 py-2.5 border-b dark:border-white/8 bg-gray-50 dark:bg-white/5">
-                          <div className="flex items-center gap-2">
-                            <Reply className="w-3.5 h-3.5 text-[#61c2ad]" />
-                            <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">Reply to {e.from_name ?? e.from_address}</span>
+                        {/* Compose header — To row */}
+                        <div className="flex items-center gap-2 px-4 py-2.5 border-b dark:border-white/8 bg-gray-50 dark:bg-white/5">
+                          <Reply className="w-3.5 h-3.5 text-[#61c2ad] shrink-0" />
+                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 shrink-0">To:</span>
+                          <span className="text-xs text-gray-600 dark:text-gray-300 flex-1 truncate">{e.from_name ?? e.from_address}</span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button onClick={() => setShowCc(v => !v)}
+                              className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors ${showCc ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8'}`}>
+                              CC
+                            </button>
+                            <button onClick={() => setShowBcc(v => !v)}
+                              className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors ${showBcc ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8'}`}>
+                              BCC
+                            </button>
                           </div>
-                          <button onClick={() => setShowReply(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                          <button onClick={() => setShowReply(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors shrink-0">
                             <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
+                        {/* CC row */}
+                        {showCc && (
+                          <div className="flex items-center gap-2 px-4 py-2 border-b dark:border-white/8 bg-gray-50 dark:bg-white/5">
+                            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 w-7 shrink-0">CC:</span>
+                            <input
+                              type="email"
+                              value={ccValue}
+                              onChange={ev => setCcValue(ev.target.value)}
+                              placeholder="Add CC recipients…"
+                              className="flex-1 text-xs bg-transparent text-gray-700 dark:text-gray-200 placeholder-gray-400 outline-none"
+                            />
+                          </div>
+                        )}
+                        {/* BCC row */}
+                        {showBcc && (
+                          <div className="flex items-center gap-2 px-4 py-2 border-b dark:border-white/8 bg-gray-50 dark:bg-white/5">
+                            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 w-7 shrink-0">BCC:</span>
+                            <input
+                              type="email"
+                              value={bccValue}
+                              onChange={ev => setBccValue(ev.target.value)}
+                              placeholder="Add BCC recipients…"
+                              className="flex-1 text-xs bg-transparent text-gray-700 dark:text-gray-200 placeholder-gray-400 outline-none"
+                            />
+                          </div>
+                        )}
                         {/* Formatting toolbar */}
                         <div className="flex items-center gap-0.5 px-3 py-1.5 border-b dark:border-white/8 bg-gray-50 dark:bg-white/[0.03]">
                           {([
