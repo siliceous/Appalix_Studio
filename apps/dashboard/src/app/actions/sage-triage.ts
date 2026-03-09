@@ -545,3 +545,75 @@ export async function dashboardAddTicket(opts: {
     return { error: err instanceof Error ? err.message : 'Unexpected error' }
   }
 }
+
+// ── Batch contact match — runs after feed loads, before user opens any popup ──
+// Priority: email → full name → phone (hardcoded, cannot be overwritten)
+export type ContactMatch = {
+  contactId: string
+  contactName: string
+  dealId?: string
+  dealTitle?: string
+}
+
+export async function batchMatchContacts(
+  items: Array<{ id: string; email?: string | null; name?: string | null; phone?: string | null }>
+): Promise<Record<string, ContactMatch | null>> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return {}
+
+  const admin = createAdminClient()
+  type CR = { id: string; name: string; email?: string | null; phone?: string | null }
+  const result: Record<string, ContactMatch | null> = {}
+  for (const item of items) result[item.id] = null
+
+  // 1. Batch email match
+  const emailItems = items.filter(i => i.email)
+  if (emailItems.length > 0) {
+    const { data: rows } = await admin.from('sage_contacts')
+      .select('id, name, email')
+      .eq('workspace_id', workspaceId)
+      .in('email', emailItems.map(i => i.email!.toLowerCase()))
+    if (rows) {
+      const map = new Map((rows as CR[]).map(c => [c.email?.toLowerCase() ?? '', c]))
+      for (const item of emailItems) {
+        const c = map.get(item.email!.toLowerCase())
+        if (c) result[item.id] = { contactId: c.id, contactName: c.name }
+      }
+    }
+  }
+
+  // 2. Name match for still-unmatched
+  const byName = items.filter(i => result[i.id] === null && i.name)
+  for (const item of byName) {
+    const { data: c } = await admin.from('sage_contacts').select('id, name')
+      .eq('workspace_id', workspaceId).ilike('name', item.name!.trim()).limit(1).maybeSingle()
+    if (c) result[item.id] = { contactId: (c as CR).id, contactName: (c as CR).name }
+  }
+
+  // 3. Phone match for still-unmatched
+  const byPhone = items.filter(i => result[i.id] === null && i.phone)
+  for (const item of byPhone) {
+    const { data: c } = await admin.from('sage_contacts').select('id, name')
+      .eq('workspace_id', workspaceId).eq('phone', item.phone!).limit(1).maybeSingle()
+    if (c) result[item.id] = { contactId: (c as CR).id, contactName: (c as CR).name }
+  }
+
+  // 4. For each matched contact, look up open deal
+  const matchedEntries = Object.entries(result).filter(([, v]) => v !== null)
+  if (matchedEntries.length > 0) {
+    const contactIds = [...new Set(matchedEntries.map(([, v]) => v!.contactId))]
+    const { data: deals } = await admin.from('sage_deals')
+      .select('id, title, contact_id')
+      .eq('workspace_id', workspaceId).eq('status', 'open')
+      .in('contact_id', contactIds)
+    if (deals) {
+      const dealMap = new Map((deals as { id: string; title: string; contact_id: string }[]).map(d => [d.contact_id, d]))
+      for (const [itemId, match] of matchedEntries) {
+        const deal = dealMap.get(match!.contactId)
+        if (deal) result[itemId] = { ...match!, dealId: deal.id, dealTitle: deal.title }
+      }
+    }
+  }
+
+  return result
+}

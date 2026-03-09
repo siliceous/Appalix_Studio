@@ -17,16 +17,17 @@ import {
 import { timeAgo } from '@/lib/utils'
 import { sendEmail, scheduleMeetingFromEmail, getEmailSignature } from '@/app/actions/sage-emails'
 import { updateAutoSetting, dismissFeedItem } from '@/app/actions/sage-auto-settings'
-import { getWorkspacePipelines, dashboardAddLead, dashboardAddTicket } from '@/app/actions/sage-triage'
+import { getWorkspacePipelines, dashboardAddLead, dashboardAddTicket, batchMatchContacts } from '@/app/actions/sage-triage'
+import type { ContactMatch } from '@/app/actions/sage-triage'
 import type { SageEmail, Conversation, Lead, SageTicket } from '@/lib/types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type DatePreset = 'today' | 'yesterday' | '7d' | '30d' | 'custom'
 
-interface RawEmail   { id: string; from_name: string | null; from_address: string; subject: string; received_at: string; ai_priority: string | null; ai_summary: string | null }
-interface RawBot     { id: string; title: string | null; platform: string | null; message_count: number; last_activity_at: string; ai_priority: string | null; bot: { name: string } | null }
-interface RawLead    { id: string; name: string; email: string | null; company: string | null; lead_score: string | null; source_platform: string; created_at: string }
-interface RawTicket  { id: string; title: string; priority: string; status: string; created_at: string; contact: { name: string } | null }
+interface RawEmail   { id: string; from_name: string | null; from_address: string; subject: string; received_at: string; ai_priority: string | null; ai_summary: string | null; ai_entities?: Record<string, string> | null }
+interface RawBot     { id: string; title: string | null; platform: string | null; message_count: number; last_activity_at: string; ai_priority: string | null; bot: { name: string } | null; ai_entities?: Record<string, string> | null }
+interface RawLead    { id: string; name: string; email: string | null; phone: string | null; company: string | null; lead_score: string | null; source_platform: string; created_at: string }
+interface RawTicket  { id: string; title: string; priority: string; status: string; created_at: string; contact: { name: string; email: string | null; phone: string | null } | null }
 interface RawTask       { id: string; title: string | null; body: string | null; due_at: string | null; deal_id: string; created_at: string; deal: { id: string; title: string; pipeline_id: string | null } | null }
 interface RawTicketTask { id: string; title: string | null; body: string | null; due_at: string | null; ticket_id: string; created_at: string; ticket: { id: string; title: string } | null }
 
@@ -128,11 +129,11 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
 type PopupState = { kind: 'email' | 'bot' | 'form' | 'ticket'; id: string }
 
 function ItemPopup({
-  popup, sageAuto, pipelines, onClose, onAction,
+  popup, pipelines, contactMatch, onClose, onAction,
 }: {
   popup: PopupState
-  sageAuto: boolean
   pipelines: { id: string; name: string }[]
+  contactMatch: ContactMatch | null | undefined
   onClose: () => void
   onAction: (extra?: Array<{ kind: string; id: string }>) => void
 }) {
@@ -140,9 +141,10 @@ function ItemPopup({
   const [data, setData]               = useState<any>(null)
   const [loading, setLoading]         = useState(true)
   const [actionBusy, setActionBusy]   = useState(false)
-  const [actionDone, setActionDone]   = useState<string | null>(null)
+  const [postAction, setPostAction]   = useState<'deal_added' | 'ticket_added' | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [showPipelinePicker, setShowPipelinePicker] = useState(false)
-  const [addLeadExisting, setAddLeadExisting]       = useState(false)
+  const [ignoring, setIgnoring]       = useState(false)
 
   // Reply compose state (email only)
   const [showReply, setShowReply]       = useState(false)
@@ -237,7 +239,7 @@ function ItemPopup({
 
   // Fetch full item
   useEffect(() => {
-    setData(null); setLoading(true); setActionDone(null); setShowReply(false); setSendResult(null); setShowPipelinePicker(false); setAddLeadExisting(false)
+    setData(null); setLoading(true); setPostAction(null); setActionError(null); setShowReply(false); setSendResult(null); setShowPipelinePicker(false); setIgnoring(false)
     const supabase = createClient()
     const go = async () => {
       if (popup.kind === 'email') {
@@ -302,15 +304,13 @@ function ItemPopup({
 
     const result = await dashboardAddLead({ name, email, phone, company, interest, source: src, conversationId, pipelineId })
     setActionBusy(false)
-    if (result.error) { setActionDone(`Error: ${result.error}`); return }
-    setAddLeadExisting(result.isExisting ?? false)
-    setActionDone(result.isExisting ? 'activity_logged' : 'lead_created')
+    if (result.error) { setActionError(result.error); return }
     onAction()
-    setTimeout(() => onClose(), 2500)
+    setPostAction('deal_added')
   }
 
   function triggerAddLead() {
-    if (pipelines.length === 0) { setActionDone('Error: No pipelines found. Create one first.'); return }
+    if (pipelines.length === 0) { setActionError('No pipelines found. Create one first.'); return }
     if (pipelines.length === 1) { handleAddLead(pipelines[0].id); return }
     setShowPipelinePicker(true)
   }
@@ -347,12 +347,15 @@ function ItemPopup({
 
     const result = await dashboardAddTicket({ name, email, phone, title, description: desc, priority, source: src })
     setActionBusy(false)
-    if (result.error) { setActionDone(`Error: ${result.error}`); return }
-    setActionDone(result.isExisting ? 'ticket_existing' : 'ticket_created')
-    // Dismiss source item + newly created ticket (prevents it re-appearing in dashboard feed)
+    if (result.error) { setActionError(result.error); return }
     const extra = result.ticketId ? [{ kind: 'ticket', id: result.ticketId }] : []
     onAction(extra)
-    setTimeout(() => onClose(), 2500)
+    setPostAction('ticket_added')
+  }
+
+  function handleIgnore() {
+    setIgnoring(true)
+    setTimeout(() => { onClose() }, 2000)
   }
 
   async function handleSendReply() {
@@ -846,22 +849,11 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                 )
               })()}
 
-              {/* Action done feedback */}
-              {actionDone && (
-                <div className={`flex items-center gap-2 text-sm rounded-xl px-4 py-3 ${
-                  actionDone.startsWith('Error:')
-                    ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10'
-                    : 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10'
-                }`}>
-                  {actionDone.startsWith('Error:')
-                    ? <X className="w-4 h-4 shrink-0" />
-                    : <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  }
-                  {actionDone === 'lead_created'    ? 'Lead added to pipeline.' :
-                   actionDone === 'activity_logged' ? 'Activity logged on existing deal.' :
-                   actionDone === 'ticket_created'  ? 'Ticket created successfully.' :
-                   actionDone === 'ticket_existing' ? 'Activity logged on existing ticket.' :
-                   actionDone}
+              {/* Error feedback */}
+              {actionError && (
+                <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 rounded-xl px-4 py-3">
+                  <X className="w-4 h-4 shrink-0" />
+                  {actionError}
                 </div>
               )}
             </>
@@ -872,26 +864,19 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
         {!loading && data && (
           <div className="px-6 py-4 border-t dark:border-white/10 shrink-0">
 
-            {/* Pipeline picker (shown for both Sage Auto ON and OFF when >1 pipelines) */}
+            {/* Pipeline picker */}
             {showPipelinePicker && (
               <div className="mb-3">
-                <p className="text-xs text-gray-400 mb-2">Choose a pipeline to add this lead to:</p>
+                <p className="text-xs text-gray-400 mb-2">Choose a pipeline:</p>
                 <div className="flex flex-wrap gap-2">
                   {pipelines.map(p => (
-                    <button
-                      key={p.id}
-                      disabled={actionBusy}
-                      onClick={() => handleAddLead(p.id)}
-                      className="px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50"
-                    >
-                      {actionBusy ? <Loader2 className="w-3 h-3 animate-spin inline mr-1" /> : null}
-                      {p.name}
+                    <button key={p.id} disabled={actionBusy} onClick={() => handleAddLead(p.id)}
+                      className="px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50">
+                      {actionBusy ? <Loader2 className="w-3 h-3 animate-spin inline mr-1" /> : null}{p.name}
                     </button>
                   ))}
-                  <button
-                    onClick={() => setShowPipelinePicker(false)}
-                    className="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/8 hover:bg-gray-200 dark:hover:bg-white/12 rounded-xl transition-colors"
-                  >
+                  <button onClick={() => setShowPipelinePicker(false)}
+                    className="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/8 hover:bg-gray-200 dark:hover:bg-white/12 rounded-xl transition-colors">
                     Cancel
                   </button>
                 </div>
@@ -900,125 +885,110 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
 
             <div className="flex items-center gap-2">
 
-              {/* ── Reply mode footer: Send button ── */}
+              {/* ── Reply compose footer ── */}
               {showReply ? (
+                sendResult === 'sent' ? (
+                  <p className="flex items-center gap-1.5 text-sm font-semibold text-[#61c2ad]">
+                    <CheckCircle2 className="w-4 h-4" /> Reply sent
+                  </p>
+                ) : (
+                  <>
+                    <div className="flex-1" />
+                    <button onClick={handleSendReply} disabled={sending || !replyBody.trim()}
+                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50">
+                      {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                      {sending ? 'Sending…' : 'Send'}
+                    </button>
+                  </>
+                )
+
+              /* ── Post-deal or post-ticket: Reply + Ignore ── */
+              ) : postAction ? (
                 <>
-                  {sendResult === 'sent' ? (
-                    <p className="flex items-center gap-1.5 text-sm font-semibold text-[#61c2ad]">
-                      <CheckCircle2 className="w-4 h-4" /> Reply sent
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-[#61c2ad] font-semibold">
+                      {postAction === 'deal_added' ? 'Deal added to pipeline.' : 'Ticket created.'}
                     </p>
+                    {ignoring && <p className="text-[11px] text-gray-400 mt-0.5">Closing…</p>}
+                  </div>
+                  {!ignoring && popup.kind === 'email' && (
+                    <button onClick={() => setShowReply(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
+                      <Reply className="w-3.5 h-3.5" /> Reply
+                    </button>
+                  )}
+                  {!ignoring && (
+                    <button onClick={handleIgnore}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/8 hover:bg-gray-200 dark:hover:bg-white/12 rounded-xl transition-colors">
+                      <X className="w-3.5 h-3.5" /> Ignore
+                    </button>
+                  )}
+                </>
+
+              /* ── Known contact: View Contact + View/Add Deal + Reply + Ignore ── */
+              ) : contactMatch !== null && contactMatch !== undefined ? (
+                <>
+                  <Link href={`/sage/contacts/${contactMatch.contactId}`} onClick={onClose}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/15 hover:bg-blue-100 dark:hover:bg-blue-500/25 rounded-xl transition-colors border border-blue-200/70 dark:border-blue-500/25">
+                    <User className="w-3.5 h-3.5" /> View Contact
+                  </Link>
+                  {contactMatch.dealId ? (
+                    <Link href={`/sage/deals/${contactMatch.dealId}`} onClick={onClose}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#2a7d6e] bg-[#2a7d6e]/10 hover:bg-[#2a7d6e]/20 rounded-xl transition-colors border border-[#2a7d6e]/25">
+                      <Kanban className="w-3.5 h-3.5" /> View Deal
+                    </Link>
+                  ) : !showPipelinePicker && (
+                    <button disabled={actionBusy} onClick={triggerAddLead}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50">
+                      {actionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                      Add Deal
+                    </button>
+                  )}
+                  <div className="flex-1" />
+                  {popup.kind === 'email' && (
+                    <button onClick={() => setShowReply(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
+                      <Reply className="w-3.5 h-3.5" /> Reply
+                    </button>
+                  )}
+                  <button onClick={handleIgnore}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/8 hover:bg-gray-200 dark:hover:bg-white/12 rounded-xl transition-colors">
+                    <X className="w-3.5 h-3.5" /> Ignore
+                  </button>
+                </>
+
+              /* ── Unknown contact OR still checking ── */
+              ) : (
+                <>
+                  {contactMatch === undefined ? (
+                    /* Still running batch match — show subtle loading */
+                    <span className="text-xs text-gray-400 flex items-center gap-1.5">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Checking contacts…
+                    </span>
                   ) : (
+                    /* No match — show Add Deal + Add Ticket */
                     <>
-                      <div className="flex-1" />
-                      <button
-                        onClick={handleSendReply}
-                        disabled={sending || !replyBody.trim()}
-                        className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50"
-                      >
-                        {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                        {sending ? 'Sending…' : 'Send'}
-                      </button>
+                      {!showPipelinePicker && (
+                        <button disabled={actionBusy} onClick={triggerAddLead}
+                          className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50">
+                          {actionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                          Add Deal
+                        </button>
+                      )}
+                      {!showPipelinePicker && popup.kind !== 'form' && (
+                        <button disabled={actionBusy} onClick={handleAddTicket}
+                          className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/25 border border-amber-200/70 dark:border-amber-500/25 rounded-xl transition-colors disabled:opacity-50">
+                          {actionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <TicketIcon className="w-3.5 h-3.5" />}
+                          Add Ticket
+                        </button>
+                      )}
                     </>
                   )}
-                </>
-              ) : sageAuto ? (
-                /* ── Sage Auto ON: Dismiss + Add Lead + Open Pipeline / Open Tickets ── */
-                <>
-                  <button
-                    onClick={() => { onAction(); onClose() }}
-                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-gray-100 dark:bg-white/8 hover:bg-gray-200 dark:hover:bg-white/12 rounded-xl transition-colors"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                    Dismiss
+                  <div className="flex-1" />
+                  <button onClick={handleIgnore}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors border dark:border-white/8">
+                    <X className="w-3.5 h-3.5" /> Ignore
                   </button>
-
-                  {!actionDone && !showPipelinePicker && popup.kind !== 'ticket' && (
-                    <button
-                      disabled={actionBusy}
-                      onClick={triggerAddLead}
-                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50"
-                    >
-                      {actionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                      Add Lead
-                    </button>
-                  )}
-
-                  {!actionDone && !showPipelinePicker && popup.kind === 'ticket' && (
-                    <button
-                      disabled={actionBusy}
-                      onClick={handleAddTicket}
-                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/25 border border-amber-200/70 dark:border-amber-500/25 rounded-xl transition-colors disabled:opacity-50"
-                    >
-                      {actionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <TicketIcon className="w-3.5 h-3.5" />}
-                      Add Ticket
-                    </button>
-                  )}
-
-                  <div className="flex-1" />
-
-                  {popup.kind === 'ticket' ? (
-                    <Link
-                      href="/sage/tickets"
-                      onClick={onClose}
-                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white rounded-xl transition-colors"
-                    >
-                      <TicketIcon className="w-3.5 h-3.5" />
-                      Open Tickets
-                    </Link>
-                  ) : (
-                    <Link
-                      href="/sage/pipelines"
-                      onClick={onClose}
-                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors"
-                    >
-                      <Kanban className="w-3.5 h-3.5" />
-                      Open Pipeline
-                    </Link>
-                  )}
-                </>
-              ) : (
-                /* ── Sage Auto OFF: Add Lead + Add Ticket + Triage link ── */
-                <>
-                  {!actionDone && !showPipelinePicker && (
-                    <button
-                      disabled={actionBusy}
-                      onClick={triggerAddLead}
-                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50"
-                    >
-                      {actionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                      Add Lead
-                    </button>
-                  )}
-
-                  {!actionDone && !showPipelinePicker && popup.kind !== 'form' && (
-                    <button
-                      disabled={actionBusy}
-                      onClick={handleAddTicket}
-                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/25 border border-amber-200/70 dark:border-amber-500/25 rounded-xl transition-colors disabled:opacity-50"
-                    >
-                      {actionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <TicketIcon className="w-3.5 h-3.5" />}
-                      Add Ticket
-                    </button>
-                  )}
-
-                  <div className="flex-1" />
-
-                  <Link
-                    href={
-                      popup.kind === 'email' ? '/sage/emails' :
-                      popup.kind === 'bot'   ? '/sage/bots' :
-                      popup.kind === 'form'  ? '/sage/forms' :
-                                              '/sage/tickets'
-                    }
-                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-[#61c2ad] hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors border dark:border-white/8"
-                    onClick={onClose}
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    {popup.kind === 'email' ? 'Email Triage' :
-                     popup.kind === 'bot'   ? 'Bot Triage' :
-                     popup.kind === 'form'  ? 'Form Triage' :
-                                             'Ticket Triage'}
-                  </Link>
                 </>
               )}
 
@@ -1054,6 +1024,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
   const [donutsCollapsed, setDonutsCollapsed] = useState(false)
   const [pipelines, setPipelines] = useState<{ id: string; name: string }[]>([])
+  const [contactMatches, setContactMatches] = useState<Record<string, ContactMatch | null | undefined>>({})
   const [showAutoDesc, setShowAutoDesc] = useState(false)
   const autoDescTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -1111,21 +1082,21 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
 
     const [eR, bR, fR, tR, xR, xtR] = await Promise.all([
       supabase.from('sage_emails')
-        .select('id, from_name, from_address, subject, received_at, ai_priority, ai_summary')
+        .select('id, from_name, from_address, subject, received_at, ai_priority, ai_summary, ai_entities')
         .eq('workspace_id', workspaceId).eq('direction', 'inbound').eq('is_read', false).eq('is_trashed', false)
         .in('ai_priority', ['high', 'medium']).gte('received_at', from).lte('received_at', to)
         .order('received_at', { ascending: false }),
       supabase.from('conversations')
-        .select('id, title, platform, message_count, last_activity_at, ai_priority, bot:bots(name)')
+        .select('id, title, platform, message_count, last_activity_at, ai_priority, ai_entities, bot:bots(name)')
         .eq('workspace_id', workspaceId).eq('status', 'active')
         .in('ai_priority', ['high', 'medium']).gte('last_activity_at', from).lte('last_activity_at', to)
         .order('last_activity_at', { ascending: false }),
       supabase.from('leads')
-        .select('id, name, email, company, lead_score, source_platform, created_at')
+        .select('id, name, email, phone, company, lead_score, source_platform, created_at')
         .eq('workspace_id', workspaceId).gte('created_at', from).lte('created_at', to)
         .order('created_at', { ascending: false }),
       supabase.from('sage_tickets')
-        .select('id, title, priority, status, created_at, contact:sage_contacts(name)')
+        .select('id, title, priority, status, created_at, contact:sage_contacts(name, email, phone)')
         .eq('workspace_id', workspaceId).gte('created_at', from).lte('created_at', to)
         .order('created_at', { ascending: false }),
       sbAny.from('sage_deal_activities')
@@ -1138,13 +1109,28 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
         .order('due_at', { ascending: true }).limit(40),
     ])
 
-    setEmails((eR.data ?? []) as RawEmail[])
-    setBots((bR.data   ?? []) as RawBot[])
-    setForms((fR.data  ?? []) as RawLead[])
-    setTickets((tR.data ?? []) as RawTicket[])
+    const newEmails  = (eR.data  ?? []) as RawEmail[]
+    const newBots    = (bR.data  ?? []) as RawBot[]
+    const newForms   = (fR.data  ?? []) as RawLead[]
+    const newTickets = (tR.data  ?? []) as RawTicket[]
+    setEmails(newEmails)
+    setBots(newBots)
+    setForms(newForms)
+    setTickets(newTickets)
     setTasks((xR.data   ?? []) as RawTask[])
     setTicketTasks((xtR.data ?? []) as RawTicketTask[])
     setLoading(false)
+
+    // Batch contact match — runs once after feed loads, no loading spinner needed
+    const matchItems = [
+      ...newEmails.map(e  => ({ id: e.id, email: e.ai_entities?.email ?? e.from_address, name: e.ai_entities?.name ?? e.from_name ?? undefined, phone: e.ai_entities?.phone ?? undefined })),
+      ...newBots.map(b    => ({ id: b.id, email: b.ai_entities?.email ?? undefined, name: b.ai_entities?.name ?? b.title ?? undefined, phone: b.ai_entities?.phone ?? undefined })),
+      ...newForms.map(f   => ({ id: f.id, email: f.email ?? undefined, name: f.name, phone: f.phone ?? undefined })),
+      ...newTickets.map(t => ({ id: t.id, email: t.contact?.email ?? undefined, name: t.contact?.name ?? undefined, phone: t.contact?.phone ?? undefined })),
+    ]
+    // Mark all as undefined (checking) so popup shows loading footer briefly if opened early
+    setContactMatches(Object.fromEntries(matchItems.map(i => [i.id, undefined])))
+    batchMatchContacts(matchItems).then(results => setContactMatches(results))
   }, [dateRange, customFrom, customTo, workspaceId])
 
   useEffect(() => { fetchData() }, [fetchData])
@@ -1203,8 +1189,8 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
       {popup && (
         <ItemPopup
           popup={popup}
-          sageAuto={sageAuto}
           pipelines={pipelines}
+          contactMatch={contactMatches[popup.id]}
           onClose={() => setPopup(null)}
           onAction={(extra) => {
             if (popup) {
