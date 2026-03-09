@@ -1197,35 +1197,45 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                 : allTablets
 
               return (
-                <div className="flex flex-col gap-3 p-4 overflow-y-auto max-h-[700px]">
-                  {ordered.map(tablet => (
-                    <div
-                      key={tablet.key}
-                      className={`rounded-xl border overflow-hidden transition-all ${
-                        topType === tablet.key
-                          ? `${tablet.borderClass} ring-1 ring-inset ${tablet.borderClass}`
-                          : 'border-gray-100 dark:border-white/8'
-                      }`}
-                    >
-                      {/* Tablet header */}
+                <div className="flex flex-col gap-2 p-4 overflow-y-auto max-h-[700px]">
+                  {ordered.map(tablet => {
+                    const isActive   = topType === tablet.key
+                    const isCollapsed = topType !== null && !isActive
+                    return (
                       <div
-                        className={`px-4 py-2.5 flex items-center justify-between cursor-pointer ${tablet.bgClass}`}
-                        onClick={() => setTopType(topType === tablet.key ? null : tablet.key)}
+                        key={tablet.key}
+                        className={`rounded-xl border overflow-hidden transition-all duration-200 ${
+                          isActive
+                            ? `${tablet.borderClass} ring-1 ring-inset ${tablet.borderClass}`
+                            : 'border-gray-100 dark:border-white/8'
+                        }`}
                       >
-                        <div className={`flex items-center gap-2 text-xs font-semibold ${tablet.accentClass}`}>
-                          {tablet.icon}
-                          {tablet.label}
+                        {/* Tablet header */}
+                        <div
+                          className={`px-4 py-2.5 flex items-center justify-between cursor-pointer ${tablet.bgClass}`}
+                          onClick={() => setTopType(isActive ? null : tablet.key)}
+                        >
+                          <div className={`flex items-center gap-2 text-xs font-semibold ${tablet.accentClass}`}>
+                            {tablet.icon}
+                            {tablet.label}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${tablet.bgClass} ${tablet.accentClass}`}>
+                              {tablet.count}
+                            </span>
+                            <span className={`text-[10px] ${tablet.accentClass} transition-transform duration-200 ${isActive ? 'rotate-180' : ''}`}>▾</span>
+                          </div>
                         </div>
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${tablet.bgClass} ${tablet.accentClass}`}>
-                          {tablet.count}
-                        </span>
+                        {/* Tablet rows */}
+                        <div className={`overflow-y-auto transition-all duration-200 ${
+                          isActive    ? 'max-h-[520px]' :
+                          isCollapsed ? 'max-h-0'       : 'max-h-[200px]'
+                        }`}>
+                          {tablet.rows}
+                        </div>
                       </div>
-                      {/* Tablet rows — collapsed unless active or first */}
-                      <div className={`overflow-y-auto transition-all ${topType === tablet.key || topType === null ? 'max-h-[240px]' : 'max-h-[120px]'}`}>
-                        {tablet.rows}
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )
             })()
