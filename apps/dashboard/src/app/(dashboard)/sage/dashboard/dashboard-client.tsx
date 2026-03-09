@@ -141,7 +141,6 @@ function ItemPopup({
 
   // Reply compose state (email only)
   const [showReply, setShowReply]       = useState(false)
-  const [showInsights, setShowInsights] = useState(true)
   const [replyBody, setReplyBody]       = useState('')
   const [sending, setSending]           = useState(false)
   const [sendResult, setSendResult]     = useState<string | null>(null)
@@ -151,6 +150,13 @@ function ItemPopup({
     document.execCommand(cmd, false, undefined)
     replyRef.current?.focus()
   }
+
+  // Populate contentEditable with AI draft when reply opens
+  useEffect(() => {
+    if (showReply && replyRef.current && replyBody && !replyRef.current.innerText.trim()) {
+      replyRef.current.innerText = replyBody
+    }
+  }, [showReply])
 
   // Escape to close
   useEffect(() => {
@@ -239,9 +245,9 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
   const label   = { email: 'Email Summary', bot: 'Chat Summary', form: 'Lead Details', ticket: 'Ticket Summary' }[popup.kind]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/55 dark:bg-black/70"
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:px-6 sm:py-8 bg-black/55 dark:bg-black/70"
       onClick={onClose}>
-      <div className="relative w-full sm:max-w-2xl bg-white dark:bg-[#2a2a2a] rounded-t-2xl sm:rounded-2xl shadow-2xl border-t sm:border dark:border-white/12 max-h-[92vh] flex flex-col"
+      <div className="relative w-full sm:max-w-2xl bg-white dark:bg-[#2a2a2a] rounded-t-2xl sm:rounded-2xl shadow-2xl border-t sm:border dark:border-white/12 h-[96vh] sm:h-[calc(100vh-64px)] flex flex-col"
         onClick={e => e.stopPropagation()}>
 
         {/* Header */}
@@ -267,8 +273,8 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                 </Link>
               ) : (
                 <button
-                  onClick={() => { setShowInsights(false); setShowReply(true); }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#61c2ad] hover:bg-[#4fa898] text-white transition-colors"
+                  onClick={() => setShowReply(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white transition-colors"
                 >
                   <Reply className="w-3.5 h-3.5" />
                   Reply
@@ -386,43 +392,13 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                           suppressContentEditableWarning
                           onInput={() => setReplyBody(replyRef.current?.innerText ?? '')}
                           data-placeholder="Write your reply…"
-                          className="min-h-[180px] px-5 py-4 text-sm text-gray-800 dark:text-gray-200 leading-relaxed outline-none [&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-gray-400"
+                          className="min-h-[280px] px-5 py-4 text-sm text-gray-800 dark:text-gray-200 leading-relaxed outline-none [&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-gray-400"
                           style={{ fontFamily: 'Georgia, "Times New Roman", serif', textAlign: 'justify' }}
                         />
                       </div>
                     )}
 
-                    {/* Key Insights — collapsible, collapsed by default when reply is open */}
-                    {(e.ai_insights ?? []).length > 0 && (
-                      <div className="bg-gray-50 dark:bg-white/[0.07] border border-gray-100 dark:border-white/10 rounded-xl overflow-hidden">
-                        <button
-                          onClick={() => setShowInsights(v => !v)}
-                          className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-100 dark:hover:bg-white/6 transition-colors"
-                        >
-                          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Key Insights</p>
-                          <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${showInsights ? 'rotate-180' : ''}`} />
-                        </button>
-                        {showInsights && (
-                          <div className="px-4 pb-4">
-                            <ul className="space-y-2">
-                              {(e.ai_insights ?? []).map((ins, i) => (
-                                <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-[#61c2ad] mt-2 shrink-0" />{ins}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    )}
 
-                    {/* Entity chips */}
-                    {e.ai_entities && Object.values(e.ai_entities).some(Boolean) && (
-                      <div className="flex flex-wrap gap-2">
-                        {e.ai_entities.name    && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><User className="w-3 h-3 text-gray-400" />{e.ai_entities.name}</span>}
-                        {e.ai_entities.company && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Building2 className="w-3 h-3 text-gray-400" />{e.ai_entities.company}</span>}
-                      </div>
-                    )}
                   </>
                 )
               })()}
@@ -451,18 +427,6 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                           <p className="text-[11px] text-purple-700 dark:text-purple-300 font-bold uppercase tracking-wide">AI Summary</p>
                         </div>
                         <p className="text-sm text-gray-800 dark:text-gray-100 leading-relaxed">{c.ai_summary}</p>
-                      </div>
-                    )}
-                    {(c.ai_insights ?? []).length > 0 && (
-                      <div className="bg-gray-50 dark:bg-white/[0.07] border border-gray-100 dark:border-white/10 rounded-xl p-4">
-                        <p className="text-[11px] font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wide mb-2.5">Key Insights</p>
-                        <ul className="space-y-2">
-                          {(c.ai_insights ?? []).map((ins, i) => (
-                            <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
-                              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-2 shrink-0" />{ins}
-                            </li>
-                          ))}
-                        </ul>
                       </div>
                     )}
                     {c.ai_entities && (Object.values(c.ai_entities) as (string | string[] | undefined)[]).some(Boolean) && (
@@ -589,7 +553,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                       <button
                         onClick={handleSendReply}
                         disabled={sending || !replyBody.trim()}
-                        className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#61c2ad] hover:bg-[#4fa898] text-white rounded-xl transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50"
                       >
                         {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                         {sending ? 'Sending…' : 'Send'}
@@ -638,7 +602,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                           if (t.contact) createLead(t.contact.name, t.contact.email)
                         }
                       }}
-                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#61c2ad] hover:bg-[#4fa898] text-white rounded-xl transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50"
                     >
                       {actionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
                       Create Lead
@@ -870,7 +834,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
           </p>
           <div className="flex flex-wrap gap-2">
             {[
-              { href: '/sage/contacts',  label: 'Add Contact', Icon: Plus,           cls: 'bg-[#61c2ad] hover:bg-[#4fa898] text-white shadow-sm' },
+              { href: '/sage/contacts',  label: 'Add Contact', Icon: Plus,           cls: 'bg-[#2a7d6e] hover:bg-[#1f6157] text-white shadow-sm' },
               { href: '/sage/emails',    label: 'Inbox',       Icon: Mail,           cls: 'bg-white dark:bg-white/8 hover:bg-gray-50 dark:hover:bg-white/12 border dark:border-white/10 text-gray-700 dark:text-gray-300' },
               { href: '/conversations',  label: 'Bot Conv.',   Icon: MessageSquare,  cls: 'bg-white dark:bg-white/8 hover:bg-gray-50 dark:hover:bg-white/12 border dark:border-white/10 text-gray-700 dark:text-gray-300' },
               { href: '/forms/leads',    label: 'Forms',       Icon: FileText,       cls: 'bg-white dark:bg-white/8 hover:bg-gray-50 dark:hover:bg-white/12 border dark:border-white/10 text-gray-700 dark:text-gray-300' },
