@@ -9,7 +9,7 @@ import {
   Plus, Kanban, CheckSquare, Zap, RefreshCw, Calendar,
   ChevronDown, X, ExternalLink, CheckCircle2, User,
   Phone, Building2, Sparkles, LayoutList, LayoutGrid,
-  Send, Reply, Loader2,
+  Send, Reply, Loader2, ArrowLeft,
   Bold, Italic, Underline, Strikethrough,
   AlignLeft, AlignJustify, List, ListOrdered, Paperclip,
   Palette, Highlighter, FileSignature, Type,
@@ -425,7 +425,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
         </div>
 
         {/* Body */}
-        <div className={`${popup.kind === 'email' && showReply ? 'overflow-hidden' : 'overflow-y-auto'} flex-1 px-6 py-5 flex flex-col gap-4`}>
+        <div className={`${popup.kind === 'email' ? 'overflow-hidden' : 'overflow-y-auto'} flex-1 px-6 py-5 flex flex-col gap-4`}>
           {loading ? (
             <div className="flex items-center justify-center py-16">
               <RefreshCw className="w-5 h-5 text-gray-300 animate-spin" />
@@ -438,7 +438,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
               {popup.kind === 'email' && (() => {
                 const e = data as SageEmail
                 return (
-                  <div className={showReply ? 'flex-1 flex flex-col gap-4 min-h-0' : 'flex flex-col gap-4'}>
+                  <div className="flex-1 flex flex-col gap-4 min-h-0">
                     {/* From / Subject row */}
                     <div className="flex items-start gap-4">
                       <div className="w-9 h-9 rounded-full bg-blue-200 dark:bg-blue-500/30 flex items-center justify-center shrink-0 text-xs font-bold text-blue-700 dark:text-blue-300">
@@ -502,11 +502,11 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
 
                     {/* Full email body */}
                     {!showReply && e.body_text && (
-                      <div className="border dark:border-white/10 rounded-xl overflow-hidden">
-                        <div className="px-4 py-2.5 border-b dark:border-white/8 bg-gray-50 dark:bg-white/[0.03]">
+                      <div className="border dark:border-white/10 rounded-xl overflow-hidden flex-1 flex flex-col min-h-0">
+                        <div className="px-4 py-2.5 border-b dark:border-white/8 bg-gray-50 dark:bg-white/[0.03] shrink-0">
                           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Email</p>
                         </div>
-                        <div className="px-4 py-4 max-h-72 overflow-y-auto">
+                        <div className="px-4 py-4 flex-1 overflow-y-auto">
                           <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{e.body_text}</p>
                         </div>
                       </div>
@@ -530,8 +530,8 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                               BCC
                             </button>
                           </div>
-                          <button onClick={() => setShowReply(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors shrink-0">
-                            <X className="w-3.5 h-3.5" />
+                          <button onClick={() => setShowReply(false)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors shrink-0">
+                            <ArrowLeft className="w-3.5 h-3.5" /> Back
                           </button>
                         </div>
                         {/* CC row */}
@@ -1304,7 +1304,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
           <div className="flex flex-wrap gap-3">
             {[
               { label: 'Emails',    Icon: Mail,          iconCls: 'text-blue-500',   total: visEmails.length,  href: '/dashboard/email'   },
-              { label: 'Bot Chats', Icon: MessageSquare, iconCls: 'text-purple-500', total: visBots.length,    href: '/conversations'     },
+              { label: 'Bot Chats', Icon: MessageSquare, iconCls: 'text-purple-500', total: visBots.length,    href: '/dashboard/bots'    },
               { label: 'Forms',     Icon: FileText,      iconCls: 'text-green-500',  total: visForms.length,   href: '/dashboard/forms'   },
               { label: 'Tickets',   Icon: TicketIcon,    iconCls: 'text-amber-500',  total: visTickets.length, href: '/dashboard/tickets' },
             ].map(card => (
@@ -1321,7 +1321,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             {[
               { label: 'Emails',    sub: 'high & medium unread',  Icon: Mail,          iconCls: 'text-blue-500',   segs: emailSegs,  total: visEmails.length,  href: '/dashboard/email'   },
-              { label: 'Bot Chats', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-500', segs: botSegs,    total: visBots.length,    href: '/conversations'     },
+              { label: 'Bot Chats', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-500', segs: botSegs,    total: visBots.length,    href: '/dashboard/bots'    },
               { label: 'Forms',     sub: 'all submissions',       Icon: FileText,      iconCls: 'text-green-500',  segs: formSegs,   total: visForms.length,   href: '/dashboard/forms'   },
               { label: 'Tickets',   sub: 'all tickets',           Icon: TicketIcon,    iconCls: 'text-amber-500',  segs: ticketSegs, total: visTickets.length, href: '/dashboard/tickets' },
             ].map(card => (

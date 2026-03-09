@@ -42,7 +42,7 @@ export default async function ConversationDetailPage({
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <a href="/conversations" className="text-xs text-gray-400 hover:text-brand-600 mb-1 block">
+          <a href="/dashboard/bots" className="text-xs text-gray-400 hover:text-brand-600 mb-1 block">
             ← Conversations
           </a>
           <RenameConversationTitle id={id} title={conversation.title} />

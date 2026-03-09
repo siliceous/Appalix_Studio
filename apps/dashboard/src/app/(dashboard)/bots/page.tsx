@@ -182,7 +182,7 @@ export default async function BotsPage() {
         <div className="xl:col-span-2 bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8">
           <div className="px-5 py-4 border-b dark:border-white/8 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Recent Conversations</h2>
-            <a href="/conversations" className="text-xs text-brand-600 dark:text-[#61c2ad] hover:underline">View all</a>
+            <a href="/dashboard/bots" className="text-xs text-brand-600 dark:text-[#61c2ad] hover:underline">View all</a>
           </div>
           <div className="divide-y dark:divide-white/5">
             {recentConversations?.length === 0 && (

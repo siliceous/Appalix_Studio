@@ -13,7 +13,7 @@ export function DeleteConversationButton({ id }: { id: string }) {
     if (!window.confirm('Delete this conversation? This cannot be undone.')) return
     startTransition(async () => {
       await deleteConversation(id)
-      router.push('/conversations')
+      router.push('/dashboard/bots')
     })
   }
 

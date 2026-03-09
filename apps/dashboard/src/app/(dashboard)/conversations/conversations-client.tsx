@@ -49,7 +49,7 @@ export function ConversationsClient({ conversations, bots, filters }: Props) {
     const next = { ...filters, ...patch }
     // Preserve preset/from/to from toolbar — only clear the conversation-specific filters
     Object.keys(next).forEach(k => { if (!next[k as keyof ConvFilters]) delete next[k as keyof ConvFilters] })
-    router.push(buildUrl('/conversations', next))
+    router.push(buildUrl('/dashboard/bots', next))
   }, [filters, router])
 
   function handleRename(id: string, currentTitle: string | null) {
