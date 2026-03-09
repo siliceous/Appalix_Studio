@@ -12,6 +12,7 @@ import {
   Send, Reply, Loader2,
   Bold, Italic, Underline, Strikethrough,
   AlignLeft, AlignJustify, List, ListOrdered, Paperclip,
+  Palette, Highlighter, FileSignature, Type,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import { sendEmail } from '@/app/actions/sage-emails'
@@ -148,11 +149,58 @@ function ItemPopup({
   const [showBcc, setShowBcc]           = useState(false)
   const [ccValue, setCcValue]           = useState('')
   const [bccValue, setBccValue]         = useState('')
-  const replyRef = useRef<HTMLDivElement>(null)
+  const replyRef    = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([])
+  const [fontOpen,  setFontOpen]  = useState(false)
+  const [colorOpen, setColorOpen] = useState(false)
+  const [hlOpen,    setHlOpen]    = useState(false)
 
-  function execFormat(cmd: string) {
-    document.execCommand(cmd, false, undefined)
+  const FONTS = [
+    { label: 'Georgia',          execName: 'Georgia' },
+    { label: 'Arial',            execName: 'Arial' },
+    { label: 'Times New Roman',  execName: 'Times New Roman' },
+    { label: 'Courier New',      execName: 'Courier New' },
+    { label: 'Trebuchet MS',     execName: 'Trebuchet MS' },
+    { label: 'Verdana',          execName: 'Verdana' },
+  ]
+  const TEXT_COLORS      = ['#111827','#6b7280','#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899']
+  const HIGHLIGHT_COLORS = ['#fef08a','#bbf7d0','#bfdbfe','#fce7f3','#fed7aa','#e0e7ff','transparent']
+
+  function execFormat(cmd: string, val?: string) {
     replyRef.current?.focus()
+    document.execCommand(cmd, false, val)
+  }
+
+  function applyFont(name: string) {
+    replyRef.current?.focus()
+    document.execCommand('fontName', false, name)
+    setFontOpen(false)
+  }
+
+  function applyColor(color: string) {
+    replyRef.current?.focus()
+    document.execCommand('foreColor', false, color)
+    setColorOpen(false)
+  }
+
+  function applyHighlight(color: string) {
+    replyRef.current?.focus()
+    document.execCommand('hiliteColor', false, color === 'transparent' ? 'transparent' : color)
+    setHlOpen(false)
+  }
+
+  function insertSignature() {
+    if (!replyRef.current) return
+    replyRef.current.focus()
+    const sig = '\n\n— \nBest regards'
+    document.execCommand('insertText', false, sig)
+  }
+
+  function handleFileChange(ev: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(ev.target.files ?? [])
+    if (files.length) setAttachedFiles(prev => [...prev, ...files])
+    ev.target.value = ''
   }
 
   // Populate contentEditable with AI draft when reply opens
@@ -335,6 +383,20 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                       </div>
                     )}
 
+                    {/* Key Insights — visible only when reply compose is NOT open */}
+                    {!showReply && (e.ai_insights ?? []).length > 0 && (
+                      <div className="bg-gray-50 dark:bg-white/[0.07] border border-gray-100 dark:border-white/10 rounded-xl p-4">
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2.5">Key Insights</p>
+                        <ul className="space-y-2">
+                          {(e.ai_insights ?? []).map((ins: string, i: number) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-2 shrink-0" />{ins}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
                     {/* Inline Reply compose — sits right after AI Summary */}
                     {showReply && (
                       <div className="rounded-2xl border dark:border-white/10 overflow-hidden bg-white dark:bg-[#1e1e1e]">
@@ -384,46 +446,141 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                           </div>
                         )}
                         {/* Formatting toolbar */}
-                        <div className="flex items-center gap-0.5 px-3 py-1.5 border-b dark:border-white/8 bg-gray-50 dark:bg-white/[0.03]">
-                          {([
-                            { cmd: 'bold',            Icon: Bold,         title: 'Bold' },
-                            { cmd: 'italic',          Icon: Italic,       title: 'Italic' },
-                            { cmd: 'underline',       Icon: Underline,    title: 'Underline' },
-                            { cmd: 'strikeThrough',   Icon: Strikethrough,title: 'Strikethrough' },
-                          ] as const).map(({ cmd, Icon, title }) => (
-                            <button key={cmd} title={title} onMouseDown={ev => { ev.preventDefault(); execFormat(cmd) }}
-                              className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                              <Icon className="w-3.5 h-3.5" />
+                        <div className="border-b dark:border-white/8 bg-gray-50 dark:bg-white/[0.03]">
+                          {/* ── Main toolbar row ── */}
+                          <div className="flex items-center flex-wrap gap-0.5 px-3 py-1.5">
+
+                            {/* Font picker toggle */}
+                            <button title="Font" onMouseDown={ev => { ev.preventDefault(); setFontOpen(v => !v); setColorOpen(false); setHlOpen(false) }}
+                              className={`flex items-center gap-1 px-1.5 py-1 rounded text-[11px] font-medium transition-colors ${fontOpen ? 'bg-gray-200 dark:bg-white/15 text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}>
+                              <Type className="w-3.5 h-3.5" />
+                              <span>Font</span>
+                              <ChevronDown className="w-3 h-3" />
                             </button>
-                          ))}
-                          <div className="w-px h-4 bg-gray-200 dark:bg-white/10 mx-1" />
-                          {([
-                            { cmd: 'insertUnorderedList', Icon: List,        title: 'Bullet list' },
-                            { cmd: 'insertOrderedList',   Icon: ListOrdered, title: 'Numbered list' },
-                          ] as const).map(({ cmd, Icon, title }) => (
-                            <button key={cmd} title={title} onMouseDown={ev => { ev.preventDefault(); execFormat(cmd) }}
-                              className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                              <Icon className="w-3.5 h-3.5" />
+
+                            <div className="w-px h-4 bg-gray-200 dark:bg-white/10 mx-0.5" />
+
+                            {/* Bold / Italic / Underline / Strikethrough */}
+                            {([
+                              { cmd: 'bold',          Icon: Bold,          title: 'Bold' },
+                              { cmd: 'italic',        Icon: Italic,        title: 'Italic' },
+                              { cmd: 'underline',     Icon: Underline,     title: 'Underline' },
+                              { cmd: 'strikeThrough', Icon: Strikethrough, title: 'Strikethrough' },
+                            ] as const).map(({ cmd, Icon, title }) => (
+                              <button key={cmd} title={title} onMouseDown={ev => { ev.preventDefault(); execFormat(cmd) }}
+                                className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                                <Icon className="w-3.5 h-3.5" />
+                              </button>
+                            ))}
+
+                            <div className="w-px h-4 bg-gray-200 dark:bg-white/10 mx-0.5" />
+
+                            {/* Text color toggle */}
+                            <button title="Text color" onMouseDown={ev => { ev.preventDefault(); setColorOpen(v => !v); setFontOpen(false); setHlOpen(false) }}
+                              className={`p-1.5 rounded transition-colors ${colorOpen ? 'bg-gray-200 dark:bg-white/15 text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}>
+                              <Palette className="w-3.5 h-3.5" />
                             </button>
-                          ))}
-                          <div className="w-px h-4 bg-gray-200 dark:bg-white/10 mx-1" />
-                          {([
-                            { cmd: 'justifyLeft', Icon: AlignLeft,    title: 'Align left' },
-                            { cmd: 'justifyFull', Icon: AlignJustify, title: 'Justify' },
-                          ] as const).map(({ cmd, Icon, title }) => (
-                            <button key={cmd} title={title} onMouseDown={ev => { ev.preventDefault(); execFormat(cmd) }}
-                              className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                              <Icon className="w-3.5 h-3.5" />
+
+                            {/* Highlight toggle */}
+                            <button title="Highlight" onMouseDown={ev => { ev.preventDefault(); setHlOpen(v => !v); setFontOpen(false); setColorOpen(false) }}
+                              className={`p-1.5 rounded transition-colors ${hlOpen ? 'bg-gray-200 dark:bg-white/15 text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}>
+                              <Highlighter className="w-3.5 h-3.5" />
                             </button>
-                          ))}
-                          <div className="w-px h-4 bg-gray-200 dark:bg-white/10 mx-1" />
-                          <button title="Attach file" className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                            <Paperclip className="w-3.5 h-3.5" />
-                          </button>
-                          <button title="Schedule meeting" className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                            <Calendar className="w-3.5 h-3.5" />
-                          </button>
+
+                            <div className="w-px h-4 bg-gray-200 dark:bg-white/10 mx-0.5" />
+
+                            {/* Lists */}
+                            <button title="Bullet list" onMouseDown={ev => { ev.preventDefault(); execFormat('insertUnorderedList') }}
+                              className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                              <List className="w-3.5 h-3.5" />
+                            </button>
+                            <button title="Numbered list" onMouseDown={ev => { ev.preventDefault(); execFormat('insertOrderedList') }}
+                              className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                              <ListOrdered className="w-3.5 h-3.5" />
+                            </button>
+
+                            <div className="w-px h-4 bg-gray-200 dark:bg-white/10 mx-0.5" />
+
+                            {/* Alignment */}
+                            <button title="Align left" onMouseDown={ev => { ev.preventDefault(); execFormat('justifyLeft') }}
+                              className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                              <AlignLeft className="w-3.5 h-3.5" />
+                            </button>
+                            <button title="Justify" onMouseDown={ev => { ev.preventDefault(); execFormat('justifyFull') }}
+                              className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                              <AlignJustify className="w-3.5 h-3.5" />
+                            </button>
+
+                            <div className="w-px h-4 bg-gray-200 dark:bg-white/10 mx-0.5" />
+
+                            {/* Signature */}
+                            <button title="Insert signature" onMouseDown={ev => { ev.preventDefault(); insertSignature() }}
+                              className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                              <FileSignature className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Attach */}
+                            <button title="Attach file" onMouseDown={ev => { ev.preventDefault(); fileInputRef.current?.click() }}
+                              className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                              <Paperclip className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Calendar */}
+                            <button title="Schedule meeting" onMouseDown={ev => { ev.preventDefault(); window.open('https://calendar.google.com/calendar/r/eventedit', '_blank') }}
+                              className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                              <Calendar className="w-3.5 h-3.5" />
+                            </button>
+
+                          </div>
+
+                          {/* ── Font picker panel ── */}
+                          {fontOpen && (
+                            <div className="px-3 py-2 border-t dark:border-white/8 flex flex-wrap gap-1">
+                              {FONTS.map(f => (
+                                <button key={f.execName} onMouseDown={ev => { ev.preventDefault(); applyFont(f.execName) }}
+                                  className="px-2.5 py-1 text-xs rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                                  style={{ fontFamily: f.execName }}>
+                                  {f.label}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* ── Text color panel ── */}
+                          {colorOpen && (
+                            <div className="px-3 py-2 border-t dark:border-white/8">
+                              <p className="text-[10px] text-gray-400 mb-1.5 uppercase tracking-wide font-semibold">Text color</p>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {TEXT_COLORS.map(c => (
+                                  <button key={c} onMouseDown={ev => { ev.preventDefault(); applyColor(c) }}
+                                    className="w-5 h-5 rounded-full border-2 border-white dark:border-[#1e1e1e] shadow-sm hover:scale-110 transition-transform"
+                                    style={{ background: c }} />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* ── Highlight panel ── */}
+                          {hlOpen && (
+                            <div className="px-3 py-2 border-t dark:border-white/8">
+                              <p className="text-[10px] text-gray-400 mb-1.5 uppercase tracking-wide font-semibold">Highlight color</p>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {HIGHLIGHT_COLORS.map(c => (
+                                  <button key={c} onMouseDown={ev => { ev.preventDefault(); applyHighlight(c) }}
+                                    className="w-5 h-5 rounded-full border-2 border-gray-200 dark:border-white/20 hover:scale-110 transition-transform"
+                                    style={{ background: c === 'transparent' ? 'transparent' : c }}
+                                    title={c === 'transparent' ? 'Remove highlight' : c}>
+                                    {c === 'transparent' && <X className="w-3 h-3 text-gray-400 m-auto" />}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
+
+                        {/* Hidden file input */}
+                        <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileChange} />
+
                         {/* Editable body */}
                         <div
                           ref={replyRef}
@@ -432,8 +589,24 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                           onInput={() => setReplyBody(replyRef.current?.innerText ?? '')}
                           data-placeholder="Write your reply…"
                           className="min-h-[280px] px-5 py-4 text-sm text-gray-800 dark:text-gray-200 leading-relaxed outline-none [&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-gray-400"
-                          style={{ fontFamily: 'Georgia, "Times New Roman", serif', textAlign: 'justify' }}
+                          style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
                         />
+
+                        {/* Attached files */}
+                        {attachedFiles.length > 0 && (
+                          <div className="px-4 py-2 border-t dark:border-white/8 flex flex-wrap gap-2">
+                            {attachedFiles.map((f, i) => (
+                              <div key={i} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-white/8 text-xs text-gray-600 dark:text-gray-300">
+                                <Paperclip className="w-3 h-3 text-gray-400" />
+                                <span className="max-w-[140px] truncate">{f.name}</span>
+                                <button onMouseDown={ev => { ev.preventDefault(); setAttachedFiles(prev => prev.filter((_, j) => j !== i)) }}
+                                  className="text-gray-400 hover:text-red-500 transition-colors ml-0.5">
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
 
