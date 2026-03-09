@@ -21,6 +21,36 @@ import { getWorkspacePipelines, dashboardAddLead, dashboardAddTicket, batchMatch
 import type { ContactMatch } from '@/app/actions/sage-triage'
 import type { SageEmail, Conversation, Lead, SageTicket } from '@/lib/types'
 
+// ── Email body renderer — converts > quoted lines to styled blocks ────────────
+function renderEmailBody(text: string) {
+  const lines = text.split('\n')
+  const out: React.ReactNode[] = []
+  let quoteBuffer: string[] = []
+  let key = 0
+
+  const flushQuote = () => {
+    if (quoteBuffer.length === 0) return
+    out.push(
+      <blockquote key={key++} className="border-l-2 border-gray-300 dark:border-white/20 pl-3 my-1 text-gray-400 dark:text-gray-500 italic text-xs leading-relaxed">
+        {quoteBuffer.map((l, i) => <span key={i} className="block">{l}</span>)}
+      </blockquote>
+    )
+    quoteBuffer = []
+  }
+
+  for (const raw of lines) {
+    const stripped = raw.replace(/^>+\s?/, '')
+    if (raw.trimStart().startsWith('>')) {
+      quoteBuffer.push(stripped)
+    } else {
+      flushQuote()
+      out.push(<span key={key++} className="block leading-relaxed">{raw || '\u00A0'}</span>)
+    }
+  }
+  flushQuote()
+  return out
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 type DatePreset = 'today' | 'yesterday' | '7d' | '30d' | 'custom'
 
@@ -538,7 +568,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Email</p>
                         </div>
                         <div className="px-4 py-4 flex-1 overflow-y-auto">
-                          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{e.body_text}</p>
+                          <div className="text-sm text-gray-700 dark:text-gray-300">{renderEmailBody(e.body_text)}</div>
                         </div>
                       </div>
                     )}
