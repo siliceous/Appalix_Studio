@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import { sendEmail, scheduleMeetingFromEmail, getEmailSignature } from '@/app/actions/sage-emails'
-import { updateAutoSetting, dismissFeedItem } from '@/app/actions/sage-auto-settings'
+import { updateAutoSetting, dismissFeedItem, runAutoBackfill } from '@/app/actions/sage-auto-settings'
 import { getWorkspacePipelines, dashboardAddLead, dashboardAddTicket, batchMatchContacts } from '@/app/actions/sage-triage'
 import type { ContactMatch } from '@/app/actions/sage-triage'
 import type { SageEmail, Conversation, Lead, SageTicket } from '@/lib/types'
@@ -1113,7 +1113,9 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
     const h = new Date().getHours()
     return h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening'
   }, [])
-  const [sageAuto,   setSageAuto]   = useState(true)
+  const [sageAuto,      setSageAuto]      = useState(true)
+  const [backfilling,   setBackfilling]   = useState(false)
+  const [backfillDone,  setBackfillDone]  = useState<number | null>(null)
   const [loading,    setLoading]    = useState(true)
   const [emails,     setEmails]     = useState<RawEmail[]>([])
   const [bots,       setBots]       = useState<RawBot[]>([])
@@ -1160,6 +1162,15 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
     setDateRange(v)
     if (v !== 'custom') localStorage.setItem('sage-range', v)
   }
+  const handleBackfill = async () => {
+    setBackfilling(true)
+    setBackfillDone(null)
+    const result = await runAutoBackfill()
+    setBackfilling(false)
+    setBackfillDone(result.applied ?? 0)
+    setTimeout(() => setBackfillDone(null), 6000)
+  }
+
   const toggleSageAuto = async () => {
     const next = !sageAuto
     setSageAuto(next)
@@ -1368,11 +1379,22 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                 {sageAuto ? 'ON' : 'OFF'}
               </span>
             </div>
-            <p className={`text-[11px] leading-relaxed px-1 max-w-[220px] whitespace-nowrap overflow-hidden text-ellipsis transition-opacity duration-500 ${showAutoDesc ? 'opacity-100' : 'opacity-0 pointer-events-none'} ${sageAuto ? 'text-[#61c2ad]' : 'text-gray-400 dark:text-gray-500'}`}>
-              {sageAuto
-                ? 'Full automation ON — AI creates contacts & deals automatically.'
-                : 'Assist mode — AI analyses only. You act manually in the dashboard.'}
-            </p>
+            <div className="flex items-center gap-2 px-1">
+              <p className={`text-[11px] leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis transition-opacity duration-500 ${showAutoDesc ? 'opacity-100' : 'opacity-0 pointer-events-none'} ${sageAuto ? 'text-[#61c2ad]' : 'text-gray-400 dark:text-gray-500'}`}>
+                {sageAuto
+                  ? 'Full automation ON — AI creates contacts & deals automatically.'
+                  : 'Assist mode — AI analyses only. You act manually in the dashboard.'}
+              </p>
+              <button
+                onClick={handleBackfill}
+                disabled={backfilling}
+                title="Process existing emails, bots & forms that were analysed before Sage Auto was enabled"
+                className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg border border-gray-200 dark:border-white/10 text-gray-400 hover:text-[#3a9e8a] hover:border-[#61c2ad]/40 transition-colors disabled:opacity-50 whitespace-nowrap shrink-0"
+              >
+                {backfilling ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                {backfillDone !== null ? `${backfillDone} processed` : 'Process existing'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

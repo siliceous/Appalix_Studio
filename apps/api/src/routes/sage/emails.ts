@@ -8,14 +8,15 @@
  */
 import type { FastifyInstance } from 'fastify'
 import { config }              from '../../config.js'
-import { syncEmailsForWorkspace, reanalyzePendingEmails } from '../../services/sage-email-sync.js'
+import { syncEmailsForWorkspace, reanalyzePendingEmails, backfillAutoActions } from '../../services/sage-email-sync.js'
 import { sendEmailSMTP }          from '../../services/sage-email-smtp.js'
 import { callClaude }             from '../../services/ai/claude.js'
 
 interface EmailAttachment { filename: string; contentType: string; dataBase64: string }
 
-interface SyncBody      { workspace_id: string; limit?: number }
-interface ReanalyzeBody { workspace_id: string; batch_size?: number; email_ids?: string[] }
+interface SyncBody        { workspace_id: string; limit?: number }
+interface ReanalyzeBody   { workspace_id: string; batch_size?: number; email_ids?: string[] }
+interface BackfillAutoBody { workspace_id: string; batch_size?: number }
 interface SendBody      { workspace_id: string; to: string; cc?: string; bcc?: string; subject: string; body: string; reply_to_email_id?: string; attachments?: EmailAttachment[] }
 interface RewriteBody   { workspace_id: string; body: string; instruction?: string }
 
@@ -60,6 +61,25 @@ export async function sageEmailRoutes(fastify: FastifyInstance) {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Reanalysis failed'
       fastify.log.error({ err, workspace_id }, 'Email reanalysis failed')
+      return reply.status(500).send({ error: message })
+    }
+  })
+
+  /**
+   * POST /sage/emails/backfill-auto
+   * Runs Sage Auto execute on already-analyzed emails (ai_action = create_lead/create_ticket).
+   * Safe to re-run — dedup guards in executeAutoAction prevent duplicate contacts/deals.
+   */
+  fastify.post<{ Body: BackfillAutoBody }>('/backfill-auto', async (request, reply) => {
+    if (!authCheck(request)) return reply.status(401).send({ error: 'Unauthorised' })
+    const { workspace_id, batch_size } = request.body
+    if (!workspace_id) return reply.status(400).send({ error: 'workspace_id is required' })
+    try {
+      const applied = await backfillAutoActions(workspace_id, batch_size ?? 200)
+      return reply.send({ ok: true, applied })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Backfill failed'
+      fastify.log.error({ err, workspace_id }, 'Sage Auto backfill failed')
       return reply.status(500).send({ error: message })
     }
   })

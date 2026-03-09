@@ -2,6 +2,9 @@
 
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 
+const API_BASE    = process.env.API_BASE_URL
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+
 export interface AutoSettings {
   global_auto_enabled:  boolean
   email_auto_enabled:   boolean
@@ -61,6 +64,24 @@ export async function updateAutoSetting(
       { workspace_id: workspaceId, [field]: value, updated_at: new Date().toISOString() },
       { onConflict: 'workspace_id' },
     )
+}
+
+export async function runAutoBackfill(): Promise<{ ok: boolean; applied?: number; error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { ok: false, error: 'Not authenticated' }
+  if (!API_BASE || !SERVICE_KEY) return { ok: false, error: 'API not configured' }
+
+  try {
+    const res = await fetch(`${API_BASE}/sage/emails/backfill-auto`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'x-service-key': SERVICE_KEY },
+      body:    JSON.stringify({ workspace_id: workspaceId }),
+    })
+    const json = await res.json() as { ok: boolean; applied?: number; error?: string }
+    return json
+  } catch {
+    return { ok: false, error: 'Request failed' }
+  }
 }
 
 export async function dismissFeedItem(

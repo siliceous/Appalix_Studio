@@ -1175,3 +1175,51 @@ export async function reanalyzePendingEmails(workspaceId: string, batchSize = 50
 
   return reanalyzed
 }
+
+// ---------------------------------------------------------------------------
+// Backfill auto-actions for already-analyzed emails
+// ---------------------------------------------------------------------------
+// Run this once after deploying Sage Auto wiring to process emails that were
+// analyzed before auto-execute existed.  Safe to re-run — executeAutoAction
+// has full dedup guards (won't create duplicate contacts or deals).
+
+export async function backfillAutoActions(workspaceId: string, batchSize = 200): Promise<number> {
+  const { data: emails } = await supabase
+    .from('sage_emails')
+    .select('id, from_name, from_address, ai_action, ai_entities, ai_summary, ai_priority')
+    .eq('workspace_id', workspaceId)
+    .eq('direction', 'inbound')
+    .in('ai_action', ['create_lead', 'create_ticket'])
+    .not('ai_analyzed_at', 'is', null)
+    .limit(batchSize)
+
+  if (!emails || emails.length === 0) return 0
+
+  const settings = await getWorkspaceAutoSettings(workspaceId)
+  if (!isFullAutomation(settings, 'email')) return 0
+
+  let applied = 0
+  for (const email of emails as { id: string; from_name: string | null; from_address: string; ai_action: string; ai_entities: Record<string, unknown> | null; ai_summary: string | null; ai_priority: string | null }[]) {
+    const mappedAction: 'create_lead' | 'create_ticket' =
+      email.ai_action === 'create_ticket' ? 'create_ticket' : 'create_lead'
+    try {
+      await executeAutoAction({
+        workspaceId,
+        channel:     'email',
+        action:      mappedAction,
+        sourceId:    email.id,
+        entities:    (email.ai_entities ?? {}) as Record<string, string>,
+        senderName:  email.from_name ?? null,
+        senderEmail: email.from_address ?? null,
+        summary:     email.ai_summary ?? null,
+        priority:    email.ai_priority ?? null,
+      })
+      applied++
+    } catch (err) {
+      console.error(`[backfill-auto] failed for email ${email.id}:`, (err as Error).message)
+    }
+  }
+
+  console.log(`[backfill-auto] applied=${applied} workspace=${workspaceId}`)
+  return applied
+}
