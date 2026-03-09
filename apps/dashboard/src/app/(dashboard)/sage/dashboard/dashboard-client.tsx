@@ -340,7 +340,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
+        <div className="overflow-y-auto flex-1 px-6 py-5 flex flex-col gap-4">
           {loading ? (
             <div className="flex items-center justify-center py-16">
               <RefreshCw className="w-5 h-5 text-gray-300 animate-spin" />
@@ -353,7 +353,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
               {popup.kind === 'email' && (() => {
                 const e = data as SageEmail
                 return (
-                  <>
+                  <div className={showReply ? 'flex-1 flex flex-col gap-4 min-h-0' : 'flex flex-col gap-4'}>
                     {/* From / Subject row */}
                     <div className="flex items-start gap-4">
                       <div className="w-9 h-9 rounded-full bg-blue-200 dark:bg-blue-500/30 flex items-center justify-center shrink-0 text-xs font-bold text-blue-700 dark:text-blue-300">
@@ -399,7 +399,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
 
                     {/* Inline Reply compose — sits right after AI Summary */}
                     {showReply && (
-                      <div className="rounded-2xl border dark:border-white/10 overflow-hidden bg-white dark:bg-[#1e1e1e]">
+                      <div className="rounded-2xl border dark:border-white/10 overflow-hidden bg-white dark:bg-[#1e1e1e] flex-1 flex flex-col min-h-0">
                         {/* Compose header — To row */}
                         <div className="flex items-center gap-2 px-4 py-2.5 border-b dark:border-white/8 bg-gray-50 dark:bg-white/5">
                           <Reply className="w-3.5 h-3.5 text-[#61c2ad] shrink-0" />
@@ -588,7 +588,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                           suppressContentEditableWarning
                           onInput={() => setReplyBody(replyRef.current?.innerText ?? '')}
                           data-placeholder="Write your reply…"
-                          className="min-h-[280px] px-5 py-4 text-sm text-gray-800 dark:text-gray-200 leading-relaxed outline-none [&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-gray-400"
+                          className="flex-1 min-h-[160px] px-5 py-4 text-sm text-gray-800 dark:text-gray-200 leading-relaxed outline-none [&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-gray-400"
                           style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
                         />
 
@@ -611,7 +611,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                     )}
 
 
-                  </>
+                  </div>
                 )
               })()}
 
