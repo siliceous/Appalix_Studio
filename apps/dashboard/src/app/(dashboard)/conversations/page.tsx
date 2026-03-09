@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect }     from 'next/navigation'
 import type { Metadata } from 'next'
 import { ConversationsClient } from './conversations-client'
+import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 
 export const metadata: Metadata = { title: 'Conversations' }
 
@@ -79,11 +80,13 @@ export default async function ConversationsPage({
   if (!membership) redirect('/login')
   const workspaceId = membership.workspace_id
 
-  // Fetch bots for filter dropdown
-  const { data: botsData } = await supabase
-    .from('bots').select('id, name').eq('workspace_id', workspaceId)
-    .order('name', { ascending: true })
+  // Fetch bots for filter dropdown + sage auto setting
+  const [{ data: botsData }, autoSettings] = await Promise.all([
+    supabase.from('bots').select('id, name').eq('workspace_id', workspaceId).order('name', { ascending: true }),
+    getAutoSettings(),
+  ])
   const bots = (botsData ?? []) as BotOption[]
+  const sageAuto = autoSettings.global_auto_enabled
 
   // Build conversations query with all filters
   const { from: dateFrom, to: dateTo } = getDateRange(params.range ?? 'all', params.from, params.to)
@@ -111,6 +114,7 @@ export default async function ConversationsPage({
       conversations={conversations}
       bots={bots}
       filters={params}
+      sageAuto={sageAuto}
     />
   )
 }
