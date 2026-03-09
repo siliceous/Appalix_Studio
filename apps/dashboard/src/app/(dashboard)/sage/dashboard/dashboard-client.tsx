@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { PieChart, Pie, Cell, Tooltip } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
@@ -10,6 +10,8 @@ import {
   ChevronDown, X, ExternalLink, CheckCircle2, User,
   Phone, Building2, Sparkles, LayoutList, LayoutGrid,
   Send, Reply, Loader2,
+  Bold, Italic, Underline, Strikethrough,
+  AlignLeft, AlignJustify, List, ListOrdered, Paperclip,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import { sendEmail } from '@/app/actions/sage-emails'
@@ -143,6 +145,12 @@ function ItemPopup({
   const [replyBody, setReplyBody]       = useState('')
   const [sending, setSending]           = useState(false)
   const [sendResult, setSendResult]     = useState<string | null>(null)
+  const replyRef = useRef<HTMLDivElement>(null)
+
+  function execFormat(cmd: string) {
+    document.execCommand(cmd, false, undefined)
+    replyRef.current?.focus()
+  }
 
   // Escape to close
   useEffect(() => {
@@ -208,13 +216,15 @@ function ItemPopup({
   }
 
   async function handleSendReply() {
-    if (!data || !replyBody.trim()) return
+    const html = replyRef.current?.innerHTML ?? ''
+    const text = replyRef.current?.innerText?.trim() ?? ''
+    if (!data || !text) return
     setSending(true); setSendResult(null)
     const e = data as SageEmail
     const result = await sendEmail({
       to: e.from_address,
       subject: `Re: ${e.subject}`,
-      body: replyBody,
+      body: html,
       replyToEmailId: e.id,
     })
     setSending(false)
@@ -317,8 +327,9 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
 
                     {/* Inline Reply compose — sits right after AI Summary */}
                     {showReply && (
-                      <div className="rounded-2xl border dark:border-white/10 overflow-hidden bg-gray-50 dark:bg-white/3">
-                        <div className="flex items-center justify-between px-4 py-2.5 border-b dark:border-white/8 bg-white dark:bg-white/5">
+                      <div className="rounded-2xl border dark:border-white/10 overflow-hidden bg-white dark:bg-[#1e1e1e]">
+                        {/* Compose header */}
+                        <div className="flex items-center justify-between px-4 py-2.5 border-b dark:border-white/8 bg-gray-50 dark:bg-white/5">
                           <div className="flex items-center gap-2">
                             <Reply className="w-3.5 h-3.5 text-[#61c2ad]" />
                             <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">Reply to {e.from_name ?? e.from_address}</span>
@@ -327,15 +338,57 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                             <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                        <div className="p-4 space-y-3">
-                          <textarea
-                            rows={10}
-                            value={replyBody}
-                            onChange={ev => setReplyBody(ev.target.value)}
-                            placeholder="Write your reply…"
-                            className="w-full text-sm bg-white dark:bg-[#1a1a1a] border dark:border-white/10 rounded-xl px-3 py-3 text-gray-800 dark:text-gray-200 placeholder-gray-400 resize-y min-h-[160px] focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 leading-relaxed"
-                          />
+                        {/* Formatting toolbar */}
+                        <div className="flex items-center gap-0.5 px-3 py-1.5 border-b dark:border-white/8 bg-gray-50 dark:bg-white/[0.03]">
+                          {([
+                            { cmd: 'bold',            Icon: Bold,         title: 'Bold' },
+                            { cmd: 'italic',          Icon: Italic,       title: 'Italic' },
+                            { cmd: 'underline',       Icon: Underline,    title: 'Underline' },
+                            { cmd: 'strikeThrough',   Icon: Strikethrough,title: 'Strikethrough' },
+                          ] as const).map(({ cmd, Icon, title }) => (
+                            <button key={cmd} title={title} onMouseDown={ev => { ev.preventDefault(); execFormat(cmd) }}
+                              className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                              <Icon className="w-3.5 h-3.5" />
+                            </button>
+                          ))}
+                          <div className="w-px h-4 bg-gray-200 dark:bg-white/10 mx-1" />
+                          {([
+                            { cmd: 'insertUnorderedList', Icon: List,        title: 'Bullet list' },
+                            { cmd: 'insertOrderedList',   Icon: ListOrdered, title: 'Numbered list' },
+                          ] as const).map(({ cmd, Icon, title }) => (
+                            <button key={cmd} title={title} onMouseDown={ev => { ev.preventDefault(); execFormat(cmd) }}
+                              className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                              <Icon className="w-3.5 h-3.5" />
+                            </button>
+                          ))}
+                          <div className="w-px h-4 bg-gray-200 dark:bg-white/10 mx-1" />
+                          {([
+                            { cmd: 'justifyLeft', Icon: AlignLeft,    title: 'Align left' },
+                            { cmd: 'justifyFull', Icon: AlignJustify, title: 'Justify' },
+                          ] as const).map(({ cmd, Icon, title }) => (
+                            <button key={cmd} title={title} onMouseDown={ev => { ev.preventDefault(); execFormat(cmd) }}
+                              className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                              <Icon className="w-3.5 h-3.5" />
+                            </button>
+                          ))}
+                          <div className="w-px h-4 bg-gray-200 dark:bg-white/10 mx-1" />
+                          <button title="Attach file" className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                            <Paperclip className="w-3.5 h-3.5" />
+                          </button>
+                          <button title="Schedule meeting" className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                            <Calendar className="w-3.5 h-3.5" />
+                          </button>
                         </div>
+                        {/* Editable body */}
+                        <div
+                          ref={replyRef}
+                          contentEditable
+                          suppressContentEditableWarning
+                          onInput={() => setReplyBody(replyRef.current?.innerText ?? '')}
+                          data-placeholder="Write your reply…"
+                          className="min-h-[180px] px-5 py-4 text-sm text-gray-800 dark:text-gray-200 leading-relaxed outline-none [&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-gray-400"
+                          style={{ fontFamily: 'Georgia, "Times New Roman", serif', textAlign: 'justify' }}
+                        />
                       </div>
                     )}
 
@@ -532,13 +585,6 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                     </p>
                   ) : (
                     <>
-                      <button
-                        onClick={onClose}
-                        className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-gray-100 dark:bg-white/8 hover:bg-gray-200 dark:hover:bg-white/12 rounded-xl transition-colors"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                        Cancel
-                      </button>
                       <div className="flex-1" />
                       <button
                         onClick={handleSendReply}
