@@ -26,10 +26,12 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
 }
 
 const FILTERS: Array<{ label: string; value: string }> = [
-  { label: 'All',      value: 'all' },
-  { label: 'Open',     value: 'open' },
-  { label: 'Pending',  value: 'pending' },
-  { label: 'Resolved', value: 'resolved' },
+  { label: 'All',         value: 'all' },
+  { label: 'Open',        value: 'open' },
+  { label: 'In Progress', value: 'in_progress' },
+  { label: 'Pending',     value: 'pending' },
+  { label: 'Resolved',    value: 'resolved' },
+  { label: 'Closed',      value: 'closed' },
 ]
 
 interface TicketsClientProps {

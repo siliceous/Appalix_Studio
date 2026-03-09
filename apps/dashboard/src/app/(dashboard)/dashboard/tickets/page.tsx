@@ -61,9 +61,7 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
     .eq('workspace_id', workspaceId)
   if (dateFrom) ticketsQuery = ticketsQuery.gte('created_at', dateFrom)
   if (dateTo)   ticketsQuery = ticketsQuery.lt('created_at', dateTo)
-  ticketsQuery = ticketsQuery
-    .in('status', ['open', 'in_progress', 'pending'])
-    .order('created_at', { ascending: false })
+  ticketsQuery = ticketsQuery.order('created_at', { ascending: false })
 
   const [{ data }, { data: contactsRaw }] = await Promise.all([
     ticketsQuery,
