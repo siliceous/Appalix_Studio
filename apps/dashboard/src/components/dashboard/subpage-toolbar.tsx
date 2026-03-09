@@ -164,8 +164,8 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
           onClick={toggleAuto}
           title={
             localAuto
-              ? `Sage Auto ON — AI auto-processes ${SOURCE_LABEL[sourceKey]} into pipeline. Click to require manual review.`
-              : `Sage Auto OFF — ${SOURCE_LABEL[sourceKey]} require manual review. Click to enable auto-processing.`
+              ? `Auto ON — AI automatically processes ${SOURCE_LABEL[sourceKey]} and updates the pipeline. Click to switch to manual review.`
+              : `Auto OFF — ${SOURCE_LABEL[sourceKey]} require manual review before creating contacts or deals. Click to enable automation.`
           }
           className={[
             'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all',

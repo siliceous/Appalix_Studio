@@ -8,10 +8,12 @@
  * Supported providers: gmail → imap.gmail.com:993
  *                      microsoft → outlook.office365.com:993
  */
-import { ImapFlow }     from 'imapflow'
-import { simpleParser } from 'mailparser'
-import { supabase }     from '../lib/supabase.js'
-import { callClaude }   from './ai/claude.js'
+import { ImapFlow }                                    from 'imapflow'
+import { simpleParser }                                from 'mailparser'
+import { supabase }                                    from '../lib/supabase.js'
+import { callClaude }                                  from './ai/claude.js'
+import { getWorkspaceAutoSettings, isFullAutomation }  from '../lib/auto-settings.js'
+import { executeAutoAction }                           from './sage-auto-execute.js'
 
 // ---------------------------------------------------------------------------
 // .ics / iCalendar parser — no external dependency needed
@@ -911,6 +913,31 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
                 })
                 .eq('id', inserted.id)
 
+              // Sage Auto — fire auto-action if full automation is enabled for the email channel
+              const mappedAction: 'create_lead' | 'create_ticket' | 'ignore' =
+                analysis.action === 'create_lead'   ? 'create_lead'   :
+                analysis.action === 'create_ticket' ? 'create_ticket' : 'ignore'
+              if (mappedAction !== 'ignore') {
+                try {
+                  const autoSettings = await getWorkspaceAutoSettings(workspaceId)
+                  if (isFullAutomation(autoSettings, 'email')) {
+                    await executeAutoAction({
+                      workspaceId,
+                      channel:     'email',
+                      action:      mappedAction,
+                      sourceId:    inserted.id,
+                      entities:    analysis.extracted ?? {},
+                      senderName:  fromName ?? null,
+                      senderEmail: fromAddress ?? null,
+                      summary:     analysis.summary ?? null,
+                      priority:    analysis.priority ?? null,
+                    })
+                  }
+                } catch (autoErr) {
+                  console.error('[email-sync] auto-execute error:', autoErr)
+                }
+              }
+
               // Auto-create deal activity when a high/medium email arrives for a contact with an open deal
               if (contactId && analysis.summary && (analysis.priority === 'high' || analysis.priority === 'medium')) {
                 try {
@@ -1111,8 +1138,35 @@ export async function reanalyzePendingEmails(workspaceId: string, batchSize = 50
           })
           .eq('id', email.id)
 
-        if (!updateErr) reanalyzed++
-        else console.error(`[reanalyze] DB update failed for ${email.id}:`, updateErr.message)
+        if (!updateErr) {
+          reanalyzed++
+          // Sage Auto — fire auto-action if full automation is enabled for the email channel
+          const reanalyzeMappedAction: 'create_lead' | 'create_ticket' | 'ignore' =
+            analysis.action === 'create_lead'   ? 'create_lead'   :
+            analysis.action === 'create_ticket' ? 'create_ticket' : 'ignore'
+          if (reanalyzeMappedAction !== 'ignore') {
+            try {
+              const autoSettings = await getWorkspaceAutoSettings(workspaceId)
+              if (isFullAutomation(autoSettings, 'email')) {
+                await executeAutoAction({
+                  workspaceId,
+                  channel:     'email',
+                  action:      reanalyzeMappedAction,
+                  sourceId:    email.id,
+                  entities:    analysis.extracted ?? {},
+                  senderName:  fromName ?? null,
+                  senderEmail: fromAddress ?? null,
+                  summary:     analysis.summary ?? null,
+                  priority:    analysis.priority ?? null,
+                })
+              }
+            } catch (autoErr) {
+              console.error('[reanalyze] auto-execute error:', autoErr)
+            }
+          }
+        } else {
+          console.error(`[reanalyze] DB update failed for ${email.id}:`, updateErr.message)
+        }
       }
     } catch (err) {
       console.error(`[reanalyze] failed for ${email.id}:`, (err as Error).message)

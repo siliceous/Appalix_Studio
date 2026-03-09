@@ -4,8 +4,10 @@
  *
  * Mirrors the analyzeEmail / reanalyzePendingEmails pattern in sage-email-sync.ts.
  */
-import { supabase }   from '../lib/supabase.js'
-import { callClaude } from './ai/claude.js'
+import { supabase }                                   from '../lib/supabase.js'
+import { callClaude }                                 from './ai/claude.js'
+import { getWorkspaceAutoSettings, isFullAutomation } from '../lib/auto-settings.js'
+import { executeAutoAction }                          from './sage-auto-execute.js'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -158,7 +160,28 @@ export async function analyzeConversationsForWorkspace(
       .eq('id', row.id)
       .eq('workspace_id', workspaceId)
 
-    if (!error) analysed++
+    if (!error) {
+      analysed++
+      // Fire auto-action if full automation is enabled for the bots channel
+      if (result.action !== 'ignore') {
+        try {
+          const settings = await getWorkspaceAutoSettings(workspaceId)
+          if (isFullAutomation(settings, 'bots')) {
+            await executeAutoAction({
+              workspaceId,
+              channel:  'bots',
+              action:   result.action,
+              sourceId: row.id,
+              entities: result.entities,
+              summary:  result.summary ?? null,
+              priority: result.priority ?? null,
+            })
+          }
+        } catch (autoErr) {
+          console.error('[conversation-analyze] auto-execute error:', autoErr)
+        }
+      }
+    }
   }
 
   return analysed

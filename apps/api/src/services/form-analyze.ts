@@ -2,8 +2,10 @@
  * Form Submission AI Analysis
  * Analyses a sage_form_submission and assigns priority, summary, insights, action, entities.
  */
-import { supabase }   from '../lib/supabase.js'
-import { callClaude } from './ai/claude.js'
+import { supabase }                                   from '../lib/supabase.js'
+import { callClaude }                                 from './ai/claude.js'
+import { getWorkspaceAutoSettings, isFullAutomation } from '../lib/auto-settings.js'
+import { executeAutoAction }                          from './sage-auto-execute.js'
 
 interface FormAnalysis {
   priority: 'high' | 'medium' | 'low'
@@ -21,13 +23,14 @@ interface FormAnalysis {
 export async function analyzeFormSubmission(submissionId: string): Promise<void> {
   const { data: submission } = await supabase
     .from('sage_form_submissions')
-    .select('id, fields')
+    .select('id, workspace_id, fields')
     .eq('id', submissionId)
     .single()
 
   if (!submission) return
 
-  const fields = (submission as { id: string; fields: Record<string, string> }).fields
+  const fields = (submission as { id: string; workspace_id: string; fields: Record<string, string> }).fields
+  const workspaceId = (submission as { id: string; workspace_id: string; fields: Record<string, string> }).workspace_id
   const lines = Object.entries(fields)
     .filter(([, v]) => v && String(v).trim())
     .map(([k, v]) => `${k}: ${v}`)
@@ -93,6 +96,26 @@ OUTPUT — return ONLY this JSON, nothing else:
         ai_analyzed_at: new Date().toISOString(),
       })
       .eq('id', submissionId)
+
+    // Fire auto-action if full automation is enabled for the forms channel
+    if (analysis.action !== 'ignore' && workspaceId) {
+      try {
+        const settings = await getWorkspaceAutoSettings(workspaceId)
+        if (isFullAutomation(settings, 'forms')) {
+          await executeAutoAction({
+            workspaceId,
+            channel:  'forms',
+            action:   analysis.action,
+            sourceId: submissionId,
+            entities: analysis.entities ?? {},
+            summary:  analysis.summary ?? null,
+            priority: analysis.priority ?? null,
+          })
+        }
+      } catch (autoErr) {
+        console.error('[form-analyze] auto-execute error:', autoErr)
+      }
+    }
   } catch (err) {
     console.error('[form-analyze] Error:', err instanceof Error ? err.message : String(err))
   }
