@@ -921,6 +921,8 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
   const [topType,     setTopType]    = useState<'email' | 'bot' | 'form' | 'ticket' | null>(null)
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
   const [donutsCollapsed, setDonutsCollapsed] = useState(false)
+  const [showAutoDesc, setShowAutoDesc] = useState(false)
+  const autoDescTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Load preferences + DB settings on mount
   useEffect(() => {
@@ -953,6 +955,9 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
     const next = !sageAuto
     setSageAuto(next)
     await updateAutoSetting('global_auto_enabled', next)
+    setShowAutoDesc(true)
+    if (autoDescTimer.current) clearTimeout(autoDescTimer.current)
+    autoDescTimer.current = setTimeout(() => setShowAutoDesc(false), 10000)
   }
 
   const handleDismiss = async (kind: 'email' | 'bot' | 'form' | 'ticket', id: string, e: React.MouseEvent) => {
@@ -1129,10 +1134,10 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                 {sageAuto ? 'ON' : 'OFF'}
               </span>
             </div>
-            <p className="text-[11px] leading-relaxed px-1 max-w-[220px] text-gray-400 dark:text-gray-500">
+            <p className={`text-[11px] leading-relaxed px-1 max-w-[220px] whitespace-nowrap overflow-hidden text-ellipsis transition-opacity duration-500 ${showAutoDesc ? 'opacity-100' : 'opacity-0 pointer-events-none'} ${sageAuto ? 'text-[#61c2ad]' : 'text-gray-400 dark:text-gray-500'}`}>
               {sageAuto
-                ? 'AI is collecting, summarising, and auto-creating contacts & updating your pipeline.'
-                : 'AI collects & summarises. You review and decide the next action.'}
+                ? 'AI is collecting, summarising & auto-updating your pipeline.'
+                : 'AI collects & summarises. You decide the next action.'}
             </p>
           </div>
         </div>
