@@ -176,7 +176,8 @@ function ItemPopup({
   const [showPipelinePicker, setShowPipelinePicker] = useState(false)
   const [ignoring, setIgnoring]       = useState(false)
 
-  const [aiCollapsed, setAiCollapsed]   = useState(false)
+  const [aiCollapsed, setAiCollapsed]         = useState(false)
+  const [replySummaryCollapsed, setReplySummaryCollapsed] = useState(false)
 
   // Reply compose state (email only)
   const [showReply, setShowReply]       = useState(false)
@@ -188,7 +189,8 @@ function ItemPopup({
   const [showBcc, setShowBcc]           = useState(false)
   const [ccValue, setCcValue]           = useState('')
   const [bccValue, setBccValue]         = useState('')
-  const replyRef    = useRef<HTMLDivElement>(null)
+  const replyRef      = useRef<HTMLDivElement>(null)
+  const draftApplied  = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const [fontOpen,  setFontOpen]  = useState(false)
@@ -251,16 +253,21 @@ function ItemPopup({
     getEmailSignature().then(({ html }) => { if (html) setEmailSignature(html) })
   }, [popup.kind])
 
-  // Populate contentEditable with AI draft + signature when reply opens
+  // Populate contentEditable with AI draft + signature when reply opens.
+  // Deps include replyBody so it retries if data loads after the user clicked Reply.
+  // draftApplied ref prevents overwriting once the user has started typing.
   useEffect(() => {
-    if (!showReply || !replyRef.current) return
-    if (replyRef.current.innerText.trim()) return   // already has content
+    if (!showReply) { draftApplied.current = false; return }
+    if (!replyRef.current) return
+    if (draftApplied.current) return          // user may have started typing — don't overwrite
     const draftHtml = replyBody ? replyBody.replace(/\n/g, '<br>') : ''
     const sigHtml   = emailSignature
       ? `<br><br><hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;" />${emailSignature}`
       : ''
     replyRef.current.innerHTML = draftHtml + sigHtml
-  }, [showReply])
+    draftApplied.current = true
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showReply, replyBody, emailSignature])
 
   // Escape to close
   useEffect(() => {
@@ -271,7 +278,7 @@ function ItemPopup({
 
   // Fetch full item
   useEffect(() => {
-    setData(null); setLoading(true); setPostAction(null); setActionError(null); setShowReply(false); setSendResult(null); setShowPipelinePicker(false); setIgnoring(false); setAiCollapsed(false)
+    setData(null); setLoading(true); setPostAction(null); setActionError(null); setShowReply(false); setSendResult(null); setShowPipelinePicker(false); setIgnoring(false); setAiCollapsed(false); setReplySummaryCollapsed(false); draftApplied.current = false
     const supabase = createClient()
     const go = async () => {
       if (popup.kind === 'email') {
@@ -573,15 +580,32 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                       </div>
                     )}
 
-                    {/* AI summary shown inline when reply is open */}
+                    {/* AI summary shown inline when reply is open — collapsible */}
                     {showReply && e.ai_summary && (
-                      <div className="bg-blue-50 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 rounded-xl p-4 shrink-0">
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <Sparkles className="w-3 h-3 text-blue-500 dark:text-blue-400" />
-                          <p className="text-[11px] text-blue-700 dark:text-blue-300 font-bold uppercase tracking-wide">AI Summary</p>
+                      replySummaryCollapsed ? (
+                        <button
+                          onClick={() => setReplySummaryCollapsed(false)}
+                          className="flex items-center gap-2 w-full px-3.5 py-2.5 bg-blue-50 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 rounded-xl text-left hover:bg-blue-100 dark:hover:bg-blue-500/25 transition-colors shrink-0"
+                        >
+                          <Sparkles className="w-3 h-3 text-blue-500 dark:text-blue-400 shrink-0" />
+                          <span className="text-[11px] text-blue-700 dark:text-blue-300 font-bold uppercase tracking-wide flex-1">AI Summary</span>
+                          <ChevronDown className="w-3.5 h-3.5 text-blue-400 shrink-0 -rotate-90" />
+                        </button>
+                      ) : (
+                        <div className="bg-blue-50 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 rounded-xl p-4 shrink-0">
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <Sparkles className="w-3 h-3 text-blue-500 dark:text-blue-400" />
+                            <p className="text-[11px] text-blue-700 dark:text-blue-300 font-bold uppercase tracking-wide flex-1">AI Summary</p>
+                            <button
+                              onClick={() => setReplySummaryCollapsed(true)}
+                              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                            >
+                              <ChevronDown className="w-3.5 h-3.5 rotate-180" />Collapse
+                            </button>
+                          </div>
+                          <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">{e.ai_summary}</p>
                         </div>
-                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">{e.ai_summary}</p>
-                      </div>
+                      )
                     )}
 
                     {/* Inline Reply compose — sits right after AI Summary */}
@@ -782,7 +806,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                           onInput={() => setReplyBody(replyRef.current?.innerText ?? '')}
                           data-placeholder="Write your reply…"
                           className="flex-1 min-h-0 overflow-y-auto px-5 py-4 text-sm text-gray-800 dark:text-gray-200 leading-relaxed outline-none [&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-gray-400"
-                          style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                          style={{ fontFamily: 'Arial, sans-serif' }}
                         />
 
                         {/* Attached files */}
