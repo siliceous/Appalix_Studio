@@ -340,7 +340,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto flex-1 px-6 py-5 flex flex-col gap-4">
+        <div className={`${popup.kind === 'email' && showReply ? 'overflow-hidden' : 'overflow-y-auto'} flex-1 px-6 py-5 flex flex-col gap-4`}>
           {loading ? (
             <div className="flex items-center justify-center py-16">
               <RefreshCw className="w-5 h-5 text-gray-300 animate-spin" />
@@ -597,7 +597,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                           suppressContentEditableWarning
                           onInput={() => setReplyBody(replyRef.current?.innerText ?? '')}
                           data-placeholder="Write your reply…"
-                          className="flex-1 min-h-[160px] px-5 py-4 text-sm text-gray-800 dark:text-gray-200 leading-relaxed outline-none [&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-gray-400"
+                          className="flex-1 min-h-0 overflow-y-auto px-5 py-4 text-sm text-gray-800 dark:text-gray-200 leading-relaxed outline-none [&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-gray-400"
                           style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
                         />
 
