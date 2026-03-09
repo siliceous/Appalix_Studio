@@ -233,7 +233,7 @@ function ItemPopup({
   const label   = { email: 'Email Summary', bot: 'Chat Summary', form: 'Lead Details', ticket: 'Ticket Summary' }[popup.kind]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/50 backdrop-blur-sm"
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/55 dark:bg-black/70"
       onClick={onClose}>
       <div className="relative w-full sm:max-w-2xl bg-white dark:bg-[#2a2a2a] rounded-t-2xl sm:rounded-2xl shadow-2xl border-t sm:border dark:border-white/12 max-h-[92vh] flex flex-col"
         onClick={e => e.stopPropagation()}>
@@ -299,7 +299,7 @@ function ItemPopup({
 
                     {/* AI Summary */}
                     {e.ai_summary && (
-                      <div className="bg-[#61c2ad]/8 border border-[#61c2ad]/20 rounded-xl p-4">
+                      <div className="bg-[#61c2ad]/10 dark:bg-[#61c2ad]/[0.12] border border-[#61c2ad]/25 dark:border-[#61c2ad]/20 rounded-xl p-4">
                         <div className="flex items-center gap-1.5 mb-2">
                           <Sparkles className="w-3 h-3 text-[#61c2ad]" />
                           <p className="text-[11px] text-[#61c2ad] font-bold uppercase tracking-wide">AI Summary</p>

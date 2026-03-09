@@ -236,7 +236,7 @@ function TriageCard({ t, isDone, actionLabel, isChecked, isSelected, onSelect, o
         </div>
         <p className="text-xs text-gray-600 dark:text-gray-400 mt-1.5 leading-snug line-clamp-2">{email.subject}</p>
         {email.ai_summary && (
-          <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1 line-clamp-1 italic">{email.ai_summary}</p>
+          <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 line-clamp-1 italic">{email.ai_summary}</p>
         )}
       </div>
     </div>
@@ -483,7 +483,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
             </button>
           </div>
         ) : (
-          <div className="rounded-xl bg-gray-50 dark:bg-white/[0.03] border border-gray-200 dark:border-white/10 overflow-hidden">
+          <div className="rounded-xl bg-blue-50/40 dark:bg-blue-500/[0.07] border border-blue-100 dark:border-blue-500/20 overflow-hidden">
             {/* Summary */}
             <div className="px-4 pt-3.5 pb-3">
               <div className="flex items-center justify-between gap-2 mb-2">
@@ -769,7 +769,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
                       </span>
                     </div>
                     {te.email.ai_summary && (
-                      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 line-clamp-1">{te.email.ai_summary}</p>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">{te.email.ai_summary}</p>
                     )}
                   </div>
                 </div>
@@ -1555,7 +1555,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
       {/* ─── Email detail floating modal overlay ─────────────────────────────── */}
       {selectedTriageEmail && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/65 backdrop-blur-[2px] p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 dark:bg-black/70 p-4"
           onClick={() => setSelectedEmailId('')}
         >
           <div
