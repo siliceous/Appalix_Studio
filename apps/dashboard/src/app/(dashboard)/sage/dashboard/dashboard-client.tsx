@@ -1088,7 +1088,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   icon: <Mail className="w-3.5 h-3.5" />,
                   accentClass: 'text-blue-700 dark:text-blue-300',
                   borderClass: 'border-blue-200 dark:border-blue-500/30',
-                  bgClass: 'bg-blue-50 dark:bg-blue-500/15',
+                  bgClass: 'bg-blue-100 dark:bg-blue-500/25',
                   count: emails.length,
                   rows: emails.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No emails this period.</p>
@@ -1115,7 +1115,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   icon: <MessageSquare className="w-3.5 h-3.5" />,
                   accentClass: 'text-purple-700 dark:text-purple-300',
                   borderClass: 'border-purple-200 dark:border-purple-500/30',
-                  bgClass: 'bg-purple-50 dark:bg-purple-500/15',
+                  bgClass: 'bg-purple-100 dark:bg-purple-500/25',
                   count: bots.length,
                   rows: bots.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No bot chats this period.</p>
@@ -1143,7 +1143,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   icon: <FileText className="w-3.5 h-3.5" />,
                   accentClass: 'text-green-700 dark:text-green-300',
                   borderClass: 'border-green-200 dark:border-green-500/30',
-                  bgClass: 'bg-green-50 dark:bg-green-500/15',
+                  bgClass: 'bg-green-100 dark:bg-green-500/25',
                   count: forms.length,
                   rows: forms.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No form submissions this period.</p>
@@ -1169,7 +1169,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   icon: <TicketIcon className="w-3.5 h-3.5" />,
                   accentClass: 'text-yellow-700 dark:text-yellow-300',
                   borderClass: 'border-yellow-200 dark:border-yellow-500/30',
-                  bgClass: 'bg-yellow-50 dark:bg-yellow-500/15',
+                  bgClass: 'bg-yellow-100 dark:bg-yellow-500/25',
                   count: tickets.length,
                   rows: tickets.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No tickets this period.</p>
@@ -1209,20 +1209,14 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                     >
                       {/* Tablet header */}
                       <div
-                        className={`px-4 py-2.5 flex items-center justify-between cursor-pointer ${
-                          topType === tablet.key ? tablet.bgClass : 'bg-gray-50 dark:bg-white/3'
-                        }`}
+                        className={`px-4 py-2.5 flex items-center justify-between cursor-pointer ${tablet.bgClass}`}
                         onClick={() => setTopType(topType === tablet.key ? null : tablet.key)}
                       >
-                        <div className={`flex items-center gap-2 text-xs font-semibold ${topType === tablet.key ? tablet.accentClass : 'text-gray-600 dark:text-gray-300'}`}>
+                        <div className={`flex items-center gap-2 text-xs font-semibold ${tablet.accentClass}`}>
                           {tablet.icon}
                           {tablet.label}
                         </div>
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                          topType === tablet.key
-                            ? `${tablet.bgClass} ${tablet.accentClass}`
-                            : 'bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400'
-                        }`}>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${tablet.bgClass} ${tablet.accentClass}`}>
                           {tablet.count}
                         </span>
                       </div>
