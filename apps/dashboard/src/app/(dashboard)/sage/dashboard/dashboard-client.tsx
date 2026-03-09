@@ -355,7 +355,7 @@ function ItemPopup({
 
                     {/* Key Insights — collapsible, collapsed by default when reply is open */}
                     {(e.ai_insights ?? []).length > 0 && (
-                      <div className="bg-gray-50 dark:bg-white/4 rounded-xl overflow-hidden">
+                      <div className="bg-gray-50 dark:bg-white/[0.07] border border-gray-100 dark:border-white/10 rounded-xl overflow-hidden">
                         <button
                           onClick={() => setShowInsights(v => !v)}
                           className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-100 dark:hover:bg-white/6 transition-colors"
@@ -406,17 +406,17 @@ function ItemPopup({
                       </div>
                     </div>
                     {c.ai_summary && (
-                      <div className="bg-blue-50/60 dark:bg-blue-500/8 border border-blue-200/60 dark:border-blue-500/20 rounded-xl p-4">
+                      <div className="bg-blue-50 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 rounded-xl p-4">
                         <div className="flex items-center gap-1.5 mb-2">
-                          <Sparkles className="w-3 h-3 text-blue-500" />
-                          <p className="text-[11px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wide">AI Summary</p>
+                          <Sparkles className="w-3 h-3 text-blue-500 dark:text-blue-400" />
+                          <p className="text-[11px] text-blue-700 dark:text-blue-300 font-bold uppercase tracking-wide">AI Summary</p>
                         </div>
-                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">{c.ai_summary}</p>
+                        <p className="text-sm text-gray-800 dark:text-gray-100 leading-relaxed">{c.ai_summary}</p>
                       </div>
                     )}
                     {(c.ai_insights ?? []).length > 0 && (
-                      <div className="bg-gray-50 dark:bg-white/4 rounded-xl p-4">
-                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2.5">Key Insights</p>
+                      <div className="bg-gray-50 dark:bg-white/[0.07] border border-gray-100 dark:border-white/10 rounded-xl p-4">
+                        <p className="text-[11px] font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wide mb-2.5">Key Insights</p>
                         <ul className="space-y-2">
                           {(c.ai_insights ?? []).map((ins, i) => (
                             <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
@@ -512,9 +512,9 @@ function ItemPopup({
                       </div>
                     )}
                     {t.description && (
-                      <div className="bg-orange-50/60 dark:bg-orange-500/8 border border-orange-200/60 dark:border-orange-500/20 rounded-xl p-4">
-                        <p className="text-[11px] text-orange-600 dark:text-orange-400 font-bold uppercase tracking-wide mb-2">Description</p>
-                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">{t.description}</p>
+                      <div className="bg-orange-50 dark:bg-orange-500/20 border border-orange-200 dark:border-orange-500/30 rounded-xl p-4">
+                        <p className="text-[11px] text-orange-700 dark:text-orange-300 font-bold uppercase tracking-wide mb-2">Description</p>
+                        <p className="text-sm text-gray-800 dark:text-gray-100 leading-relaxed whitespace-pre-wrap">{t.description}</p>
                       </div>
                     )}
                   </>
@@ -1086,9 +1086,9 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   key: 'email',
                   label: 'Emails',
                   icon: <Mail className="w-3.5 h-3.5" />,
-                  accentClass: 'text-blue-600 dark:text-blue-400',
-                  borderClass: 'border-blue-200 dark:border-blue-500/20',
-                  bgClass: 'bg-blue-50 dark:bg-blue-500/8',
+                  accentClass: 'text-blue-700 dark:text-blue-300',
+                  borderClass: 'border-blue-200 dark:border-blue-500/30',
+                  bgClass: 'bg-blue-50 dark:bg-blue-500/15',
                   count: emails.length,
                   rows: emails.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No emails this period.</p>
@@ -1113,9 +1113,9 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   key: 'bot',
                   label: 'Bot Chats',
                   icon: <MessageSquare className="w-3.5 h-3.5" />,
-                  accentClass: 'text-purple-600 dark:text-purple-400',
-                  borderClass: 'border-purple-200 dark:border-purple-500/20',
-                  bgClass: 'bg-purple-50 dark:bg-purple-500/8',
+                  accentClass: 'text-purple-700 dark:text-purple-300',
+                  borderClass: 'border-purple-200 dark:border-purple-500/30',
+                  bgClass: 'bg-purple-50 dark:bg-purple-500/15',
                   count: bots.length,
                   rows: bots.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No bot chats this period.</p>
@@ -1141,9 +1141,9 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   key: 'form',
                   label: 'Form Submissions',
                   icon: <FileText className="w-3.5 h-3.5" />,
-                  accentClass: 'text-green-600 dark:text-green-400',
-                  borderClass: 'border-green-200 dark:border-green-500/20',
-                  bgClass: 'bg-green-50 dark:bg-green-500/8',
+                  accentClass: 'text-green-700 dark:text-green-300',
+                  borderClass: 'border-green-200 dark:border-green-500/30',
+                  bgClass: 'bg-green-50 dark:bg-green-500/15',
                   count: forms.length,
                   rows: forms.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No form submissions this period.</p>
@@ -1167,9 +1167,9 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   key: 'ticket',
                   label: 'Tickets',
                   icon: <TicketIcon className="w-3.5 h-3.5" />,
-                  accentClass: 'text-yellow-600 dark:text-yellow-400',
-                  borderClass: 'border-yellow-200 dark:border-yellow-500/20',
-                  bgClass: 'bg-yellow-50 dark:bg-yellow-500/8',
+                  accentClass: 'text-yellow-700 dark:text-yellow-300',
+                  borderClass: 'border-yellow-200 dark:border-yellow-500/30',
+                  bgClass: 'bg-yellow-50 dark:bg-yellow-500/15',
                   count: tickets.length,
                   rows: tickets.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No tickets this period.</p>
