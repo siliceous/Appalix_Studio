@@ -172,9 +172,10 @@ export async function analyzeConversationsForWorkspace(
               channel:  'bots',
               action:   result.action,
               sourceId: row.id,
-              entities: result.entities,
-              summary:  result.summary ?? null,
-              priority: result.priority ?? null,
+              entities:          result.entities,
+              summary:           result.summary ?? null,
+              priority:          result.priority ?? null,
+              defaultPipelineId: settings.default_pipeline_id,
             })
           }
         } catch (autoErr) {

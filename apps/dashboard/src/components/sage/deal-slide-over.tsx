@@ -22,7 +22,8 @@ interface DealSlideOverProps {
   onClose:         () => void
   openEditForm?:   boolean
   stages?:         { id: string; name: string }[]
-  onDealUpdated?:  (dealId: string, changes: { title: string; value: number | null; currency: string; close_date: string | null; priority: string | null; stage_id?: string }) => void
+  onDealUpdated?:  (dealId: string, changes: { title: string; value: number | null; currency: string; close_date: string | null; priority: string | null; stage_id?: string; status?: string }) => void
+  onDealDeleted?:  (dealId: string) => void
 }
 
 const ACTIVITY_ICONS: Record<ActivityType, React.ElementType> = {
@@ -104,7 +105,7 @@ const STATUS_BADGE: Record<string, string> = {
   lost: 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400',
 }
 
-export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpdated }: DealSlideOverProps) {
+export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpdated, onDealDeleted }: DealSlideOverProps) {
   const router = useRouter()
   const [deal,          setDeal]          = useState<Record<string, unknown> & { contact: Record<string, unknown> | null } | null>(null)
   const [activities,    setActivities]    = useState<SageDealActivity[]>([])
@@ -187,9 +188,25 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
   }
 
   function handleWonLostConfirm() {
+    const newStatus = wonLostMode!  // capture before clearing
     setWonLostMode(null)
+    // Immediately notify parent — don't wait for async reload
+    if (onDealUpdated && dealId) {
+      onDealUpdated(dealId, {
+        title:      dealTitle,
+        value:      dealValue,
+        currency:   dealCurrency,
+        close_date: dealCloseDate,
+        priority:   dealPriority,
+        status:     newStatus,
+      })
+    }
+    // Reload deal detail in background to update banners/activity
     if (dealId) {
-      getDealDetail(dealId).then(res => { setDeal(res.deal); setActivities(res.activities) })
+      getDealDetail(dealId).then(res => {
+        setDeal(res.deal)
+        setActivities(res.activities)
+      })
     }
   }
 
@@ -468,7 +485,7 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                           if (!dealId) return
                           setDeleting(true)
                           await deleteDeal(dealId)
-                          router.refresh()
+                          onDealDeleted?.(dealId)
                           onClose()
                         }}
                         className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-60"

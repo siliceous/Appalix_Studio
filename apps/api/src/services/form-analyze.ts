@@ -107,9 +107,10 @@ OUTPUT — return ONLY this JSON, nothing else:
             channel:  'forms',
             action:   analysis.action,
             sourceId: submissionId,
-            entities: analysis.entities ?? {},
-            summary:  analysis.summary ?? null,
-            priority: analysis.priority ?? null,
+            entities:          analysis.entities ?? {},
+            summary:           analysis.summary ?? null,
+            priority:          analysis.priority ?? null,
+            defaultPipelineId: settings.default_pipeline_id,
           })
         }
       } catch (autoErr) {

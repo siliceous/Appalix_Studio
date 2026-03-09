@@ -13,10 +13,10 @@
 import { supabase } from '../lib/supabase.js'
 
 export interface AutoExecuteInput {
-  workspaceId: string
-  channel:     'email' | 'bots' | 'forms' | 'tickets'
-  action:      'create_lead' | 'create_ticket' | 'ignore'
-  sourceId:    string   // email id, conversation id, or form submission id
+  workspaceId:       string
+  channel:           'email' | 'bots' | 'forms' | 'tickets'
+  action:            'create_lead' | 'create_ticket' | 'ignore'
+  sourceId:          string   // email id, conversation id, or form submission id
   entities: {
     name?:             string
     email?:            string
@@ -24,10 +24,11 @@ export interface AutoExecuteInput {
     company?:          string
     product_interest?: string
   }
-  senderName?:  string | null   // email: from_name fallback
-  senderEmail?: string | null   // email: from_address fallback
-  summary?:     string | null
-  priority?:    string | null
+  senderName?:       string | null   // email: from_name fallback
+  senderEmail?:      string | null   // email: from_address fallback
+  summary?:          string | null
+  priority?:         string | null
+  defaultPipelineId?: string | null  // from workspace settings; null = oldest pipeline
 }
 
 export async function executeAutoAction(input: AutoExecuteInput): Promise<void> {
@@ -122,7 +123,44 @@ async function autoCreateLead(input: AutoExecuteInput): Promise<void> {
     contactId = (newContact as ContactRow).id
   }
 
-  // ── 2. Check for existing open deal ───────────────────────────────────────
+  // ── 2. Dedup: check if a deal was already created from this exact source ──
+  if (channel === 'email') {
+    const { data: existingByEmail } = await supabase
+      .from('sage_deals').select('id')
+      .eq('workspace_id', workspaceId)
+      .eq('source_email_id', sourceId)
+      .limit(1).maybeSingle()
+    if (existingByEmail) {
+      console.log(`[sage-auto] Deal already exists for email ${sourceId} — skipping`)
+      return
+    }
+  }
+
+  if (channel === 'bots') {
+    const { data: existingByConv } = await supabase
+      .from('sage_deals').select('id')
+      .eq('workspace_id', workspaceId)
+      .eq('source_conversation_id', sourceId)
+      .limit(1).maybeSingle()
+    if (existingByConv) {
+      console.log(`[sage-auto] Deal already exists for conversation ${sourceId} — skipping`)
+      return
+    }
+  }
+
+  if (channel === 'forms') {
+    const { data: existingByForm } = await supabase
+      .from('sage_deals').select('id')
+      .eq('workspace_id', workspaceId)
+      .eq('source_form_id', sourceId)
+      .limit(1).maybeSingle()
+    if (existingByForm) {
+      console.log(`[sage-auto] Deal already exists for form ${sourceId} — skipping`)
+      return
+    }
+  }
+
+  // Secondary dedup: contact already has an open deal (regardless of source)
   const { data: existingDeal } = await supabase
     .from('sage_deals').select('id')
     .eq('workspace_id', workspaceId)
@@ -135,26 +173,19 @@ async function autoCreateLead(input: AutoExecuteInput): Promise<void> {
     return
   }
 
-  // Dedup: don't create a deal if we already made one from this exact source
-  if (channel === 'bots') {
-    const { data: existingByConv } = await supabase
-      .from('sage_deals').select('id')
+  // ── 3. Resolve pipeline ────────────────────────────────────────────────────
+  let pipelineId: string
+  if (input.defaultPipelineId) {
+    pipelineId = input.defaultPipelineId
+  } else {
+    const { data: pipeline } = await supabase
+      .from('sage_pipelines').select('id')
       .eq('workspace_id', workspaceId)
-      .eq('source_conversation_id', sourceId)
+      .order('created_at', { ascending: true })
       .limit(1).maybeSingle()
-    if (existingByConv) return
+    if (!pipeline) return  // No pipeline configured — skip silently
+    pipelineId = (pipeline as { id: string }).id
   }
-
-  // ── 3. Find first pipeline + stage ────────────────────────────────────────
-  const { data: pipeline } = await supabase
-    .from('sage_pipelines').select('id')
-    .eq('workspace_id', workspaceId)
-    .order('created_at', { ascending: true })
-    .limit(1).maybeSingle()
-
-  if (!pipeline) return  // No pipeline configured — skip silently
-
-  const pipelineId = (pipeline as { id: string }).id
 
   const { data: stage } = await supabase
     .from('sage_pipeline_stages').select('id')
@@ -180,7 +211,9 @@ async function autoCreateLead(input: AutoExecuteInput): Promise<void> {
     tags:                   [],
   }
 
-  if (channel === 'bots') dealInsert.source_conversation_id = sourceId
+  if (channel === 'email') dealInsert.source_email_id        = sourceId
+  if (channel === 'bots')  dealInsert.source_conversation_id = sourceId
+  if (channel === 'forms') dealInsert.source_form_id         = sourceId
 
   const { data: deal, error: dealError } = await supabase
     .from('sage_deals')

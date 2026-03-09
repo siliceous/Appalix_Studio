@@ -14,6 +14,7 @@ export interface WorkspaceAutoSettings {
   bots_auto_enabled:    boolean
   forms_auto_enabled:   boolean
   tickets_auto_enabled: boolean
+  default_pipeline_id:  string | null
 }
 
 const DEFAULTS: WorkspaceAutoSettings = {
@@ -22,13 +23,14 @@ const DEFAULTS: WorkspaceAutoSettings = {
   bots_auto_enabled:    true,
   forms_auto_enabled:   true,
   tickets_auto_enabled: true,
+  default_pipeline_id:  null,
 }
 
 export async function getWorkspaceAutoSettings(workspaceId: string): Promise<WorkspaceAutoSettings> {
   try {
     const { data } = await supabase
       .from('sage_workspace_settings')
-      .select('global_auto_enabled, email_auto_enabled, bots_auto_enabled, forms_auto_enabled, tickets_auto_enabled')
+      .select('global_auto_enabled, email_auto_enabled, bots_auto_enabled, forms_auto_enabled, tickets_auto_enabled, default_pipeline_id')
       .eq('workspace_id', workspaceId)
       .maybeSingle()
 
@@ -40,6 +42,7 @@ export async function getWorkspaceAutoSettings(workspaceId: string): Promise<Wor
       bots_auto_enabled:    data.bots_auto_enabled     ?? true,
       forms_auto_enabled:   data.forms_auto_enabled    ?? true,
       tickets_auto_enabled: data.tickets_auto_enabled  ?? true,
+      default_pipeline_id:  data.default_pipeline_id   ?? null,
     }
   } catch {
     return DEFAULTS

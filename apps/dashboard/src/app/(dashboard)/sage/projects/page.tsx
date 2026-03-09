@@ -22,18 +22,23 @@ export default async function ProjectsPage() {
   if (!membership) redirect('/login')
   const workspaceId = membership.workspace_id
 
-  const { data } = await supabase
-    .from('sage_deals')
-    .select('id, title, value, currency, won_at, created_at, updated_at, priority, tags, description, pipeline_id, contact:sage_contacts(id, name, email), company:sage_companies(id, name), stage:sage_pipeline_stages(id, name, color)')
-    .eq('workspace_id', workspaceId)
-    .eq('status', 'won')
-    .order('won_at', { ascending: false })
-
-  const projects = (data ?? []) as (SageDeal & {
+  type DealRow = SageDeal & {
     contact: Pick<SageContact, 'id' | 'name' | 'email'> | null
     company: Pick<SageCompany, 'id' | 'name'> | null
     stage:   Pick<SagePipelineStage, 'id' | 'name' | 'color'> | null
-  })[]
+  }
 
-  return <ProjectsClient projects={projects} />
+  const SELECT = 'id, title, value, currency, won_at, lost_at, lost_reason, created_at, updated_at, priority, tags, description, pipeline_id, contact:sage_contacts(id, name, email), company:sage_companies(id, name), stage:sage_pipeline_stages(id, name, color)'
+
+  const [{ data: wonData }, { data: lostData }] = await Promise.all([
+    supabase.from('sage_deals').select(SELECT).eq('workspace_id', workspaceId).eq('status', 'won').order('won_at',  { ascending: false }),
+    supabase.from('sage_deals').select(SELECT).eq('workspace_id', workspaceId).eq('status', 'lost').order('lost_at', { ascending: false }),
+  ])
+
+  return (
+    <ProjectsClient
+      projects={(wonData  ?? []) as DealRow[]}
+      lostDeals={(lostData ?? []) as DealRow[]}
+    />
+  )
 }

@@ -926,11 +926,12 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
                       channel:     'email',
                       action:      mappedAction,
                       sourceId:    inserted.id,
-                      entities:    analysis.extracted ?? {},
-                      senderName:  fromName ?? null,
-                      senderEmail: fromAddress ?? null,
-                      summary:     analysis.summary ?? null,
-                      priority:    analysis.priority ?? null,
+                      entities:          analysis.extracted ?? {},
+                      senderName:        fromName ?? null,
+                      senderEmail:       fromAddress ?? null,
+                      summary:           analysis.summary ?? null,
+                      priority:          analysis.priority ?? null,
+                      defaultPipelineId: autoSettings.default_pipeline_id,
                     })
                   }
                 } catch (autoErr) {
@@ -1153,11 +1154,12 @@ export async function reanalyzePendingEmails(workspaceId: string, batchSize = 50
                   channel:     'email',
                   action:      reanalyzeMappedAction,
                   sourceId:    email.id,
-                  entities:    analysis.extracted ?? {},
-                  senderName:  fromName ?? null,
-                  senderEmail: fromAddress ?? null,
-                  summary:     analysis.summary ?? null,
-                  priority:    analysis.priority ?? null,
+                  entities:          analysis.extracted ?? {},
+                  senderName:        fromName ?? null,
+                  senderEmail:       fromAddress ?? null,
+                  summary:           analysis.summary ?? null,
+                  priority:          analysis.priority ?? null,
+                  defaultPipelineId: autoSettings.default_pipeline_id,
                 })
               }
             } catch (autoErr) {
@@ -1208,11 +1210,12 @@ export async function backfillAutoActions(workspaceId: string, batchSize = 200):
         channel:     'email',
         action:      mappedAction,
         sourceId:    email.id,
-        entities:    (email.ai_entities ?? {}) as Record<string, string>,
-        senderName:  email.from_name ?? null,
-        senderEmail: email.from_address ?? null,
-        summary:     email.ai_summary ?? null,
-        priority:    email.ai_priority ?? null,
+        entities:          (email.ai_entities ?? {}) as Record<string, string>,
+        senderName:        email.from_name ?? null,
+        senderEmail:       email.from_address ?? null,
+        summary:           email.ai_summary ?? null,
+        priority:          email.ai_priority ?? null,
+        defaultPipelineId: settings.default_pipeline_id,
       })
       applied++
     } catch (err) {

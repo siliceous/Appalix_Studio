@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import { sendEmail, scheduleMeetingFromEmail, getEmailSignature } from '@/app/actions/sage-emails'
-import { updateAutoSetting, dismissFeedItem, runAutoBackfill } from '@/app/actions/sage-auto-settings'
+import { updateAutoSetting, dismissFeedItem, runAutoBackfill, setDefaultPipeline } from '@/app/actions/sage-auto-settings'
 import { getWorkspacePipelines, dashboardAddLead, dashboardAddTicket, batchMatchContacts } from '@/app/actions/sage-triage'
 import type { ContactMatch } from '@/app/actions/sage-triage'
 import type { SageEmail, Conversation, Lead, SageTicket } from '@/lib/types'
@@ -1130,6 +1130,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
   const [donutsCollapsed, setDonutsCollapsed] = useState(false)
   const [pipelines, setPipelines] = useState<{ id: string; name: string }[]>([])
+  const [defaultPipelineId, setDefaultPipelineId] = useState<string | null>(null)
   const [contactMatches, setContactMatches] = useState<Record<string, ContactMatch | null | undefined>>({})
   const [showAutoDesc, setShowAutoDesc] = useState(false)
   const autoDescTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -1143,11 +1144,14 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sbAny = supabase as any
     sbAny.from('sage_workspace_settings')
-      .select('global_auto_enabled')
+      .select('global_auto_enabled, default_pipeline_id')
       .eq('workspace_id', workspaceId)
       .maybeSingle()
-      .then(({ data }: { data: { global_auto_enabled: boolean } | null }) => {
-        if (data != null) setSageAuto(data.global_auto_enabled ?? true)
+      .then(({ data }: { data: { global_auto_enabled: boolean; default_pipeline_id: string | null } | null }) => {
+        if (data != null) {
+          setSageAuto(data.global_auto_enabled ?? true)
+          setDefaultPipelineId(data.default_pipeline_id ?? null)
+        }
       })
     sbAny.from('sage_feed_dismissals')
       .select('source_type, source_id')
@@ -1199,7 +1203,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
       supabase.from('sage_emails')
         .select('id, from_name, from_address, subject, received_at, ai_priority, ai_summary, ai_entities')
         .eq('workspace_id', workspaceId).eq('direction', 'inbound').eq('is_read', false).eq('is_trashed', false)
-        .in('ai_priority', ['high', 'medium']).gte('received_at', from).lte('received_at', to)
+        .gte('received_at', from).lte('received_at', to)
         .order('received_at', { ascending: false }),
       supabase.from('conversations')
         .select('id, title, platform, message_count, last_activity_at, ai_priority, ai_entities, bot:bots(name)')
@@ -1385,16 +1389,38 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   ? 'Full automation ON — AI creates contacts & deals automatically.'
                   : 'Assist mode — AI analyses only. You act manually in the dashboard.'}
               </p>
-              <button
-                onClick={handleBackfill}
-                disabled={backfilling}
-                title="Process existing emails, bots & forms that were analysed before Sage Auto was enabled"
-                className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg border border-gray-200 dark:border-white/10 text-gray-400 hover:text-[#3a9e8a] hover:border-[#61c2ad]/40 transition-colors disabled:opacity-50 whitespace-nowrap shrink-0"
-              >
-                {backfilling ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
-                {backfillDone !== null ? `${backfillDone} processed` : 'Process existing'}
-              </button>
+              {sageAuto && (
+                <button
+                  onClick={handleBackfill}
+                  disabled={backfilling}
+                  title="Process existing emails, bots & forms that were analysed before Sage Auto was enabled"
+                  className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg border border-gray-200 dark:border-white/10 text-gray-400 hover:text-[#3a9e8a] hover:border-[#61c2ad]/40 transition-colors disabled:opacity-50 whitespace-nowrap shrink-0"
+                >
+                  {backfilling ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                  {backfillDone !== null ? `${backfillDone} processed` : 'Process existing'}
+                </button>
+              )}
             </div>
+            {/* Default pipeline selector */}
+            {pipelines.length > 0 && (
+              <div className="flex items-center gap-2 px-1 mt-1">
+                <span className="text-[11px] text-gray-400 dark:text-gray-500 shrink-0">Pipeline:</span>
+                <select
+                  value={defaultPipelineId ?? ''}
+                  onChange={async e => {
+                    const val = e.target.value || null
+                    setDefaultPipelineId(val)
+                    await setDefaultPipeline(val)
+                  }}
+                  className="flex-1 min-w-0 text-[11px] bg-gray-50 dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/40 cursor-pointer"
+                >
+                  <option value="">Oldest pipeline (default)</option>
+                  {pipelines.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
       </div>

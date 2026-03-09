@@ -67,7 +67,7 @@ export function PipelineBoard({
   const [sortKey,          setSortKey]          = useState<SortKey>('none')
   const [showSortMenu,     setShowSortMenu]     = useState(false)
   const [showFilterMenu,   setShowFilterMenu]   = useState(false)
-  const [filterStatuses,   setFilterStatuses]   = useState<FilterStatus[]>([])
+  const [filterStatuses,   setFilterStatuses]   = useState<FilterStatus[]>(['open'])
   const [filterPriorities, setFilterPriorities] = useState<FilterPriority[]>([])
   const [viewMode,         setViewMode]         = useState<'kanban' | 'list'>('kanban')
 
@@ -546,11 +546,19 @@ export function PipelineBoard({
         stages={stages}
         openEditForm={openEditOnDealId === selectedDealId && openEditOnDealId !== null}
         onClose={() => { setSelectedDealId(null); setOpenEditOnDealId(null) }}
+        onDealDeleted={id => {
+          setDeals(prev => prev.filter(d => d.id !== id))
+          setSelectedDealId(null)
+        }}
         onDealUpdated={(id, changes) => {
           setDeals(prev => prev.map(d => d.id === id
-            ? { ...d, ...changes, priority: changes.priority as 'low' | 'medium' | 'high' | null, stage_id: changes.stage_id ?? d.stage_id }
+            ? { ...d, ...changes, priority: changes.priority as 'low' | 'medium' | 'high' | null, stage_id: changes.stage_id ?? d.stage_id, status: (changes.status ?? d.status) as 'open' | 'won' | 'lost' }
             : d
           ))
+          // Close slide-over if deal was won/lost (it leaves the filtered board)
+          if (changes.status === 'won' || changes.status === 'lost') {
+            setSelectedDealId(null)
+          }
         }}
       />
 

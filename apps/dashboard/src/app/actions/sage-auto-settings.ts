@@ -11,6 +11,7 @@ export interface AutoSettings {
   bots_auto_enabled:    boolean
   forms_auto_enabled:   boolean
   tickets_auto_enabled: boolean
+  default_pipeline_id:  string | null
 }
 
 const DEFAULTS: AutoSettings = {
@@ -19,6 +20,7 @@ const DEFAULTS: AutoSettings = {
   bots_auto_enabled:    true,
   forms_auto_enabled:   true,
   tickets_auto_enabled: true,
+  default_pipeline_id:  null,
 }
 
 async function getWorkspaceId(): Promise<string | null> {
@@ -42,12 +44,12 @@ export async function getAutoSettings(): Promise<AutoSettings> {
   const supabase = await createClient()
   const { data } = await supabase
     .from('sage_workspace_settings')
-    .select('global_auto_enabled, email_auto_enabled, bots_auto_enabled, forms_auto_enabled, tickets_auto_enabled')
+    .select('global_auto_enabled, email_auto_enabled, bots_auto_enabled, forms_auto_enabled, tickets_auto_enabled, default_pipeline_id')
     .eq('workspace_id', workspaceId)
     .maybeSingle()
 
   if (!data) return DEFAULTS
-  return data as AutoSettings
+  return { ...DEFAULTS, ...(data as Partial<AutoSettings>) }
 }
 
 export async function updateAutoSetting(
@@ -62,6 +64,19 @@ export async function updateAutoSetting(
     .from('sage_workspace_settings')
     .upsert(
       { workspace_id: workspaceId, [field]: value, updated_at: new Date().toISOString() },
+      { onConflict: 'workspace_id' },
+    )
+}
+
+export async function setDefaultPipeline(pipelineId: string | null): Promise<void> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return
+
+  const admin = createAdminClient()
+  await admin
+    .from('sage_workspace_settings')
+    .upsert(
+      { workspace_id: workspaceId, default_pipeline_id: pipelineId, updated_at: new Date().toISOString() },
       { onConflict: 'workspace_id' },
     )
 }
