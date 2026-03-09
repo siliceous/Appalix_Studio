@@ -17,7 +17,7 @@ import {
 import { timeAgo } from '@/lib/utils'
 import { sendEmail, scheduleMeetingFromEmail, getEmailSignature } from '@/app/actions/sage-emails'
 import { updateAutoSetting, dismissFeedItem } from '@/app/actions/sage-auto-settings'
-import { getWorkspacePipelines, dashboardAddLead } from '@/app/actions/sage-triage'
+import { getWorkspacePipelines, dashboardAddLead, dashboardAddTicket } from '@/app/actions/sage-triage'
 import type { SageEmail, Conversation, Lead, SageTicket } from '@/lib/types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -128,14 +128,13 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
 type PopupState = { kind: 'email' | 'bot' | 'form' | 'ticket'; id: string }
 
 function ItemPopup({
-  popup, sageAuto, workspaceId, pipelines, onClose, onAction,
+  popup, sageAuto, pipelines, onClose, onAction,
 }: {
   popup: PopupState
   sageAuto: boolean
-  workspaceId: string
   pipelines: { id: string; name: string }[]
   onClose: () => void
-  onAction: () => void
+  onAction: (extra?: Array<{ kind: string; id: string }>) => void
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [data, setData]               = useState<any>(null)
@@ -307,6 +306,7 @@ function ItemPopup({
     setAddLeadExisting(result.isExisting ?? false)
     setActionDone(result.isExisting ? 'activity_logged' : 'lead_created')
     onAction()
+    setTimeout(() => onClose(), 2500)
   }
 
   function triggerAddLead() {
@@ -315,31 +315,44 @@ function ItemPopup({
     setShowPipelinePicker(true)
   }
 
+  // Hard-coded dedup: email → name → phone (cannot be overwritten)
+  // If existing open ticket found → log activity, no duplicate created
   async function handleAddTicket() {
     setActionBusy(true)
-    let title = '', desc: string | null = null, priority = 'medium',
-        contactEmail = '', contactName = ''
+    let name = '', email: string | null = null, phone: string | null = null,
+        title = '', desc: string | null = null, priority = 'medium'
+    const src = popup.kind as 'email' | 'bot' | 'form' | 'ticket'
+
     if (popup.kind === 'email') {
       const e = data as SageEmail
+      name  = e.ai_entities?.name ?? e.from_name ?? e.from_address
+      email = e.ai_entities?.email ?? e.from_address
+      phone = e.ai_entities?.phone ?? null
       title = e.subject; desc = e.ai_summary ?? null; priority = e.ai_priority ?? 'medium'
-      contactEmail = e.from_address; contactName = e.from_name ?? e.from_address
     } else if (popup.kind === 'bot') {
       const c = data as Conversation
-      title = c.title ?? 'Support ticket'; desc = c.ai_summary ?? null; priority = c.ai_priority ?? 'medium'
-      contactName = (c as any).ai_entities?.name ?? c.title ?? 'Contact'
-      contactEmail = (c as any).ai_entities?.email ?? ''
+      name  = (c as any).ai_entities?.name ?? c.title ?? 'Contact'
+      email = (c as any).ai_entities?.email ?? null
+      phone = (c as any).ai_entities?.phone ?? null
+      title = c.title ?? 'Support ticket'; desc = (c as any).ai_summary ?? null; priority = (c as any).ai_priority ?? 'medium'
     } else if (popup.kind === 'form') {
       const l = data as Lead
+      name = l.name; email = l.email ?? null; phone = l.phone ?? null
       title = `Form: ${l.name}`; priority = l.lead_score ?? 'medium'
-      contactName = l.name; contactEmail = l.email ?? ''
+    } else if (popup.kind === 'ticket') {
+      const t = data as any
+      name = t.contact?.name ?? t.title; email = t.contact?.email ?? null; phone = t.contact?.phone ?? null
+      title = t.title; desc = t.description ?? null; priority = t.priority ?? 'medium'
     }
-    const supabase = createClient()
-    await (supabase as any).from('sage_tickets').insert({
-      workspace_id: workspaceId, title, description: desc,
-      priority, status: 'open',
-    })
-    setActionBusy(false); setActionDone('ticket_created')
-    onAction()
+
+    const result = await dashboardAddTicket({ name, email, phone, title, description: desc, priority, source: src })
+    setActionBusy(false)
+    if (result.error) { setActionDone(`Error: ${result.error}`); return }
+    setActionDone(result.isExisting ? 'ticket_existing' : 'ticket_created')
+    // Dismiss source item + newly created ticket (prevents it re-appearing in dashboard feed)
+    const extra = result.ticketId ? [{ kind: 'ticket', id: result.ticketId }] : []
+    onAction(extra)
+    setTimeout(() => onClose(), 2500)
   }
 
   async function handleSendReply() {
@@ -452,16 +465,20 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                       </div>
                     )}
 
-                    {/* Extracted contact details */}
-                    {!showReply && e.ai_entities && (e.ai_entities.name || e.ai_entities.email || e.ai_entities.phone || e.ai_entities.company) && (
+                    {/* Contact details — always shown for email (sender + any AI-extracted extras) */}
+                    {!showReply && (
                       <div>
-                        <p className="text-xs text-gray-400 mb-2">Contact details extracted</p>
+                        <p className="text-xs text-gray-400 mb-2">Contact details</p>
                         <div className="flex flex-wrap gap-2">
-                          {e.ai_entities.name    && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><User className="w-3 h-3 text-gray-400" />{e.ai_entities.name}</span>}
-                          {e.ai_entities.email   && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Mail className="w-3 h-3 text-gray-400" />{e.ai_entities.email}</span>}
-                          {e.ai_entities.phone   && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Phone className="w-3 h-3 text-gray-400" />{e.ai_entities.phone}</span>}
-                          {e.ai_entities.company && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Building2 className="w-3 h-3 text-gray-400" />{e.ai_entities.company}</span>}
-                          {e.ai_entities.product_interest && <span className="text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300">{e.ai_entities.product_interest}</span>}
+                          <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300">
+                            <User className="w-3 h-3 text-gray-400" />{e.ai_entities?.name ?? e.from_name ?? e.from_address}
+                          </span>
+                          <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300">
+                            <Mail className="w-3 h-3 text-gray-400" />{e.ai_entities?.email ?? e.from_address}
+                          </span>
+                          {e.ai_entities?.phone   && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Phone className="w-3 h-3 text-gray-400" />{e.ai_entities.phone}</span>}
+                          {e.ai_entities?.company && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Building2 className="w-3 h-3 text-gray-400" />{e.ai_entities.company}</span>}
+                          {e.ai_entities?.product_interest && <span className="text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300">{e.ai_entities.product_interest}</span>}
                         </div>
                       </div>
                     )}
@@ -843,6 +860,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                   {actionDone === 'lead_created'    ? 'Lead added to pipeline.' :
                    actionDone === 'activity_logged' ? 'Activity logged on existing deal.' :
                    actionDone === 'ticket_created'  ? 'Ticket created successfully.' :
+                   actionDone === 'ticket_existing' ? 'Activity logged on existing ticket.' :
                    actionDone}
                 </div>
               )}
@@ -1155,20 +1173,26 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
     setDoneBusy(null)
   }
 
-  // ── Donut segments ────────────────────────────────────────────────────────
-  const emailSegs:  DonutSegment[] = [{ name: 'High', value: emails.filter(e => e.ai_priority === 'high').length, fill: P_COLORS.high }, { name: 'Medium', value: emails.filter(e => e.ai_priority === 'medium').length, fill: P_COLORS.medium }]
-  const botSegs:    DonutSegment[] = [{ name: 'High', value: bots.filter(b => b.ai_priority === 'high').length,   fill: P_COLORS.high }, { name: 'Medium', value: bots.filter(b => b.ai_priority === 'medium').length,   fill: P_COLORS.medium }]
-  const formSegs:   DonutSegment[] = [{ name: 'High', value: forms.filter(f => f.lead_score === 'high').length, fill: P_COLORS.high }, { name: 'Medium', value: forms.filter(f => f.lead_score === 'medium').length, fill: P_COLORS.medium }, { name: 'Low', value: forms.filter(f => f.lead_score === 'low' || !f.lead_score).length, fill: P_COLORS.low }]
-  const ticketSegs: DonutSegment[] = [{ name: 'High', value: tickets.filter(t => t.priority === 'high' || t.priority === 'urgent').length, fill: P_COLORS.high }, { name: 'Medium', value: tickets.filter(t => t.priority === 'medium').length, fill: P_COLORS.medium }, { name: 'Low', value: tickets.filter(t => t.priority === 'low').length, fill: P_COLORS.low }]
+  // ── Visible (non-dismissed) subsets — used by both donuts and timeline ───
+  const visEmails  = useMemo(() => emails.filter(e  => !dismissedIds.has(`email-${e.id}`)),   [emails,   dismissedIds])
+  const visBots    = useMemo(() => bots.filter(b    => !dismissedIds.has(`bot-${b.id}`)),     [bots,     dismissedIds])
+  const visForms   = useMemo(() => forms.filter(f   => !dismissedIds.has(`form-${f.id}`)),    [forms,    dismissedIds])
+  const visTickets = useMemo(() => tickets.filter(t => !dismissedIds.has(`ticket-${t.id}`)), [tickets,  dismissedIds])
 
-  // ── Timeline ──────────────────────────────────────────────────────────────
+  // ── Donut segments (always reflect visible feed, same as triage counts) ──
+  const emailSegs:  DonutSegment[] = [{ name: 'High', value: visEmails.filter(e => e.ai_priority === 'high').length, fill: P_COLORS.high }, { name: 'Medium', value: visEmails.filter(e => e.ai_priority === 'medium').length, fill: P_COLORS.medium }]
+  const botSegs:    DonutSegment[] = [{ name: 'High', value: visBots.filter(b => b.ai_priority === 'high').length,   fill: P_COLORS.high }, { name: 'Medium', value: visBots.filter(b => b.ai_priority === 'medium').length,   fill: P_COLORS.medium }]
+  const formSegs:   DonutSegment[] = [{ name: 'High', value: visForms.filter(f => f.lead_score === 'high').length, fill: P_COLORS.high }, { name: 'Medium', value: visForms.filter(f => f.lead_score === 'medium').length, fill: P_COLORS.medium }, { name: 'Low', value: visForms.filter(f => f.lead_score === 'low' || !f.lead_score).length, fill: P_COLORS.low }]
+  const ticketSegs: DonutSegment[] = [{ name: 'High', value: visTickets.filter(t => t.priority === 'high' || t.priority === 'urgent').length, fill: P_COLORS.high }, { name: 'Medium', value: visTickets.filter(t => t.priority === 'medium').length, fill: P_COLORS.medium }, { name: 'Low', value: visTickets.filter(t => t.priority === 'low').length, fill: P_COLORS.low }]
+
+  // ── Timeline (uses pre-filtered visible arrays) ───────────────────────────
   const timeline = useMemo<TItem[]>(() => [
-    ...emails.map(d  => ({ kind: 'email'  as const, data: d, time: d.received_at    })),
-    ...bots.map(d    => ({ kind: 'bot'    as const, data: d, time: d.last_activity_at })),
-    ...forms.map(d   => ({ kind: 'form'   as const, data: d, time: d.created_at      })),
-    ...tickets.map(d => ({ kind: 'ticket' as const, data: d, time: d.created_at      })),
-  ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
-   .filter(item => !dismissedIds.has(`${item.kind}-${item.data.id}`)), [emails, bots, forms, tickets, dismissedIds])
+    ...visEmails.map(d  => ({ kind: 'email'  as const, data: d, time: d.received_at    })),
+    ...visBots.map(d    => ({ kind: 'bot'    as const, data: d, time: d.last_activity_at })),
+    ...visForms.map(d   => ({ kind: 'form'   as const, data: d, time: d.created_at      })),
+    ...visTickets.map(d => ({ kind: 'ticket' as const, data: d, time: d.created_at      })),
+  ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()),
+  [visEmails, visBots, visForms, visTickets])
 
   const overdue = (due: string | null) => !!due && new Date(due) < new Date()
 
@@ -1180,13 +1204,21 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
         <ItemPopup
           popup={popup}
           sageAuto={sageAuto}
-          workspaceId={workspaceId}
           pipelines={pipelines}
           onClose={() => setPopup(null)}
-          onAction={() => {
+          onAction={(extra) => {
             if (popup) {
-              setDismissedIds(prev => new Set([...prev, `${popup.kind}-${popup.id}`]))
-              dismissFeedItem(popup.kind, popup.id)
+              // Always dismiss the source feed item
+              const allKeys = [
+                { kind: popup.kind, id: popup.id },
+                ...(extra ?? []),
+              ]
+              setDismissedIds(prev => {
+                const next = new Set(prev)
+                allKeys.forEach(k => next.add(`${k.kind}-${k.id}`))
+                return next
+              })
+              allKeys.forEach(k => dismissFeedItem(k.kind as 'email' | 'bot' | 'form' | 'ticket', k.id))
             }
           }}
         />
@@ -1278,10 +1310,10 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
           /* Collapsed: compact single-row pills */
           <div className="flex flex-wrap gap-3">
             {[
-              { label: 'Emails',    Icon: Mail,          iconCls: 'text-blue-500',   total: emails.length,  href: '/dashboard/email'   },
-              { label: 'Bot Chats', Icon: MessageSquare, iconCls: 'text-purple-500', total: bots.length,    href: '/dashboard/bots'    },
-              { label: 'Forms',     Icon: FileText,      iconCls: 'text-green-500',  total: forms.length,   href: '/dashboard/forms'   },
-              { label: 'Tickets',   Icon: TicketIcon,    iconCls: 'text-amber-500',  total: tickets.length, href: '/dashboard/tickets' },
+              { label: 'Emails',    Icon: Mail,          iconCls: 'text-blue-500',   total: visEmails.length,  href: '/dashboard/email'   },
+              { label: 'Bot Chats', Icon: MessageSquare, iconCls: 'text-purple-500', total: visBots.length,    href: '/dashboard/bots'    },
+              { label: 'Forms',     Icon: FileText,      iconCls: 'text-green-500',  total: visForms.length,   href: '/dashboard/forms'   },
+              { label: 'Tickets',   Icon: TicketIcon,    iconCls: 'text-amber-500',  total: visTickets.length, href: '/dashboard/tickets' },
             ].map(card => (
               <Link key={card.label} href={card.href}
                 className="flex items-center gap-2 bg-white dark:bg-[#232323] border dark:border-white/8 rounded-lg px-3 py-2 hover:shadow-sm hover:border-gray-300 dark:hover:border-white/15 transition-all">
@@ -1295,10 +1327,10 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
           /* Expanded: full donut cards */
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             {[
-              { label: 'Emails',    sub: 'high & medium unread',  Icon: Mail,          iconCls: 'text-blue-500',   segs: emailSegs,  total: emails.length,  href: '/dashboard/email'   },
-              { label: 'Bot Chats', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-500', segs: botSegs,    total: bots.length,    href: '/dashboard/bots'    },
-              { label: 'Forms',     sub: 'all submissions',       Icon: FileText,      iconCls: 'text-green-500',  segs: formSegs,   total: forms.length,   href: '/dashboard/forms'   },
-              { label: 'Tickets',   sub: 'all tickets',           Icon: TicketIcon,    iconCls: 'text-amber-500',  segs: ticketSegs, total: tickets.length, href: '/dashboard/tickets' },
+              { label: 'Emails',    sub: 'high & medium unread',  Icon: Mail,          iconCls: 'text-blue-500',   segs: emailSegs,  total: visEmails.length,  href: '/dashboard/email'   },
+              { label: 'Bot Chats', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-500', segs: botSegs,    total: visBots.length,    href: '/dashboard/bots'    },
+              { label: 'Forms',     sub: 'all submissions',       Icon: FileText,      iconCls: 'text-green-500',  segs: formSegs,   total: visForms.length,   href: '/dashboard/forms'   },
+              { label: 'Tickets',   sub: 'all tickets',           Icon: TicketIcon,    iconCls: 'text-amber-500',  segs: ticketSegs, total: visTickets.length, href: '/dashboard/tickets' },
             ].map(card => (
               <Link key={card.label} href={card.href} className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-4 flex flex-col items-center hover:shadow-md hover:border-gray-300 dark:hover:border-white/15 transition-all cursor-pointer">
                 <div className="w-full flex items-center justify-between mb-2">
@@ -1357,28 +1389,28 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                 className={`flex items-center gap-1 text-blue-500 hover:text-blue-600 transition-colors ${topType === 'email' && feedView === 'grid' ? 'font-semibold' : ''}`}
                 title="Emails"
               >
-                <Mail className="w-3.5 h-3.5" />{emails.length}
+                <Mail className="w-3.5 h-3.5" />{visEmails.length}
               </button>
               <button
                 onClick={() => { setFeedView('grid'); setTopType('bot') }}
                 className={`flex items-center gap-1 text-purple-500 hover:text-purple-600 transition-colors ${topType === 'bot' && feedView === 'grid' ? 'font-semibold' : ''}`}
                 title="Bot chats"
               >
-                <MessageSquare className="w-3.5 h-3.5" />{bots.length}
+                <MessageSquare className="w-3.5 h-3.5" />{visBots.length}
               </button>
               <button
                 onClick={() => { setFeedView('grid'); setTopType('form') }}
                 className={`flex items-center gap-1 text-green-500 hover:text-green-600 transition-colors ${topType === 'form' && feedView === 'grid' ? 'font-semibold' : ''}`}
                 title="Form submissions"
               >
-                <FileText className="w-3.5 h-3.5" />{forms.length}
+                <FileText className="w-3.5 h-3.5" />{visForms.length}
               </button>
               <button
                 onClick={() => { setFeedView('grid'); setTopType('ticket') }}
                 className={`flex items-center gap-1 text-amber-500 hover:text-amber-600 transition-colors ${topType === 'ticket' && feedView === 'grid' ? 'font-semibold' : ''}`}
                 title="Tickets"
               >
-                <TicketIcon className="w-3.5 h-3.5" />{tickets.length}
+                <TicketIcon className="w-3.5 h-3.5" />{visTickets.length}
               </button>
             </div>
           </div>
@@ -1508,10 +1540,10 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   accentClass: 'text-blue-700 dark:text-blue-300',
                   borderClass: 'border-blue-200 dark:border-blue-500/30',
                   bgClass: 'bg-blue-100 dark:bg-blue-500/25',
-                  count: emails.length,
-                  rows: emails.length === 0
+                  count: visEmails.length,
+                  rows: visEmails.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No emails this period.</p>
-                    : emails.filter(e => !dismissedIds.has(`email-${e.id}`)).map(e => (
+                    : visEmails.map(e => (
                       <div key={e.id} onClick={() => setPopup({ kind: 'email', id: e.id })}
                         className="group flex items-start gap-3 px-5 py-4 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer border-b border-blue-100 dark:border-blue-500/15 last:border-0">
                         <PriorityDot priority={e.ai_priority ?? 'low'} pulse={e.ai_priority === 'high'} />
@@ -1535,10 +1567,10 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   accentClass: 'text-purple-700 dark:text-purple-300',
                   borderClass: 'border-purple-200 dark:border-purple-500/30',
                   bgClass: 'bg-purple-100 dark:bg-purple-500/25',
-                  count: bots.length,
-                  rows: bots.length === 0
+                  count: visBots.length,
+                  rows: visBots.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No bot chats this period.</p>
-                    : bots.filter(b => !dismissedIds.has(`bot-${b.id}`)).map(b => (
+                    : visBots.map(b => (
                       <div key={b.id} onClick={() => setPopup({ kind: 'bot', id: b.id })}
                         className="group flex items-start gap-3 px-5 py-3 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-colors cursor-pointer border-b border-purple-100 dark:border-purple-500/15 last:border-0">
                         <PriorityDot priority={b.ai_priority ?? 'low'} pulse={b.ai_priority === 'high'} />
@@ -1563,10 +1595,10 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   accentClass: 'text-green-700 dark:text-green-300',
                   borderClass: 'border-green-200 dark:border-green-500/30',
                   bgClass: 'bg-green-100 dark:bg-green-500/25',
-                  count: forms.length,
-                  rows: forms.length === 0
+                  count: visForms.length,
+                  rows: visForms.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No form submissions this period.</p>
-                    : forms.filter(f => !dismissedIds.has(`form-${f.id}`)).map(f => (
+                    : visForms.map(f => (
                       <div key={f.id} onClick={() => setPopup({ kind: 'form', id: f.id })}
                         className="group flex items-start gap-3 px-5 py-3 hover:bg-green-50 dark:hover:bg-green-500/10 transition-colors cursor-pointer border-b border-green-100 dark:border-green-500/15 last:border-0">
                         <PriorityDot priority={f.lead_score ?? 'low'} />
@@ -1589,10 +1621,10 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   accentClass: 'text-amber-700 dark:text-amber-400',
                   borderClass: 'border-amber-200/70 dark:border-amber-500/25',
                   bgClass: 'bg-amber-50 dark:bg-amber-500/15',
-                  count: tickets.length,
-                  rows: tickets.length === 0
+                  count: visTickets.length,
+                  rows: visTickets.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No tickets this period.</p>
-                    : tickets.filter(t => !dismissedIds.has(`ticket-${t.id}`)).map(t => (
+                    : visTickets.map(t => (
                       <div key={t.id} onClick={() => setPopup({ kind: 'ticket', id: t.id })}
                         className="group flex items-start gap-3 px-5 py-3 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors cursor-pointer border-b border-amber-100 dark:border-amber-500/15 last:border-0">
                         <PriorityDot priority={t.priority} pulse={t.priority === 'high' || t.priority === 'urgent'} />

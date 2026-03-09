@@ -461,3 +461,87 @@ export async function dashboardAddLead(opts: {
     return { error: msg }
   }
 }
+
+// ── Hard-coded dedup: add ticket from dashboard ──────────────────────────────
+// Dedup priority: email → name → phone (cannot be overwritten)
+// If existing open ticket found for contact → log activity, no duplicate
+export async function dashboardAddTicket(opts: {
+  name: string
+  email?: string | null
+  phone?: string | null
+  title: string
+  description?: string | null
+  priority?: string
+  source: 'email' | 'bot' | 'form' | 'ticket'
+}): Promise<{ ticketId?: string; isExisting?: boolean; error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { error: 'Not authenticated' }
+
+  const admin = createAdminClient()
+  type Row = { id: string }
+
+  try {
+    // 1. Find contact: email → name → phone (hardcoded priority)
+    let contactId: string | null = null
+
+    if (opts.email) {
+      const { data: c } = await admin.from('sage_contacts').select('id')
+        .eq('workspace_id', workspaceId).ilike('email', opts.email).limit(1).maybeSingle()
+      if (c) contactId = (c as Row).id
+    }
+    if (!contactId && opts.name) {
+      const { data: c } = await admin.from('sage_contacts').select('id')
+        .eq('workspace_id', workspaceId).ilike('name', opts.name.trim()).limit(1).maybeSingle()
+      if (c) contactId = (c as Row).id
+    }
+    if (!contactId && opts.phone) {
+      const { data: c } = await admin.from('sage_contacts').select('id')
+        .eq('workspace_id', workspaceId).eq('phone', opts.phone).limit(1).maybeSingle()
+      if (c) contactId = (c as Row).id
+    }
+
+    // 2. Check for existing open ticket for this contact
+    if (contactId) {
+      const { data: existing } = await admin.from('sage_tickets').select('id')
+        .eq('workspace_id', workspaceId).eq('contact_id', contactId).eq('status', 'open')
+        .limit(1).maybeSingle()
+
+      if (existing) {
+        const ticketId = (existing as Row).id
+        const actTitle =
+          opts.source === 'email' ? 'Received an email'
+          : opts.source === 'bot' ? 'Received a bot conversation'
+          : opts.source === 'form' ? 'Received a form submission'
+          : 'Received a ticket update'
+        await (admin as any).from('sage_ticket_activities').insert({
+          workspace_id: workspaceId,
+          ticket_id:    ticketId,
+          type:         'note',
+          title:        actTitle,
+          body:         opts.description ?? null,
+        })
+        revalidatePath('/sage/tickets')
+        return { ticketId, isExisting: true }
+      }
+    }
+
+    // 3. Create new ticket (linked to contact if found)
+    const { data: created, error } = await admin.from('sage_tickets')
+      .insert({
+        workspace_id: workspaceId,
+        title:        opts.title,
+        description:  opts.description ?? null,
+        priority:     opts.priority ?? 'medium',
+        status:       'open',
+        ...(contactId ? { contact_id: contactId } : {}),
+      })
+      .select('id').single()
+
+    if (error || !created) return { error: error?.message ?? 'Failed to create ticket' }
+    const ticketId = (created as Row).id
+    revalidatePath('/sage/tickets')
+    return { ticketId, isExisting: false }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Unexpected error' }
+  }
+}
