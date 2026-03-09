@@ -189,8 +189,7 @@ function ItemPopup({
   const [showBcc, setShowBcc]           = useState(false)
   const [ccValue, setCcValue]           = useState('')
   const [bccValue, setBccValue]         = useState('')
-  const replyRef      = useRef<HTMLDivElement>(null)
-  const draftApplied  = useRef(false)
+  const replyRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const [fontOpen,  setFontOpen]  = useState(false)
@@ -254,19 +253,16 @@ function ItemPopup({
   }, [popup.kind])
 
   // Populate contentEditable with AI draft + signature when reply opens.
-  // Deps include replyBody so it retries if data loads after the user clicked Reply.
-  // draftApplied ref prevents overwriting once the user has started typing.
+  // The contentEditable gets key={popup.id} so it's a fresh empty DOM node
+  // each time. Guard on innerText ensures we never overwrite user-typed content.
   useEffect(() => {
-    if (!showReply) { draftApplied.current = false; return }
-    if (!replyRef.current) return
-    if (draftApplied.current) return          // user may have started typing — don't overwrite
+    if (!showReply || !replyRef.current) return
+    if (replyRef.current.innerText.trim()) return   // user has already typed — don't overwrite
     const draftHtml = replyBody ? replyBody.replace(/\n/g, '<br>') : ''
     const sigHtml   = emailSignature
       ? `<br><br><hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;" />${emailSignature}`
       : ''
     replyRef.current.innerHTML = draftHtml + sigHtml
-    draftApplied.current = true
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showReply, replyBody, emailSignature])
 
   // Escape to close
@@ -278,7 +274,7 @@ function ItemPopup({
 
   // Fetch full item
   useEffect(() => {
-    setData(null); setLoading(true); setPostAction(null); setActionError(null); setShowReply(false); setSendResult(null); setShowPipelinePicker(false); setIgnoring(false); setAiCollapsed(false); setReplySummaryCollapsed(false); draftApplied.current = false
+    setData(null); setLoading(true); setPostAction(null); setActionError(null); setShowReply(false); setSendResult(null); setShowPipelinePicker(false); setIgnoring(false); setAiCollapsed(false); setReplySummaryCollapsed(false)
     const supabase = createClient()
     const go = async () => {
       if (popup.kind === 'email') {
@@ -610,9 +606,9 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
 
                     {/* Inline Reply compose — sits right after AI Summary */}
                     {showReply && (
-                      <div className="rounded-2xl border dark:border-white/10 overflow-hidden bg-white dark:bg-[#1e1e1e] flex-1 flex flex-col min-h-0">
+                      <div className="rounded-2xl border border-gray-200 overflow-hidden bg-white flex-1 flex flex-col min-h-0">
                         {/* Compose header — To row */}
-                        <div className="flex items-center gap-2 px-4 py-2.5 border-b dark:border-white/8 bg-gray-50 dark:bg-white/5">
+                        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-200 bg-gray-50">
                           <Reply className="w-3.5 h-3.5 text-[#61c2ad] shrink-0" />
                           <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 shrink-0">To:</span>
                           <span className="text-xs text-gray-600 dark:text-gray-300 flex-1 truncate">{e.from_name ?? e.from_address}</span>
@@ -629,7 +625,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                         </div>
                         {/* CC row */}
                         {showCc && (
-                          <div className="flex items-center gap-2 px-4 py-2 border-b dark:border-white/8 bg-gray-50 dark:bg-white/5">
+                          <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-200 bg-gray-50">
                             <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 w-7 shrink-0">CC:</span>
                             <input
                               type="email"
@@ -642,7 +638,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                         )}
                         {/* BCC row */}
                         {showBcc && (
-                          <div className="flex items-center gap-2 px-4 py-2 border-b dark:border-white/8 bg-gray-50 dark:bg-white/5">
+                          <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-200 bg-gray-50">
                             <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 w-7 shrink-0">BCC:</span>
                             <input
                               type="email"
@@ -654,7 +650,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                           </div>
                         )}
                         {/* Formatting toolbar */}
-                        <div className="border-b dark:border-white/8 bg-gray-50 dark:bg-white/[0.03]">
+                        <div className="border-b border-gray-200 bg-gray-50">
                           {/* ── Main toolbar row ── */}
                           <div className="flex items-center flex-wrap gap-0.5 px-3 py-1.5">
 
@@ -800,13 +796,14 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
 
                         {/* Editable body */}
                         <div
+                          key={popup.id}
                           ref={replyRef}
                           contentEditable
                           suppressContentEditableWarning
                           onInput={() => setReplyBody(replyRef.current?.innerText ?? '')}
                           data-placeholder="Write your reply…"
-                          className="flex-1 min-h-0 overflow-y-auto px-5 py-4 text-sm text-gray-800 dark:text-gray-200 leading-relaxed outline-none [&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-gray-400"
-                          style={{ fontFamily: 'Arial, sans-serif' }}
+                          className="flex-1 min-h-0 overflow-y-auto px-5 py-4 text-sm leading-relaxed outline-none [&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-gray-400"
+                          style={{ fontFamily: 'Arial, sans-serif', color: '#374151', backgroundColor: '#ffffff' }}
                         />
 
                         {/* Attached files */}
