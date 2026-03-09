@@ -1214,25 +1214,20 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
       <div className="flex items-start justify-between gap-6 mb-5 flex-wrap">
         <div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{greeting}</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 mb-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
             Here&apos;s what needs your attention today
           </p>
-          <div className="flex flex-wrap gap-2">
-            {[
-              { href: '/sage/contacts',  label: 'Add Contact', Icon: Plus,           cls: 'bg-[#2a7d6e] hover:bg-[#1f6157] text-white shadow-sm' },
-              { href: '/sage/emails',    label: 'Inbox',       Icon: Mail,           cls: 'bg-white dark:bg-white/8 hover:bg-gray-50 dark:hover:bg-white/12 border dark:border-white/10 text-gray-700 dark:text-gray-300' },
-              { href: '/conversations',  label: 'Bot Conv.',   Icon: MessageSquare,  cls: 'bg-white dark:bg-white/8 hover:bg-gray-50 dark:hover:bg-white/12 border dark:border-white/10 text-gray-700 dark:text-gray-300' },
-              { href: '/forms/leads',    label: 'Forms',       Icon: FileText,       cls: 'bg-white dark:bg-white/8 hover:bg-gray-50 dark:hover:bg-white/12 border dark:border-white/10 text-gray-700 dark:text-gray-300' },
-              { href: '/sage/pipelines', label: 'Pipelines',   Icon: Kanban,         cls: 'bg-white dark:bg-white/8 hover:bg-gray-50 dark:hover:bg-white/12 border dark:border-white/10 text-gray-700 dark:text-gray-300' },
-            ].map(({ href, label, Icon: Ic, cls }) => (
-              <Link key={href} href={href} className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-xl transition-colors ${cls}`}>
-                <Ic className="w-3.5 h-3.5" /> {label}
-              </Link>
-            ))}
-          </div>
         </div>
 
         <div className="flex items-start gap-3 flex-wrap">
+          {/* Quick actions */}
+          <Link href="/sage/contacts" className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-xl bg-[#2a7d6e] hover:bg-[#1f6157] text-white shadow-sm transition-colors">
+            <Plus className="w-3.5 h-3.5" /> Add Contact
+          </Link>
+          <Link href="/sage/pipelines" className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors">
+            <Kanban className="w-3.5 h-3.5" /> Pipelines
+          </Link>
+
           {/* Date range */}
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">

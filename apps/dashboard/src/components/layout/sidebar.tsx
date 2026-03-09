@@ -53,7 +53,6 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Agent',
     items: [
       { href: '/bots',          label: 'Bots',           icon: Bot },
-      { href: '/conversations',  label: 'Conversations',  icon: MessageSquare },
       { href: '/integrations',   label: 'Integrations',   icon: Plug },
       { href: '/sources',        label: 'Knowledge Base', icon: BookOpen },
     ],
@@ -64,8 +63,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/sage/pipelines', label: 'Pipelines', icon: Kanban },
       { href: '/sage/contacts',  label: 'Contacts',  icon: Users },
-      { href: '/sage/emails',    label: 'Emails',    icon: Mail },
-      { href: '/sage/tickets',   label: 'Tickets',   icon: Ticket },
     ],
   },
   {
