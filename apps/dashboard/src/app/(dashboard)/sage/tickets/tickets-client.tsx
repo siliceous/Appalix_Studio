@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Ticket, Plus, Trash2, Mail, Pencil, Merge, X, Loader2 } from 'lucide-react'
+import { Ticket, Plus, Trash2, Mail, Pencil, Merge, X, Loader2, Search } from 'lucide-react'
 import { TicketModal } from '@/components/sage/ticket-modal'
 import { TicketSlideOver } from '@/components/dashboard/ticket-slide-over'
 import { updateTicketStatus, deleteTicket, mergeTickets } from '@/app/actions/sage'
@@ -41,6 +41,7 @@ interface TicketsClientProps {
 export function TicketsClient({ tickets: initialTickets, contacts, triageMode = false }: TicketsClientProps) {
   const [tickets,      setTickets]      = useState(initialTickets)
   const [filter,       setFilter]       = useState('all')
+  const [search,       setSearch]       = useState('')
   const [showModal,    setShowModal]    = useState(false)
   const [deleting,     setDeleting]     = useState<string | null>(null)
   const [slideTicket,  setSlideTicket]  = useState<TicketWithContact | null>(null)
@@ -93,7 +94,18 @@ export function TicketsClient({ tickets: initialTickets, contacts, triageMode = 
     })
   }
 
-  const filtered = sortTickets(filter === 'all' ? tickets : tickets.filter(t => t.status === filter))
+  const q = search.toLowerCase()
+  const searched = q
+    ? tickets.filter(t =>
+        t.title.toLowerCase().includes(q) ||
+        (t.name ?? '').toLowerCase().includes(q) ||
+        (t.email ?? '').toLowerCase().includes(q) ||
+        (t.contact?.name ?? '').toLowerCase().includes(q) ||
+        (t.contact?.email ?? '').toLowerCase().includes(q) ||
+        (t.description ?? '').toLowerCase().includes(q)
+      )
+    : tickets
+  const filtered = sortTickets(filter === 'all' ? searched : searched.filter(t => t.status === filter))
 
   async function handleStatusChange(id: string, status: SageTicketStatus) {
     if (triageMode && (status === 'resolved' || status === 'closed')) {
@@ -118,7 +130,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, triageMode = 
   const selectedTickets = tickets.filter(t => selectedIds.has(t.id))
 
   return (
-    <div className="max-w-5xl mx-auto p-8">
+    <div className="max-w-6xl mx-auto space-y-5 p-8">
       {/* Merge modal */}
       {showMerge && selectedIds.size >= 2 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -169,7 +181,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, triageMode = 
       )}
 
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Tickets</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -201,24 +213,46 @@ export function TicketsClient({ tickets: initialTickets, contacts, triageMode = 
         </div>
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex items-center gap-1 mb-5 p-1 bg-gray-100 dark:bg-white/5 rounded-xl w-fit">
-        {FILTERS.map(f => (
-          <button
-            key={f.value}
-            onClick={() => setFilter(f.value)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              filter === f.value
-                ? 'bg-white dark:bg-[#232323] text-gray-900 dark:text-gray-100 shadow-sm'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
-          >
-            {f.label}
-            <span className="ml-1.5 text-xs text-gray-400">
-              {f.value === 'all' ? tickets.length : tickets.filter(t => t.status === f.value).length}
-            </span>
-          </button>
-        ))}
+      {/* Filter bar */}
+      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-4">
+        <div className="flex flex-wrap gap-3 items-center">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[180px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search tickets…"
+              className="w-full pl-8 pr-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
+            />
+            {search && (
+              <button onClick={() => setSearch('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          {/* Status pills */}
+          <div className="flex items-center gap-1">
+            {FILTERS.map(f => (
+              <button
+                key={f.value}
+                onClick={() => setFilter(f.value)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  filter === f.value
+                    ? 'bg-[#61c2ad]/15 dark:bg-[#61c2ad]/20 text-[#1f6157] dark:text-[#61c2ad] border border-[#61c2ad]/30'
+                    : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
+                }`}
+              >
+                {f.label}
+                <span className="ml-1 opacity-60">
+                  {f.value === 'all' ? tickets.length : tickets.filter(t => t.status === f.value).length}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Tickets list */}
