@@ -17,6 +17,7 @@ import {
 import { timeAgo } from '@/lib/utils'
 import { sendEmail, scheduleMeetingFromEmail, getEmailSignature } from '@/app/actions/sage-emails'
 import { updateAutoSetting, dismissFeedItem } from '@/app/actions/sage-auto-settings'
+import { getWorkspacePipelines, dashboardAddLead } from '@/app/actions/sage-triage'
 import type { SageEmail, Conversation, Lead, SageTicket } from '@/lib/types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -127,11 +128,12 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
 type PopupState = { kind: 'email' | 'bot' | 'form' | 'ticket'; id: string }
 
 function ItemPopup({
-  popup, sageAuto, workspaceId, onClose, onAction,
+  popup, sageAuto, workspaceId, pipelines, onClose, onAction,
 }: {
   popup: PopupState
   sageAuto: boolean
   workspaceId: string
+  pipelines: { id: string; name: string }[]
   onClose: () => void
   onAction: () => void
 }) {
@@ -139,7 +141,9 @@ function ItemPopup({
   const [data, setData]               = useState<any>(null)
   const [loading, setLoading]         = useState(true)
   const [actionBusy, setActionBusy]   = useState(false)
-  const [actionDone, setActionDone]   = useState<'contact' | 'ticket' | null>(null)
+  const [actionDone, setActionDone]   = useState<string | null>(null)
+  const [showPipelinePicker, setShowPipelinePicker] = useState(false)
+  const [addLeadExisting, setAddLeadExisting]       = useState(false)
 
   // Reply compose state (email only)
   const [showReply, setShowReply]       = useState(false)
@@ -234,7 +238,7 @@ function ItemPopup({
 
   // Fetch full item
   useEffect(() => {
-    setData(null); setLoading(true); setActionDone(null); setShowReply(false); setSendResult(null)
+    setData(null); setLoading(true); setActionDone(null); setShowReply(false); setSendResult(null); setShowPipelinePicker(false); setAddLeadExisting(false)
     const supabase = createClient()
     const go = async () => {
       if (popup.kind === 'email') {
@@ -256,7 +260,7 @@ function ItemPopup({
         setData(d)
       } else if (popup.kind === 'ticket') {
         const { data: d } = await supabase.from('sage_tickets')
-          .select('id, title, description, priority, status, created_at, contact:sage_contacts(name, email)')
+          .select('id, title, description, priority, status, created_at, contact:sage_contacts(name, email, phone)')
           .eq('id', popup.id).single()
         setData(d)
       }
@@ -265,28 +269,76 @@ function ItemPopup({
     go()
   }, [popup.id, popup.kind])
 
-  async function createLead(name: string, email?: string | null, phone?: string | null, company?: string | null) {
-    setActionBusy(true)
-    const supabase = createClient()
-    await (supabase as any).from('sage_contacts').insert({
-      workspace_id: workspaceId, name,
-      email: email ?? null, phone: phone ?? null,
-      company_name: company ?? null, source: 'manual', tags: [],
-    })
-    setActionBusy(false); setActionDone('contact')
+  async function handleAddLead(pipelineId: string) {
+    setActionBusy(true); setShowPipelinePicker(false)
+    const src = popup.kind === 'ticket' ? 'email' : popup.kind as 'email' | 'bot' | 'form'
+    let name = '', email: string | null = null, phone: string | null = null,
+        company: string | null = null, interest: string | null = null, conversationId: string | null = null
+
+    if (popup.kind === 'email') {
+      const e = data as SageEmail
+      name  = e.ai_entities?.name ?? e.from_name ?? e.from_address
+      email = e.ai_entities?.email ?? e.from_address
+      phone = e.ai_entities?.phone ?? null
+      company  = e.ai_entities?.company ?? null
+      interest = e.ai_entities?.product_interest ?? null
+    } else if (popup.kind === 'bot') {
+      const c = data as Conversation
+      name  = (c as any).ai_entities?.name ?? c.title ?? 'Contact'
+      email = (c as any).ai_entities?.email ?? null
+      phone = (c as any).ai_entities?.phone ?? null
+      company  = (c as any).ai_entities?.company ?? null
+      interest = (c as any).ai_entities?.product_interest ?? null
+      conversationId = c.id
+    } else if (popup.kind === 'form') {
+      const l = data as Lead
+      name  = l.name; email = l.email ?? null; phone = l.phone ?? null
+      company  = l.company ?? null; interest = l.campaign_name ?? null
+    } else if (popup.kind === 'ticket') {
+      const t = data as any
+      name  = t.contact?.name ?? t.title
+      email = t.contact?.email ?? null
+      phone = t.contact?.phone ?? null
+    }
+
+    const result = await dashboardAddLead({ name, email, phone, company, interest, source: src, conversationId, pipelineId })
+    setActionBusy(false)
+    if (result.error) { setActionDone(`Error: ${result.error}`); return }
+    setAddLeadExisting(result.isExisting ?? false)
+    setActionDone(result.isExisting ? 'activity_logged' : 'lead_created')
     onAction()
   }
 
-  async function createTicket(title: string, desc?: string | null, priority?: string) {
+  function triggerAddLead() {
+    if (pipelines.length === 0) { setActionDone('Error: No pipelines found. Create one first.'); return }
+    if (pipelines.length === 1) { handleAddLead(pipelines[0].id); return }
+    setShowPipelinePicker(true)
+  }
+
+  async function handleAddTicket() {
     setActionBusy(true)
+    let title = '', desc: string | null = null, priority = 'medium',
+        contactEmail = '', contactName = ''
+    if (popup.kind === 'email') {
+      const e = data as SageEmail
+      title = e.subject; desc = e.ai_summary ?? null; priority = e.ai_priority ?? 'medium'
+      contactEmail = e.from_address; contactName = e.from_name ?? e.from_address
+    } else if (popup.kind === 'bot') {
+      const c = data as Conversation
+      title = c.title ?? 'Support ticket'; desc = c.ai_summary ?? null; priority = c.ai_priority ?? 'medium'
+      contactName = (c as any).ai_entities?.name ?? c.title ?? 'Contact'
+      contactEmail = (c as any).ai_entities?.email ?? ''
+    } else if (popup.kind === 'form') {
+      const l = data as Lead
+      title = `Form: ${l.name}`; priority = l.lead_score ?? 'medium'
+      contactName = l.name; contactEmail = l.email ?? ''
+    }
     const supabase = createClient()
     await (supabase as any).from('sage_tickets').insert({
-      workspace_id: workspaceId, title,
-      description: desc ?? null,
-      priority: priority ?? 'medium',
-      status: 'open',
+      workspace_id: workspaceId, title, description: desc,
+      priority, status: 'open',
     })
-    setActionBusy(false); setActionDone('ticket')
+    setActionBusy(false); setActionDone('ticket_created')
     onAction()
   }
 
@@ -397,6 +449,20 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                           <p className="text-[11px] text-blue-700 dark:text-blue-300 font-bold uppercase tracking-wide">AI Summary</p>
                         </div>
                         <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">{e.ai_summary}</p>
+                      </div>
+                    )}
+
+                    {/* Extracted contact details */}
+                    {!showReply && e.ai_entities && (e.ai_entities.name || e.ai_entities.email || e.ai_entities.phone || e.ai_entities.company) && (
+                      <div>
+                        <p className="text-xs text-gray-400 mb-2">Contact details extracted</p>
+                        <div className="flex flex-wrap gap-2">
+                          {e.ai_entities.name    && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><User className="w-3 h-3 text-gray-400" />{e.ai_entities.name}</span>}
+                          {e.ai_entities.email   && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Mail className="w-3 h-3 text-gray-400" />{e.ai_entities.email}</span>}
+                          {e.ai_entities.phone   && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Phone className="w-3 h-3 text-gray-400" />{e.ai_entities.phone}</span>}
+                          {e.ai_entities.company && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Building2 className="w-3 h-3 text-gray-400" />{e.ai_entities.company}</span>}
+                          {e.ai_entities.product_interest && <span className="text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300">{e.ai_entities.product_interest}</span>}
+                        </div>
                       </div>
                     )}
 
@@ -723,7 +789,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
 
               {/* ── Ticket popup ── */}
               {popup.kind === 'ticket' && (() => {
-                const t = data as SageTicket & { contact: { name: string; email: string | null } | null }
+                const t = data as SageTicket & { contact: { name: string; email: string | null; phone: string | null } | null }
                 return (
                   <>
                     <div className="flex items-start gap-3">
@@ -744,11 +810,12 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                       </div>
                     </div>
                     {t.contact && (
-                      <div className="flex items-center gap-2.5 bg-gray-50 dark:bg-white/5 rounded-xl p-3">
-                        <User className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                        <div>
-                          <p className="text-xs font-medium text-gray-800 dark:text-gray-200">{t.contact.name}</p>
-                          {t.contact.email && <p className="text-[11px] text-gray-400">{t.contact.email}</p>}
+                      <div>
+                        <p className="text-xs text-gray-400 mb-2">Contact details extracted</p>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><User className="w-3 h-3 text-gray-400" />{t.contact.name}</span>
+                          {t.contact.email && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Mail className="w-3 h-3 text-gray-400" />{t.contact.email}</span>}
+                          {t.contact.phone && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Phone className="w-3 h-3 text-gray-400" />{t.contact.phone}</span>}
                         </div>
                       </div>
                     )}
@@ -764,9 +831,19 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
 
               {/* Action done feedback */}
               {actionDone && (
-                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10 rounded-xl px-4 py-3">
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  {actionDone === 'contact' ? 'Lead created successfully.' : 'Ticket created successfully.'}
+                <div className={`flex items-center gap-2 text-sm rounded-xl px-4 py-3 ${
+                  actionDone.startsWith('Error:')
+                    ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10'
+                    : 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10'
+                }`}>
+                  {actionDone.startsWith('Error:')
+                    ? <X className="w-4 h-4 shrink-0" />
+                    : <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  }
+                  {actionDone === 'lead_created'    ? 'Lead added to pipeline.' :
+                   actionDone === 'activity_logged' ? 'Activity logged on existing deal.' :
+                   actionDone === 'ticket_created'  ? 'Ticket created successfully.' :
+                   actionDone}
                 </div>
               )}
             </>
@@ -776,6 +853,33 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
         {/* Footer actions */}
         {!loading && data && (
           <div className="px-6 py-4 border-t dark:border-white/10 shrink-0">
+
+            {/* Pipeline picker (shown for both Sage Auto ON and OFF when >1 pipelines) */}
+            {showPipelinePicker && (
+              <div className="mb-3">
+                <p className="text-xs text-gray-400 mb-2">Choose a pipeline to add this lead to:</p>
+                <div className="flex flex-wrap gap-2">
+                  {pipelines.map(p => (
+                    <button
+                      key={p.id}
+                      disabled={actionBusy}
+                      onClick={() => handleAddLead(p.id)}
+                      className="px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50"
+                    >
+                      {actionBusy ? <Loader2 className="w-3 h-3 animate-spin inline mr-1" /> : null}
+                      {p.name}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setShowPipelinePicker(false)}
+                    className="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/8 hover:bg-gray-200 dark:hover:bg-white/12 rounded-xl transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center gap-2">
 
               {/* ── Reply mode footer: Send button ── */}
@@ -800,7 +904,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                   )}
                 </>
               ) : sageAuto ? (
-                /* ── Sage Auto ON: Dismiss + Open Pipeline ── */
+                /* ── Sage Auto ON: Dismiss + Add Lead + Open Pipeline / Open Tickets ── */
                 <>
                   <button
                     onClick={() => { onAction(); onClose() }}
@@ -809,63 +913,73 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                     <X className="w-3.5 h-3.5" />
                     Dismiss
                   </button>
-                  <div className="flex-1" />
-                  <Link
-                    href="/sage/pipelines"
-                    onClick={onClose}
-                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors"
-                  >
-                    <Kanban className="w-3.5 h-3.5" />
-                    Open Pipeline
-                  </Link>
-                </>
-              ) : (
-                /* ── Sage Auto OFF: Create Lead + Create Ticket + Triage link ── */
-                <>
-                  {!actionDone && (
+
+                  {!actionDone && !showPipelinePicker && popup.kind !== 'ticket' && (
                     <button
                       disabled={actionBusy}
-                      onClick={() => {
-                        if (popup.kind === 'email') {
-                          const e = data as SageEmail
-                          createLead(e.ai_entities?.name ?? e.from_name ?? e.from_address, e.ai_entities?.email ?? e.from_address, null, e.ai_entities?.company)
-                        } else if (popup.kind === 'bot') {
-                          const c = data as Conversation
-                          createLead(c.ai_entities?.name ?? c.title ?? 'Contact', c.ai_entities?.email, c.ai_entities?.phone)
-                        } else if (popup.kind === 'form') {
-                          const l = data as Lead
-                          createLead(l.name, l.email, l.phone, l.company)
-                        } else {
-                          const t = data as SageTicket & { contact: { name: string; email: string | null } | null }
-                          if (t.contact) createLead(t.contact.name, t.contact.email)
-                        }
-                      }}
+                      onClick={triggerAddLead}
                       className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50"
                     >
                       {actionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                      Create Lead
+                      Add Lead
                     </button>
                   )}
 
-                  {!actionDone && popup.kind !== 'form' && (
+                  {!actionDone && !showPipelinePicker && popup.kind === 'ticket' && (
                     <button
                       disabled={actionBusy}
-                      onClick={() => {
-                        if (popup.kind === 'email') {
-                          const e = data as SageEmail
-                          createTicket(e.subject, e.ai_summary, 'medium')
-                        } else if (popup.kind === 'bot') {
-                          const c = data as Conversation
-                          createTicket(c.title ?? 'Support ticket', c.ai_summary, 'medium')
-                        } else {
-                          const t = data as SageTicket
-                          createTicket(t.title, t.description, t.priority)
-                        }
-                      }}
+                      onClick={handleAddTicket}
                       className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/25 border border-amber-200/70 dark:border-amber-500/25 rounded-xl transition-colors disabled:opacity-50"
                     >
                       {actionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <TicketIcon className="w-3.5 h-3.5" />}
-                      Create Ticket
+                      Add Ticket
+                    </button>
+                  )}
+
+                  <div className="flex-1" />
+
+                  {popup.kind === 'ticket' ? (
+                    <Link
+                      href="/sage/tickets"
+                      onClick={onClose}
+                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white rounded-xl transition-colors"
+                    >
+                      <TicketIcon className="w-3.5 h-3.5" />
+                      Open Tickets
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/sage/pipelines"
+                      onClick={onClose}
+                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors"
+                    >
+                      <Kanban className="w-3.5 h-3.5" />
+                      Open Pipeline
+                    </Link>
+                  )}
+                </>
+              ) : (
+                /* ── Sage Auto OFF: Add Lead + Add Ticket + Triage link ── */
+                <>
+                  {!actionDone && !showPipelinePicker && (
+                    <button
+                      disabled={actionBusy}
+                      onClick={triggerAddLead}
+                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50"
+                    >
+                      {actionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                      Add Lead
+                    </button>
+                  )}
+
+                  {!actionDone && !showPipelinePicker && popup.kind !== 'form' && (
+                    <button
+                      disabled={actionBusy}
+                      onClick={handleAddTicket}
+                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/25 border border-amber-200/70 dark:border-amber-500/25 rounded-xl transition-colors disabled:opacity-50"
+                    >
+                      {actionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <TicketIcon className="w-3.5 h-3.5" />}
+                      Add Ticket
                     </button>
                   )}
 
@@ -921,6 +1035,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
   const [topType,     setTopType]    = useState<'email' | 'bot' | 'form' | 'ticket' | null>(null)
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
   const [donutsCollapsed, setDonutsCollapsed] = useState(false)
+  const [pipelines, setPipelines] = useState<{ id: string; name: string }[]>([])
   const [showAutoDesc, setShowAutoDesc] = useState(false)
   const autoDescTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -945,6 +1060,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
       .then(({ data }: { data: { source_type: string; source_id: string }[] | null }) => {
         if (data) setDismissedIds(new Set(data.map(d => `${d.source_type}-${d.source_id}`)))
       })
+    getWorkspacePipelines().then(({ pipelines: p }) => setPipelines(p))
   }, [workspaceId])
 
   const handleDateChange = (v: DatePreset) => {
@@ -1065,6 +1181,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
           popup={popup}
           sageAuto={sageAuto}
           workspaceId={workspaceId}
+          pipelines={pipelines}
           onClose={() => setPopup(null)}
           onAction={() => {
             if (popup) {

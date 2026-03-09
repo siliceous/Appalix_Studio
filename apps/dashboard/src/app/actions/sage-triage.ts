@@ -310,3 +310,154 @@ export async function triageAddDealNote(
     return { error: msg }
   }
 }
+
+/** Return all pipelines for the current workspace (for the pipeline picker UI). */
+export async function getWorkspacePipelines(): Promise<{ pipelines: { id: string; name: string }[] }> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { pipelines: [] }
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('sage_pipelines')
+    .select('id, name')
+    .eq('workspace_id', workspaceId)
+    .order('created_at', { ascending: true })
+  return { pipelines: (data ?? []) as { id: string; name: string }[] }
+}
+
+/**
+ * Dashboard "Add Lead" action.
+ * Dedup (hardcoded): email → name → phone.
+ * – Existing contact + open deal  → log "Received a {source}" activity on that deal.
+ * – Existing contact + no open deal → create deal in first stage of chosen pipeline.
+ * – New contact                   → create contact + deal.
+ */
+export async function dashboardAddLead(opts: {
+  name:            string
+  email?:          string | null
+  phone?:          string | null
+  company?:        string | null
+  interest?:       string | null
+  source:          'email' | 'bot' | 'form'
+  conversationId?: string | null
+  pipelineId:      string
+}): Promise<{ contactId?: string; dealId?: string; isExisting?: boolean; error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { error: 'Not authenticated' }
+  const admin = createAdminClient()
+
+  try {
+    type CR = { id: string }
+    let contactId: string
+    let isNew = true
+
+    // 1. Dedup: email → name → phone
+    let existing: CR | null = null
+    if (opts.email) {
+      const { data: r } = await admin.from('sage_contacts').select('id')
+        .eq('workspace_id', workspaceId).ilike('email', opts.email).limit(1).maybeSingle()
+      if (r) existing = r as CR
+    }
+    if (!existing && opts.name) {
+      const { data: r } = await admin.from('sage_contacts').select('id')
+        .eq('workspace_id', workspaceId).ilike('name', opts.name.trim()).limit(1).maybeSingle()
+      if (r) existing = r as CR
+    }
+    if (!existing && opts.phone) {
+      const { data: r } = await admin.from('sage_contacts').select('id')
+        .eq('workspace_id', workspaceId).eq('phone', opts.phone).limit(1).maybeSingle()
+      if (r) existing = r as CR
+    }
+
+    if (existing) {
+      isNew = false
+      contactId = existing.id
+      const upd: Record<string, string> = {}
+      if (opts.email)   upd.email        = opts.email.toLowerCase()
+      if (opts.phone)   upd.phone        = opts.phone
+      if (opts.company) upd.company_name = opts.company
+      if (Object.keys(upd).length > 0)
+        await admin.from('sage_contacts').update(upd).eq('id', contactId)
+    } else {
+      const { data: created, error: contactErr } = await admin
+        .from('sage_contacts')
+        .insert({
+          workspace_id: workspaceId,
+          name:         opts.name,
+          email:        opts.email?.toLowerCase() ?? null,
+          phone:        opts.phone ?? null,
+          company_name: opts.company ?? null,
+          source:       opts.source,
+          contact_type: 'potential_customer',
+          tags:         [],
+        })
+        .select('id').single()
+      if (contactErr || !created) return { error: contactErr?.message ?? 'Failed to create contact' }
+      contactId = (created as CR).id
+      await logActivity(workspaceId, 'contact', contactId, 'contact_created', { source: `${opts.source}_triage` })
+    }
+
+    // 2. Check for existing open deal
+    const { data: openDeal } = await admin.from('sage_deals').select('id')
+      .eq('workspace_id', workspaceId).eq('contact_id', contactId).eq('status', 'open')
+      .limit(1).maybeSingle()
+
+    if (openDeal) {
+      const dealId = (openDeal as { id: string }).id
+      const activityTitle =
+        opts.source === 'email' ? 'Received an email'
+        : opts.source === 'bot' ? 'Received a bot conversation'
+        : 'Received a form submission'
+      await admin.from('sage_deal_activities').insert({
+        workspace_id: workspaceId,
+        deal_id:      dealId,
+        type:         'note',
+        title:        activityTitle,
+        body:         opts.interest ? `Interest: ${opts.interest}` : null,
+      })
+      await logActivity(workspaceId, 'deal', dealId, 'activity_added', { source: opts.source, title: activityTitle })
+      revalidatePath('/sage/pipelines')
+      return { contactId, dealId, isExisting: true }
+    }
+
+    // 3. First stage of chosen pipeline
+    const { data: stage } = await admin.from('sage_pipeline_stages').select('id')
+      .eq('pipeline_id', opts.pipelineId).order('position', { ascending: true }).limit(1).single()
+    const stageId = (stage as { id: string } | null)?.id ?? null
+
+    // 4. Deal title: Name - Company - Interest
+    const parts = [opts.name]
+    if (opts.company)  parts.push(opts.company)
+    if (opts.interest) parts.push(opts.interest)
+    const dealTitle = parts.join(' - ')
+
+    // 5. Create deal
+    const { data: deal, error: dealErr } = await admin.from('sage_deals')
+      .insert({
+        workspace_id:           workspaceId,
+        pipeline_id:            opts.pipelineId,
+        stage_id:               stageId,
+        contact_id:             contactId,
+        title:                  dealTitle,
+        source:                 opts.source,
+        source_conversation_id: opts.conversationId ?? null,
+        status:                 'open',
+        currency:               'USD',
+        tags:                   [],
+        visibility:             'everyone',
+      })
+      .select('id').single()
+
+    if (dealErr || !deal) return { error: dealErr?.message ?? 'Failed to create deal' }
+    const dealId = (deal as { id: string }).id
+
+    void isNew
+    await logActivity(workspaceId, 'deal', dealId, 'deal_created', { source: `${opts.source}_triage` })
+    revalidatePath('/dashboard')
+    revalidatePath('/sage/pipelines')
+    revalidatePath('/sage/contacts')
+    return { contactId, dealId, isExisting: false }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unexpected error'
+    return { error: msg }
+  }
+}
