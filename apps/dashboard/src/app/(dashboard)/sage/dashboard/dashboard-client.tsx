@@ -227,9 +227,9 @@ function ItemPopup({
     setCopied(true); setTimeout(() => setCopied(false), 2000)
   }
 
-  const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 dark:bg-purple-500/30', form: 'bg-green-200 dark:bg-green-500/30', ticket: 'bg-yellow-200 dark:bg-yellow-500/30' }[popup.kind]
+  const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 dark:bg-purple-500/30', form: 'bg-green-200 dark:bg-green-500/30', ticket: 'bg-amber-100 dark:bg-amber-500/25' }[popup.kind]
   const Icon    = { email: Mail, bot: MessageSquare, form: FileText, ticket: TicketIcon }[popup.kind]
-  const iconCol = { email: 'text-blue-700 dark:text-blue-300', bot: 'text-purple-700 dark:text-purple-300', form: 'text-green-700 dark:text-green-300', ticket: 'text-yellow-700 dark:text-yellow-300' }[popup.kind]
+  const iconCol = { email: 'text-blue-700 dark:text-blue-300', bot: 'text-purple-700 dark:text-purple-300', form: 'text-green-700 dark:text-green-300', ticket: 'text-amber-700 dark:text-amber-400' }[popup.kind]
   const label   = { email: 'Email Summary', bot: 'Chat Summary', form: 'Lead Details', ticket: 'Ticket Summary' }[popup.kind]
 
   return (
@@ -486,8 +486,8 @@ function ItemPopup({
                 return (
                   <>
                     <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-full bg-orange-200 dark:bg-orange-500/30 flex items-center justify-center shrink-0">
-                        <TicketIcon className="w-4 h-4 text-orange-700 dark:text-orange-300" />
+                      <div className="w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-500/25 flex items-center justify-center shrink-0">
+                        <TicketIcon className="w-4 h-4 text-amber-700 dark:text-amber-400" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t.title}</p>
@@ -512,8 +512,8 @@ function ItemPopup({
                       </div>
                     )}
                     {t.description && (
-                      <div className="bg-orange-50 dark:bg-orange-500/20 border border-orange-200 dark:border-orange-500/30 rounded-xl p-4">
-                        <p className="text-[11px] text-orange-700 dark:text-orange-300 font-bold uppercase tracking-wide mb-2">Description</p>
+                      <div className="bg-amber-50 dark:bg-amber-500/15 border border-amber-200/70 dark:border-amber-500/25 rounded-xl p-4">
+                        <p className="text-[11px] text-amber-700 dark:text-amber-400 font-bold uppercase tracking-wide mb-2">Description</p>
                         <p className="text-sm text-gray-800 dark:text-gray-100 leading-relaxed whitespace-pre-wrap">{t.description}</p>
                       </div>
                     )}
@@ -600,7 +600,7 @@ function ItemPopup({
                           createTicket(t.title, t.description, t.priority)
                         }
                       }}
-                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20 border border-orange-200 dark:border-orange-500/20 rounded-xl transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/25 border border-amber-200/70 dark:border-amber-500/25 rounded-xl transition-colors disabled:opacity-50"
                     >
                       {actionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <TicketIcon className="w-3.5 h-3.5" />}
                       Create Ticket
@@ -881,7 +881,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
           { label: 'Emails',    sub: 'high & medium unread',  Icon: Mail,        iconCls: 'text-blue-500',   segs: emailSegs,  total: emails.length,  href: '/dashboard/email'   },
           { label: 'Bot Chats', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-500', segs: botSegs,  total: bots.length,    href: '/dashboard/bots'    },
           { label: 'Forms',     sub: 'all submissions',       Icon: FileText,    iconCls: 'text-green-500',  segs: formSegs,   total: forms.length,   href: '/dashboard/forms'   },
-          { label: 'Tickets',   sub: 'all tickets',           Icon: TicketIcon,  iconCls: 'text-yellow-500', segs: ticketSegs, total: tickets.length, href: '/dashboard/tickets' },
+          { label: 'Tickets',   sub: 'all tickets',           Icon: TicketIcon,  iconCls: 'text-amber-500', segs: ticketSegs, total: tickets.length, href: '/dashboard/tickets' },
         ].map(card => (
           <Link key={card.label} href={card.href} className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-4 flex flex-col items-center hover:shadow-md hover:border-gray-300 dark:hover:border-white/15 transition-all cursor-pointer">
             <div className="w-full flex items-center justify-between mb-2">
@@ -956,7 +956,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
               </button>
               <button
                 onClick={() => { setFeedView('grid'); setTopType('ticket') }}
-                className={`flex items-center gap-1 text-yellow-500 hover:text-yellow-600 transition-colors ${topType === 'ticket' && feedView === 'grid' ? 'font-semibold' : ''}`}
+                className={`flex items-center gap-1 text-amber-500 hover:text-amber-600 transition-colors ${topType === 'ticket' && feedView === 'grid' ? 'font-semibold' : ''}`}
                 title="Tickets"
               >
                 <TicketIcon className="w-3.5 h-3.5" />{tickets.length}
@@ -1167,9 +1167,9 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   key: 'ticket',
                   label: 'Tickets',
                   icon: <TicketIcon className="w-3.5 h-3.5" />,
-                  accentClass: 'text-yellow-700 dark:text-yellow-300',
-                  borderClass: 'border-yellow-200 dark:border-yellow-500/30',
-                  bgClass: 'bg-yellow-100 dark:bg-yellow-500/25',
+                  accentClass: 'text-amber-700 dark:text-amber-400',
+                  borderClass: 'border-amber-200/70 dark:border-amber-500/25',
+                  bgClass: 'bg-amber-50 dark:bg-amber-500/15',
                   count: tickets.length,
                   rows: tickets.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No tickets this period.</p>
@@ -1294,7 +1294,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                 <div key={task.id} className="flex items-start gap-0 px-5 py-4 group hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
                   <Link href="/sage/tickets" className="flex-1 min-w-0 pr-2">
                     <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400">Ticket</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">Ticket</span>
                     </div>
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
                       {task.title ?? 'Untitled task'}
