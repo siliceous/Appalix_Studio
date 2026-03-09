@@ -7,7 +7,7 @@ import Link from 'next/link'
 import {
   Mail, MessageSquare, FileText, Ticket as TicketIcon,
   Plus, Kanban, CheckSquare, Zap, RefreshCw, Calendar,
-  ChevronDown, X, Copy, ExternalLink, CheckCircle2, User,
+  ChevronDown, X, ExternalLink, CheckCircle2, User,
   Phone, Building2, Sparkles, LayoutList, LayoutGrid,
   Send, Reply, Loader2,
 } from 'lucide-react'
@@ -143,7 +143,6 @@ function ItemPopup({
   const [replyBody, setReplyBody]       = useState('')
   const [sending, setSending]           = useState(false)
   const [sendResult, setSendResult]     = useState<string | null>(null)
-  const [copied, setCopied]             = useState(false)
 
   // Escape to close
   useEffect(() => {
@@ -219,15 +218,12 @@ function ItemPopup({
       replyToEmailId: e.id,
     })
     setSending(false)
-    setSendResult(result.ok ? 'sent' : (result.error ?? 'error'))
+    const resultStr = result.ok ? 'sent' : (result.error ?? 'error')
+    setSendResult(resultStr)
+    if (result.ok) setTimeout(() => onClose(), 3000)
   }
 
-  function copyReply() {
-    navigator.clipboard.writeText(replyBody)
-    setCopied(true); setTimeout(() => setCopied(false), 2000)
-  }
-
-  const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 dark:bg-purple-500/30', form: 'bg-green-200 dark:bg-green-500/30', ticket: 'bg-amber-100 dark:bg-amber-500/25' }[popup.kind]
+const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 dark:bg-purple-500/30', form: 'bg-green-200 dark:bg-green-500/30', ticket: 'bg-amber-100 dark:bg-amber-500/25' }[popup.kind]
   const Icon    = { email: Mail, bot: MessageSquare, form: FileText, ticket: TicketIcon }[popup.kind]
   const iconCol = { email: 'text-blue-700 dark:text-blue-300', bot: 'text-purple-700 dark:text-purple-300', form: 'text-green-700 dark:text-green-300', ticket: 'text-amber-700 dark:text-amber-400' }[popup.kind]
   const label   = { email: 'Email Summary', bot: 'Chat Summary', form: 'Lead Details', ticket: 'Ticket Summary' }[popup.kind]
@@ -250,13 +246,24 @@ function ItemPopup({
           <div className="flex items-center gap-2">
             {/* Quick-action buttons in header for email */}
             {popup.kind === 'email' && !loading && data && (
-              <button
-                onClick={() => setShowReply(v => { if (!v) setShowInsights(false); return !v; })}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#61c2ad] hover:bg-[#4fa898] text-white transition-colors"
-              >
-                <Reply className="w-3.5 h-3.5" />
-                Reply
-              </button>
+              showReply ? (
+                <Link
+                  href="/sage/pipelines"
+                  onClick={onClose}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                >
+                  <Kanban className="w-3.5 h-3.5" />
+                  Open Pipeline
+                </Link>
+              ) : (
+                <button
+                  onClick={() => { setShowInsights(false); setShowReply(true); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#61c2ad] hover:bg-[#4fa898] text-white transition-colors"
+                >
+                  <Reply className="w-3.5 h-3.5" />
+                  Reply
+                </button>
+              )
             )}
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors">
               <X className="w-4 h-4 text-gray-400" />
@@ -328,27 +335,6 @@ function ItemPopup({
                             placeholder="Write your reply…"
                             className="w-full text-sm bg-white dark:bg-[#1a1a1a] border dark:border-white/10 rounded-xl px-3 py-3 text-gray-800 dark:text-gray-200 placeholder-gray-400 resize-y min-h-[160px] focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 leading-relaxed"
                           />
-                          <div className="flex items-center gap-2 pt-1 border-t dark:border-white/8">
-                            <button
-                              onClick={handleSendReply}
-                              disabled={sending || !replyBody.trim() || sendResult === 'sent'}
-                              className="flex items-center gap-1.5 px-4 py-2 bg-[#61c2ad] hover:bg-[#4fa898] text-white text-xs font-semibold rounded-xl transition-colors disabled:opacity-50"
-                            >
-                              {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                              {sending ? 'Sending…' : sendResult === 'sent' ? 'Sent!' : 'Send'}
-                            </button>
-                            <button onClick={copyReply}
-                              className="flex items-center gap-1.5 px-3 py-2 text-xs text-gray-500 dark:text-gray-400 hover:text-[#61c2ad] transition-colors rounded-xl hover:bg-gray-100 dark:hover:bg-white/8">
-                              {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-                              {copied ? 'Copied!' : 'Copy'}
-                            </button>
-                            {sendResult && sendResult !== 'sent' && (
-                              <p className="text-xs text-red-500 ml-1">Error: {sendResult}</p>
-                            )}
-                            {sendResult === 'sent' && (
-                              <p className="flex items-center gap-1 text-xs text-green-500 ml-1"><CheckCircle2 className="w-3.5 h-3.5" /> Reply sent</p>
-                            )}
-                          </div>
                         </div>
                       </div>
                     )}
@@ -537,7 +523,35 @@ function ItemPopup({
           <div className="px-6 py-4 border-t dark:border-white/10 shrink-0">
             <div className="flex items-center gap-2">
 
-              {sageAuto ? (
+              {/* ── Reply mode footer: Send button ── */}
+              {showReply ? (
+                <>
+                  {sendResult === 'sent' ? (
+                    <p className="flex items-center gap-1.5 text-sm font-semibold text-[#61c2ad]">
+                      <CheckCircle2 className="w-4 h-4" /> Reply sent
+                    </p>
+                  ) : (
+                    <>
+                      <button
+                        onClick={onClose}
+                        className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-gray-100 dark:bg-white/8 hover:bg-gray-200 dark:hover:bg-white/12 rounded-xl transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        Cancel
+                      </button>
+                      <div className="flex-1" />
+                      <button
+                        onClick={handleSendReply}
+                        disabled={sending || !replyBody.trim()}
+                        className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#61c2ad] hover:bg-[#4fa898] text-white rounded-xl transition-colors disabled:opacity-50"
+                      >
+                        {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                        {sending ? 'Sending…' : 'Send'}
+                      </button>
+                    </>
+                  )}
+                </>
+              ) : sageAuto ? (
                 /* ── Sage Auto ON: Dismiss + Open Pipeline ── */
                 <>
                   <button
