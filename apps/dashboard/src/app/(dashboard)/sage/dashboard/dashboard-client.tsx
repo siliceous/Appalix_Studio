@@ -500,6 +500,18 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                       </div>
                     )}
 
+                    {/* Full email body */}
+                    {!showReply && e.body_text && (
+                      <div className="border dark:border-white/10 rounded-xl overflow-hidden">
+                        <div className="px-4 py-2.5 border-b dark:border-white/8 bg-gray-50 dark:bg-white/[0.03]">
+                          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Email</p>
+                        </div>
+                        <div className="px-4 py-4 max-h-72 overflow-y-auto">
+                          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{e.body_text}</p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Inline Reply compose — sits right after AI Summary */}
                     {showReply && (
                       <div className="rounded-2xl border dark:border-white/10 overflow-hidden bg-white dark:bg-[#1e1e1e] flex-1 flex flex-col min-h-0">
