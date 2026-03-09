@@ -20,6 +20,7 @@ import {
   FileText,
   Inbox,
   Rss,
+  FolderOpen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -62,6 +63,7 @@ const NAV_GROUPS: NavGroup[] = [
     pro: true,
     items: [
       { href: '/sage/pipelines', label: 'Pipelines', icon: Kanban },
+      { href: '/sage/projects',  label: 'Projects',  icon: FolderOpen },
       { href: '/sage/contacts',  label: 'Contacts',  icon: Users },
     ],
   },
