@@ -1,119 +1,116 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { Header } from '@/components/layout/header'
-import { MessageSquare } from 'lucide-react'
-import { PLATFORM_META, timeAgo } from '@/lib/utils'
-import { ConversationActions } from './conversation-actions'
-import { ConversationTitleCell } from './conversation-title-cell'
+import { redirect }     from 'next/navigation'
 import type { Metadata } from 'next'
-import type { Conversation } from '@/lib/types'
+import { ConversationsClient } from './conversations-client'
 
 export const metadata: Metadata = { title: 'Conversations' }
 
-const SENTIMENT_COLORS = {
-  positive: 'text-green-600',
-  neutral:  'text-gray-400',
-  negative: 'text-red-500',
+function getDateRange(range: string, customFrom?: string, customTo?: string) {
+  const now = new Date()
+  switch (range) {
+    case 'today': {
+      const from = new Date(now); from.setHours(0, 0, 0, 0)
+      return { from: from.toISOString(), to: null }
+    }
+    case 'yesterday': {
+      const from = new Date(now); from.setDate(from.getDate() - 1); from.setHours(0, 0, 0, 0)
+      const to   = new Date(now); to.setHours(0, 0, 0, 0)
+      return { from: from.toISOString(), to: to.toISOString() }
+    }
+    case '7d': {
+      const from = new Date(now); from.setDate(from.getDate() - 7)
+      return { from: from.toISOString(), to: null }
+    }
+    case '30d': {
+      const from = new Date(now); from.setDate(from.getDate() - 30)
+      return { from: from.toISOString(), to: null }
+    }
+    case 'custom': {
+      return {
+        from: customFrom ? new Date(customFrom + 'T00:00:00').toISOString() : null,
+        to:   customTo   ? new Date(customTo   + 'T23:59:59').toISOString() : null,
+      }
+    }
+    default: return { from: null, to: null }
+  }
+}
+
+export type ConvRow = {
+  id: string
+  title: string | null
+  platform: string | null
+  status: string | null
+  sentiment: string | null
+  message_count: number
+  last_activity_at: string
+  ai_priority: string | null
+  ai_summary: string | null
+  ai_entities: Record<string, string> | null
+  bot_id: string | null
+  bots: { id: string; name: string } | null
+}
+
+export type BotOption = { id: string; name: string }
+
+export type ConvFilters = {
+  bot?: string
+  platform?: string
+  status?: string
+  range?: string
+  from?: string
+  to?: string
+  q?: string
 }
 
 export default async function ConversationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ platform?: string; status?: string }>
+  searchParams: Promise<ConvFilters>
 }) {
-  const { platform, status } = await searchParams
+  const params  = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
   const { data: membershipRaw } = await supabase
-    .from('workspace_members').select('workspace_id').eq('user_id', user.id).order('created_at', { ascending: true }).limit(1).single()
+    .from('workspace_members').select('workspace_id')
+    .eq('user_id', user.id).order('created_at', { ascending: true }).limit(1).single()
   const membership = membershipRaw as { workspace_id: string } | null
   if (!membership) redirect('/login')
+  const workspaceId = membership.workspace_id
 
-  let query = supabase
+  // Fetch bots for filter dropdown
+  const { data: botsData } = await supabase
+    .from('bots').select('id, name').eq('workspace_id', workspaceId)
+    .order('name', { ascending: true })
+  const bots = (botsData ?? []) as BotOption[]
+
+  // Build conversations query with all filters
+  const { from: dateFrom, to: dateTo } = getDateRange(params.range ?? 'all', params.from, params.to)
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query: any = supabase
     .from('conversations')
-    .select('id, title, platform, status, sentiment, message_count, last_activity_at, bots(name)')
-    .eq('workspace_id', membership.workspace_id)
+    .select('id, title, platform, status, sentiment, message_count, last_activity_at, ai_priority, ai_summary, ai_entities, bot_id, bots(id, name)')
+    .eq('workspace_id', workspaceId)
     .order('last_activity_at', { ascending: false })
-    .limit(50)
+    .limit(150)
 
-  if (platform) query = query.eq('platform', platform)
-  if (status)   query = query.eq('status', status)
+  if (params.platform) query = query.eq('platform', params.platform)
+  if (params.status)   query = query.eq('status', params.status)
+  if (params.bot)      query = query.eq('bot_id', params.bot)
+  if (dateFrom)        query = query.gte('last_activity_at', dateFrom)
+  if (dateTo)          query = query.lte('last_activity_at', dateTo)
+  if (params.q)        query = query.ilike('title', `%${params.q}%`)
 
   const { data: rawConversations } = await query
-  type ConvRow = Pick<Conversation, 'id' | 'title' | 'platform' | 'status' | 'sentiment' | 'message_count' | 'last_activity_at'> & { bots?: { name: string } | null }
   const conversations = (rawConversations ?? []) as ConvRow[]
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <Header title="Conversations" description="All conversations across every platform" />
-
-      {/* Filters */}
-      <div className="flex gap-2 mb-5 flex-wrap">
-        {(['all', 'slack', 'google_chat', 'facebook_messenger', 'whatsapp', 'wordpress', 'web_widget'] as const).map((p) => (
-          <a
-            key={p}
-            href={p === 'all' ? '/conversations' : `/conversations?platform=${p}`}
-            className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${
-              (p === 'all' && !platform) || platform === p
-                ? 'bg-brand-600 text-white border-brand-600'
-                : 'bg-white text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            {p === 'all' ? 'All' : PLATFORM_META[p]?.label}
-          </a>
-        ))}
-      </div>
-
-      <div className="bg-white rounded-xl border overflow-hidden">
-        {conversations?.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <MessageSquare className="w-10 h-10 text-gray-300 mb-3" />
-            <p className="text-sm text-gray-500">No conversations found.</p>
-          </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="text-left px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">Conversation</th>
-                <th className="text-left px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">Platform</th>
-                <th className="text-left px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">Bot</th>
-                <th className="text-right px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">Messages</th>
-                <th className="text-right px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">Last active</th>
-                <th className="text-right px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {conversations?.map((c) => (
-                <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-5 py-3.5">
-                    <ConversationTitleCell id={c.id} title={c.title} />
-                    {c.sentiment && (
-                      <span className={`ml-2 text-xs ${SENTIMENT_COLORS[c.sentiment]}`}>●</span>
-                    )}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    {c.platform ? (
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PLATFORM_META[c.platform]?.color}`}>
-                        {PLATFORM_META[c.platform]?.label}
-                      </span>
-                    ) : '—'}
-                  </td>
-                  <td className="px-5 py-3.5 text-gray-500">
-                    {c.bots?.name ?? '—'}
-                  </td>
-                  <td className="px-5 py-3.5 text-right text-gray-500">{c.message_count}</td>
-                  <td className="px-5 py-3.5 text-right text-gray-400">{timeAgo(c.last_activity_at)}</td>
-                  <td className="px-5 py-3.5">
-                    <ConversationActions id={c.id} title={c.title} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
+    <ConversationsClient
+      conversations={conversations}
+      bots={bots}
+      filters={params}
+    />
   )
 }

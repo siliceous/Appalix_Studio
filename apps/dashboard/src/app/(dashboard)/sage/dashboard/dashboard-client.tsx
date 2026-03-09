@@ -1297,7 +1297,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
           <div className="flex flex-wrap gap-3">
             {[
               { label: 'Emails',    Icon: Mail,          iconCls: 'text-blue-500',   total: visEmails.length,  href: '/dashboard/email'   },
-              { label: 'Bot Chats', Icon: MessageSquare, iconCls: 'text-purple-500', total: visBots.length,    href: '/dashboard/bots'    },
+              { label: 'Bot Chats', Icon: MessageSquare, iconCls: 'text-purple-500', total: visBots.length,    href: '/conversations'     },
               { label: 'Forms',     Icon: FileText,      iconCls: 'text-green-500',  total: visForms.length,   href: '/dashboard/forms'   },
               { label: 'Tickets',   Icon: TicketIcon,    iconCls: 'text-amber-500',  total: visTickets.length, href: '/dashboard/tickets' },
             ].map(card => (
@@ -1314,7 +1314,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             {[
               { label: 'Emails',    sub: 'high & medium unread',  Icon: Mail,          iconCls: 'text-blue-500',   segs: emailSegs,  total: visEmails.length,  href: '/dashboard/email'   },
-              { label: 'Bot Chats', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-500', segs: botSegs,    total: visBots.length,    href: '/dashboard/bots'    },
+              { label: 'Bot Chats', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-500', segs: botSegs,    total: visBots.length,    href: '/conversations'     },
               { label: 'Forms',     sub: 'all submissions',       Icon: FileText,      iconCls: 'text-green-500',  segs: formSegs,   total: visForms.length,   href: '/dashboard/forms'   },
               { label: 'Tickets',   sub: 'all tickets',           Icon: TicketIcon,    iconCls: 'text-amber-500',  segs: ticketSegs, total: visTickets.length, href: '/dashboard/tickets' },
             ].map(card => (

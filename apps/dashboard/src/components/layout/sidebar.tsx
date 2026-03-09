@@ -44,7 +44,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/dashboard',         label: 'Overview',  icon: LayoutDashboard },
       { href: '/dashboard/email',   label: 'Emails',    icon: Mail,        sub: true },
-      { href: '/dashboard/bots',    label: 'Bots',      icon: MessageSquare, sub: true },
+      { href: '/conversations',      label: 'Conversations', icon: MessageSquare, sub: true },
       { href: '/dashboard/forms',   label: 'Forms',     icon: FileText,    sub: true },
       { href: '/dashboard/tickets', label: 'Tickets',   icon: Ticket,      sub: true },
     ],
