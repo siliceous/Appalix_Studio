@@ -252,7 +252,7 @@ function ItemPopup({
             {popup.kind === 'email' && !loading && data && (
               <button
                 onClick={() => setShowReply(v => { if (!v) setShowInsights(false); return !v; })}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showReply ? 'bg-[#61c2ad] text-white' : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/12'}`}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#61c2ad] hover:bg-[#4fa898] text-white transition-colors"
               >
                 <Reply className="w-3.5 h-3.5" />
                 Reply
@@ -551,7 +551,7 @@ function ItemPopup({
                   <Link
                     href="/sage/pipelines"
                     onClick={onClose}
-                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#61c2ad] hover:bg-[#4fa898] text-white rounded-xl transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors"
                   >
                     <Kanban className="w-3.5 h-3.5" />
                     Open Pipeline
