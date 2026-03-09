@@ -1068,7 +1068,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 mb-4">
             Here&apos;s what needs your attention today
           </p>
-          <div className="flex flex-wrap gap-2 items-center">
+          <div className="flex flex-wrap gap-2">
             {[
               { href: '/sage/contacts',  label: 'Add Contact', Icon: Plus,           cls: 'bg-[#2a7d6e] hover:bg-[#1f6157] text-white shadow-sm' },
               { href: '/sage/emails',    label: 'Inbox',       Icon: Mail,           cls: 'bg-white dark:bg-white/8 hover:bg-gray-50 dark:hover:bg-white/12 border dark:border-white/10 text-gray-700 dark:text-gray-300' },
@@ -1080,9 +1080,39 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                 <Ic className="w-3.5 h-3.5" /> {label}
               </Link>
             ))}
+          </div>
+        </div>
 
-            {/* Sage Auto — inline with buttons */}
-            <div className="flex items-center gap-2 bg-white dark:bg-[#232323] border dark:border-white/10 rounded-xl px-3 py-2">
+        <div className="flex items-start gap-3 flex-wrap">
+          {/* Date range */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <select value={dateRange} onChange={e => handleDateChange(e.target.value as DatePreset)}
+                className="appearance-none bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 cursor-pointer">
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+                <option value="custom">Choose...</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            </div>
+            {dateRange === 'custom' && (
+              <div className="flex items-center gap-1.5">
+                <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
+                  className="bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
+                  placeholder="dd/mm/yyyy" />
+                <span className="text-xs text-gray-400">to</span>
+                <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
+                  className="bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
+                  placeholder="dd/mm/yyyy" />
+              </div>
+            )}
+          </div>
+
+          {/* Sage Auto with description underneath */}
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2.5 bg-white dark:bg-[#232323] border dark:border-white/10 rounded-xl px-4 py-2">
               <Zap className={`w-3.5 h-3.5 ${sageAuto ? 'text-[#61c2ad]' : 'text-gray-400'}`} />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sage Auto</span>
               <Toggle checked={sageAuto} onChange={toggleSageAuto} />
@@ -1090,48 +1120,14 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                 {sageAuto ? 'ON' : 'OFF'}
               </span>
             </div>
+            <p className="text-[11px] leading-relaxed px-1 max-w-[220px] text-gray-400 dark:text-gray-500">
+              {sageAuto
+                ? 'AI is collecting, summarising, and auto-creating contacts & updating your pipeline.'
+                : 'AI collects & summarises. You review and decide the next action.'}
+            </p>
           </div>
-        </div>
-
-        {/* Date range */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
-            <select value={dateRange} onChange={e => handleDateChange(e.target.value as DatePreset)}
-              className="appearance-none bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 cursor-pointer">
-              <option value="today">Today</option>
-              <option value="yesterday">Yesterday</option>
-              <option value="7d">Last 7 days</option>
-              <option value="30d">Last 30 days</option>
-              <option value="custom">Choose...</option>
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-          </div>
-          {dateRange === 'custom' && (
-            <div className="flex items-center gap-1.5">
-              <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
-                className="bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
-                placeholder="dd/mm/yyyy" />
-              <span className="text-xs text-gray-400">to</span>
-              <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
-                className="bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
-                placeholder="dd/mm/yyyy" />
-            </div>
-          )}
         </div>
       </div>
-
-      {/* Sage Auto banner */}
-      {sageAuto ? (
-        <div className="mb-5 flex items-center gap-2 text-xs text-[#4fa898] dark:text-[#61c2ad] bg-[#61c2ad]/8 border border-[#61c2ad]/20 rounded-xl px-4 py-2.5">
-          <Zap className="w-3.5 h-3.5 shrink-0" />
-          <span><strong>Sage Auto is ON</strong> — AI is collecting from all channels, summarising, and automatically creating contacts &amp; updating your pipeline.</span>
-        </div>
-      ) : (
-        <div className="mb-5 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/8 rounded-xl px-4 py-2.5">
-          <Zap className="w-3.5 h-3.5 shrink-0 text-gray-400" />
-          <span><strong className="text-gray-600 dark:text-gray-300">Sage Auto is OFF</strong> — AI continues collecting and summarising conversations from all channels, while you review them and decide the next action.</span>
-        </div>
-      )}
 
       {/* ── 4 Donut cards ──────────────────────────────────────────────── */}
       <div className="mb-6">
