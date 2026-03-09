@@ -2,13 +2,14 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect }     from 'next/navigation'
 import type { Metadata } from 'next'
 import { ConversationsClient } from './conversations-client'
+import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 
 export const metadata: Metadata = { title: 'Conversations' }
 
-function getDateRange(range: string, customFrom?: string, customTo?: string) {
+function getDateRange(preset: SubpagePreset, customFrom?: string, customTo?: string) {
   const now = new Date()
-  switch (range) {
+  switch (preset) {
     case 'today': {
       const from = new Date(now); from.setHours(0, 0, 0, 0)
       return { from: from.toISOString(), to: null }
@@ -54,12 +55,12 @@ export type ConvRow = {
 export type BotOption = { id: string; name: string }
 
 export type ConvFilters = {
+  preset?: string
+  from?: string
+  to?: string
   bot?: string
   platform?: string
   status?: string
-  range?: string
-  from?: string
-  to?: string
   q?: string
 }
 
@@ -68,7 +69,9 @@ export default async function ConversationsPage({
 }: {
   searchParams: Promise<ConvFilters>
 }) {
-  const params  = await searchParams
+  const [params, autoSettings] = await Promise.all([searchParams, getAutoSettings()])
+  const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as SubpagePreset
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -80,16 +83,14 @@ export default async function ConversationsPage({
   if (!membership) redirect('/login')
   const workspaceId = membership.workspace_id
 
-  // Fetch bots for filter dropdown + sage auto setting
-  const [{ data: botsData }, autoSettings] = await Promise.all([
-    supabase.from('bots').select('id, name').eq('workspace_id', workspaceId).order('name', { ascending: true }),
-    getAutoSettings(),
-  ])
+  // Fetch bots for filter dropdown
+  const { data: botsData } = await supabase
+    .from('bots').select('id, name').eq('workspace_id', workspaceId)
+    .order('name', { ascending: true })
   const bots = (botsData ?? []) as BotOption[]
-  const sageAuto = autoSettings.global_auto_enabled
 
   // Build conversations query with all filters
-  const { from: dateFrom, to: dateTo } = getDateRange(params.range ?? 'all', params.from, params.to)
+  const { from: dateFrom, to: dateTo } = getDateRange(preset, params.from, params.to)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query: any = supabase
@@ -110,11 +111,21 @@ export default async function ConversationsPage({
   const conversations = (rawConversations ?? []) as ConvRow[]
 
   return (
-    <ConversationsClient
-      conversations={conversations}
-      bots={bots}
-      filters={params}
-      sageAuto={sageAuto}
-    />
+    <div className="-m-8 flex flex-col h-screen overflow-hidden">
+      <SubpageToolbar
+        sourceKey="bots"
+        preset={preset}
+        customFrom={params.from}
+        customTo={params.to}
+        autoEnabled={autoSettings.bots_auto_enabled}
+      />
+      <div className="flex-1 overflow-y-auto">
+        <ConversationsClient
+          conversations={conversations}
+          bots={bots}
+          filters={params}
+        />
+      </div>
+    </div>
   )
 }

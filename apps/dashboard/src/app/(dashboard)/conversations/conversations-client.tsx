@@ -1,26 +1,15 @@
 'use client'
 
-import React, { useCallback, useState, useTransition } from 'react'
+import React, { useCallback, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   MessageSquare, Search, ChevronDown, Download,
-  Pencil, ExternalLink, X, Zap,
+  Pencil, ExternalLink, X,
 } from 'lucide-react'
 import { PLATFORM_META, timeAgo } from '@/lib/utils'
 import { renameConversation } from '@/app/actions/conversation'
-import { updateAutoSetting } from '@/app/actions/sage-auto-settings'
 import type { ConvRow, BotOption, ConvFilters } from './page'
-
-// ── Toggle switch ─────────────────────────────────────────────────────────────
-function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
-  return (
-    <button onClick={onChange} aria-label="Toggle"
-      className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors focus:outline-none ${checked ? 'bg-[#61c2ad]' : 'bg-gray-300 dark:bg-gray-600'}`}>
-      <span className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${checked ? 'translate-x-5' : 'translate-x-1'}`} />
-    </button>
-  )
-}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const PLATFORMS = ['slack', 'google_chat', 'facebook_messenger', 'whatsapp', 'wordpress', 'web_widget'] as const
@@ -50,25 +39,15 @@ interface Props {
   conversations: ConvRow[]
   bots: BotOption[]
   filters: ConvFilters
-  sageAuto: boolean
 }
 
-export function ConversationsClient({ conversations, bots, filters, sageAuto: initialSageAuto }: Props) {
+export function ConversationsClient({ conversations, bots, filters }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
-  const [customFrom, setCustomFrom] = useState(filters.from ?? '')
-  const [customTo,   setCustomTo]   = useState(filters.to   ?? '')
-  const [sageAuto,   setSageAuto]   = useState(initialSageAuto)
-
-  async function toggleSageAuto() {
-    const next = !sageAuto
-    setSageAuto(next)
-    await updateAutoSetting('global_auto_enabled', next)
-  }
 
   const pushFilter = useCallback((patch: Partial<ConvFilters>) => {
     const next = { ...filters, ...patch }
-    // Clear empty values
+    // Preserve preset/from/to from toolbar — only clear the conversation-specific filters
     Object.keys(next).forEach(k => { if (!next[k as keyof ConvFilters]) delete next[k as keyof ConvFilters] })
     router.push(buildUrl('/conversations', next))
   }, [filters, router])
@@ -82,44 +61,19 @@ export function ConversationsClient({ conversations, bots, filters, sageAuto: in
     })
   }
 
-  function handleRangeChange(value: string) {
-    if (value === 'custom') {
-      pushFilter({ range: 'custom', from: customFrom || undefined, to: customTo || undefined })
-    } else {
-      pushFilter({ range: value === 'all' ? undefined : value, from: undefined, to: undefined })
-    }
-  }
-
-  function applyCustomDates() {
-    if (customFrom && customTo) {
-      pushFilter({ range: 'custom', from: customFrom, to: customTo })
-    }
-  }
-
-  const activeRange = filters.range ?? 'all'
   const activePlatform = filters.platform ?? 'all'
   const activeBotId = filters.bot ?? ''
   const activeStatus = filters.status ?? ''
 
   return (
-    <div className="max-w-6xl mx-auto space-y-5">
+    <div className="max-w-6xl mx-auto space-y-5 p-8">
 
       {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Conversations</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Permanent record of every bot conversation — {conversations.length} shown
-          </p>
-        </div>
-        <div className="flex items-center gap-2 bg-white dark:bg-[#232323] border dark:border-white/10 rounded-xl px-4 py-2 shrink-0">
-          <Zap className={`w-3.5 h-3.5 ${sageAuto ? 'text-[#61c2ad]' : 'text-gray-400'}`} />
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sage Auto</span>
-          <Toggle checked={sageAuto} onChange={toggleSageAuto} />
-          <span className={`text-xs font-bold ${sageAuto ? 'text-[#61c2ad]' : 'text-gray-400'}`}>
-            {sageAuto ? 'ON' : 'OFF'}
-          </span>
-        </div>
+      <div>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Conversations</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          Permanent record of every bot conversation — {conversations.length} shown
+        </p>
       </div>
 
       {/* ── Filter bar ── */}
@@ -180,72 +134,28 @@ export function ConversationsClient({ conversations, bots, filters, sageAuto: in
           </div>
         </div>
 
-        {/* Row 2: Date range + Platform pills */}
-        <div className="flex flex-wrap gap-3 items-center">
-
-          {/* Date range */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative">
-              <select
-                value={activeRange}
-                onChange={e => handleRangeChange(e.target.value)}
-                className="appearance-none bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 cursor-pointer"
-              >
-                <option value="all">All time</option>
-                <option value="today">Today</option>
-                <option value="yesterday">Yesterday</option>
-                <option value="7d">Last 7 days</option>
-                <option value="30d">Last 30 days</option>
-                <option value="custom">Choose…</option>
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-            </div>
-            {activeRange === 'custom' && (
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="date"
-                  value={customFrom}
-                  onChange={e => setCustomFrom(e.target.value)}
-                  onBlur={applyCustomDates}
-                  className="bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
-                />
-                <span className="text-xs text-gray-400">to</span>
-                <input
-                  type="date"
-                  value={customTo}
-                  onChange={e => setCustomTo(e.target.value)}
-                  onBlur={applyCustomDates}
-                  className="bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="w-px h-5 bg-gray-200 dark:bg-white/10" />
-
-          {/* Platform pills */}
-          <div className="flex items-center gap-1 flex-wrap">
-            <button
-              onClick={() => pushFilter({ platform: undefined })}
+        {/* Row 2: Platform pills */}
+        <div className="flex items-center gap-1 flex-wrap">
+          <button
+            onClick={() => pushFilter({ platform: undefined })}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+              activePlatform === 'all'
+                ? 'bg-[#61c2ad] text-white'
+                : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
+            }`}>
+            All platforms
+          </button>
+          {PLATFORMS.map(p => (
+            <button key={p}
+              onClick={() => pushFilter({ platform: p })}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                activePlatform === 'all'
+                activePlatform === p
                   ? 'bg-[#61c2ad] text-white'
                   : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
               }`}>
-              All platforms
+              {PLATFORM_META[p]?.label ?? p}
             </button>
-            {PLATFORMS.map(p => (
-              <button key={p}
-                onClick={() => pushFilter({ platform: p })}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                  activePlatform === p
-                    ? 'bg-[#61c2ad] text-white'
-                    : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
-                }`}>
-                {PLATFORM_META[p]?.label ?? p}
-              </button>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
 
