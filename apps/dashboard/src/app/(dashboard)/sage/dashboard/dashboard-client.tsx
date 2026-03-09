@@ -521,12 +521,12 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                         <div className="flex flex-col gap-4 shrink-0">
                           {e.ai_summary && (
                             <div className="bg-blue-50 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 rounded-xl p-4">
-                              <div className="flex items-center gap-1.5 mb-2">
-                                <Sparkles className="w-3 h-3 text-blue-500 dark:text-blue-400" />
+                              <div className="flex items-start gap-1.5 mb-2">
+                                <Sparkles className="w-3 h-3 text-blue-500 dark:text-blue-400 mt-0.5" />
                                 <p className="text-[11px] text-blue-700 dark:text-blue-300 font-bold uppercase tracking-wide flex-1">AI Summary</p>
                                 <button
                                   onClick={() => setAiCollapsed(true)}
-                                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors -mt-1"
                                 >
                                   <ChevronDown className="w-3.5 h-3.5 rotate-180" />Collapse
                                 </button>
@@ -593,12 +593,12 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                         </button>
                       ) : (
                         <div className="bg-blue-50 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 rounded-xl p-4 shrink-0">
-                          <div className="flex items-center gap-1.5 mb-2">
-                            <Sparkles className="w-3 h-3 text-blue-500 dark:text-blue-400" />
+                          <div className="flex items-start gap-1.5 mb-2">
+                            <Sparkles className="w-3 h-3 text-blue-500 dark:text-blue-400 mt-0.5" />
                             <p className="text-[11px] text-blue-700 dark:text-blue-300 font-bold uppercase tracking-wide flex-1">AI Summary</p>
                             <button
                               onClick={() => setReplySummaryCollapsed(true)}
-                              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors -mt-1"
                             >
                               <ChevronDown className="w-3.5 h-3.5 rotate-180" />Collapse
                             </button>
