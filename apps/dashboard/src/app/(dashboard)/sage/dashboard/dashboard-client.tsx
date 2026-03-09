@@ -15,7 +15,7 @@ import {
   Palette, Highlighter, FileSignature, Type,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
-import { sendEmail } from '@/app/actions/sage-emails'
+import { sendEmail, scheduleMeetingFromEmail } from '@/app/actions/sage-emails'
 import { updateAutoSetting, dismissFeedItem } from '@/app/actions/sage-auto-settings'
 import type { SageEmail, Conversation, Lead, SageTicket } from '@/lib/types'
 
@@ -526,7 +526,16 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                             </button>
 
                             {/* Calendar */}
-                            <button title="Schedule meeting" onMouseDown={ev => { ev.preventDefault(); window.open('https://calendar.google.com/calendar/r/eventedit', '_blank') }}
+                            <button title="Schedule meeting — logs to CRM & opens Google Calendar" onMouseDown={async ev => {
+                              ev.preventDefault()
+                              const result = await scheduleMeetingFromEmail({
+                                emailId:     e.id,
+                                subject:     e.subject ?? '(no subject)',
+                                fromAddress: e.from_address,
+                                fromName:    e.from_name,
+                              })
+                              if (result.ok) window.open(result.calendarUrl, '_blank')
+                            }}
                               className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                               <Calendar className="w-3.5 h-3.5" />
                             </button>

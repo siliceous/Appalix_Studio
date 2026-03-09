@@ -224,6 +224,47 @@ export async function sendEmail(opts: {
 }
 
 /**
+ * Log a "meeting scheduled" record in sage_meetings linked to the email chain,
+ * and return a pre-filled Google Calendar URL so the user can pick the time.
+ */
+export async function scheduleMeetingFromEmail(opts: {
+  emailId:       string
+  subject:       string
+  fromAddress:   string
+  fromName:      string | null
+}): Promise<{ ok: boolean; calendarUrl: string; error?: string }> {
+  const supabase = await createClient()
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { ok: false, calendarUrl: '', error: 'Not authenticated' }
+
+  const title = `Meeting with ${opts.fromName ?? opts.fromAddress} — Re: ${opts.subject}`
+  const description = `Meeting scheduled from email chain.\nClient: ${opts.fromName ?? opts.fromAddress} (${opts.fromAddress})\nSubject: ${opts.subject}`
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any).from('sage_meetings').insert({
+    workspace_id:   workspaceId,
+    email_id:       opts.emailId,
+    title,
+    description,
+    attendees:      [opts.fromAddress],
+    organizer:      opts.fromAddress,
+    organizer_name: opts.fromName,
+  })
+
+  if (error) return { ok: false, calendarUrl: '', error: (error as { message: string }).message }
+
+  revalidatePath('/dashboard')
+
+  const params = new URLSearchParams({
+    text:    title,
+    details: description,
+    add:     opts.fromAddress,
+  })
+  const calendarUrl = `https://calendar.google.com/calendar/r/eventedit?${params.toString()}`
+  return { ok: true, calendarUrl }
+}
+
+/**
  * Mark a triage email as read (is_read=true) so it no longer appears in triage.
  * Called explicitly when the user dismisses the post-send popup ("Done").
  */
