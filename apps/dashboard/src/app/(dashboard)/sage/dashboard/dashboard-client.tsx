@@ -227,9 +227,9 @@ function ItemPopup({
     setCopied(true); setTimeout(() => setCopied(false), 2000)
   }
 
-  const iconCls = { email: 'bg-blue-100 dark:bg-blue-500/15', bot: 'bg-purple-100 dark:bg-purple-500/15', form: 'bg-green-100 dark:bg-green-500/15', ticket: 'bg-yellow-100 dark:bg-yellow-500/15' }[popup.kind]
+  const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 dark:bg-purple-500/30', form: 'bg-green-200 dark:bg-green-500/30', ticket: 'bg-yellow-200 dark:bg-yellow-500/30' }[popup.kind]
   const Icon    = { email: Mail, bot: MessageSquare, form: FileText, ticket: TicketIcon }[popup.kind]
-  const iconCol = { email: 'text-blue-600 dark:text-blue-400', bot: 'text-purple-600 dark:text-purple-400', form: 'text-green-600 dark:text-green-400', ticket: 'text-yellow-600 dark:text-yellow-400' }[popup.kind]
+  const iconCol = { email: 'text-blue-700 dark:text-blue-300', bot: 'text-purple-700 dark:text-purple-300', form: 'text-green-700 dark:text-green-300', ticket: 'text-yellow-700 dark:text-yellow-300' }[popup.kind]
   const label   = { email: 'Email Summary', bot: 'Chat Summary', form: 'Lead Details', ticket: 'Ticket Summary' }[popup.kind]
 
   return (
@@ -281,7 +281,7 @@ function ItemPopup({
                   <>
                     {/* From / Subject row */}
                     <div className="flex items-start gap-4">
-                      <div className="w-9 h-9 rounded-full bg-green-100 dark:bg-green-500/15 flex items-center justify-center shrink-0 text-xs font-bold text-green-600 dark:text-green-400">
+                      <div className="w-9 h-9 rounded-full bg-green-200 dark:bg-green-500/30 flex items-center justify-center shrink-0 text-xs font-bold text-green-700 dark:text-green-300">
                         {(e.from_name ?? e.from_address).charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -394,7 +394,7 @@ function ItemPopup({
                 return (
                   <>
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center shrink-0 text-xs font-bold text-blue-600 dark:text-blue-400">
+                      <div className="w-9 h-9 rounded-full bg-blue-200 dark:bg-blue-500/30 flex items-center justify-center shrink-0 text-xs font-bold text-blue-700 dark:text-blue-300">
                         <MessageSquare className="w-4 h-4" />
                       </div>
                       <div>
@@ -447,7 +447,7 @@ function ItemPopup({
                 return (
                   <>
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-purple-100 dark:bg-purple-500/15 flex items-center justify-center shrink-0 text-xs font-bold text-purple-600 dark:text-purple-400">
+                      <div className="w-9 h-9 rounded-full bg-purple-200 dark:bg-purple-500/30 flex items-center justify-center shrink-0 text-xs font-bold text-purple-700 dark:text-purple-300">
                         {l.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -486,8 +486,8 @@ function ItemPopup({
                 return (
                   <>
                     <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-500/15 flex items-center justify-center shrink-0">
-                        <TicketIcon className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                      <div className="w-9 h-9 rounded-full bg-orange-200 dark:bg-orange-500/30 flex items-center justify-center shrink-0">
+                        <TicketIcon className="w-4 h-4 text-orange-700 dark:text-orange-300" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t.title}</p>
@@ -984,8 +984,8 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                       <div key={timeKey} onClick={() => setPopup({ kind: 'email', id: e.id })}
                         className="group flex items-start gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
                         <PriorityDot priority={e.ai_priority ?? 'low'} pulse={e.ai_priority === 'high'} />
-                        <div className="w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center shrink-0">
-                          <Mail className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        <div className="w-6 h-6 rounded-md bg-blue-200 dark:bg-blue-500/30 flex items-center justify-center shrink-0">
+                          <Mail className="w-3.5 h-3.5 text-blue-700 dark:text-blue-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{e.from_name ?? e.from_address}</p>
@@ -1006,8 +1006,8 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                       <div key={timeKey} onClick={() => setPopup({ kind: 'bot', id: b.id })}
                         className="group flex items-start gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
                         <PriorityDot priority={b.ai_priority ?? 'low'} pulse={b.ai_priority === 'high'} />
-                        <div className="w-6 h-6 rounded-md bg-purple-100 dark:bg-purple-500/15 flex items-center justify-center shrink-0">
-                          <MessageSquare className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                        <div className="w-6 h-6 rounded-md bg-purple-200 dark:bg-purple-500/30 flex items-center justify-center shrink-0">
+                          <MessageSquare className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{b.title ?? 'Untitled conversation'}</p>
@@ -1029,8 +1029,8 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                       <div key={timeKey} onClick={() => setPopup({ kind: 'form', id: f.id })}
                         className="group flex items-start gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
                         <PriorityDot priority={f.lead_score ?? 'low'} />
-                        <div className="w-6 h-6 rounded-md bg-green-100 dark:bg-green-500/15 flex items-center justify-center shrink-0">
-                          <FileText className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                        <div className="w-6 h-6 rounded-md bg-green-200 dark:bg-green-500/30 flex items-center justify-center shrink-0">
+                          <FileText className="w-3.5 h-3.5 text-green-700 dark:text-green-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{f.name}</p>
@@ -1050,8 +1050,8 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                       <div key={timeKey} onClick={() => setPopup({ kind: 'ticket', id: t.id })}
                         className="group flex items-start gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
                         <PriorityDot priority={t.priority} pulse={t.priority === 'high' || t.priority === 'urgent'} />
-                        <div className="w-6 h-6 rounded-md bg-yellow-100 dark:bg-yellow-500/15 flex items-center justify-center shrink-0">
-                          <TicketIcon className="w-3.5 h-3.5 text-yellow-600 dark:text-yellow-400" />
+                        <div className="w-6 h-6 rounded-md bg-yellow-200 dark:bg-yellow-500/30 flex items-center justify-center shrink-0">
+                          <TicketIcon className="w-3.5 h-3.5 text-yellow-700 dark:text-yellow-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{t.title}</p>
