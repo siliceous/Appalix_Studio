@@ -3,7 +3,7 @@ import { redirect }     from 'next/navigation'
 import type { Metadata } from 'next'
 import type { WorkspaceMember } from '@/lib/types'
 import type { SageForm, SageFormSubmission } from '@/app/actions/sage-forms'
-import { FormsDashboard } from '@/components/dashboard/forms-dashboard'
+import { FormsTable, type FormFilters } from '@/components/dashboard/forms-table'
 import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 
@@ -37,10 +37,15 @@ function getDateRange(preset: SubpagePreset, customFrom?: string, customTo?: str
   return { from: null, to: null }
 }
 
-export default async function FormsPage({ searchParams }: { searchParams: Promise<{ preset?: string; from?: string; to?: string }> }) {
+export default async function FormsPage({
+  searchParams,
+}: {
+  searchParams: Promise<FormFilters>
+}) {
   const [params, autoSettings] = await Promise.all([searchParams, getAutoSettings()])
   const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as SubpagePreset
   const { from: dateFrom, to: dateTo } = getDateRange(preset, params.from, params.to)
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -57,24 +62,56 @@ export default async function FormsPage({ searchParams }: { searchParams: Promis
   const workspaceId = membership.workspace_id
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let subsQuery = (supabase as any).from('sage_form_submissions').select('id, form_id, fields, ai_priority, ai_summary, ai_insights, ai_action, ai_entities, ai_analyzed_at, actioned_at, action_type, created_at').eq('workspace_id', workspaceId)
-  if (dateFrom) subsQuery = subsQuery.gte('created_at', dateFrom)
-  if (dateTo)   subsQuery = subsQuery.lt('created_at', dateTo)
+  let subsQuery = (supabase as any)
+    .from('sage_form_submissions')
+    .select('id, form_id, fields, ai_priority, ai_summary, ai_insights, ai_action, ai_entities, ai_analyzed_at, actioned_at, action_type, created_at')
+    .eq('workspace_id', workspaceId)
+
+  if (dateFrom)        subsQuery = subsQuery.gte('created_at', dateFrom)
+  if (dateTo)          subsQuery = subsQuery.lt('created_at', dateTo)
+  if (params.form)     subsQuery = subsQuery.eq('form_id', params.form)
+  if (params.status === 'pending') {
+    subsQuery = subsQuery.is('actioned_at', null)
+  } else if (params.status) {
+    subsQuery = subsQuery.eq('action_type', params.status)
+  }
+
   subsQuery = subsQuery.order('created_at', { ascending: false }).limit(200)
 
   const [formsRes, submissionsRes] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any).from('sage_forms').select('id, name, description, is_active, created_at').eq('workspace_id', workspaceId).order('created_at', { ascending: false }),
+    (supabase as any).from('sage_forms').select('id, name, description, is_active, created_at').eq('workspace_id', workspaceId).order('name', { ascending: true }),
     subsQuery,
   ])
-  const forms       = (formsRes.data       ?? []) as SageForm[]
-  const submissions = (submissionsRes.data ?? []) as SageFormSubmission[]
+
+  let submissions = (submissionsRes.data ?? []) as SageFormSubmission[]
+  const forms     = (formsRes.data       ?? []) as SageForm[]
+
+  // Client-side search filter (name/email from fields or ai_entities)
+  if (params.q) {
+    const q = params.q.toLowerCase()
+    submissions = submissions.filter(s => {
+      const name  = (s.ai_entities?.name  ?? s.fields.name  ?? '').toLowerCase()
+      const email = (s.ai_entities?.email ?? s.fields.email ?? '').toLowerCase()
+      return name.includes(q) || email.includes(q)
+    })
+  }
 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
-      <SubpageToolbar sourceKey="forms" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.forms_auto_enabled} />
-      <div className="flex flex-1 overflow-hidden">
-        <FormsDashboard forms={forms} submissions={submissions} />
+      <SubpageToolbar
+        sourceKey="forms"
+        preset={preset}
+        customFrom={params.from}
+        customTo={params.to}
+        autoEnabled={autoSettings.forms_auto_enabled}
+      />
+      <div className="flex-1 overflow-y-auto">
+        <FormsTable
+          submissions={submissions}
+          forms={forms}
+          filters={params}
+        />
       </div>
     </div>
   )
