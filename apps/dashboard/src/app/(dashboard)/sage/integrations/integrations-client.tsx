@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef } from 'react'
 import Link from 'next/link'
-import { Check, X, ExternalLink, Loader2, ChevronDown, ChevronUp, BookOpen } from 'lucide-react'
+import { Check, X, ExternalLink, Loader2, ChevronDown, ChevronUp, BookOpen, FileSignature, Bold, Italic, Underline, ImagePlus, CheckCircle2 } from 'lucide-react'
 import { saveSageIntegration, disconnectSageIntegration } from '@/app/actions/sage'
+import { saveEmailSignature, getEmailSignature } from '@/app/actions/sage-emails'
 import type { SageIntegrationProvider } from '@/lib/types'
 
 interface IntegrationCard {
@@ -174,11 +175,16 @@ interface IntegrationsClientProps {
 }
 
 export function IntegrationsClient({ connected: initialConnected, standalone = true }: IntegrationsClientProps) {
-  const [connected,   setConnected]  = useState<Set<string>>(initialConnected)
-  const [expanded,    setExpanded]   = useState<string | null>(null)
-  const [pending,     startTransition] = useTransition()
-  const [saving,      setSaving]     = useState<string | null>(null)
-  const [formValues,  setFormValues] = useState<Record<string, Record<string, string>>>({})
+  const [connected,         setConnected]        = useState<Set<string>>(initialConnected)
+  const [expanded,          setExpanded]         = useState<string | null>(null)
+  const [pending,           startTransition]     = useTransition()
+  const [saving,            setSaving]           = useState<string | null>(null)
+  const [formValues,        setFormValues]       = useState<Record<string, Record<string, string>>>({})
+  const [sigExpanded,       setSigExpanded]      = useState<string | null>(null)
+  const [sigSaving,         setSigSaving]        = useState(false)
+  const [sigSaved,          setSigSaved]         = useState(false)
+  const sigRef              = useRef<HTMLDivElement>(null)
+  const sigImgRef           = useRef<HTMLInputElement>(null)
 
   function toggleExpand(provider: SageIntegrationProvider) {
     setExpanded(prev => prev === provider ? null : provider)
@@ -214,6 +220,37 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
       })
       setSaving(null)
     })
+  }
+
+  async function handleOpenSignature(provider: string) {
+    if (sigExpanded === provider) { setSigExpanded(null); return }
+    setSigExpanded(provider)
+    const { html } = await getEmailSignature()
+    if (html && sigRef.current && !sigRef.current.innerHTML.trim()) {
+      sigRef.current.innerHTML = html
+    }
+  }
+
+  async function handleSaveSignature() {
+    if (!sigRef.current) return
+    setSigSaving(true); setSigSaved(false)
+    const html = sigRef.current.innerHTML
+    await saveEmailSignature(html)
+    setSigSaving(false); setSigSaved(true)
+    setTimeout(() => setSigSaved(false), 3000)
+  }
+
+  function handleSigImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !sigRef.current) return
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const dataUrl = ev.target?.result as string
+      sigRef.current!.focus()
+      document.execCommand('insertHTML', false, `<img src="${dataUrl}" style="max-width:200px;height:auto;" alt="signature-image" />`)
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
   }
 
   const categories = ['payments', 'automation', 'email', 'tickets', 'email_marketing'] as const
@@ -321,6 +358,73 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                         )}
                       </div>
                     </div>
+
+                    {/* Signature editor — email providers only, when connected */}
+                    {isConnected && (integration.provider === 'gmail' || integration.provider === 'microsoft') && (
+                      <>
+                        <div className="border-t dark:border-white/8 px-4 py-3 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <FileSignature className="w-3.5 h-3.5 text-gray-400" />
+                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Email Signature</span>
+                            <span className="text-[10px] text-gray-400">(auto-appended to replies)</span>
+                          </div>
+                          <button
+                            onClick={() => handleOpenSignature(integration.provider)}
+                            className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg border dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                          >
+                            {sigExpanded === integration.provider ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                            {sigExpanded === integration.provider ? 'Close' : 'Edit'}
+                          </button>
+                        </div>
+
+                        {sigExpanded === integration.provider && (
+                          <div className="border-t dark:border-white/8 px-4 pb-4 bg-gray-50 dark:bg-white/3 rounded-b-xl space-y-3">
+                            {/* Mini toolbar */}
+                            <div className="flex items-center gap-1 pt-3 pb-1 border-b dark:border-white/8">
+                              {([
+                                { cmd: 'bold',      Icon: Bold,      title: 'Bold' },
+                                { cmd: 'italic',    Icon: Italic,    title: 'Italic' },
+                                { cmd: 'underline', Icon: Underline, title: 'Underline' },
+                              ] as const).map(({ cmd, Icon, title }) => (
+                                <button key={cmd} title={title}
+                                  onMouseDown={ev => { ev.preventDefault(); sigRef.current?.focus(); document.execCommand(cmd) }}
+                                  className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 transition-colors">
+                                  <Icon className="w-3.5 h-3.5" />
+                                </button>
+                              ))}
+                              <div className="w-px h-4 bg-gray-200 dark:bg-white/10 mx-0.5" />
+                              <button title="Insert logo / image"
+                                onMouseDown={ev => { ev.preventDefault(); sigImgRef.current?.click() }}
+                                className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 transition-colors">
+                                <ImagePlus className="w-3.5 h-3.5" />
+                              </button>
+                              <input ref={sigImgRef} type="file" accept="image/*" className="hidden" onChange={handleSigImageUpload} />
+                            </div>
+
+                            {/* Editable area */}
+                            <div
+                              ref={sigRef}
+                              contentEditable
+                              suppressContentEditableWarning
+                              data-placeholder="Type your signature here… e.g. Name, title, phone, website"
+                              className="min-h-[100px] px-3 py-2.5 rounded-lg border dark:border-white/10 bg-white dark:bg-[#232323] text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad] empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400"
+                            />
+
+                            <div className="flex items-center justify-between">
+                              <p className="text-[11px] text-gray-400">Images are embedded directly. For best email compatibility, use a publicly hosted logo URL.</p>
+                              <button
+                                onClick={handleSaveSignature}
+                                disabled={sigSaving}
+                                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium transition-colors disabled:opacity-60"
+                              >
+                                {sigSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : sigSaved ? <CheckCircle2 className="w-3 h-3" /> : null}
+                                {sigSaving ? 'Saving…' : sigSaved ? 'Saved!' : 'Save Signature'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
 
                     {/* Config form — shown when expanding a non-connected integration */}
                     {isExpanded && !isConnected && (

@@ -9,12 +9,10 @@ import { NextResponse, type NextRequest } from 'next/server'
  */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/dashboard'
-
-  if (!code) {
-    return NextResponse.redirect(`${origin}/login?error=missing_code`)
-  }
+  const code       = searchParams.get('code')
+  const tokenHash  = searchParams.get('token_hash')
+  const type       = searchParams.get('type')
+  const next       = searchParams.get('next') ?? '/dashboard'
 
   const cookieStore = await cookies()
 
@@ -33,11 +31,27 @@ export async function GET(request: NextRequest) {
     },
   )
 
-  const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(code)
+  let userId: string | undefined
 
-  if (error) {
-    console.error('[auth/callback] exchangeCodeForSession error:', error.message)
-    return NextResponse.redirect(`${origin}/login?error=auth_failed`)
+  if (code) {
+    // PKCE flow (Authorization Code) — used by OAuth and newer magic link flow
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error) {
+      console.error('[auth/callback] exchangeCodeForSession error:', error.message)
+      return NextResponse.redirect(`${origin}/login?error=auth_failed`)
+    }
+    userId = data.user?.id
+  } else if (tokenHash && type) {
+    // Token hash flow — used by magic links / email OTP in some Supabase configurations
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: type as any })
+    if (error) {
+      console.error('[auth/callback] verifyOtp error:', error.message)
+      return NextResponse.redirect(`${origin}/login?error=auth_failed`)
+    }
+    userId = data.user?.id
+  } else {
+    return NextResponse.redirect(`${origin}/login?error=missing_code`)
   }
 
   // If a specific destination was requested, honour it
@@ -47,7 +61,6 @@ export async function GET(request: NextRequest) {
   }
 
   // Check whether this user has completed the onboarding profile form
-  const userId = sessionData.user?.id
   if (userId) {
     const { data: profile } = await supabase
       .from('user_profiles')

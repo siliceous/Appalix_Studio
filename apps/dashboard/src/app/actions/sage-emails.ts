@@ -276,6 +276,63 @@ export async function markEmailRead(emailId: string): Promise<void> {
 }
 
 /**
+ * Fetch the HTML signature saved for the workspace's connected email account.
+ */
+export async function getEmailSignature(): Promise<{ html: string | null }> {
+  const supabase = await createClient()
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { html: null }
+
+  for (const provider of ['gmail', 'microsoft']) {
+    const { data } = await supabase
+      .from('sage_integrations')
+      .select('config')
+      .eq('workspace_id', workspaceId)
+      .eq('provider', provider)
+      .eq('status', 'connected')
+      .limit(1)
+      .single()
+
+    const cfg = (data as { config: Record<string, string> } | null)?.config
+    if (cfg?.signature) return { html: cfg.signature }
+  }
+
+  return { html: null }
+}
+
+/**
+ * Save an HTML email signature for the workspace's connected email account.
+ * Merges with existing config (credentials are preserved).
+ */
+export async function saveEmailSignature(html: string): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient()
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { ok: false, error: 'Not authenticated' }
+
+  const { data: integration } = await supabase
+    .from('sage_integrations')
+    .select('provider, config')
+    .eq('workspace_id', workspaceId)
+    .in('provider', ['gmail', 'microsoft'])
+    .eq('status', 'connected')
+    .limit(1)
+    .single()
+
+  if (!integration) return { ok: false, error: 'No email account connected' }
+
+  const typed = integration as { provider: string; config: Record<string, string> }
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('sage_integrations')
+    .update({ config: { ...typed.config, signature: html }, updated_at: new Date().toISOString() })
+    .eq('workspace_id', workspaceId)
+    .eq('provider', typed.provider)
+
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}
+
+/**
  * Ask Claude to rewrite an email body according to an instruction.
  */
 export async function rewriteEmail(opts: {

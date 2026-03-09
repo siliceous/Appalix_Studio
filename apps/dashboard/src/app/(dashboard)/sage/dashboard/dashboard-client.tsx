@@ -15,7 +15,7 @@ import {
   Palette, Highlighter, FileSignature, Type,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
-import { sendEmail, scheduleMeetingFromEmail } from '@/app/actions/sage-emails'
+import { sendEmail, scheduleMeetingFromEmail, getEmailSignature } from '@/app/actions/sage-emails'
 import { updateAutoSetting, dismissFeedItem } from '@/app/actions/sage-auto-settings'
 import type { SageEmail, Conversation, Lead, SageTicket } from '@/lib/types'
 
@@ -143,6 +143,7 @@ function ItemPopup({
   // Reply compose state (email only)
   const [showReply, setShowReply]       = useState(false)
   const [replyBody, setReplyBody]       = useState('')
+  const [emailSignature, setEmailSignature] = useState<string | null>(null)
   const [sending, setSending]           = useState(false)
   const [sendResult, setSendResult]     = useState<string | null>(null)
   const [showCc, setShowCc]             = useState(false)
@@ -164,12 +165,11 @@ function ItemPopup({
     { label: 'Trebuchet MS',     execName: 'Trebuchet MS' },
     { label: 'Verdana',          execName: 'Verdana' },
   ]
-  const TEXT_COLORS      = ['#111827','#6b7280','#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899']
+  const TEXT_COLORS      = ['#ffffff','#111827','#6b7280','#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899']
   const HIGHLIGHT_COLORS = ['#fef08a','#bbf7d0','#bfdbfe','#fce7f3','#fed7aa','#e0e7ff','transparent']
 
   function execFormat(cmd: string, val?: string) {
-    replyRef.current?.focus()
-    document.execCommand(cmd, false, val)
+    document.execCommand(cmd, false, val ?? undefined)
   }
 
   function applyFont(name: string) {
@@ -193,8 +193,12 @@ function ItemPopup({
   function insertSignature() {
     if (!replyRef.current) return
     replyRef.current.focus()
-    const sig = '\n\n— \nBest regards'
-    document.execCommand('insertText', false, sig)
+    if (emailSignature) {
+      document.execCommand('insertHTML', false,
+        `<br><hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;" />${emailSignature}`)
+    } else {
+      document.execCommand('insertText', false, '\n\n— \nBest regards')
+    }
   }
 
   function handleFileChange(ev: React.ChangeEvent<HTMLInputElement>) {
@@ -203,11 +207,21 @@ function ItemPopup({
     ev.target.value = ''
   }
 
-  // Populate contentEditable with AI draft when reply opens
+  // Fetch connected email signature once for this popup
   useEffect(() => {
-    if (showReply && replyRef.current && replyBody && !replyRef.current.innerText.trim()) {
-      replyRef.current.innerText = replyBody
-    }
+    if (popup.kind !== 'email') return
+    getEmailSignature().then(({ html }) => { if (html) setEmailSignature(html) })
+  }, [popup.kind])
+
+  // Populate contentEditable with AI draft + signature when reply opens
+  useEffect(() => {
+    if (!showReply || !replyRef.current) return
+    if (replyRef.current.innerText.trim()) return   // already has content
+    const draftHtml = replyBody ? replyBody.replace(/\n/g, '<br>') : ''
+    const sigHtml   = emailSignature
+      ? `<br><br><hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;" />${emailSignature}`
+      : ''
+    replyRef.current.innerHTML = draftHtml + sigHtml
   }, [showReply])
 
   // Escape to close
@@ -562,8 +576,8 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 {TEXT_COLORS.map(c => (
                                   <button key={c} onMouseDown={ev => { ev.preventDefault(); applyColor(c) }}
-                                    className="w-5 h-5 rounded-full border-2 border-white dark:border-[#1e1e1e] shadow-sm hover:scale-110 transition-transform"
-                                    style={{ background: c }} />
+                                    className="w-5 h-5 rounded-full border-2 shadow-sm hover:scale-110 transition-transform"
+                                    style={{ background: c, borderColor: c === '#ffffff' ? '#d1d5db' : undefined }} />
                                 ))}
                               </div>
                             </div>
@@ -903,6 +917,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
   const [feedView,    setFeedView]   = useState<'list' | 'grid'>('list')
   const [topType,     setTopType]    = useState<'email' | 'bot' | 'form' | 'ticket' | null>(null)
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
+  const [donutsCollapsed, setDonutsCollapsed] = useState(false)
 
   // Load preferences + DB settings on mount
   useEffect(() => {
@@ -1053,7 +1068,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 mb-4">
             Here&apos;s what needs your attention today
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
             {[
               { href: '/sage/contacts',  label: 'Add Contact', Icon: Plus,           cls: 'bg-[#2a7d6e] hover:bg-[#1f6157] text-white shadow-sm' },
               { href: '/sage/emails',    label: 'Inbox',       Icon: Mail,           cls: 'bg-white dark:bg-white/8 hover:bg-gray-50 dark:hover:bg-white/12 border dark:border-white/10 text-gray-700 dark:text-gray-300' },
@@ -1065,45 +1080,43 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                 <Ic className="w-3.5 h-3.5" /> {label}
               </Link>
             ))}
+
+            {/* Sage Auto — inline with buttons */}
+            <div className="flex items-center gap-2 bg-white dark:bg-[#232323] border dark:border-white/10 rounded-xl px-3 py-2">
+              <Zap className={`w-3.5 h-3.5 ${sageAuto ? 'text-[#61c2ad]' : 'text-gray-400'}`} />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sage Auto</span>
+              <Toggle checked={sageAuto} onChange={toggleSageAuto} />
+              <span className={`text-xs font-bold ${sageAuto ? 'text-[#61c2ad]' : 'text-gray-400'}`}>
+                {sageAuto ? 'ON' : 'OFF'}
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* Date range */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative">
-              <select value={dateRange} onChange={e => handleDateChange(e.target.value as DatePreset)}
-                className="appearance-none bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 cursor-pointer">
-                <option value="today">Today</option>
-                <option value="yesterday">Yesterday</option>
-                <option value="7d">Last 7 days</option>
-                <option value="30d">Last 30 days</option>
-                <option value="custom">Choose...</option>
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+        {/* Date range */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative">
+            <select value={dateRange} onChange={e => handleDateChange(e.target.value as DatePreset)}
+              className="appearance-none bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 cursor-pointer">
+              <option value="today">Today</option>
+              <option value="yesterday">Yesterday</option>
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="custom">Choose...</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+          </div>
+          {dateRange === 'custom' && (
+            <div className="flex items-center gap-1.5">
+              <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
+                className="bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
+                placeholder="dd/mm/yyyy" />
+              <span className="text-xs text-gray-400">to</span>
+              <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
+                className="bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
+                placeholder="dd/mm/yyyy" />
             </div>
-            {dateRange === 'custom' && (
-              <div className="flex items-center gap-1.5">
-                <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
-                  className="bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
-                  placeholder="dd/mm/yyyy" />
-                <span className="text-xs text-gray-400">to</span>
-                <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
-                  className="bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
-                  placeholder="dd/mm/yyyy" />
-              </div>
-            )}
-          </div>
-
-          {/* Sage Auto */}
-          <div className="flex items-center gap-2.5 bg-white dark:bg-[#232323] border dark:border-white/10 rounded-xl px-4 py-2">
-            <Zap className={`w-3.5 h-3.5 ${sageAuto ? 'text-[#61c2ad]' : 'text-gray-400'}`} />
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sage Auto</span>
-            <Toggle checked={sageAuto} onChange={toggleSageAuto} />
-            <span className={`text-xs font-bold ${sageAuto ? 'text-[#61c2ad]' : 'text-gray-400'}`}>
-              {sageAuto ? 'ON' : 'OFF'}
-            </span>
-          </div>
+          )}
         </div>
       </div>
 
@@ -1121,32 +1134,66 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
       )}
 
       {/* ── 4 Donut cards ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: 'Emails',    sub: 'high & medium unread',  Icon: Mail,        iconCls: 'text-blue-500',   segs: emailSegs,  total: emails.length,  href: '/dashboard/email'   },
-          { label: 'Bot Chats', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-500', segs: botSegs,  total: bots.length,    href: '/dashboard/bots'    },
-          { label: 'Forms',     sub: 'all submissions',       Icon: FileText,    iconCls: 'text-green-500',  segs: formSegs,   total: forms.length,   href: '/dashboard/forms'   },
-          { label: 'Tickets',   sub: 'all tickets',           Icon: TicketIcon,  iconCls: 'text-amber-500', segs: ticketSegs, total: tickets.length, href: '/dashboard/tickets' },
-        ].map(card => (
-          <Link key={card.label} href={card.href} className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-4 flex flex-col items-center hover:shadow-md hover:border-gray-300 dark:hover:border-white/15 transition-all cursor-pointer">
-            <div className="w-full flex items-center justify-between mb-2">
-              <div>
-                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{card.label}</p>
-                <p className="text-[10px] text-gray-400">{card.sub}</p>
-              </div>
-              <card.Icon className={`w-4 h-4 ${card.iconCls}`} />
-            </div>
-            <DonutChart segments={card.segs} total={card.total} />
-            <div className="flex items-center gap-2.5 mt-2 text-[11px] flex-wrap justify-center">
-              {card.segs.map(s => (
-                <span key={s.name} className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full" style={{ background: s.fill }} />
-                  <span className="text-gray-500 dark:text-gray-400">{s.value} {s.name.toLowerCase()}</span>
-                </span>
-              ))}
-            </div>
-          </Link>
-        ))}
+      <div className="mb-6">
+        {/* Section header with collapse toggle */}
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Overview</span>
+          <button
+            onClick={() => setDonutsCollapsed(c => !c)}
+            className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          >
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${donutsCollapsed ? '-rotate-90' : ''}`} />
+            {donutsCollapsed ? 'Expand' : 'Collapse'}
+          </button>
+        </div>
+
+        {donutsCollapsed ? (
+          /* Collapsed: compact single-row pills */
+          <div className="flex flex-wrap gap-3">
+            {[
+              { label: 'Emails',    Icon: Mail,          iconCls: 'text-blue-500',   total: emails.length,  href: '/dashboard/email'   },
+              { label: 'Bot Chats', Icon: MessageSquare, iconCls: 'text-purple-500', total: bots.length,    href: '/dashboard/bots'    },
+              { label: 'Forms',     Icon: FileText,      iconCls: 'text-green-500',  total: forms.length,   href: '/dashboard/forms'   },
+              { label: 'Tickets',   Icon: TicketIcon,    iconCls: 'text-amber-500',  total: tickets.length, href: '/dashboard/tickets' },
+            ].map(card => (
+              <Link key={card.label} href={card.href}
+                className="flex items-center gap-2 bg-white dark:bg-[#232323] border dark:border-white/8 rounded-lg px-3 py-2 hover:shadow-sm hover:border-gray-300 dark:hover:border-white/15 transition-all">
+                <card.Icon className={`w-3.5 h-3.5 ${card.iconCls}`} />
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{card.label}</span>
+                <span className="text-xs font-bold text-gray-900 dark:text-gray-100">{card.total}</span>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          /* Expanded: full donut cards */
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+            {[
+              { label: 'Emails',    sub: 'high & medium unread',  Icon: Mail,          iconCls: 'text-blue-500',   segs: emailSegs,  total: emails.length,  href: '/dashboard/email'   },
+              { label: 'Bot Chats', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-500', segs: botSegs,    total: bots.length,    href: '/dashboard/bots'    },
+              { label: 'Forms',     sub: 'all submissions',       Icon: FileText,      iconCls: 'text-green-500',  segs: formSegs,   total: forms.length,   href: '/dashboard/forms'   },
+              { label: 'Tickets',   sub: 'all tickets',           Icon: TicketIcon,    iconCls: 'text-amber-500',  segs: ticketSegs, total: tickets.length, href: '/dashboard/tickets' },
+            ].map(card => (
+              <Link key={card.label} href={card.href} className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-4 flex flex-col items-center hover:shadow-md hover:border-gray-300 dark:hover:border-white/15 transition-all cursor-pointer">
+                <div className="w-full flex items-center justify-between mb-2">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{card.label}</p>
+                    <p className="text-[10px] text-gray-400">{card.sub}</p>
+                  </div>
+                  <card.Icon className={`w-4 h-4 ${card.iconCls}`} />
+                </div>
+                <DonutChart segments={card.segs} total={card.total} />
+                <div className="flex items-center gap-2.5 mt-2 text-[11px] flex-wrap justify-center">
+                  {card.segs.map(s => (
+                    <span key={s.name} className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full" style={{ background: s.fill }} />
+                      <span className="text-gray-500 dark:text-gray-400">{s.value} {s.name.toLowerCase()}</span>
+                    </span>
+                  ))}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── 2 : 1 layout ───────────────────────────────────────────────── */}

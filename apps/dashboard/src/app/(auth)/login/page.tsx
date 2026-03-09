@@ -4,6 +4,17 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Provider } from '@supabase/supabase-js'
 
+async function sendMagicLink(email: string): Promise<{ error?: string }> {
+  const res = await fetch('/api/auth/send-magic-link', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ email }),
+  })
+  const data = await res.json() as { ok?: boolean; error?: string }
+  if (!res.ok) return { error: data.error ?? 'Failed to send magic link.' }
+  return {}
+}
+
 const SOCIAL_PROVIDERS: {
   provider: Provider
   label: string
@@ -87,16 +98,13 @@ export default function LoginPage() {
     setLoading(null)
   }
 
-  async function handleEmail(e: React.FormEvent<HTMLFormElement>) {
+  async function handleEmail(e: React.FormEvent) {
     e.preventDefault()
     setLoading('email')
     setError(null)
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${location.origin}/api/auth/callback` },
-    })
+    const { error } = await sendMagicLink(email)
     if (error) {
-      setError(error.message)
+      setError(error)
     } else {
       setSent(true)
     }
