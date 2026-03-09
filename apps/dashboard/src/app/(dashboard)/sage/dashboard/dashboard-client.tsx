@@ -127,12 +127,13 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
 type PopupState = { kind: 'email' | 'bot' | 'form' | 'ticket'; id: string }
 
 function ItemPopup({
-  popup, sageAuto, workspaceId, onClose,
+  popup, sageAuto, workspaceId, onClose, onAction,
 }: {
   popup: PopupState
   sageAuto: boolean
   workspaceId: string
   onClose: () => void
+  onAction: () => void
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [data, setData]               = useState<any>(null)
@@ -273,6 +274,7 @@ function ItemPopup({
       company_name: company ?? null, source: 'manual', tags: [],
     })
     setActionBusy(false); setActionDone('contact')
+    onAction()
   }
 
   async function createTicket(title: string, desc?: string | null, priority?: string) {
@@ -285,6 +287,7 @@ function ItemPopup({
       status: 'open',
     })
     setActionBusy(false); setActionDone('ticket')
+    onAction()
   }
 
   async function handleSendReply() {
@@ -302,7 +305,7 @@ function ItemPopup({
     setSending(false)
     const resultStr = result.ok ? 'sent' : (result.error ?? 'error')
     setSendResult(resultStr)
-    if (result.ok) setTimeout(() => onClose(), 3000)
+    if (result.ok) { onAction(); setTimeout(() => onClose(), 3000) }
   }
 
 const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 dark:bg-purple-500/30', form: 'bg-green-200 dark:bg-green-500/30', ticket: 'bg-amber-100 dark:bg-amber-500/25' }[popup.kind]
@@ -800,7 +803,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                 /* ── Sage Auto ON: Dismiss + Open Pipeline ── */
                 <>
                   <button
-                    onClick={onClose}
+                    onClick={() => { onAction(); onClose() }}
                     className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-gray-100 dark:bg-white/8 hover:bg-gray-200 dark:hover:bg-white/12 rounded-xl transition-colors"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -1058,6 +1061,12 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
           sageAuto={sageAuto}
           workspaceId={workspaceId}
           onClose={() => setPopup(null)}
+          onAction={() => {
+            if (popup) {
+              setDismissedIds(prev => new Set([...prev, `${popup.kind}-${popup.id}`]))
+              dismissFeedItem(popup.kind, popup.id)
+            }
+          }}
         />
       )}
 
