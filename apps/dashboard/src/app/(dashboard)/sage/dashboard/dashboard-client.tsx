@@ -402,14 +402,22 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
             {/* Quick-action buttons in header for email */}
             {popup.kind === 'email' && !loading && data && (
               showReply ? (
-                <Link
-                  href="/sage/pipelines"
-                  onClick={onClose}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
-                >
-                  <Kanban className="w-3.5 h-3.5" />
-                  Open Pipeline
-                </Link>
+                <>
+                  <button
+                    onClick={() => setShowReply(false)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 hover:text-gray-800 dark:hover:text-gray-200 transition-colors border border-gray-200 dark:border-white/10"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" /> Back
+                  </button>
+                  <Link
+                    href="/sage/pipelines"
+                    onClick={onClose}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                  >
+                    <Kanban className="w-3.5 h-3.5" />
+                    Open Pipeline
+                  </Link>
+                </>
               ) : (
                 <button
                   onClick={() => setShowReply(true)}
@@ -481,9 +489,9 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                                 <p className="text-[11px] text-blue-700 dark:text-blue-300 font-bold uppercase tracking-wide flex-1">AI Summary</p>
                                 <button
                                   onClick={() => setAiCollapsed(true)}
-                                  className="flex items-center gap-1 text-[10px] text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-200 transition-colors"
+                                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
                                 >
-                                  <ChevronDown className="w-3 h-3 rotate-180" />Collapse
+                                  <ChevronDown className="w-3.5 h-3.5 rotate-180" />Collapse
                                 </button>
                               </div>
                               <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">{e.ai_summary}</p>
@@ -564,9 +572,6 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                               BCC
                             </button>
                           </div>
-                          <button onClick={() => setShowReply(false)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors shrink-0">
-                            <ArrowLeft className="w-3.5 h-3.5" /> Back
-                          </button>
                         </div>
                         {/* CC row */}
                         {showCc && (
