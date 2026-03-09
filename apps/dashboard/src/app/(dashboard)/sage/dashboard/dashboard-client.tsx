@@ -281,7 +281,7 @@ function ItemPopup({
                   <>
                     {/* From / Subject row */}
                     <div className="flex items-start gap-4">
-                      <div className="w-9 h-9 rounded-full bg-green-200 dark:bg-green-500/30 flex items-center justify-center shrink-0 text-xs font-bold text-green-700 dark:text-green-300">
+                      <div className="w-9 h-9 rounded-full bg-blue-200 dark:bg-blue-500/30 flex items-center justify-center shrink-0 text-xs font-bold text-blue-700 dark:text-blue-300">
                         {(e.from_name ?? e.from_address).charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -299,10 +299,10 @@ function ItemPopup({
 
                     {/* AI Summary */}
                     {e.ai_summary && (
-                      <div className="bg-[#61c2ad]/10 dark:bg-[#61c2ad]/[0.12] border border-[#61c2ad]/25 dark:border-[#61c2ad]/20 rounded-xl p-4">
+                      <div className="bg-blue-50 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 rounded-xl p-4">
                         <div className="flex items-center gap-1.5 mb-2">
-                          <Sparkles className="w-3 h-3 text-[#61c2ad]" />
-                          <p className="text-[11px] text-[#61c2ad] font-bold uppercase tracking-wide">AI Summary</p>
+                          <Sparkles className="w-3 h-3 text-blue-500 dark:text-blue-400" />
+                          <p className="text-[11px] text-blue-700 dark:text-blue-300 font-bold uppercase tracking-wide">AI Summary</p>
                         </div>
                         <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">{e.ai_summary}</p>
                       </div>
@@ -394,7 +394,7 @@ function ItemPopup({
                 return (
                   <>
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-blue-200 dark:bg-blue-500/30 flex items-center justify-center shrink-0 text-xs font-bold text-blue-700 dark:text-blue-300">
+                      <div className="w-9 h-9 rounded-full bg-purple-200 dark:bg-purple-500/30 flex items-center justify-center shrink-0 text-xs font-bold text-purple-700 dark:text-purple-300">
                         <MessageSquare className="w-4 h-4" />
                       </div>
                       <div>
@@ -406,10 +406,10 @@ function ItemPopup({
                       </div>
                     </div>
                     {c.ai_summary && (
-                      <div className="bg-blue-50 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 rounded-xl p-4">
+                      <div className="bg-purple-50 dark:bg-purple-500/20 border border-purple-200 dark:border-purple-500/30 rounded-xl p-4">
                         <div className="flex items-center gap-1.5 mb-2">
-                          <Sparkles className="w-3 h-3 text-blue-500 dark:text-blue-400" />
-                          <p className="text-[11px] text-blue-700 dark:text-blue-300 font-bold uppercase tracking-wide">AI Summary</p>
+                          <Sparkles className="w-3 h-3 text-purple-500 dark:text-purple-400" />
+                          <p className="text-[11px] text-purple-700 dark:text-purple-300 font-bold uppercase tracking-wide">AI Summary</p>
                         </div>
                         <p className="text-sm text-gray-800 dark:text-gray-100 leading-relaxed">{c.ai_summary}</p>
                       </div>
@@ -420,7 +420,7 @@ function ItemPopup({
                         <ul className="space-y-2">
                           {(c.ai_insights ?? []).map((ins, i) => (
                             <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
-                              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-2 shrink-0" />{ins}
+                              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-2 shrink-0" />{ins}
                             </li>
                           ))}
                         </ul>
@@ -1094,16 +1094,16 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No emails this period.</p>
                     : emails.filter(e => !dismissedIds.has(`email-${e.id}`)).map(e => (
                       <div key={e.id} onClick={() => setPopup({ kind: 'email', id: e.id })}
-                        className="group flex items-start gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer border-b dark:border-white/6 last:border-0">
+                        className="group flex items-start gap-3 px-5 py-4 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer border-b border-blue-100 dark:border-blue-500/15 last:border-0">
                         <PriorityDot priority={e.ai_priority ?? 'low'} pulse={e.ai_priority === 'high'} />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{e.from_name ?? e.from_address}</p>
-                          <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{e.subject}</p>
-                          {e.ai_summary && <p className="text-[10px] text-gray-400 italic truncate mt-0.5">{e.ai_summary}</p>}
+                          <p className="text-[11px] text-blue-600/80 dark:text-blue-300/70 truncate">{e.subject}</p>
+                          {e.ai_summary && <p className="text-[10px] text-blue-500/60 dark:text-blue-400/60 italic truncate mt-0.5">{e.ai_summary}</p>}
                         </div>
-                        <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(e.received_at)}</span>
+                        <span className="text-[10px] text-blue-500/70 dark:text-blue-400/60 shrink-0">{timeAgo(e.received_at)}</span>
                         <button onClick={ev => handleDismiss('email', e.id, ev)} title="Dismiss"
-                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all shrink-0">
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-all shrink-0">
                           <X className="w-3 h-3" />
                         </button>
                       </div>
@@ -1121,17 +1121,17 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No bot chats this period.</p>
                     : bots.filter(b => !dismissedIds.has(`bot-${b.id}`)).map(b => (
                       <div key={b.id} onClick={() => setPopup({ kind: 'bot', id: b.id })}
-                        className="group flex items-start gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer border-b dark:border-white/6 last:border-0">
+                        className="group flex items-start gap-3 px-5 py-3 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-colors cursor-pointer border-b border-purple-100 dark:border-purple-500/15 last:border-0">
                         <PriorityDot priority={b.ai_priority ?? 'low'} pulse={b.ai_priority === 'high'} />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{b.title ?? 'Untitled conversation'}</p>
-                          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                          <p className="text-[11px] text-purple-600/80 dark:text-purple-300/70">
                             {b.bot?.name && <span className="font-medium">{b.bot.name} · </span>}{b.message_count} msgs
                           </p>
                         </div>
-                        <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(b.last_activity_at)}</span>
+                        <span className="text-[10px] text-purple-500/70 dark:text-purple-400/60 shrink-0">{timeAgo(b.last_activity_at)}</span>
                         <button onClick={ev => handleDismiss('bot', b.id, ev)} title="Dismiss"
-                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all shrink-0">
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-purple-100 dark:hover:bg-purple-500/20 text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-all shrink-0">
                           <X className="w-3 h-3" />
                         </button>
                       </div>
@@ -1149,15 +1149,15 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No form submissions this period.</p>
                     : forms.filter(f => !dismissedIds.has(`form-${f.id}`)).map(f => (
                       <div key={f.id} onClick={() => setPopup({ kind: 'form', id: f.id })}
-                        className="group flex items-start gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer border-b dark:border-white/6 last:border-0">
+                        className="group flex items-start gap-3 px-5 py-3 hover:bg-green-50 dark:hover:bg-green-500/10 transition-colors cursor-pointer border-b border-green-100 dark:border-green-500/15 last:border-0">
                         <PriorityDot priority={f.lead_score ?? 'low'} />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{f.name}</p>
-                          <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{f.company ?? f.email ?? f.source_platform}</p>
+                          <p className="text-[11px] text-green-600/80 dark:text-green-300/70 truncate">{f.company ?? f.email ?? f.source_platform}</p>
                         </div>
-                        <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(f.created_at)}</span>
+                        <span className="text-[10px] text-green-500/70 dark:text-green-400/60 shrink-0">{timeAgo(f.created_at)}</span>
                         <button onClick={ev => handleDismiss('form', f.id, ev)} title="Dismiss"
-                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all shrink-0">
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-green-100 dark:hover:bg-green-500/20 text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-all shrink-0">
                           <X className="w-3 h-3" />
                         </button>
                       </div>
@@ -1175,15 +1175,15 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No tickets this period.</p>
                     : tickets.filter(t => !dismissedIds.has(`ticket-${t.id}`)).map(t => (
                       <div key={t.id} onClick={() => setPopup({ kind: 'ticket', id: t.id })}
-                        className="group flex items-start gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer border-b dark:border-white/6 last:border-0">
+                        className="group flex items-start gap-3 px-5 py-3 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors cursor-pointer border-b border-amber-100 dark:border-amber-500/15 last:border-0">
                         <PriorityDot priority={t.priority} pulse={t.priority === 'high' || t.priority === 'urgent'} />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{t.title}</p>
-                          {t.contact && <p className="text-[11px] text-gray-500 dark:text-gray-400">{t.contact.name}</p>}
+                          {t.contact && <p className="text-[11px] text-amber-600/80 dark:text-amber-300/70">{t.contact.name}</p>}
                         </div>
-                        <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(t.created_at)}</span>
+                        <span className="text-[10px] text-amber-500/70 dark:text-amber-400/60 shrink-0">{timeAgo(t.created_at)}</span>
                         <button onClick={ev => handleDismiss('ticket', t.id, ev)} title="Dismiss"
-                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all shrink-0">
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-all shrink-0">
                           <X className="w-3 h-3" />
                         </button>
                       </div>
@@ -1223,7 +1223,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${tablet.bgClass} ${tablet.accentClass}`}>
                               {tablet.count}
                             </span>
-                            <span className={`text-[10px] ${tablet.accentClass} transition-transform duration-200 ${isActive ? 'rotate-180' : ''}`}>▾</span>
+                            <ChevronDown className={`w-4 h-4 ${tablet.accentClass} transition-transform duration-200 ${isActive ? 'rotate-180' : ''}`} />
                           </div>
                         </div>
                         {/* Tablet rows */}
