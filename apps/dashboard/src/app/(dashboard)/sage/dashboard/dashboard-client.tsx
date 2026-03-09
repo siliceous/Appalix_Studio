@@ -1679,12 +1679,12 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
           )}
         </div>
 
-        {/* Right: pending tasks */}
+        {/* Right: pending + upcoming tasks */}
         <div className="xl:col-span-1 bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col">
           <div className="px-5 py-4 border-b dark:border-white/8 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <CheckSquare className="w-4 h-4 text-gray-400" />
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Pending Tasks</h2>
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Tasks</h2>
             </div>
             {(tasks.length + ticketTasks.length) > 0 && (
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400">{tasks.length + ticketTasks.length}</span>
@@ -1698,82 +1698,102 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
               <CheckSquare className="w-8 h-8 text-gray-200 dark:text-gray-700 mx-auto mb-2" />
               <p className="text-sm text-gray-400">All caught up!</p>
             </div>
-          ) : (
-            <div className="divide-y dark:divide-white/8 overflow-y-auto max-h-[680px]">
-              {tasks.map(task => {
-                const pipelineUrl = task.deal?.pipeline_id
-                  ? `/sage/pipelines/${task.deal.pipeline_id}?deal=${task.deal_id}`
-                  : '/sage/pipelines'
-                return (
-                  <div key={task.id} className="flex items-start gap-0 px-5 py-4 group hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
-                    <Link href={pipelineUrl} className="flex-1 min-w-0 pr-2">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
-                        {task.title ?? 'Untitled task'}
-                      </p>
-                      {task.deal && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{task.deal.title}</p>
-                      )}
-                      {task.body && (
-                        <p className="text-[11px] text-gray-400 italic truncate mt-0.5">{task.body}</p>
-                      )}
-                      {task.due_at && (
-                        <span className={`flex items-center gap-1 text-xs font-medium mt-1 ${overdue(task.due_at) ? 'text-red-500' : 'text-gray-400'}`}>
-                          <Calendar className="w-3 h-3" />
-                          {new Date(task.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          {overdue(task.due_at) && ' · overdue'}
-                        </span>
-                      )}
-                    </Link>
-                    <button
-                      onClick={e => markTaskDone(task.id, e)}
-                      disabled={doneBusy === task.id}
-                      title="Mark as done"
-                      className="shrink-0 w-5 h-5 mt-0.5 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 hover:text-green-600 text-transparent transition-colors disabled:opacity-50"
-                    >
-                      {doneBusy === task.id
-                        ? <RefreshCw className="w-3 h-3 text-gray-400 animate-spin" />
-                        : <CheckCircle2 className="w-3 h-3" />}
-                    </button>
-                  </div>
-                )
-              })}
-              {ticketTasks.map(task => (
-                <div key={task.id} className="flex items-start gap-0 px-5 py-4 group hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
-                  <Link href="/sage/tickets" className="flex-1 min-w-0 pr-2">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">Ticket</span>
+          ) : (() => {
+            // Normalise into a single shape for rendering
+            type AnyTask = { id: string; title: string | null; body: string | null; due_at: string | null; kind: 'deal' | 'ticket'; href: string; subtitle: string | null }
+            const allTasks: AnyTask[] = [
+              ...tasks.map(t => ({
+                id: t.id, title: t.title, body: t.body, due_at: t.due_at, kind: 'deal' as const,
+                href: t.deal?.pipeline_id ? `/sage/pipelines/${t.deal.pipeline_id}?deal=${t.deal_id}` : '/sage/pipelines',
+                subtitle: t.deal?.title ?? null,
+              })),
+              ...ticketTasks.map(t => ({
+                id: t.id, title: t.title, body: t.body, due_at: t.due_at, kind: 'ticket' as const,
+                href: '/dashboard/tickets',
+                subtitle: t.ticket?.title ?? null,
+              })),
+            ]
+            // Pending = overdue OR no due date. Upcoming = future due date.
+            const isPending = (t: AnyTask) => !t.due_at || overdue(t.due_at)
+            const pendingTasks  = allTasks.filter(t => isPending(t)).sort((a, b) => {
+              if (!a.due_at && !b.due_at) return 0
+              if (!a.due_at) return 1   // no date goes after overdue
+              if (!b.due_at) return -1
+              return new Date(a.due_at).getTime() - new Date(b.due_at).getTime() // oldest first
+            })
+            const upcomingTasks = allTasks.filter(t => !isPending(t)).sort((a, b) =>
+              new Date(a.due_at!).getTime() - new Date(b.due_at!).getTime() // soonest first
+            )
+
+            const renderTask = (task: AnyTask, onDone: (e: React.MouseEvent) => void) => (
+              <div key={task.id} className="flex items-start gap-0 px-5 py-4 group hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
+                <Link href={task.href} className="flex-1 min-w-0 pr-2">
+                  {task.kind === 'ticket' && (
+                    <span className="inline-block text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 mb-0.5">Ticket</span>
+                  )}
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
+                    {task.title ?? 'Untitled task'}
+                  </p>
+                  {task.subtitle && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{task.subtitle}</p>
+                  )}
+                  {task.body && (
+                    <p className="text-[11px] text-gray-400 italic truncate mt-0.5">{task.body}</p>
+                  )}
+                  {task.due_at && (
+                    <span className={`flex items-center gap-1 text-xs font-medium mt-1 ${overdue(task.due_at) ? 'text-red-500' : 'text-gray-400'}`}>
+                      <Calendar className="w-3 h-3" />
+                      {new Date(task.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {overdue(task.due_at) && ' · overdue'}
+                    </span>
+                  )}
+                </Link>
+                <button
+                  onClick={onDone}
+                  disabled={doneBusy === task.id}
+                  title="Mark as done"
+                  className="shrink-0 w-5 h-5 mt-0.5 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 hover:text-green-600 text-transparent transition-colors disabled:opacity-50"
+                >
+                  {doneBusy === task.id
+                    ? <RefreshCw className="w-3 h-3 text-gray-400 animate-spin" />
+                    : <CheckCircle2 className="w-3 h-3" />}
+                </button>
+              </div>
+            )
+
+            return (
+              <div className="overflow-y-auto max-h-[680px]">
+                {/* Pending */}
+                {pendingTasks.length > 0 && (
+                  <>
+                    <div className="px-5 py-2 bg-gray-50 dark:bg-white/[0.02] border-b dark:border-white/8 flex items-center justify-between">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Pending</span>
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-500/10 text-red-500">{pendingTasks.length}</span>
                     </div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
-                      {task.title ?? 'Untitled task'}
-                    </p>
-                    {task.ticket && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{task.ticket.title}</p>
-                    )}
-                    {task.body && (
-                      <p className="text-[11px] text-gray-400 italic truncate mt-0.5">{task.body}</p>
-                    )}
-                    {task.due_at && (
-                      <span className={`flex items-center gap-1 text-xs font-medium mt-1 ${overdue(task.due_at) ? 'text-red-500' : 'text-gray-400'}`}>
-                        <Calendar className="w-3 h-3" />
-                        {new Date(task.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        {overdue(task.due_at) && ' · overdue'}
-                      </span>
-                    )}
-                  </Link>
-                  <button
-                    onClick={e => markTicketTaskDone(task.id, e)}
-                    disabled={doneBusy === task.id}
-                    title="Mark as done"
-                    className="shrink-0 w-5 h-5 mt-0.5 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 hover:text-green-600 text-transparent transition-colors disabled:opacity-50"
-                  >
-                    {doneBusy === task.id
-                      ? <RefreshCw className="w-3 h-3 text-gray-400 animate-spin" />
-                      : <CheckCircle2 className="w-3 h-3" />}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+                    <div className="divide-y dark:divide-white/8">
+                      {pendingTasks.map(task => renderTask(task, e =>
+                        task.kind === 'deal' ? markTaskDone(task.id, e) : markTicketTaskDone(task.id, e)
+                      ))}
+                    </div>
+                  </>
+                )}
+                {/* Upcoming */}
+                {upcomingTasks.length > 0 && (
+                  <>
+                    <div className="px-5 py-2 bg-gray-50 dark:bg-white/[0.02] border-b dark:border-white/8 border-t dark:border-t-white/8 flex items-center justify-between">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Upcoming</span>
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400">{upcomingTasks.length}</span>
+                    </div>
+                    <div className="divide-y dark:divide-white/8">
+                      {upcomingTasks.map(task => renderTask(task, e =>
+                        task.kind === 'deal' ? markTaskDone(task.id, e) : markTicketTaskDone(task.id, e)
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )
+          })()}
         </div>
       </div>
     </>
