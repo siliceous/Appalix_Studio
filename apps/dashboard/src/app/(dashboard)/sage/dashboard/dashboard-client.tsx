@@ -1503,8 +1503,8 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                         key={tablet.key}
                         className={`rounded-xl border overflow-hidden transition-all duration-200 ${
                           isActive
-                            ? `${tablet.borderClass} ring-1 ring-inset ${tablet.borderClass}`
-                            : 'border-gray-100 dark:border-white/8'
+                            ? tablet.borderClass
+                            : 'border-gray-100 dark:border-white/[0.06]'
                         }`}
                       >
                         {/* Tablet header */}
