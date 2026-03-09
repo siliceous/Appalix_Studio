@@ -125,7 +125,7 @@ export function ConversationsClient({ conversations, bots, filters }: Props) {
                 onClick={() => pushFilter({ status: s || undefined })}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                   activeStatus === s
-                    ? 'bg-[#61c2ad] text-white'
+                    ? 'bg-[#61c2ad]/15 dark:bg-[#61c2ad]/20 text-[#1f6157] dark:text-[#61c2ad] border border-[#61c2ad]/30'
                     : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
                 }`}>
                 {s === '' ? 'All status' : s.charAt(0).toUpperCase() + s.slice(1)}
@@ -140,7 +140,7 @@ export function ConversationsClient({ conversations, bots, filters }: Props) {
             onClick={() => pushFilter({ platform: undefined })}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
               activePlatform === 'all'
-                ? 'bg-[#61c2ad] text-white'
+                ? 'bg-[#61c2ad]/15 dark:bg-[#61c2ad]/20 text-[#1f6157] dark:text-[#61c2ad] border border-[#61c2ad]/30'
                 : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
             }`}>
             All platforms
