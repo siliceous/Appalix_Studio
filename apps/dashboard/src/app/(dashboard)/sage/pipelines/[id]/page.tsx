@@ -44,6 +44,7 @@ export default async function PipelineBoardPage({
       .select('id, title, value, currency, status, stage_id, close_date, priority, company_name, created_at, contact:sage_contacts(id, name)')
       .eq('pipeline_id', id)
       .eq('workspace_id', workspaceId)
+      .or(`owner_id.is.null,owner_id.eq.${user.id}`)
       .order('created_at'),
     supabase.from('sage_contacts').select('id, name, company_name').eq('workspace_id', workspaceId).order('name'),
     supabase.from('sage_pipelines').select('id, name').eq('workspace_id', workspaceId).order('created_at'),

@@ -34,6 +34,7 @@ export default async function ContactsPage() {
       .from('sage_contacts')
       .select('*')
       .eq('workspace_id', membership.workspace_id)
+      .or(`assigned_to.is.null,assigned_to.eq.${user.id}`)
       .order('created_at', { ascending: false }),
     supabase
       .from('sage_deals')

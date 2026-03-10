@@ -181,8 +181,16 @@ export async function assignContact(
 
   if (error) return { error: error.message }
 
+  // Cascade assignment to all open deals for this contact
+  await admin
+    .from('sage_deals')
+    .update({ owner_id: userId, updated_at: new Date().toISOString() })
+    .eq('contact_id', contactId)
+    .eq('workspace_id', workspaceId)
+
   await logActivity(workspaceId, 'contact', contactId, 'contact_assigned', { assigned_to: userId })
   revalidatePath('/sage/contacts')
+  revalidatePath('/sage/pipelines')
   return { success: true }
 }
 
@@ -358,6 +366,8 @@ export async function deletePipeline(id: string) {
 // ---------------------------------------------------------------
 
 export async function createDeal(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user: dealUser } } = await supabase.auth.getUser()
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
 
@@ -410,6 +420,7 @@ export async function createDeal(formData: FormData) {
       pipeline_id:    pipelineId,
       stage_id:       stageId,
       contact_id:     contactId,
+      owner_id:       dealUser?.id ?? null,
       value,
       currency,
       status,
