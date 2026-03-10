@@ -189,7 +189,8 @@ function ItemPopup({
   const [showBcc, setShowBcc]           = useState(false)
   const [ccValue, setCcValue]           = useState('')
   const [bccValue, setBccValue]         = useState('')
-  const replyRef = useRef<HTMLDivElement>(null)
+  const replyRef      = useRef<HTMLDivElement>(null)
+  const userTypedRef  = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const [fontOpen,  setFontOpen]  = useState(false)
@@ -252,12 +253,15 @@ function ItemPopup({
     getEmailSignature().then(({ html }) => { if (html) setEmailSignature(html) })
   }, [popup.kind])
 
+  // Reset typed flag whenever a new email popup opens
+  useEffect(() => { userTypedRef.current = false }, [popup.id])
+
   // Populate contentEditable with AI draft + signature when reply opens.
-  // The contentEditable gets key={popup.id} so it's a fresh empty DOM node
-  // each time. Guard on innerText ensures we never overwrite user-typed content.
+  // Uses userTypedRef instead of innerText check so signature loading early
+  // doesn't block the draft from appearing after it arrives asynchronously.
   useEffect(() => {
     if (!showReply || !replyRef.current) return
-    if (replyRef.current.innerText.trim()) return   // user has already typed — don't overwrite
+    if (userTypedRef.current) return  // user has manually typed — don't overwrite
     const draftHtml = replyBody ? replyBody.replace(/\n/g, '<br>') : ''
     const sigHtml   = emailSignature
       ? `<br><br><hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;" />${emailSignature}`
@@ -802,7 +806,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                           ref={replyRef}
                           contentEditable
                           suppressContentEditableWarning
-                          onInput={() => setReplyBody(replyRef.current?.innerText ?? '')}
+                          onInput={() => { userTypedRef.current = true; setReplyBody(replyRef.current?.innerText ?? '') }}
                           data-placeholder="Write your reply…"
                           className="flex-1 min-h-0 overflow-y-auto px-5 py-4 text-sm leading-relaxed outline-none [&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-gray-400"
                           style={{ fontFamily: 'Arial, sans-serif', color: '#374151', backgroundColor: '#ffffff' }}
@@ -1132,6 +1136,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
   const [pipelines, setPipelines] = useState<{ id: string; name: string }[]>([])
   const [defaultPipelineId, setDefaultPipelineId] = useState<string | null>(null)
   const [contactMatches, setContactMatches] = useState<Record<string, ContactMatch | null | undefined>>({})
+  const [feedFilter,   setFeedFilter]   = useState<'all' | 'priority'>('all')
   const [showAutoDesc, setShowAutoDesc] = useState(false)
   const autoDescTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -1291,13 +1296,28 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
   const ticketSegs: DonutSegment[] = [{ name: 'High', value: visTickets.filter(t => t.priority === 'high' || t.priority === 'urgent').length, fill: P_COLORS.high }, { name: 'Medium', value: visTickets.filter(t => t.priority === 'medium').length, fill: P_COLORS.medium }, { name: 'Low', value: visTickets.filter(t => t.priority === 'low').length, fill: P_COLORS.low }]
 
   // ── Timeline (uses pre-filtered visible arrays) ───────────────────────────
-  const timeline = useMemo<TItem[]>(() => [
-    ...visEmails.map(d  => ({ kind: 'email'  as const, data: d, time: d.received_at    })),
-    ...visBots.map(d    => ({ kind: 'bot'    as const, data: d, time: d.last_activity_at })),
-    ...visForms.map(d   => ({ kind: 'form'   as const, data: d, time: d.created_at      })),
-    ...visTickets.map(d => ({ kind: 'ticket' as const, data: d, time: d.created_at      })),
-  ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()),
-  [visEmails, visBots, visForms, visTickets])
+  const P_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 }
+  function itemPriority(item: TItem): number {
+    const d = item.data as Record<string, unknown>
+    const p = (d.ai_priority ?? d.priority ?? d.lead_score ?? '') as string
+    return P_RANK[p] ?? 3
+  }
+  const timeline = useMemo<TItem[]>(() => {
+    const all: TItem[] = [
+      ...visEmails.map(d  => ({ kind: 'email'  as const, data: d, time: d.received_at    })),
+      ...visBots.map(d    => ({ kind: 'bot'    as const, data: d, time: d.last_activity_at })),
+      ...visForms.map(d   => ({ kind: 'form'   as const, data: d, time: d.created_at      })),
+      ...visTickets.map(d => ({ kind: 'ticket' as const, data: d, time: d.created_at      })),
+    ]
+    const filtered = feedFilter === 'priority'
+      ? all.filter(item => itemPriority(item) <= 1)  // 0=high, 1=medium only
+      : all
+    return filtered.sort((a, b) => {
+      const pd = itemPriority(a) - itemPriority(b)
+      if (pd !== 0) return pd
+      return new Date(b.time).getTime() - new Date(a.time).getTime()
+    })
+  }, [visEmails, visBots, visForms, visTickets, feedFilter])
 
   const overdue = (due: string | null) => !!due && new Date(due) < new Date()
 
@@ -1373,54 +1393,52 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
             )}
           </div>
 
-          {/* Sage Auto with description underneath */}
-          <div className="flex flex-col gap-1">
+          {/* Sage Auto */}
+          <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2.5 bg-white dark:bg-[#232323] border dark:border-white/10 rounded-xl px-4 py-2">
-              <Zap className={`w-3.5 h-3.5 ${sageAuto ? 'text-[#61c2ad]' : 'text-gray-400'}`} />
+              <Zap className={`w-3.5 h-3.5 shrink-0 ${sageAuto ? 'text-[#61c2ad]' : 'text-gray-400'}`} />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sage Auto</span>
               <Toggle checked={sageAuto} onChange={toggleSageAuto} />
               <span className={`text-xs font-bold ${sageAuto ? 'text-[#61c2ad]' : 'text-gray-400'}`}>
                 {sageAuto ? 'ON' : 'OFF'}
               </span>
-            </div>
-            <div className="flex items-center gap-2 px-1">
-              <p className={`text-[11px] leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis transition-opacity duration-500 ${showAutoDesc ? 'opacity-100' : 'opacity-0 pointer-events-none'} ${sageAuto ? 'text-[#61c2ad]' : 'text-gray-400 dark:text-gray-500'}`}>
-                {sageAuto
-                  ? 'Full automation ON — AI creates contacts & deals automatically.'
-                  : 'Assist mode — AI analyses only. You act manually in the dashboard.'}
-              </p>
-              {sageAuto && (
-                <button
-                  onClick={handleBackfill}
-                  disabled={backfilling}
-                  title="Process existing emails, bots & forms that were analysed before Sage Auto was enabled"
-                  className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg border border-gray-200 dark:border-white/10 text-gray-400 hover:text-[#3a9e8a] hover:border-[#61c2ad]/40 transition-colors disabled:opacity-50 whitespace-nowrap shrink-0"
-                >
-                  {backfilling ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
-                  {backfillDone !== null ? `${backfillDone} processed` : 'Process existing'}
-                </button>
-              )}
-            </div>
-            {/* Default pipeline selector */}
-            {pipelines.length > 0 && (
-              <div className="flex items-center gap-2 px-1 mt-1">
-                <span className="text-[11px] text-gray-400 dark:text-gray-500 shrink-0">Pipeline:</span>
-                <select
-                  value={defaultPipelineId ?? ''}
-                  onChange={async e => {
-                    const val = e.target.value || null
-                    setDefaultPipelineId(val)
-                    await setDefaultPipeline(val)
-                  }}
-                  className="flex-1 min-w-0 text-[11px] bg-gray-50 dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/40 cursor-pointer"
-                >
-                  <option value="">Oldest pipeline (default)</option>
-                  {pipelines.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+              {/* Right side — always fills the gap */}
+              <div className="ml-auto flex items-center gap-2">
+                {pipelines.length > 0 && (
+                  <select
+                    value={defaultPipelineId ?? ''}
+                    onChange={async e => {
+                      const val = e.target.value || null
+                      setDefaultPipelineId(val)
+                      await setDefaultPipeline(val)
+                    }}
+                    className="text-[11px] bg-gray-50 dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/40 cursor-pointer"
+                  >
+                    <option value="">Default pipeline</option>
+                    {pipelines.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                )}
+                {sageAuto && (
+                  <button
+                    onClick={handleBackfill}
+                    disabled={backfilling}
+                    title="Process existing emails, bots & forms that were analysed before Sage Auto was enabled"
+                    className="flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-lg border border-gray-200 dark:border-white/10 text-gray-400 hover:text-[#3a9e8a] hover:border-[#61c2ad]/40 transition-colors disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {backfilling ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                    {backfillDone !== null ? `${backfillDone} processed` : 'Process existing'}
+                  </button>
+                )}
               </div>
-            )}
+            </div>
+            {/* Status description — fades in briefly after toggle */}
+            <p className={`text-[11px] px-1 transition-opacity duration-500 ${showAutoDesc ? 'opacity-100' : 'opacity-0 pointer-events-none'} ${sageAuto ? 'text-[#61c2ad]' : 'text-gray-400 dark:text-gray-500'}`}>
+              {sageAuto
+                ? 'Full automation ON — AI creates contacts & deals automatically.'
+                : 'Assist mode — AI analyses only. You act manually in the dashboard.'}
+            </p>
           </div>
         </div>
       </div>
@@ -1497,8 +1515,19 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
           <div className="px-5 py-4 border-b dark:border-white/8 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Activity Feed</h2>
+              {/* All / Priority filter */}
+              <div className="flex items-center gap-0.5 ml-1 bg-gray-100 dark:bg-white/6 rounded-lg p-0.5">
+                <button
+                  onClick={() => setFeedFilter('all')}
+                  className={`px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${feedFilter === 'all' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+                >All</button>
+                <button
+                  onClick={() => setFeedFilter('priority')}
+                  className={`px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${feedFilter === 'priority' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+                >Priority</button>
+              </div>
               {/* List / Grid toggle */}
-              <div className="flex items-center gap-0.5 ml-2 bg-gray-100 dark:bg-white/6 rounded-lg p-0.5">
+              <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-white/6 rounded-lg p-0.5">
                 <button
                   onClick={() => setFeedView('list')}
                   className={`p-1 rounded-md transition-colors ${feedView === 'list' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
