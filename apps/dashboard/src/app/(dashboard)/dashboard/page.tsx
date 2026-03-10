@@ -72,14 +72,22 @@ export default async function DashboardPage({
     type PRow = { user_id: string; first_name: string; last_name: string | null }
     const pMap: Record<string, PRow> = {}
     for (const p of (profiles ?? []) as PRow[]) pMap[p.user_id] = p
+
+    // Fetch emails as fallback display name
+    const { data: { users: authUsers } } = await admin.auth.admin.listUsers({ perPage: 1000 })
+    const emailMap: Record<string, string> = {}
+    for (const u of authUsers) emailMap[u.id] = u.email ?? ''
+
     teamMembers = ((rawTeam ?? []) as TRowArr[])
       .filter((m) => (ROLE_RANK[m.role as WorkspaceMemberRole] ?? 0) < callerRank)
       .map((m) => {
         const p = pMap[m.user_id]
+        const fullName = p ? [p.first_name, p.last_name].filter(Boolean).join(' ') : ''
+        const email = emailMap[m.user_id] ?? ''
         return {
           user_id: m.user_id,
           role: m.role as WorkspaceMemberRole,
-          name: p ? [p.first_name, p.last_name].filter(Boolean).join(' ') || m.user_id : m.user_id,
+          name: fullName || email || m.user_id,
         }
       })
   }
