@@ -19,14 +19,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Load the first workspace this user belongs to
   const { data: membership } = await supabase
     .from('workspace_members')
-    .select('workspace_id, workspaces(*)')
+    .select('workspace_id, role, workspaces(*)')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true })
     .limit(1)
     .single()
 
-  const raw = membership as unknown as { workspaces: Workspace } | null
+  const raw = membership as unknown as { workspaces: Workspace; role: string } | null
   const workspace = raw?.workspaces ?? null
+  const callerRole = (raw?.role ?? 'member') as string
 
   if (!workspace) {
     return (
@@ -60,7 +61,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-[#1c1c1c] relative">
       {/* Subtle green ambient glow in dark mode */}
       <div className="pointer-events-none fixed top-0 left-60 right-0 h-[300px] dark:bg-[#61c2ad]/[0.03] blur-[80px] hidden dark:block" />
-      <Sidebar workspace={workspace} />
+      <Sidebar workspace={workspace} callerRole={callerRole} />
       <main className="flex-1 p-8 overflow-auto bg-gray-50 dark:bg-[#1c1c1c]">
         {children}
       </main>

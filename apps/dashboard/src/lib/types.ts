@@ -21,6 +21,13 @@ export type SubscriptionStatus =
   | 'active' | 'inactive' | 'trialing' | 'past_due' | 'cancelled' | 'paused'
 
 export type WorkspaceMemberRole = 'owner' | 'admin' | 'member' | 'viewer'
+
+export interface WorkspaceMemberSummary {
+  user_id: string
+  name:    string
+  email:   string
+  role:    WorkspaceMemberRole
+}
 export type IntegrationStatus = 'active' | 'inactive' | 'error'
 export type ConversationStatus = 'active' | 'closed' | 'archived'
 export type MessageRole = 'user' | 'assistant' | 'tool' | 'system'
@@ -54,6 +61,7 @@ export interface Workspace {
   extra_bots: number
   extra_bot_limit: number | null
   rr_index: number
+  rr_enabled: boolean
   created_at: string
   updated_at: string
 }
@@ -246,6 +254,7 @@ export interface SageContact {
   tags:                   string[]
   notes:                  string | null
   value:                  number | null
+  assigned_to:            string | null
   created_at:             string
   updated_at:             string
   // joined

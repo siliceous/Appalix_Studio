@@ -279,3 +279,33 @@ export async function createWorkspace(formData: FormData) {
 
   redirect('/dashboard')
 }
+
+export async function toggleRoundRobin(
+  enabled: boolean,
+): Promise<{ error?: string; success?: boolean }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated.' }
+
+  const { data: membership } = await supabase
+    .from('workspace_members')
+    .select('workspace_id, role')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single()
+  if (!membership) return { error: 'Workspace not found.' }
+
+  const { workspace_id, role } = membership as { workspace_id: string; role: string }
+  if (!['owner', 'admin'].includes(role)) return { error: 'Only owners and admins can change this setting.' }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('workspaces')
+    .update({ rr_enabled: enabled })
+    .eq('id', workspace_id)
+
+  if (error) return { error: error.message }
+  return { success: true }
+}
+

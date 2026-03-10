@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { getRoundRobinAssignee } from '@/lib/round-robin'
 
 async function getWorkspaceId(): Promise<string | null> {
   const supabase = await createClient()
@@ -105,6 +106,12 @@ export async function triageCreateLead(data: {
         .single()
       if (contactErr || !created) return { error: contactErr?.message ?? 'Failed to create contact' }
       contactId = (created as CR).id
+
+      // Round-robin auto-assignment for new contacts
+      const assignee = await getRoundRobinAssignee(workspaceId, admin)
+      if (assignee) {
+        await admin.from('sage_contacts').update({ assigned_to: assignee }).eq('id', contactId)
+      }
     }
 
     if (isNew) await logActivity(workspaceId, 'contact', contactId, 'contact_created', { source: 'email_triage' })
@@ -393,6 +400,13 @@ export async function dashboardAddLead(opts: {
         .select('id').single()
       if (contactErr || !created) return { error: contactErr?.message ?? 'Failed to create contact' }
       contactId = (created as CR).id
+
+      // Round-robin auto-assignment for new contacts
+      const assignee = await getRoundRobinAssignee(workspaceId, admin)
+      if (assignee) {
+        await admin.from('sage_contacts').update({ assigned_to: assignee }).eq('id', contactId)
+      }
+
       await logActivity(workspaceId, 'contact', contactId, 'contact_created', { source: `${opts.source}_triage` })
     }
 

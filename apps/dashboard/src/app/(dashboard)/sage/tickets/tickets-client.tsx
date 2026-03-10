@@ -35,12 +35,14 @@ const FILTERS: Array<{ label: string; value: string }> = [
 ]
 
 interface TicketsClientProps {
-  tickets:    TicketWithContact[]
-  contacts:   Pick<SageContact, 'id' | 'name'>[]
+  tickets:     TicketWithContact[]
+  contacts:    Pick<SageContact, 'id' | 'name'>[]
   triageMode?: boolean   // when true, auto-remove resolved/closed on status change
+  callerRole?: string
 }
 
-export function TicketsClient({ tickets: initialTickets, contacts, triageMode = false }: TicketsClientProps) {
+export function TicketsClient({ tickets: initialTickets, contacts, triageMode = false, callerRole }: TicketsClientProps) {
+  const canWrite = callerRole !== 'viewer'
   const [tickets,      setTickets]      = useState(initialTickets)
   const [filter,       setFilter]       = useState('all')
   const [search,       setSearch]       = useState('')
@@ -191,7 +193,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, triageMode = 
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {selectedIds.size >= 2 && (
+          {canWrite && selectedIds.size >= 2 && (
             <button
               onClick={() => { setPrimaryId([...selectedIds][0]); setShowMerge(true) }}
               className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-xl transition-colors"
@@ -205,13 +207,15 @@ export function TicketsClient({ tickets: initialTickets, contacts, triageMode = 
               <X className="w-3.5 h-3.5" /> Clear
             </button>
           )}
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            New Ticket
-          </button>
+          {canWrite && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              New Ticket
+            </button>
+          )}
         </div>
       </div>
 
@@ -265,7 +269,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, triageMode = 
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {filter === 'all' ? 'No tickets yet.' : `No ${filter} tickets.`}
             </p>
-            {filter === 'all' && (
+            {filter === 'all' && canWrite && (
               <button onClick={() => setShowModal(true)} className="mt-3 text-sm text-brand-600 dark:text-[#61c2ad] hover:underline">
                 Create your first ticket →
               </button>
@@ -280,13 +284,15 @@ export function TicketsClient({ tickets: initialTickets, contacts, triageMode = 
               const isSelected = selectedIds.has(ticket.id)
               return (
                 <div key={ticket.id} className={`flex items-start gap-4 px-5 py-4 transition-colors ${isSelected ? 'bg-amber-50 dark:bg-amber-500/8' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}>
-                  {/* Checkbox */}
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => toggleSelect(ticket.id)}
-                    className="mt-1 shrink-0 w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-amber-500 cursor-pointer"
-                  />
+                  {/* Checkbox — only for users who can write (merge requires canWrite) */}
+                  {canWrite && (
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelect(ticket.id)}
+                      className="mt-1 shrink-0 w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-amber-500 cursor-pointer"
+                    />
+                  )}
                   {/* Priority dot */}
                   <div className="mt-0.5 shrink-0">
                     <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full font-medium ${pc.color}`}>
@@ -312,17 +318,23 @@ export function TicketsClient({ tickets: initialTickets, contacts, triageMode = 
 
                   {/* Status selector + actions */}
                   <div className="shrink-0 flex items-center gap-2">
-                    <select
-                      value={ticket.status}
-                      onChange={e => handleStatusChange(ticket.id, e.target.value as SageTicketStatus)}
-                      className={`text-xs px-2.5 py-1 rounded-lg font-medium border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad] ${sc.color}`}
-                    >
-                      <option value="open">Open</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="pending">Pending</option>
-                      <option value="resolved">Resolved</option>
-                      <option value="closed">Closed</option>
-                    </select>
+                    {canWrite ? (
+                      <select
+                        value={ticket.status}
+                        onChange={e => handleStatusChange(ticket.id, e.target.value as SageTicketStatus)}
+                        className={`text-xs px-2.5 py-1 rounded-lg font-medium border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad] ${sc.color}`}
+                      >
+                        <option value="open">Open</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="pending">Pending</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="closed">Closed</option>
+                      </select>
+                    ) : (
+                      <span className={`text-xs px-2.5 py-1 rounded-lg font-medium ${sc.color}`}>
+                        {sc.label}
+                      </span>
+                    )}
 
                     <button
                       onClick={() => setSlideTicket(ticket)}
@@ -332,13 +344,15 @@ export function TicketsClient({ tickets: initialTickets, contacts, triageMode = 
                       <Pencil className="w-3.5 h-3.5 text-gray-400" />
                     </button>
 
-                    <button
-                      onClick={() => handleDelete(ticket.id)}
-                      disabled={deleting === ticket.id}
-                      className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 hover:text-red-500" />
-                    </button>
+                    {canWrite && (
+                      <button
+                        onClick={() => handleDelete(ticket.id)}
+                        disabled={deleting === ticket.id}
+                        className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 hover:text-red-500" />
+                      </button>
+                    )}
                   </div>
                 </div>
               )

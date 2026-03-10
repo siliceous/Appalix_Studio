@@ -240,15 +240,40 @@ export default function TeamSeatsRolesPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">What&apos;s coming next</h2>
-            <p>
-              The current roles system is the foundation for more advanced controls coming soon:
+            <h2 className="text-xl font-semibold text-white mb-3">Lead assignment &amp; round-robin distribution</h2>
+            <p className="mb-4">
+              Every contact in Sage CRM can be assigned to a specific team member. Assignments show as
+              a badge in the contacts table, are filterable from the Filter panel, and can be set from
+              the New or Edit Contact modal.
             </p>
-            <ul className="list-disc pl-5 space-y-2 mt-3">
-              <li><strong className="text-white">Lead assignment</strong> — manually assign contacts and deals to specific team members.</li>
-              <li><strong className="text-white">Round-robin distribution</strong> — automatically rotate incoming leads across your active team in sequence.</li>
-              <li><strong className="text-white">Scoped views</strong> — Members will optionally see only their own assigned leads, keeping pipelines clean on large teams.</li>
-            </ul>
+
+            <div className="space-y-4">
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+                <h3 className="text-sm font-semibold text-white mb-2">Manual assignment</h3>
+                <p className="text-sm text-gray-300 leading-relaxed">
+                  Open any contact and select a team member from the <strong className="text-white">Assigned to</strong> dropdown.
+                  Use the <strong className="text-white">Assigned To</strong> filter in the contacts table to view a
+                  specific rep&apos;s leads, or select <em>Unassigned</em> to find contacts that haven&apos;t been picked up yet.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-brand-600/20 bg-brand-600/5 p-5">
+                <h3 className="text-sm font-semibold text-white mb-2">Round-robin auto-distribution</h3>
+                <p className="text-sm text-gray-300 leading-relaxed">
+                  Enable <strong className="text-white">Lead Distribution</strong> in Settings to automatically rotate
+                  incoming leads across your accepted team members in join order. Every new contact created by the bot,
+                  email triage, or form submission is assigned to the next rep — no manual work required.
+                  The rotation pointer advances atomically so concurrent leads never land on the same person twice.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Coming next</p>
+              <ul className="list-disc pl-5 space-y-1.5 text-sm text-gray-400">
+                <li><strong className="text-gray-300">Scoped views</strong> — Members optionally see only their own assigned leads, keeping pipelines clean on large teams.</li>
+              </ul>
+            </div>
           </section>
 
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">

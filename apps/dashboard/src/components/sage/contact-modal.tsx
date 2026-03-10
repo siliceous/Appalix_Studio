@@ -20,19 +20,20 @@ function postalCodeLabel(country: string): string {
 }
 import { X, Loader2 } from 'lucide-react'
 import { createContact, updateContact } from '@/app/actions/sage'
-import type { SageContact } from '@/lib/types'
+import type { SageContact, WorkspaceMemberSummary } from '@/lib/types'
 
 interface ContactModalProps {
   contact?:  SageContact
   onClose:   () => void
   onSaved?:  (contact: SageContact) => void
+  members?:  WorkspaceMemberSummary[]
 }
 
 const inputCls = 'w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]'
 const labelCls = 'block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5'
 const sectionCls = 'text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3 mt-1'
 
-export function ContactModal({ contact, onClose, onSaved }: ContactModalProps) {
+export function ContactModal({ contact, onClose, onSaved, members }: ContactModalProps) {
   const [pending, startTransition] = useTransition()
   const [country, setCountry] = useState(contact?.country ?? '')
   const isEdit = !!contact
@@ -192,6 +193,19 @@ export function ContactModal({ contact, onClose, onSaved }: ContactModalProps) {
                   </select>
                 </div>
               </div>
+              {members && members.length > 0 && (
+                <div>
+                  <label className={labelCls}>Assigned to</label>
+                  <select name="assigned_to" defaultValue={contact?.assigned_to ?? ''} className={inputCls}>
+                    <option value="">Unassigned</option>
+                    {members.map(m => (
+                      <option key={m.user_id} value={m.user_id}>
+                        {m.name || m.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className={labelCls}>Notes</label>
                 <textarea name="notes" rows={3} placeholder="Any additional context…" defaultValue={contact?.notes ?? ''} className={`${inputCls} resize-none`} />

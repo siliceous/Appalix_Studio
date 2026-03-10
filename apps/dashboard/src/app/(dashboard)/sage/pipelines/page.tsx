@@ -21,21 +21,24 @@ export default function PipelinesPage() {
   const [showModal,  setShowModal]  = useState(false)
   const [deleting,   setDeleting]   = useState<string | null>(null)
   const [loading,    setLoading]    = useState(true)
+  const [canWrite,   setCanWrite]   = useState(true)
 
   useEffect(() => {
     async function load() {
       const supabase = createClient()
       const { data: membershipRaw } = await supabase
         .from('workspace_members')
-        .select('workspace_id')
+        .select('workspace_id, role')
         .limit(1)
         .single()
       if (!membershipRaw) return
+      const m = membershipRaw as { workspace_id: string; role: string }
+      setCanWrite(m.role !== 'viewer')
 
       const { data } = await supabase
         .from('sage_pipelines')
         .select('*')
-        .eq('workspace_id', (membershipRaw as { workspace_id: string }).workspace_id)
+        .eq('workspace_id', m.workspace_id)
         .order('created_at', { ascending: true })
 
       setPipelines((data ?? []) as SagePipeline[])
@@ -65,13 +68,15 @@ export default function PipelinesPage() {
             Track deals from lead to close
           </p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Create Pipeline
-        </button>
+        {canWrite && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Create Pipeline
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -88,13 +93,15 @@ export default function PipelinesPage() {
           <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mb-8 leading-relaxed">
             Create your first pipeline to start tracking leads from chat into closed deals.
           </p>
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors text-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Create your first pipeline
-          </button>
+          {canWrite && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors text-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Create your first pipeline
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -117,16 +124,18 @@ export default function PipelinesPage() {
                       </span>
                     )}
                   </div>
-                  <button
-                    onClick={() => handleDelete(pipeline.id)}
-                    disabled={deleting === pipeline.id}
-                    className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
-                  >
-                    {deleting === pipeline.id
-                      ? <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
-                      : <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
-                    }
-                  </button>
+                  {canWrite && (
+                    <button
+                      onClick={() => handleDelete(pipeline.id)}
+                      disabled={deleting === pipeline.id}
+                      className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+                    >
+                      {deleting === pipeline.id
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
+                        : <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
+                      }
+                    </button>
+                  )}
                 </div>
 
                 <Link

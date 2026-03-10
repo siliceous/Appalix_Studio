@@ -13,13 +13,13 @@ export default async function TicketsPage() {
 
   const { data: membershipRaw } = await supabase
     .from('workspace_members')
-    .select('workspace_id')
+    .select('workspace_id, role')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true })
     .limit(1)
     .single()
 
-  const membership  = membershipRaw as Pick<WorkspaceMember, 'workspace_id'> | null
+  const membership  = membershipRaw as Pick<WorkspaceMember, 'workspace_id' | 'role'> | null
   if (!membership) redirect('/login')
   const workspaceId = membership.workspace_id
 
@@ -39,5 +39,5 @@ export default async function TicketsPage() {
   const tickets  = (ticketsRaw  ?? []) as (SageTicket & { contact: Pick<SageContact, 'id' | 'name' | 'email'> | null })[]
   const contacts = (contactsRaw ?? []) as Pick<SageContact, 'id' | 'name'>[]
 
-  return <TicketsClient tickets={tickets} contacts={contacts} />
+  return <TicketsClient tickets={tickets} contacts={contacts} callerRole={membership.role as WorkspaceMember['role']} />
 }

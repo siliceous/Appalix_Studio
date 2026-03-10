@@ -21,13 +21,13 @@ export default async function PipelineBoardPage({
 
   const { data: membershipRaw } = await supabase
     .from('workspace_members')
-    .select('workspace_id')
+    .select('workspace_id, role')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true })
     .limit(1)
     .single()
 
-  const membership  = membershipRaw as Pick<WorkspaceMember, 'workspace_id'> | null
+  const membership  = membershipRaw as Pick<WorkspaceMember, 'workspace_id' | 'role'> | null
   if (!membership) redirect('/login')
   const workspaceId = membership.workspace_id
 
@@ -106,6 +106,7 @@ export default async function PipelineBoardPage({
             ownerName={ownerName}
             dealLastActivity={dealLastActivity}
             initialDealId={initialDealId}
+            callerRole={membership.role as WorkspaceMember['role']}
           />
         )}
       </div>

@@ -22,6 +22,7 @@ interface PipelineBoardProps {
   ownerName:         string
   dealLastActivity:  Record<string, string>  // dealId → ISO timestamp of last activity
   initialDealId?:    string                  // auto-open this deal's slide-over on mount
+  callerRole?:       string
 }
 
 type SortKey = 'none' | 'value_desc' | 'close_date' | 'created_desc' | 'priority'
@@ -49,7 +50,9 @@ export function PipelineBoard({
   ownerName,
   dealLastActivity,
   initialDealId,
+  callerRole,
 }: PipelineBoardProps) {
+  const canWrite = callerRole !== 'viewer'
   const router = useRouter()
   const [deals,              setDeals]              = useState<DealWithContact[]>(initialDeals)
   const [stages,             setStages]             = useState<SagePipelineStage[]>(initialStages)
@@ -287,24 +290,28 @@ export function PipelineBoard({
         </div>
 
         {/* Manage Stages */}
-        <button
-          onClick={() => setShowManageStages(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
-        >
-          <Settings2 className="w-3.5 h-3.5" />
-          Manage Stages
-        </button>
+        {canWrite && (
+          <button
+            onClick={() => setShowManageStages(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+          >
+            <Settings2 className="w-3.5 h-3.5" />
+            Manage Stages
+          </button>
+        )}
 
         {/* Add an Opportunity */}
-        <div className="ml-auto">
-          <button
-            onClick={() => setShowDealModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Add an Opportunity
-          </button>
-        </div>
+        {canWrite && (
+          <div className="ml-auto">
+            <button
+              onClick={() => setShowDealModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add an Opportunity
+            </button>
+          </div>
+        )}
       </div>
 
       {/* List view */}
@@ -347,17 +354,23 @@ export function PipelineBoard({
                         {deal.contact?.name ?? deal.company_name ?? '—'}
                       </td>
                       <td className="py-3 pr-4" onClick={e => e.stopPropagation()}>
-                        <select
-                          value={deal.stage_id ?? ''}
-                          onChange={async e => {
-                            const newStageId = e.target.value
-                            setDeals(prev => prev.map(d => d.id === deal.id ? { ...d, stage_id: newStageId } : d))
-                            moveDeal(deal.id, newStageId).catch(() => setDeals(initialDeals))
-                          }}
-                          className="text-[11px] px-2 py-0.5 rounded-full bg-[#61c2ad]/10 text-[#3d9585] dark:text-[#61c2ad] font-medium cursor-pointer border-none focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/40 hover:bg-[#61c2ad]/20 transition-colors appearance-none"
-                        >
-                          {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                        </select>
+                        {canWrite ? (
+                          <select
+                            value={deal.stage_id ?? ''}
+                            onChange={async e => {
+                              const newStageId = e.target.value
+                              setDeals(prev => prev.map(d => d.id === deal.id ? { ...d, stage_id: newStageId } : d))
+                              moveDeal(deal.id, newStageId).catch(() => setDeals(initialDeals))
+                            }}
+                            className="text-[11px] px-2 py-0.5 rounded-full bg-[#61c2ad]/10 text-[#3d9585] dark:text-[#61c2ad] font-medium cursor-pointer border-none focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/40 hover:bg-[#61c2ad]/20 transition-colors appearance-none"
+                          >
+                            {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                          </select>
+                        ) : (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#61c2ad]/10 text-[#3d9585] dark:text-[#61c2ad] font-medium">
+                            {stages.find(s => s.id === deal.stage_id)?.name ?? '—'}
+                          </span>
+                        )}
                       </td>
                       <td className="py-3 pr-4 text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
                         {deal.value ? formatCurrency(deal.value, deal.currency) : <span className="text-gray-300 dark:text-gray-600 font-normal">—</span>}
@@ -374,13 +387,15 @@ export function PipelineBoard({
                         {deal.close_date ? new Date(deal.close_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                       </td>
                       <td className="py-3">
-                        <button
-                          onClick={e => { e.stopPropagation(); setOpenEditOnDealId(deal.id); setSelectedDealId(deal.id) }}
-                          className="opacity-0 group-hover/row:opacity-100 p-1 text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] rounded transition-all"
-                          title="Edit deal"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
+                        {canWrite && (
+                          <button
+                            onClick={e => { e.stopPropagation(); setOpenEditOnDealId(deal.id); setSelectedDealId(deal.id) }}
+                            className="opacity-0 group-hover/row:opacity-100 p-1 text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] rounded transition-all"
+                            title="Edit deal"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   )
@@ -431,9 +446,9 @@ export function PipelineBoard({
                 {stageDeals.map(deal => (
                   <div
                     key={deal.id}
-                    draggable
-                    onDragStart={e => handleDragStart(e, deal.id)}
-                    onDragEnd={handleDragEnd}
+                    draggable={canWrite}
+                    onDragStart={canWrite ? e => handleDragStart(e, deal.id) : undefined}
+                    onDragEnd={canWrite ? handleDragEnd : undefined}
                     onClick={() => { if (!dragId) setSelectedDealId(deal.id) }}
                     className={`bg-white dark:bg-[#2a2a2a] rounded-xl p-3.5 border dark:border-white/8 cursor-pointer active:cursor-grabbing select-none transition-all ${
                       dragId === deal.id ? 'opacity-40 scale-95 rotate-1' : 'hover:shadow-sm hover:border-gray-200 dark:hover:border-white/15'
@@ -454,13 +469,15 @@ export function PipelineBoard({
                             )
                           })()}
                           <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-snug flex-1">{deal.title}</p>
-                          <button
-                            onClick={e => { e.stopPropagation(); setOpenEditOnDealId(deal.id); setSelectedDealId(deal.id) }}
-                            className="opacity-0 group-hover/title:opacity-100 p-0.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] rounded transition-all shrink-0"
-                            title="Edit deal"
-                          >
-                            <Pencil className="w-3 h-3" />
-                          </button>
+                          {canWrite && (
+                            <button
+                              onClick={e => { e.stopPropagation(); setOpenEditOnDealId(deal.id); setSelectedDealId(deal.id) }}
+                              className="opacity-0 group-hover/title:opacity-100 p-0.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] rounded transition-all shrink-0"
+                              title="Edit deal"
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                          )}
                         </div>
                         {deal.contact && (
                           <p className="text-xs text-gray-400 mt-0.5 truncate">{deal.contact.name}</p>

@@ -28,10 +28,11 @@ import { useRouter } from 'next/navigation'
 import type { Workspace } from '@/lib/types'
 
 interface NavItem {
-  href:  string
-  label: string
-  icon:  React.ElementType
-  sub?:  boolean  // renders indented under its parent group item
+  href:      string
+  label:     string
+  icon:      React.ElementType
+  sub?:      boolean  // renders indented under its parent group item
+  adminOnly?: boolean // hidden for viewers
 }
 
 interface NavGroup {
@@ -53,9 +54,9 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Agent',
     items: [
-      { href: '/bots',          label: 'Bots',           icon: Bot },
-      { href: '/integrations',   label: 'Integrations',   icon: Plug },
-      { href: '/sources',        label: 'Knowledge Base', icon: BookOpen },
+      { href: '/bots',         label: 'Bots',           icon: Bot,      adminOnly: true },
+      { href: '/integrations', label: 'Integrations',   icon: Plug,     adminOnly: true },
+      { href: '/sources',      label: 'Knowledge Base', icon: BookOpen, adminOnly: true },
     ],
   },
   {
@@ -84,14 +85,16 @@ const NAV_GROUPS: NavGroup[] = [
 ]
 
 interface SidebarProps {
-  workspace: Workspace
+  workspace:   Workspace
+  callerRole?: string
 }
 
-export function Sidebar({ workspace }: SidebarProps) {
+export function Sidebar({ workspace, callerRole }: SidebarProps) {
   const pathname  = usePathname()
   const router    = useRouter()
   const supabase  = createClient()
   const isProPlan = ['pro', 'scale', 'enterprise'].includes(workspace.plan)
+  const isViewer  = callerRole === 'viewer'
 
   async function signOut() {
     await supabase.auth.signOut()
@@ -195,7 +198,7 @@ export function Sidebar({ workspace }: SidebarProps) {
                 )}
 
                 <div className="space-y-0.5">
-                  {group.items.map(({ href, label, icon: Icon, sub }) => {
+                  {group.items.filter(item => !(isViewer && item.adminOnly)).map(({ href, label, icon: Icon, sub }) => {
                     const active = isActive(href)
 
                     const linkCls = cn(

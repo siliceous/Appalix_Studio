@@ -74,6 +74,7 @@ export async function createContact(formData: FormData) {
   const source        = ((formData.get('source') as string | null)?.trim() || 'manual')
   const valueRaw      = (formData.get('value') as string | null)?.trim()
   const value         = valueRaw ? parseFloat(valueRaw) : null
+  const assigned_to   = (formData.get('assigned_to') as string | null)?.trim() || null
 
   // Dedup check: email → name → phone before insert
   type CR = { id: string }
@@ -97,7 +98,7 @@ export async function createContact(formData: FormData) {
 
   const { data, error } = await admin
     .from('sage_contacts')
-    .insert({ workspace_id: workspaceId, name, email, phone, title, contact_type, company_name, website_url, business_goal, street, city, state, zip, country, visibility, notes, tags, source, value })
+    .insert({ workspace_id: workspaceId, name, email, phone, title, contact_type, company_name, website_url, business_goal, street, city, state, zip, country, visibility, notes, tags, source, value, assigned_to })
     .select('*')
     .single()
 
@@ -133,10 +134,11 @@ export async function updateContact(id: string, formData: FormData) {
   const source        = ((formData.get('source') as string | null)?.trim() || 'manual')
   const valueRaw      = (formData.get('value') as string | null)?.trim()
   const value         = valueRaw ? parseFloat(valueRaw) : null
+  const assigned_to   = (formData.get('assigned_to') as string | null)?.trim() || null
 
   const { data, error } = await admin
     .from('sage_contacts')
-    .update({ name, email, phone, title, contact_type, company_name, website_url, business_goal, street, city, state, zip, country, visibility, notes, tags, source, value, updated_at: new Date().toISOString() })
+    .update({ name, email, phone, title, contact_type, company_name, website_url, business_goal, street, city, state, zip, country, visibility, notes, tags, source, value, assigned_to, updated_at: new Date().toISOString() })
     .eq('id', id)
     .eq('workspace_id', workspaceId)
     .select('*')
@@ -162,6 +164,26 @@ export async function deleteContact(id: string) {
 
   if (error) throw new Error(error.message)
   revalidatePath('/sage/contacts')
+}
+
+export async function assignContact(
+  contactId: string,
+  userId: string | null,
+): Promise<{ error?: string; success?: boolean }> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+
+  const { error } = await admin
+    .from('sage_contacts')
+    .update({ assigned_to: userId, updated_at: new Date().toISOString() })
+    .eq('id', contactId)
+    .eq('workspace_id', workspaceId)
+
+  if (error) return { error: error.message }
+
+  await logActivity(workspaceId, 'contact', contactId, 'contact_assigned', { assigned_to: userId })
+  revalidatePath('/sage/contacts')
+  return { success: true }
 }
 
 // ---------------------------------------------------------------

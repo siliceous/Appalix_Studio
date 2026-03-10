@@ -10,7 +10,7 @@ import { ContactModal } from '@/components/sage/contact-modal'
 import { deleteContact } from '@/app/actions/sage'
 import { timeAgo } from '@/lib/utils'
 import Link from 'next/link'
-import type { SageContact } from '@/lib/types'
+import type { SageContact, WorkspaceMemberSummary } from '@/lib/types'
 
 // ── Column definitions ──────────────────────────────────────────────────────
 type ColKey =
@@ -18,7 +18,7 @@ type ColKey =
   | 'last_contacted_at' | 'interactions' | 'inactive_days'
   | 'tags' | 'city' | 'country' | 'created_at' | 'notes'
   | 'updated_at' | 'phone' | 'state' | 'street' | 'website_url'
-  | 'deal_value'
+  | 'deal_value' | 'assigned_to'
 
 const ALL_COLUMNS: { key: ColKey; label: string; required?: true }[] = [
   { key: 'name',              label: 'Person',         required: true },
@@ -40,6 +40,7 @@ const ALL_COLUMNS: { key: ColKey; label: string; required?: true }[] = [
   { key: 'street',            label: 'Street' },
   { key: 'website_url',       label: 'Website' },
   { key: 'deal_value',        label: 'Value' },
+  { key: 'assigned_to',       label: 'Assigned To' },
 ]
 
 const DEFAULT_VISIBLE = new Set<ColKey>(['name', 'company_name', 'email', 'contact_type', 'deal_value', 'tags', 'created_at'])
@@ -69,13 +70,19 @@ interface FilterState {
   city:          string
   state:         string
   country:       string
+  assignedTo:    string
 }
-const EMPTY_FILTER: FilterState = { contactType: [], lastContacted: '', tags: '', city: '', state: '', country: '' }
+const EMPTY_FILTER: FilterState = { contactType: [], lastContacted: '', tags: '', city: '', state: '', country: '', assignedTo: '' }
 
 // ── Component ───────────────────────────────────────────────────────────────
-interface ContactsClientProps { contacts: SageContact[] }
+interface ContactsClientProps {
+  contacts:   SageContact[]
+  members:    WorkspaceMemberSummary[]
+  callerRole: WorkspaceMemberSummary['role']
+}
 
-export function ContactsClient({ contacts: initial }: ContactsClientProps) {
+export function ContactsClient({ contacts: initial, members, callerRole }: ContactsClientProps) {
+  const canWrite = callerRole !== 'viewer'
   const router = useRouter()
   const [contacts,       setContacts]       = useState(initial)
   const [showModal,      setShowModal]      = useState(false)
@@ -111,7 +118,7 @@ export function ContactsClient({ contacts: initial }: ContactsClientProps) {
 
   const activeFilterCount = [
     filters.contactType.length > 0, !!filters.lastContacted,
-    !!filters.tags, !!filters.city, !!filters.state, !!filters.country,
+    !!filters.tags, !!filters.city, !!filters.state, !!filters.country, !!filters.assignedTo,
   ].filter(Boolean).length
 
   // ── Filtering + sorting ──────────────────────────────────────────────────
@@ -128,6 +135,9 @@ export function ContactsClient({ contacts: initial }: ContactsClientProps) {
         const daysMap: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90, '1y': 365 }
         const cutoff = new Date(Date.now() - daysMap[filters.lastContacted] * 86_400_000)
         if (new Date(c.last_contacted_at) < cutoff) return false
+      }
+      if (filters.assignedTo) {
+        if (filters.assignedTo === '__unassigned__' ? !!c.assigned_to : c.assigned_to !== filters.assignedTo) return false
       }
       return true
     })
@@ -202,6 +212,16 @@ export function ContactsClient({ contacts: initial }: ContactsClientProps) {
             </span>
           : <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
       }
+      case 'assigned_to': {
+        if (!c.assigned_to) return <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
+        const m = members.find(m => m.user_id === c.assigned_to)
+        const label = m ? (m.name || m.email) : c.assigned_to.slice(0, 8)
+        return (
+          <span className="text-xs px-2 py-0.5 rounded-full bg-brand-50 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad] whitespace-nowrap">
+            {label}
+          </span>
+        )
+      }
       default: return null
     }
   }
@@ -224,12 +244,14 @@ export function ContactsClient({ contacts: initial }: ContactsClientProps) {
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Contacts</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{contacts.length} total</p>
         </div>
-        <button
-          onClick={e => { e.stopPropagation(); setShowModal(true) }}
-          className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
-        >
-          <UserPlus className="w-4 h-4" /> New Contact
-        </button>
+        {canWrite && (
+          <button
+            onClick={e => { e.stopPropagation(); setShowModal(true) }}
+            className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
+          >
+            <UserPlus className="w-4 h-4" /> New Contact
+          </button>
+        )}
       </div>
 
       {/* Toolbar */}
@@ -348,6 +370,24 @@ export function ContactsClient({ contacts: initial }: ContactsClientProps) {
                 />
               </div>
 
+              {/* Assigned To */}
+              {members.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Assigned To</p>
+                  <select
+                    value={filters.assignedTo}
+                    onChange={e => setFilters(prev => ({ ...prev, assignedTo: e.target.value }))}
+                    className="w-full px-2 py-1.5 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-[#1c1c1c] text-gray-900 dark:text-gray-100"
+                  >
+                    <option value="">Anyone</option>
+                    <option value="__unassigned__">Unassigned</option>
+                    {members.map(m => (
+                      <option key={m.user_id} value={m.user_id}>{m.name || m.email}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* Location */}
               <div>
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Location</p>
@@ -403,7 +443,7 @@ export function ContactsClient({ contacts: initial }: ContactsClientProps) {
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {search || activeFilterCount > 0 ? 'No contacts match your filters.' : 'No contacts yet. Add your first one.'}
             </p>
-            {!search && !activeFilterCount && (
+            {!search && !activeFilterCount && canWrite && (
               <button onClick={() => setShowModal(true)} className="mt-4 text-sm text-brand-600 dark:text-[#61c2ad] hover:underline">
                 Add a contact →
               </button>
@@ -418,7 +458,7 @@ export function ContactsClient({ contacts: initial }: ContactsClientProps) {
                     {col.label}
                   </th>
                 ))}
-                <th className="px-4 py-3 w-16" />
+                {canWrite && <th className="px-4 py-3 w-16" />}
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-white/8">
@@ -433,24 +473,26 @@ export function ContactsClient({ contacts: initial }: ContactsClientProps) {
                       {renderCell(col.key, contact)}
                     </td>
                   ))}
-                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                    <div className="flex items-center gap-1 justify-end">
-                      <button
-                        onClick={() => setEditingContact(contact)}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
-                        title="Edit"
-                      >
-                        <Pencil className="w-3.5 h-3.5 text-gray-400" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(contact.id)}
-                        disabled={deleting === contact.id}
-                        className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
-                      </button>
-                    </div>
-                  </td>
+                  {canWrite && (
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center gap-1 justify-end">
+                        <button
+                          onClick={() => setEditingContact(contact)}
+                          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil className="w-3.5 h-3.5 text-gray-400" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(contact.id)}
+                          disabled={deleting === contact.id}
+                          className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -461,6 +503,7 @@ export function ContactsClient({ contacts: initial }: ContactsClientProps) {
       {(showModal || editingContact) && (
         <ContactModal
           contact={editingContact ?? undefined}
+          members={members}
           onClose={() => { setShowModal(false); setEditingContact(null) }}
           onSaved={saved => {
             if (editingContact) {

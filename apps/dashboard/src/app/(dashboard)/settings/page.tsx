@@ -5,6 +5,7 @@ import { DeleteWorkspaceButton } from '@/components/settings/delete-workspace-bu
 import { ThemeToggle } from '@/components/settings/theme-toggle'
 import { BusinessProfileSection } from '@/components/settings/business-profile-section'
 import { TeamMembersSection, type MemberDisplay } from '@/components/settings/team-members-section'
+import { RoundRobinToggle } from '@/components/settings/round-robin-toggle'
 import { parseBusinessDescription } from '@/lib/business-profile'
 import { STATUS_COLORS, formatDate } from '@/lib/utils'
 import type { Metadata } from 'next'
@@ -217,6 +218,27 @@ export default async function SettingsPage() {
           />
         </div>
       </section>
+
+      {/* Lead Distribution */}
+      {isAdmin && (
+        <section className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10">
+          <div className="px-6 py-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Lead Distribution</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm">
+                  When enabled, new leads from bot conversations, email, and form submissions are automatically
+                  assigned to accepted team members in round-robin order.
+                </p>
+              </div>
+              <RoundRobinToggle
+                enabled={!!(workspace as Workspace & { rr_enabled?: boolean }).rr_enabled}
+                isAdmin={isAdmin}
+              />
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Danger zone */}
       {membership.role === 'owner' && (
