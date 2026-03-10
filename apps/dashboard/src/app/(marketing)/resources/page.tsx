@@ -373,6 +373,16 @@ const POSTS = [
   // General guides & posts
   {
     category: 'Product',
+    title: 'Team Seats, Roles & Permissions in Appalix',
+    excerpt: 'A complete breakdown of how Appalix manages workspace access — four-tier role hierarchy (Owner, Admin, Member, Viewer), per-plan seat limits, real-time enforcement, and what\'s coming next with lead assignment and round-robin distribution.',
+    readTime: '8 min read',
+    date: 'Mar 10, 2026',
+    emoji: '👥',
+    large: true,
+    slug: 'team-seats-roles',
+  },
+  {
+    category: 'Product',
     title: "Meet Appalix Sage: Your Team's Internal AI Assistant",
     excerpt: 'Appalix Sage puts AI to work inside your team — searching your knowledge base, drafting proposals and reports, and sharing content with colleagues. Available on Pro and above.',
     readTime: '8 min read',
