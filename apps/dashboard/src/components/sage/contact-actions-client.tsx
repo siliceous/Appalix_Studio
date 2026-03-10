@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Pencil, Plus } from 'lucide-react'
 import { ContactModal } from './contact-modal'
 import { DealModal } from './deal-modal'
-import type { SageContact, SagePipelineStage, SagePipeline } from '@/lib/types'
+import type { SageContact, SagePipelineStage, SagePipeline, WorkspaceMemberSummary } from '@/lib/types'
 
 interface ContactActionsClientProps {
   contact:      SageContact
@@ -13,6 +13,7 @@ interface ContactActionsClientProps {
   stages:       SagePipelineStage[]
   allPipelines: Pick<SagePipeline, 'id' | 'name'>[]
   ownerName:    string
+  members?:     WorkspaceMemberSummary[]
 }
 
 export function ContactActionsClient({
@@ -21,6 +22,7 @@ export function ContactActionsClient({
   stages,
   allPipelines,
   ownerName,
+  members,
 }: ContactActionsClientProps) {
   const router = useRouter()
   const [showEdit, setShowEdit] = useState(false)
@@ -66,6 +68,7 @@ export function ContactActionsClient({
       {showEdit && (
         <ContactModal
           contact={contact}
+          members={members}
           onClose={() => setShowEdit(false)}
           onSaved={() => {
             setShowEdit(false)
