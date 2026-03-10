@@ -74,18 +74,21 @@ export async function inviteWorkspaceMember(
   if (linkData?.user) {
     invitedUserId = linkData.user.id
     inviteLink    = linkData.properties?.action_link ?? null
+    console.log('[invite] new user link generated, inviteLink:', inviteLink ? 'ok' : 'NULL')
   } else if (linkError) {
+    console.log('[invite] generateLink error (user exists):', linkError.message)
     // User already has an account — look them up
     const { data: usersData } = await admin.auth.admin.listUsers({ perPage: 1000 })
     const existing = usersData?.users.find((u) => u.email?.toLowerCase() === email)
     if (!existing) return { error: linkError.message }
     invitedUserId = existing.id
     // Existing user: generate a magic link so they can jump straight in
-    const { data: mlData } = await admin.auth.admin.generateLink({
+    const { data: mlData, error: mlError } = await admin.auth.admin.generateLink({
       type: 'magiclink',
       email,
       options: { redirectTo: `${appUrl}/dashboard` },
     })
+    console.log('[invite] magiclink generated, inviteLink:', mlData?.properties?.action_link ? 'ok' : 'NULL', mlError?.message ?? '')
     inviteLink = mlData?.properties?.action_link ?? null
   }
 
