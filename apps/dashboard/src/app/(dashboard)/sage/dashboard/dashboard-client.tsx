@@ -1674,6 +1674,11 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
           ) : (
             /* ── GRID VIEW: 4 stacked tablets ───────────────────────────── */
             (() => {
+              const sortP = (p: string | null | undefined) => P_RANK[p ?? ''] ?? 3
+              const sortedEmails  = [...visEmails].sort((a, b) => sortP(a.ai_priority) - sortP(b.ai_priority))
+              const sortedBots    = [...visBots].sort((a, b)   => sortP(a.ai_priority) - sortP(b.ai_priority))
+              const sortedForms   = [...visForms].sort((a, b)  => sortP(a.lead_score)  - sortP(b.lead_score))
+              const sortedTickets = [...visTickets].sort((a, b) => sortP(a.priority)   - sortP(b.priority))
               const allTablets: Array<{
                 key: 'email' | 'bot' | 'form' | 'ticket'
                 label: string
@@ -1692,9 +1697,9 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   borderClass: 'border-blue-200 dark:border-blue-500/30',
                   bgClass: 'bg-blue-100 dark:bg-blue-500/25',
                   count: visEmails.length,
-                  rows: visEmails.length === 0
+                  rows: sortedEmails.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No emails this period.</p>
-                    : visEmails.map(e => (
+                    : sortedEmails.map(e => (
                       <div key={e.id} onClick={() => setPopup({ kind: 'email', id: e.id })}
                         className="group flex items-start gap-3 px-5 py-4 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer border-b border-blue-100 dark:border-blue-500/15 last:border-0">
                         <PriorityDot priority={e.ai_priority ?? 'low'} pulse={e.ai_priority === 'high'} />
@@ -1719,9 +1724,9 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   borderClass: 'border-purple-200 dark:border-purple-500/30',
                   bgClass: 'bg-purple-100 dark:bg-purple-500/25',
                   count: visBots.length,
-                  rows: visBots.length === 0
+                  rows: sortedBots.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No bot chats this period.</p>
-                    : visBots.map(b => (
+                    : sortedBots.map(b => (
                       <div key={b.id} onClick={() => setPopup({ kind: 'bot', id: b.id })}
                         className="group flex items-start gap-3 px-5 py-3 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-colors cursor-pointer border-b border-purple-100 dark:border-purple-500/15 last:border-0">
                         <PriorityDot priority={b.ai_priority ?? 'low'} pulse={b.ai_priority === 'high'} />
@@ -1747,9 +1752,9 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   borderClass: 'border-green-200 dark:border-green-500/30',
                   bgClass: 'bg-green-100 dark:bg-green-500/25',
                   count: visForms.length,
-                  rows: visForms.length === 0
+                  rows: sortedForms.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No form submissions this period.</p>
-                    : visForms.map(f => (
+                    : sortedForms.map(f => (
                       <div key={f.id} onClick={() => setPopup({ kind: 'form', id: f.id })}
                         className="group flex items-start gap-3 px-5 py-3 hover:bg-green-50 dark:hover:bg-green-500/10 transition-colors cursor-pointer border-b border-green-100 dark:border-green-500/15 last:border-0">
                         <PriorityDot priority={f.lead_score ?? 'low'} />
@@ -1773,9 +1778,9 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
                   borderClass: 'border-amber-200/70 dark:border-amber-500/25',
                   bgClass: 'bg-amber-50 dark:bg-amber-500/15',
                   count: visTickets.length,
-                  rows: visTickets.length === 0
+                  rows: sortedTickets.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No tickets this period.</p>
-                    : visTickets.map(t => (
+                    : sortedTickets.map(t => (
                       <div key={t.id} onClick={() => setPopup({ kind: 'ticket', id: t.id })}
                         className="group flex items-start gap-3 px-5 py-3 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors cursor-pointer border-b border-amber-100 dark:border-amber-500/15 last:border-0">
                         <PriorityDot priority={t.priority} pulse={t.priority === 'high' || t.priority === 'urgent'} />
