@@ -21,6 +21,7 @@ import {
   Inbox,
   Rss,
   FolderOpen,
+  Pencil,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -89,9 +90,11 @@ interface SidebarProps {
   workspace:        Workspace
   callerRole?:      string
   userPermissions?: UserPermissions
+  userName?:        string | null
+  userEmail?:       string | null
 }
 
-export function Sidebar({ workspace, callerRole, userPermissions }: SidebarProps) {
+export function Sidebar({ workspace, callerRole, userPermissions, userName, userEmail }: SidebarProps) {
   const pathname  = usePathname()
   const router    = useRouter()
   const supabase  = createClient()
@@ -155,17 +158,34 @@ export function Sidebar({ workspace, callerRole, userPermissions }: SidebarProps
             </div>
           </div>
 
-          {/* Workspace badge */}
+          {/* Account identity */}
           <div className="bg-gray-50 dark:bg-white/5 rounded-lg px-2 py-2">
             <div className="flex items-center gap-2 min-w-0">
-              {/* Status dot — always visible */}
-              <span className={cn('w-2 h-2 rounded-full shrink-0', planDotCls)} />
-              {/* Name + plan — fades in on hover */}
-              <div className="overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-75 min-w-0">
-                <p className="text-xs font-medium text-gray-900 dark:text-white truncate leading-tight">
-                  {workspace.name}
-                </p>
-                <span className={cn('inline-block mt-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none', planBadgeCls)}>
+              {/* Avatar — always visible */}
+              <div className="w-7 h-7 shrink-0 rounded-full bg-brand-600 flex items-center justify-center text-white text-[10px] font-bold uppercase select-none">
+                {userName
+                  ? userName.split(' ').map(w => w[0]).slice(0, 2).join('')
+                  : (userEmail?.[0] ?? '?')}
+              </div>
+              {/* Name + email + edit — fades in on hover */}
+              <div className="overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-75 min-w-0 flex-1">
+                <div className="flex items-center gap-1 min-w-0">
+                  <p className="text-xs font-medium text-gray-900 dark:text-white truncate leading-tight flex-1">
+                    {userName ?? userEmail ?? 'My Account'}
+                  </p>
+                  <Link
+                    href="/settings/profile"
+                    title="Edit profile"
+                    className="shrink-0 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <Pencil className="w-2.5 h-2.5" />
+                  </Link>
+                </div>
+                {userName && userEmail && (
+                  <p className="text-[10px] text-gray-400 truncate leading-tight mt-0.5">{userEmail}</p>
+                )}
+                <span className={cn('inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none', planBadgeCls)}>
                   {workspace.plan}
                 </span>
               </div>

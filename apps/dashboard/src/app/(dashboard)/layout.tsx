@@ -34,6 +34,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
     ? await getUserPermissions(user.id, raw!.workspace_id ?? workspace.id, callerRole)
     : null
 
+  // Fetch user's display name for the sidebar account identity
+  const { data: profileRaw } = await supabase
+    .from('user_profiles')
+    .select('first_name, last_name')
+    .eq('user_id', user.id)
+    .maybeSingle()
+  type ProfileRow = { first_name: string; last_name: string | null }
+  const profile = profileRaw as ProfileRow | null
+  const userName  = profile ? [profile.first_name, profile.last_name].filter(Boolean).join(' ') : null
+  const userEmail = user.email ?? null
+
   if (!workspace) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
@@ -66,7 +77,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-[#1c1c1c] relative">
       {/* Subtle green ambient glow in dark mode */}
       <div className="pointer-events-none fixed top-0 left-60 right-0 h-[300px] dark:bg-[#61c2ad]/[0.03] blur-[80px] hidden dark:block" />
-      <Sidebar workspace={workspace} callerRole={callerRole} userPermissions={userPermissions ?? undefined} />
+      <Sidebar
+        workspace={workspace}
+        callerRole={callerRole}
+        userPermissions={userPermissions ?? undefined}
+        userName={userName}
+        userEmail={userEmail}
+      />
       <main className="flex-1 p-8 overflow-auto bg-gray-50 dark:bg-[#1c1c1c]">
         {children}
       </main>

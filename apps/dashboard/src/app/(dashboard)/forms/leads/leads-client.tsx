@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { Trash2, ArrowRight, Search, ChevronDown, Inbox, Loader2 } from 'lucide-react'
+import { Trash2, ArrowRight, Search, ChevronDown, Inbox, Loader2, UserPlus } from 'lucide-react'
 import { deleteLead, moveLeadToPipeline } from '@/app/actions/leads'
-import type { Lead, LeadAdPlatform, LeadScore } from '@/lib/types'
+import type { Lead, LeadAdPlatform, LeadScore, WorkspaceMemberRole } from '@/lib/types'
 
 // ---------------------------------------------------------------------------
 // Platform meta
@@ -43,18 +43,28 @@ function ScoreBadge({ score }: { score: LeadScore | null }) {
 // Component
 // ---------------------------------------------------------------------------
 
-interface LeadsClientProps {
-  leads: Lead[]
+interface TeamMember {
+  user_id: string
+  name:    string
+  role:    WorkspaceMemberRole
 }
 
-export function LeadsClient({ leads: initial }: LeadsClientProps) {
-  const [leads, setLeads]           = useState<Lead[]>(initial)
-  const [search, setSearch]         = useState('')
+interface LeadsClientProps {
+  leads:         Lead[]
+  canAllocate:   boolean
+  teamMembers:   TeamMember[]
+  memberNameMap: Record<string, string>
+}
+
+export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNameMap }: LeadsClientProps) {
+  const [leads, setLeads]             = useState<Lead[]>(initial)
+  const [search, setSearch]           = useState('')
   const [platformFilter, setPlatform] = useState<'all' | LeadAdPlatform>('all')
-  const [scoreFilter, setScore]     = useState<'all' | LeadScore>('all')
-  const [deleting, setDeleting]     = useState<string | null>(null)
-  const [moving, setMoving]         = useState<string | null>(null)
-  const [, startTransition]         = useTransition()
+  const [scoreFilter, setScore]       = useState<'all' | LeadScore>('all')
+  const [deleting, setDeleting]       = useState<string | null>(null)
+  const [moving, setMoving]           = useState<string | null>(null)
+  const [assigning, setAssigning]     = useState<string | null>(null)
+  const [, startTransition]           = useTransition()
 
   const filtered = leads.filter(l => {
     const q = search.toLowerCase()
@@ -85,6 +95,26 @@ export function LeadsClient({ leads: initial }: LeadsClientProps) {
       setLeads(prev => prev.map(l => l.id === id ? { ...l, pipeline_stage: 'crm_pipeline' } : l))
       setMoving(null)
     })
+  }
+
+  async function handleAssign(leadId: string, assignedTo: string | null) {
+    setAssigning(leadId)
+    try {
+      const res = await fetch('/api/allocate-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lead_id: leadId, assigned_to: assignedTo }),
+      })
+      if (res.ok) {
+        setLeads(prev => prev.map(l =>
+          l.id === leadId
+            ? { ...l, assigned_to: assignedTo, allocated_at: new Date().toISOString() }
+            : l
+        ))
+      }
+    } finally {
+      setAssigning(null)
+    }
   }
 
   function formatDate(iso: string) {
@@ -168,6 +198,9 @@ export function LeadsClient({ leads: initial }: LeadsClientProps) {
                 <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Campaign</th>
                 <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Score</th>
                 <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Status</th>
+                {canAllocate && (
+                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Assigned</th>
+                )}
                 <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Date</th>
                 <th className="px-5 py-3" />
               </tr>
@@ -222,6 +255,33 @@ export function LeadsClient({ leads: initial }: LeadsClientProps) {
                       </span>
                     )}
                   </td>
+
+                  {/* Assigned to */}
+                  {canAllocate && (
+                    <td className="px-5 py-3.5">
+                      {assigning === lead.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
+                      ) : teamMembers.length > 0 ? (
+                        <div className="relative">
+                          <select
+                            value={lead.assigned_to ?? ''}
+                            onChange={e => handleAssign(lead.id, e.target.value || null)}
+                            className="appearance-none pl-2 pr-6 py-1 text-xs border border-gray-200 dark:border-white/10 rounded-md bg-white dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-[#61c2ad] max-w-[130px]"
+                          >
+                            <option value="">Unassigned</option>
+                            {teamMembers.map(m => (
+                              <option key={m.user_id} value={m.user_id}>{m.name}</option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">
+                          {lead.assigned_to ? (memberNameMap[lead.assigned_to] ?? '—') : '—'}
+                        </span>
+                      )}
+                    </td>
+                  )}
 
                   {/* Date */}
                   <td className="px-5 py-3.5 whitespace-nowrap">

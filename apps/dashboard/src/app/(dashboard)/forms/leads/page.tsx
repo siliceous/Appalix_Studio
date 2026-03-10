@@ -1,9 +1,11 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Header } from '@/components/layout/header'
 import { LeadsClient } from './leads-client'
-import type { WorkspaceMember, Lead } from '@/lib/types'
+import { getUserPermissions } from '@/lib/permissions'
+import { ROLE_RANK } from '@/lib/types'
+import type { WorkspaceMember, Lead, WorkspaceMemberRole } from '@/lib/types'
 
 export default async function AllLeadsPage() {
   const supabase = await createClient()
@@ -12,15 +14,20 @@ export default async function AllLeadsPage() {
 
   const { data: membershipRaw } = await supabase
     .from('workspace_members')
-    .select('workspace_id')
+    .select('workspace_id, role')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true })
     .limit(1)
     .single()
 
-  const membership = membershipRaw as Pick<WorkspaceMember, 'workspace_id'> | null
+  type MRow = Pick<WorkspaceMember, 'workspace_id' | 'role'>
+  const membership = membershipRaw as MRow | null
   if (!membership) redirect('/login')
   const workspaceId = membership.workspace_id
+  const callerRole  = membership.role as WorkspaceMemberRole
+  const callerRank  = ROLE_RANK[callerRole] ?? 0
+
+  const userPermissions = await getUserPermissions(user.id, workspaceId, callerRole)
 
   const { data: leadsRaw } = await supabase
     .from('leads')
@@ -29,6 +36,44 @@ export default async function AllLeadsPage() {
     .order('created_at', { ascending: false })
 
   const leads = (leadsRaw ?? []) as Lead[]
+
+  // Fetch team members below caller's rank for the "Assign to" picker
+  let teamMembers: { user_id: string; name: string; role: WorkspaceMemberRole }[] = []
+  if (userPermissions.can_allocate_leads || callerRank >= ROLE_RANK.manager) {
+    const admin = createAdminClient()
+    const { data: rawTeam } = await admin
+      .from('workspace_members')
+      .select('user_id, role')
+      .eq('workspace_id', workspaceId)
+      .neq('user_id', user.id)
+    const { data: profiles } = await admin
+      .from('user_profiles')
+      .select('user_id, first_name, last_name')
+    type PRow = { user_id: string; first_name: string; last_name: string | null }
+    const pMap: Record<string, PRow> = {}
+    for (const p of (profiles ?? []) as PRow[]) pMap[p.user_id] = p
+    teamMembers = ((rawTeam ?? []) as { user_id: string; role: string }[])
+      .filter((m) => (ROLE_RANK[m.role as WorkspaceMemberRole] ?? 0) < callerRank)
+      .map((m) => {
+        const p = pMap[m.user_id]
+        return {
+          user_id: m.user_id,
+          role:    m.role as WorkspaceMemberRole,
+          name:    p ? [p.first_name, p.last_name].filter(Boolean).join(' ') || m.user_id : m.user_id,
+        }
+      })
+  }
+
+  // Build a name map for all workspace members (to show assignee names)
+  const admin = createAdminClient()
+  const { data: allProfiles } = await admin
+    .from('user_profiles')
+    .select('user_id, first_name, last_name')
+  type PRow = { user_id: string; first_name: string; last_name: string | null }
+  const memberNameMap: Record<string, string> = {}
+  for (const p of (allProfiles ?? []) as PRow[]) {
+    memberNameMap[p.user_id] = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.user_id
+  }
 
   return (
     <div className="max-w-5xl mx-auto p-8">
@@ -45,7 +90,12 @@ export default async function AllLeadsPage() {
         }
       />
 
-      <LeadsClient leads={leads} />
+      <LeadsClient
+        leads={leads}
+        canAllocate={userPermissions.can_allocate_leads || callerRank >= ROLE_RANK.manager}
+        teamMembers={teamMembers}
+        memberNameMap={memberNameMap}
+      />
     </div>
   )
 }

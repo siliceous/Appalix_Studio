@@ -540,6 +540,9 @@ export interface Lead {
   form_name:       string | null
   lead_score:      LeadScore | null
   pipeline_stage:  string
+  assigned_to:     string | null
+  allocated_by:    string | null
+  allocated_at:    string | null
   raw_payload:     Record<string, unknown> | null
   created_at:      string
   updated_at:      string
