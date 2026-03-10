@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { PieChart, Pie, Cell, Tooltip } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
@@ -1195,15 +1195,16 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
   }
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
-  const fetchData = useCallback(async () => {
+  useEffect(() => {
     if (dateRange === 'custom' && (!customFrom || !customTo)) return
+    let cancelled = false
     setLoading(true)
     const { from, to } = getRange(dateRange, customFrom, customTo)
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sbAny = supabase as any
 
-    const [eR, bR, fR, tR, xR, xtR] = await Promise.all([
+    Promise.all([
       supabase.from('sage_emails')
         .select('id, from_name, from_address, subject, received_at, ai_priority, ai_summary, ai_entities')
         .eq('workspace_id', workspaceId).eq('direction', 'inbound').eq('is_read', false).eq('is_trashed', false)
@@ -1212,7 +1213,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
       supabase.from('conversations')
         .select('id, title, platform, message_count, last_activity_at, ai_priority, ai_entities, bot:bots(name)')
         .eq('workspace_id', workspaceId).eq('status', 'active')
-        .in('ai_priority', ['high', 'medium']).gte('last_activity_at', from).lte('last_activity_at', to)
+        .gte('last_activity_at', from).lte('last_activity_at', to)
         .order('last_activity_at', { ascending: false }),
       supabase.from('leads')
         .select('id, name, email, phone, company, lead_score, source_platform, created_at')
@@ -1230,33 +1231,33 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
         .select('id, title, body, due_at, ticket_id, created_at, ticket:sage_tickets(id, title)')
         .eq('workspace_id', workspaceId).eq('type', 'task').is('completed_at', null)
         .order('due_at', { ascending: true }).limit(40),
-    ])
+    ]).then(([eR, bR, fR, tR, xR, xtR]) => {
+      if (cancelled) return
+      const newEmails  = (eR.data  ?? []) as RawEmail[]
+      const newBots    = (bR.data  ?? []) as RawBot[]
+      const newForms   = (fR.data  ?? []) as RawLead[]
+      const newTickets = (tR.data  ?? []) as RawTicket[]
+      setEmails(newEmails)
+      setBots(newBots)
+      setForms(newForms)
+      setTickets(newTickets)
+      setTasks((xR.data   ?? []) as RawTask[])
+      setTicketTasks((xtR.data ?? []) as RawTicketTask[])
+      setLoading(false)
 
-    const newEmails  = (eR.data  ?? []) as RawEmail[]
-    const newBots    = (bR.data  ?? []) as RawBot[]
-    const newForms   = (fR.data  ?? []) as RawLead[]
-    const newTickets = (tR.data  ?? []) as RawTicket[]
-    setEmails(newEmails)
-    setBots(newBots)
-    setForms(newForms)
-    setTickets(newTickets)
-    setTasks((xR.data   ?? []) as RawTask[])
-    setTicketTasks((xtR.data ?? []) as RawTicketTask[])
-    setLoading(false)
+      // Batch contact match — runs once after feed loads, no loading spinner needed
+      const matchItems = [
+        ...newEmails.map(e  => ({ id: e.id, email: e.ai_entities?.email ?? e.from_address, name: e.ai_entities?.name ?? e.from_name ?? undefined, phone: e.ai_entities?.phone ?? undefined })),
+        ...newBots.map(b    => ({ id: b.id, email: b.ai_entities?.email ?? undefined, name: b.ai_entities?.name ?? b.title ?? undefined, phone: b.ai_entities?.phone ?? undefined })),
+        ...newForms.map(f   => ({ id: f.id, email: f.email ?? undefined, name: f.name, phone: f.phone ?? undefined })),
+        ...newTickets.map(t => ({ id: t.id, email: t.contact?.email ?? undefined, name: t.contact?.name ?? undefined, phone: t.contact?.phone ?? undefined })),
+      ]
+      setContactMatches(Object.fromEntries(matchItems.map(i => [i.id, undefined])))
+      batchMatchContacts(matchItems).then(results => { if (!cancelled) setContactMatches(results) })
+    })
 
-    // Batch contact match — runs once after feed loads, no loading spinner needed
-    const matchItems = [
-      ...newEmails.map(e  => ({ id: e.id, email: e.ai_entities?.email ?? e.from_address, name: e.ai_entities?.name ?? e.from_name ?? undefined, phone: e.ai_entities?.phone ?? undefined })),
-      ...newBots.map(b    => ({ id: b.id, email: b.ai_entities?.email ?? undefined, name: b.ai_entities?.name ?? b.title ?? undefined, phone: b.ai_entities?.phone ?? undefined })),
-      ...newForms.map(f   => ({ id: f.id, email: f.email ?? undefined, name: f.name, phone: f.phone ?? undefined })),
-      ...newTickets.map(t => ({ id: t.id, email: t.contact?.email ?? undefined, name: t.contact?.name ?? undefined, phone: t.contact?.phone ?? undefined })),
-    ]
-    // Mark all as undefined (checking) so popup shows loading footer briefly if opened early
-    setContactMatches(Object.fromEntries(matchItems.map(i => [i.id, undefined])))
-    batchMatchContacts(matchItems).then(results => setContactMatches(results))
+    return () => { cancelled = true }
   }, [dateRange, customFrom, customTo, workspaceId])
-
-  useEffect(() => { fetchData() }, [fetchData])
 
   // Mark task done
   async function markTaskDone(taskId: string, e: React.MouseEvent) {
