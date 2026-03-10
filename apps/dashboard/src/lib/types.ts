@@ -16,7 +16,7 @@ export type Platform =
   | 'custom_api'
   | 'telegram'
 
-export type WorkspacePlan = 'starter' | 'core' | 'pro' | 'scale' | 'enterprise'
+export type WorkspacePlan = 'individual' | 'pro' | 'team' | 'enterprise'
 export type SubscriptionStatus =
   | 'active' | 'inactive' | 'trialing' | 'past_due' | 'cancelled' | 'paused'
 

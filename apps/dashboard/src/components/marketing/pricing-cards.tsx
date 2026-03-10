@@ -6,74 +6,71 @@ import { ContactSalesButton } from '@/components/marketing/contact-sales-button'
 
 const PLANS = [
   {
-    name: 'Starter',
+    key: 'individual',
+    name: 'Individual',
     annualPrice: 29,
-    monthlyPrice: 45,
-    desc: 'Perfect for small businesses getting started with AI.',
+    monthlyPrice: 49,
+    desc: 'Perfect for solo operators and freelancers.',
     popular: false,
+    seats: 1,
+    bots: 1,
+    conversations: '5,000',
+    extraSeats: 'Unlimited extra seats',
     features: [
-      '1 AI agent',
-      '2,000 conversations / month',
-      '2 platform integrations',
-      'Lead capture',
-      'Email magic link login',
-      'Basic analytics',
-      'Email support',
-    ],
-    cta: 'Start a 7 Day Free Trial',
-  },
-  {
-    name: 'Core',
-    annualPrice: 39,
-    monthlyPrice: 59,
-    desc: 'More bots and integrations for growing teams.',
-    popular: false,
-    features: [
-      '2 AI agents',
+      '1 seat included',
+      '1 AI bot',
       '5,000 conversations / month',
-      '5 platform integrations',
-      'Lead capture',
-      'Human handoff',
+      'Sage AI CRM assistant',
+      'Lead capture & pipeline',
+      'Email & form integration',
       'Basic analytics',
       'Email support',
     ],
-    cta: 'Start a 7 Day Free Trial',
+    cta: 'Start Free Trial',
   },
   {
+    key: 'pro',
     name: 'Pro',
-    annualPrice: 79,
-    monthlyPrice: 119,
-    desc: 'The complete toolkit for high-growth teams.',
+    annualPrice: 99,
+    monthlyPrice: 149,
+    desc: 'For growing teams that need more power and collaboration.',
     popular: true,
+    seats: 3,
+    bots: 3,
+    conversations: '15,000',
+    extraSeats: 'Up to 6 extra seats',
     features: [
-      '5 AI agents',
-      '12,000 conversations / month',
-      '150 agent runs / month',
+      '3 seats included',
+      '3 AI bots',
+      '15,000 conversations / month',
+      'Sage AI CRM assistant',
+      'Lead capture & pipeline',
       'All platform integrations',
-      'Sage AI assistant',
-      'Lead capture & CRM export',
       'Human handoff',
       'AI task automation',
       'Advanced analytics',
-      'Custom branding',
       'API access',
       'Priority support',
     ],
-    cta: 'Start a 7 Day Free Trial',
+    cta: 'Start Free Trial',
   },
   {
-    name: 'Scale',
+    key: 'team',
+    name: 'Team',
     annualPrice: 299,
     monthlyPrice: 469,
-    desc: 'High-volume operations with white-label options.',
+    desc: 'High-volume operations for larger teams.',
     popular: false,
+    seats: 10,
+    bots: null,
+    conversations: '50,000',
+    extraSeats: 'Up to 10 extra seats',
     features: [
-      '10 AI agents',
+      '10 seats included',
+      'Unlimited AI bots',
       '50,000 conversations / month',
-      '500 agent runs / month',
+      'Sage AI CRM assistant',
       'All platform integrations',
-      'Sage AI assistant',
-      'Lead capture & CRM export',
       'Human handoff',
       'AI task automation',
       'Advanced analytics',
@@ -81,17 +78,23 @@ const PLANS = [
       'API access',
       'Dedicated account manager',
     ],
-    cta: 'Start a 7 Day Free Trial',
+    cta: 'Start Free Trial',
   },
   {
+    key: 'enterprise',
     name: 'Enterprise',
     annualPrice: null,
     monthlyPrice: null,
-    desc: 'Tailored for large organisations with specific needs.',
+    desc: 'Custom solution built around your organisation\'s needs.',
     popular: false,
+    seats: null,
+    bots: null,
+    conversations: 'Unlimited',
+    extraSeats: null,
     features: [
-      'Unlimited everything',
-      'Sage AI assistant',
+      'Unlimited seats & bots',
+      'Unlimited conversations',
+      'Sage AI CRM assistant',
       'SSO / SAML login',
       'Custom integrations',
       'Dedicated infrastructure',
@@ -100,9 +103,11 @@ const PLANS = [
       'On-boarding support',
       '24/7 dedicated support',
     ],
-    cta: 'Contact us',
+    cta: 'Talk to us',
   },
 ]
+
+const EXTRA_SEAT = { annual: 29, monthly: 45 }
 
 export function PricingCards() {
   const [isAnnual, setIsAnnual] = useState(true)
@@ -131,25 +136,25 @@ export function PricingCards() {
             Annual
           </span>
           <span className="text-xs bg-green-500/20 text-green-400 px-2.5 py-1 rounded-full font-semibold">
-            Save ~35%
+            Save up to 35%
           </span>
         </div>
         {!isAnnual && (
           <p className="text-xs text-gray-500">
-            Switch to annual billing and save <span className="text-green-400 font-semibold">~35% on average</span>
+            Switch to annual billing and save <span className="text-green-400 font-semibold">up to 35%</span>
           </p>
         )}
       </div>
 
       {/* Cards */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {PLANS.map((plan) => {
           const price = isAnnual ? plan.annualPrice : plan.monthlyPrice
-          const isEnterprise = plan.name === 'Enterprise'
+          const isEnterprise = plan.key === 'enterprise'
 
           return (
             <div
-              key={plan.name}
+              key={plan.key}
               className={`relative flex flex-col rounded-2xl p-6 border transition-colors h-full ${
                 plan.popular
                   ? 'bg-brand-600/10 border-brand-600/50 shadow-lg shadow-brand-600/10'
@@ -170,26 +175,28 @@ export function PricingCards() {
               {isEnterprise && enterpriseTooltip && (
                 <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-56 z-10">
                   <div className="bg-gray-900 border border-white/10 text-xs text-gray-300 leading-relaxed px-3 py-2 rounded-xl shadow-xl text-center">
-                    Get in touch with your requirements for our customised enterprise plan.
+                    Contact us to discuss your requirements for a tailored enterprise plan.
                   </div>
                   <div className="w-2.5 h-2.5 bg-gray-900 border-b border-r border-white/10 rotate-45 mx-auto -mt-1.5" />
                 </div>
               )}
 
-              <div className="mb-5">
+              {/* Plan name + desc */}
+              <div className="mb-4">
                 <h3 className={`font-bold text-lg mb-1 ${plan.popular ? 'text-brand-300' : 'text-white'}`}>
                   {plan.name}
                 </h3>
-                <p className="text-xs text-gray-300 leading-relaxed">{plan.desc}</p>
+                <p className="text-xs text-gray-400 leading-relaxed">{plan.desc}</p>
               </div>
 
-              <div className="mb-6">
+              {/* Price */}
+              <div className="mb-4">
                 {price !== null ? (
                   <>
                     <span className="text-3xl font-black text-white">${price}</span>
                     <span className="text-gray-500 text-sm">/mo</span>
                     {isAnnual && (
-                      <p className="text-xs text-gray-300 mt-1">Billed ${price * 12}/year</p>
+                      <p className="text-xs text-gray-400 mt-0.5">Billed ${price * 12}/year</p>
                     )}
                   </>
                 ) : (
@@ -197,23 +204,43 @@ export function PricingCards() {
                 )}
               </div>
 
-              <ul className="space-y-2.5 mb-8 flex-1">
+              {/* Seat / bot / conversation stats */}
+              {!isEnterprise && (
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/8 text-gray-300 border border-white/10">
+                    {plan.seats} seat{plan.seats !== 1 ? 's' : ''}
+                  </span>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/8 text-gray-300 border border-white/10">
+                    {plan.bots !== null ? `${plan.bots} bot${plan.bots !== 1 ? 's' : ''}` : 'Unlimited bots'}
+                  </span>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/8 text-gray-300 border border-white/10">
+                    {plan.conversations} conv/mo
+                  </span>
+                </div>
+              )}
+
+              {/* Extra seat note */}
+              {plan.extraSeats && (
+                <p className="text-[11px] text-[#61c2ad] mb-4">
+                  + {plan.extraSeats} at ${isAnnual ? EXTRA_SEAT.annual : EXTRA_SEAT.monthly}/seat/mo
+                </p>
+              )}
+
+              {/* Features */}
+              <ul className="space-y-2 mb-8 flex-1">
                 {plan.features.map((f) =>
-                  f === 'Sage AI assistant' ? (
+                  f === 'Sage AI CRM assistant' ? (
                     <li key={f}>
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#61c2ad]/10 border border-[#61c2ad]/30 text-[#61c2ad] text-xs font-semibold">
                         <span className="text-[10px]">✦</span>
-                        Sage AI assistant
+                        Sage AI CRM assistant
                       </span>
                     </li>
                   ) : (
                     <li key={f} className="flex items-start gap-2 text-sm">
                       <svg
                         className={`w-4 h-4 mt-0.5 shrink-0 ${plan.popular ? 'text-brand-400' : 'text-gray-500'}`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2.5}
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
@@ -223,6 +250,7 @@ export function PricingCards() {
                 )}
               </ul>
 
+              {/* CTA */}
               {isEnterprise ? (
                 <ContactSalesButton
                   label={plan.cta}
@@ -244,6 +272,12 @@ export function PricingCards() {
           )
         })}
       </div>
+
+      {/* Extra seat footnote */}
+      <p className="text-center text-xs text-gray-500 mt-6">
+        Extra seats available on all plans — ${EXTRA_SEAT.annual}/seat/mo billed annually or ${EXTRA_SEAT.monthly}/seat/mo billed monthly.
+        Enterprise plans are available through consultation with the Appalix team only.
+      </p>
     </section>
   )
 }

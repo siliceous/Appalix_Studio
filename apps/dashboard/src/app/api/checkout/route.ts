@@ -5,12 +5,19 @@ import { createClient } from '@/lib/supabase/server'
 export const dynamic = 'force-dynamic'
 
 // Set these in Vercel env vars once you create the prices in your Stripe dashboard.
-// Price nickname must contain the plan name (e.g. "Core Monthly", "Pro Monthly", "Scale Monthly")
+// Price nickname must contain the plan name (e.g. "Individual Monthly", "Pro Monthly", "Team Monthly")
 // so the webhook's getPlanFromPrice() can identify the plan.
+// Each plan has a monthly and annual price ID.
 const PRICE_IDS: Record<string, string | undefined> = {
-  core:  process.env.STRIPE_PRICE_CORE,
-  pro:   process.env.STRIPE_PRICE_PRO,
-  scale: process.env.STRIPE_PRICE_SCALE,
+  individual_monthly: process.env.STRIPE_PRICE_INDIVIDUAL_MONTHLY,
+  individual_annual:  process.env.STRIPE_PRICE_INDIVIDUAL_ANNUAL,
+  pro_monthly:        process.env.STRIPE_PRICE_PRO_MONTHLY,
+  pro_annual:         process.env.STRIPE_PRICE_PRO_ANNUAL,
+  team_monthly:       process.env.STRIPE_PRICE_TEAM_MONTHLY,
+  team_annual:        process.env.STRIPE_PRICE_TEAM_ANNUAL,
+  // Extra seat add-on (applied as a separate line item)
+  extra_seat_monthly: process.env.STRIPE_PRICE_EXTRA_SEAT_MONTHLY,
+  extra_seat_annual:  process.env.STRIPE_PRICE_EXTRA_SEAT_ANNUAL,
 }
 
 export async function POST(request: NextRequest) {
@@ -18,16 +25,17 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
-  const { plan } = await request.json() as { plan?: string }
+  const { plan, billing } = await request.json() as { plan?: string; billing?: 'monthly' | 'annual' }
 
-  if (!plan || !Object.keys(PRICE_IDS).includes(plan)) {
-    return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
+  const priceKey = `${plan}_${billing ?? 'monthly'}`
+  if (!plan || !Object.keys(PRICE_IDS).includes(priceKey)) {
+    return NextResponse.json({ error: 'Invalid plan or billing period' }, { status: 400 })
   }
 
-  const priceId = PRICE_IDS[plan]
+  const priceId = PRICE_IDS[priceKey]
   if (!priceId) {
     return NextResponse.json({
-      error: `Stripe price not configured for ${plan}. Add STRIPE_PRICE_${plan.toUpperCase()} to your environment variables.`,
+      error: `Stripe price not configured for ${priceKey}. Add STRIPE_PRICE_${priceKey.toUpperCase()} to your environment variables.`,
     }, { status: 400 })
   }
 
@@ -73,6 +81,7 @@ export async function POST(request: NextRequest) {
     line_items:           [{ price: priceId, quantity: 1 }],
     metadata: {
       plan,
+      billing:      billing ?? 'monthly',
       workspace_id: membership.workspace_id,
       user_id:      user.id,
     },

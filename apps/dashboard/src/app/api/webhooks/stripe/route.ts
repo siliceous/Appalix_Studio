@@ -87,7 +87,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const metadata   = session.metadata ?? {}
   const email      = session.customer_details?.email ?? metadata.email
   const workspaceName = metadata.workspace_name ?? email?.split('@')[0] ?? 'My Workspace'
-  const plan       = (metadata.plan ?? 'starter') as 'starter' | 'core' | 'pro' | 'scale' | 'enterprise'
+  const plan       = (metadata.plan ?? 'individual') as Plan
   const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id
   const subscriptionId = typeof session.subscription === 'string'
     ? session.subscription
@@ -202,24 +202,28 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 // Helpers
 // ---------------------------------------------------------------
 
-type Plan = 'starter' | 'core' | 'pro' | 'scale' | 'enterprise'
+type Plan = 'individual' | 'pro' | 'team' | 'enterprise'
 
-const PLAN_LIMITS: Record<Plan, { monthly_message_limit: number; monthly_agent_run_limit: number }> = {
-  starter:    { monthly_message_limit:  2_000, monthly_agent_run_limit:     0 },
-  core:       { monthly_message_limit:  5_000, monthly_agent_run_limit:     0 },
-  pro:        { monthly_message_limit: 12_000, monthly_agent_run_limit:   150 },
-  scale:      { monthly_message_limit: 50_000, monthly_agent_run_limit:   500 },
-  enterprise: { monthly_message_limit: 999_999, monthly_agent_run_limit: 9_999 },
+const PLAN_LIMITS: Record<Plan, {
+  monthly_message_limit: number
+  monthly_agent_run_limit: number
+  seat_limit: number | null
+  bot_limit: number | null
+  extra_seat_limit: number | null
+}> = {
+  individual: { monthly_message_limit:  5_000, monthly_agent_run_limit:   0, seat_limit:   1, bot_limit:    1, extra_seat_limit: null },
+  pro:        { monthly_message_limit: 15_000, monthly_agent_run_limit: 150, seat_limit:   3, bot_limit:    3, extra_seat_limit:    6 },
+  team:       { monthly_message_limit: 50_000, monthly_agent_run_limit: 500, seat_limit:  10, bot_limit: null, extra_seat_limit:   10 },
+  enterprise: { monthly_message_limit: 999_999, monthly_agent_run_limit: 9_999, seat_limit: null, bot_limit: null, extra_seat_limit: null },
 }
 
 function getPlanFromPrice(price?: Stripe.Price): Plan {
-  if (!price) return 'starter'
+  if (!price) return 'individual'
   const nickname = (price.nickname ?? '').toLowerCase()
   if (nickname.includes('enterprise')) return 'enterprise'
-  if (nickname.includes('scale'))      return 'scale'
+  if (nickname.includes('team'))       return 'team'
   if (nickname.includes('pro'))        return 'pro'
-  if (nickname.includes('core'))       return 'core'
-  return 'starter'
+  return 'individual'
 }
 
 function stripeStatusToInternal(status: Stripe.Subscription.Status) {
