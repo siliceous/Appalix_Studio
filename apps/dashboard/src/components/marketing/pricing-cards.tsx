@@ -10,8 +10,8 @@ const PLANS = [
   {
     key: 'individual',
     name: 'Individual',
-    annualPrice: 29,
-    monthlyPrice: 49,
+    annualPrice: 49,
+    monthlyPrice: 69,
     desc: 'Perfect for solo operators and freelancers.',
     popular: false,
     seats: 1,
