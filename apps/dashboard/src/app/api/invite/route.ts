@@ -139,7 +139,8 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
     // Resend email only
-    if (inviteLink) await sendInviteEmail(email, inviteLink, existingMember.role, appUrl)
+    if (!inviteLink) return NextResponse.json({ error: 'Could not generate invite link. Please try again.' }, { status: 500 })
+    await sendInviteEmail(email, inviteLink, existingMember.role, appUrl)
     return NextResponse.json({ ok: true })
   }
 
@@ -153,7 +154,8 @@ export async function POST(request: NextRequest) {
 
   if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
 
-  if (inviteLink) await sendInviteEmail(email, inviteLink, role, appUrl)
+  if (!inviteLink) return NextResponse.json({ error: 'Member added but invite link generation failed. Please re-invite to send email.' }, { status: 500 })
+  await sendInviteEmail(email, inviteLink, role, appUrl)
 
   return NextResponse.json({ ok: true })
 }
