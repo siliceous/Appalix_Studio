@@ -11,6 +11,7 @@ import { deleteContact } from '@/app/actions/sage'
 import { timeAgo } from '@/lib/utils'
 import Link from 'next/link'
 import type { SageContact, WorkspaceMemberSummary } from '@/lib/types'
+import { ChevronDown } from 'lucide-react'
 
 // ── Column definitions ──────────────────────────────────────────────────────
 type ColKey =
@@ -76,12 +77,14 @@ const EMPTY_FILTER: FilterState = { contactType: [], lastContacted: '', tags: ''
 
 // ── Component ───────────────────────────────────────────────────────────────
 interface ContactsClientProps {
-  contacts:   SageContact[]
-  members:    WorkspaceMemberSummary[]
-  callerRole: WorkspaceMemberSummary['role']
+  contacts:     SageContact[]
+  members:      WorkspaceMemberSummary[]
+  callerRole:   WorkspaceMemberSummary['role']
+  teamMembers?: WorkspaceMemberSummary[]
+  viewAsUserId?: string | null
 }
 
-export function ContactsClient({ contacts: initial, members, callerRole }: ContactsClientProps) {
+export function ContactsClient({ contacts: initial, members, callerRole, teamMembers = [], viewAsUserId }: ContactsClientProps) {
   const canWrite = callerRole !== 'viewer'
   const router = useRouter()
   const [contacts,       setContacts]       = useState(initial)
@@ -244,14 +247,37 @@ export function ContactsClient({ contacts: initial, members, callerRole }: Conta
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Contacts</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{contacts.length} total</p>
         </div>
-        {canWrite && (
-          <button
-            onClick={e => { e.stopPropagation(); setShowModal(true) }}
-            className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
-          >
-            <UserPlus className="w-4 h-4" /> New Contact
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* View as team member picker — managers+ only */}
+          {teamMembers.length > 0 && (
+            <div className="relative">
+              <select
+                value={viewAsUserId ?? ''}
+                onChange={e => {
+                  const v = e.target.value
+                  window.location.href = v ? `/sage/contacts?viewAs=${v}` : '/sage/contacts'
+                }}
+                className="appearance-none pl-3 pr-7 py-2 text-sm border dark:border-white/10 rounded-xl bg-white dark:bg-[#232323] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+              >
+                <option value="">My contacts</option>
+                {teamMembers.map(m => (
+                  <option key={m.user_id} value={m.user_id}>
+                    {m.name || m.email} ({m.role})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+            </div>
+          )}
+          {canWrite && (
+            <button
+              onClick={e => { e.stopPropagation(); setShowModal(true) }}
+              className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
+            >
+              <UserPlus className="w-4 h-4" /> New Contact
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Toolbar */}
