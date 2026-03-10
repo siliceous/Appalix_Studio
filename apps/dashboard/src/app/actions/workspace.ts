@@ -91,6 +91,10 @@ export async function inviteWorkspaceMember(
 
   if (!invitedUserId) return { error: 'Could not resolve user for that email.' }
 
+  // Safety: never allow the caller to be upserted as the invited user
+  // (would demote the owner's own membership row)
+  if (invitedUserId === user.id) return { error: 'You cannot invite yourself.' }
+
   // Upsert — avoids duplicate if already a member
   const { error: insertError } = await admin
     .from('workspace_members')
