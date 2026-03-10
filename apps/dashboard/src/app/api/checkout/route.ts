@@ -21,6 +21,8 @@ const PRICE_IDS: Record<string, string | undefined> = {
   // Extra bot add-on
   extra_bot_monthly:  process.env.STRIPE_PRICE_EXTRA_BOT_MONTHLY,
   extra_bot_annual:   process.env.STRIPE_PRICE_EXTRA_BOT_ANNUAL,
+  // NOTE: conversation overage (STRIPE_PRICE_OVERAGE_CONV) is a metered price
+  // attached server-side after checkout in the webhook — not selectable here.
 }
 
 export async function POST(request: NextRequest) {

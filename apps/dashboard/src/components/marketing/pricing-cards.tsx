@@ -205,7 +205,7 @@ export function PricingCards() {
                 </span>
               </div>
 
-              {/* Extra seat + bot add-on notes */}
+              {/* Extra seat + bot + overage notes */}
               <div className="flex flex-col gap-0.5 mb-4">
                 {plan.extraSeats && (
                   <p className="text-[11px] text-[#61c2ad]">
@@ -217,6 +217,9 @@ export function PricingCards() {
                     + Extra bots at ${isAnnual ? EXTRA_BOT.annual : EXTRA_BOT.monthly}/bot/mo
                   </p>
                 )}
+                <p className="text-[11px] text-gray-500">
+                  $10 per 1,000 extra conversations
+                </p>
               </div>
 
               {/* Features */}

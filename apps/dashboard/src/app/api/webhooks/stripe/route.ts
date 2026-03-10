@@ -21,10 +21,19 @@ function getSupabase() {
  * Stripe webhook handler.
  *
  * Relevant events:
- *   checkout.session.completed      → provision new workspace
- *   customer.subscription.updated   → update plan / status
+ *   checkout.session.completed      → provision new workspace; attach overage meter item
+ *   customer.subscription.updated   → update plan / status / billing_period_start
  *   customer.subscription.deleted   → cancel / restrict workspace
  *   invoice.payment_failed          → mark past_due
+ *   invoice.upcoming                → report conversation overage usage to Stripe
+ *
+ * Overage billing:
+ *   Price: STRIPE_PRICE_OVERAGE_CONV — a metered "per unit" Stripe price at $0.01/unit
+ *          ($10 per 1,000 conversations).  Set STRIPE_OVERAGE_UNIT_AMOUNT_CENTS to
+ *          override (default 1 cent = $0.01).
+ *   Logic: at invoice.upcoming we count conversations created since billing_period_start,
+ *          subtract the plan's monthly_message_limit, and report any positive overage
+ *          to Stripe using action='set' (idempotent — safe to re-run).
  */
 export async function POST(request: NextRequest) {
   const stripe    = getStripe()
@@ -66,8 +75,12 @@ export async function POST(request: NextRequest) {
         await handlePaymentFailed(invoice)
         break
       }
+      case 'invoice.upcoming': {
+        const invoice = event.data.object as Stripe.Invoice
+        await handleInvoiceUpcoming(invoice)
+        break
+      }
       default:
-        // Acknowledge unhandled events without error
         break
     }
   } catch (err) {
@@ -83,6 +96,7 @@ export async function POST(request: NextRequest) {
 // ---------------------------------------------------------------
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  const stripe   = getStripe()
   const supabase = getSupabase()
   const metadata   = session.metadata ?? {}
   const email      = session.customer_details?.email ?? metadata.email
@@ -98,6 +112,29 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return
   }
 
+  // Resolve billing period start from Stripe subscription
+  let billingPeriodStart: string | null = null
+  if (subscriptionId) {
+    const sub = await stripe.subscriptions.retrieve(subscriptionId)
+    billingPeriodStart = new Date(sub.current_period_start * 1000).toISOString()
+  }
+
+  // Attach conversation overage metered item to the subscription
+  let overageItemId: string | null = null
+  if (subscriptionId && process.env.STRIPE_PRICE_OVERAGE_CONV) {
+    try {
+      const item = await stripe.subscriptionItems.create({
+        subscription: subscriptionId,
+        price:        process.env.STRIPE_PRICE_OVERAGE_CONV,
+        quantity:     undefined, // metered — no quantity on creation
+      })
+      overageItemId = item.id
+    } catch (err) {
+      // Non-fatal — overage just won't be tracked for this sub until fixed
+      console.error('[stripe] Failed to attach overage meter item:', err)
+    }
+  }
+
   // If this is an upgrade for an existing workspace, update it instead of creating a new one
   if (metadata.workspace_id) {
     await supabase
@@ -108,6 +145,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         stripe_customer_id:     customerId ?? null,
         stripe_subscription_id: subscriptionId ?? null,
         billing_email:          email,
+        billing_period_start:   billingPeriodStart,
+        ...(overageItemId ? { overage_item_id: overageItemId } : {}),
         ...PLAN_LIMITS[plan],
       })
       .eq('id', metadata.workspace_id)
@@ -143,6 +182,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       stripe_customer_id:     customerId ?? null,
       stripe_subscription_id: subscriptionId ?? null,
       billing_email:          email,
+      billing_period_start:   billingPeriodStart,
+      overage_item_id:        overageItemId,
       ...PLAN_LIMITS[plan],
     })
     .select('id')
@@ -173,9 +214,18 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
   const plan   = getPlanFromPrice(sub.items.data[0]?.price)
   const status = stripeStatusToInternal(sub.status)
 
+  // Update billing_period_start whenever the subscription renews
+  const billingPeriodStart = new Date(sub.current_period_start * 1000).toISOString()
+
   await supabase
     .from('workspaces')
-    .update({ plan, subscription_status: status, stripe_subscription_id: sub.id, ...PLAN_LIMITS[plan] })
+    .update({
+      plan,
+      subscription_status:  status,
+      stripe_subscription_id: sub.id,
+      billing_period_start: billingPeriodStart,
+      ...PLAN_LIMITS[plan],
+    })
     .eq('stripe_subscription_id', sub.id)
 }
 
@@ -196,6 +246,48 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     .from('workspaces')
     .update({ subscription_status: 'past_due' })
     .eq('stripe_customer_id', customerId)
+}
+
+/**
+ * invoice.upcoming — fires ~3 days before invoice finalisation.
+ * Count conversations created since billing_period_start,
+ * subtract the plan limit, report any positive overage to Stripe.
+ * Uses action='set' so it's idempotent (safe to re-run or retry).
+ */
+async function handleInvoiceUpcoming(invoice: Stripe.Invoice) {
+  const stripe   = getStripe()
+  const supabase = getSupabase()
+
+  const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id
+  if (!customerId) return
+
+  // Load workspace
+  const { data: ws } = await supabase
+    .from('workspaces')
+    .select('id, monthly_message_limit, overage_item_id, billing_period_start')
+    .eq('stripe_customer_id', customerId)
+    .maybeSingle()
+
+  if (!ws || !ws.overage_item_id || !ws.billing_period_start) return
+
+  // Count conversations created in this billing period
+  const { count } = await supabase
+    .from('conversations')
+    .select('id', { count: 'exact', head: true })
+    .eq('workspace_id', ws.id)
+    .gte('created_at', ws.billing_period_start)
+
+  const total    = count ?? 0
+  const limit    = ws.monthly_message_limit ?? 0
+  const overage  = Math.max(0, total - limit)
+
+  // Report overage to Stripe (action='set' = set total for period, idempotent)
+  await stripe.subscriptionItems.createUsageRecord(
+    ws.overage_item_id,
+    { quantity: overage, timestamp: 'now', action: 'set' },
+  )
+
+  console.log(`[stripe] Overage reported: workspace=${ws.id} total=${total} limit=${limit} overage=${overage}`)
 }
 
 // ---------------------------------------------------------------
@@ -230,14 +322,14 @@ function getPlanFromPrice(price?: Stripe.Price): Plan {
 
 function stripeStatusToInternal(status: Stripe.Subscription.Status) {
   const map: Record<string, string> = {
-    active:            'active',
-    trialing:          'trialing',
-    past_due:          'past_due',
-    canceled:          'cancelled',
-    unpaid:            'past_due',
-    paused:            'paused',
-    incomplete:        'inactive',
-    incomplete_expired:'inactive',
+    active:             'active',
+    trialing:           'trialing',
+    past_due:           'past_due',
+    canceled:           'cancelled',
+    unpaid:             'past_due',
+    paused:             'paused',
+    incomplete:         'inactive',
+    incomplete_expired: 'inactive',
   }
   return (map[status] ?? 'inactive') as 'active' | 'inactive' | 'trialing' | 'past_due' | 'cancelled' | 'paused'
 }
