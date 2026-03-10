@@ -15,9 +15,12 @@ const PRICE_IDS: Record<string, string | undefined> = {
   pro_annual:         process.env.STRIPE_PRICE_PRO_ANNUAL,
   team_monthly:       process.env.STRIPE_PRICE_TEAM_MONTHLY,
   team_annual:        process.env.STRIPE_PRICE_TEAM_ANNUAL,
-  // Extra seat add-on (applied as a separate line item)
+  // Extra seat add-on
   extra_seat_monthly: process.env.STRIPE_PRICE_EXTRA_SEAT_MONTHLY,
   extra_seat_annual:  process.env.STRIPE_PRICE_EXTRA_SEAT_ANNUAL,
+  // Extra bot add-on
+  extra_bot_monthly:  process.env.STRIPE_PRICE_EXTRA_BOT_MONTHLY,
+  extra_bot_annual:   process.env.STRIPE_PRICE_EXTRA_BOT_ANNUAL,
 }
 
 export async function POST(request: NextRequest) {

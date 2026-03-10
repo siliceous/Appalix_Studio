@@ -4,6 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { ContactSalesButton } from '@/components/marketing/contact-sales-button'
 
+const EXTRA_BOT  = { annual: 19, monthly: 29 }
+
 const PLANS = [
   {
     key: 'individual',
@@ -16,6 +18,7 @@ const PLANS = [
     bots: 1,
     conversations: '5,000',
     extraSeats: 'Unlimited extra seats',
+    extraBots: true,
     features: [
       '1 seat included',
       '1 AI bot',
@@ -39,6 +42,7 @@ const PLANS = [
     bots: 3,
     conversations: '15,000',
     extraSeats: 'Up to 6 extra seats',
+    extraBots: true,
     features: [
       '3 seats included',
       '3 AI bots',
@@ -62,12 +66,13 @@ const PLANS = [
     desc: 'High-volume operations for larger teams.',
     popular: false,
     seats: 10,
-    bots: null,
+    bots: 10,
     conversations: '50,000',
     extraSeats: 'Up to 10 extra seats',
+    extraBots: true,
     features: [
       '10 seats included',
-      'Unlimited AI bots',
+      '10 AI bots',
       '50,000 conversations / month',
       'Sage AI CRM assistant',
       'All platform integrations',
@@ -91,6 +96,7 @@ const PLANS = [
     bots: null,
     conversations: 'Unlimited',
     extraSeats: null,
+    extraBots: false,
     features: [
       'Unlimited seats & bots',
       'Unlimited conversations',
@@ -219,11 +225,20 @@ export function PricingCards() {
                 </div>
               )}
 
-              {/* Extra seat note */}
-              {plan.extraSeats && (
-                <p className="text-[11px] text-[#61c2ad] mb-4">
-                  + {plan.extraSeats} at ${isAnnual ? EXTRA_SEAT.annual : EXTRA_SEAT.monthly}/seat/mo
-                </p>
+              {/* Extra seat + extra bot notes */}
+              {(plan.extraSeats || plan.extraBots) && (
+                <div className="flex flex-col gap-0.5 mb-4">
+                  {plan.extraSeats && (
+                    <p className="text-[11px] text-[#61c2ad]">
+                      + {plan.extraSeats} at ${isAnnual ? EXTRA_SEAT.annual : EXTRA_SEAT.monthly}/seat/mo
+                    </p>
+                  )}
+                  {plan.extraBots && (
+                    <p className="text-[11px] text-[#61c2ad]">
+                      + Extra bots at ${isAnnual ? EXTRA_BOT.annual : EXTRA_BOT.monthly}/bot/mo
+                    </p>
+                  )}
+                </div>
               )}
 
               {/* Features */}
@@ -275,8 +290,9 @@ export function PricingCards() {
 
       {/* Extra seat footnote */}
       <p className="text-center text-xs text-gray-500 mt-6">
-        Extra seats available on all plans — ${EXTRA_SEAT.annual}/seat/mo billed annually or ${EXTRA_SEAT.monthly}/seat/mo billed monthly.
-        Enterprise plans are available through consultation with the Appalix team only.
+        Extra seats: ${EXTRA_SEAT.annual}/seat/mo annual · ${EXTRA_SEAT.monthly}/seat/mo monthly.{' '}
+        Extra bots: ${EXTRA_BOT.annual}/bot/mo annual · ${EXTRA_BOT.monthly}/bot/mo monthly.{' '}
+        Enterprise plans by consultation with the Appalix team only.
       </p>
     </section>
   )
