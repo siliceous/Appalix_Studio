@@ -92,10 +92,67 @@ export async function inviteWorkspaceMember(
   if (!invitedUserId) return { error: 'Could not resolve user for that email.' }
 
   // Safety: never allow the caller to be upserted as the invited user
-  // (would demote the owner's own membership row)
   if (invitedUserId === user.id) return { error: 'You cannot invite yourself.' }
 
-  // Upsert — avoids duplicate if already a member
+  // Check if user is already a member of this workspace
+  const { data: existingMember } = await admin
+    .from('workspace_members')
+    .select('id, role')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', invitedUserId)
+    .maybeSingle()
+
+  if (existingMember) {
+    if (['owner', 'admin'].includes(existingMember.role)) {
+      return { error: `This user is already a workspace ${existingMember.role} and cannot be re-invited.` }
+    }
+    // Already a member/viewer — just resend the invite email without touching their role
+    if (inviteLink && process.env.RESEND_API_KEY) {
+      const resend    = new Resend(process.env.RESEND_API_KEY)
+      const fromEmail = process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev'
+      const appName   = 'Appalix'
+      await resend.emails.send({
+        from:    `${appName} <${fromEmail}>`,
+        to:      [email],
+        subject: `You've been invited to a workspace on ${appName}`,
+        html: `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 16px;">
+    <tr><td align="center">
+      <table width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+        <tr><td style="background:#ec732e;padding:24px 32px;">
+          <p style="margin:0;font-size:20px;font-weight:700;color:#ffffff;">${appName}</p>
+        </td></tr>
+        <tr><td style="padding:32px;">
+          <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111827;">You've been invited</h1>
+          <p style="margin:0 0 28px;font-size:15px;color:#6b7280;line-height:1.5;">
+            You've been invited to join a workspace on ${appName} as a <strong>${existingMember.role}</strong>.<br/>
+            Click the button below to accept and get started.
+          </p>
+          <a href="${inviteLink}"
+             style="display:inline-block;padding:13px 28px;background:#ec732e;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px;">
+            Accept invitation
+          </a>
+          <p style="margin:28px 0 0;font-size:12px;color:#9ca3af;line-height:1.6;">
+            This link is valid for 24 hours and can only be used once.<br/>
+            If you didn't expect this invitation, you can safely ignore it.<br/>
+            Having trouble? Copy and paste this URL:<br/>
+            <a href="${inviteLink}" style="color:#ec732e;word-break:break-all;">${inviteLink}</a>
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+      })
+    }
+    return { success: true }
+  }
+
+  // Upsert — new member
   const { error: insertError } = await admin
     .from('workspace_members')
     .upsert(
