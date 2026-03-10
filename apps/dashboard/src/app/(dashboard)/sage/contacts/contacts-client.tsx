@@ -86,7 +86,7 @@ const ALL_COLUMNS: { key: ColKey; label: string; required?: true }[] = [
   { key: 'assigned_to',       label: 'Assigned To' },
 ]
 
-const DEFAULT_VISIBLE = new Set<ColKey>(['name', 'company_name', 'email', 'contact_type', 'deal_value', 'tags', 'created_at'])
+const DEFAULT_VISIBLE = new Set<ColKey>(['name', 'company_name', 'email', 'contact_type', 'deal_value', 'tags', 'created_at', 'assigned_to'])
 
 const SORT_FIELDS: { key: string; label: string }[] = [
   { key: '',             label: 'None' },
