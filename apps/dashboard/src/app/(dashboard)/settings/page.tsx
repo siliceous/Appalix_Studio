@@ -71,7 +71,7 @@ export default async function SettingsPage() {
       role:         m.role,
       email:        userEmailMap[m.user_id] ?? '',
       name:         [firstName, lastName].filter(Boolean).join(' '),
-      accepted_at:  m.accepted_at,
+      accepted_at:  m.accepted_at ?? (m.role === 'owner' ? m.created_at : null),
       invited_at:   m.invited_at ?? null,
       isCurrentUser: m.user_id === user.id,
     }
