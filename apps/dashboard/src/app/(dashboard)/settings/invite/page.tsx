@@ -1,14 +1,41 @@
 'use client'
 
-import { useActionState } from 'react'
-import { inviteWorkspaceMember } from '@/app/actions/workspace'
+import { useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { Header } from '@/components/layout/header'
-import { SubmitButton } from '@/components/ui/submit-button'
-
-const initialState = { error: undefined, success: false }
 
 export default function InvitePage() {
-  const [state, formAction] = useActionState(inviteWorkspaceMember, initialState)
+  const [error,   setError]   = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [pending, setPending] = useState(false)
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setError(null)
+    setPending(true)
+
+    const form  = e.currentTarget
+    const email = (form.elements.namedItem('email') as HTMLInputElement).value.trim().toLowerCase()
+    const role  = (form.elements.namedItem('role')  as HTMLSelectElement).value
+
+    try {
+      const res  = await fetch('/api/invite', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email, role }),
+      })
+      const data = await res.json() as { ok?: boolean; error?: string }
+      if (!res.ok || data.error) {
+        setError(data.error ?? 'Something went wrong.')
+      } else {
+        setSuccess(true)
+      }
+    } catch {
+      setError('Network error. Please try again.')
+    } finally {
+      setPending(false)
+    }
+  }
 
   return (
     <div className="max-w-lg mx-auto space-y-6">
@@ -26,7 +53,7 @@ export default function InvitePage() {
       />
 
       <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-6">
-        {state.success ? (
+        {success ? (
           <div className="text-center py-4">
             <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-[#61c2ad]/10 flex items-center justify-center mx-auto mb-3">
               <svg className="w-5 h-5 text-green-600 dark:text-[#61c2ad]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -45,7 +72,7 @@ export default function InvitePage() {
                 Back to settings
               </a>
               <button
-                onClick={() => window.location.reload()}
+                onClick={() => setSuccess(false)}
                 className="px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
               >
                 Invite another
@@ -53,10 +80,10 @@ export default function InvitePage() {
             </div>
           </div>
         ) : (
-          <form action={formAction} className="space-y-4">
-            {state.error && (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
               <div className="px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">
-                {state.error}
+                {error}
               </div>
             )}
 
@@ -97,12 +124,18 @@ export default function InvitePage() {
               >
                 Cancel
               </a>
-              <SubmitButton
-                pendingText="Sending invite…"
-                className="flex-1 px-4 py-2.5 text-sm font-medium bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:bg-brand-400 transition-colors"
+              <button
+                type="submit"
+                disabled={pending}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:bg-brand-400 transition-colors"
               >
-                Send invite
-              </SubmitButton>
+                {pending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Sending invite…
+                  </>
+                ) : 'Send invite'}
+              </button>
             </div>
           </form>
         )}
