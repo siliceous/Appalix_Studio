@@ -37,27 +37,10 @@ function inviteHtml(inviteLink: string, role: string, appName: string) {
 </html>`
 }
 
-export async function GET() {
-  return NextResponse.json({
-    RESEND_API_KEY: process.env.RESEND_API_KEY ? `set (${process.env.RESEND_API_KEY.slice(0, 6)}…)` : 'MISSING',
-    RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL ?? 'MISSING',
-    NODE_ENV: process.env.NODE_ENV,
-  })
-}
-
 export async function POST(request: NextRequest) {
-  const body = await request.json() as { email?: string; role?: string; _debug?: boolean }
+  const body = await request.json() as { email?: string; role?: string }
   const email = (body.email ?? '').trim().toLowerCase()
   const role  = (body.role ?? 'member') as WorkspaceMemberRole
-
-  // Temporary debug endpoint — remove after confirming env vars
-  if (body._debug) {
-    return NextResponse.json({
-      RESEND_API_KEY: process.env.RESEND_API_KEY ? `set (${process.env.RESEND_API_KEY.slice(0, 6)}…)` : 'MISSING',
-      RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL ?? 'MISSING',
-      NODE_ENV: process.env.NODE_ENV,
-    })
-  }
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json({ error: 'A valid email address is required.' }, { status: 400 })
