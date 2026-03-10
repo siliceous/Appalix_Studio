@@ -1136,7 +1136,6 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
   const [pipelines, setPipelines] = useState<{ id: string; name: string }[]>([])
   const [defaultPipelineId, setDefaultPipelineId] = useState<string | null>(null)
   const [contactMatches, setContactMatches] = useState<Record<string, ContactMatch | null | undefined>>({})
-  const [feedFilter,   setFeedFilter]   = useState<'all' | 'priority'>('all')
   const [showAutoDesc, setShowAutoDesc] = useState(false)
   const autoDescTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -1309,15 +1308,16 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
       ...visForms.map(d   => ({ kind: 'form'   as const, data: d, time: d.created_at      })),
       ...visTickets.map(d => ({ kind: 'ticket' as const, data: d, time: d.created_at      })),
     ]
-    const filtered = feedFilter === 'priority'
-      ? all.filter(item => itemPriority(item) <= 1)  // 0=high, 1=medium only
+    // List mode: high + medium only. Grid mode: all items, high+medium sorted to top.
+    const items = feedView === 'list'
+      ? all.filter(item => itemPriority(item) <= 1)
       : all
-    return filtered.sort((a, b) => {
+    return items.sort((a, b) => {
       const pd = itemPriority(a) - itemPriority(b)
       if (pd !== 0) return pd
       return new Date(b.time).getTime() - new Date(a.time).getTime()
     })
-  }, [visEmails, visBots, visForms, visTickets, feedFilter])
+  }, [visEmails, visBots, visForms, visTickets, feedView])
 
   const overdue = (due: string | null) => !!due && new Date(due) < new Date()
 
@@ -1515,17 +1515,6 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
           <div className="px-5 py-4 border-b dark:border-white/8 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Activity Feed</h2>
-              {/* All / Priority filter */}
-              <div className="flex items-center gap-0.5 ml-1 bg-gray-100 dark:bg-white/6 rounded-lg p-0.5">
-                <button
-                  onClick={() => setFeedFilter('all')}
-                  className={`px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${feedFilter === 'all' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
-                >All</button>
-                <button
-                  onClick={() => setFeedFilter('priority')}
-                  className={`px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${feedFilter === 'priority' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
-                >Priority</button>
-              </div>
               {/* List / Grid toggle */}
               <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-white/6 rounded-lg p-0.5">
                 <button
