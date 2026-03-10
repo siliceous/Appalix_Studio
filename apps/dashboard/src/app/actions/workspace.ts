@@ -328,8 +328,9 @@ export async function createWorkspace(formData: FormData) {
 
   await admin.from('workspace_members').insert({
     workspace_id: workspace.id,
-    user_id: user.id,
-    role: 'owner',
+    user_id:      user.id,
+    role:         'owner',
+    accepted_at:  new Date().toISOString(),
   })
 
   redirect('/dashboard')

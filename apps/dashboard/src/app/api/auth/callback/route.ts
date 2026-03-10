@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createAdminClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { NextResponse, type NextRequest } from 'next/server'
 
@@ -58,6 +59,16 @@ export async function GET(request: NextRequest) {
   if (next !== '/dashboard') {
     const redirectTo = next.startsWith('/') ? `${origin}${next}` : origin
     return NextResponse.redirect(redirectTo)
+  }
+
+  // Stamp accepted_at for any pending workspace membership (invite accepted)
+  if (userId) {
+    const admin = createAdminClient()
+    await admin
+      .from('workspace_members')
+      .update({ accepted_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .is('accepted_at', null)
   }
 
   // Check whether this user has completed the onboarding profile form
