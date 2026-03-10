@@ -4,7 +4,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { PipelineBoard } from '@/components/sage/pipeline-board'
-import type { WorkspaceMember, SagePipeline, SagePipelineStage, SageDeal, SageContact } from '@/lib/types'
+import type { WorkspaceMember, SagePipeline, SagePipelineStage, SageDeal, SageContact, WorkspaceMemberRole } from '@/lib/types'
+import { ROLE_RANK } from '@/lib/types'
 
 export default async function PipelineBoardPage({
   params,
@@ -40,12 +41,10 @@ export default async function PipelineBoardPage({
   ] = await Promise.all([
     supabase.from('sage_pipelines').select('*').eq('id', id).eq('workspace_id', workspaceId).single(),
     supabase.from('sage_pipeline_stages').select('*').eq('pipeline_id', id).order('position'),
-    supabase.from('sage_deals')
-      .select('id, title, value, currency, status, stage_id, close_date, priority, company_name, created_at, contact:sage_contacts(id, name)')
-      .eq('pipeline_id', id)
-      .eq('workspace_id', workspaceId)
-      .or(`owner_id.is.null,owner_id.eq.${user.id}`)
-      .order('created_at'),
+    // Managers+ see unassigned deals too; employees/members see only their own
+    (ROLE_RANK[membership.role as WorkspaceMemberRole] ?? 0) >= ROLE_RANK.manager
+      ? supabase.from('sage_deals').select('id, title, value, currency, status, stage_id, close_date, priority, company_name, created_at, contact:sage_contacts(id, name)').eq('pipeline_id', id).eq('workspace_id', workspaceId).order('created_at')
+      : supabase.from('sage_deals').select('id, title, value, currency, status, stage_id, close_date, priority, company_name, created_at, contact:sage_contacts(id, name)').eq('pipeline_id', id).eq('workspace_id', workspaceId).eq('owner_id', user.id).order('created_at'),
     supabase.from('sage_contacts').select('id, name, company_name').eq('workspace_id', workspaceId).order('name'),
     supabase.from('sage_pipelines').select('id, name').eq('workspace_id', workspaceId).order('created_at'),
   ])

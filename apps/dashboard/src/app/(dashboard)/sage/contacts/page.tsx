@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation'
 import { ContactsClient } from './contacts-client'
 import { getUserPermissions } from '@/lib/permissions'
 import type { Metadata } from 'next'
-import type { WorkspaceMember, SageContact, WorkspaceMemberSummary } from '@/lib/types'
+import type { WorkspaceMember, SageContact, WorkspaceMemberSummary, WorkspaceMemberRole } from '@/lib/types'
+import { ROLE_RANK } from '@/lib/types'
 
 export const metadata: Metadata = { title: 'Contacts · Sage' }
 
@@ -30,12 +31,10 @@ export default async function ContactsPage() {
   const admin = createAdminClient()
 
   const [{ data: contactsRaw }, { data: dealsRaw }, { data: membersRaw }] = await Promise.all([
-    supabase
-      .from('sage_contacts')
-      .select('*')
-      .eq('workspace_id', membership.workspace_id)
-      .or(`assigned_to.is.null,assigned_to.eq.${user.id}`)
-      .order('created_at', { ascending: false }),
+    // Managers+ see unassigned contacts too; employees/members see only their own
+    (ROLE_RANK[membership.role as WorkspaceMemberRole] ?? 0) >= ROLE_RANK.manager
+      ? supabase.from('sage_contacts').select('*').eq('workspace_id', membership.workspace_id).order('created_at', { ascending: false })
+      : supabase.from('sage_contacts').select('*').eq('workspace_id', membership.workspace_id).eq('assigned_to', user.id).order('created_at', { ascending: false }),
     supabase
       .from('sage_deals')
       .select('contact_id, value')
