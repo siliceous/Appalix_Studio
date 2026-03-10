@@ -32,6 +32,27 @@ export const ROLE_RANK: Record<WorkspaceMemberRole, number> = {
   viewer:   1,
 }
 
+/** Per-user permission flags (stored in workspace_permissions table) */
+export interface UserPermissions {
+  can_view_contacts:  boolean
+  can_view_pipelines: boolean
+  can_view_projects:  boolean
+  can_view_dashboard: boolean
+  can_allocate_leads: boolean
+  can_reassign_leads: boolean
+  can_edit_deals:     boolean
+}
+
+export const DEFAULT_PERMISSIONS: UserPermissions = {
+  can_view_contacts:  true,
+  can_view_pipelines: true,
+  can_view_projects:  true,
+  can_view_dashboard: true,
+  can_allocate_leads: false,
+  can_reassign_leads: false,
+  can_edit_deals:     false,
+}
+
 /** Roles each caller is allowed to invite */
 export const INVITE_ALLOWED: Record<WorkspaceMemberRole, WorkspaceMemberRole[]> = {
   owner:    ['admin', 'manager', 'employee'],

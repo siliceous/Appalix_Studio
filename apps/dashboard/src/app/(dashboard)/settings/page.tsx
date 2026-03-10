@@ -5,11 +5,13 @@ import { DeleteWorkspaceButton } from '@/components/settings/delete-workspace-bu
 import { ThemeToggle } from '@/components/settings/theme-toggle'
 import { BusinessProfileSection } from '@/components/settings/business-profile-section'
 import { TeamMembersSection, type MemberDisplay } from '@/components/settings/team-members-section'
+import { PermissionsSection, type MemberForPermissions } from '@/components/settings/permissions-section'
 import { RoundRobinToggle } from '@/components/settings/round-robin-toggle'
 import { parseBusinessDescription } from '@/lib/business-profile'
 import { STATUS_COLORS, formatDate } from '@/lib/utils'
 import type { Metadata } from 'next'
-import type { Workspace, WorkspaceMember } from '@/lib/types'
+import type { Workspace, WorkspaceMember, WorkspaceMemberRole } from '@/lib/types'
+import { ROLE_RANK } from '@/lib/types'
 
 export const metadata: Metadata = { title: 'Settings' }
 
@@ -81,6 +83,24 @@ export default async function SettingsPage() {
   const profileData = parseBusinessDescription(
     (workspace as Workspace & { sage_business_description?: string | null }).sage_business_description ?? null
   )
+
+  // Fetch existing permissions for manageable members (only for admin+)
+  const callerRank = ROLE_RANK[membership.role as WorkspaceMemberRole] ?? 0
+  type PermRow = { target_user_id: string; can_view_contacts: boolean; can_view_pipelines: boolean; can_view_projects: boolean; can_view_dashboard: boolean; can_allocate_leads: boolean; can_reassign_leads: boolean; can_edit_deals: boolean }
+  let initialPermissions: Record<string, Partial<PermRow>> = {}
+  if (callerRank >= ROLE_RANK.manager) {
+    const { data: permRows } = await admin
+      .from('workspace_permissions')
+      .select('target_user_id, can_view_contacts, can_view_pipelines, can_view_projects, can_view_dashboard, can_allocate_leads, can_reassign_leads, can_edit_deals')
+      .eq('workspace_id', workspace.id)
+    for (const p of (permRows ?? []) as PermRow[]) {
+      initialPermissions[p.target_user_id] = p
+    }
+  }
+
+  const membersForPermissions: MemberForPermissions[] = members
+    .filter((m) => !m.isCurrentUser && (ROLE_RANK[m.role] ?? 0) < callerRank)
+    .map((m) => ({ user_id: m.user_id, name: m.name, email: m.email, role: m.role }))
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -220,6 +240,23 @@ export default async function SettingsPage() {
           />
         </div>
       </section>
+
+      {/* Member permissions */}
+      {membersForPermissions.length > 0 && (
+        <section className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10">
+          <div className="px-6 py-5 border-b dark:border-white/10">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Permissions</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Control what each team member can see and do. Click a member to expand.
+            </p>
+          </div>
+          <PermissionsSection
+            members={membersForPermissions}
+            callerRole={membership.role as WorkspaceMemberRole}
+            initialPermissions={initialPermissions}
+          />
+        </section>
+      )}
 
       {/* Lead Distribution */}
       {isAdmin && (

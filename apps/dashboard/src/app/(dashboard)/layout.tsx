@@ -4,7 +4,8 @@ import { Sidebar } from '@/components/layout/sidebar'
 import { SageRightPanel } from '@/components/sage/sage-right-panel'
 import { ReminderWatcher } from '@/components/reminder-watcher'
 import { createWorkspace } from '@/app/actions/workspace'
-import type { Workspace } from '@/lib/types'
+import { getUserPermissions } from '@/lib/permissions'
+import type { Workspace, WorkspaceMemberRole } from '@/lib/types'
 
 // All dashboard pages are user-specific and require live DB access — never statically render.
 export const dynamic = 'force-dynamic'
@@ -25,9 +26,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .limit(1)
     .single()
 
-  const raw = membership as unknown as { workspaces: Workspace; role: string } | null
+  const raw = membership as unknown as { workspaces: Workspace; role: string; workspace_id: string } | null
   const workspace = raw?.workspaces ?? null
-  const callerRole = (raw?.role ?? 'member') as string
+  const callerRole = (raw?.role ?? 'member') as WorkspaceMemberRole
+
+  const userPermissions = workspace
+    ? await getUserPermissions(user.id, raw!.workspace_id ?? workspace.id, callerRole)
+    : null
 
   if (!workspace) {
     return (
@@ -61,7 +66,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-[#1c1c1c] relative">
       {/* Subtle green ambient glow in dark mode */}
       <div className="pointer-events-none fixed top-0 left-60 right-0 h-[300px] dark:bg-[#61c2ad]/[0.03] blur-[80px] hidden dark:block" />
-      <Sidebar workspace={workspace} callerRole={callerRole} />
+      <Sidebar workspace={workspace} callerRole={callerRole} userPermissions={userPermissions ?? undefined} />
       <main className="flex-1 p-8 overflow-auto bg-gray-50 dark:bg-[#1c1c1c]">
         {children}
       </main>

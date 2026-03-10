@@ -25,14 +25,15 @@ import {
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import type { Workspace } from '@/lib/types'
+import type { Workspace, UserPermissions } from '@/lib/types'
 
 interface NavItem {
-  href:      string
-  label:     string
-  icon:      React.ElementType
-  sub?:      boolean  // renders indented under its parent group item
-  adminOnly?: boolean // hidden for viewers
+  href:            string
+  label:           string
+  icon:            React.ElementType
+  sub?:            boolean
+  adminOnly?:      boolean                // hidden for viewers
+  permissionKey?:  keyof UserPermissions  // hidden if permission is false
 }
 
 interface NavGroup {
@@ -63,9 +64,9 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Sage',
     pro: true,
     items: [
-      { href: '/sage/pipelines', label: 'Pipelines', icon: Kanban },
-      { href: '/sage/projects',  label: 'Projects',  icon: FolderOpen },
-      { href: '/sage/contacts',  label: 'Contacts',  icon: Users },
+      { href: '/sage/pipelines', label: 'Pipelines', icon: Kanban,     permissionKey: 'can_view_pipelines' },
+      { href: '/sage/projects',  label: 'Projects',  icon: FolderOpen, permissionKey: 'can_view_projects'  },
+      { href: '/sage/contacts',  label: 'Contacts',  icon: Users,      permissionKey: 'can_view_contacts'  },
     ],
   },
   {
@@ -85,11 +86,12 @@ const NAV_GROUPS: NavGroup[] = [
 ]
 
 interface SidebarProps {
-  workspace:   Workspace
-  callerRole?: string
+  workspace:        Workspace
+  callerRole?:      string
+  userPermissions?: UserPermissions
 }
 
-export function Sidebar({ workspace, callerRole }: SidebarProps) {
+export function Sidebar({ workspace, callerRole, userPermissions }: SidebarProps) {
   const pathname  = usePathname()
   const router    = useRouter()
   const supabase  = createClient()
@@ -198,7 +200,11 @@ export function Sidebar({ workspace, callerRole }: SidebarProps) {
                 )}
 
                 <div className="space-y-0.5">
-                  {group.items.filter(item => !(isViewer && item.adminOnly)).map(({ href, label, icon: Icon, sub }) => {
+                  {group.items.filter(item => {
+                  if (isViewer && item.adminOnly) return false
+                  if (item.permissionKey && userPermissions && !userPermissions[item.permissionKey]) return false
+                  return true
+                }).map(({ href, label, icon: Icon, sub }) => {
                     const active = isActive(href)
 
                     const linkCls = cn(

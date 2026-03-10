@@ -1,6 +1,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { ContactsClient } from './contacts-client'
+import { getUserPermissions } from '@/lib/permissions'
 import type { Metadata } from 'next'
 import type { WorkspaceMember, SageContact, WorkspaceMemberSummary } from '@/lib/types'
 
@@ -22,6 +23,9 @@ export default async function ContactsPage() {
   type MembershipRow = Pick<WorkspaceMember, 'workspace_id' | 'role'>
   const membership  = membershipRaw as MembershipRow | null
   if (!membership) redirect('/login')
+
+  const perms = await getUserPermissions(user.id, membership.workspace_id, membership.role as import('@/lib/types').WorkspaceMemberRole)
+  if (!perms.can_view_contacts) redirect('/dashboard')
 
   const admin = createAdminClient()
 
