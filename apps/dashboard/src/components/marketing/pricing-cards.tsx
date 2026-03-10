@@ -22,7 +22,7 @@ const PLANS = [
     features: [
       '1 seat included',
       '1 AI bot',
-      '5,000 conversations / month',
+      '5,000 messages / month',
       'Sage AI CRM assistant',
       'Lead capture & pipeline',
       'Email & form integration',
@@ -46,7 +46,7 @@ const PLANS = [
     features: [
       '3 seats included',
       '3 AI bots',
-      '15,000 conversations / month',
+      '15,000 messages / month',
       'Sage AI CRM assistant',
       'Lead capture & pipeline',
       'All platform integrations',
@@ -73,7 +73,7 @@ const PLANS = [
     features: [
       '10 seats included',
       '10 AI bots',
-      '50,000 conversations / month',
+      '50,000 messages / month',
       'Sage AI CRM assistant',
       'All platform integrations',
       'Human handoff',
@@ -201,7 +201,7 @@ export function PricingCards() {
                   {plan.bots !== null ? `${plan.bots} bot${plan.bots !== 1 ? 's' : ''}` : 'Unlimited bots'}
                 </span>
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/8 text-gray-300 border border-white/10">
-                  {plan.conversations} conv/mo
+                  {plan.conversations} msg/mo
                 </span>
               </div>
 

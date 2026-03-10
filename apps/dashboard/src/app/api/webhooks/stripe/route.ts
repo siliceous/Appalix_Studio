@@ -28,12 +28,11 @@ function getSupabase() {
  *   invoice.upcoming                → report conversation overage usage to Stripe
  *
  * Overage billing:
- *   Price: STRIPE_PRICE_OVERAGE_CONV — a metered "per unit" Stripe price at $0.01/unit
- *          ($10 per 1,000 conversations).  Set STRIPE_OVERAGE_UNIT_AMOUNT_CENTS to
- *          override (default 1 cent = $0.01).
- *   Logic: at invoice.upcoming we count conversations created since billing_period_start,
+ *   Price: STRIPE_PRICE_OVERAGE_CONV — usage-based price linked to meter
+ *          "llm_conversation_overage" at $0.01/unit ($10 per 1,000 messages).
+ *   Logic: at invoice.upcoming we count messages created since billing_period_start,
  *          subtract the plan's monthly_message_limit, and report any positive overage
- *          to Stripe using action='set' (idempotent — safe to re-run).
+ *          via stripe.billing.meterEvents.create (idempotent via invoice ID key).
  */
 export async function POST(request: NextRequest) {
   const stripe    = getStripe()
@@ -250,9 +249,10 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 
 /**
  * invoice.upcoming — fires ~3 days before invoice finalisation.
- * Count conversations created since billing_period_start,
- * subtract the plan limit, report any positive overage to Stripe.
- * Uses action='set' so it's idempotent (safe to re-run or retry).
+ * Count messages created since billing_period_start,
+ * subtract the plan limit, report any positive overage to Stripe
+ * via the Billing Meters API (event_name: llm_conversation_overage).
+ * Idempotency key = invoice ID so duplicate webhook deliveries are safe.
  */
 async function handleInvoiceUpcoming(invoice: Stripe.Invoice) {
   const stripe   = getStripe()
@@ -264,27 +264,35 @@ async function handleInvoiceUpcoming(invoice: Stripe.Invoice) {
   // Load workspace
   const { data: ws } = await supabase
     .from('workspaces')
-    .select('id, monthly_message_limit, overage_item_id, billing_period_start')
+    .select('id, monthly_message_limit, billing_period_start')
     .eq('stripe_customer_id', customerId)
     .maybeSingle()
 
-  if (!ws || !ws.overage_item_id || !ws.billing_period_start) return
+  if (!ws || !ws.billing_period_start) return
 
-  // Count conversations created in this billing period
+  // Count messages created in this billing period
   const { count } = await supabase
     .from('conversations')
     .select('id', { count: 'exact', head: true })
     .eq('workspace_id', ws.id)
     .gte('created_at', ws.billing_period_start)
 
-  const total    = count ?? 0
-  const limit    = ws.monthly_message_limit ?? 0
-  const overage  = Math.max(0, total - limit)
+  const total   = count ?? 0
+  const limit   = ws.monthly_message_limit ?? 0
+  const overage = Math.max(0, total - limit)
 
-  // Report overage to Stripe (action='set' = set total for period, idempotent)
-  await stripe.subscriptionItems.createUsageRecord(
-    ws.overage_item_id,
-    { quantity: overage, timestamp: 'now', action: 'set' },
+  if (overage === 0) return
+
+  // Report overage via Billing Meters API — idempotent per invoice
+  await stripe.billing.meterEvents.create(
+    {
+      event_name: 'llm_conversation_overage',
+      payload: {
+        stripe_customer_id: customerId,
+        value:              String(overage),
+      },
+    },
+    { idempotencyKey: `overage-${invoice.id}` },
   )
 
   console.log(`[stripe] Overage reported: workspace=${ws.id} total=${total} limit=${limit} overage=${overage}`)
