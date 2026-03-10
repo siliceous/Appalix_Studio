@@ -39,6 +39,27 @@ export async function inviteWorkspaceMember(
   const workspaceId = membership.workspace_id
   const appUrl      = process.env.NEXT_PUBLIC_APP_URL ?? 'https://appalix.ai'
 
+  // Enforce seat limit
+  const { data: wsRaw } = await supabase
+    .from('workspaces')
+    .select('seat_limit, extra_seats')
+    .eq('id', workspaceId)
+    .single()
+  const wsData = wsRaw as { seat_limit: number | null; extra_seats: number } | null
+
+  if (wsData?.seat_limit !== null && wsData?.seat_limit !== undefined) {
+    const totalSeats = (wsData.seat_limit ?? 1) + (wsData.extra_seats ?? 0)
+    const { count: memberCount } = await admin
+      .from('workspace_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('workspace_id', workspaceId)
+    if ((memberCount ?? 0) >= totalSeats) {
+      return {
+        error: `Seat limit reached (${memberCount}/${totalSeats}). Purchase extra seats or upgrade your plan to invite more members.`,
+      }
+    }
+  }
+
   // Try to invite via Supabase auth (sends magic-link email)
   let invitedUserId: string | null = null
 
@@ -74,6 +95,103 @@ export async function inviteWorkspaceMember(
     )
 
   if (insertError) return { error: insertError.message }
+
+  return { success: true }
+}
+
+export async function removeMember(
+  memberId: string,
+): Promise<{ error?: string; success?: boolean }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated.' }
+
+  const admin = createAdminClient()
+
+  // Load caller's membership
+  const { data: callerRaw } = await supabase
+    .from('workspace_members')
+    .select('workspace_id, role')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single()
+
+  type MemberRow = { workspace_id: string; role: string }
+  const caller = callerRaw as MemberRow | null
+  if (!caller) return { error: 'Workspace not found.' }
+  if (!['owner', 'admin'].includes(caller.role)) {
+    return { error: 'You do not have permission to remove members.' }
+  }
+
+  // Load target membership
+  const { data: targetRaw } = await admin
+    .from('workspace_members')
+    .select('id, role, workspace_id, user_id')
+    .eq('id', memberId)
+    .single()
+
+  const target = targetRaw as (MemberRow & { id: string; user_id: string }) | null
+  if (!target) return { error: 'Member not found.' }
+  if (target.workspace_id !== caller.workspace_id) return { error: 'Member not in your workspace.' }
+  if (target.role === 'owner') return { error: 'Cannot remove the workspace owner.' }
+  // Admins can only remove member/viewer, not other admins
+  if (caller.role === 'admin' && target.role === 'admin') {
+    return { error: 'Admins cannot remove other admins.' }
+  }
+  // Cannot remove yourself
+  if (target.user_id === user.id) return { error: 'Cannot remove yourself.' }
+
+  const { error } = await admin.from('workspace_members').delete().eq('id', memberId)
+  if (error) return { error: error.message }
+
+  return { success: true }
+}
+
+export async function updateMemberRole(
+  memberId: string,
+  role: WorkspaceMemberRole,
+): Promise<{ error?: string; success?: boolean }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated.' }
+
+  // Only owners can change roles
+  const { data: callerRaw } = await supabase
+    .from('workspace_members')
+    .select('workspace_id, role')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single()
+
+  type MemberRow = { workspace_id: string; role: string }
+  const caller = callerRaw as MemberRow | null
+  if (!caller || caller.role !== 'owner') {
+    return { error: 'Only the workspace owner can change roles.' }
+  }
+
+  if (role === 'owner') return { error: 'Cannot assign owner role.' }
+
+  const admin = createAdminClient()
+
+  const { data: targetRaw } = await admin
+    .from('workspace_members')
+    .select('id, role, workspace_id')
+    .eq('id', memberId)
+    .single()
+
+  const target = targetRaw as (MemberRow & { id: string }) | null
+  if (!target) return { error: 'Member not found.' }
+  if (target.workspace_id !== caller.workspace_id) return { error: 'Member not in your workspace.' }
+  if (target.role === 'owner') return { error: 'Cannot change the owner\'s role.' }
+
+  const { error } = await admin
+    .from('workspace_members')
+    .update({ role })
+    .eq('id', memberId)
+
+  if (error) return { error: error.message }
 
   return { success: true }
 }

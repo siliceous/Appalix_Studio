@@ -47,6 +47,13 @@ export interface Workspace {
   monthly_message_limit: number
   monthly_agent_run_limit: number
   sage_business_description: string | null
+  seat_limit: number | null
+  extra_seats: number
+  extra_seat_limit: number | null
+  bot_limit: number | null
+  extra_bots: number
+  extra_bot_limit: number | null
+  rr_index: number
   created_at: string
   updated_at: string
 }

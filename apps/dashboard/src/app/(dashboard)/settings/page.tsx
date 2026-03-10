@@ -1,9 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { DeleteWorkspaceButton } from '@/components/settings/delete-workspace-button'
 import { ThemeToggle } from '@/components/settings/theme-toggle'
 import { BusinessProfileSection } from '@/components/settings/business-profile-section'
+import { TeamMembersSection, type MemberDisplay } from '@/components/settings/team-members-section'
 import { parseBusinessDescription } from '@/lib/business-profile'
 import { STATUS_COLORS, formatDate } from '@/lib/utils'
 import type { Metadata } from 'next'
@@ -31,11 +32,49 @@ export default async function SettingsPage() {
   const workspace = membership.workspaces
   const isAdmin   = ['owner', 'admin'].includes(membership.role)
 
-  const { data: rawMembers } = await supabase
+  const admin = createAdminClient()
+
+  const { data: rawMembers } = await admin
     .from('workspace_members')
-    .select('id, role, accepted_at, created_at')
+    .select('id, user_id, role, accepted_at, invited_at, created_at')
     .eq('workspace_id', workspace?.id ?? '')
-  const members = (rawMembers ?? []) as Pick<WorkspaceMember, 'id' | 'role' | 'accepted_at' | 'created_at'>[]
+    .order('created_at', { ascending: true })
+  const rawMemberList = (rawMembers ?? []) as Pick<WorkspaceMember, 'id' | 'user_id' | 'role' | 'accepted_at' | 'invited_at' | 'created_at'>[]
+
+  // Fetch emails from auth.users
+  const { data: usersData } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  const userEmailMap: Record<string, string> = {}
+  for (const u of usersData?.users ?? []) {
+    userEmailMap[u.id] = u.email ?? ''
+  }
+
+  // Fetch names from user_profiles
+  const memberUserIds = rawMemberList.map((m) => m.user_id)
+  const { data: profiles } = await admin
+    .from('user_profiles')
+    .select('user_id, first_name, last_name')
+    .in('user_id', memberUserIds)
+  type ProfileRow = { user_id: string; first_name: string; last_name: string | null }
+  const profileMap: Record<string, ProfileRow> = {}
+  for (const p of (profiles ?? []) as ProfileRow[]) {
+    profileMap[p.user_id] = p
+  }
+
+  const members: MemberDisplay[] = rawMemberList.map((m) => {
+    const profile = profileMap[m.user_id]
+    const firstName = profile?.first_name ?? ''
+    const lastName  = profile?.last_name  ?? ''
+    return {
+      id:           m.id,
+      user_id:      m.user_id,
+      role:         m.role,
+      email:        userEmailMap[m.user_id] ?? '',
+      name:         [firstName, lastName].filter(Boolean).join(' '),
+      accepted_at:  m.accepted_at,
+      invited_at:   m.invited_at ?? null,
+      isCurrentUser: m.user_id === user.id,
+    }
+  })
 
   const profileData = parseBusinessDescription(
     (workspace as Workspace & { sage_business_description?: string | null }).sage_business_description ?? null
@@ -168,20 +207,14 @@ export default async function SettingsPage() {
             </a>
           )}
         </div>
-        <div className="divide-y dark:divide-white/10">
-          {members?.map((m) => (
-            <div key={m.id} className="flex items-center gap-4 px-6 py-3.5">
-              <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-brand-700 dark:text-brand-300 text-xs font-medium">
-                {m.role[0].toUpperCase()}
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 capitalize">{m.role}</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
-                  {m.accepted_at ? `Joined ${formatDate(m.accepted_at)}` : 'Invitation pending'}
-                </p>
-              </div>
-            </div>
-          ))}
+        <div className="pt-4">
+          <TeamMembersSection
+            members={members}
+            callerRole={membership.role}
+            seatLimit={workspace.seat_limit ?? null}
+            extraSeats={workspace.extra_seats ?? 0}
+            workspaceId={workspace.id}
+          />
         </div>
       </section>
 
