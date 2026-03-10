@@ -37,10 +37,10 @@ export default async function SettingsPage() {
 
   const { data: rawMembers } = await admin
     .from('workspace_members')
-    .select('id, user_id, role, accepted_at, invited_at, created_at')
+    .select('id, user_id, role, accepted_at, invited_at, created_at, invited_by')
     .eq('workspace_id', workspace?.id ?? '')
     .order('created_at', { ascending: true })
-  const rawMemberList = (rawMembers ?? []) as Pick<WorkspaceMember, 'id' | 'user_id' | 'role' | 'accepted_at' | 'invited_at' | 'created_at'>[]
+  const rawMemberList = (rawMembers ?? []) as (Pick<WorkspaceMember, 'id' | 'user_id' | 'role' | 'accepted_at' | 'invited_at' | 'created_at'> & { invited_by: string | null })[]
 
   // Fetch emails from auth.users
   const { data: usersData } = await admin.auth.admin.listUsers({ perPage: 1000 })
@@ -66,13 +66,14 @@ export default async function SettingsPage() {
     const firstName = profile?.first_name ?? ''
     const lastName  = profile?.last_name  ?? ''
     return {
-      id:           m.id,
-      user_id:      m.user_id,
-      role:         m.role,
-      email:        userEmailMap[m.user_id] ?? '',
-      name:         [firstName, lastName].filter(Boolean).join(' '),
-      accepted_at:  m.accepted_at ?? (m.role === 'owner' ? m.created_at : null),
-      invited_at:   m.invited_at ?? null,
+      id:            m.id,
+      user_id:       m.user_id,
+      role:          m.role,
+      email:         userEmailMap[m.user_id] ?? '',
+      name:          [firstName, lastName].filter(Boolean).join(' '),
+      accepted_at:   m.accepted_at ?? (m.role === 'owner' ? m.created_at : null),
+      invited_at:    m.invited_at ?? null,
+      invited_by:    m.invited_by ?? null,
       isCurrentUser: m.user_id === user.id,
     }
   })
@@ -212,6 +213,7 @@ export default async function SettingsPage() {
           <TeamMembersSection
             members={members}
             callerRole={membership.role}
+            callerUserId={user.id}
             seatLimit={workspace.seat_limit ?? null}
             extraSeats={workspace.extra_seats ?? 0}
             workspaceId={workspace.id}

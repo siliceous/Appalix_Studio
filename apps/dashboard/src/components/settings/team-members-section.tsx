@@ -13,13 +13,15 @@ export type MemberDisplay = {
   name: string
   accepted_at: string | null
   invited_at: string | null
+  invited_by: string | null
   isCurrentUser: boolean
 }
 
 type Props = {
   members: MemberDisplay[]
   callerRole: WorkspaceMemberRole
-  seatLimit: number | null   // null = enterprise/unlimited
+  callerUserId: string
+  seatLimit: number | null
   extraSeats: number
   workspaceId: string
 }
@@ -150,18 +152,33 @@ function MemberRow({
   )
 }
 
-export function TeamMembersSection({ members: initialMembers, callerRole, seatLimit, extraSeats }: Props) {
-  // Use local state so removals are reflected instantly
+const ROLE_ORDER: WorkspaceMemberRole[] = ['owner', 'admin', 'manager', 'employee', 'member', 'viewer']
+const ROLE_LABEL: Partial<Record<WorkspaceMemberRole, string>> = {
+  owner: 'Owner', admin: 'Admins', manager: 'Managers', employee: 'Employees', member: 'Members', viewer: 'Viewers',
+}
+
+export function TeamMembersSection({ members: initialMembers, callerRole, callerUserId: _callerUserId, seatLimit, extraSeats }: Props) {
   const [members, setMembers] = React.useState(initialMembers)
 
-  const totalSeats  = seatLimit !== null ? seatLimit + extraSeats : null
-  const usedSeats   = members.length
-  const pct         = totalSeats ? Math.min(100, Math.round((usedSeats / totalSeats) * 100)) : 0
-  const barColour   = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-400' : 'bg-[#61c2ad]'
+  const totalSeats = seatLimit !== null ? seatLimit + extraSeats : null
+  const usedSeats  = members.length
+  const pct        = totalSeats ? Math.min(100, Math.round((usedSeats / totalSeats) * 100)) : 0
+  const barColour  = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-400' : 'bg-[#61c2ad]'
 
   function handleRemoved(id: string) {
     setMembers((prev) => prev.filter((m) => m.id !== id))
   }
+
+  // Build user_id → name map for "Reports to" labels
+  const nameMap: Record<string, string> = {}
+  for (const m of members) nameMap[m.user_id] = m.name || m.email
+
+  // Group members by role in hierarchy order
+  const grouped = ROLE_ORDER.reduce<Record<string, MemberDisplay[]>>((acc, r) => {
+    const group = members.filter((m) => m.role === r)
+    if (group.length) acc[r] = group
+    return acc
+  }, {})
 
   return (
     <>
@@ -170,9 +187,7 @@ export function TeamMembersSection({ members: initialMembers, callerRole, seatLi
         <div className="px-6 pb-3">
           <div className="flex items-center justify-between mb-1">
             <span className="text-[11px] text-gray-400 dark:text-gray-500">Seats used</span>
-            <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-400">
-              {usedSeats} / {totalSeats}
-            </span>
+            <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-400">{usedSeats} / {totalSeats}</span>
           </div>
           <div className="h-1.5 rounded-full bg-gray-100 dark:bg-white/8 overflow-hidden">
             <div className={`h-full rounded-full transition-all ${barColour}`} style={{ width: `${pct}%` }} />
@@ -187,12 +202,33 @@ export function TeamMembersSection({ members: initialMembers, callerRole, seatLi
         </div>
       )}
 
-      {/* Member rows */}
-      <div className="divide-y dark:divide-white/10">
-        {members.map((m) => (
-          <MemberRow key={m.id} member={m} callerRole={callerRole} onRemoved={handleRemoved} />
-        ))}
-      </div>
+      {/* Hierarchy groups */}
+      {ROLE_ORDER.filter((r) => grouped[r]).map((r) => (
+        <div key={r}>
+          {r !== 'owner' && (
+            <div className="px-6 py-2 bg-gray-50 dark:bg-white/3 border-t dark:border-white/10">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                {ROLE_LABEL[r]}
+              </span>
+            </div>
+          )}
+          <div className="divide-y dark:divide-white/10">
+            {grouped[r].map((m) => {
+              const reportsTo = m.invited_by ? nameMap[m.invited_by] : null
+              return (
+                <div key={m.id} className={r !== 'owner' && r !== 'admin' ? 'pl-4' : ''}>
+                  {reportsTo && m.role !== 'owner' && (
+                    <p className="px-6 pt-2 text-[10px] text-gray-400 dark:text-gray-600">
+                      Reports to: <span className="font-medium">{reportsTo}</span>
+                    </p>
+                  )}
+                  <MemberRow member={m} callerRole={callerRole} onRemoved={handleRemoved} />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      ))}
     </>
   )
 }

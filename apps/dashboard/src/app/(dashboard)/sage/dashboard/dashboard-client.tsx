@@ -1110,7 +1110,23 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
 }
 
 // ── Main dashboard component ──────────────────────────────────────────────────
-export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
+import type { WorkspaceMemberRole } from '@/lib/types'
+
+interface TeamMember { user_id: string; name: string; role: WorkspaceMemberRole }
+
+export function SageDashboardClient({
+  workspaceId,
+  callerRole,
+  viewAsUserId,
+  viewAsName,
+  teamMembers = [],
+}: {
+  workspaceId: string
+  callerRole?: WorkspaceMemberRole
+  viewAsUserId?: string | null
+  viewAsName?: string | null
+  teamMembers?: TeamMember[]
+}) {
   const [dateRange,  setDateRange]  = useState<DatePreset>('today')
   const [customFrom, setCustomFrom] = useState<string>('')
   const [customTo,   setCustomTo]   = useState<string>('')
@@ -1220,10 +1236,14 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
         .select('id, name, email, phone, company, lead_score, source_platform, created_at')
         .eq('workspace_id', workspaceId).gte('created_at', from).lte('created_at', to)
         .order('created_at', { ascending: false }),
-      supabase.from('sage_tickets')
-        .select('id, title, priority, status, created_at, contact:sage_contacts(name, email, phone)')
-        .eq('workspace_id', workspaceId).gte('created_at', from).lte('created_at', to)
-        .order('created_at', { ascending: false }),
+      (() => {
+        let q = supabase.from('sage_tickets')
+          .select('id, title, priority, status, created_at, contact:sage_contacts(name, email, phone)')
+          .eq('workspace_id', workspaceId).gte('created_at', from).lte('created_at', to)
+          .order('created_at', { ascending: false })
+        if (viewAsUserId) q = (q as any).eq('owner_id', viewAsUserId)
+        return q
+      })(),
       sbAny.from('sage_deal_activities')
         .select('id, title, body, due_at, deal_id, created_at, deal:sage_deals(id, title, pipeline_id)')
         .eq('workspace_id', workspaceId).eq('type', 'task').is('completed_at', null)
@@ -1258,7 +1278,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
     })
 
     return () => { cancelled = true }
-  }, [dateRange, customFrom, customTo, workspaceId])
+  }, [dateRange, customFrom, customTo, workspaceId, viewAsUserId])
 
   // Mark task done
   async function markTaskDone(taskId: string, e: React.MouseEvent) {
@@ -1326,6 +1346,33 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <>
+      {/* View-as banner */}
+      {viewAsUserId && viewAsName && (
+        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-amber-50 dark:bg-amber-400/10 border-b border-amber-200 dark:border-amber-400/20 text-xs text-amber-800 dark:text-amber-300">
+          <span>Viewing dashboard as <strong>{viewAsName}</strong> — tickets are filtered to their assignments.</span>
+          <a href="/dashboard" className="underline hover:no-underline shrink-0">Exit view</a>
+        </div>
+      )}
+
+      {/* Team picker — shown for managers and above when not already viewing as someone */}
+      {!viewAsUserId && teamMembers.length > 0 && (
+        <div className="flex items-center gap-2 px-4 py-2 border-b dark:border-white/10 bg-white dark:bg-[#1e1e1e]">
+          <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">View as:</span>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {teamMembers.map((m) => (
+              <a
+                key={m.user_id}
+                href={`/dashboard?viewAs=${m.user_id}`}
+                className="px-2.5 py-1 text-xs rounded-full border dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+              >
+                {m.name}
+                <span className="ml-1 text-[10px] text-gray-400 capitalize">({m.role})</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* AI Summary popup */}
       {popup && (
         <ItemPopup
