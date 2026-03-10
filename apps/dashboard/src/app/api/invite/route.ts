@@ -140,7 +140,8 @@ export async function POST(request: NextRequest) {
     }
     // Resend email only
     if (!inviteLink) return NextResponse.json({ error: 'Could not generate invite link. Please try again.' }, { status: 500 })
-    await sendInviteEmail(email, inviteLink, existingMember.role, appUrl)
+    const emailErr = await sendInviteEmail(email, inviteLink, existingMember.role, appUrl)
+    if (emailErr) return NextResponse.json({ error: emailErr }, { status: 500 })
     return NextResponse.json({ ok: true })
   }
 
@@ -155,16 +156,17 @@ export async function POST(request: NextRequest) {
   if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
 
   if (!inviteLink) return NextResponse.json({ error: 'Member added but invite link generation failed. Please re-invite to send email.' }, { status: 500 })
-  await sendInviteEmail(email, inviteLink, role, appUrl)
+  const emailErr = await sendInviteEmail(email, inviteLink, role, appUrl)
+  if (emailErr) return NextResponse.json({ error: emailErr }, { status: 500 })
 
   return NextResponse.json({ ok: true })
 }
 
-async function sendInviteEmail(to: string, inviteLink: string, role: string, _appUrl: string) {
+async function sendInviteEmail(to: string, inviteLink: string, role: string, _appUrl: string): Promise<string | null> {
   const RESEND_API_KEY = process.env.RESEND_API_KEY
   if (!RESEND_API_KEY) {
     console.error('[invite] RESEND_API_KEY not set')
-    return
+    return 'Email service not configured (RESEND_API_KEY missing).'
   }
   const fromEmail = process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev'
   const appName   = 'Appalix'
@@ -175,6 +177,10 @@ async function sendInviteEmail(to: string, inviteLink: string, role: string, _ap
     subject: `You've been invited to a workspace on ${appName}`,
     html:    inviteHtml(inviteLink, role, appName),
   })
-  if (error) console.error('[invite] Resend error:', JSON.stringify(error))
-  else console.log('[invite] email sent to', to)
+  if (error) {
+    console.error('[invite] Resend error:', JSON.stringify(error))
+    return `Resend: ${error.message ?? JSON.stringify(error)}`
+  }
+  console.log('[invite] email sent to', to)
+  return null
 }
