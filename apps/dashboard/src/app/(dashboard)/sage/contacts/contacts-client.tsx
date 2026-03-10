@@ -259,12 +259,12 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
           : <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
       }
       case 'assigned_to': {
-        if (canAssign) {
+        if (canAssign && teamMembers.length > 0) {
           return (
             <AssignCell
               contactId={c.id}
               value={c.assigned_to ?? ''}
-              members={members}
+              members={teamMembers}
               onAssigned={(contactId, userId) =>
                 setContacts(prev => prev.map(x => x.id === contactId ? { ...x, assigned_to: userId || null } : x))
               }
@@ -302,27 +302,6 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{contacts.length} total</p>
         </div>
         <div className="flex items-center gap-2">
-          {/* View as team member picker — managers+ only */}
-          {teamMembers.length > 0 && (
-            <div className="relative">
-              <select
-                value={viewAsUserId ?? ''}
-                onChange={e => {
-                  const v = e.target.value
-                  window.location.href = v ? `/sage/contacts?viewAs=${v}` : '/sage/contacts'
-                }}
-                className="appearance-none pl-3 pr-7 py-2 text-sm border dark:border-white/10 rounded-xl bg-white dark:bg-[#232323] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
-              >
-                <option value="">My contacts</option>
-                {teamMembers.map(m => (
-                  <option key={m.user_id} value={m.user_id}>
-                    {m.name || m.email} ({m.role})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-            </div>
-          )}
           {canWrite && (
             <button
               onClick={e => { e.stopPropagation(); setShowModal(true) }}
@@ -487,6 +466,26 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
             </div>
           )}
         </div>
+
+        {/* View as team member picker — managers+ only */}
+        {teamMembers.length > 0 && (
+          <div className="relative ml-auto">
+            <select
+              value={viewAsUserId ?? ''}
+              onChange={e => {
+                const v = e.target.value
+                window.location.href = v ? `/sage/contacts?viewAs=${v}` : '/sage/contacts'
+              }}
+              className="appearance-none pl-2.5 pr-7 py-2 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/8 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad] transition-colors"
+            >
+              <option value="">My contacts</option>
+              {teamMembers.map(m => (
+                <option key={m.user_id} value={m.user_id}>{m.name || m.email}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+          </div>
+        )}
 
         {/* Edit Columns */}
         <div className="relative">
