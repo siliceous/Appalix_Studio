@@ -1006,6 +1006,160 @@ const GUIDES: Record<string, Guide> = {
       'Alternatively, use the "Insert Headers and Footers" plugin and paste the script tag in the Footer Scripts section.',
     ],
   },
+
+  // ────────────────────────────────────────────────────────────────
+  // Team management — Phases 2, 3, 4
+  // ────────────────────────────────────────────────────────────────
+
+  'assign-leads': {
+    title:     'Manually Assign Leads to Team Members',
+    summary:   'Every contact in Sage CRM can have a clear owner. Assigning leads prevents the "who\'s handling this?" problem — one person owns each contact, everyone can see it, and nothing falls through the cracks. Assignments are logged to the contact\'s activity timeline.',
+    requires:  'Pro plan or above. At least one accepted team member in the workspace.',
+    verifyWith: 'has_assigned_contacts',
+    steps: [
+      {
+        step:   1,
+        title:  'Open Sage → Contacts',
+        detail: 'Click "Sage" in the sidebar, then "Contacts". You will see your full contact list.',
+      },
+      {
+        step:   2,
+        title:  'Open a contact to assign',
+        detail: 'Click the pencil (edit) icon on any contact row, OR click "+ New Contact" to create and assign at the same time.',
+      },
+      {
+        step:   3,
+        title:  'Set the Assigned To field',
+        detail: 'Scroll to the Settings section inside the contact form. Open the "Assigned to" dropdown — you will see all accepted workspace members. Select the rep who should own this lead.',
+      },
+      {
+        step:   4,
+        title:  'Save and verify',
+        detail: 'Click "Save changes" (or "Create contact" for a new one). The contacts table now shows an "Assigned To" badge on that row. Use Contacts → Filter → Assigned To → [name] to see only that rep\'s leads.',
+      },
+    ],
+    tips: [
+      'Use the Filter panel → Assigned To → Unassigned to find all contacts that don\'t have an owner yet — review this list weekly.',
+      'Only Members, Admins, and Owners can assign contacts. Viewers see the assignment but cannot change it.',
+      'If an assigned team member leaves the workspace, their contacts automatically become unassigned so nothing is lost.',
+      'Every reassignment is logged in the contact\'s activity timeline so you always have a full audit trail.',
+    ],
+  },
+
+  'round-robin': {
+    title:     'Enable Round-Robin Lead Distribution',
+    summary:   'Round-robin automatically assigns every inbound lead — from the bot, email triage, and form submissions — to the next team member in rotation. No manual work required. The counter advances atomically so two simultaneous leads never land on the same person.',
+    requires:  'Pro plan or above. At least two accepted team members in the workspace. Owner or Admin role to enable.',
+    verifyWith: 'rr_enabled',
+    steps: [
+      {
+        step:   1,
+        title:  'Go to Settings',
+        detail: 'Click "Settings" at the bottom of the sidebar.',
+      },
+      {
+        step:   2,
+        title:  'Find the Lead Distribution section',
+        detail: 'Scroll down past Team members until you see the "Lead Distribution" card. It shows a toggle labelled Off/On. This section is only visible to Owners and Admins.',
+      },
+      {
+        step:   3,
+        title:  'Flip the toggle to On',
+        detail: 'Click the toggle. It turns green and shows "On" immediately — no page reload, no confirmation. The change takes effect instantly for all future inbound leads.',
+      },
+      {
+        step:   4,
+        title:  'Verify with the next inbound lead',
+        detail: 'Send a test message through your bot, or submit a test form. Open Sage → Contacts and check that the new contact has an "Assigned To" badge. The first lead goes to the oldest member (index 0), the second to the next, and so on.',
+      },
+    ],
+    tips: [
+      'Round-robin only affects NEW contacts created by automated sources (bot, email, forms). Existing contacts and manually created contacts are not retroactively assigned.',
+      'You can always override a round-robin assignment by opening the contact and changing the "Assigned to" field — the rotation counter is not affected.',
+      'The counter never resets and uses modulo at read time, so adding or removing team members is handled automatically with no recalibration.',
+      'To temporarily pause a rep from receiving leads, remove them from the workspace or turn off round-robin and handle assignment manually.',
+    ],
+  },
+
+  permissions: {
+    title:     'Role-Based Permissions in Appalix',
+    summary:   'Appalix has four roles: Owner, Admin, Member, and Viewer. Permissions are enforced at both the UI layer (buttons appear/disappear) and the server layer (actions are rejected regardless of what the UI shows). Viewers have full read access but cannot create, edit, or delete anything.',
+    steps: [
+      {
+        step:   1,
+        title:  'Understand the four roles',
+        detail: 'Owner (1 per workspace): full control including billing and workspace deletion. Admin: configure bots, integrations, knowledge base, invite members. Member: full CRM/pipeline/ticket access, no configuration. Viewer: read-only — sees everything, changes nothing.',
+      },
+      {
+        step:   2,
+        title:  'Invite team members with the right role',
+        detail: 'Go to Settings → Team members → "+ Invite member". Choose Admin for team leads who need to configure the platform. Choose Member for sales reps and support agents. Choose Viewer for executives or external stakeholders who need visibility without edit access.',
+      },
+      {
+        step:   3,
+        title:  'Review what Viewers cannot do',
+        detail: 'Viewers cannot: create/edit/delete contacts, create/edit pipelines, add/move deals, create/delete tickets, change ticket status, merge tickets, or access Bots/Integrations/Knowledge Base in the sidebar. All these controls are hidden from their UI and blocked server-side.',
+      },
+      {
+        step:   4,
+        title:  'Change a member\'s role if needed',
+        detail: 'Only the Owner can change roles. In Settings → Team members, each non-owner row has a role dropdown. Select the new role and it saves immediately. The change takes effect on the member\'s next page load.',
+      },
+    ],
+    tips: [
+      'Permissions are role-based only — there are no custom per-user overrides. To change access, change the role.',
+      'Admins can invite members but cannot reassign roles or access billing.',
+      'The sidebar hides Bots, Integrations, and Knowledge Base for Viewers to reduce noise. Settings remains visible so they can check billing and workspace info.',
+      'Server actions re-fetch the caller\'s role on every mutation, so bypassing the UI is not possible.',
+    ],
+  },
+
+  'team-onboarding': {
+    title:     'Onboard Your Team to Appalix',
+    summary:   'A complete 7-step checklist to go from a fresh workspace to a fully operational team: business profile → invite members → lead distribution → first pipeline → import contacts → assign leads → orient each role.',
+    steps: [
+      {
+        step:   1,
+        title:  'Set up your business profile',
+        detail: 'Go to Settings → Business Profile → Edit. Enter your company name, industry, products/services, and target customers (use the tag chips). Or paste your website URL and click "Auto-fill" to let AI populate the fields. Click Save. This powers lead scoring, bot responses, and Sage\'s AI answers.',
+      },
+      {
+        step:   2,
+        title:  'Invite team members with the right roles',
+        detail: 'Go to Settings → Team members → "+ Invite member". For team leads: Admin. For sales reps and support agents: Member. For executives or consultants: Viewer (read-only). Each person receives an email with a magic link to join.',
+      },
+      {
+        step:   3,
+        title:  'Choose a lead distribution strategy',
+        detail: 'For high-volume inbound (bot, email, forms): go to Settings → Lead Distribution → flip the toggle On (round-robin). For territory-based or enterprise accounts: leave it Off and assign contacts manually.',
+      },
+      {
+        step:   4,
+        title:  'Create your first pipeline',
+        detail: 'Go to Sage → Pipelines → "Create Pipeline". Name it (e.g. "New Business"), choose a template (Sales, Agency, Consulting, Support, or Onboarding), and click Create. Customise stages with "Manage Stages" on the board.',
+      },
+      {
+        step:   5,
+        title:  'Import or create your first contacts',
+        detail: 'Option A — Manual: Sage → Contacts → "+ New Contact". Option B — Inbound bot: your AI bot auto-creates contacts when visitors share details. Option C — Lead ads: connect Meta or Google Ads in Forms → Sources.',
+      },
+      {
+        step:   6,
+        title:  'Assign existing contacts to your team',
+        detail: 'Go to Sage → Contacts → Filter → Assigned To → Unassigned. Edit each contact and set the "Assigned to" field to the right rep. Repeat until the Unassigned view is empty.',
+      },
+      {
+        step:   7,
+        title:  'Orient your team members',
+        detail: 'Tell Members to go to Sage → Contacts → Filter → Assigned To → [their name] to see their leads, and Sage → Pipelines to see their deals. Admins should review Settings → Bots and Settings → Integrations. Viewers start at Dashboard → Overview and Analytics.',
+      },
+    ],
+    tips: [
+      'The business profile is the single most impactful thing to fill in — the more specific your target customer description, the sharper the AI\'s lead scoring becomes.',
+      'Pending invites (not yet accepted) do not consume a seat and do not appear in the round-robin pool.',
+      'You can run this entire onboarding checklist conversationally with Sage — just ask "help me onboard my team" and Sage will guide you step by step.',
+    ],
+  },
 }
 
 // Aliases for common synonyms
@@ -1058,6 +1212,28 @@ const TOPIC_ALIASES: Record<string, string> = {
   ticket:             'tickets',
   tickets:            'tickets',
   support:            'tickets',
+  // Team management
+  'assign leads':     'assign-leads',
+  'assign lead':      'assign-leads',
+  'lead assignment':  'assign-leads',
+  'assign contacts':  'assign-leads',
+  assigned:           'assign-leads',
+  'round robin':      'round-robin',
+  'roundrobin':       'round-robin',
+  'lead distribution': 'round-robin',
+  'auto assign':      'round-robin',
+  'lead rotation':    'round-robin',
+  roles:              'permissions',
+  role:               'permissions',
+  permission:         'permissions',
+  'access control':   'permissions',
+  viewer:             'permissions',
+  'team roles':       'permissions',
+  onboarding:         'team-onboarding',
+  'team onboarding':  'team-onboarding',
+  'onboard team':     'team-onboarding',
+  'get started':      'team-onboarding',
+  'setup team':       'team-onboarding',
   // External CRM lead routing
   salesforce:         'salesforce',
   'sales force':      'salesforce',
@@ -1356,8 +1532,42 @@ export async function sageCheckFeatureStatus(
       break
     }
 
+    case 'has_assigned_contacts': {
+      const { count } = await supabase
+        .from('sage_contacts')
+        .select('*', { count: 'exact', head: true })
+        .eq('workspace_id', workspaceId)
+        .not('assigned_to', 'is', null)
+      const n = count ?? 0
+      result = {
+        feature:   'lead_assignment',
+        connected: n > 0,
+        detail:    n > 0
+          ? `${n} contact${n > 1 ? 's' : ''} have been assigned to team members.`
+          : 'No contacts are assigned yet. Open any contact → Edit → Assigned to → pick a team member.',
+      }
+      break
+    }
+
+    case 'rr_enabled': {
+      const { data: ws } = await supabase
+        .from('workspaces')
+        .select('rr_enabled')
+        .eq('id', workspaceId)
+        .single()
+      const on = !!(ws as { rr_enabled?: boolean } | null)?.rr_enabled
+      result = {
+        feature:   'round_robin',
+        connected: on,
+        detail:    on
+          ? 'Round-robin lead distribution is enabled. Inbound leads are being auto-assigned.'
+          : 'Round-robin is off. Go to Settings → Lead Distribution → flip the toggle On.',
+      }
+      break
+    }
+
     default:
-      return `Unknown feature "${feature}". Checkable features: gmail, microsoft, stripe, slack, whatsapp, facebook, telegram, google-chat, zapier, hubspot, salesforce, monday, intercom, zoho, freshdesk, zendesk, has_pipelines, has_contacts, has_deals, has_bots, has_sources, has_widget.`
+      return `Unknown feature "${feature}". Checkable features: gmail, microsoft, stripe, slack, whatsapp, facebook, telegram, google-chat, zapier, hubspot, salesforce, monday, intercom, zoho, freshdesk, zendesk, has_pipelines, has_contacts, has_deals, has_bots, has_sources, has_widget, has_assigned_contacts, rr_enabled.`
   }
 
   const icon = result.connected ? '✅' : '⏳'
