@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Ticket, Plus, Trash2, Mail, Pencil, Merge, X, Loader2, Search } from 'lucide-react'
+import { Ticket, Plus, Trash2, Mail, Pencil, Merge, X, Loader2, Search, ChevronDown } from 'lucide-react'
 import { TicketModal } from '@/components/sage/ticket-modal'
 import { TicketSlideOver } from '@/components/dashboard/ticket-slide-over'
-import { updateTicketStatus, deleteTicket, mergeTickets } from '@/app/actions/sage'
+import { updateTicketStatus, deleteTicket, mergeTickets, assignTicket } from '@/app/actions/sage'
 import { timeAgo } from '@/lib/utils'
-import type { SageTicket, SageContact, SageTicketStatus } from '@/lib/types'
+import type { SageTicket, SageContact, SageTicketStatus, WorkspaceMemberSummary } from '@/lib/types'
 
 type TicketWithContact = SageTicket & { contact: Pick<SageContact, 'id' | 'name' | 'email'> | null }
 
@@ -39,10 +39,12 @@ interface TicketsClientProps {
   contacts:    Pick<SageContact, 'id' | 'name'>[]
   triageMode?: boolean   // when true, auto-remove resolved/closed on status change
   callerRole?: string
+  members?:    WorkspaceMemberSummary[]
 }
 
-export function TicketsClient({ tickets: initialTickets, contacts, triageMode = false, callerRole }: TicketsClientProps) {
-  const canWrite = callerRole !== 'viewer'
+export function TicketsClient({ tickets: initialTickets, contacts, triageMode = false, callerRole, members = [] }: TicketsClientProps) {
+  const canWrite  = callerRole !== 'viewer'
+  const canAssign = members.length > 0
   const [tickets,      setTickets]      = useState(initialTickets)
   const [filter,       setFilter]       = useState('all')
   const [search,       setSearch]       = useState('')
@@ -53,6 +55,10 @@ export function TicketsClient({ tickets: initialTickets, contacts, triageMode = 
   const [showMerge,    setShowMerge]    = useState(false)
   const [primaryId,    setPrimaryId]    = useState<string | null>(null)
   const [merging,      startMerge]      = useTransition()
+  const [assigning,    startAssign]     = useTransition()
+  const [assignedMap,  setAssignedMap]  = useState<Record<string, string>>(() =>
+    Object.fromEntries(initialTickets.map(t => [t.id, t.owner_id ?? '']))
+  )
 
   function toggleSelect(id: string) {
     setSelectedIds(prev => {
@@ -118,6 +124,12 @@ export function TicketsClient({ tickets: initialTickets, contacts, triageMode = 
       setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t))
     }
     await updateTicketStatus(id, status)
+  }
+
+  function handleAssign(ticketId: string, userId: string) {
+    const next = userId || null
+    setAssignedMap(prev => ({ ...prev, [ticketId]: userId }))
+    startAssign(async () => { await assignTicket(ticketId, next) })
   }
 
   async function handleDelete(id: string) {
@@ -334,6 +346,26 @@ export function TicketsClient({ tickets: initialTickets, contacts, triageMode = 
                       <span className={`text-xs px-2.5 py-1 rounded-lg font-medium ${sc.color}`}>
                         {sc.label}
                       </span>
+                    )}
+
+                    {/* Assign dropdown — managers only */}
+                    {canAssign && (
+                      <div className="relative">
+                        <select
+                          value={assignedMap[ticket.id] ?? ''}
+                          onChange={e => handleAssign(ticket.id, e.target.value)}
+                          disabled={assigning}
+                          className="appearance-none pl-2 pr-6 py-1 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/8 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad] transition-colors disabled:opacity-50 max-w-[120px]"
+                        >
+                          <option value="">Unassigned</option>
+                          {members.map(m => (
+                            <option key={m.user_id} value={m.user_id}>
+                              {m.name || m.email}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                      </div>
                     )}
 
                     <button

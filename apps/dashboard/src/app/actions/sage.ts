@@ -194,6 +194,25 @@ export async function assignContact(
   return { success: true }
 }
 
+export async function assignTicket(
+  ticketId: string,
+  userId: string | null,
+): Promise<{ error?: string; success?: boolean }> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+
+  const { error } = await admin
+    .from('sage_tickets')
+    .update({ owner_id: userId, updated_at: new Date().toISOString() })
+    .eq('id', ticketId)
+    .eq('workspace_id', workspaceId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/sage/tickets')
+  return { success: true }
+}
+
 // ---------------------------------------------------------------
 // Pipelines
 // ---------------------------------------------------------------

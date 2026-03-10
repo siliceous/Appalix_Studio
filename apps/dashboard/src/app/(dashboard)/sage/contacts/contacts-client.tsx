@@ -7,11 +7,53 @@ import {
   Zap, ArrowUpDown, SlidersHorizontal, Columns3, Check,
 } from 'lucide-react'
 import { ContactModal } from '@/components/sage/contact-modal'
-import { deleteContact } from '@/app/actions/sage'
+import { deleteContact, assignContact } from '@/app/actions/sage'
 import { timeAgo } from '@/lib/utils'
 import Link from 'next/link'
-import type { SageContact, WorkspaceMemberSummary } from '@/lib/types'
-import { ChevronDown } from 'lucide-react'
+import type { SageContact, WorkspaceMemberSummary, WorkspaceMemberRole } from '@/lib/types'
+import { ROLE_RANK } from '@/lib/types'
+import { ChevronDown, Loader2 } from 'lucide-react'
+import { useTransition } from 'react'
+
+// ── Inline assign dropdown ───────────────────────────────────────────────────
+function AssignCell({ contactId, value, members, onAssigned }: {
+  contactId: string
+  value:     string
+  members:   WorkspaceMemberSummary[]
+  onAssigned: (contactId: string, userId: string) => void
+}) {
+  const [pending, startTransition] = useTransition()
+  const [localValue, setLocalValue] = useState(value)
+
+  function handleChange(userId: string) {
+    setLocalValue(userId)
+    onAssigned(contactId, userId)
+    startTransition(async () => {
+      await assignContact(contactId, userId || null)
+    })
+  }
+
+  return (
+    <div className="relative">
+      <select
+        value={localValue}
+        onChange={e => handleChange(e.target.value)}
+        disabled={pending}
+        onClick={e => e.stopPropagation()}
+        className="appearance-none pl-2 pr-6 py-1 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/8 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad] transition-colors disabled:opacity-50 max-w-[130px]"
+      >
+        <option value="">Unassigned</option>
+        {members.map(m => (
+          <option key={m.user_id} value={m.user_id}>{m.name || m.email}</option>
+        ))}
+      </select>
+      {pending
+        ? <Loader2 className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 animate-spin text-gray-400 pointer-events-none" />
+        : <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+      }
+    </div>
+  )
+}
 
 // ── Column definitions ──────────────────────────────────────────────────────
 type ColKey =
@@ -85,7 +127,8 @@ interface ContactsClientProps {
 }
 
 export function ContactsClient({ contacts: initial, members, callerRole, teamMembers = [], viewAsUserId }: ContactsClientProps) {
-  const canWrite = callerRole !== 'viewer'
+  const canWrite  = callerRole !== 'viewer'
+  const canAssign = (ROLE_RANK[callerRole as WorkspaceMemberRole] ?? 0) >= ROLE_RANK.manager
   const router = useRouter()
   const [contacts,       setContacts]       = useState(initial)
   const [showModal,      setShowModal]      = useState(false)
@@ -216,12 +259,23 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
           : <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
       }
       case 'assigned_to': {
+        if (canAssign) {
+          return (
+            <AssignCell
+              contactId={c.id}
+              value={c.assigned_to ?? ''}
+              members={members}
+              onAssigned={(contactId, userId) =>
+                setContacts(prev => prev.map(x => x.id === contactId ? { ...x, assigned_to: userId || null } : x))
+              }
+            />
+          )
+        }
         if (!c.assigned_to) return <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
         const m = members.find(m => m.user_id === c.assigned_to)
-        const label = m ? (m.name || m.email) : c.assigned_to.slice(0, 8)
         return (
           <span className="text-xs px-2 py-0.5 rounded-full bg-brand-50 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad] whitespace-nowrap">
-            {label}
+            {m ? (m.name || m.email) : c.assigned_to.slice(0, 8)}
           </span>
         )
       }
