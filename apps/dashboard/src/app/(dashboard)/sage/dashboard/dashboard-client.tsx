@@ -1297,7 +1297,7 @@ export function SageDashboardClient({ workspaceId }: { workspaceId: string }) {
   // ── Timeline (uses pre-filtered visible arrays) ───────────────────────────
   const P_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 }
   function itemPriority(item: TItem): number {
-    const d = item.data as Record<string, unknown>
+    const d = item.data as unknown as Record<string, unknown>
     const p = (d.ai_priority ?? d.priority ?? d.lead_score ?? '') as string
     return P_RANK[p] ?? 3
   }
