@@ -31,7 +31,7 @@ export default async function SettingsPage() {
   if (!membership) redirect('/login')
 
   const workspace = membership.workspaces
-  const isAdmin   = ['owner', 'admin'].includes(membership.role)
+  const isAdmin   = ['owner', 'admin', 'manager'].includes(membership.role)
 
   const admin = createAdminClient()
 

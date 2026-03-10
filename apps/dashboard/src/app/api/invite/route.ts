@@ -2,6 +2,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import type { WorkspaceMemberRole } from '@/lib/types'
+import { INVITE_ALLOWED } from '@/lib/types'
 
 function inviteHtml(inviteLink: string, role: string, appName: string) {
   return `<!DOCTYPE html>
@@ -61,11 +62,17 @@ export async function POST(request: NextRequest) {
     .limit(1)
     .single()
 
-  type MemberRow = { workspace_id: string; role: string }
+  type MemberRow = { workspace_id: string; role: WorkspaceMemberRole }
   const membership = membershipRaw as MemberRow | null
   if (!membership) return NextResponse.json({ error: 'Workspace not found.' }, { status: 404 })
-  if (!['owner', 'admin'].includes(membership.role)) {
+
+  const callerRole = membership.role
+  const allowedRoles = INVITE_ALLOWED[callerRole] ?? []
+  if (allowedRoles.length === 0) {
     return NextResponse.json({ error: 'You do not have permission to invite members.' }, { status: 403 })
+  }
+  if (!allowedRoles.includes(role)) {
+    return NextResponse.json({ error: `As a ${callerRole} you cannot invite a ${role}.` }, { status: 403 })
   }
 
   const workspaceId = membership.workspace_id

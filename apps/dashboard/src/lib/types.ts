@@ -20,7 +20,27 @@ export type WorkspacePlan = 'individual' | 'pro' | 'team' | 'enterprise'
 export type SubscriptionStatus =
   | 'active' | 'inactive' | 'trialing' | 'past_due' | 'cancelled' | 'paused'
 
-export type WorkspaceMemberRole = 'owner' | 'admin' | 'member' | 'viewer'
+export type WorkspaceMemberRole = 'owner' | 'admin' | 'manager' | 'employee' | 'member' | 'viewer'
+
+/** Numeric rank — higher = more authority */
+export const ROLE_RANK: Record<WorkspaceMemberRole, number> = {
+  owner:    5,
+  admin:    4,
+  manager:  3,
+  employee: 2,
+  member:   2, // legacy alias for employee
+  viewer:   1,
+}
+
+/** Roles each caller is allowed to invite */
+export const INVITE_ALLOWED: Record<WorkspaceMemberRole, WorkspaceMemberRole[]> = {
+  owner:    ['admin', 'manager', 'employee'],
+  admin:    ['manager', 'employee'],
+  manager:  ['employee'],
+  employee: [],
+  member:   [],
+  viewer:   [],
+}
 
 export interface WorkspaceMemberSummary {
   user_id: string

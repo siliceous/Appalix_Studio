@@ -5,6 +5,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { Resend } from 'resend'
 import Stripe from 'stripe'
 import type { WorkspaceMemberRole } from '@/lib/types'
+import { ROLE_RANK, INVITE_ALLOWED } from '@/lib/types'
 
 export async function inviteWorkspaceMember(
   _prevState: { error?: string; success?: boolean },
@@ -236,10 +237,10 @@ export async function removeMember(
     .limit(1)
     .single()
 
-  type MemberRow = { workspace_id: string; role: string }
+  type MemberRow = { workspace_id: string; role: WorkspaceMemberRole }
   const caller = callerRaw as MemberRow | null
   if (!caller) return { error: 'Workspace not found.' }
-  if (!['owner', 'admin'].includes(caller.role)) {
+  if ((ROLE_RANK[caller.role] ?? 0) < ROLE_RANK.manager) {
     return { error: 'You do not have permission to remove members.' }
   }
 
@@ -254,11 +255,9 @@ export async function removeMember(
   if (!target) return { error: 'Member not found.' }
   if (target.workspace_id !== caller.workspace_id) return { error: 'Member not in your workspace.' }
   if (target.role === 'owner') return { error: 'Cannot remove the workspace owner.' }
-  // Admins can only remove member/viewer, not other admins
-  if (caller.role === 'admin' && target.role === 'admin') {
-    return { error: 'Admins cannot remove other admins.' }
+  if ((ROLE_RANK[caller.role] ?? 0) <= (ROLE_RANK[target.role] ?? 0)) {
+    return { error: 'You cannot remove someone at the same or higher level.' }
   }
-  // Cannot remove yourself
   if (target.user_id === user.id) return { error: 'Cannot remove yourself.' }
 
   const { error } = await admin.from('workspace_members').delete().eq('id', memberId)
@@ -284,13 +283,19 @@ export async function updateMemberRole(
     .limit(1)
     .single()
 
-  type MemberRow = { workspace_id: string; role: string }
+  type MemberRow = { workspace_id: string; role: WorkspaceMemberRole }
   const caller = callerRaw as MemberRow | null
-  if (!caller || caller.role !== 'owner') {
-    return { error: 'Only the workspace owner can change roles.' }
-  }
+  if (!caller) return { error: 'Workspace not found.' }
 
   if (role === 'owner') return { error: 'Cannot assign owner role.' }
+  // Caller must outrank the target role being assigned
+  if ((ROLE_RANK[caller.role] ?? 0) <= (ROLE_RANK[role] ?? 0)) {
+    return { error: 'You cannot assign a role equal to or above your own.' }
+  }
+  // Role must be in caller's invitable list
+  if (!(INVITE_ALLOWED[caller.role] ?? []).includes(role)) {
+    return { error: `You cannot assign the ${role} role.` }
+  }
 
   const admin = createAdminClient()
 
@@ -303,7 +308,10 @@ export async function updateMemberRole(
   const target = targetRaw as (MemberRow & { id: string }) | null
   if (!target) return { error: 'Member not found.' }
   if (target.workspace_id !== caller.workspace_id) return { error: 'Member not in your workspace.' }
-  if (target.role === 'owner') return { error: 'Cannot change the owner\'s role.' }
+  if (target.role === 'owner') return { error: "Cannot change the owner's role." }
+  if ((ROLE_RANK[caller.role] ?? 0) <= (ROLE_RANK[target.role] ?? 0)) {
+    return { error: 'You cannot change the role of someone at the same or higher level.' }
+  }
 
   const { error } = await admin
     .from('workspace_members')

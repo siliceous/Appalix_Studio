@@ -3,6 +3,7 @@
 import { useTransition } from 'react'
 import { removeMember, updateMemberRole } from '@/app/actions/workspace'
 import type { WorkspaceMemberRole } from '@/lib/types'
+import { ROLE_RANK, INVITE_ALLOWED } from '@/lib/types'
 
 export type MemberDisplay = {
   id: string
@@ -24,10 +25,12 @@ type Props = {
 }
 
 const ROLE_BADGE: Record<WorkspaceMemberRole, string> = {
-  owner:  'bg-amber-100 dark:bg-amber-400/10 text-amber-700 dark:text-amber-400',
-  admin:  'bg-brand-100 dark:bg-brand-400/10 text-brand-700 dark:text-brand-400',
-  member: 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400',
-  viewer: 'bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-500',
+  owner:    'bg-amber-100 dark:bg-amber-400/10 text-amber-700 dark:text-amber-400',
+  admin:    'bg-brand-100 dark:bg-brand-400/10 text-brand-700 dark:text-brand-400',
+  manager:  'bg-purple-100 dark:bg-purple-400/10 text-purple-700 dark:text-purple-400',
+  employee: 'bg-green-100 dark:bg-green-400/10 text-green-700 dark:text-green-400',
+  member:   'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400',
+  viewer:   'bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-500',
 }
 
 function Avatar({ name, role }: { name: string; role: WorkspaceMemberRole }) {
@@ -39,10 +42,12 @@ function Avatar({ name, role }: { name: string; role: WorkspaceMemberRole }) {
     .slice(0, 2)
 
   const bg: Record<WorkspaceMemberRole, string> = {
-    owner:  'bg-amber-100 dark:bg-amber-400/10 text-amber-700 dark:text-amber-400',
-    admin:  'bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300',
-    member: 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400',
-    viewer: 'bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-500',
+    owner:    'bg-amber-100 dark:bg-amber-400/10 text-amber-700 dark:text-amber-400',
+    admin:    'bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300',
+    manager:  'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300',
+    employee: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300',
+    member:   'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400',
+    viewer:   'bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-500',
   }
 
   return (
@@ -63,14 +68,20 @@ function MemberRow({
 }) {
   const [isPending, startTransition] = useTransition()
 
+  // Can remove if caller outranks target and target is not owner
   const canRemove =
     !member.isCurrentUser &&
     member.role !== 'owner' &&
-    (callerRole === 'owner' || (callerRole === 'admin' && member.role !== 'admin'))
+    ROLE_RANK[callerRole] > ROLE_RANK[member.role]
 
-  const canChangeRole = callerRole === 'owner' && member.role !== 'owner' && !member.isCurrentUser
+  // Can change role if caller outranks target; available roles are what caller can invite
+  const canChangeRole =
+    !member.isCurrentUser &&
+    member.role !== 'owner' &&
+    ROLE_RANK[callerRole] > ROLE_RANK[member.role] &&
+    (INVITE_ALLOWED[callerRole] ?? []).length > 0
 
-  const ROLES: WorkspaceMemberRole[] = ['admin', 'member', 'viewer']
+  const ROLES = INVITE_ALLOWED[callerRole] ?? []
 
   function handleRemove() {
     startTransition(async () => {
