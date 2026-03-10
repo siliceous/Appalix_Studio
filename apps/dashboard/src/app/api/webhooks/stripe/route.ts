@@ -213,9 +213,9 @@ const PLAN_LIMITS: Record<Plan, {
   extra_bot_limit: number | null
 }> = {
   //                                                                              seats  bots  extra seats  extra bots
-  individual: { monthly_message_limit:  5_000, monthly_agent_run_limit:     0, seat_limit:   1, bot_limit:  1, extra_seat_limit: null, extra_bot_limit: null },
+  individual: { monthly_message_limit:  5_000, monthly_agent_run_limit:     0, seat_limit:   1, bot_limit:  1, extra_seat_limit:    2, extra_bot_limit: null },
   pro:        { monthly_message_limit: 15_000, monthly_agent_run_limit:   150, seat_limit:   3, bot_limit:  3, extra_seat_limit:    6, extra_bot_limit: null },
-  team:       { monthly_message_limit: 50_000, monthly_agent_run_limit:   500, seat_limit:  10, bot_limit: 10, extra_seat_limit:   10, extra_bot_limit: null },
+  team:       { monthly_message_limit: 50_000, monthly_agent_run_limit:   500, seat_limit:  10, bot_limit: 10, extra_seat_limit: null, extra_bot_limit: null },
   enterprise: { monthly_message_limit: 999_999, monthly_agent_run_limit: 9_999, seat_limit: null, bot_limit: null, extra_seat_limit: null, extra_bot_limit: null },
 }
 

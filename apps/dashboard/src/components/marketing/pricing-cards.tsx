@@ -17,7 +17,7 @@ const PLANS = [
     seats: 1,
     bots: 1,
     conversations: '5,000',
-    extraSeats: 'Unlimited extra seats',
+    extraSeats: 'Up to 2 extra seats',
     extraBots: true,
     features: [
       '1 seat included',
@@ -68,7 +68,7 @@ const PLANS = [
     seats: 10,
     bots: 10,
     conversations: '50,000',
-    extraSeats: 'Up to 10 extra seats',
+    extraSeats: 'Unlimited extra seats',
     extraBots: true,
     features: [
       '10 seats included',
