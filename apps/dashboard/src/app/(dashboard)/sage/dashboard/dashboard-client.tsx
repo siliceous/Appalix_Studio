@@ -110,9 +110,10 @@ interface DonutSegment { name: string; value: number; fill: string }
 function DonutChart({ segments, total, size = 130 }: { segments: DonutSegment[]; total: number; size?: number }) {
   const ir = Math.round(size * 0.29)
   const or = Math.round(size * 0.44)
-  const data = total === 0
+  const filtered = segments.filter(s => s.value > 0)
+  const data = (total === 0 || filtered.length === 0)
     ? [{ name: 'empty', value: 1, fill: '#e5e7eb' }]
-    : segments.filter(s => s.value > 0)
+    : filtered
 
   return (
     <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
