@@ -752,21 +752,27 @@ export async function deleteTicket(id: string) {
 // ---------------------------------------------------------------
 
 export async function saveSageIntegration(provider: string, config: Record<string, string>) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
 
   const { error } = await admin
     .from('sage_integrations')
     .upsert(
-      { workspace_id: workspaceId, provider, config, status: 'connected', updated_at: new Date().toISOString() },
-      { onConflict: 'workspace_id,provider' }
+      { workspace_id: workspaceId, user_id: user.id, provider, config, status: 'connected', updated_at: new Date().toISOString() },
+      { onConflict: 'workspace_id,user_id,provider' }
     )
 
   if (error) throw new Error(error.message)
-  revalidatePath('/sage/integrations')
+  revalidatePath('/integrations')
 }
 
 export async function disconnectSageIntegration(provider: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
 
@@ -774,10 +780,11 @@ export async function disconnectSageIntegration(provider: string) {
     .from('sage_integrations')
     .update({ status: 'disconnected', config: {}, updated_at: new Date().toISOString() })
     .eq('workspace_id', workspaceId)
+    .eq('user_id', user.id)
     .eq('provider', provider)
 
   if (error) throw new Error(error.message)
-  revalidatePath('/sage/integrations')
+  revalidatePath('/integrations')
 }
 
 // ---------------------------------------------------------------

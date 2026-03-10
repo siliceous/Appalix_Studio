@@ -170,13 +170,15 @@ const CATEGORY_LABELS: Record<string, string> = {
 }
 
 interface IntegrationsClientProps {
-  connected:  Set<string>
-  standalone?: boolean  // false when embedded inside another page
+  connected:        Set<string>
+  standalone?:      boolean  // false when embedded inside another page
+  initialExpanded?: string   // auto-open this provider card (e.g. from onboarding)
+  onboarding?:      boolean  // redirect to /dashboard after first connection
 }
 
-export function IntegrationsClient({ connected: initialConnected, standalone = true }: IntegrationsClientProps) {
+export function IntegrationsClient({ connected: initialConnected, standalone = true, initialExpanded, onboarding }: IntegrationsClientProps) {
   const [connected,         setConnected]        = useState<Set<string>>(initialConnected)
-  const [expanded,          setExpanded]         = useState<string | null>(null)
+  const [expanded,          setExpanded]         = useState<string | null>(initialExpanded ?? null)
   const [pending,           startTransition]     = useTransition()
   const [saving,            setSaving]           = useState<string | null>(null)
   const [formValues,        setFormValues]       = useState<Record<string, Record<string, string>>>({})
@@ -205,6 +207,9 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
       setConnected(prev => new Set([...prev, provider]))
       setExpanded(null)
       setSaving(null)
+      if (onboarding) {
+        window.location.href = '/dashboard'
+      }
     })
   }
 

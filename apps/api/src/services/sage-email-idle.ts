@@ -53,9 +53,11 @@ const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms))
  */
 export function startIdleForWorkspace(
   workspaceId: string,
+  userId:       string,
   creds:        ImapCreds,
 ): () => void {
   let running = true
+  const label = `workspace=${workspaceId} user=${userId}`
 
   async function loop() {
     let backoff = 5_000  // 5 s initial reconnect delay
@@ -75,25 +77,20 @@ export function startIdleForWorkspace(
 
         const lock = await client.getMailboxLock('INBOX')
         try {
-          console.log(`[IDLE] workspace=${workspaceId} connected, waiting for mail…`)
+          console.log(`[IDLE] ${label} connected, waiting for mail…`)
 
           while (running) {
-            // Blocks until server sends any notification OR connection drops.
-            // true  = EXISTS/EXPUNGE/FETCH received (could be new mail, flag change)
-            // false = connection dropped / idle broken externally
             const hasNew = await client.idle()
 
             if (!running) break
 
             if (hasNew) {
-              // Pull the latest batch (20 msgs max); skips already-synced ones
               try {
-                await syncEmailsForWorkspace(workspaceId, 20)
+                await syncEmailsForWorkspace(workspaceId, userId, 20)
               } catch (syncErr) {
-                console.error(`[IDLE] sync error for workspace=${workspaceId}:`, (syncErr as Error).message)
+                console.error(`[IDLE] sync error for ${label}:`, (syncErr as Error).message)
               }
             } else {
-              // Connection dropped — break inner loop to reconnect
               break
             }
           }
@@ -103,19 +100,19 @@ export function startIdleForWorkspace(
 
         if (running) await client.logout()
       } catch (err) {
-        console.error(`[IDLE] workspace=${workspaceId} connection error:`, (err as Error).message)
+        console.error(`[IDLE] ${label} connection error:`, (err as Error).message)
       } finally {
         try { await client.logout() } catch { /* ignore */ }
       }
 
       if (running) {
-        console.log(`[IDLE] workspace=${workspaceId} reconnecting in ${backoff / 1000}s…`)
+        console.log(`[IDLE] ${label} reconnecting in ${backoff / 1000}s…`)
         await sleep(backoff)
         backoff = Math.min(backoff * 2, 300_000)  // cap at 5 min
       }
     }
 
-    console.log(`[IDLE] workspace=${workspaceId} loop stopped`)
+    console.log(`[IDLE] ${label} loop stopped`)
   }
 
   void loop()
@@ -134,25 +131,27 @@ async function syncActiveIntegrations() {
   try {
     const { data: integrations } = await supabase
       .from('sage_integrations')
-      .select('workspace_id, provider, config')
+      .select('workspace_id, user_id, provider, config')
       .eq('status', 'connected')
       .in('provider', ['gmail', 'microsoft'])
 
-    const connected = new Set((integrations ?? []).map(i => i.workspace_id as string))
+    // Key loops by user_id (each user has their own IMAP connection)
+    const connected = new Set((integrations ?? []).map(i => i.user_id as string))
 
     // Stop loops for integrations that were disconnected
-    for (const [wsId, stop] of activeLoops) {
-      if (!connected.has(wsId)) {
+    for (const [uid, stop] of activeLoops) {
+      if (!connected.has(uid)) {
         stop()
-        activeLoops.delete(wsId)
-        console.log(`[IDLE] stopped loop for disconnected workspace=${wsId}`)
+        activeLoops.delete(uid)
+        console.log(`[IDLE] stopped loop for disconnected user=${uid}`)
       }
     }
 
     // Start loops for newly connected integrations
     for (const row of integrations ?? []) {
-      const wsId = row.workspace_id as string
-      if (activeLoops.has(wsId)) continue  // already running
+      const userId = row.user_id as string
+      const wsId   = row.workspace_id as string
+      if (activeLoops.has(userId)) continue  // already running
 
       const creds = getImapCreds(
         row.provider as string,
@@ -160,13 +159,13 @@ async function syncActiveIntegrations() {
       )
       if (!creds) continue
 
-      const stop = startIdleForWorkspace(wsId, creds)
-      activeLoops.set(wsId, stop)
-      console.log(`[IDLE] started loop for workspace=${wsId} (${row.provider as string})`)
+      const stop = startIdleForWorkspace(wsId, userId, creds)
+      activeLoops.set(userId, stop)
+      console.log(`[IDLE] started loop for workspace=${wsId} user=${userId} (${row.provider as string})`)
 
       // Catch-up sync: fetch latest emails that may have arrived during downtime
-      syncEmailsForWorkspace(wsId, 50).catch((err: unknown) => {
-        console.error(`[IDLE] catch-up sync failed for workspace=${wsId}:`, (err as Error).message)
+      syncEmailsForWorkspace(wsId, userId, 50).catch((err: unknown) => {
+        console.error(`[IDLE] catch-up sync failed for workspace=${wsId} user=${userId}:`, (err as Error).message)
       })
     }
   } catch (err) {

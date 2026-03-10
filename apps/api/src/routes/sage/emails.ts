@@ -14,10 +14,10 @@ import { callClaude }             from '../../services/ai/claude.js'
 
 interface EmailAttachment { filename: string; contentType: string; dataBase64: string }
 
-interface SyncBody        { workspace_id: string; limit?: number }
+interface SyncBody        { workspace_id: string; user_id: string; limit?: number }
 interface ReanalyzeBody   { workspace_id: string; batch_size?: number; email_ids?: string[] }
 interface BackfillAutoBody { workspace_id: string; batch_size?: number }
-interface SendBody      { workspace_id: string; to: string; cc?: string; bcc?: string; subject: string; body: string; reply_to_email_id?: string; attachments?: EmailAttachment[] }
+interface SendBody      { workspace_id: string; user_id: string; to: string; cc?: string; bcc?: string; subject: string; body: string; reply_to_email_id?: string; attachments?: EmailAttachment[] }
 interface RewriteBody   { workspace_id: string; body: string; instruction?: string }
 
 function authCheck(req: { headers: Record<string, string | string[] | undefined> }): boolean {
@@ -32,11 +32,11 @@ export async function sageEmailRoutes(fastify: FastifyInstance) {
   fastify.post<{ Body: SyncBody }>('/sync', async (request, reply) => {
     if (!authCheck(request)) return reply.status(401).send({ error: 'Unauthorised' })
 
-    const { workspace_id, limit } = request.body
-    if (!workspace_id) return reply.status(400).send({ error: 'workspace_id is required' })
+    const { workspace_id, user_id, limit } = request.body
+    if (!workspace_id || !user_id) return reply.status(400).send({ error: 'workspace_id and user_id are required' })
 
     try {
-      const synced = await syncEmailsForWorkspace(workspace_id, limit)
+      const synced = await syncEmailsForWorkspace(workspace_id, user_id, limit)
       return reply.send({ ok: true, synced })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sync failed'
@@ -91,13 +91,13 @@ export async function sageEmailRoutes(fastify: FastifyInstance) {
   fastify.post<{ Body: SendBody }>('/send', async (request, reply) => {
     if (!authCheck(request)) return reply.status(401).send({ error: 'Unauthorised' })
 
-    const { workspace_id, to, cc, bcc, subject, body, reply_to_email_id, attachments } = request.body
-    if (!workspace_id || !to || !subject || !body) {
-      return reply.status(400).send({ error: 'workspace_id, to, subject, body are required' })
+    const { workspace_id, user_id, to, cc, bcc, subject, body, reply_to_email_id, attachments } = request.body
+    if (!workspace_id || !user_id || !to || !subject || !body) {
+      return reply.status(400).send({ error: 'workspace_id, user_id, to, subject, body are required' })
     }
 
     try {
-      await sendEmailSMTP({ workspaceId: workspace_id, to, cc, bcc, subject, body, replyToEmailId: reply_to_email_id, attachments })
+      await sendEmailSMTP({ workspaceId: workspace_id, userId: user_id, to, cc, bcc, subject, body, replyToEmailId: reply_to_email_id, attachments })
       return reply.send({ ok: true })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Send failed'

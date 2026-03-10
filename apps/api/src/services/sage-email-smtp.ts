@@ -18,6 +18,7 @@ interface EmailAttachment {
 
 interface SendEmailOptions {
   workspaceId:     string
+  userId:          string
   to:              string
   cc?:             string
   bcc?:            string
@@ -50,13 +51,14 @@ function getSmtpCreds(provider: string, config: Record<string, string>): SmtpCre
 }
 
 export async function sendEmailSMTP(opts: SendEmailOptions): Promise<void> {
-  const { workspaceId, to, cc, bcc, subject, body, replyToEmailId, attachments } = opts
+  const { workspaceId, userId, to, cc, bcc, subject, body, replyToEmailId, attachments } = opts
 
-  // Load connected email integration
+  // Load connected email integration for this user
   const { data: integrations } = await supabase
     .from('sage_integrations')
     .select('provider, config')
     .eq('workspace_id', workspaceId)
+    .eq('user_id', userId)
     .eq('status', 'connected')
     .in('provider', ['gmail', 'microsoft'])
     .limit(1)
@@ -113,6 +115,7 @@ export async function sendEmailSMTP(opts: SendEmailOptions): Promise<void> {
   const messageId = (info.messageId as string | undefined) ?? `sent-${Date.now()}`
   await supabase.from('sage_emails').insert({
     workspace_id: workspaceId,
+    user_id:      userId,
     message_id:   messageId,
     thread_id:    replyToMessageId,
     from_address: creds.user,

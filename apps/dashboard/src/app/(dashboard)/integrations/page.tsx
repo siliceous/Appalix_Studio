@@ -32,7 +32,12 @@ const AVAILABLE_PLATFORMS: { platform: Platform; desc: string; guide: string }[]
   { platform: 'custom_api',         desc: 'Connect via REST API — build any custom integration',   guide: '/resources/custom-api-integration' },
 ]
 
-export default async function IntegrationsPage() {
+export default async function IntegrationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ provider?: string; onboarding?: string }>
+}) {
+  const { provider: initialProvider, onboarding } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -44,7 +49,7 @@ export default async function IntegrationsPage() {
 
   const [{ data: rawIntegrations }, { data: sageIntegrationsRaw }] = await Promise.all([
     supabase.from('integrations').select('*, bots(name)').eq('workspace_id', membership.workspace_id).order('created_at', { ascending: false }),
-    supabase.from('sage_integrations').select('provider, status').eq('workspace_id', membership.workspace_id),
+    supabase.from('sage_integrations').select('provider, status').eq('workspace_id', membership.workspace_id).eq('user_id', user.id),
   ])
   const integrations = (rawIntegrations ?? []) as IntegrationRow[]
 
@@ -183,7 +188,7 @@ export default async function IntegrationsPage() {
             Connect external services to power payments, email, automation, and ticketing from Sage.
           </p>
         </div>
-        <IntegrationsClient connected={sageConnected} standalone={false} />
+        <IntegrationsClient connected={sageConnected} standalone={false} initialExpanded={initialProvider} onboarding={onboarding === '1'} />
       </section>
     </div>
   )

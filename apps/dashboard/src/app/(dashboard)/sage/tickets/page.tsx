@@ -27,12 +27,18 @@ export default async function TicketsPage() {
   const isManager   = callerRank >= ROLE_RANK.manager
   const admin       = createAdminClient()
 
+  const isEmployee = callerRank < ROLE_RANK.manager
+
+  const ticketsQuery = supabase
+    .from('sage_tickets')
+    .select('id, title, name, email, phone, occurred_at, description, status, priority, contact_method, created_at, updated_at, contact_id, deal_id, owner_id, related_url, external_provider, external_id, external_url, contact:sage_contacts(id, name, email)')
+    .eq('workspace_id', workspaceId)
+    .order('created_at', { ascending: false })
+
+  if (isEmployee) ticketsQuery.eq('owner_id', user.id)
+
   const [{ data: ticketsRaw }, { data: contactsRaw }, { data: membersRaw }] = await Promise.all([
-    supabase
-      .from('sage_tickets')
-      .select('id, title, name, email, phone, occurred_at, description, status, priority, contact_method, created_at, updated_at, contact_id, deal_id, owner_id, related_url, external_provider, external_id, external_url, contact:sage_contacts(id, name, email)')
-      .eq('workspace_id', workspaceId)
-      .order('created_at', { ascending: false }),
+    ticketsQuery,
     supabase
       .from('sage_contacts')
       .select('id, name')

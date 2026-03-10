@@ -28,32 +28,35 @@ export default async function SageEmailsPage() {
 
   const workspaceId = membership.workspace_id
 
-  // Fetch emails
+  // Fetch emails for this user only
   const { data: emailsRaw } = await supabase
     .from('sage_emails')
     .select('*, contact:sage_contacts(id, name, email)')
     .eq('workspace_id', workspaceId)
+    .eq('user_id', user.id)
     .order('received_at', { ascending: false })
     .limit(100)
 
   const emails = (emailsRaw ?? []) as SageEmail[]
 
-  // Detect connected email provider for calendar link generation
+  // Detect connected email provider for this user
   const { data: emailIntegration } = await supabase
     .from('sage_integrations')
     .select('provider')
     .eq('workspace_id', workspaceId)
+    .eq('user_id', user.id)
     .in('provider', ['gmail', 'microsoft'])
     .eq('status', 'connected')
     .limit(1)
     .maybeSingle()
   const emailProvider = ((emailIntegration as { provider?: string } | null)?.provider ?? null) as 'gmail' | 'microsoft' | null
 
-  // Check if Stripe is connected
+  // Check if Stripe is connected (workspace-level)
   const { data: stripeIntegration } = await supabase
     .from('sage_integrations')
     .select('id')
     .eq('workspace_id', workspaceId)
+    .eq('user_id', user.id)
     .eq('provider', 'stripe')
     .eq('status', 'connected')
     .limit(1)

@@ -263,6 +263,10 @@ export async function removeMember(
   const { error } = await admin.from('workspace_members').delete().eq('id', memberId)
   if (error) return { error: error.message }
 
+  // Delete user profile and auth account so they can be re-invited cleanly
+  await admin.from('user_profiles').delete().eq('user_id', target.user_id)
+  await admin.auth.admin.deleteUser(target.user_id)
+
   return { success: true }
 }
 

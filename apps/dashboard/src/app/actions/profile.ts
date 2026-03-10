@@ -187,5 +187,8 @@ export async function saveProfile(formData: FormData) {
     }
   }
 
-  redirect('/dashboard')
+  const emailProvider = (formData.get('email_provider') as string | null)?.trim() || 'gmail'
+  const validProviders = ['gmail', 'microsoft']
+  const provider = validProviders.includes(emailProvider) ? emailProvider : 'gmail'
+  redirect(`/integrations?provider=${provider}&onboarding=1`)
 }

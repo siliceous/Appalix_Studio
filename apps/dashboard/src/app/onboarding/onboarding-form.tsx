@@ -247,11 +247,27 @@ export default function OnboardingForm() {
         />
       </div>
 
+      {/* Email provider */}
+      <div>
+        <label className={labelCls}>Which email do you use?</label>
+        <div className="flex gap-3">
+          {[
+            { value: 'gmail',     label: '📧 Gmail' },
+            { value: 'microsoft', label: '📬 Outlook / Microsoft' },
+          ].map(({ value, label }) => (
+            <label key={value} className="flex-1 flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 transition-colors">
+              <input type="radio" name="email_provider" value={value} className="accent-brand-600" defaultChecked={value === 'gmail'} />
+              <span className="text-sm">{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
       <button
         type="submit"
         className="w-full py-2.5 px-4 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors"
       >
-        Continue to dashboard →
+        Continue →
       </button>
     </form>
   )

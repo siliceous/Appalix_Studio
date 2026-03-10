@@ -32,6 +32,9 @@ async function getWorkspaceId(): Promise<string | null> {
 export async function syncEmails(): Promise<{ synced: number; error?: string }> {
   if (!API_BASE || !SERVICE_KEY) return { synced: 0, error: 'Server not configured' }
 
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { synced: 0, error: 'Not authenticated' }
   const workspaceId = await getWorkspaceId()
   if (!workspaceId) return { synced: 0, error: 'Not authenticated' }
 
@@ -39,7 +42,7 @@ export async function syncEmails(): Promise<{ synced: number; error?: string }> 
     const res = await fetch(`${API_BASE}/sage/emails/sync`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', 'X-Service-Key': SERVICE_KEY },
-      body:    JSON.stringify({ workspace_id: workspaceId, limit: 250 }),
+      body:    JSON.stringify({ workspace_id: workspaceId, user_id: user.id, limit: 250 }),
     })
     const data = await res.json() as { synced?: number; error?: string }
     if (!res.ok) return { synced: 0, error: data.error ?? 'Sync failed' }
@@ -178,6 +181,9 @@ export async function sendEmail(opts: {
 }): Promise<{ ok: boolean; error?: string }> {
   if (!API_BASE || !SERVICE_KEY) return { ok: false, error: 'Server not configured' }
 
+  const supabase2 = await createClient()
+  const { data: { user: sender } } = await supabase2.auth.getUser()
+  if (!sender) return { ok: false, error: 'Not authenticated' }
   const workspaceId = await getWorkspaceId()
   if (!workspaceId) return { ok: false, error: 'Not authenticated' }
 
@@ -192,6 +198,7 @@ export async function sendEmail(opts: {
         headers: { 'Content-Type': 'application/json', 'X-Service-Key': SERVICE_KEY },
         body:    JSON.stringify({
           workspace_id:      workspaceId,
+          user_id:           sender.id,
           to:                opts.to,
           cc:                opts.cc  || undefined,
           bcc:               opts.bcc || undefined,
@@ -280,6 +287,8 @@ export async function markEmailRead(emailId: string): Promise<void> {
  */
 export async function getEmailSignature(): Promise<{ html: string | null }> {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { html: null }
   const workspaceId = await getWorkspaceId()
   if (!workspaceId) return { html: null }
 
@@ -288,6 +297,7 @@ export async function getEmailSignature(): Promise<{ html: string | null }> {
       .from('sage_integrations')
       .select('config')
       .eq('workspace_id', workspaceId)
+      .eq('user_id', user.id)
       .eq('provider', provider)
       .eq('status', 'connected')
       .limit(1)

@@ -629,7 +629,7 @@ async function searchAndSyncContactEmails(
 // Main sync function
 // ---------------------------------------------------------------------------
 
-export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): Promise<number> {
+export async function syncEmailsForWorkspace(workspaceId: string, userId: string, limit = 250): Promise<number> {
   // 0. Fetch workspace business description for AI context.
   //    If not set, auto-derive it from the knowledge base and cache it.
   const { data: workspace } = await supabase
@@ -640,11 +640,12 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
   const stored = (workspace as { sage_business_description?: string | null } | null)?.sage_business_description ?? null
   const businessDescription = stored ?? await deriveBusinessDescription(workspaceId)
 
-  // 1. Find a connected gmail or microsoft integration
+  // 1. Find a connected gmail or microsoft integration for this user
   const { data: integrations } = await supabase
     .from('sage_integrations')
     .select('provider, config')
     .eq('workspace_id', workspaceId)
+    .eq('user_id', userId)
     .eq('status', 'connected')
     .in('provider', ['gmail', 'microsoft'])
     .limit(1)
@@ -753,11 +754,12 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
           )
           const calendarEmail  = isCalendarNotification(subject, fromAddress, hasIcsPart)
 
-          // Check for existing email (deduplication)
+          // Check for existing email (per-user deduplication)
           const { data: existing } = await supabase
             .from('sage_emails')
             .select('id')
             .eq('workspace_id', workspaceId)
+            .eq('user_id', userId)
             .eq('message_id', messageId)
             .single()
 
@@ -772,6 +774,7 @@ export async function syncEmailsForWorkspace(workspaceId: string, limit = 250): 
             .from('sage_emails')
             .insert({
               workspace_id: workspaceId,
+              user_id:      userId,
               contact_id:   contactId,
               message_id:   messageId,
               thread_id:    threadId,
