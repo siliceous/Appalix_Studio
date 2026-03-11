@@ -1,7 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect }     from 'next/navigation'
 import type { Metadata } from 'next'
-import type { WorkspaceMember } from '@/lib/types'
+import type { WorkspaceMember, WorkspaceMemberRole } from '@/lib/types'
+import { ROLE_RANK } from '@/lib/types'
 import type { SageForm, SageFormSubmission } from '@/app/actions/sage-forms'
 import { FormsTable, type FormFilters } from '@/components/dashboard/forms-table'
 import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
@@ -52,20 +53,54 @@ export default async function FormsPage({
 
   const { data: membershipRaw } = await supabase
     .from('workspace_members')
-    .select('workspace_id')
+    .select('workspace_id, role')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true })
     .limit(1)
     .single()
-  const membership = membershipRaw as Pick<WorkspaceMember, 'workspace_id'> | null
+  const membership = membershipRaw as Pick<WorkspaceMember, 'workspace_id' | 'role'> | null
   if (!membership) redirect('/login')
   const workspaceId = membership.workspace_id
+  const callerRank  = ROLE_RANK[(membership.role ?? 'viewer') as WorkspaceMemberRole] ?? 1
+  const isRestricted = callerRank < ROLE_RANK.admin
+
+  // For restricted users: find visible form IDs (forms created by them or their employees)
+  let visibleFormIds: string[] = []
+  if (isRestricted) {
+    const admin = createAdminClient()
+    let visibleUserIds = [user.id]
+    if (callerRank >= ROLE_RANK.manager) {
+      const { data: belowMembers } = await admin
+        .from('workspace_members').select('user_id, role').eq('workspace_id', workspaceId)
+      const below = (belowMembers ?? []) as { user_id: string; role: WorkspaceMemberRole }[]
+      const employeeIds = below
+        .filter(m => (ROLE_RANK[m.role] ?? 0) < ROLE_RANK.manager && m.user_id !== user.id)
+        .map(m => m.user_id)
+      visibleUserIds = [user.id, ...employeeIds]
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: visibleForms } = await (admin as any)
+      .from('sage_forms')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .in('created_by', visibleUserIds)
+    visibleFormIds = ((visibleForms ?? []) as { id: string }[]).map(f => f.id)
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let subsQuery = (supabase as any)
     .from('sage_form_submissions')
     .select('id, form_id, fields, ai_priority, ai_summary, ai_insights, ai_action, ai_entities, ai_analyzed_at, actioned_at, action_type, created_at')
     .eq('workspace_id', workspaceId)
+
+  if (isRestricted) {
+    if (visibleFormIds.length === 0) {
+      // No visible forms — return empty
+      subsQuery = subsQuery.eq('form_id', '00000000-0000-0000-0000-000000000000')
+    } else {
+      subsQuery = subsQuery.in('form_id', visibleFormIds)
+    }
+  }
 
   if (dateFrom)        subsQuery = subsQuery.gte('created_at', dateFrom)
   if (dateTo)          subsQuery = subsQuery.lt('created_at', dateTo)
@@ -80,7 +115,14 @@ export default async function FormsPage({
 
   const [formsRes, submissionsRes] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any).from('sage_forms').select('id, name, description, is_active, created_at').eq('workspace_id', workspaceId).order('name', { ascending: true }),
+    isRestricted && visibleFormIds.length > 0
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ? (supabase as any).from('sage_forms').select('id, name, description, is_active, created_at').eq('workspace_id', workspaceId).in('id', visibleFormIds).order('name', { ascending: true })
+      : isRestricted
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ? Promise.resolve({ data: [] })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        : (supabase as any).from('sage_forms').select('id, name, description, is_active, created_at').eq('workspace_id', workspaceId).order('name', { ascending: true }),
     subsQuery,
   ])
 

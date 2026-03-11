@@ -229,7 +229,7 @@ export default function NewBotPage() {
 
     const { data, error: insertError } = await supabase
       .from('bots')
-      .insert({ ...form, workspace_id: membership.workspace_id } as never)
+      .insert({ ...form, workspace_id: membership.workspace_id, created_by: user.id } as never)
       .select('id')
       .single()
 

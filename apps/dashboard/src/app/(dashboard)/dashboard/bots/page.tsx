@@ -63,7 +63,7 @@ export default async function BotsPage({
 
   const admin = createAdminClient()
   const [botsRes, membersRes, profilesRes] = await Promise.all([
-    supabase.from('bots').select('id, name').eq('workspace_id', workspaceId).order('name'),
+    supabase.from('bots').select('id, name, created_by').eq('workspace_id', workspaceId).order('name'),
     callerRank >= ROLE_RANK.manager
       ? admin.from('workspace_members').select('user_id, role').eq('workspace_id', workspaceId)
       : Promise.resolve({ data: [] }),
@@ -71,7 +71,7 @@ export default async function BotsPage({
       ? admin.from('user_profiles').select('user_id, first_name, last_name')
       : Promise.resolve({ data: [] }),
   ])
-  const bots = (botsRes.data ?? []) as BotOption[]
+  const bots = (botsRes.data ?? []) as (BotOption & { created_by: string | null })[]
 
   // Build team member list for assign dropdown (only if caller is manager+)
   type PRow = { user_id: string; first_name: string; last_name: string | null }
@@ -91,18 +91,23 @@ export default async function BotsPage({
 
   // Role-based scoping: admin/owner see all; manager sees own+employees; employee sees own
   const isRestricted = callerRank < ROLE_RANK.admin
-  let visibleAssignees: string[] = []
+  let visibleUserIds: string[] = []
   if (isRestricted) {
     if (callerRank >= ROLE_RANK.manager) {
       const allMembers = (membersRes.data ?? []) as MRow[]
       const employeeIds = allMembers
         .filter(m => (ROLE_RANK[m.role] ?? 0) < ROLE_RANK.manager && m.user_id !== user.id)
         .map(m => m.user_id)
-      visibleAssignees = [user.id, ...employeeIds]
+      visibleUserIds = [user.id, ...employeeIds]
     } else {
-      visibleAssignees = [user.id]
+      visibleUserIds = [user.id]
     }
   }
+
+  // For restricted users: scope by bots they created + conversations assigned to them
+  const visibleBotIds = isRestricted
+    ? bots.filter(b => b.created_by && visibleUserIds.includes(b.created_by)).map(b => b.id)
+    : []
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query: any = supabase
@@ -113,10 +118,16 @@ export default async function BotsPage({
     .limit(150)
 
   if (isRestricted) {
-    if (visibleAssignees.length === 1) {
-      query = query.eq('assigned_to', visibleAssignees[0])
-    } else {
-      query = query.in('assigned_to', visibleAssignees)
+    // Show conversations from their bots OR directly assigned to them
+    if (visibleBotIds.length === 0 && visibleUserIds.length > 0) {
+      // No owned bots — only show assigned conversations
+      query = visibleUserIds.length === 1
+        ? query.eq('assigned_to', visibleUserIds[0])
+        : query.in('assigned_to', visibleUserIds)
+    } else if (visibleBotIds.length > 0) {
+      const botFilter     = visibleBotIds.length === 1 ? `bot_id.eq.${visibleBotIds[0]}` : `bot_id.in.(${visibleBotIds.join(',')})`
+      const assignFilter  = visibleUserIds.length === 1 ? `assigned_to.eq.${visibleUserIds[0]}` : `assigned_to.in.(${visibleUserIds.join(',')})`
+      query = query.or(`${botFilter},${assignFilter}`)
     }
   }
 

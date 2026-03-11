@@ -43,13 +43,19 @@ export interface SageFormSubmission {
 
 /** Create a new form */
 export async function createForm(data: { name: string; description?: string }): Promise<{ form?: SageForm; error?: string }> {
-  const workspaceId = await getWorkspaceId()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+  const { data: membershipRaw } = await supabase
+    .from('workspace_members').select('workspace_id').eq('user_id', user.id)
+    .order('created_at', { ascending: true }).limit(1).single()
+  const workspaceId = (membershipRaw as { workspace_id: string } | null)?.workspace_id
   if (!workspaceId) return { error: 'Not authenticated' }
 
   const admin = createAdminClient()
   const { data: form, error } = await admin
     .from('sage_forms')
-    .insert({ workspace_id: workspaceId, name: data.name.trim(), description: data.description?.trim() || null })
+    .insert({ workspace_id: workspaceId, name: data.name.trim(), description: data.description?.trim() || null, created_by: user.id })
     .select('id, name, description, is_active, created_at')
     .single()
 
