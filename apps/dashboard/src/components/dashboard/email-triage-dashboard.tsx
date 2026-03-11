@@ -1043,15 +1043,16 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
       const emailId = modalEmail.email.id
 
       if (modalMode === 'lead') {
-        result = await triageCreateLead({
+        const leadResult = await triageCreateLead({
           name:      mName,
           email:     mEmail,
           company:   mCompany || undefined,
           dealTitle: mDealTitle,
           notes:     mNotes || undefined,
         })
+        result = leadResult
         if (!result.error) {
-          setActioned(prev => new Map(prev).set(emailId, 'Lead + deal created'))
+          setActioned(prev => new Map(prev).set(emailId, leadResult.isExisting ? 'Deal already exists – linked' : 'Lead + deal created'))
           setModalMode(null)
         }
       } else if (modalMode === 'ticket') {

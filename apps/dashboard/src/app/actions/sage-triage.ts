@@ -54,7 +54,7 @@ export async function triageCreateLead(data: {
   conversationId?: string
   source?:         'email' | 'chat'
   productInterest?: string
-}): Promise<{ contactId?: string; dealId?: string; error?: string }> {
+}): Promise<{ contactId?: string; dealId?: string; isExisting?: boolean; error?: string }> {
   const workspaceId = await getWorkspaceId()
   if (!workspaceId) return { error: 'Not authenticated' }
 
@@ -137,7 +137,7 @@ export async function triageCreateLead(data: {
       revalidatePath('/dashboard')
       revalidatePath('/sage/pipelines')
       revalidatePath('/sage/contacts')
-      return { contactId, dealId }
+      return { contactId, dealId, isExisting: true }
     }
 
     // 3. Find first pipeline + first stage
