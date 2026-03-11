@@ -265,9 +265,10 @@ export async function removeMember(
   if (error) return { error: error.message }
 
   // Delete profile and auth account (best-effort — don't block the UI response)
-  admin.from('user_profiles').delete().eq('user_id', target.user_id).then(() => {
-    admin.auth.admin.deleteUser(target.user_id).catch(console.error)
-  }).catch(console.error)
+  void (async () => {
+    await admin.from('user_profiles').delete().eq('user_id', target.user_id)
+    await admin.auth.admin.deleteUser(target.user_id).catch(console.error)
+  })().catch(console.error)
 
   revalidatePath('/settings')
   return { success: true }
