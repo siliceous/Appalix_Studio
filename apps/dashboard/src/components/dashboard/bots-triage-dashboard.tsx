@@ -187,7 +187,7 @@ function DetailCard({ tc, actioned, onAction, onDismiss, onClose, onAnalyze, onR
               <Brain className="w-3.5 h-3.5 text-blue-500" />
               <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">AI Summary</span>
             </div>
-            <p className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed">{conversation.ai_summary}</p>
+            <p className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed line-clamp-3" title={conversation.ai_summary}>{conversation.ai_summary}</p>
           </div>
         ) : (
           <div className="rounded-xl bg-gray-50 dark:bg-white/3 border border-gray-200 dark:border-white/10 px-4 py-3 flex items-start gap-2.5">
