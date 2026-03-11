@@ -185,11 +185,11 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Bot</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Platform</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Priority</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Summary</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide max-w-[200px]">Summary</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Msgs</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Last active</th>
                 {canAssign && <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Assigned to</th>}
-                <th className="text-right px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Actions</th>
+                <th className="text-right px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide w-px whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-white/5">
@@ -239,7 +239,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                     </td>
 
                     {/* AI Summary excerpt */}
-                    <td className="px-4 py-3.5 max-w-[280px]">
+                    <td className="px-4 py-3.5 max-w-[200px]">
                       {c.ai_summary ? (
                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={c.ai_summary}>
                           {c.ai_summary.length > 90 ? c.ai_summary.slice(0, 90) + '…' : c.ai_summary}
@@ -275,7 +275,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                     )}
 
                     {/* Actions: view, rename, download */}
-                    <td className="px-5 py-3.5">
+                    <td className="px-5 py-3.5 w-px whitespace-nowrap">
                       <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                         <Link href={`/conversations/${c.id}`}
                           title="View full transcript"
