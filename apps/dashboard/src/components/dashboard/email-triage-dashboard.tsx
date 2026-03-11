@@ -9,7 +9,7 @@ import {
   Check, X, ChevronRight, Loader2, Trash2,
   Phone, Globe, Tag, Brain,
   Calendar, MapPin, Users, Clock,
-  Maximize2, Minimize2,
+  Maximize2, Minimize2, ArrowLeft, Reply,
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   List, ListOrdered, Link2, Paperclip, Palette,
 } from 'lucide-react'
@@ -263,7 +263,7 @@ interface DetailCardProps {
   emailProvider: 'gmail' | 'microsoft' | null
 }
 
-function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, isDeleting, isAnalyzing, emailProvider, modalSize, onResize }: DetailCardProps) {
+function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, onAction, isDeleting, isAnalyzing, emailProvider, modalSize, onResize }: DetailCardProps) {
   const { email, meeting } = t
   const entities  = email.ai_entities
   const drafts    = email.ai_reply_drafts ?? []
@@ -271,6 +271,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
   const editorRef = useRef<RichTextEditorRef>(null)
 
   // Lazy init so the editor and Send button are ready immediately on first render
+  const [showReply,      setShowReply]      = useState(false)
   const [composeBody,    setComposeBody]    = useState(() => drafts[0]?.body ?? '')
   const [attachments,    setAttachments]    = useState<EmailAttachment[]>([])
   const [sent,           setSent]           = useState(false)
@@ -289,6 +290,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
     setNoteSaved(false)
     setSendError(null)
     setAttachments([])
+    setShowReply(false)
     const draft = drafts[0]?.body ?? ''
     setComposeBody(draft)
     editorRef.current?.setHtml(draft.replace(/\n/g, '<br>'))
@@ -384,6 +386,14 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {showReply && (
+              <button
+                onClick={e => { e.stopPropagation(); setShowReply(false) }}
+                className="flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors border border-gray-200 dark:border-white/10"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" /> Back
+              </button>
+            )}
             {email.ai_priority && (
               <span className={cn('text-[11px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wide border flex items-center gap-1.5', PRIORITY_BADGE[email.ai_priority])}>
                 <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT[email.ai_priority])} />
@@ -569,8 +579,22 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
           </div>
         )}
 
-        {/* Reply draft */}
-        {drafts.length > 0 && !sent && (
+        {/* Original email body — shown in detail view (not in reply mode) */}
+        {!showReply && (email.body_text || email.body_html) && (
+          <div className="rounded-xl border border-gray-200 dark:border-white/8 overflow-hidden">
+            <div className="px-4 py-2.5 bg-gray-50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/8">
+              <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Email</span>
+            </div>
+            <div className="px-4 py-3.5 max-h-72 overflow-y-auto">
+              <p className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed font-mono">
+                {email.body_text ?? ''}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Reply composer — shown when Reply button is clicked */}
+        {showReply && !sent && (
           <div className="rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden shadow-sm">
 
             {/* To / Subject headers — compressed */}
@@ -747,8 +771,8 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
           </div>
         )}
 
-        {/* Email History — previous emails from this sender */}
-        {relatedEmails.length > 0 && (
+        {/* Email History — previous emails from this sender (hidden in reply mode) */}
+        {!showReply && relatedEmails.length > 0 && (
           <div className="pt-2 border-t dark:border-white/8">
             <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
               <Clock className="w-3 h-3" /> Email history ({relatedEmails.length})
@@ -778,6 +802,51 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
           </div>
         )}
       </div>
+
+      {/* ── Sticky bottom action bar — shown in detail view (not reply mode, not post-send) ── */}
+      {!showReply && !sent && (
+        <div className="px-4 py-3 border-t dark:border-white/8 bg-white dark:bg-[#232323] flex items-center gap-2 shrink-0">
+          {t.matchedContact && (
+            <Link
+              href={`/contacts/${t.matchedContact.id}`}
+              onClick={e => e.stopPropagation()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
+            >
+              <UserPlus className="w-3.5 h-3.5" /> View Contact
+            </Link>
+          )}
+          {!isDone && (
+            t.matchedDeal ? (
+              <button
+                onClick={() => onAction(t, 'deal_note')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Note
+              </button>
+            ) : (
+              <button
+                onClick={() => onAction(t, 'lead')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Deal
+              </button>
+            )
+          )}
+          <div className="flex-1" />
+          <button
+            onClick={() => setShowReply(true)}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white transition-colors shadow-sm"
+          >
+            <Reply className="w-3.5 h-3.5" /> Reply
+          </button>
+          <button
+            onClick={() => { onDismiss(email.id); onClose() }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 transition-colors"
+          >
+            <X className="w-3 h-3" /> Ignore
+          </button>
+        </div>
+      )}
     </div>
   )
 }
