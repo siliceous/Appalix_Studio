@@ -1,13 +1,34 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { TicketsClient } from './tickets-client'
+import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
+import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 import type { Metadata } from 'next'
 import type { WorkspaceMember, WorkspaceMemberSummary, WorkspaceMemberRole, SageTicket, SageContact } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
 
+function getDateRange(preset: SubpagePreset, customFrom?: string, customTo?: string): { from: string | null; to: string | null } {
+  if (preset === 'custom') {
+    return {
+      from: customFrom ? new Date(customFrom).toISOString() : null,
+      to:   customTo   ? new Date(customTo + 'T23:59:59').toISOString() : null,
+    }
+  }
+  const now = new Date()
+  if (preset === 'today') { const f = new Date(now); f.setHours(0,0,0,0); return { from: f.toISOString(), to: null } }
+  if (preset === 'yesterday') { const f = new Date(now); f.setDate(f.getDate()-1); f.setHours(0,0,0,0); const t = new Date(now); t.setHours(0,0,0,0); return { from: f.toISOString(), to: t.toISOString() } }
+  if (preset === '7d')  { const f = new Date(now); f.setDate(f.getDate()-7);  return { from: f.toISOString(), to: null } }
+  if (preset === '30d') { const f = new Date(now); f.setDate(f.getDate()-30); return { from: f.toISOString(), to: null } }
+  return { from: null, to: null }
+}
+
 export const metadata: Metadata = { title: 'Tickets · Sage' }
 
-export default async function TicketsPage() {
+export default async function TicketsPage({ searchParams }: { searchParams: Promise<{ preset?: string; from?: string; to?: string }> }) {
+  const [params, autoSettings] = await Promise.all([searchParams, getAutoSettings()])
+  const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as SubpagePreset
+  const { from: dateFrom, to: dateTo } = getDateRange(preset, params.from, params.to)
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -29,13 +50,15 @@ export default async function TicketsPage() {
 
   const isEmployee = callerRank < ROLE_RANK.manager
 
-  const ticketsQuery = supabase
+  let ticketsQuery = supabase
     .from('sage_tickets')
     .select('id, title, name, email, phone, occurred_at, description, status, priority, contact_method, created_at, updated_at, contact_id, deal_id, owner_id, related_url, external_provider, external_id, external_url, contact:sage_contacts(id, name, email)')
     .eq('workspace_id', workspaceId)
-    .order('created_at', { ascending: false })
 
-  if (isEmployee) ticketsQuery.eq('owner_id', user.id)
+  if (isEmployee) ticketsQuery = (ticketsQuery as any).eq('owner_id', user.id)
+  if (dateFrom) ticketsQuery = ticketsQuery.gte('created_at', dateFrom)
+  if (dateTo)   ticketsQuery = ticketsQuery.lt('created_at', dateTo)
+  ticketsQuery = ticketsQuery.order('created_at', { ascending: false })
 
   const [{ data: ticketsRaw }, { data: contactsRaw }, { data: membersRaw }] = await Promise.all([
     ticketsQuery,
@@ -76,11 +99,16 @@ export default async function TicketsPage() {
   }
 
   return (
-    <TicketsClient
-      tickets={tickets}
-      contacts={contacts}
-      callerRole={membership.role as WorkspaceMember['role']}
-      members={assignableMembers}
-    />
+    <div className="-m-8 flex flex-col h-screen overflow-hidden">
+      <SubpageToolbar sourceKey="tickets" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.tickets_auto_enabled} />
+      <div className="flex-1 overflow-y-auto">
+        <TicketsClient
+          tickets={tickets}
+          contacts={contacts}
+          callerRole={membership.role as WorkspaceMember['role']}
+          members={assignableMembers}
+        />
+      </div>
+    </div>
   )
 }
