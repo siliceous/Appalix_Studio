@@ -1274,10 +1274,13 @@ export function SageDashboardClient({
         return q
       })(),
       (() => {
+        // Tickets: show all open tickets — no date filter, open = needs attention regardless of age
         let q = supabase.from('sage_tickets')
           .select('id, title, priority, status, created_at, contact:sage_contacts(name, email, phone)')
-          .eq('workspace_id', workspaceId).gte('created_at', from).lte('created_at', to)
+          .eq('workspace_id', workspaceId)
+          .in('status', ['open', 'pending'])
           .order('created_at', { ascending: false })
+          .limit(100)
         if (viewAsUserId) q = (q as any).eq('owner_id', viewAsUserId)
         else if (visibleUserIds.length === 1) q = (q as any).eq('owner_id', visibleUserIds[0])
         else if (visibleUserIds.length > 1)  q = (q as any).in('owner_id', visibleUserIds)
