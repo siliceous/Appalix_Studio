@@ -1462,7 +1462,7 @@ export function SageDashboardClient({
               <select
                 defaultValue=""
                 onChange={e => { if (e.target.value) window.location.href = `/dashboard?viewAs=${e.target.value}` }}
-                className="appearance-none pl-3 pr-7 py-2 text-sm border dark:border-white/10 rounded-xl bg-white dark:bg-[#232323] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+                className="appearance-none pl-3 pr-7 py-2 text-sm border dark:border-white/10 rounded-xl bg-white dark:bg-[#232323] text-gray-700 dark:text-gray-300 focus:outline-none"
               >
                 <option value="" disabled>View as…</option>
                 {teamMembers.map((m) => (
@@ -1479,7 +1479,7 @@ export function SageDashboardClient({
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
               <select value={dateRange} onChange={e => handleDateChange(e.target.value as DatePreset)}
-                className="appearance-none bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 cursor-pointer">
+                className="appearance-none bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl pl-3 pr-8 py-2 focus:outline-none cursor-pointer">
                 <option value="today">Today</option>
                 <option value="yesterday">Yesterday</option>
                 <option value="7d">Last 7 days</option>
@@ -1491,11 +1491,11 @@ export function SageDashboardClient({
             {dateRange === 'custom' && (
               <div className="flex items-center gap-1.5">
                 <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
-                  className="bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
+                  className="bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl px-3 py-2 focus:outline-none"
                   placeholder="dd/mm/yyyy" />
                 <span className="text-xs text-gray-400">to</span>
                 <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
-                  className="bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
+                  className="bg-white dark:bg-[#232323] border dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 rounded-xl px-3 py-2 focus:outline-none"
                   placeholder="dd/mm/yyyy" />
               </div>
             )}
