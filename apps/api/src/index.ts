@@ -20,8 +20,9 @@ import { copilotRoutes }     from './routes/copilot/index.js'
 import { sageEmailRoutes }  from './routes/sage/emails.js'
 import { botRoutes }        from './routes/bots/index.js'
 import { formRoutes }       from './routes/forms/index.js'
-import { startIdleManager, stopIdleManager } from './services/sage-email-idle.js'
-import { reanalyzePendingEmails }            from './services/sage-email-sync.js'
+import { startIdleManager, stopIdleManager }        from './services/sage-email-idle.js'
+import { reanalyzePendingEmails }                   from './services/sage-email-sync.js'
+import { analyzeConversationsForWorkspace }         from './services/conversation-analyze.js'
 
 const server = Fastify({
   logger: {
@@ -210,6 +211,38 @@ try {
   // Run once on startup, then every 1 minute
   void pollUnanalyzedEmails()
   setInterval(pollUnanalyzedEmails, 60 * 1000)
+
+  // ---------------------------------------------------------------
+  // Conversation analysis poller
+  // Mirrors the email poller — picks up bot conversations whose
+  // AI analysis hasn't run yet (ai_analyzed_at IS NULL).
+  // Runs once on startup and every 2 minutes.
+  // ---------------------------------------------------------------
+  async function pollUnanalyzedConversations() {
+    try {
+      const { data: rows } = await supabase
+        .from('conversations')
+        .select('workspace_id')
+        .is('ai_analyzed_at', null)
+        .limit(100)
+
+      if (!rows || rows.length === 0) return
+
+      const workspaceIds = [...new Set(rows.map(r => r.workspace_id as string))]
+      console.log(`[conv-poller] found unanalyzed conversations in ${workspaceIds.length} workspace(s)`)
+
+      for (const wsId of workspaceIds) {
+        analyzeConversationsForWorkspace(wsId, 20).catch((err: unknown) => {
+          console.error(`[conv-poller] analyze failed for workspace=${wsId}:`, err)
+        })
+      }
+    } catch (err) {
+      console.error('[conv-poller] error:', err)
+    }
+  }
+
+  void pollUnanalyzedConversations()
+  setInterval(pollUnanalyzedConversations, 2 * 60 * 1000)
 
   // Graceful shutdown — release IMAP connections before process exits
   const shutdown = () => { stopIdleManager(); process.exit(0) }
