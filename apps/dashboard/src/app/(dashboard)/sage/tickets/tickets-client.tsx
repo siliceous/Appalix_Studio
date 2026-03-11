@@ -35,14 +35,13 @@ const FILTERS: Array<{ label: string; value: string }> = [
 ]
 
 interface TicketsClientProps {
-  tickets:     TicketWithContact[]
-  contacts:    Pick<SageContact, 'id' | 'name'>[]
-  triageMode?: boolean   // when true, auto-remove resolved/closed on status change
+  tickets:    TicketWithContact[]
+  contacts:   Pick<SageContact, 'id' | 'name'>[]
   callerRole?: string
-  members?:    WorkspaceMemberSummary[]
+  members?:   WorkspaceMemberSummary[]
 }
 
-export function TicketsClient({ tickets: initialTickets, contacts, triageMode = false, callerRole, members = [] }: TicketsClientProps) {
+export function TicketsClient({ tickets: initialTickets, contacts, callerRole, members = [] }: TicketsClientProps) {
   const canWrite  = callerRole !== 'viewer'
   const canAssign = members.length > 0
   const [tickets,      setTickets]      = useState(initialTickets)
@@ -118,11 +117,8 @@ export function TicketsClient({ tickets: initialTickets, contacts, triageMode = 
   const filtered = sortTickets(filter === 'all' ? searched : searched.filter(t => t.status === filter))
 
   async function handleStatusChange(id: string, status: SageTicketStatus) {
-    if (triageMode && (status === 'resolved' || status === 'closed')) {
-      setTickets(prev => prev.filter(t => t.id !== id))
-    } else {
-      setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t))
-    }
+    setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t))
+    if (status === 'resolved' || status === 'closed') setFilter(status)
     await updateTicketStatus(id, status)
   }
 
@@ -399,11 +395,10 @@ export function TicketsClient({ tickets: initialTickets, contacts, triageMode = 
         ticket={slideTicket}
         onClose={() => setSlideTicket(null)}
         onStatusChanged={(id, status) => {
-          if (triageMode && (status === 'resolved' || status === 'closed')) {
+          setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t))
+          if (status === 'resolved' || status === 'closed') {
+            setFilter(status)
             setSlideTicket(null)
-            setTickets(prev => prev.filter(t => t.id !== id))
-          } else {
-            setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t))
           }
         }}
       />
