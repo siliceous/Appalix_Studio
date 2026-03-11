@@ -41,11 +41,19 @@ interface TicketsClientProps {
   members?:   WorkspaceMemberSummary[]
 }
 
+const DATE_PRESETS = [
+  { value: 'all',  label: 'All time'     },
+  { value: '7d',   label: 'Last 7 days'  },
+  { value: '30d',  label: 'Last 30 days' },
+  { value: 'today',label: 'Today'        },
+]
+
 export function TicketsClient({ tickets: initialTickets, contacts, callerRole, members = [] }: TicketsClientProps) {
   const canWrite  = callerRole !== 'viewer'
   const canAssign = members.length > 0
   const [tickets,      setTickets]      = useState(initialTickets)
   const [filter,       setFilter]       = useState('all')
+  const [datePreset,   setDatePreset]   = useState('all')
   const [search,       setSearch]       = useState('')
   const [showModal,    setShowModal]    = useState(false)
   const [deleting,     setDeleting]     = useState<string | null>(null)
@@ -114,7 +122,15 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
         (t.description ?? '').toLowerCase().includes(q)
       )
     : tickets
-  const filtered = sortTickets(filter === 'all' ? searched : searched.filter(t => t.status === filter))
+  const dateFiltered = datePreset === 'all' ? searched : searched.filter(t => {
+    const created = new Date(t.created_at).getTime()
+    const now = Date.now()
+    if (datePreset === 'today') return created >= new Date().setHours(0,0,0,0)
+    if (datePreset === '7d')   return created >= now - 7  * 86400000
+    if (datePreset === '30d')  return created >= now - 30 * 86400000
+    return true
+  })
+  const filtered = sortTickets(filter === 'all' ? dateFiltered : dateFiltered.filter(t => t.status === filter))
 
   async function handleStatusChange(id: string, status: SageTicketStatus) {
     setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t))
@@ -247,6 +263,15 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
               </button>
             )}
           </div>
+          {/* Date preset */}
+          <select
+            value={datePreset}
+            onChange={e => setDatePreset(e.target.value)}
+            className="text-xs border dark:border-white/10 rounded-lg px-2.5 py-1.5 bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/40 cursor-pointer"
+          >
+            {DATE_PRESETS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+          </select>
+
           {/* Status pills */}
           <div className="flex items-center gap-1">
             {FILTERS.map(f => (
