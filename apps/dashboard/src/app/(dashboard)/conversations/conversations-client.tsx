@@ -276,7 +276,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
 
                     {/* Actions: view, rename, download */}
                     <td className="px-5 py-3.5 w-px whitespace-nowrap">
-                      <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 justify-end">
                         <Link href={`/conversations/${c.id}`}
                           title="View full transcript"
                           className="p-1.5 text-gray-400 hover:text-[#61c2ad] hover:bg-[#61c2ad]/10 rounded-lg transition-colors">
