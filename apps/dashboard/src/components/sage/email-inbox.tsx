@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useTransition, useRef, useMemo } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   Mail, RefreshCw, Send, Sparkles, Star, Inbox,
   Loader2, AlertCircle, Paperclip, Receipt, FileText, X, ArrowRight,
@@ -137,6 +138,8 @@ export function EmailInbox({
   contactDeals    = {},
   emailProvider   = null,
 }: EmailInboxProps) {
+
+  const router = useRouter()
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [emails,      setEmails]      = useState<SageEmail[]>(initialEmails)
@@ -351,8 +354,8 @@ export function EmailInbox({
         setSyncResult(`Error: ${result.error}`)
       } else {
         setSyncResult(result.synced === 0 ? 'Up to date.' : `${result.synced} new email${result.synced === 1 ? '' : 's'} synced.`)
-        window.location.reload()
       }
+      router.refresh()
     })
   }
 
@@ -365,7 +368,7 @@ export function EmailInbox({
         setSyncResult(`Error: ${result.error}`)
       } else {
         setSyncResult(result.synced === 0 ? 'No new emails.' : `${result.synced} new email${result.synced === 1 ? '' : 's'}.`)
-        if (result.synced > 0) window.location.reload()
+        if (result.synced > 0) router.refresh()
       }
     })
   }
@@ -802,7 +805,7 @@ export function EmailInbox({
                 {mailView === 'trash' ? 'Trash is empty' : mailView === 'drafts' ? 'No drafts' : emails.length === 0 ? 'No emails yet' : 'No emails match filter'}
               </p>
               {emails.length === 0 && (
-                <Link href="/sage/integrations"
+                <Link href="/integrations"
                   className="flex items-center gap-2 text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2.5 hover:bg-amber-500/15 transition-colors">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                   Connect Gmail or Outlook
@@ -1131,7 +1134,7 @@ export function EmailInbox({
               </p>
             </div>
             {emails.length === 0 && (
-              <Link href="/sage/integrations"
+              <Link href="/integrations"
                 className="flex items-center gap-2 text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2.5 hover:bg-amber-500/15 transition-colors">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 Connect Gmail or Outlook in Sage → Integrations

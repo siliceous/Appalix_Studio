@@ -8,8 +8,8 @@ import {
   Pencil, ExternalLink, X,
 } from 'lucide-react'
 import { PLATFORM_META, timeAgo } from '@/lib/utils'
-import { renameConversation } from '@/app/actions/conversation'
-import type { ConvRow, BotOption, ConvFilters } from './page'
+import { renameConversation, assignConversation } from '@/app/actions/conversation'
+import type { ConvRow, BotOption, ConvFilters, TeamMember } from './page'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const PLATFORMS = ['slack', 'google_chat', 'facebook_messenger', 'whatsapp', 'wordpress', 'web_widget'] as const
@@ -37,13 +37,24 @@ function buildUrl(base: string, filters: ConvFilters): string {
 // ── Main component ────────────────────────────────────────────────────────────
 interface Props {
   conversations: ConvRow[]
-  bots: BotOption[]
-  filters: ConvFilters
+  bots:          BotOption[]
+  filters:       ConvFilters
+  teamMembers?:  TeamMember[]
+  canAssign?:    boolean
 }
 
-export function ConversationsClient({ conversations, bots, filters }: Props) {
+export function ConversationsClient({ conversations, bots, filters, teamMembers = [], canAssign = false }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
+  const [localAssign, setLocalAssign] = React.useState<Record<string, string | null>>({})
+  const [assigning, setAssigning] = React.useState<string | null>(null)
+
+  async function handleAssign(convId: string, userId: string | null) {
+    setAssigning(convId)
+    const result = await assignConversation(convId, userId)
+    if (!result.error) setLocalAssign(prev => ({ ...prev, [convId]: userId }))
+    setAssigning(null)
+  }
 
   const pushFilter = useCallback((patch: Partial<ConvFilters>) => {
     const next = { ...filters, ...patch }
@@ -177,6 +188,7 @@ export function ConversationsClient({ conversations, bots, filters }: Props) {
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Summary</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Msgs</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Last active</th>
+                {canAssign && <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Assigned to</th>}
                 <th className="text-right px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Actions</th>
               </tr>
             </thead>
@@ -244,6 +256,23 @@ export function ConversationsClient({ conversations, bots, filters }: Props) {
                     <td className="px-4 py-3.5 text-right text-xs text-gray-400 whitespace-nowrap">
                       {timeAgo(c.last_activity_at)}
                     </td>
+
+                    {/* Assign to */}
+                    {canAssign && (
+                      <td className="px-4 py-3.5">
+                        <select
+                          value={localAssign[c.id] !== undefined ? (localAssign[c.id] ?? '') : (c.assigned_to ?? '')}
+                          disabled={assigning === c.id}
+                          onChange={e => handleAssign(c.id, e.target.value || null)}
+                          className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 disabled:opacity-50 max-w-[130px]"
+                        >
+                          <option value="">Unassigned</option>
+                          {teamMembers.map(m => (
+                            <option key={m.user_id} value={m.user_id}>{m.name}</option>
+                          ))}
+                        </select>
+                      </td>
+                    )}
 
                     {/* Actions: view, rename, download */}
                     <td className="px-5 py-3.5">

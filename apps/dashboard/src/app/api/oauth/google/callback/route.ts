@@ -122,7 +122,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  await admin.from('sage_integrations' as never).upsert(
+  const { error: upsertError } = await (admin.from('sage_integrations' as never).upsert(
     {
       workspace_id: workspaceId,
       user_id:      userId,
@@ -131,9 +131,25 @@ export async function GET(req: NextRequest) {
       config,
     },
     { onConflict: 'workspace_id,user_id,provider' },
-  )
+  ) as unknown as Promise<{ error: { message: string; code: string } | null }>)
 
-  // ── 5. Redirect ──────────────────────────────────────────────────────────
+  if (upsertError) {
+    console.error('[oauth/google/callback] upsert failed:', JSON.stringify(upsertError))
+    return NextResponse.redirect(`${appUrl}/integrations?error=save_failed&detail=${encodeURIComponent(upsertError.message)}`)
+  }
+
+  // ── 5. Kick off an initial sync in the background ───────────────────────
+  const apiBase    = process.env.API_BASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (apiBase && serviceKey) {
+    fetch(`${apiBase}/sage/emails/sync`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Service-Key': serviceKey },
+      body:    JSON.stringify({ workspace_id: workspaceId, user_id: userId, limit: 50 }),
+    }).catch(() => {/* best-effort — don't block the redirect */})
+  }
+
+  // ── 6. Redirect ──────────────────────────────────────────────────────────
   if (flow === 'onboarding') {
     return NextResponse.redirect(`${appUrl}/dashboard`)
   }

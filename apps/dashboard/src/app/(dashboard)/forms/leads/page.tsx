@@ -29,11 +29,41 @@ export default async function AllLeadsPage() {
 
   const userPermissions = await getUserPermissions(user.id, workspaceId, callerRole)
 
-  const { data: leadsRaw } = await supabase
+  // Role-based scoping: admin/owner see all; manager sees own+employees; employee sees own
+  const isRestricted = callerRank < ROLE_RANK.admin
+  let visibleAssignees: string[] = []
+  if (isRestricted) {
+    visibleAssignees = [user.id]
+    if (callerRank >= ROLE_RANK.manager) {
+      const admin = createAdminClient()
+      const { data: belowMembers } = await admin
+        .from('workspace_members')
+        .select('user_id, role')
+        .eq('workspace_id', workspaceId)
+      const below = (belowMembers ?? []) as { user_id: string; role: WorkspaceMemberRole }[]
+      const employeeIds = below
+        .filter(m => (ROLE_RANK[m.role] ?? 0) < ROLE_RANK.manager && m.user_id !== user.id)
+        .map(m => m.user_id)
+      visibleAssignees = [user.id, ...employeeIds]
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let leadsQuery: any = supabase
     .from('leads')
     .select('*, source:lead_ad_sources(id, platform, name)')
     .eq('workspace_id', workspaceId)
     .order('created_at', { ascending: false })
+
+  if (isRestricted) {
+    if (visibleAssignees.length === 1) {
+      leadsQuery = leadsQuery.eq('assigned_to', visibleAssignees[0])
+    } else {
+      leadsQuery = leadsQuery.in('assigned_to', visibleAssignees)
+    }
+  }
+
+  const { data: leadsRaw } = await leadsQuery
 
   const leads = (leadsRaw ?? []) as Lead[]
 

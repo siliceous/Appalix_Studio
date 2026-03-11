@@ -17,9 +17,11 @@ export type ConvRow = {
   ai_entities: Record<string, string> | null
   bot_id: string | null
   bots: { id: string; name: string } | null
+  assigned_to: string | null
 }
 
 export type BotOption = { id: string; name: string }
+export type TeamMember = { user_id: string; name: string }
 
 export type ConvFilters = {
   preset?: string

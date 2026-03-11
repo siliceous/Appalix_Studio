@@ -26,7 +26,8 @@ import {
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import type { Workspace, UserPermissions } from '@/lib/types'
+import type { Workspace, UserPermissions, WorkspaceMemberRole } from '@/lib/types'
+import { ROLE_RANK } from '@/lib/types'
 
 interface NavItem {
   href:            string
@@ -34,6 +35,7 @@ interface NavItem {
   icon:            React.ElementType
   sub?:            boolean
   adminOnly?:      boolean                // hidden for viewers
+  adminPlus?:      boolean                // hidden for manager and below (requires admin+)
   permissionKey?:  keyof UserPermissions  // hidden if permission is false
 }
 
@@ -98,8 +100,9 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
   const pathname  = usePathname()
   const router    = useRouter()
   const supabase  = createClient()
-  const isProPlan = ['pro', 'scale', 'enterprise'].includes(workspace.plan)
-  const isViewer  = callerRole === 'viewer'
+  const isProPlan  = ['pro', 'scale', 'enterprise'].includes(workspace.plan)
+  const isViewer   = callerRole === 'viewer'
+  const callerRank = ROLE_RANK[(callerRole ?? 'viewer') as WorkspaceMemberRole] ?? 1
 
   async function signOut() {
     await supabase.auth.signOut()
@@ -222,6 +225,7 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
                 <div className="space-y-0.5">
                   {group.items.filter(item => {
                   if (isViewer && item.adminOnly) return false
+                  if (item.adminPlus && callerRank < ROLE_RANK.admin) return false
                   if (item.permissionKey && userPermissions && !userPermissions[item.permissionKey]) return false
                   return true
                 }).map(({ href, label, icon: Icon, sub }) => {

@@ -97,6 +97,7 @@ export default async function DashboardPage({
       <SageDashboardClient
         workspaceId={membership.workspace_id}
         callerRole={membership.role as WorkspaceMemberRole}
+        currentUserId={user.id}
         viewAsUserId={viewAsUserId}
         viewAsName={viewAsName}
         teamMembers={teamMembers}

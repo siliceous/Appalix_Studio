@@ -19,7 +19,8 @@ import { sendEmail, scheduleMeetingFromEmail, getEmailSignature } from '@/app/ac
 import { updateAutoSetting, dismissFeedItem, runAutoBackfill, setDefaultPipeline } from '@/app/actions/sage-auto-settings'
 import { getWorkspacePipelines, dashboardAddLead, dashboardAddTicket, batchMatchContacts } from '@/app/actions/sage-triage'
 import type { ContactMatch } from '@/app/actions/sage-triage'
-import type { SageEmail, Conversation, Lead, SageTicket } from '@/lib/types'
+import type { SageEmail, Conversation, Lead, SageTicket, WorkspaceMemberRole } from '@/lib/types'
+import { ROLE_RANK } from '@/lib/types'
 
 // ── Email body renderer — converts > quoted lines to styled blocks ────────────
 function renderEmailBody(text: string) {
@@ -1110,19 +1111,20 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
 }
 
 // ── Main dashboard component ──────────────────────────────────────────────────
-import type { WorkspaceMemberRole } from '@/lib/types'
 
 interface TeamMember { user_id: string; name: string; role: WorkspaceMemberRole }
 
 export function SageDashboardClient({
   workspaceId,
   callerRole,
+  currentUserId,
   viewAsUserId,
   viewAsName,
   teamMembers = [],
 }: {
   workspaceId: string
   callerRole?: WorkspaceMemberRole
+  currentUserId?: string | null
   viewAsUserId?: string | null
   viewAsName?: string | null
   teamMembers?: TeamMember[]
@@ -1221,27 +1223,62 @@ export function SageDashboardClient({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sbAny = supabase as any
 
+    // Roles below admin see a scoped subset of data:
+    //   manager  — own data + employees below them
+    //   employee — own data only
+    const callerRankNow = callerRole ? ROLE_RANK[callerRole] : ROLE_RANK.owner
+    const isRestricted  = callerRankNow < ROLE_RANK.admin
+    // IDs this user is allowed to see (own + direct reports for managers)
+    const visibleUserIds: string[] = isRestricted && currentUserId
+      ? [
+          currentUserId,
+          // employees/members below manager
+          ...(callerRankNow >= ROLE_RANK.manager
+            ? teamMembers
+                .filter(m => ROLE_RANK[m.role] < ROLE_RANK.manager)
+                .map(m => m.user_id)
+            : []),
+        ]
+      : []
+
     Promise.all([
-      supabase.from('sage_emails')
-        .select('id, from_name, from_address, subject, received_at, ai_priority, ai_summary, ai_entities')
-        .eq('workspace_id', workspaceId).eq('direction', 'inbound').eq('is_read', false).eq('is_trashed', false)
-        .gte('received_at', from).lte('received_at', to)
-        .order('received_at', { ascending: false }),
-      supabase.from('conversations')
-        .select('id, title, platform, message_count, last_activity_at, ai_priority, ai_entities, bot:bots(name)')
-        .eq('workspace_id', workspaceId).eq('status', 'active')
-        .gte('last_activity_at', from).lte('last_activity_at', to)
-        .order('last_activity_at', { ascending: false }),
-      supabase.from('leads')
-        .select('id, name, email, phone, company, lead_score, source_platform, created_at')
-        .eq('workspace_id', workspaceId).gte('created_at', from).lte('created_at', to)
-        .order('created_at', { ascending: false }),
+      (() => {
+        let q = supabase.from('sage_emails')
+          .select('id, from_name, from_address, subject, received_at, ai_priority, ai_summary, ai_entities')
+          .eq('workspace_id', workspaceId).eq('direction', 'inbound').eq('is_read', false).eq('is_trashed', false)
+          .gte('received_at', from).lte('received_at', to)
+          .order('received_at', { ascending: false })
+        if (visibleUserIds.length === 1) q = (q as any).eq('user_id', visibleUserIds[0])
+        else if (visibleUserIds.length > 1) q = (q as any).in('user_id', visibleUserIds)
+        return q
+      })(),
+      (() => {
+        let q = supabase.from('conversations')
+          .select('id, title, platform, message_count, last_activity_at, ai_priority, ai_entities, bot:bots(name)')
+          .eq('workspace_id', workspaceId).eq('status', 'active')
+          .gte('last_activity_at', from).lte('last_activity_at', to)
+          .order('last_activity_at', { ascending: false })
+        if (visibleUserIds.length === 1) q = (q as any).eq('assigned_to', visibleUserIds[0])
+        else if (visibleUserIds.length > 1) q = (q as any).in('assigned_to', visibleUserIds)
+        return q
+      })(),
+      (() => {
+        let q = supabase.from('leads')
+          .select('id, name, email, phone, company, lead_score, source_platform, created_at')
+          .eq('workspace_id', workspaceId).gte('created_at', from).lte('created_at', to)
+          .order('created_at', { ascending: false })
+        if (visibleUserIds.length === 1) q = (q as any).eq('assigned_to', visibleUserIds[0])
+        else if (visibleUserIds.length > 1) q = (q as any).in('assigned_to', visibleUserIds)
+        return q
+      })(),
       (() => {
         let q = supabase.from('sage_tickets')
           .select('id, title, priority, status, created_at, contact:sage_contacts(name, email, phone)')
           .eq('workspace_id', workspaceId).gte('created_at', from).lte('created_at', to)
           .order('created_at', { ascending: false })
         if (viewAsUserId) q = (q as any).eq('owner_id', viewAsUserId)
+        else if (visibleUserIds.length === 1) q = (q as any).eq('owner_id', visibleUserIds[0])
+        else if (visibleUserIds.length > 1)  q = (q as any).in('owner_id', visibleUserIds)
         return q
       })(),
       sbAny.from('sage_deal_activities')

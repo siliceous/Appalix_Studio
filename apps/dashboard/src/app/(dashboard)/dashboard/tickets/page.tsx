@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect }     from 'next/navigation'
 import type { Metadata } from 'next'
-import type { WorkspaceMember, SageTicket, SageContact } from '@/lib/types'
+import type { WorkspaceMember, SageTicket, SageContact, WorkspaceMemberRole } from '@/lib/types'
+import { ROLE_RANK } from '@/lib/types'
 import { TicketsClient } from '@/app/(dashboard)/sage/tickets/tickets-client'
 import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
@@ -46,19 +47,42 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
 
   const { data: membershipRaw } = await supabase
     .from('workspace_members')
-    .select('workspace_id')
+    .select('workspace_id, role')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true })
     .limit(1)
     .single()
-  const membership = membershipRaw as Pick<WorkspaceMember, 'workspace_id'> | null
+  const membership = membershipRaw as Pick<WorkspaceMember, 'workspace_id' | 'role'> | null
   if (!membership) redirect('/login')
   const workspaceId = membership.workspace_id
+
+  const callerRank   = ROLE_RANK[(membership.role ?? 'viewer') as WorkspaceMemberRole] ?? 1
+  const isRestricted = callerRank < ROLE_RANK.admin
+
+  // For restricted roles, scope to visible user IDs (own + employees for managers)
+  let visibleOwnerIds: string[] = []
+  if (isRestricted) {
+    visibleOwnerIds = [user.id]
+    if (callerRank >= ROLE_RANK.manager) {
+      // Fetch employee user IDs in this workspace
+      const { data: belowMembers } = await supabase
+        .from('workspace_members')
+        .select('user_id, role')
+        .eq('workspace_id', workspaceId)
+      const below = (belowMembers ?? []) as { user_id: string; role: WorkspaceMemberRole }[]
+      const employeeIds = below
+        .filter(m => ROLE_RANK[m.role] < ROLE_RANK.manager && m.user_id !== user.id)
+        .map(m => m.user_id)
+      visibleOwnerIds = [user.id, ...employeeIds]
+    }
+  }
 
   let ticketsQuery = supabase
     .from('sage_tickets')
     .select('id, title, name, email, phone, occurred_at, description, status, priority, contact_method, created_at, updated_at, contact_id, deal_id, owner_id, related_url, external_provider, external_id, external_url, contact:sage_contacts(id, name, email)')
     .eq('workspace_id', workspaceId)
+  if (visibleOwnerIds.length === 1) ticketsQuery = (ticketsQuery as any).eq('owner_id', visibleOwnerIds[0])
+  else if (visibleOwnerIds.length > 1) ticketsQuery = (ticketsQuery as any).in('owner_id', visibleOwnerIds)
   if (dateFrom) ticketsQuery = ticketsQuery.gte('created_at', dateFrom)
   if (dateTo)   ticketsQuery = ticketsQuery.lt('created_at', dateTo)
   ticketsQuery = ticketsQuery.order('created_at', { ascending: false })
