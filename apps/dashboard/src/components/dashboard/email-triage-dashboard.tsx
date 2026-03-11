@@ -1015,14 +1015,20 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
     setModalError(null)
     setModalEmail(t)
     if (mode === 'lead') {
-      setMName(e.from_name ?? e.from_address)
+      const aiName    = e.ai_entities?.name
+      const name      = (aiName && aiName.length < 80) ? aiName : (e.from_name ?? e.from_address)
+      const company   = e.ai_entities?.company ?? ''
+      const interest  = e.ai_entities?.product_interest ?? ''
+      const titleParts = [name, company, interest].filter(Boolean)
+      setMName(name)
       setMEmail(e.from_address)
-      setMCompany(e.ai_entities?.company ?? '')
-      setMDealTitle(e.subject.replace(/^(Re:|Fwd:)\s*/i, '').trim())
+      setMCompany(company)
+      setMDealTitle(titleParts.join(' - '))
       setMNotes(e.ai_summary ?? '')
     }
     if (mode === 'ticket') {
-      setMName(e.from_name ?? e.from_address)
+      const aiNameT = e.ai_entities?.name
+      setMName((aiNameT && aiNameT.length < 80) ? aiNameT : (e.from_name ?? e.from_address))
       setMEmail(e.from_address)
       setMDealTitle(e.subject)
       setMNotes(e.ai_summary ?? (e.body_text ?? '').slice(0, 300))

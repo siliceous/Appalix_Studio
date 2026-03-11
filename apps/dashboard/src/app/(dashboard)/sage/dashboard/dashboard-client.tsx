@@ -319,8 +319,9 @@ function ItemPopup({
 
     if (popup.kind === 'email') {
       const e = data as SageEmail
-      name  = e.ai_entities?.name ?? e.from_name ?? e.from_address
-      email = e.ai_entities?.email ?? e.from_address
+      const aiName = e.ai_entities?.name
+      name  = (aiName && aiName.length < 80) ? aiName : (e.from_name ?? e.from_address)
+      email = e.from_address   // always use the actual sender address — ai_entities.email can differ
       phone = e.ai_entities?.phone ?? null
       company  = e.ai_entities?.company ?? null
       interest = e.ai_entities?.product_interest ?? null
@@ -366,8 +367,9 @@ function ItemPopup({
 
     if (popup.kind === 'email') {
       const e = data as SageEmail
-      name  = e.ai_entities?.name ?? e.from_name ?? e.from_address
-      email = e.ai_entities?.email ?? e.from_address
+      const aiNameT = e.ai_entities?.name
+      name  = (aiNameT && aiNameT.length < 80) ? aiNameT : (e.from_name ?? e.from_address)
+      email = e.from_address   // always use actual sender address
       phone = e.ai_entities?.phone ?? null
       title = e.subject; desc = e.ai_summary ?? null; priority = e.ai_priority ?? 'medium'
     } else if (popup.kind === 'bot') {
