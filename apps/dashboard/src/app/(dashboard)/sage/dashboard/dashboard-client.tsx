@@ -1148,7 +1148,7 @@ export function SageDashboardClient({
   callerRole?: WorkspaceMemberRole
   currentUserId?: string | null
   viewAsUserId?: string | null
-  viewAsName?: string | null
+  viewAsName?: string | null  // kept for API compatibility
   teamMembers?: TeamMember[]
 }) {
   const [dateRange,  setDateRange]  = useState<DatePreset>('7d')
@@ -1413,15 +1413,6 @@ export function SageDashboardClient({
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <>
-      {/* View-as banner */}
-      {viewAsUserId && viewAsName && (
-        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-amber-50 dark:bg-amber-400/10 border-b border-amber-200 dark:border-amber-400/20 text-xs text-amber-800 dark:text-amber-300">
-          <span>Viewing dashboard as <strong>{viewAsName}</strong> — tickets are filtered to their assignments.</span>
-          <a href="/dashboard" className="underline hover:no-underline shrink-0">Exit view</a>
-        </div>
-      )}
-
-
       {/* AI Summary popup */}
       {popup && (
         <ItemPopup
