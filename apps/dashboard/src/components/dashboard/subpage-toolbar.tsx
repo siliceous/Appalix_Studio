@@ -88,9 +88,9 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
   ]
 
   return (
-    <nav className="px-4 border-b dark:border-white/8 bg-white dark:bg-[#1c1c1c] flex items-center shrink-0 gap-4 min-h-[52px]">
+    <nav className="px-4 border-b dark:border-white/8 bg-white dark:bg-[#1c1c1c] grid grid-cols-[1fr_auto] items-center shrink-0 gap-x-4 min-h-[52px]">
       {/* Overview link + page pill buttons */}
-      <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto">
+      <div className="flex items-center gap-1.5 min-w-0 overflow-x-auto">
         <Link
           href="/dashboard"
           className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors shrink-0 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/6 mr-0.5"
@@ -118,7 +118,7 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
       </div>
 
       {/* Controls */}
-      <div className="flex items-center gap-2.5 flex-none">
+      <div className="flex items-center gap-2.5">
         {/* Date preset + optional custom range inputs */}
         <div className="flex items-center gap-2">
           <div className="relative">
