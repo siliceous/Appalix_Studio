@@ -1292,10 +1292,10 @@ export function SageDashboardClient({
         .eq('workspace_id', workspaceId).eq('type', 'task').is('completed_at', null)
         .order('due_at', { ascending: true }).limit(40),
     ]).then(([eR, bR, fR, tR, xR, xtR]) => {
+      console.log('[dash:then]', 'cancelled=', cancelled, '| tickets=', tR.data?.length ?? 0, tR.error ? `ERR:${tR.error.message}` : 'ok')
+      if (tR.error)  console.error('[dash:tickets-err]', tR.error)
+      if (xtR.error) console.error('[dash:ticket-tasks-err]', xtR.error)
       if (cancelled) return
-      if (tR.error)  console.error('[dashboard] tickets query error:',       tR.error)
-      if (xtR.error) console.error('[dashboard] ticket-tasks query error:', xtR.error)
-      console.log('[dashboard] tickets raw count:', tR.data?.length ?? 0, tR.error ? `ERROR: ${tR.error.message}` : 'ok')
       const newEmails  = (eR.data  ?? []) as RawEmail[]
       const newBots    = (bR.data  ?? []) as RawBot[]
       const newForms   = (fR.data  ?? []) as RawLead[]
@@ -1317,6 +1317,8 @@ export function SageDashboardClient({
       ]
       setContactMatches(Object.fromEntries(matchItems.map(i => [i.id, undefined])))
       batchMatchContacts(matchItems).then(results => { if (!cancelled) setContactMatches(results) })
+    }).catch((err: unknown) => {
+      console.error('[dash:promise-all-threw]', err)
     })
 
     return () => { cancelled = true }
