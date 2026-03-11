@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient }              from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 /**
  * Microsoft OAuth2 callback.
@@ -105,6 +105,7 @@ export async function GET(req: NextRequest) {
   }
 
   // ── 4. Save / update integration ────────────────────────────────────────
+  const admin = createAdminClient()
   const config: Record<string, string> = {
     from_email:   email,
     access_token: tokens.access_token,
@@ -114,9 +115,8 @@ export async function GET(req: NextRequest) {
   if (tokens.refresh_token) {
     config.refresh_token = tokens.refresh_token
   } else {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existing } = await (supabase as any)
-      .from('sage_integrations')
+    const { data: existing } = await admin
+      .from('sage_integrations' as never)
       .select('config')
       .eq('workspace_id', workspaceId)
       .eq('user_id', userId)
@@ -128,8 +128,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase as any).from('sage_integrations').upsert(
+  await admin.from('sage_integrations' as never).upsert(
     {
       workspace_id: workspaceId,
       user_id:      userId,
