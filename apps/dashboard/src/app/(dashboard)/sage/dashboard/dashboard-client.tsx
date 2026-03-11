@@ -302,7 +302,7 @@ function ItemPopup({
         setData(d)
       } else if (popup.kind === 'ticket') {
         const { data: d } = await supabase.from('sage_tickets')
-          .select('id, title, description, priority, status, created_at, contact:sage_contacts(name, email, phone)')
+          .select('id, title, description, priority, status, created_at, name, email, phone, contact_method, related_url, occurred_at, contact:sage_contacts(name, email, phone)')
           .eq('id', popup.id).single()
         setData(d)
       }
@@ -921,7 +921,10 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
 
               {/* ── Ticket popup ── */}
               {popup.kind === 'ticket' && (() => {
-                const t = data as SageTicket & { contact: { name: string; email: string | null; phone: string | null } | null }
+                const t = data as SageTicket & { contact: { name: string; email: string | null; phone: string | null } | null; name?: string | null; email?: string | null; phone?: string | null; contact_method?: string | null; related_url?: string | null; occurred_at?: string | null }
+                const displayName  = t.contact?.name  ?? t.name  ?? null
+                const displayEmail = t.contact?.email ?? t.email ?? null
+                const displayPhone = t.contact?.phone ?? t.phone ?? null
                 return (
                   <>
                     <div className="flex items-start gap-3">
@@ -936,19 +939,29 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                             {t.priority}
                           </span>
                           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400">
-                            {t.status}
+                            {t.status.replace('_', ' ')}
                           </span>
+                          {t.contact_method && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                              prefers {t.contact_method}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
-                    {t.contact && (
+                    {(displayName || displayEmail || displayPhone) && (
                       <div>
-                        <p className="text-xs text-gray-400 mb-2">Contact details extracted</p>
+                        <p className="text-xs text-gray-400 mb-2">Contact details</p>
                         <div className="flex flex-wrap gap-2">
-                          <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><User className="w-3 h-3 text-gray-400" />{t.contact.name}</span>
-                          {t.contact.email && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Mail className="w-3 h-3 text-gray-400" />{t.contact.email}</span>}
-                          {t.contact.phone && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Phone className="w-3 h-3 text-gray-400" />{t.contact.phone}</span>}
+                          {displayName  && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><User className="w-3 h-3 text-gray-400" />{displayName}</span>}
+                          {displayEmail && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Mail className="w-3 h-3 text-gray-400" />{displayEmail}</span>}
+                          {displayPhone && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Phone className="w-3 h-3 text-gray-400" />{displayPhone}</span>}
                         </div>
+                      </div>
+                    )}
+                    {t.occurred_at && (
+                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        <span className="font-medium text-gray-400">Occurred:</span> {new Date(t.occurred_at).toLocaleDateString()}
                       </div>
                     )}
                     {t.description && (
@@ -956,6 +969,13 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                         <p className="text-[11px] text-amber-700 dark:text-amber-400 font-bold uppercase tracking-wide mb-2">Description</p>
                         <p className="text-sm text-gray-800 dark:text-gray-100 leading-relaxed whitespace-pre-wrap">{t.description}</p>
                       </div>
+                    )}
+                    {t.related_url && (
+                      <a href={t.related_url} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline truncate"
+                        onClick={e => e.stopPropagation()}>
+                        <ExternalLink className="w-3 h-3 shrink-0" /> {t.related_url}
+                      </a>
                     )}
                   </>
                 )
@@ -1274,11 +1294,11 @@ export function SageDashboardClient({
         return q
       })(),
       (() => {
-        // Tickets: show all open tickets — no date filter, open = needs attention regardless of age
+        // Tickets: show all active tickets — no date filter, active = needs attention regardless of age
         let q = supabase.from('sage_tickets')
           .select('id, title, priority, status, created_at, contact:sage_contacts(name, email, phone)')
           .eq('workspace_id', workspaceId)
-          .in('status', ['open', 'pending'])
+          .in('status', ['open', 'pending', 'in_progress'])
           .order('created_at', { ascending: false })
           .limit(100)
         if (viewAsUserId) q = (q as any).eq('owner_id', viewAsUserId)
@@ -1361,7 +1381,7 @@ export function SageDashboardClient({
   const emailSegs:  DonutSegment[] = [{ name: 'High', value: visEmails.filter(e => e.ai_priority === 'high').length, fill: P_COLORS.high }, { name: 'Medium', value: visEmails.filter(e => e.ai_priority === 'medium').length, fill: P_COLORS.medium }]
   const botSegs:    DonutSegment[] = [{ name: 'High', value: visBots.filter(b => b.ai_priority === 'high').length,   fill: P_COLORS.high }, { name: 'Medium', value: visBots.filter(b => b.ai_priority === 'medium').length,   fill: P_COLORS.medium }]
   const formSegs:   DonutSegment[] = [{ name: 'High', value: visForms.filter(f => f.lead_score === 'high').length, fill: P_COLORS.high }, { name: 'Medium', value: visForms.filter(f => f.lead_score === 'medium').length, fill: P_COLORS.medium }, { name: 'Low', value: visForms.filter(f => f.lead_score === 'low' || !f.lead_score).length, fill: P_COLORS.low }]
-  const ticketSegs: DonutSegment[] = [{ name: 'High', value: visTickets.filter(t => t.priority === 'high' || t.priority === 'urgent').length, fill: P_COLORS.high }, { name: 'Medium', value: visTickets.filter(t => t.priority === 'medium').length, fill: P_COLORS.medium }, { name: 'Low', value: visTickets.filter(t => t.priority === 'low').length, fill: P_COLORS.low }]
+  const ticketSegs: DonutSegment[] = [{ name: 'High', value: tickets.filter(t => t.priority === 'high' || t.priority === 'urgent').length, fill: P_COLORS.high }, { name: 'Medium', value: tickets.filter(t => t.priority === 'medium').length, fill: P_COLORS.medium }, { name: 'Low', value: tickets.filter(t => t.priority === 'low').length, fill: P_COLORS.low }]
 
   // ── Timeline (uses pre-filtered visible arrays) ───────────────────────────
   const P_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 }
@@ -1563,7 +1583,7 @@ export function SageDashboardClient({
               { label: 'Emails',    Icon: Mail,          iconCls: 'text-blue-500',   total: visEmails.length,  href: '/dashboard/email'   },
               { label: 'Bot Chats', Icon: MessageSquare, iconCls: 'text-purple-500', total: visBots.length,    href: '/dashboard/bots'    },
               { label: 'Forms',     Icon: FileText,      iconCls: 'text-green-500',  total: visForms.length,   href: '/dashboard/forms'   },
-              { label: 'Tickets',   Icon: TicketIcon,    iconCls: 'text-amber-500',  total: visTickets.length, href: '/dashboard/tickets' },
+              { label: 'Tickets',   Icon: TicketIcon,    iconCls: 'text-amber-500',  total: tickets.length,    href: '/dashboard/tickets' },
             ].map(card => (
               <Link key={card.label} href={card.href}
                 className="flex items-center gap-2 bg-white dark:bg-[#232323] border dark:border-white/8 rounded-lg px-3 py-2 hover:shadow-sm hover:border-gray-300 dark:hover:border-white/15 transition-all">
@@ -1580,7 +1600,7 @@ export function SageDashboardClient({
               { label: 'Emails',    sub: 'high & medium unread',  Icon: Mail,          iconCls: 'text-blue-500',   segs: emailSegs,  total: visEmails.length,  href: '/dashboard/email'   },
               { label: 'Bot Chats', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-500', segs: botSegs,    total: visBots.length,    href: '/dashboard/bots'    },
               { label: 'Forms',     sub: 'all submissions',       Icon: FileText,      iconCls: 'text-green-500',  segs: formSegs,   total: visForms.length,   href: '/dashboard/forms'   },
-              { label: 'Tickets',   sub: 'all tickets',           Icon: TicketIcon,    iconCls: 'text-amber-500',  segs: ticketSegs, total: visTickets.length, href: '/dashboard/tickets' },
+              { label: 'Tickets',   sub: 'all tickets',           Icon: TicketIcon,    iconCls: 'text-amber-500',  segs: ticketSegs, total: tickets.length,    href: '/dashboard/tickets' },
             ].map(card => (
               <Link key={card.label} href={card.href} className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-4 flex flex-col items-center hover:shadow-md hover:border-gray-300 dark:hover:border-white/15 transition-all cursor-pointer">
                 <div className="w-full flex items-center justify-between mb-2">
@@ -1756,7 +1776,16 @@ export function SageDashboardClient({
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{t.title}</p>
-                          {t.contact && <p className="text-xs text-gray-500 dark:text-gray-400">{t.contact.name}</p>}
+                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                            {t.contact && <span className="text-xs text-gray-500 dark:text-gray-400">{t.contact.name}</span>}
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                              style={{ background: `${P_COLORS[t.priority] ?? '#9ca3af'}20`, color: P_COLORS[t.priority] ?? '#9ca3af' }}>
+                              {t.priority}
+                            </span>
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400">
+                              {t.status.replace('_', ' ')}
+                            </span>
+                          </div>
                         </div>
                         <span className="text-xs text-gray-400 shrink-0">{timeLabel}</span>
                         <button onClick={ev => handleDismiss('ticket', t.id, ev)} title="Dismiss"

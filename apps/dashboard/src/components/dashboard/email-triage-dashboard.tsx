@@ -1557,7 +1557,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
                 </div>
                 <div className="col-span-2">
                   <label className="text-[11px] font-semibold text-gray-500 block mb-1">Notes</label>
-                  <textarea value={mNotes} onChange={e => setMNotes(e.target.value)} rows={2}
+                  <textarea name="lead-notes" value={mNotes} onChange={e => setMNotes(e.target.value)} rows={2}
                     className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none" />
                 </div>
               </div>
@@ -1590,7 +1590,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-gray-500 block mb-1">Description</label>
-                  <textarea value={mNotes} onChange={e => setMNotes(e.target.value)} rows={2}
+                  <textarea name="ticket-description" value={mNotes} onChange={e => setMNotes(e.target.value)} rows={2}
                     className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none" />
                 </div>
               </div>
@@ -1604,7 +1604,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-gray-500 block mb-1">Note</label>
-                  <textarea value={mNote} onChange={e => setMNote(e.target.value)} rows={3}
+                  <textarea name="deal-note" value={mNote} onChange={e => setMNote(e.target.value)} rows={3}
                     className="w-full text-sm px-3 py-2 rounded-lg border dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none" />
                 </div>
               </div>
