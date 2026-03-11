@@ -94,8 +94,9 @@ function TagInput({ name, tags, onChange, placeholder }: TagInputProps) {
 // Main form
 // ---------------------------------------------------------------------------
 
-export default function OnboardingForm() {
+export default function OnboardingForm({ inviteEmail }: { inviteEmail: string }) {
   const [profileUrl,      setProfileUrl]      = useState('')
+  const [syncEmail,       setSyncEmail]        = useState(inviteEmail)
   const [scrapeError,     setScrapeError]      = useState<string | null>(null)
   const [scraped,         setScraped]          = useState(false)
   const [isPending,       startTransition]     = useTransition()
@@ -245,6 +246,21 @@ export default function OnboardingForm() {
           onChange={setTargetCustomers}
           placeholder="e.g. Small business owners, Marketing agencies…"
         />
+      </div>
+
+      {/* Email to sync */}
+      <div>
+        <label htmlFor="sync_email" className={labelCls}>
+          Email to connect for inbox sync
+        </label>
+        <input
+          id="sync_email" name="sync_email" type="email"
+          value={syncEmail}
+          onChange={e => setSyncEmail(e.target.value)}
+          placeholder="you@gmail.com"
+          className={inputCls}
+        />
+        <p className="mt-1 text-xs text-gray-400">Pre-filled from your invite — change it if you use a different address.</p>
       </div>
 
       {/* Email provider */}

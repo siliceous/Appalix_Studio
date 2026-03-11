@@ -190,5 +190,7 @@ export async function saveProfile(formData: FormData) {
   const emailProvider = (formData.get('email_provider') as string | null)?.trim() || 'gmail'
   const validProviders = ['gmail', 'microsoft']
   const provider = validProviders.includes(emailProvider) ? emailProvider : 'gmail'
-  redirect(`/integrations?provider=${provider}&onboarding=1`)
+  const syncEmail = (formData.get('sync_email') as string | null)?.trim() || ''
+  const hintParam = syncEmail ? `&hint=${encodeURIComponent(syncEmail)}` : ''
+  redirect(`/onboarding/connect?provider=${provider}${hintParam}`)
 }

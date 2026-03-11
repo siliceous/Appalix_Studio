@@ -35,7 +35,7 @@ export default async function OnboardingPage() {
             This helps Sage AI understand what you sell so it can prioritise your leads and emails correctly.
           </p>
 
-          <OnboardingForm />
+          <OnboardingForm inviteEmail={user.email ?? ''} />
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-4">

@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
   const appUrl     = process.env.NEXT_PUBLIC_APP_URL ?? ''
   const redirectUri = `${appUrl}/api/oauth/google/callback`
   const flow        = req.nextUrl.searchParams.get('state') ?? 'default'
+  const hint        = req.nextUrl.searchParams.get('hint') ?? ''
 
   // Identify the logged-in user now, while we still have the session cookie
   const supabase = await createClient()
@@ -53,6 +54,7 @@ export async function GET(req: NextRequest) {
   url.searchParams.set('access_type',   'offline')
   url.searchParams.set('prompt',        'consent')
   url.searchParams.set('state',         state)
+  if (hint) url.searchParams.set('login_hint', hint)
 
   return NextResponse.redirect(url.toString())
 }

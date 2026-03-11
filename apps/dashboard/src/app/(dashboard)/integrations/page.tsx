@@ -35,9 +35,9 @@ const AVAILABLE_PLATFORMS: { platform: Platform; desc: string; guide: string }[]
 export default async function IntegrationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ provider?: string; onboarding?: string }>
+  searchParams: Promise<{ provider?: string; onboarding?: string; hint?: string }>
 }) {
-  const { provider: initialProvider, onboarding } = await searchParams
+  const { provider: initialProvider, onboarding, hint } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -188,7 +188,7 @@ export default async function IntegrationsPage({
             Connect external services to power payments, email, automation, and ticketing from Sage.
           </p>
         </div>
-        <IntegrationsClient connected={sageConnected} standalone={false} initialExpanded={initialProvider} onboarding={onboarding === '1'} />
+        <IntegrationsClient connected={sageConnected} standalone={false} initialExpanded={initialProvider} onboarding={onboarding === '1'} loginHint={hint} />
       </section>
     </div>
   )

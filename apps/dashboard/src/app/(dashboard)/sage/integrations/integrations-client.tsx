@@ -169,9 +169,10 @@ interface IntegrationsClientProps {
   standalone?:      boolean  // false when embedded inside another page
   initialExpanded?: string   // auto-open this provider card (e.g. from onboarding)
   onboarding?:      boolean  // redirect to /dashboard after first connection
+  loginHint?:       string   // pre-fill the email hint in the OAuth URL
 }
 
-export function IntegrationsClient({ connected: initialConnected, standalone = true, initialExpanded, onboarding }: IntegrationsClientProps) {
+export function IntegrationsClient({ connected: initialConnected, standalone = true, initialExpanded, onboarding, loginHint }: IntegrationsClientProps) {
   const [connected,         setConnected]        = useState<Set<string>>(initialConnected)
   const [expanded,          setExpanded]         = useState<string | null>(initialExpanded ?? null)
   const [pending,           startTransition]     = useTransition()
@@ -350,7 +351,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                         ) : integration.oauthPath ? (
                           /* OAuth providers — single-click sign-in */
                           <a
-                            href={`${integration.oauthPath}${onboarding ? '?state=onboarding' : ''}`}
+                            href={`${integration.oauthPath}?${onboarding ? 'state=onboarding' : 'state=default'}${loginHint ? `&hint=${encodeURIComponent(loginHint)}` : ''}`}
                             className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium transition-colors"
                           >
                             Connect
