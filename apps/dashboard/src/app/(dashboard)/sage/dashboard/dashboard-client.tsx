@@ -1293,6 +1293,9 @@ export function SageDashboardClient({
         .order('due_at', { ascending: true }).limit(40),
     ]).then(([eR, bR, fR, tR, xR, xtR]) => {
       if (cancelled) return
+      if (tR.error)  console.error('[dashboard] tickets query error:',       tR.error)
+      if (xtR.error) console.error('[dashboard] ticket-tasks query error:', xtR.error)
+      console.log('[dashboard] tickets raw count:', tR.data?.length ?? 0, tR.error ? `ERROR: ${tR.error.message}` : 'ok')
       const newEmails  = (eR.data  ?? []) as RawEmail[]
       const newBots    = (bR.data  ?? []) as RawBot[]
       const newForms   = (fR.data  ?? []) as RawLead[]
