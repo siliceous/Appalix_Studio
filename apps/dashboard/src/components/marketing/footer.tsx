@@ -19,7 +19,7 @@ const FOOTER_LINKS = {
     { label: 'Contact',      href: '/contact'      },
     { label: 'Security',     href: '/security'     },
     { label: 'Privacy',      href: '/privacy'      },
-    { label: 'Terms',        href: '#'             },
+    { label: 'Terms',        href: '/terms'        },
   ],
 }
 
