@@ -5,15 +5,31 @@ import { createClient }              from '@/lib/supabase/server'
  * Microsoft OAuth2 callback.
  * Exchanges the auth code for tokens, gets the user's Outlook email,
  * and saves everything to sage_integrations.
+ *
+ * User identity (uid, wid) is read from the state parameter so this
+ * works even if the session cookie is not available after the redirect.
  */
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
-  const code  = searchParams.get('code')
-  const state = searchParams.get('state') ?? 'default'
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+  const code     = searchParams.get('code')
+  const rawState = searchParams.get('state') ?? ''
+  const appUrl   = process.env.NEXT_PUBLIC_APP_URL ?? ''
 
   if (!code) {
     return NextResponse.redirect(`${appUrl}/integrations?error=microsoft_oauth_denied`)
+  }
+
+  // Decode state — supports both new base64url JSON and legacy plain strings
+  let flow = 'default'
+  let userId: string | null = null
+  let workspaceId: string | null = null
+  try {
+    const parsed = JSON.parse(Buffer.from(rawState, 'base64url').toString())
+    flow        = parsed.flow ?? 'default'
+    userId      = parsed.uid  ?? null
+    workspaceId = parsed.wid  ?? null
+  } catch {
+    flow = rawState || 'default'
   }
 
   const clientId     = process.env.MICROSOFT_CLIENT_ID!
@@ -66,25 +82,26 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${appUrl}/integrations?error=microsoft_email_missing`)
   }
 
-  // ── 3. Identify the authenticated workspace user ─────────────────────────
+  // ── 3. Identify the workspace user ───────────────────────────────────────
+  // Prefer identity from state; fall back to session cookie
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return NextResponse.redirect(`${appUrl}/login`)
-  }
+  if (!userId || !workspaceId) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.redirect(`${appUrl}/login`)
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: membershipRaw } = await (supabase as any)
-    .from('workspace_members')
-    .select('workspace_id')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: true })
-    .limit(1)
-    .single()
-  const membership = membershipRaw as { workspace_id: string } | null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: membershipRaw } = await (supabase as any)
+      .from('workspace_members')
+      .select('workspace_id')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .single()
+    const membership = membershipRaw as { workspace_id: string } | null
+    if (!membership) return NextResponse.redirect(`${appUrl}/login`)
 
-  if (!membership) {
-    return NextResponse.redirect(`${appUrl}/login`)
+    userId      = user.id
+    workspaceId = membership.workspace_id
   }
 
   // ── 4. Save / update integration ────────────────────────────────────────
@@ -101,8 +118,8 @@ export async function GET(req: NextRequest) {
     const { data: existing } = await (supabase as any)
       .from('sage_integrations')
       .select('config')
-      .eq('workspace_id', membership.workspace_id)
-      .eq('user_id', user.id)
+      .eq('workspace_id', workspaceId)
+      .eq('user_id', userId)
       .eq('provider', 'microsoft')
       .maybeSingle()
     const existingConfig = ((existing as { config?: Record<string, string> } | null)?.config ?? {})
@@ -114,8 +131,8 @@ export async function GET(req: NextRequest) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (supabase as any).from('sage_integrations').upsert(
     {
-      workspace_id: membership.workspace_id,
-      user_id:      user.id,
+      workspace_id: workspaceId,
+      user_id:      userId,
       provider:     'microsoft',
       status:       'connected',
       config,
@@ -124,7 +141,7 @@ export async function GET(req: NextRequest) {
   )
 
   // ── 5. Redirect ──────────────────────────────────────────────────────────
-  if (state === 'onboarding') {
+  if (flow === 'onboarding') {
     return NextResponse.redirect(`${appUrl}/dashboard`)
   }
   return NextResponse.redirect(`${appUrl}/integrations?connected=microsoft`)
