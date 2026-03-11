@@ -80,7 +80,7 @@ export default async function BotsPage({
   type MRow = { user_id: string; role: WorkspaceMemberRole }
   const teamMembers: TeamMember[] = callerRank >= ROLE_RANK.manager
     ? ((membersRes.data ?? []) as MRow[])
-        .filter(m => (ROLE_RANK[m.role] ?? 0) <= callerRank)  // can only assign to peers and below
+        .filter(m => (ROLE_RANK[m.role] ?? 0) <= callerRank && m.user_id !== user.id)  // can only assign to peers and below, not self
         .map(m => {
           const p = pMap[m.user_id]
           return { user_id: m.user_id, name: p ? [p.first_name, p.last_name].filter(Boolean).join(' ') : m.user_id }
