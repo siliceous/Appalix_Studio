@@ -18,6 +18,7 @@
 import { ImapFlow }               from 'imapflow'
 import { supabase }               from '../lib/supabase.js'
 import { syncEmailsForWorkspace } from './sage-email-sync.js'
+import { getValidAccessToken }    from './oauth-token-refresh.js'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -26,16 +27,30 @@ import { syncEmailsForWorkspace } from './sage-email-sync.js'
 interface ImapCreds {
   host: string
   port: number
-  auth: { user: string; pass: string }
+  auth: { user: string; pass?: string; accessToken?: string }
 }
 
-function getImapCreds(
-  provider: string,
-  config:   Record<string, string>,
-): ImapCreds | null {
-  const email    = config.from_email
+/** Resolves IMAP credentials, handling both OAuth2 and app-password flows. */
+async function resolveImapCreds(
+  workspaceId: string,
+  userId:      string,
+  provider:    string,
+  config:      Record<string, string>,
+): Promise<ImapCreds | null> {
+  const email = config.from_email
+  if (!email) return null
+
+  if (config.auth_method === 'oauth2') {
+    const token = await getValidAccessToken(workspaceId, userId, provider as 'gmail' | 'microsoft', config)
+    if (!token) return null
+    if (provider === 'gmail')     return { host: 'imap.gmail.com',        port: 993, auth: { user: email, accessToken: token } }
+    if (provider === 'microsoft') return { host: 'outlook.office365.com', port: 993, auth: { user: email, accessToken: token } }
+    return null
+  }
+
+  // App-password fallback
   const password = config.app_password ?? config.password
-  if (!email || !password) return null
+  if (!password) return null
   if (provider === 'gmail')     return { host: 'imap.gmail.com',        port: 993, auth: { user: email, pass: password } }
   if (provider === 'microsoft') return { host: 'outlook.office365.com', port: 993, auth: { user: email, pass: password } }
   return null
@@ -153,7 +168,9 @@ async function syncActiveIntegrations() {
       const wsId   = row.workspace_id as string
       if (activeLoops.has(userId)) continue  // already running
 
-      const creds = getImapCreds(
+      const creds = await resolveImapCreds(
+        wsId,
+        userId,
         row.provider as string,
         row.config   as Record<string, string>,
       )

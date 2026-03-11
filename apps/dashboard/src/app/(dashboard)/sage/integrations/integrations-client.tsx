@@ -8,14 +8,15 @@ import { saveEmailSignature, getEmailSignature } from '@/app/actions/sage-emails
 import type { SageIntegrationProvider } from '@/lib/types'
 
 interface IntegrationCard {
-  provider:    SageIntegrationProvider
-  name:        string
-  description: string
-  logo:        string
-  category:    'automation' | 'email' | 'tickets' | 'payments' | 'email_marketing'
-  fields:      Array<{ name: string; label: string; type: string; placeholder: string; hint?: string }>
-  docsUrl?:    string
+  provider:     SageIntegrationProvider
+  name:         string
+  description:  string
+  logo:         string
+  category:     'automation' | 'email' | 'tickets' | 'payments' | 'email_marketing'
+  fields:       Array<{ name: string; label: string; type: string; placeholder: string; hint?: string }>
+  docsUrl?:     string
   tutorialUrl?: string
+  oauthPath?:   string   // e.g. '/api/oauth/google' — if set, OAuth button replaces text fields
 }
 
 const INTEGRATIONS: IntegrationCard[] = [
@@ -46,27 +47,21 @@ const INTEGRATIONS: IntegrationCard[] = [
   {
     provider:    'gmail',
     name:        'Gmail',
-    description: 'Send emails from contact and deal records using your Gmail account. Emails are logged to the activity timeline.',
+    description: 'Connect your Gmail account via Google Sign-In. Emails are synced automatically and sent from your address.',
     logo:        '📧',
     category:    'email',
-    fields: [
-      { name: 'from_email',    label: 'From Email',    type: 'email',    placeholder: 'you@gmail.com' },
-      { name: 'app_password',  label: 'App Password',  type: 'password', placeholder: 'xxxx xxxx xxxx xxxx', hint: 'Create an App Password in your Google Account → Security → 2-Step Verification → App Passwords' },
-    ],
-    docsUrl:     'https://myaccount.google.com/apppasswords',
+    fields:      [],
+    oauthPath:   '/api/oauth/google',
     tutorialUrl: '/resources/connect-sage-gmail',
   },
   {
     provider:    'microsoft',
     name:        'Microsoft / Outlook',
-    description: 'Send emails from contact and deal records using your Microsoft Outlook or Office 365 account.',
+    description: 'Connect your Outlook or Office 365 account via Microsoft Sign-In. Emails are synced automatically.',
     logo:        '📬',
     category:    'email',
-    fields: [
-      { name: 'from_email', label: 'Email Address', type: 'email',    placeholder: 'you@outlook.com' },
-      { name: 'password',   label: 'App Password',  type: 'password', placeholder: 'App-specific password', hint: 'Create an App Password in your Microsoft Account → Security → Advanced security options' },
-    ],
-    docsUrl:     'https://account.microsoft.com/security',
+    fields:      [],
+    oauthPath:   '/api/oauth/microsoft',
     tutorialUrl: '/resources/connect-sage-microsoft',
   },
   {
@@ -352,6 +347,14 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                             {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
                             Disconnect
                           </button>
+                        ) : integration.oauthPath ? (
+                          /* OAuth providers — single-click sign-in */
+                          <a
+                            href={`${integration.oauthPath}${onboarding ? '?state=onboarding' : ''}`}
+                            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium transition-colors"
+                          >
+                            Connect
+                          </a>
                         ) : (
                           <button
                             onClick={() => toggleExpand(integration.provider)}
@@ -431,8 +434,8 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                       </>
                     )}
 
-                    {/* Config form — shown when expanding a non-connected integration */}
-                    {isExpanded && !isConnected && (
+                    {/* Config form — shown when expanding a non-connected, non-OAuth integration */}
+                    {isExpanded && !isConnected && !integration.oauthPath && (
                       <div className="border-t dark:border-white/8 px-4 py-4 space-y-3 bg-gray-50 dark:bg-white/3 rounded-b-xl">
                         {integration.fields.map(field => (
                           <div key={field.name}>

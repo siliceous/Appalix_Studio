@@ -14,6 +14,7 @@ import { supabase }                                    from '../lib/supabase.js'
 import { callClaude }                                  from './ai/claude.js'
 import { getWorkspaceAutoSettings, isFullAutomation }  from '../lib/auto-settings.js'
 import { executeAutoAction }                           from './sage-auto-execute.js'
+import { getValidAccessToken }                         from './oauth-token-refresh.js'
 
 // ---------------------------------------------------------------------------
 // .ics / iCalendar parser — no external dependency needed
@@ -138,21 +139,26 @@ function isCalendarNotification(
 interface ImapCreds {
   host: string
   port: number
-  auth: { user: string; pass: string }
+  auth: { user: string; pass?: string; accessToken?: string }
 }
 
-function getImapCreds(provider: string, config: Record<string, string>): ImapCreds | null {
-  const email    = config.from_email
+function getImapCreds(provider: string, config: Record<string, string>, accessToken?: string): ImapCreds | null {
+  const email = config.from_email
+  if (!email) return null
+
+  // OAuth2 path
+  if (accessToken) {
+    if (provider === 'gmail')     return { host: 'imap.gmail.com',        port: 993, auth: { user: email, accessToken } }
+    if (provider === 'microsoft') return { host: 'outlook.office365.com', port: 993, auth: { user: email, accessToken } }
+    return null
+  }
+
+  // App-password fallback
   const password = config.app_password ?? config.password
+  if (!password) return null
 
-  if (!email || !password) return null
-
-  if (provider === 'gmail') {
-    return { host: 'imap.gmail.com', port: 993, auth: { user: email, pass: password } }
-  }
-  if (provider === 'microsoft') {
-    return { host: 'outlook.office365.com', port: 993, auth: { user: email, pass: password } }
-  }
+  if (provider === 'gmail')     return { host: 'imap.gmail.com',        port: 993, auth: { user: email, pass: password } }
+  if (provider === 'microsoft') return { host: 'outlook.office365.com', port: 993, auth: { user: email, pass: password } }
   return null
 }
 
@@ -655,7 +661,16 @@ export async function syncEmailsForWorkspace(workspaceId: string, userId: string
   }
 
   const { provider, config } = integrations[0] as { provider: string; config: Record<string, string> }
-  const creds = getImapCreds(provider, config)
+
+  // Resolve access token — refresh if OAuth2 and expired
+  let accessToken: string | undefined
+  if (config.auth_method === 'oauth2') {
+    const token = await getValidAccessToken(workspaceId, userId, provider as 'gmail' | 'microsoft', config)
+    if (!token) throw new Error(`OAuth2 token unavailable for ${provider} integration.`)
+    accessToken = token
+  }
+
+  const creds = getImapCreds(provider, config, accessToken)
 
   if (!creds) {
     throw new Error(`Missing credentials for ${provider} integration.`)

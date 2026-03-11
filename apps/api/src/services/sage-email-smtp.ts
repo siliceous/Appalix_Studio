@@ -9,6 +9,7 @@
  */
 import nodemailer from 'nodemailer'
 import { supabase } from '../lib/supabase.js'
+import { getValidAccessToken } from './oauth-token-refresh.js'
 
 interface EmailAttachment {
   filename:    string
@@ -29,24 +30,30 @@ interface SendEmailOptions {
 }
 
 interface SmtpCreds {
-  host:     string
-  port:     number
-  user:     string
-  password: string
+  host:        string
+  port:        number
+  user:        string
+  password?:   string
+  accessToken?: string   // OAuth2 — used instead of password when set
 }
 
-function getSmtpCreds(provider: string, config: Record<string, string>): SmtpCreds | null {
-  const user     = config.from_email
+function getSmtpCreds(provider: string, config: Record<string, string>, accessToken?: string): SmtpCreds | null {
+  const user = config.from_email
+  if (!user) return null
+
+  // OAuth2 path
+  if (accessToken) {
+    if (provider === 'gmail')     return { host: 'smtp.gmail.com',    port: 587, user, accessToken }
+    if (provider === 'microsoft') return { host: 'smtp.office365.com', port: 587, user, accessToken }
+    return null
+  }
+
+  // App-password fallback
   const password = config.app_password ?? config.password
+  if (!password) return null
 
-  if (!user || !password) return null
-
-  if (provider === 'gmail') {
-    return { host: 'smtp.gmail.com', port: 587, user, password }
-  }
-  if (provider === 'microsoft') {
-    return { host: 'smtp.office365.com', port: 587, user, password }
-  }
+  if (provider === 'gmail')     return { host: 'smtp.gmail.com',    port: 587, user, password }
+  if (provider === 'microsoft') return { host: 'smtp.office365.com', port: 587, user, password }
   return null
 }
 
@@ -68,22 +75,46 @@ export async function sendEmailSMTP(opts: SendEmailOptions): Promise<void> {
   }
 
   const { provider, config } = integrations[0] as { provider: string; config: Record<string, string> }
-  const creds = getSmtpCreds(provider, config)
+
+  // Resolve access token — refresh if OAuth2 and expired
+  let accessToken: string | undefined
+  if (config.auth_method === 'oauth2') {
+    const token = await getValidAccessToken(workspaceId, userId, provider as 'gmail' | 'microsoft', config)
+    if (!token) throw new Error(`OAuth2 token unavailable for ${provider} integration.`)
+    accessToken = token
+  }
+
+  const creds = getSmtpCreds(provider, config, accessToken)
 
   if (!creds) {
     throw new Error(`Missing SMTP credentials for ${provider} integration.`)
   }
 
   // Create nodemailer transporter
-  const transporter = nodemailer.createTransport({
-    host:   creds.host,
-    port:   creds.port,
-    secure: false,          // STARTTLS on port 587
-    auth: {
-      user: creds.user,
-      pass: creds.password,
-    },
-  })
+  const transporter = nodemailer.createTransport(
+    creds.accessToken
+      ? {
+          // OAuth2 SMTP
+          host:   creds.host,
+          port:   creds.port,
+          secure: false,
+          auth: {
+            type:        'OAuth2',
+            user:        creds.user,
+            accessToken: creds.accessToken,
+          },
+        }
+      : {
+          // App-password SMTP
+          host:   creds.host,
+          port:   creds.port,
+          secure: false,          // STARTTLS on port 587
+          auth: {
+            user: creds.user,
+            pass: creds.password,
+          },
+        },
+  )
 
   // Send the email
   const info = await transporter.sendMail({
