@@ -291,13 +291,14 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
 
               const isSelected = selectedIds.has(ticket.id)
               return (
-                <div key={ticket.id} className={`flex items-start gap-4 px-5 py-4 transition-colors ${isSelected ? 'bg-amber-50 dark:bg-amber-500/8' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}>
+                <div key={ticket.id} onClick={() => setSlideTicket(ticket)} className={`flex items-start gap-4 px-5 py-4 transition-colors cursor-pointer ${isSelected ? 'bg-amber-50 dark:bg-amber-500/8' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}>
                   {/* Checkbox — only for users who can write (merge requires canWrite) */}
                   {canWrite && (
                     <input
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => toggleSelect(ticket.id)}
+                      onClick={e => e.stopPropagation()}
                       className="mt-1 shrink-0 w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-amber-500 cursor-pointer"
                     />
                   )}
@@ -325,7 +326,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
                   </div>
 
                   {/* Status selector + actions */}
-                  <div className="shrink-0 flex items-center gap-2">
+                  <div className="shrink-0 flex items-center gap-2" onClick={e => e.stopPropagation()}>
                     {canWrite ? (
                       <select
                         value={ticket.status}
