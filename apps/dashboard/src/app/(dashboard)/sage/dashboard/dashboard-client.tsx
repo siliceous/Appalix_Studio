@@ -1129,7 +1129,7 @@ export function SageDashboardClient({
   viewAsName?: string | null
   teamMembers?: TeamMember[]
 }) {
-  const [dateRange,  setDateRange]  = useState<DatePreset>('today')
+  const [dateRange,  setDateRange]  = useState<DatePreset>('7d')
   const [customFrom, setCustomFrom] = useState<string>('')
   const [customTo,   setCustomTo]   = useState<string>('')
   const greeting = useMemo(() => {
