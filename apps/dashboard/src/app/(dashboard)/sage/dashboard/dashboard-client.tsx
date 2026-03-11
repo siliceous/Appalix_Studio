@@ -1421,27 +1421,6 @@ export function SageDashboardClient({
         </div>
       )}
 
-      {/* Team picker — shown for managers and above when not already viewing as someone */}
-      {!viewAsUserId && teamMembers.length > 0 && (
-        <div className="flex items-center gap-2 px-4 py-2 border-b dark:border-white/10 bg-white dark:bg-[#1e1e1e]">
-          <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">View as:</span>
-          <div className="relative">
-            <select
-              defaultValue=""
-              onChange={e => { if (e.target.value) window.location.href = `/dashboard?viewAs=${e.target.value}` }}
-              className="appearance-none pl-3 pr-7 py-1.5 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
-            >
-              <option value="" disabled>Select team member…</option>
-              {teamMembers.map((m) => (
-                <option key={m.user_id} value={m.user_id}>
-                  {m.name} ({m.role})
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
-          </div>
-        </div>
-      )}
 
       {/* AI Summary popup */}
       {popup && (
@@ -1485,6 +1464,25 @@ export function SageDashboardClient({
           <Link href="/sage/pipelines" className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors">
             <Kanban className="w-3.5 h-3.5" /> Pipelines
           </Link>
+
+          {/* View as — team member picker for managers */}
+          {!viewAsUserId && teamMembers.length > 0 && (
+            <div className="relative">
+              <select
+                defaultValue=""
+                onChange={e => { if (e.target.value) window.location.href = `/dashboard?viewAs=${e.target.value}` }}
+                className="appearance-none pl-3 pr-7 py-2 text-sm border dark:border-white/10 rounded-xl bg-white dark:bg-[#232323] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+              >
+                <option value="" disabled>View as…</option>
+                {teamMembers.map((m) => (
+                  <option key={m.user_id} value={m.user_id}>
+                    {m.name} ({m.role})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+            </div>
+          )}
 
           {/* Date range */}
           <div className="flex items-center gap-2 flex-wrap">
