@@ -59,13 +59,20 @@ export async function GET(req: NextRequest) {
         ].join(' '),
       }),
     })
-    tokens = await res.json() as typeof tokens
-  } catch {
+    const body = await res.json() as typeof tokens & { error?: string; error_description?: string }
+    if (!res.ok || body.error) {
+      const desc = encodeURIComponent(body.error_description ?? body.error ?? 'unknown')
+      console.error('[oauth/microsoft/callback] token error:', body.error, body.error_description)
+      return NextResponse.redirect(`${appUrl}/integrations?error=microsoft_token_failed&detail=${desc}`)
+    }
+    tokens = body
+  } catch (e) {
+    console.error('[oauth/microsoft/callback] token fetch threw:', e)
     return NextResponse.redirect(`${appUrl}/integrations?error=microsoft_token_failed`)
   }
 
   if (!tokens.access_token) {
-    return NextResponse.redirect(`${appUrl}/integrations?error=microsoft_token_failed`)
+    return NextResponse.redirect(`${appUrl}/integrations?error=microsoft_token_failed&detail=no_access_token`)
   }
 
   // ── 2. Get the user's email via Microsoft Graph (with ID token fallback) ──
