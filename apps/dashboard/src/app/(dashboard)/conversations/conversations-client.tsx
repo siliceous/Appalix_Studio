@@ -9,6 +9,8 @@ import {
 } from 'lucide-react'
 import { PLATFORM_META, timeAgo } from '@/lib/utils'
 import { renameConversation, assignConversation } from '@/app/actions/conversation'
+import { exportConversations } from '@/app/actions/csv-export'
+import { CsvExportButton } from '@/components/ui/csv-export-button'
 import type { ConvRow, BotOption, ConvFilters, TeamMember } from './page'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -80,11 +82,14 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
     <div className="max-w-6xl mx-auto space-y-5 p-8">
 
       {/* ── Header ── */}
-      <div>
-        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Conversations</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-          Permanent record of every bot conversation — {conversations.length} shown
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Conversations</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            Permanent record of every bot conversation — {conversations.length} shown
+          </p>
+        </div>
+        <CsvExportButton action={exportConversations} />
       </div>
 
       {/* ── Filter bar ── */}

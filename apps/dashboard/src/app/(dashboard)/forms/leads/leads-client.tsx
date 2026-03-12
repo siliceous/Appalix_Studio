@@ -184,8 +184,10 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
           <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
         </div>
 
-        <CsvExportButton action={exportLeads} />
-        <p className="text-xs text-gray-400 ml-auto">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</p>
+        <div className="ml-auto flex items-center gap-3">
+          <CsvExportButton action={exportLeads} />
+          <p className="text-xs text-gray-400">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</p>
+        </div>
       </div>
 
       {/* Table */}
