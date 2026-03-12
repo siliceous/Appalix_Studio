@@ -187,10 +187,15 @@ export async function saveProfile(formData: FormData) {
     }
   }
 
-  const emailProvider = (formData.get('email_provider') as string | null)?.trim() || 'gmail'
-  const validProviders = ['gmail', 'microsoft']
-  const provider = validProviders.includes(emailProvider) ? emailProvider : 'gmail'
-  const syncEmail = (formData.get('sync_email') as string | null)?.trim() || ''
-  const hintParam = syncEmail ? `&hint=${encodeURIComponent(syncEmail)}` : ''
-  redirect(`/onboarding/connect?provider=${provider}${hintParam}`)
+  // Detect email provider from the user's auth email domain
+  const emailDomain = user.email?.split('@')[1]?.toLowerCase() ?? ''
+  const microsoftDomains = ['outlook.com', 'hotmail.com', 'live.com', 'microsoft.com', 'msn.com']
+  const gmailDomains = ['gmail.com', 'googlemail.com']
+  let providerParam = ''
+  if (gmailDomains.includes(emailDomain)) {
+    providerParam = '?provider=gmail'
+  } else if (microsoftDomains.includes(emailDomain)) {
+    providerParam = '?provider=microsoft'
+  }
+  redirect(`/onboarding/connect${providerParam}`)
 }

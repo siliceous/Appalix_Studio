@@ -33,6 +33,8 @@ export async function GET(request: NextRequest) {
   )
 
   let userId: string | undefined
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let userMeta: Record<string, any> = {}
 
   if (code) {
     // PKCE flow (Authorization Code) — used by OAuth and newer magic link flow
@@ -41,7 +43,8 @@ export async function GET(request: NextRequest) {
       console.error('[auth/callback] exchangeCodeForSession error:', error.message)
       return NextResponse.redirect(`${origin}/login?error=auth_failed`)
     }
-    userId = data.user?.id
+    userId   = data.user?.id
+    userMeta = data.user?.user_metadata ?? {}
   } else if (tokenHash && type) {
     // Token hash flow — used by magic links / email OTP in some Supabase configurations
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -50,16 +53,29 @@ export async function GET(request: NextRequest) {
       console.error('[auth/callback] verifyOtp error:', error.message)
       return NextResponse.redirect(`${origin}/login?error=auth_failed`)
     }
-    userId = data.user?.id
+    userId   = data.user?.id
+    userMeta = data.user?.user_metadata ?? {}
   } else {
     return NextResponse.redirect(`${origin}/login?error=missing_code`)
+  }
+
+  const admin = createAdminClient()
+
+  // Patch missing full_name for Microsoft/Outlook OAuth users.
+  // Microsoft sends 'name' in the token; Supabase doesn't always map it to full_name.
+  if (userId && !userMeta.full_name) {
+    const derivedName = userMeta.name as string | undefined
+    if (derivedName) {
+      await admin.auth.admin.updateUserById(userId, {
+        user_metadata: { ...userMeta, full_name: derivedName },
+      })
+    }
   }
 
   // Stamp accepted_at for any pending workspace membership (invite accepted)
   // Track whether this login is accepting a fresh invite
   let justAcceptedInvite = false
   if (userId) {
-    const admin = createAdminClient()
     const { count } = await admin
       .from('workspace_members')
       .update({ accepted_at: new Date().toISOString() }, { count: 'exact' })

@@ -94,9 +94,8 @@ function TagInput({ name, tags, onChange, placeholder }: TagInputProps) {
 // Main form
 // ---------------------------------------------------------------------------
 
-export default function OnboardingForm({ inviteEmail }: { inviteEmail: string }) {
+export default function OnboardingForm({ inviteEmail: _inviteEmail }: { inviteEmail: string }) {
   const [profileUrl,      setProfileUrl]      = useState('')
-  const [syncEmail,       setSyncEmail]        = useState(inviteEmail)
   const [scrapeError,     setScrapeError]      = useState<string | null>(null)
   const [scraped,         setScraped]          = useState(false)
   const [isPending,       startTransition]     = useTransition()
@@ -246,37 +245,6 @@ export default function OnboardingForm({ inviteEmail }: { inviteEmail: string })
           onChange={setTargetCustomers}
           placeholder="e.g. Small business owners, Marketing agencies…"
         />
-      </div>
-
-      {/* Email to sync */}
-      <div>
-        <label htmlFor="sync_email" className={labelCls}>
-          Email to connect for inbox sync
-        </label>
-        <input
-          id="sync_email" name="sync_email" type="email"
-          value={syncEmail}
-          onChange={e => setSyncEmail(e.target.value)}
-          placeholder="you@gmail.com"
-          className={inputCls}
-        />
-        <p className="mt-1 text-xs text-gray-400">Pre-filled from your invite — change it if you use a different address.</p>
-      </div>
-
-      {/* Email provider */}
-      <div>
-        <label className={labelCls}>Which email do you use?</label>
-        <div className="flex gap-3">
-          {[
-            { value: 'gmail',     label: '📧 Gmail' },
-            { value: 'microsoft', label: '📬 Outlook / Microsoft' },
-          ].map(({ value, label }) => (
-            <label key={value} className="flex-1 flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 transition-colors">
-              <input type="radio" name="email_provider" value={value} className="accent-brand-600" defaultChecked={value === 'gmail'} />
-              <span className="text-sm">{label}</span>
-            </label>
-          ))}
-        </div>
       </div>
 
       <button
