@@ -1184,82 +1184,91 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
       <aside className="w-[260px] shrink-0 flex flex-col border-r dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
 
         {/* Header */}
-        <div className="px-4 py-3 border-b dark:border-white/8 shrink-0">
-          <div className="flex items-center justify-between mb-2">
+        <div className="px-4 pt-4 pb-3 border-b dark:border-white/8 shrink-0 space-y-3">
+
+          {/* Row 1: Title + Sync */}
+          <div className="flex items-start justify-between">
             <div className="flex items-center gap-2 min-w-0">
-              <Mail className="w-4 h-4 text-blue-500 shrink-0" />
+              <Mail className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
               <div className="min-w-0">
-                <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Triage</h2>
+                <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-tight">Triage</h2>
                 {connectedEmail && (
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{connectedEmail}</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate mt-0.5">{connectedEmail}</p>
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-1">
+            <button
+              onClick={handleSync}
+              disabled={isSyncing || isReanalyzing}
+              title="Sync inbox"
+              className="flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-50 transition-colors shrink-0"
+            >
+              <RefreshCw className={cn('w-3.5 h-3.5', isSyncing && 'animate-spin')} />
+            </button>
+          </div>
+
+          {/* Row 2: Priority badges + Analyse */}
+          {(highCount > 0 || medCount > 0 || visible.length > 0) && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {highCount > 0 && (
+                <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#61c2ad]/10 text-[#3a9e8a] dark:text-[#61c2ad] font-semibold border border-[#61c2ad]/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#61c2ad]" />{highCount} High
+                </span>
+              )}
+              {medCount > 0 && (
+                <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-500/75 dark:text-amber-400/75 font-semibold border border-amber-200/70 dark:border-amber-500/18">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />{medCount} Medium
+                </span>
+              )}
+              {visible.length > 0 && (
+                <button
+                  onClick={handleReanalyze}
+                  disabled={isReanalyzing || isSyncing}
+                  className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/15 disabled:opacity-50 transition-colors"
+                >
+                  {isReanalyzing ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Brain className="w-2.5 h-2.5" />}
+                  {isReanalyzing
+                    ? 'Analysing…'
+                    : selectedIds.size > 0
+                      ? `Analyse ${selectedIds.size}`
+                      : unanalyzedCount > 0
+                        ? `Analyse ${unanalyzedCount}`
+                        : `Analyse ${visible.length}`}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Row 3: Bulk actions (only when items are present) */}
+          {visible.length > 0 && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  const allSel = visible.length > 0 && visible.every(t => selectedIds.has(t.email.id))
+                  setSelectedIds(allSel ? new Set() : new Set(visible.map(t => t.email.id)))
+                }}
+                title={visible.every(t => selectedIds.has(t.email.id)) ? 'Deselect all' : 'Select all'}
+                className="text-[11px] px-2.5 py-1 rounded-lg border dark:border-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors font-medium"
+              >
+                {visible.every(t => selectedIds.has(t.email.id)) ? 'Deselect all' : 'Select all'}
+              </button>
               {selectedIds.size > 0 && (
                 <button
                   onClick={handleDeleteSelected}
                   disabled={isDeleting}
                   title={`Delete ${selectedIds.size} selected`}
-                  className="flex items-center justify-center w-7 h-7 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-lg border border-red-200 dark:border-red-500/20 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50 transition-colors font-medium"
                 >
                   {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                  Delete {selectedIds.size}
                 </button>
               )}
-              {visible.length > 0 && (
-                <button
-                  onClick={() => {
-                    const allSel = visible.length > 0 && visible.every(t => selectedIds.has(t.email.id))
-                    setSelectedIds(allSel ? new Set() : new Set(visible.map(t => t.email.id)))
-                  }}
-                  title={visible.every(t => selectedIds.has(t.email.id)) ? 'Deselect all' : 'Select all'}
-                  className="text-[11px] px-2 py-1 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors font-medium"
-                >
-                  {visible.every(t => selectedIds.has(t.email.id)) ? 'Deselect' : 'All'}
-                </button>
-              )}
-              <button
-                onClick={handleSync}
-                disabled={isSyncing || isReanalyzing}
-                className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-50 transition-colors"
-              >
-                <RefreshCw className={cn('w-3 h-3', isSyncing && 'animate-spin')} />
-                {isSyncing ? 'Syncing…' : 'Sync'}
-              </button>
             </div>
-          </div>
+          )}
 
-          {/* Status badges */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {highCount > 0 && (
-              <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#61c2ad]/10 text-[#3a9e8a] dark:text-[#61c2ad] font-semibold border border-[#61c2ad]/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#61c2ad]" />{highCount} High
-              </span>
-            )}
-            {medCount > 0 && (
-              <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-500/75 dark:text-amber-400/75 font-semibold border border-amber-200/70 dark:border-amber-500/18">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />{medCount} Medium
-              </span>
-            )}
-            {visible.length > 0 && (
-              <button
-                onClick={handleReanalyze}
-                disabled={isReanalyzing || isSyncing}
-                className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/15 disabled:opacity-50 transition-colors"
-              >
-                {isReanalyzing ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Brain className="w-2.5 h-2.5" />}
-                {isReanalyzing
-                  ? 'Analysing…'
-                  : selectedIds.size > 0
-                    ? `Analyse ${selectedIds.size}`
-                    : unanalyzedCount > 0
-                      ? `Analyse ${unanalyzedCount}`
-                      : `Analyse ${visible.length}`}
-              </button>
-            )}
-          </div>
+          {/* Status messages */}
           {(syncMsg || (analyzeMsg && !isReanalyzing)) && (
-            <p className={cn('text-[11px] mt-1 font-medium', (syncMsg ?? analyzeMsg ?? '').startsWith('Error') ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
+            <p className={cn('text-[11px] font-medium', (syncMsg ?? analyzeMsg ?? '').startsWith('Error') ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
               {syncMsg ?? analyzeMsg}
             </p>
           )}
