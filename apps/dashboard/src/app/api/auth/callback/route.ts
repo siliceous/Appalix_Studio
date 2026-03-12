@@ -55,12 +55,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=missing_code`)
   }
 
-  // If a specific destination was requested, honour it
-  if (next !== '/dashboard') {
-    const redirectTo = next.startsWith('/') ? `${origin}${next}` : origin
-    return NextResponse.redirect(redirectTo)
-  }
-
   // Stamp accepted_at for any pending workspace membership (invite accepted)
   if (userId) {
     const admin = createAdminClient()
@@ -69,6 +63,12 @@ export async function GET(request: NextRequest) {
       .update({ accepted_at: new Date().toISOString() })
       .eq('user_id', userId)
       .is('accepted_at', null)
+  }
+
+  // If a specific destination was requested, honour it
+  if (next !== '/dashboard') {
+    const redirectTo = next.startsWith('/') ? `${origin}${next}` : origin
+    return NextResponse.redirect(redirectTo)
   }
 
   // Check whether this user has completed the onboarding profile form
