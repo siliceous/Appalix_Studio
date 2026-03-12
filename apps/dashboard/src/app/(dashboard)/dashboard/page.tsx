@@ -41,7 +41,7 @@ export default async function DashboardPage({
   // Resolve viewAs — validate caller outranks the target
   let viewAsUserId: string | null = null
   let viewAsName: string | null = null
-  if (viewAs && callerRank >= ROLE_RANK.admin) {
+  if (viewAs && callerRank >= ROLE_RANK.manager) {
     const admin = createAdminClient()
     const { data: targetRaw } = await admin
       .from('workspace_members')

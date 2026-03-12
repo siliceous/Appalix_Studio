@@ -1442,7 +1442,7 @@ export function SageDashboardClient({
       )}
 
       {/* ── Header ───────────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-6 mb-5 flex-wrap">
+      <div className="flex items-start justify-between gap-6 mb-5 flex-wrap pt-4">
         <div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{greeting}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -1460,14 +1460,20 @@ export function SageDashboardClient({
           </Link>
 
           {/* View as — team member picker for managers */}
-          {!viewAsUserId && teamMembers.length > 0 && (
+          {teamMembers.length > 0 && (
             <div className="relative">
               <select
-                defaultValue=""
-                onChange={e => { if (e.target.value) window.location.href = `/dashboard?viewAs=${e.target.value}` }}
+                value={viewAsUserId ?? ''}
+                onChange={e => {
+                  const val = e.target.value
+                  window.location.href = val ? `/dashboard?viewAs=${val}` : '/dashboard'
+                }}
                 className="appearance-none pl-3 pr-7 py-2 text-sm border dark:border-white/10 rounded-xl bg-white dark:bg-[#232323] text-gray-700 dark:text-gray-300 focus:outline-none"
               >
-                <option value="" disabled>View as…</option>
+                {viewAsUserId
+                  ? <option value="">← My view</option>
+                  : <option value="" disabled>View as…</option>
+                }
                 {teamMembers.map((m) => (
                   <option key={m.user_id} value={m.user_id}>
                     {m.name} ({m.role})
