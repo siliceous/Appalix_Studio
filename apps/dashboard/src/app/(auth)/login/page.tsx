@@ -92,7 +92,7 @@ export default function LoginPage() {
     setError(null)
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${location.origin}/api/auth/callback` },
+      options: { redirectTo: `${location.origin}/api/auth/callback`, queryParams: { prompt: 'select_account' } },
     })
     if (error) setError(error.message)
     setLoading(null)
