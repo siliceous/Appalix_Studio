@@ -54,8 +54,6 @@ export async function GET(req: NextRequest) {
           'offline_access',
           'openid',
           'email',
-          'profile',
-          'User.Read',
         ].join(' '),
       }),
     })
