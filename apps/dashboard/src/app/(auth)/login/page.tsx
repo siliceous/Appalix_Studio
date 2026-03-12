@@ -90,9 +90,12 @@ export default function LoginPage() {
   async function handleSocial(provider: Provider) {
     setLoading(provider)
     setError(null)
+    const azureOptions = provider === 'azure'
+      ? { scopes: 'openid email profile User.Read', queryParams: { prompt: 'select_account' } }
+      : { queryParams: { prompt: 'select_account' } }
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${location.origin}/api/auth/callback`, queryParams: { prompt: 'select_account' } },
+      options: { redirectTo: `${location.origin}/api/auth/callback`, ...azureOptions },
     })
     if (error) setError(error.message)
     setLoading(null)
