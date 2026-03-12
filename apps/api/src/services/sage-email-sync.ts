@@ -685,6 +685,11 @@ export async function syncEmailsForWorkspace(workspaceId: string, userId: string
     logger: false,  // suppress verbose imap logs
   })
 
+  // Prevent unhandled 'error' events (e.g. socket timeout) from crashing the process
+  client.on('error', (err: Error) => {
+    console.error('[email-sync] IMAP client error:', err.message)
+  })
+
   await client.connect()
 
   let synced = 0
