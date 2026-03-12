@@ -1145,6 +1145,7 @@ export function SageDashboardClient({
   teamMembers = [],
   userName,
   emailConnected = true,
+  connectProvider = null,
 }: {
   workspaceId: string
   callerRole?: WorkspaceMemberRole
@@ -1154,6 +1155,7 @@ export function SageDashboardClient({
   teamMembers?: TeamMember[]
   userName?: string | null
   emailConnected?: boolean
+  connectProvider?: string | null
 }) {
   const [dateRange,  setDateRange]  = useState<DatePreset>('7d')
   const [customFrom, setCustomFrom] = useState<string>('')
@@ -1568,7 +1570,7 @@ export function SageDashboardClient({
       {/* ── Sync inbox banner — shown when no email is connected ───────── */}
       {!emailConnected && !viewAsUserId && (
         <Link
-          href="/integrations"
+          href={connectProvider ? `/integrations?provider=${connectProvider}` : '/integrations'}
           className="flex items-center gap-3 mb-5 px-4 py-3 bg-[#61c2ad] rounded-xl hover:bg-[#4eab97] transition-colors group shadow-md"
         >
           <Mail className="w-5 h-5 text-white shrink-0" />

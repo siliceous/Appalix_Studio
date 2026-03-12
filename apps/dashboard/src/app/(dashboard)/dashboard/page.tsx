@@ -42,6 +42,14 @@ export default async function DashboardPage({
     .maybeSingle()
   const emailConnected = !!emailIntegrationRaw
 
+  // Detect provider from email domain for banner link
+  const emailDomain = user.email?.split('@')[1]?.toLowerCase() ?? ''
+  const microsoftDomains = ['outlook.com', 'hotmail.com', 'live.com', 'microsoft.com', 'msn.com']
+  const gmailDomains = ['gmail.com', 'googlemail.com']
+  const connectProvider = gmailDomains.includes(emailDomain) ? 'gmail'
+    : microsoftDomains.includes(emailDomain) ? 'microsoft'
+    : null
+
   // Fetch current user's first name for the greeting
   const { data: profileRaw } = await supabase
     .from('user_profiles')
@@ -123,6 +131,7 @@ export default async function DashboardPage({
         teamMembers={teamMembers}
         userName={firstName}
         emailConnected={emailConnected}
+        connectProvider={connectProvider}
       />
     </div>
   )
