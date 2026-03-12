@@ -677,12 +677,13 @@ export async function syncEmailsForWorkspace(workspaceId: string, userId: string
   }
 
   // 2. Connect via IMAP
+  console.log(`[email-sync] Connecting to ${creds.host}:${creds.port} as ${creds.auth.user} auth_method=${config.auth_method}`)
   const client = new ImapFlow({
     host:   creds.host,
     port:   creds.port,
     secure: true,
     auth:   creds.auth,
-    logger: false,  // suppress verbose imap logs
+    logger: { debug: () => {}, info: (obj: unknown) => console.log('[imap]', obj), warn: (obj: unknown) => console.warn('[imap]', obj), error: (obj: unknown) => console.error('[imap]', obj) },
   })
 
   // Prevent unhandled 'error' events (e.g. socket timeout) from crashing the process
