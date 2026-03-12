@@ -440,34 +440,24 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
             <Sparkles className="w-3.5 h-3.5 text-[#61c2ad]" />
           </div>
           <div className="flex items-center gap-2">
-            {/* Quick-action buttons in header for email */}
-            {popup.kind === 'email' && !loading && data && (
-              showReply ? (
-                <>
-                  <button
-                    onClick={() => setShowReply(false)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 hover:text-gray-800 dark:hover:text-gray-200 transition-colors border border-gray-200 dark:border-white/10"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5" /> Back
-                  </button>
-                  <Link
-                    href="/sage/pipelines"
-                    onClick={onClose}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
-                  >
-                    <Kanban className="w-3.5 h-3.5" />
-                    Open Pipeline
-                  </Link>
-                </>
-              ) : (
+            {/* Quick-action buttons in header for email — only shown when compose is open */}
+            {popup.kind === 'email' && !loading && data && showReply && (
+              <>
                 <button
-                  onClick={() => setShowReply(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white transition-colors"
+                  onClick={() => setShowReply(false)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 hover:text-gray-800 dark:hover:text-gray-200 transition-colors border border-gray-200 dark:border-white/10"
                 >
-                  <Reply className="w-3.5 h-3.5" />
-                  Reply
+                  <ArrowLeft className="w-3.5 h-3.5" /> Back
                 </button>
-              )
+                <Link
+                  href="/sage/pipelines"
+                  onClick={onClose}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                >
+                  <Kanban className="w-3.5 h-3.5" />
+                  Open Pipeline
+                </Link>
+              </>
             )}
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors">
               <X className="w-4 h-4 text-gray-400" />
