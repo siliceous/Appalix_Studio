@@ -30,6 +30,14 @@ export default async function DashboardPage({
   const { viewAs } = await searchParams
   const callerRank = ROLE_RANK[membership.role as WorkspaceMemberRole] ?? 0
 
+  // Fetch current user's first name for the greeting
+  const { data: profileRaw } = await supabase
+    .from('user_profiles')
+    .select('first_name')
+    .eq('user_id', user.id)
+    .maybeSingle()
+  const firstName = (profileRaw as { first_name: string } | null)?.first_name ?? null
+
   // Resolve viewAs — validate caller outranks the target
   let viewAsUserId: string | null = null
   let viewAsName: string | null = null
@@ -101,6 +109,7 @@ export default async function DashboardPage({
         viewAsUserId={viewAsUserId}
         viewAsName={viewAsName}
         teamMembers={teamMembers}
+        userName={firstName}
       />
     </div>
   )

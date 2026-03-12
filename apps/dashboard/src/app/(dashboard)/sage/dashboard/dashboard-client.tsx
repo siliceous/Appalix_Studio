@@ -1143,6 +1143,7 @@ export function SageDashboardClient({
   viewAsUserId,
   viewAsName,
   teamMembers = [],
+  userName,
 }: {
   workspaceId: string
   callerRole?: WorkspaceMemberRole
@@ -1150,14 +1151,16 @@ export function SageDashboardClient({
   viewAsUserId?: string | null
   viewAsName?: string | null  // kept for API compatibility
   teamMembers?: TeamMember[]
+  userName?: string | null
 }) {
   const [dateRange,  setDateRange]  = useState<DatePreset>('7d')
   const [customFrom, setCustomFrom] = useState<string>('')
   const [customTo,   setCustomTo]   = useState<string>('')
   const greeting = useMemo(() => {
     const h = new Date().getHours()
-    return h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening'
-  }, [])
+    const base = h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening'
+    return userName ? `${base}, ${userName}` : base
+  }, [userName])
   const [sageAuto,      setSageAuto]      = useState(true)
   const [backfilling,   setBackfilling]   = useState(false)
   const [backfillDone,  setBackfillDone]  = useState<number | null>(null)
