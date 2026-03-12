@@ -153,5 +153,5 @@ export async function GET(req: NextRequest) {
   if (flow === 'onboarding') {
     return NextResponse.redirect(`${appUrl}/dashboard`)
   }
-  return NextResponse.redirect(`${appUrl}/integrations?connected=gmail`)
+  return NextResponse.redirect(`${appUrl}/sage/emails?syncing=1`)
 }

@@ -139,9 +139,20 @@ export async function GET(req: NextRequest) {
     { onConflict: 'workspace_id,user_id,provider' },
   )
 
-  // ── 5. Redirect ──────────────────────────────────────────────────────────
+  // ── 5. Kick off an initial sync in the background ───────────────────────
+  const apiBase    = process.env.API_BASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (apiBase && serviceKey) {
+    fetch(`${apiBase}/sage/emails/sync`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Service-Key': serviceKey },
+      body:    JSON.stringify({ workspace_id: workspaceId, user_id: userId, limit: 50 }),
+    }).catch(() => {/* best-effort — don't block the redirect */})
+  }
+
+  // ── 6. Redirect ──────────────────────────────────────────────────────────
   if (flow === 'onboarding') {
     return NextResponse.redirect(`${appUrl}/dashboard`)
   }
-  return NextResponse.redirect(`${appUrl}/integrations?connected=microsoft`)
+  return NextResponse.redirect(`${appUrl}/sage/emails?syncing=1`)
 }

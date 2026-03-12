@@ -9,9 +9,9 @@ export const metadata: Metadata = { title: 'Emails · Sage' }
 export default async function SageEmailsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ autoSync?: string }>
+  searchParams: Promise<{ autoSync?: string; syncing?: string }>
 }) {
-  const { autoSync } = await searchParams
+  const { autoSync, syncing } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -90,7 +90,7 @@ export default async function SageEmailsPage({
       stripeConnected={stripeConnected}
       contactDeals={contactDeals}
       emailProvider={emailProvider}
-      autoSync={autoSync === '1'}
+      autoSync={autoSync === '1' || syncing === '1'}
     />
   )
 }
