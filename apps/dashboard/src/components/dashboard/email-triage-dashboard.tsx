@@ -40,6 +40,7 @@ interface Props {
   triageEmails:  TriageEmail[]
   workspaceId:   string
   emailProvider: 'gmail' | 'microsoft' | null
+  autoSync?:     boolean
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -853,7 +854,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
+export function EmailTriageDashboard({ triageEmails, emailProvider, autoSync }: Props) {
   const router = useRouter()
   const [dismissed,       setDismissed]       = useState<Set<string>>(new Set())
   const [actioned,        setActioned]        = useState<Map<string, string>>(new Map())
@@ -942,6 +943,12 @@ export function EmailTriageDashboard({ triageEmails, emailProvider }: Props) {
       setTimeout(() => { isSyncingRef.current = false }, 3000)
     })
   }
+
+  // Auto-sync on mount when redirected from OAuth connect flow
+  useEffect(() => {
+    if (autoSync) handleSync()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function handleReanalyze() {
     setAnalyzeMsg(null)

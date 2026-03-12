@@ -69,7 +69,7 @@ function deriveRecommendation(
   return 'create_lead'
 }
 
-export default async function EmailTriagePage({ searchParams }: { searchParams: Promise<{ preset?: string; from?: string; to?: string; viewAs?: string }> }) {
+export default async function EmailTriagePage({ searchParams }: { searchParams: Promise<{ preset?: string; from?: string; to?: string; viewAs?: string; syncing?: string }> }) {
   const [params, autoSettings] = await Promise.all([searchParams, getAutoSettings()])
   const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as SubpagePreset
   const { from: dateFrom, to: dateTo } = getDateRange(preset, params.from, params.to)
@@ -199,7 +199,7 @@ export default async function EmailTriagePage({ searchParams }: { searchParams: 
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
       <SubpageToolbar sourceKey="email" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.email_auto_enabled} />
       <div className="flex flex-1 overflow-hidden">
-        <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} />
+        <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} autoSync={params.syncing === '1'} />
       </div>
     </div>
   )
