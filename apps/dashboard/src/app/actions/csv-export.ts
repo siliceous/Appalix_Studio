@@ -76,10 +76,11 @@ export async function exportContacts(): Promise<{ csv: string; filename: string 
     ]
 
     // Flatten tags array to comma-separated string
-    const rows = (data ?? []).map(r => ({
-      ...r,
-      tags: Array.isArray(r.tags) ? (r.tags as string[]).join('; ') : (r.tags ?? ''),
-    })) as Record<string, unknown>[]
+    const rows = (data ?? []).map(r => {
+      const row = r as Record<string, unknown>
+      row.tags = Array.isArray(row.tags) ? (row.tags as string[]).join('; ') : (row.tags ?? '')
+      return row
+    })
 
     return { csv: toCsv(rows, columns), filename: `contacts-${new Date().toISOString().slice(0, 10)}.csv` }
   } catch (e) {
