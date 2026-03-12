@@ -62,14 +62,18 @@ export default async function FormsPage({
   if (!membership) redirect('/login')
   const workspaceId = membership.workspace_id
   const callerRank  = ROLE_RANK[(membership.role ?? 'viewer') as WorkspaceMemberRole] ?? 1
-  const isRestricted = callerRank < ROLE_RANK.admin
+
+  // viewAs: manager+ can browse a team member's form submissions
+  const viewAsUserId = (params.viewAs && callerRank >= ROLE_RANK.manager) ? params.viewAs : null
+
+  const isRestricted = viewAsUserId ? true : callerRank < ROLE_RANK.admin
 
   // For restricted users: find visible form IDs (forms created by them or their employees)
   let visibleFormIds: string[] = []
   if (isRestricted) {
     const admin = createAdminClient()
-    let visibleUserIds = [user.id]
-    if (callerRank >= ROLE_RANK.manager) {
+    let visibleUserIds = viewAsUserId ? [viewAsUserId] : [user.id]
+    if (!viewAsUserId && callerRank >= ROLE_RANK.manager) {
       const { data: belowMembers } = await admin
         .from('workspace_members').select('user_id, role').eq('workspace_id', workspaceId)
       const below = (belowMembers ?? []) as { user_id: string; role: WorkspaceMemberRole }[]

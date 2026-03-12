@@ -35,6 +35,7 @@ export type FormFilters = {
   form?: string
   status?: string
   q?: string
+  viewAs?: string
 }
 
 interface Props {

@@ -31,6 +31,7 @@ export type ConvFilters = {
   platform?: string
   status?: string
   q?: string
+  viewAs?: string
 }
 
 export default function ConversationsPage() {

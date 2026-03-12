@@ -37,7 +37,7 @@ function getDateRange(preset: SubpagePreset, customFrom?: string, customTo?: str
   return { from: null, to: null }
 }
 
-export default async function TicketsPage({ searchParams }: { searchParams: Promise<{ preset?: string; from?: string; to?: string }> }) {
+export default async function TicketsPage({ searchParams }: { searchParams: Promise<{ preset?: string; from?: string; to?: string; viewAs?: string }> }) {
   const [params, autoSettings] = await Promise.all([searchParams, getAutoSettings()])
   const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as SubpagePreset
   const { from: dateFrom, to: dateTo } = getDateRange(preset, params.from, params.to)
@@ -57,11 +57,17 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
   const workspaceId = membership.workspace_id
 
   const callerRank   = ROLE_RANK[(membership.role ?? 'viewer') as WorkspaceMemberRole] ?? 1
-  const isRestricted = callerRank < ROLE_RANK.admin
+
+  // viewAs: manager+ can browse a team member's tickets
+  const viewAsUserId = (params.viewAs && callerRank >= ROLE_RANK.manager) ? params.viewAs : null
+
+  const isRestricted = viewAsUserId ? true : callerRank < ROLE_RANK.admin
 
   // For restricted roles, scope to visible user IDs (own + employees for managers)
   let visibleOwnerIds: string[] = []
-  if (isRestricted) {
+  if (viewAsUserId) {
+    visibleOwnerIds = [viewAsUserId]
+  } else if (isRestricted) {
     visibleOwnerIds = [user.id]
     if (callerRank >= ROLE_RANK.manager) {
       // Fetch employee user IDs in this workspace

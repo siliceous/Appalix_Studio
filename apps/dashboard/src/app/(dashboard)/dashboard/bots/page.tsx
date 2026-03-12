@@ -89,10 +89,16 @@ export default async function BotsPage({
 
   const { from: dateFrom, to: dateTo } = getDateRange(preset, params.from, params.to)
 
+  // viewAs: manager+ can browse a team member's conversations
+  const viewAsUserId = (params.viewAs && callerRank >= ROLE_RANK.manager) ? params.viewAs : null
+
   // Role-based scoping: admin/owner see all; manager sees own+employees; employee sees own
-  const isRestricted = callerRank < ROLE_RANK.admin
+  // If viewAs is active, scope entirely to that user
+  const isRestricted = viewAsUserId ? true : callerRank < ROLE_RANK.admin
   let visibleUserIds: string[] = []
-  if (isRestricted) {
+  if (viewAsUserId) {
+    visibleUserIds = [viewAsUserId]
+  } else if (isRestricted) {
     if (callerRank >= ROLE_RANK.manager) {
       const allMembers = (membersRes.data ?? []) as MRow[]
       const employeeIds = allMembers
