@@ -1273,7 +1273,8 @@ export function SageDashboardClient({
           .eq('workspace_id', workspaceId).eq('direction', 'inbound').eq('is_read', false).eq('is_trashed', false)
           .gte('received_at', from).lte('received_at', to)
           .order('received_at', { ascending: false })
-        if (visibleUserIds.length === 1) q = (q as any).eq('user_id', visibleUserIds[0])
+        if (viewAsUserId) q = (q as any).eq('user_id', viewAsUserId)
+        else if (visibleUserIds.length === 1) q = (q as any).eq('user_id', visibleUserIds[0])
         else if (visibleUserIds.length > 1) q = (q as any).in('user_id', visibleUserIds)
         return q
       })(),
@@ -1283,7 +1284,8 @@ export function SageDashboardClient({
           .eq('workspace_id', workspaceId).eq('status', 'active')
           .gte('last_activity_at', from).lte('last_activity_at', to)
           .order('last_activity_at', { ascending: false })
-        if (visibleUserIds.length === 1) q = (q as any).eq('assigned_to', visibleUserIds[0])
+        if (viewAsUserId) q = (q as any).eq('assigned_to', viewAsUserId)
+        else if (visibleUserIds.length === 1) q = (q as any).eq('assigned_to', visibleUserIds[0])
         else if (visibleUserIds.length > 1) q = (q as any).in('assigned_to', visibleUserIds)
         return q
       })(),
@@ -1292,7 +1294,8 @@ export function SageDashboardClient({
           .select('id, name, email, phone, company, lead_score, source_platform, created_at')
           .eq('workspace_id', workspaceId).gte('created_at', from).lte('created_at', to)
           .order('created_at', { ascending: false })
-        if (visibleUserIds.length === 1) q = (q as any).eq('assigned_to', visibleUserIds[0])
+        if (viewAsUserId) q = (q as any).eq('assigned_to', viewAsUserId)
+        else if (visibleUserIds.length === 1) q = (q as any).eq('assigned_to', visibleUserIds[0])
         else if (visibleUserIds.length > 1) q = (q as any).in('assigned_to', visibleUserIds)
         return q
       })(),
