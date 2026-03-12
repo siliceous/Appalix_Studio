@@ -1569,14 +1569,14 @@ export function SageDashboardClient({
       {!emailConnected && !viewAsUserId && (
         <Link
           href="/integrations"
-          className="flex items-center gap-3 mb-5 px-4 py-3 bg-[#61c2ad]/10 border border-[#61c2ad]/30 rounded-xl hover:bg-[#61c2ad]/15 transition-colors group"
+          className="flex items-center gap-3 mb-5 px-4 py-3 bg-[#61c2ad] rounded-xl hover:bg-[#4eab97] transition-colors group shadow-md"
         >
-          <Mail className="w-4 h-4 text-[#61c2ad] shrink-0" />
+          <Mail className="w-5 h-5 text-white shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">Connect &amp; sync your inbox</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Link Gmail or Outlook so Sage AI can read and prioritise your emails.</p>
+            <p className="text-sm font-bold text-white">Connect &amp; sync your inbox</p>
+            <p className="text-xs text-white/80">Link Gmail or Outlook so Sage AI can read and prioritise your emails.</p>
           </div>
-          <span className="text-xs font-semibold text-[#61c2ad] whitespace-nowrap group-hover:underline">Get started →</span>
+          <span className="text-sm font-bold text-white whitespace-nowrap group-hover:underline">Get started →</span>
         </Link>
       )}
 
