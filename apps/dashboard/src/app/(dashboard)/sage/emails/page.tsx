@@ -6,7 +6,12 @@ import type { WorkspaceMember, SageEmail } from '@/lib/types'
 
 export const metadata: Metadata = { title: 'Emails · Sage' }
 
-export default async function SageEmailsPage() {
+export default async function SageEmailsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ autoSync?: string }>
+}) {
+  const { autoSync } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -85,6 +90,7 @@ export default async function SageEmailsPage() {
       stripeConnected={stripeConnected}
       contactDeals={contactDeals}
       emailProvider={emailProvider}
+      autoSync={autoSync === '1'}
     />
   )
 }

@@ -1144,6 +1144,7 @@ export function SageDashboardClient({
   viewAsName,
   teamMembers = [],
   userName,
+  emailConnected = true,
 }: {
   workspaceId: string
   callerRole?: WorkspaceMemberRole
@@ -1152,6 +1153,7 @@ export function SageDashboardClient({
   viewAsName?: string | null  // kept for API compatibility
   teamMembers?: TeamMember[]
   userName?: string | null
+  emailConnected?: boolean
 }) {
   const [dateRange,  setDateRange]  = useState<DatePreset>('7d')
   const [customFrom, setCustomFrom] = useState<string>('')
@@ -1562,6 +1564,21 @@ export function SageDashboardClient({
           </div>
         </div>
       </div>
+
+      {/* ── Sync inbox banner — shown when no email is connected ───────── */}
+      {!emailConnected && !viewAsUserId && (
+        <Link
+          href="/sage/emails?autoSync=1"
+          className="flex items-center gap-3 mb-5 px-4 py-3 bg-[#61c2ad]/10 border border-[#61c2ad]/30 rounded-xl hover:bg-[#61c2ad]/15 transition-colors group"
+        >
+          <Mail className="w-4 h-4 text-[#61c2ad] shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">Connect &amp; sync your inbox</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Link Gmail or Outlook so Sage AI can read and prioritise your emails.</p>
+          </div>
+          <span className="text-xs font-semibold text-[#61c2ad] whitespace-nowrap group-hover:underline">Get started →</span>
+        </Link>
+      )}
 
       {/* ── 4 Donut cards ──────────────────────────────────────────────── */}
       <div className="mb-6">

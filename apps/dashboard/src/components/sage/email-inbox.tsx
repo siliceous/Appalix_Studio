@@ -130,6 +130,7 @@ interface EmailInboxProps {
   stripeConnected?: boolean
   contactDeals?:   Record<string, { id: string; title: string }[]>
   emailProvider?:  'gmail' | 'microsoft' | null
+  autoSync?:       boolean
 }
 
 export function EmailInbox({
@@ -137,6 +138,7 @@ export function EmailInbox({
   stripeConnected = false,
   contactDeals    = {},
   emailProvider   = null,
+  autoSync        = false,
 }: EmailInboxProps) {
 
   const router = useRouter()
@@ -196,6 +198,12 @@ export function EmailInbox({
     }, 60_000)
 
     return () => clearInterval(interval)
+  }, [])
+
+  // Auto-sync on mount when navigated from the dashboard banner
+  useEffect(() => {
+    if (autoSync) handleSync()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Reset per-message quoted view when switching threads

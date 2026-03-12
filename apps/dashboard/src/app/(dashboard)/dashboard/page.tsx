@@ -30,6 +30,18 @@ export default async function DashboardPage({
   const { viewAs } = await searchParams
   const callerRank = ROLE_RANK[membership.role as WorkspaceMemberRole] ?? 0
 
+  // Check if user has a connected email integration
+  const { data: emailIntegrationRaw } = await supabase
+    .from('sage_integrations')
+    .select('id')
+    .eq('workspace_id', membership.workspace_id)
+    .eq('user_id', user.id)
+    .in('provider', ['gmail', 'microsoft'])
+    .eq('status', 'connected')
+    .limit(1)
+    .maybeSingle()
+  const emailConnected = !!emailIntegrationRaw
+
   // Fetch current user's first name for the greeting
   const { data: profileRaw } = await supabase
     .from('user_profiles')
@@ -110,6 +122,7 @@ export default async function DashboardPage({
         viewAsName={viewAsName}
         teamMembers={teamMembers}
         userName={firstName}
+        emailConnected={emailConnected}
       />
     </div>
   )
