@@ -52,6 +52,8 @@ export async function GET(req: NextRequest) {
     'offline_access',
     'openid',
     'email',
+    'profile',
+    'User.Read',
   ].join(' ')
 
   const url = new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize')

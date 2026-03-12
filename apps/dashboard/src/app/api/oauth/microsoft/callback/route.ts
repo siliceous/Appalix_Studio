@@ -54,6 +54,8 @@ export async function GET(req: NextRequest) {
           'offline_access',
           'openid',
           'email',
+          'profile',
+          'User.Read',
         ].join(' '),
       }),
     })
@@ -66,16 +68,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${appUrl}/integrations?error=microsoft_token_failed`)
   }
 
-  // ── 2. Get the user's email via Microsoft Graph ──────────────────────────
-  let email: string
+  // ── 2. Get the user's email via Microsoft Graph (with ID token fallback) ──
+  let email = ''
+
+  // Try Graph API first
   try {
     const res  = await fetch('https://graph.microsoft.com/v1.0/me?$select=mail,userPrincipalName', {
       headers: { Authorization: `Bearer ${tokens.access_token}` },
     })
     const info = await res.json() as { mail?: string; userPrincipalName?: string }
     email = info.mail ?? info.userPrincipalName ?? ''
-  } catch {
-    return NextResponse.redirect(`${appUrl}/integrations?error=microsoft_userinfo_failed`)
+  } catch { /* fall through to ID token */ }
+
+  // Fallback: extract email from ID token JWT payload
+  if (!email && tokens.id_token) {
+    try {
+      const payload = JSON.parse(Buffer.from(tokens.id_token.split('.')[1], 'base64url').toString())
+      email = payload.email ?? payload.preferred_username ?? payload.upn ?? ''
+    } catch { /* ignore */ }
   }
 
   if (!email) {
