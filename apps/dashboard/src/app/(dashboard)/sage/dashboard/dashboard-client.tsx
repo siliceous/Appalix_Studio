@@ -1581,64 +1581,47 @@ export function SageDashboardClient({
           /* Collapsed: compact single-row pills */
           <div className="flex flex-wrap gap-3">
             {[
-              { label: 'Emails',    Icon: Mail,          iconCls: 'text-blue-500',   total: visEmails.length,  href: viewAsUserId ? null : '/dashboard/email'                                   },
+              { label: 'Emails',    Icon: Mail,          iconCls: 'text-blue-500',   total: visEmails.length,  href: viewAsUserId ? `/dashboard/email?viewAs=${viewAsUserId}`    : '/dashboard/email'    },
               { label: 'Bot Chats', Icon: MessageSquare, iconCls: 'text-purple-500', total: visBots.length,    href: viewAsUserId ? `/dashboard/bots?viewAs=${viewAsUserId}`    : '/dashboard/bots'    },
               { label: 'Forms',     Icon: FileText,      iconCls: 'text-green-500',  total: visForms.length,   href: viewAsUserId ? `/dashboard/forms?viewAs=${viewAsUserId}`   : '/dashboard/forms'   },
               { label: 'Tickets',   Icon: TicketIcon,    iconCls: 'text-amber-500',  total: tickets.length,    href: viewAsUserId ? `/dashboard/tickets?viewAs=${viewAsUserId}` : '/dashboard/tickets' },
-            ].map(card => card.href ? (
+            ].map(card => (
               <Link key={card.label} href={card.href}
                 className="flex items-center gap-2 bg-white dark:bg-[#232323] border dark:border-white/8 rounded-lg px-3 py-2 hover:shadow-sm hover:border-gray-300 dark:hover:border-white/15 transition-all">
                 <card.Icon className={`w-3.5 h-3.5 ${card.iconCls}`} />
                 <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{card.label}</span>
                 <span className="text-xs font-bold text-gray-900 dark:text-gray-100">{card.total}</span>
               </Link>
-            ) : (
-              <div key={card.label} className="flex items-center gap-2 bg-white dark:bg-[#232323] border dark:border-white/8 rounded-lg px-3 py-2 opacity-50 cursor-not-allowed" title="No access to team member emails">
-                <card.Icon className={`w-3.5 h-3.5 ${card.iconCls}`} />
-                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{card.label}</span>
-                <span className="text-xs text-gray-400">No access</span>
-              </div>
             ))}
           </div>
         ) : (
           /* Expanded: full donut cards */
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             {[
-              { label: 'Emails',    sub: 'high & medium unread',  Icon: Mail,          iconCls: 'text-blue-500',   segs: emailSegs,  total: visEmails.length,  href: viewAsUserId ? null : '/dashboard/email'                                   },
+              { label: 'Emails',    sub: 'high & medium unread',  Icon: Mail,          iconCls: 'text-blue-500',   segs: emailSegs,  total: visEmails.length,  href: viewAsUserId ? `/dashboard/email?viewAs=${viewAsUserId}`    : '/dashboard/email'    },
               { label: 'Bot Chats', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-500', segs: botSegs,    total: visBots.length,    href: viewAsUserId ? `/dashboard/bots?viewAs=${viewAsUserId}`    : '/dashboard/bots'    },
               { label: 'Forms',     sub: 'all submissions',       Icon: FileText,      iconCls: 'text-green-500',  segs: formSegs,   total: visForms.length,   href: viewAsUserId ? `/dashboard/forms?viewAs=${viewAsUserId}`   : '/dashboard/forms'   },
               { label: 'Tickets',   sub: 'all tickets',           Icon: TicketIcon,    iconCls: 'text-amber-500',  segs: ticketSegs, total: tickets.length,    href: viewAsUserId ? `/dashboard/tickets?viewAs=${viewAsUserId}` : '/dashboard/tickets' },
-            ].map(card => {
-              const inner = (
-                <>
-                  <div className="w-full flex items-center justify-between mb-2">
-                    <div>
-                      <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{card.label}</p>
-                      <p className="text-[10px] text-gray-400">{card.href ? card.sub : 'No access'}</p>
-                    </div>
-                    <card.Icon className={`w-4 h-4 ${card.iconCls} ${!card.href ? 'opacity-40' : ''}`} />
+            ].map(card => (
+              <Link key={card.label} href={card.href} className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-4 flex flex-col items-center hover:shadow-md hover:border-gray-300 dark:hover:border-white/15 transition-all cursor-pointer">
+                <div className="w-full flex items-center justify-between mb-2">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{card.label}</p>
+                    <p className="text-[10px] text-gray-400">{card.sub}</p>
                   </div>
-                  <DonutChart segments={card.segs} total={card.total} />
-                  <div className="flex items-center gap-2.5 mt-2 text-[11px] flex-wrap justify-center">
-                    {card.segs.map(s => (
-                      <span key={s.name} className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full" style={{ background: s.fill }} />
-                        <span className="text-gray-500 dark:text-gray-400">{s.value} {s.name.toLowerCase()}</span>
-                      </span>
-                    ))}
-                  </div>
-                </>
-              )
-              return card.href ? (
-                <Link key={card.label} href={card.href} className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-4 flex flex-col items-center hover:shadow-md hover:border-gray-300 dark:hover:border-white/15 transition-all cursor-pointer">
-                  {inner}
-                </Link>
-              ) : (
-                <div key={card.label} className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-4 flex flex-col items-center opacity-60 cursor-not-allowed" title="No access to team member emails">
-                  {inner}
+                  <card.Icon className={`w-4 h-4 ${card.iconCls}`} />
                 </div>
-              )
-            })}
+                <DonutChart segments={card.segs} total={card.total} />
+                <div className="flex items-center gap-2.5 mt-2 text-[11px] flex-wrap justify-center">
+                  {card.segs.map(s => (
+                    <span key={s.name} className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full" style={{ background: s.fill }} />
+                      <span className="text-gray-500 dark:text-gray-400">{s.value} {s.name.toLowerCase()}</span>
+                    </span>
+                  ))}
+                </div>
+              </Link>
+            ))}
           </div>
         )}
       </div>

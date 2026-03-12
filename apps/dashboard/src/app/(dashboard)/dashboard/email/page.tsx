@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect }     from 'next/navigation'
 import type { Metadata } from 'next'
-import type { WorkspaceMember, SageEmail, SageMeeting } from '@/lib/types'
+import type { WorkspaceMember, WorkspaceMemberRole, SageEmail, SageMeeting } from '@/lib/types'
+import { ROLE_RANK } from '@/lib/types'
 import { EmailTriageDashboard, type TriageEmail, type TriageRecommendation } from '@/components/dashboard/email-triage-dashboard'
 import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
@@ -68,7 +69,7 @@ function deriveRecommendation(
   return 'create_lead'
 }
 
-export default async function EmailTriagePage({ searchParams }: { searchParams: Promise<{ preset?: string; from?: string; to?: string }> }) {
+export default async function EmailTriagePage({ searchParams }: { searchParams: Promise<{ preset?: string; from?: string; to?: string; viewAs?: string }> }) {
   const [params, autoSettings] = await Promise.all([searchParams, getAutoSettings()])
   const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as SubpagePreset
   const { from: dateFrom, to: dateTo } = getDateRange(preset, params.from, params.to)
@@ -78,21 +79,26 @@ export default async function EmailTriagePage({ searchParams }: { searchParams: 
 
   const { data: membershipRaw } = await supabase
     .from('workspace_members')
-    .select('workspace_id')
+    .select('workspace_id, role')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true })
     .limit(1)
     .single()
-  const membership = membershipRaw as Pick<WorkspaceMember, 'workspace_id'> | null
+  const membership = membershipRaw as Pick<WorkspaceMember, 'workspace_id' | 'role'> | null
   if (!membership) redirect('/login')
   const workspaceId = membership.workspace_id
+
+  // viewAs: manager+ can browse a team member's emails
+  const callerRank  = ROLE_RANK[(membership.role ?? 'viewer') as WorkspaceMemberRole] ?? 1
+  const viewAsUserId = (params.viewAs && callerRank >= ROLE_RANK.manager) ? params.viewAs : null
+  const effectiveUserId = viewAsUserId ?? user.id
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: emailIntegration } = await (supabase as any)
     .from('sage_integrations')
     .select('provider')
     .eq('workspace_id', workspaceId)
-    .eq('user_id', user.id)
+    .eq('user_id', effectiveUserId)
     .in('provider', ['gmail', 'microsoft'])
     .eq('status', 'connected')
     .limit(1)
@@ -104,7 +110,7 @@ export default async function EmailTriagePage({ searchParams }: { searchParams: 
     .from('sage_emails')
     .select('*, contact:sage_contacts(id, name, email)')
     .eq('workspace_id', workspaceId)
-    .eq('user_id', user.id)
+    .eq('user_id', effectiveUserId)
     .eq('direction', 'inbound')
     .eq('is_trashed', false)
     .eq('is_read', false)
