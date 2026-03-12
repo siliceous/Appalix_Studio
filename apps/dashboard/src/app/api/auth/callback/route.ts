@@ -56,13 +56,16 @@ export async function GET(request: NextRequest) {
   }
 
   // Stamp accepted_at for any pending workspace membership (invite accepted)
+  // Track whether this login is accepting a fresh invite
+  let justAcceptedInvite = false
   if (userId) {
     const admin = createAdminClient()
-    await admin
+    const { count } = await admin
       .from('workspace_members')
-      .update({ accepted_at: new Date().toISOString() })
+      .update({ accepted_at: new Date().toISOString() }, { count: 'exact' })
       .eq('user_id', userId)
       .is('accepted_at', null)
+    justAcceptedInvite = (count ?? 0) > 0
   }
 
   // If a specific destination was requested, honour it
@@ -81,6 +84,11 @@ export async function GET(request: NextRequest) {
 
     if (!profile) {
       return NextResponse.redirect(`${origin}/onboarding`)
+    }
+
+    // Existing user accepting an invite — send them to connect their email
+    if (justAcceptedInvite) {
+      return NextResponse.redirect(`${origin}/onboarding/connect`)
     }
   }
 

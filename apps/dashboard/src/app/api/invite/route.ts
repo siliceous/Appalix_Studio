@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
   const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
     type: 'invite',
     email,
-    options: { redirectTo: `${appUrl}/api/auth/callback?next=/onboarding` },
+    options: { redirectTo: `${appUrl}/api/auth/callback` },
   })
 
   if (linkData?.user) {
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
     const { data: mlData, error: mlError } = await admin.auth.admin.generateLink({
       type: 'magiclink',
       email,
-      options: { redirectTo: `${appUrl}/api/auth/callback?next=/onboarding/connect` },
+      options: { redirectTo: `${appUrl}/api/auth/callback` },
     })
     console.log('[invite] magiclink:', mlData?.properties?.action_link ? 'ok' : 'NULL', mlError?.message ?? '')
     inviteLink = mlData?.properties?.action_link ?? null
