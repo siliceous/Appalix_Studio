@@ -135,6 +135,69 @@ export function startIdleForWorkspace(
 }
 
 // ---------------------------------------------------------------------------
+// Microsoft Graph API poll loop (replaces IMAP IDLE for personal accounts)
+// ---------------------------------------------------------------------------
+
+/**
+ * Polls Graph API every 60 s for new Inbox messages.
+ * Calls syncEmailsForWorkspace when new mail is detected.
+ * Returns a stop() function identical to the IMAP IDLE interface.
+ */
+export function startGraphPollForWorkspace(
+  workspaceId: string,
+  userId:      string,
+  config:      Record<string, string>,
+): () => void {
+  let running = true
+  const label = `workspace=${workspaceId} user=${userId}`
+
+  async function loop() {
+    // Start 2 minutes in the past so we catch any mail that arrived during startup
+    let lastChecked = new Date(Date.now() - 2 * 60 * 1000)
+
+    // Initial catch-up sync
+    try {
+      await syncEmailsForWorkspace(workspaceId, userId, 50)
+    } catch (err) {
+      console.error(`[Graph poll] catch-up sync failed for ${label}:`, (err as Error).message)
+    }
+
+    while (running) {
+      await sleep(60_000)
+      if (!running) break
+
+      try {
+        const token = await getValidAccessToken(workspaceId, userId, 'microsoft', config)
+        if (!token) continue
+
+        const isoTime = lastChecked.toISOString()
+        const url = `https://graph.microsoft.com/v1.0/me/mailFolders/Inbox/messages?$filter=receivedDateTime gt ${isoTime}&$top=1&$select=id`
+
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        lastChecked = new Date()
+
+        if (!res.ok) continue
+
+        const data = await res.json() as { value?: unknown[] }
+        if (data.value && data.value.length > 0) {
+          console.log(`[Graph poll] ${label} new mail detected — syncing`)
+          await syncEmailsForWorkspace(workspaceId, userId, 20)
+        }
+      } catch (err) {
+        console.error(`[Graph poll] error for ${label}:`, (err as Error).message)
+      }
+    }
+
+    console.log(`[Graph poll] ${label} loop stopped`)
+  }
+
+  void loop()
+  return () => { running = false }
+}
+
+// ---------------------------------------------------------------------------
 // Manager — one loop per connected workspace
 // ---------------------------------------------------------------------------
 
@@ -164,21 +227,26 @@ async function syncActiveIntegrations() {
 
     // Start loops for newly connected integrations
     for (const row of integrations ?? []) {
-      const userId = row.user_id as string
-      const wsId   = row.workspace_id as string
+      const userId   = row.user_id as string
+      const wsId     = row.workspace_id as string
+      const provider = row.provider as string
+      const cfg      = row.config as Record<string, string>
       if (activeLoops.has(userId)) continue  // already running
 
-      const creds = await resolveImapCreds(
-        wsId,
-        userId,
-        row.provider as string,
-        row.config   as Record<string, string>,
-      )
+      // Microsoft OAuth2 → Graph API polling (IMAP IDLE unreliable for personal accounts)
+      if (provider === 'microsoft' && cfg.auth_method === 'oauth2') {
+        const stop = startGraphPollForWorkspace(wsId, userId, cfg)
+        activeLoops.set(userId, stop)
+        console.log(`[Graph poll] started for workspace=${wsId} user=${userId}`)
+        continue
+      }
+
+      const creds = await resolveImapCreds(wsId, userId, provider, cfg)
       if (!creds) continue
 
       const stop = startIdleForWorkspace(wsId, userId, creds)
       activeLoops.set(userId, stop)
-      console.log(`[IDLE] started loop for workspace=${wsId} user=${userId} (${row.provider as string})`)
+      console.log(`[IDLE] started loop for workspace=${wsId} user=${userId} (${provider})`)
 
       // Catch-up sync: fetch latest emails that may have arrived during downtime
       syncEmailsForWorkspace(wsId, userId, 50).catch((err: unknown) => {

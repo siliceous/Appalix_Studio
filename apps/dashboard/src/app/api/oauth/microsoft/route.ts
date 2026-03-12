@@ -47,8 +47,9 @@ export async function GET(req: NextRequest) {
   })).toString('base64url')
 
   const scope = [
-    'https://outlook.office.com/IMAP.AccessAsUser.All',
-    'https://outlook.office.com/SMTP.Send',
+    'https://graph.microsoft.com/Mail.Read',
+    'https://graph.microsoft.com/Mail.ReadWrite',
+    'https://graph.microsoft.com/Mail.Send',
     'offline_access',
     'openid',
     'email',

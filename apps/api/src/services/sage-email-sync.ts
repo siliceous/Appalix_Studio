@@ -133,6 +133,25 @@ function isCalendarNotification(
 }
 
 // ---------------------------------------------------------------------------
+// HTML → plain text utility (for Graph API HTML bodies)
+// ---------------------------------------------------------------------------
+
+function stripHtml(html: string): string {
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#(\d+);/g, (_: string, n: string) => String.fromCharCode(Number(n)))
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+// ---------------------------------------------------------------------------
 // Provider config
 // ---------------------------------------------------------------------------
 
@@ -542,6 +561,356 @@ Task: Identify any NEW products, services, or customer segments described in the
 }
 
 // ---------------------------------------------------------------------------
+// Microsoft Graph API email sync
+// ---------------------------------------------------------------------------
+
+interface GraphMessage {
+  id: string
+  subject?: string
+  from?: { emailAddress: { name?: string; address?: string } }
+  toRecipients?: { emailAddress: { name?: string; address?: string } }[]
+  receivedDateTime?: string
+  isRead?: boolean
+  internetMessageId?: string
+  conversationId?: string
+  body?: { contentType: string; content: string }
+  hasAttachments?: boolean
+  isDraft?: boolean
+}
+
+async function syncMicrosoftEmailsViaGraph(opts: {
+  workspaceId:         string
+  userId:              string
+  accessToken:         string
+  fromEmail:           string
+  limit:               number
+  businessDescription: string | null
+  contactPairs:        { email: string; contactId: string }[]
+}): Promise<number> {
+  const { workspaceId, userId, accessToken, fromEmail, limit, businessDescription, contactPairs } = opts
+
+  const top = Math.min(limit, 100)
+  const url = `https://graph.microsoft.com/v1.0/me/mailFolders/Inbox/messages?$orderby=receivedDateTime desc&$top=${top}&$select=id,subject,from,toRecipients,receivedDateTime,isRead,internetMessageId,conversationId,body,hasAttachments,isDraft`
+
+  console.log(`[email-sync] Fetching Graph API messages for ${fromEmail}`)
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`Graph API error: ${res.status} ${errText}`)
+  }
+
+  const data = await res.json() as { value?: GraphMessage[] }
+  const messages = data.value ?? []
+
+  console.log(`[email-sync] Graph API returned ${messages.length} messages`)
+
+  let synced = 0
+
+  for (const msg of messages) {
+    try {
+      if (msg.isDraft) continue
+
+      const messageId   = msg.internetMessageId ?? `graph-${msg.id}`
+      const fromAddress = (msg.from?.emailAddress?.address ?? '').toLowerCase()
+      const fromName    = msg.from?.emailAddress?.name ?? fromAddress
+      const toAddress   = msg.toRecipients?.[0]?.emailAddress?.address ?? fromEmail
+      const subject     = msg.subject ?? '(no subject)'
+      const rawBody     = msg.body?.content ?? ''
+      const bodyText    = msg.body?.contentType === 'html' ? stripHtml(rawBody) : rawBody
+      const bodyHtml    = msg.body?.contentType === 'html' ? rawBody : null
+      const receivedAt  = msg.receivedDateTime ?? new Date().toISOString()
+      const threadId    = msg.conversationId ?? null
+
+      const calendarEmail = isCalendarNotification(subject, fromAddress, false)
+
+      // Dedup check
+      const { data: existing } = await supabase
+        .from('sage_emails')
+        .select('id')
+        .eq('workspace_id', workspaceId)
+        .eq('user_id', userId)
+        .eq('message_id', messageId)
+        .single()
+
+      if (existing) continue
+
+      // Auto-link contact
+      const contactId = fromAddress ? await findContactByEmail(workspaceId, fromAddress) : null
+
+      // Fetch ICS attachment if present
+      let icsText: string | null = null
+      if (msg.hasAttachments && !calendarEmail) {
+        try {
+          const attRes = await fetch(
+            `https://graph.microsoft.com/v1.0/me/messages/${msg.id}/attachments?$select=contentType,name,contentBytes`,
+            { headers: { Authorization: `Bearer ${accessToken}` } },
+          )
+          if (attRes.ok) {
+            const attData = await attRes.json() as { value?: { contentType?: string; name?: string; contentBytes?: string }[] }
+            const icsAtt = (attData.value ?? []).find(
+              a => a.contentType === 'text/calendar' ||
+                   a.contentType === 'application/ics' ||
+                   (a.name ?? '').toLowerCase().endsWith('.ics'),
+            )
+            if (icsAtt?.contentBytes) {
+              icsText = Buffer.from(icsAtt.contentBytes, 'base64').toString('utf8')
+            }
+          }
+        } catch { /* attachment fetch failure doesn't block sync */ }
+      }
+
+      const { data: inserted } = await supabase
+        .from('sage_emails')
+        .insert({
+          workspace_id: workspaceId,
+          user_id:      userId,
+          contact_id:   contactId,
+          message_id:   messageId,
+          thread_id:    threadId,
+          from_address: fromAddress,
+          from_name:    fromName,
+          to_address:   toAddress,
+          subject,
+          body_text:    bodyText,
+          body_html:    bodyHtml,
+          received_at:  receivedAt,
+          direction:    'inbound',
+          is_read:      calendarEmail,
+        })
+        .select('id')
+        .single()
+
+      if (!inserted) continue
+
+      synced++
+
+      if (calendarEmail) continue
+
+      // Parse .ics calendar attachment
+      if (icsText) {
+        try {
+          const meeting = parseIcs(icsText)
+          if (meeting && (meeting.title || meeting.startAt)) {
+            await supabase
+              .from('sage_meetings')
+              .upsert({
+                workspace_id:   workspaceId,
+                email_id:       inserted.id,
+                ics_uid:        meeting.icsUid,
+                title:          meeting.title ?? '(untitled)',
+                start_at:       meeting.startAt,
+                end_at:         meeting.endAt,
+                location:       meeting.location,
+                description:    meeting.description,
+                organizer:      meeting.organizer,
+                organizer_name: meeting.organizerName,
+                attendees:      meeting.attendees,
+              }, { onConflict: 'workspace_id,ics_uid', ignoreDuplicates: true })
+          }
+        } catch { /* calendar parsing failure doesn't block email sync */ }
+      }
+
+      // AI analysis
+      try {
+        const priorSummaries: string[] = []
+        try {
+          let priorQuery = supabase
+            .from('sage_emails')
+            .select('subject, body_text, received_at')
+            .eq('workspace_id', workspaceId)
+            .eq('direction', 'inbound')
+            .neq('message_id', messageId)
+            .order('received_at', { ascending: false })
+            .limit(4)
+
+          if (contactId) {
+            priorQuery = priorQuery.eq('contact_id', contactId)
+          } else {
+            priorQuery = priorQuery.ilike('from_address', fromAddress)
+          }
+
+          const { data: priorEmails } = await priorQuery
+          if (priorEmails) {
+            for (const pe of priorEmails) {
+              if (pe.body_text) {
+                const snippet = pe.body_text.slice(0, 600).replace(/\s+/g, ' ').trim()
+                priorSummaries.push(`Subject: ${pe.subject}\n${snippet}`)
+              }
+            }
+          }
+        } catch { /* best-effort */ }
+
+        let crmContext: { contactName?: string; dealTitle?: string; dealStage?: string } | undefined
+        if (contactId) {
+          try {
+            const { data: openDeal } = await supabase
+              .from('sage_deals')
+              .select('title, stage:sage_pipeline_stages(name)')
+              .eq('workspace_id', workspaceId)
+              .eq('contact_id', contactId)
+              .eq('status', 'open')
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .single()
+            if (openDeal) {
+              const stageName = Array.isArray(openDeal.stage)
+                ? (openDeal.stage[0] as { name: string } | undefined)?.name
+                : (openDeal.stage as { name: string } | null)?.name
+              crmContext = { contactName: fromName ?? undefined, dealTitle: openDeal.title, dealStage: stageName ?? undefined }
+            }
+          } catch { /* best-effort */ }
+        }
+
+        const analysis = await analyzeEmail(
+          `${fromName} <${fromAddress}>`,
+          subject,
+          bodyText,
+          priorSummaries,
+          crmContext,
+          businessDescription,
+        )
+
+        if (analysis) {
+          const extracted = analysis.extracted ?? {}
+          const entities  = { ...extracted }
+          await supabase
+            .from('sage_emails')
+            .update({
+              ai_priority:     analysis.priority,
+              ai_category:     analysis.category ?? null,
+              ai_summary:      analysis.summary ?? null,
+              ai_reason:       analysis.reason,
+              ai_user_prompt:  analysis.user_prompt ?? null,
+              ai_action:       analysis.action,
+              ai_entities:     Object.keys(entities).length > 0 ? entities : null,
+              ai_insights:     analysis.insights,
+              ai_reply_drafts: analysis.reply_drafts,
+              ai_analyzed_at:  new Date().toISOString(),
+            })
+            .eq('id', inserted.id)
+
+          const mappedAction: 'create_lead' | 'create_ticket' | 'ignore' =
+            analysis.action === 'create_lead'   ? 'create_lead'   :
+            analysis.action === 'create_ticket' ? 'create_ticket' : 'ignore'
+          if (mappedAction !== 'ignore') {
+            try {
+              const autoSettings = await getWorkspaceAutoSettings(workspaceId)
+              if (isFullAutomation(autoSettings, 'email')) {
+                await executeAutoAction({
+                  workspaceId,
+                  channel:           'email',
+                  action:            mappedAction,
+                  sourceId:          inserted.id,
+                  entities:          analysis.extracted ?? {},
+                  senderName:        fromName ?? null,
+                  senderEmail:       fromAddress ?? null,
+                  summary:           analysis.summary ?? null,
+                  priority:          analysis.priority ?? null,
+                  defaultPipelineId: autoSettings.default_pipeline_id,
+                })
+              }
+            } catch (autoErr) {
+              console.error('[email-sync] Graph auto-execute error:', autoErr)
+            }
+          }
+
+          if (contactId && analysis.summary && (analysis.priority === 'high' || analysis.priority === 'medium')) {
+            try {
+              const deal = await findOpenDealByContact(workspaceId, contactId)
+              if (deal) {
+                await supabase.from('sage_deal_activities').insert({
+                  workspace_id: workspaceId,
+                  deal_id:      deal.id,
+                  type:         'note',
+                  title:        `Email: ${subject}`,
+                  body:         analysis.summary,
+                  created_by:   null,
+                })
+              }
+            } catch { /* best-effort */ }
+          }
+        }
+      } catch { /* AI analysis failure doesn't block email sync */ }
+
+    } catch (err) {
+      console.error('[email-sync] Graph message processing error:', (err as Error).message)
+    }
+  }
+
+  // CRM targeted search via Graph API for contacts with open deals
+  if (contactPairs.length > 0) {
+    const since180 = new Date()
+    since180.setDate(since180.getDate() - 180)
+    const isoSince = since180.toISOString()
+
+    for (const { email: contactEmail, contactId } of contactPairs) {
+      try {
+        const contactUrl = `https://graph.microsoft.com/v1.0/me/messages?$filter=from/emailAddress/address eq '${contactEmail}' and receivedDateTime gt ${isoSince}&$orderby=receivedDateTime desc&$top=50&$select=id,subject,from,toRecipients,receivedDateTime,isRead,internetMessageId,conversationId,body`
+        const contactRes = await fetch(contactUrl, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        if (!contactRes.ok) continue
+
+        const contactData = await contactRes.json() as { value?: GraphMessage[] }
+        for (const cmsg of contactData.value ?? []) {
+          try {
+            const msgId = cmsg.internetMessageId ?? `graph-${cmsg.id}`
+
+            const { data: alreadyExists } = await supabase
+              .from('sage_emails')
+              .select('id')
+              .eq('workspace_id', workspaceId)
+              .eq('message_id', msgId)
+              .single()
+
+            if (alreadyExists) continue
+
+            const ca       = (cmsg.from?.emailAddress?.address ?? '').toLowerCase()
+            const cn       = cmsg.from?.emailAddress?.name ?? ca
+            const raw      = cmsg.body?.content ?? ''
+            const bodyTxt  = cmsg.body?.contentType === 'html' ? stripHtml(raw) : raw
+            const bodyHtm  = cmsg.body?.contentType === 'html' ? raw : null
+
+            const { data: ins } = await supabase
+              .from('sage_emails')
+              .insert({
+                workspace_id: workspaceId,
+                contact_id:   contactId,
+                message_id:   msgId,
+                thread_id:    cmsg.conversationId ?? null,
+                from_address: ca,
+                from_name:    cn,
+                to_address:   cmsg.toRecipients?.[0]?.emailAddress?.address ?? fromEmail,
+                subject:      cmsg.subject ?? '(no subject)',
+                body_text:    bodyTxt,
+                body_html:    bodyHtm,
+                received_at:  cmsg.receivedDateTime ?? new Date().toISOString(),
+                direction:    'inbound',
+                is_read:      false,
+              })
+              .select('id')
+              .single()
+
+            if (ins) {
+              synced++
+              console.log(`[email-sync] CRM targeted (Graph): synced "${cmsg.subject ?? ''}" from ${contactEmail}`)
+            }
+          } catch { /* skip malformed message */ }
+        }
+      } catch (err) {
+        console.error(`[email-sync] Graph CRM search failed for ${contactEmail}:`, (err as Error).message)
+      }
+    }
+  }
+
+  return synced
+}
+
+// ---------------------------------------------------------------------------
 // CRM contact targeted IMAP search helper
 // ---------------------------------------------------------------------------
 
@@ -668,6 +1037,35 @@ export async function syncEmailsForWorkspace(workspaceId: string, userId: string
     const token = await getValidAccessToken(workspaceId, userId, provider as 'gmail' | 'microsoft', config)
     if (!token) throw new Error(`OAuth2 token unavailable for ${provider} integration.`)
     accessToken = token
+  }
+
+  // Microsoft OAuth2 → use Graph API (IMAP is unreliable for personal accounts)
+  if (provider === 'microsoft' && config.auth_method === 'oauth2' && accessToken) {
+    // Pre-fetch CRM contacts for targeted search
+    type DealRowG = { contact_id: string; sage_contacts: { email: string | null }[] }
+    const { data: openDealsG } = await supabase
+      .from('sage_deals')
+      .select('contact_id, sage_contacts!inner(email)')
+      .eq('workspace_id', workspaceId)
+      .eq('status', 'open')
+    const contactPairsG = [...new Map(
+      ((openDealsG ?? []) as unknown as DealRowG[])
+        .filter(d => d.sage_contacts?.[0]?.email)
+        .map(d => [d.contact_id, {
+          email:     d.sage_contacts[0].email!.toLowerCase(),
+          contactId: d.contact_id,
+        }]),
+    ).values()]
+
+    return await syncMicrosoftEmailsViaGraph({
+      workspaceId,
+      userId,
+      accessToken,
+      fromEmail:           config.from_email,
+      limit,
+      businessDescription,
+      contactPairs:        contactPairsG,
+    })
   }
 
   const creds = getImapCreds(provider, config, accessToken)

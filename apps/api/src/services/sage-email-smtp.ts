@@ -84,6 +84,73 @@ export async function sendEmailSMTP(opts: SendEmailOptions): Promise<void> {
     accessToken = token
   }
 
+  // Determine In-Reply-To header if replying (needed before sending)
+  let replyToMessageId: string | null = null
+  if (replyToEmailId) {
+    const { data: original } = await supabase
+      .from('sage_emails')
+      .select('message_id, contact_id')
+      .eq('id', replyToEmailId)
+      .single()
+    replyToMessageId = original?.message_id ?? null
+  }
+
+  // Microsoft OAuth2 → use Graph API sendMail (SMTP OAuth is unreliable for personal accounts)
+  if (provider === 'microsoft' && accessToken) {
+    const toRecipients  = to.split(',').map(a => ({ emailAddress: { address: a.trim() } }))
+    const ccRecipients  = cc  ? cc.split(',').map(a => ({ emailAddress: { address: a.trim() } })) : undefined
+    const bccRecipients = bcc ? bcc.split(',').map(a => ({ emailAddress: { address: a.trim() } })) : undefined
+
+    const graphBody: Record<string, unknown> = {
+      message: {
+        subject,
+        body:           { contentType: 'Text', content: body },
+        toRecipients,
+        ...(ccRecipients  ? { ccRecipients }  : {}),
+        ...(bccRecipients ? { bccRecipients } : {}),
+        ...(replyToMessageId ? { singleValueExtendedProperties: [{ id: 'String {00020386-0000-0000-C000-000000000046} Name In-Reply-To', value: replyToMessageId }] } : {}),
+        ...(attachments?.length ? {
+          attachments: attachments.map(a => ({
+            '@odata.type':  '#microsoft.graph.fileAttachment',
+            name:           a.filename,
+            contentType:    a.contentType,
+            contentBytes:   a.dataBase64,
+          })),
+        } : {}),
+      },
+      saveToSentItems: true,
+    }
+
+    const sendRes = await fetch('https://graph.microsoft.com/v1.0/me/sendMail', {
+      method:  'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body:    JSON.stringify(graphBody),
+    })
+
+    if (!sendRes.ok) {
+      const errText = await sendRes.text()
+      throw new Error(`Graph sendMail error: ${sendRes.status} ${errText}`)
+    }
+
+    const messageId = `graph-sent-${Date.now()}`
+    await supabase.from('sage_emails').insert({
+      workspace_id: workspaceId,
+      user_id:      userId,
+      message_id:   messageId,
+      thread_id:    replyToMessageId,
+      from_address: config.from_email,
+      from_name:    'You',
+      to_address:   to,
+      subject,
+      body_text:    body,
+      received_at:  new Date().toISOString(),
+      direction:    'outbound',
+      is_read:      true,
+      ai_priority:  null,
+    })
+    return
+  }
+
   const creds = getSmtpCreds(provider, config, accessToken)
 
   if (!creds) {
@@ -130,17 +197,6 @@ export async function sendEmailSMTP(opts: SendEmailOptions): Promise<void> {
       contentType: a.contentType,
     })),
   })
-
-  // Determine In-Reply-To header if replying
-  let replyToMessageId: string | null = null
-  if (replyToEmailId) {
-    const { data: original } = await supabase
-      .from('sage_emails')
-      .select('message_id, contact_id')
-      .eq('id', replyToEmailId)
-      .single()
-    replyToMessageId = original?.message_id ?? null
-  }
 
   // Log outbound email to sage_emails
   const messageId = (info.messageId as string | undefined) ?? `sent-${Date.now()}`
