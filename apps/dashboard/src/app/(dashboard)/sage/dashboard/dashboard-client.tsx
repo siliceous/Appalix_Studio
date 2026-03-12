@@ -1568,7 +1568,7 @@ export function SageDashboardClient({
       {/* ── Sync inbox banner — shown when no email is connected ───────── */}
       {!emailConnected && !viewAsUserId && (
         <Link
-          href="/sage/emails?autoSync=1"
+          href="/integrations"
           className="flex items-center gap-3 mb-5 px-4 py-3 bg-[#61c2ad]/10 border border-[#61c2ad]/30 rounded-xl hover:bg-[#61c2ad]/15 transition-colors group"
         >
           <Mail className="w-4 h-4 text-[#61c2ad] shrink-0" />
