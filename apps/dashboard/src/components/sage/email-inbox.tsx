@@ -945,10 +945,6 @@ export function EmailInbox({
                     >
                       <Calendar className="w-4 h-4" />
                     </a>
-                    <button onClick={() => openReply('reply')} title="Reply"
-                      className={cn('p-1.5 rounded-lg transition-colors', composeMode === 'reply' ? 'bg-brand-100 dark:bg-[#ec732e]/15 text-brand-600 dark:text-[#ec732e]' : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400')}>
-                      <Reply className="w-4 h-4" />
-                    </button>
                     <button onClick={() => openReply('forward')} title="Forward"
                       className={cn('p-1.5 rounded-lg transition-colors', composeMode === 'forward' ? 'bg-brand-100 dark:bg-[#ec732e]/15 text-brand-600 dark:text-[#ec732e]' : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400')}>
                       <Forward className="w-4 h-4" />
@@ -1068,13 +1064,13 @@ export function EmailInbox({
 
                 {/* Reply / Forward buttons at end of thread */}
                 {!composeMode && (
-                  <div className="flex gap-3 py-2">
+                  <div className="flex gap-3 py-3">
                     <button onClick={() => openReply('reply')}
-                      className="flex items-center gap-2 px-5 py-2 border dark:border-white/10 rounded-full text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                      className="flex items-center gap-2 px-6 py-2.5 bg-brand-600 dark:bg-[#ec732e] text-white rounded-full text-sm font-semibold hover:opacity-90 transition-opacity shadow-sm">
                       <Reply className="w-4 h-4" /> Reply
                     </button>
                     <button onClick={() => openReply('forward')}
-                      className="flex items-center gap-2 px-5 py-2 border dark:border-white/10 rounded-full text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                      className="flex items-center gap-2 px-6 py-2.5 border border-gray-200 dark:border-white/10 rounded-full text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                       <Forward className="w-4 h-4" /> Forward
                     </button>
                   </div>

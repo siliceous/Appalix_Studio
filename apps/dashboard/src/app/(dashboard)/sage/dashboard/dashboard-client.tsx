@@ -1165,7 +1165,7 @@ export function SageDashboardClient({
     const base = h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening'
     return userName ? `${base}, ${userName}` : base
   }, [userName])
-  const [sageAuto,      setSageAuto]      = useState(true)
+  const [sageAuto,      setSageAuto]      = useState(false)
   const [backfilling,   setBackfilling]   = useState(false)
   const [backfillDone,  setBackfillDone]  = useState<number | null>(null)
   const [loading,    setLoading]    = useState(true)
@@ -1201,7 +1201,7 @@ export function SageDashboardClient({
       .maybeSingle()
       .then(({ data }: { data: { global_auto_enabled: boolean; default_pipeline_id: string | null } | null }) => {
         if (data != null) {
-          setSageAuto(data.global_auto_enabled ?? true)
+          setSageAuto(data.global_auto_enabled ?? false)
           setDefaultPipelineId(data.default_pipeline_id ?? null)
         }
       })

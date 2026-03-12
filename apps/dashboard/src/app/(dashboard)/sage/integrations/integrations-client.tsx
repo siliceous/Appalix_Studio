@@ -277,11 +277,16 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
 
             <div className="space-y-3">
               {cards.map(integration => {
-                const isConnected = connected.has(integration.provider)
-                const isExpanded  = expanded === integration.provider
-                const isSaving    = saving === integration.provider
-                const values      = formValues[integration.provider] ?? {}
-                const allFilled   = integration.fields.every(f => (values[f.name] ?? '').trim().length > 0)
+                const isConnected    = connected.has(integration.provider)
+                const isExpanded     = expanded === integration.provider
+                const isSaving       = saving === integration.provider
+                const values         = formValues[integration.provider] ?? {}
+                const allFilled      = integration.fields.every(f => (values[f.name] ?? '').trim().length > 0)
+                const emailProviders = ['gmail', 'microsoft']
+                const otherEmailConnected =
+                  integration.category === 'email' &&
+                  !isConnected &&
+                  emailProviders.some(p => p !== integration.provider && connected.has(p))
 
                 return (
                   <div
@@ -350,12 +355,21 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                           </button>
                         ) : integration.oauthPath ? (
                           /* OAuth providers — single-click sign-in */
-                          <a
-                            href={`${integration.oauthPath}?${onboarding ? 'state=onboarding' : 'state=default'}${loginHint ? `&hint=${encodeURIComponent(loginHint)}` : ''}`}
-                            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium transition-colors"
-                          >
-                            Connect
-                          </a>
+                          otherEmailConnected ? (
+                            <span
+                              title="Disconnect your existing email account first — only one email integration is supported at a time."
+                              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-500 cursor-not-allowed select-none"
+                            >
+                              Not available
+                            </span>
+                          ) : (
+                            <a
+                              href={`${integration.oauthPath}?${onboarding ? 'state=onboarding' : 'state=default'}${loginHint ? `&hint=${encodeURIComponent(loginHint)}` : ''}`}
+                              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium transition-colors"
+                            >
+                              Connect
+                            </a>
+                          )
                         ) : (
                           <button
                             onClick={() => toggleExpand(integration.provider)}

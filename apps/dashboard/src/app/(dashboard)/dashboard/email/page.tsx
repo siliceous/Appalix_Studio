@@ -96,14 +96,15 @@ export default async function EmailTriagePage({ searchParams }: { searchParams: 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: emailIntegration } = await (supabase as any)
     .from('sage_integrations')
-    .select('provider')
+    .select('provider, config')
     .eq('workspace_id', workspaceId)
     .eq('user_id', effectiveUserId)
     .in('provider', ['gmail', 'microsoft'])
     .eq('status', 'connected')
     .limit(1)
     .maybeSingle()
-  const emailProvider = ((emailIntegration as { provider?: string } | null)?.provider ?? null) as 'gmail' | 'microsoft' | null
+  const emailProvider    = ((emailIntegration as { provider?: string } | null)?.provider ?? null) as 'gmail' | 'microsoft' | null
+  const connectedEmail   = ((emailIntegration as { config?: { from_email?: string } } | null)?.config?.from_email) ?? null
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let emailQuery = (supabase as any)
@@ -199,7 +200,7 @@ export default async function EmailTriagePage({ searchParams }: { searchParams: 
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
       <SubpageToolbar sourceKey="email" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.email_auto_enabled} />
       <div className="flex flex-1 overflow-hidden">
-        <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} autoSync={params.syncing === '1'} />
+        <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} connectedEmail={connectedEmail} autoSync={params.syncing === '1'} />
       </div>
     </div>
   )

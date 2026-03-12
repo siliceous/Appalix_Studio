@@ -4,6 +4,10 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, GripVertical, Search, SlidersHorizontal, ArrowUpDown, Settings2, Pencil, LayoutList, KanbanSquare } from 'lucide-react'
 import { moveDeal } from '@/app/actions/sage'
+import { exportDeals } from '@/app/actions/csv-export'
+import { importDeals } from '@/app/actions/csv-import'
+import { CsvExportButton } from '@/components/ui/csv-export-button'
+import { CsvImportButton } from '@/components/ui/csv-import-button'
 import { DealModal } from './deal-modal'
 import { ManageStagesModal } from './manage-stages-modal'
 import { DealSlideOver } from './deal-slide-over'
@@ -300,9 +304,22 @@ export function PipelineBoard({
           </button>
         )}
 
-        {/* Add an Opportunity */}
-        {canWrite && (
-          <div className="ml-auto">
+        {/* CSV export / import */}
+        <div className="ml-auto flex items-center gap-2">
+          <CsvExportButton
+            action={() => exportDeals(pipelineId)}
+            label="Export"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
+          />
+          {canWrite && (
+            <CsvImportButton
+              action={importDeals}
+              label="Import"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
+              onSuccess={() => router.refresh()}
+            />
+          )}
+          {canWrite && (
             <button
               onClick={() => setShowDealModal(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition-colors"
@@ -310,8 +327,8 @@ export function PipelineBoard({
               <Plus className="w-3.5 h-3.5" />
               Add an Opportunity
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* List view */}

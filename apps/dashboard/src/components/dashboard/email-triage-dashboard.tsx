@@ -37,10 +37,11 @@ export interface TriageEmail {
 }
 
 interface Props {
-  triageEmails:  TriageEmail[]
-  workspaceId:   string
-  emailProvider: 'gmail' | 'microsoft' | null
-  autoSync?:     boolean
+  triageEmails:   TriageEmail[]
+  workspaceId:    string
+  emailProvider:  'gmail' | 'microsoft' | null
+  connectedEmail?: string | null
+  autoSync?:      boolean
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -854,7 +855,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export function EmailTriageDashboard({ triageEmails, emailProvider, autoSync }: Props) {
+export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEmail, autoSync }: Props) {
   const router = useRouter()
   const [dismissed,       setDismissed]       = useState<Set<string>>(new Set())
   const [actioned,        setActioned]        = useState<Map<string, string>>(new Map())
@@ -1185,9 +1186,14 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, autoSync }: 
         {/* Header */}
         <div className="px-4 py-3 border-b dark:border-white/8 shrink-0">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               <Mail className="w-4 h-4 text-blue-500 shrink-0" />
-              <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Triage</h2>
+              <div className="min-w-0">
+                <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Triage</h2>
+                {connectedEmail && (
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{connectedEmail}</p>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-1">
               {selectedIds.size > 0 && (

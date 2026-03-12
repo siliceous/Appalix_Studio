@@ -8,6 +8,10 @@ import {
 } from 'lucide-react'
 import { ContactModal } from '@/components/sage/contact-modal'
 import { deleteContact, assignContact } from '@/app/actions/sage'
+import { exportContacts } from '@/app/actions/csv-export'
+import { importContacts } from '@/app/actions/csv-import'
+import { CsvExportButton } from '@/components/ui/csv-export-button'
+import { CsvImportButton } from '@/components/ui/csv-import-button'
 import { timeAgo } from '@/lib/utils'
 import Link from 'next/link'
 import type { SageContact, WorkspaceMemberSummary, WorkspaceMemberRole } from '@/lib/types'
@@ -302,6 +306,10 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{contacts.length} total</p>
         </div>
         <div className="flex items-center gap-2">
+          <CsvExportButton action={exportContacts} />
+          {canWrite && (
+            <CsvImportButton action={importContacts} onSuccess={() => router.refresh()} />
+          )}
           {canWrite && (
             <button
               onClick={e => { e.stopPropagation(); setShowModal(true) }}

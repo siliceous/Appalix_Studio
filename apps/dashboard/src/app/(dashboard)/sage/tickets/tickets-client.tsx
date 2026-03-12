@@ -5,6 +5,8 @@ import { Ticket, Plus, Trash2, Mail, Pencil, Merge, X, Loader2, Search, ChevronD
 import { TicketModal } from '@/components/sage/ticket-modal'
 import { TicketSlideOver } from '@/components/dashboard/ticket-slide-over'
 import { updateTicketStatus, deleteTicket, mergeTickets, assignTicket } from '@/app/actions/sage'
+import { exportTickets } from '@/app/actions/csv-export'
+import { CsvExportButton } from '@/components/ui/csv-export-button'
 import { timeAgo } from '@/lib/utils'
 import type { SageTicket, SageContact, SageTicketStatus, WorkspaceMemberSummary } from '@/lib/types'
 
@@ -201,6 +203,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <CsvExportButton action={exportTickets} />
           {canWrite && selectedIds.size >= 2 && (
             <button
               onClick={() => { setPrimaryId([...selectedIds][0]); setShowMerge(true) }}
