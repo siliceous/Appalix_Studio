@@ -5,6 +5,7 @@ import { SageRightPanel } from '@/components/sage/sage-right-panel'
 import { ReminderWatcher } from '@/components/reminder-watcher'
 import { createWorkspace } from '@/app/actions/workspace'
 import { getUserPermissions } from '@/lib/permissions'
+import { getBranding } from '@/app/actions/workspace-branding'
 import type { Workspace, WorkspaceMemberRole } from '@/lib/types'
 
 // All dashboard pages are user-specific and require live DB access — never statically render.
@@ -33,6 +34,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const userPermissions = workspace
     ? await getUserPermissions(user.id, raw!.workspace_id ?? workspace.id, callerRole)
     : null
+
+  const branding = workspace ? await getBranding() : null
 
   // Fetch user's display name for the sidebar account identity
   const { data: profileRaw } = await supabase
@@ -83,6 +86,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         userPermissions={userPermissions ?? undefined}
         userName={userName}
         userEmail={userEmail}
+        branding={branding}
       />
       <main className="flex-1 p-8 overflow-auto bg-gray-50 dark:bg-[#1c1c1c]">
         {children}

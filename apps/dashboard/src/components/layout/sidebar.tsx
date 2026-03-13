@@ -23,12 +23,15 @@ import {
   FolderOpen,
   Pencil,
   TrendingUp,
+  ListFilter,
+  Paintbrush,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Workspace, UserPermissions, WorkspaceMemberRole } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
+import type { WorkspaceBranding } from '@/app/actions/workspace-branding'
 
 interface NavItem {
   href:            string
@@ -72,6 +75,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/sage/projects',  label: 'Projects',    icon: FolderOpen,  permissionKey: 'can_view_projects'  },
       { href: '/sage/contacts',  label: 'Contacts',    icon: Users,       permissionKey: 'can_view_contacts'  },
       { href: '/sage/roi',       label: 'ROI',         icon: TrendingUp                                       },
+      { href: '/sage/rules',     label: 'Rules',       icon: ListFilter,  adminOnly: true                     },
     ],
   },
   {
@@ -84,8 +88,9 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     items: [
-      { href: '/analytics', label: 'Analytics', icon: BarChart2 },
-      { href: '/settings',  label: 'Settings',  icon: Settings },
+      { href: '/analytics',         label: 'Analytics', icon: BarChart2  },
+      { href: '/settings',          label: 'Settings',  icon: Settings   },
+      { href: '/settings/branding', label: 'Branding',  icon: Paintbrush, adminOnly: true },
     ],
   },
 ]
@@ -96,6 +101,7 @@ interface SidebarProps {
   userPermissions?: UserPermissions
   userName?:        string | null
   userEmail?:       string | null
+  branding?:        WorkspaceBranding | null
 }
 
 // Routes that should carry ?viewAs= when a manager is viewing a junior
@@ -104,7 +110,7 @@ const VIEW_AS_ROUTES = new Set([
   '/sage/pipelines', '/sage/contacts', '/sage/roi',
 ])
 
-export function Sidebar({ workspace, callerRole, userPermissions, userName, userEmail }: SidebarProps) {
+export function Sidebar({ workspace, callerRole, userPermissions, userName, userEmail, branding }: SidebarProps) {
   const pathname    = usePathname()
   const searchParams = useSearchParams()
   const router      = useRouter()
@@ -155,19 +161,42 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
           {/* Logo row */}
           <div className="flex items-center gap-2.5 mb-3 min-w-0">
             {/* Brand mark — always visible */}
-            <div className="w-8 h-8 shrink-0 rounded-xl bg-brand-600 flex items-center justify-center text-white font-black text-sm select-none">
-              A
+            <div
+              className="w-8 h-8 shrink-0 rounded-xl flex items-center justify-center text-white font-black text-sm select-none"
+              style={{ backgroundColor: branding?.primary_color ?? '#61c2ad' }}
+            >
+              {branding?.brand_name?.charAt(0).toUpperCase() ?? 'A'}
             </div>
             {/* Full logo — fades in on hover */}
             <div className="overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-75 whitespace-nowrap">
-              <Image
-                src="/logo.png"
-                alt="Appalix"
-                width={88}
-                height={26}
-                className="object-contain mix-blend-multiply dark:mix-blend-normal dark:invert"
-                priority
-              />
+              {branding?.logo_url ? (
+                <Image
+                  src={branding.logo_url}
+                  alt={branding.brand_name ?? 'Logo'}
+                  width={88}
+                  height={26}
+                  className="object-contain"
+                  priority
+                />
+              ) : (
+                <>
+                  {!branding?.hide_powered_by && (
+                    <Image
+                      src="/logo.png"
+                      alt="Appalix"
+                      width={88}
+                      height={26}
+                      className="object-contain mix-blend-multiply dark:mix-blend-normal dark:invert"
+                      priority
+                    />
+                  )}
+                  {(branding?.brand_name || branding?.hide_powered_by) && (
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {branding.brand_name ?? workspace.name}
+                    </span>
+                  )}
+                </>
+              )}
             </div>
           </div>
 
@@ -175,7 +204,10 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
           <div className="bg-gray-50 dark:bg-white/5 rounded-lg px-2 py-2">
             <div className="flex items-center gap-2 min-w-0">
               {/* Avatar — always visible */}
-              <div className="w-7 h-7 shrink-0 rounded-full bg-brand-600 flex items-center justify-center text-white text-[10px] font-bold uppercase select-none">
+              <div
+                className="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-white text-[10px] font-bold uppercase select-none"
+                style={{ backgroundColor: branding?.primary_color ?? '#61c2ad' }}
+              >
                 {userName
                   ? userName.split(' ').map(w => w[0]).slice(0, 2).join('')
                   : (userEmail?.[0] ?? '?')}

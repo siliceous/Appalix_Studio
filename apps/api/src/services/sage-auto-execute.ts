@@ -11,6 +11,7 @@
  *   This function is NOT called in assist mode.
  */
 import { supabase } from '../lib/supabase.js'
+import { findMatchingRule } from '../lib/rules-engine.js'
 
 export interface AutoExecuteInput {
   workspaceId:       string
@@ -32,10 +33,56 @@ export interface AutoExecuteInput {
 }
 
 export async function executeAutoAction(input: AutoExecuteInput): Promise<void> {
+  // Check if a workspace rule overrides the default action / pipeline
+  const rule = await findMatchingRule(supabase, input.workspaceId, {
+    channel:  input.channel,
+    priority: input.priority,
+    content:  input.summary,
+  })
+
+  if (rule) {
+    console.log(`[sage-auto] Rule matched: "${rule.name}" (id=${rule.id}) — overriding action=${rule.action_type} pipeline=${rule.pipeline_id ?? 'default'}`)
+    input = {
+      ...input,
+      action:            rule.action_type,
+      defaultPipelineId: rule.pipeline_id ?? input.defaultPipelineId,
+    }
+
+    if (rule.notify_owner) {
+      // Fire-and-forget owner notification (non-blocking)
+      notifyOwner(input.workspaceId, rule.name, input.channel, input.summary).catch(() => {})
+    }
+  }
+
   const { action } = input
   if (action === 'create_lead')   await autoCreateLead(input)
   if (action === 'create_ticket') await autoCreateTicket(input)
   // 'ignore' → no-op
+}
+
+async function notifyOwner(
+  workspaceId: string,
+  ruleName:    string,
+  channel:     string,
+  summary:     string | null | undefined,
+): Promise<void> {
+  // Fetch workspace owner email
+  const { data: owner } = await supabase
+    .from('workspace_members')
+    .select('user_id')
+    .eq('workspace_id', workspaceId)
+    .eq('role', 'owner')
+    .limit(1)
+    .maybeSingle()
+
+  if (!owner) return
+
+  // Log notification — full email delivery can be wired to Resend in a later pass
+  console.log(
+    `[sage-auto] Rule "${ruleName}" fired on ${channel}` +
+    (summary ? ` — "${summary.slice(0, 80)}"` : '') +
+    ` | owner_user_id=${(owner as { user_id: string }).user_id}`
+  )
 }
 
 // ---------------------------------------------------------------------------
