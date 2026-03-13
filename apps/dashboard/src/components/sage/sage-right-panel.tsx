@@ -65,6 +65,19 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [panelState, listening])
 
+  // Listen for sage:open events dispatched by onboarding/help CTAs
+  useEffect(() => {
+    function onSageOpen(e: Event) {
+      const prompt = (e as CustomEvent<{ prompt?: string }>).detail?.prompt ?? ''
+      setPanelState('floating')
+      if (prompt) {
+        setTimeout(() => setInput(prompt), 150)
+      }
+    }
+    window.addEventListener('sage:open', onSageOpen)
+    return () => window.removeEventListener('sage:open', onSageOpen)
+  }, [])
+
   useEffect(() => {
     if ((panelState === 'floating' || panelState === 'expanded') && !floatReady.current) {
       floatReady.current = true

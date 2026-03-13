@@ -6,6 +6,7 @@ import { ReminderWatcher } from '@/components/reminder-watcher'
 import { createWorkspace } from '@/app/actions/workspace'
 import { getUserPermissions } from '@/lib/permissions'
 import { getBranding } from '@/app/actions/workspace-branding'
+import { WelcomeModal } from '@/components/onboarding/welcome-modal'
 import type { Workspace, WorkspaceMemberRole } from '@/lib/types'
 
 // All dashboard pages are user-specific and require live DB access — never statically render.
@@ -92,6 +93,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {children}
       </main>
       <SageRightPanel workspaceId={workspace.id} />
+      <WelcomeModal userName={userName} />
       <ReminderWatcher />
     </div>
   )
