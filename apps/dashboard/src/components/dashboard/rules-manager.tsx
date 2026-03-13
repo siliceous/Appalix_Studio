@@ -505,7 +505,7 @@ export function RulesManager({ initialRules, pipelines }: Props) {
   const inactive = rules.filter(r => !r.enabled)
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6 p-8">
       <div className="flex items-start justify-between gap-4">
         <Header
           title="Automation Rules"

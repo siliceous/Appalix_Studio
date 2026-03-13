@@ -373,6 +373,16 @@ const POSTS = [
   // General guides & posts
   {
     category: 'Product',
+    title: 'Sage Automation Rules — Smart Multi-Pipeline Lead Routing',
+    excerpt: 'Route every lead to the right pipeline automatically using condition-based rules. Set filters on priority, keywords, and channel, choose an action and a target pipeline, and let Sage handle the rest. First-match wins.',
+    readTime: '10 min read',
+    date: 'Mar 13, 2026',
+    emoji: '⚡',
+    large: true,
+    slug: 'sage-automation-rules',
+  },
+  {
+    category: 'Product',
     title: 'Team Seats, Roles & Permissions in Appalix',
     excerpt: 'A complete breakdown of how Appalix manages workspace access — four-tier role hierarchy (Owner, Admin, Member, Viewer), per-plan seat limits, real-time enforcement, and what\'s coming next with lead assignment and round-robin distribution.',
     readTime: '8 min read',
