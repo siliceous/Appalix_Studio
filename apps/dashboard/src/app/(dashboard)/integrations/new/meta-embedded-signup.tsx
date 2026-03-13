@@ -49,6 +49,12 @@ export function MetaEmbeddedSignup({ platform, name, botId, appId }: Props) {
     setLoading(true)
     setError('')
 
+    // Reset loading if the popup closes without a callback (e.g. popup blocked)
+    const timeout = setTimeout(() => {
+      setLoading(false)
+      setError('The login popup was closed or blocked. Please allow popups for this site and try again.')
+    }, 90_000)
+
     const scope =
       platform === 'facebook_messenger'
         ? 'pages_messaging,pages_read_engagement,pages_manage_metadata,pages_show_list'
@@ -56,9 +62,11 @@ export function MetaEmbeddedSignup({ platform, name, botId, appId }: Props) {
 
     window.FB.login(
       async (res: { authResponse?: { accessToken: string }; status: string }) => {
+        clearTimeout(timeout)
+
         if (!res.authResponse?.accessToken) {
           setLoading(false)
-          setError('Login cancelled or failed')
+          setError('Login cancelled. Please try again and complete the Facebook authorisation.')
           return
         }
 
@@ -83,7 +91,7 @@ export function MetaEmbeddedSignup({ platform, name, botId, appId }: Props) {
           setLoading(false)
         }
       },
-      { scope, auth_type: 'rerequest' },
+      { scope },
     )
   }
 
