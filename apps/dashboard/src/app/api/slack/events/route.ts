@@ -6,22 +6,24 @@ import { NextRequest, NextResponse } from 'next/server'
  * - Will handle incoming message events once subscriptions are active.
  */
 export async function POST(req: NextRequest) {
-  const body = await req.json() as {
-    type: string
-    challenge?: string
-    event?: Record<string, unknown>
-    team_id?: string
+  let body: { type?: string; challenge?: string; event?: Record<string, unknown>; team_id?: string }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ ok: false }, { status: 400 })
   }
 
   // ── URL verification (Slack sends this when you first save the Events URL) ──
-  if (body.type === 'url_verification') {
-    return NextResponse.json({ challenge: body.challenge })
+  if (body.type === 'url_verification' && body.challenge) {
+    return new NextResponse(body.challenge, {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain' },
+    })
   }
 
   // ── Event callback ────────────────────────────────────────────────────────
   // Acknowledge immediately — Slack requires a 200 within 3 seconds
   if (body.type === 'event_callback') {
-    // Process asynchronously (don't await so we return 200 fast)
     handleEvent(body.event ?? {}, body.team_id ?? '').catch((err) =>
       console.error('[slack/events] handler error:', err),
     )
