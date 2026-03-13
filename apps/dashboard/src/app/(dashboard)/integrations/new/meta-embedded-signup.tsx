@@ -69,7 +69,7 @@ export function MetaEmbeddedSignup({ platform, name, botId, appId }: Props) {
 
     const scope =
       platform === 'facebook_messenger'
-        ? 'pages_messaging,pages_read_engagement,pages_manage_metadata,pages_show_list'
+        ? 'pages_messaging,pages_manage_metadata,pages_show_list'
         : 'whatsapp_business_messaging,whatsapp_business_management'
 
     try {
