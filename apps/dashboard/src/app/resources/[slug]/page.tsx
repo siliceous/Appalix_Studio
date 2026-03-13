@@ -55,7 +55,7 @@ const GUIDES: Record<string, Guide> = {
     emoji: '💬',
     intro: 'Let your bot respond to messages in Slack channels and DMs.',
     steps: [
-      { title: 'Create a Slack App', body: 'Go to api.slack.com/apps → Create New App → From scratch. Give it a name and pick your workspace.', docsUrl: 'https://api.slack.com/apps' },
+      { title: 'Create a Slack App', body: 'Go to api.slack.com/apps → Create New App → From scratch. Give it a name and pick your workspace.' },
       { title: 'Enable Socket Mode or Events API', body: 'Under Features → Event Subscriptions, turn it on. Set the Request URL to your Appalix webhook: https://app.appalix.com/api/webhooks/slack/{integration_id}' },
       { title: 'Subscribe to bot events', body: 'Add these bot events: message.channels, message.im, app_mention.' },
       { title: 'Install to workspace', body: 'Under Settings → Install App, click Install to Workspace and authorise.' },
@@ -72,7 +72,7 @@ const GUIDES: Record<string, Guide> = {
     emoji: '💙',
     intro: 'Handle Messenger conversations from your Facebook Page automatically.',
     steps: [
-      { title: 'Create a Meta App', body: 'Go to developers.facebook.com → My Apps → Create App. Choose Business type.', docsUrl: 'https://developers.facebook.com/apps' },
+      { title: 'Create a Meta App', body: 'Go to developers.facebook.com → My Apps → Create App. Choose Business type.' },
       { title: 'Add Messenger product', body: 'In the app dashboard, click Add Product → Messenger → Set up.' },
       { title: 'Generate a Page access token', body: 'Under Access Tokens, select your Facebook Page and generate a token.' },
       { title: 'Set up the webhook', body: 'Under Webhooks, click Add Callback URL. Enter: https://app.appalix.com/api/webhooks/facebook/{integration_id} and set a Verify Token (any string you choose).' },
@@ -88,7 +88,7 @@ const GUIDES: Record<string, Guide> = {
     emoji: '📱',
     intro: 'Chat with customers on WhatsApp Business via the Meta Cloud API.',
     steps: [
-      { title: 'Create a Meta App with WhatsApp', body: 'Go to developers.facebook.com → My Apps → Create App → Business. Add the WhatsApp product.', docsUrl: 'https://developers.facebook.com/apps' },
+      { title: 'Create a Meta App with WhatsApp', body: 'Go to developers.facebook.com → My Apps → Create App → Business. Add the WhatsApp product.' },
       { title: 'Get your Phone Number ID and Access Token', body: 'In the Meta App dashboard → WhatsApp → API Setup, copy the Phone Number ID and the temporary access token (or generate a permanent one via a System User).' },
       { title: 'Configure the webhook', body: 'Under WhatsApp → Configuration, set the Webhook URL to: https://app.appalix.com/api/webhooks/whatsapp/{integration_id}. Subscribe to the messages field.' },
       { title: 'Create the integration in Appalix', body: 'Go to Integrations → Add integration → WhatsApp. Paste the access token, phone number ID, and verify token, then click Create integration.' },
@@ -103,7 +103,7 @@ const GUIDES: Record<string, Guide> = {
     emoji: '💬',
     intro: 'Answer questions in Google Chat spaces using a service account.',
     steps: [
-      { title: 'Create a Google Cloud project', body: 'Go to console.cloud.google.com → New Project. Enable the Google Chat API.', docsUrl: 'https://console.cloud.google.com' },
+      { title: 'Create a Google Cloud project', body: 'Go to console.cloud.google.com → New Project. Enable the Google Chat API.' },
       { title: 'Create a service account', body: 'In IAM & Admin → Service Accounts, create a new service account and download the JSON key.' },
       { title: 'Configure the Chat app', body: 'In Google Chat API → Configuration, set the App URL to: https://app.appalix.com/api/webhooks/google-chat/{integration_id}. Set the bot name and description.' },
       { title: 'Create the integration in Appalix', body: 'Go to Integrations → Add integration → Google Chat. Paste the service account JSON, name the integration, pick your bot, and click Create integration.' },
