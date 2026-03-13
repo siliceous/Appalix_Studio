@@ -3,7 +3,7 @@
 import React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import {
   LayoutDashboard,
   Bot,
@@ -96,9 +96,17 @@ interface SidebarProps {
   userEmail?:       string | null
 }
 
+// Routes that should carry ?viewAs= when a manager is viewing a junior
+const VIEW_AS_ROUTES = new Set([
+  '/dashboard', '/dashboard/email', '/dashboard/bots', '/dashboard/forms', '/dashboard/tickets',
+  '/sage/pipelines', '/sage/contacts',
+])
+
 export function Sidebar({ workspace, callerRole, userPermissions, userName, userEmail }: SidebarProps) {
-  const pathname  = usePathname()
-  const router    = useRouter()
+  const pathname    = usePathname()
+  const searchParams = useSearchParams()
+  const router      = useRouter()
+  const viewAs      = searchParams.get('viewAs')
   const supabase  = createClient()
   const isProPlan  = ['pro', 'scale', 'enterprise'].includes(workspace.plan)
   const isViewer   = callerRole === 'viewer'
@@ -252,12 +260,16 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
                       </>
                     )
 
+                    const resolvedHref = !locked && viewAs && VIEW_AS_ROUTES.has(href)
+                      ? `${href}?viewAs=${viewAs}`
+                      : href
+
                     return locked ? (
                       <Link key={href} href="/settings/upgrade" className={linkCls} title={label}>
                         {content}
                       </Link>
                     ) : (
-                      <Link key={href} href={href} className={linkCls} title={label}>
+                      <Link key={href} href={resolvedHref} className={linkCls} title={label}>
                         {content}
                       </Link>
                     )
