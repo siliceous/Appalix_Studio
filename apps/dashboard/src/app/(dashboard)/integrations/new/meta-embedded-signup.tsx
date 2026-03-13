@@ -74,7 +74,7 @@ export function MetaEmbeddedSignup({ platform, name, botId, appId }: Props) {
 
     try {
       window.FB.login(
-        async (res: { authResponse?: { accessToken: string }; status: string }) => {
+        (res: { authResponse?: { accessToken: string }; status: string }) => {
           clearTimeout(timeout)
 
           if (!res.authResponse?.accessToken) {
@@ -83,26 +83,22 @@ export function MetaEmbeddedSignup({ platform, name, botId, appId }: Props) {
             return
           }
 
-          try {
-            const r = await fetch('/api/oauth/meta/exchange', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                token: res.authResponse.accessToken,
-                platform,
-                name,
-                botId,
-              }),
+          const token = res.authResponse.accessToken
+          fetch('/api/oauth/meta/exchange', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, platform, name, botId }),
+          })
+            .then(r => r.json().then((data: { integrationId?: string; error?: string }) => {
+              if (!r.ok) throw new Error(data.error ?? 'Failed to save integration')
+              router.push(
+                `/integrations/${data.integrationId}?connected=${platform === 'facebook_messenger' ? 'facebook' : 'whatsapp'}`,
+              )
+            }))
+            .catch(err => {
+              setError(err instanceof Error ? err.message : 'Unknown error')
+              setLoading(false)
             })
-            const data = await r.json() as { integrationId?: string; error?: string }
-            if (!r.ok) throw new Error(data.error ?? 'Failed to save integration')
-            router.push(
-              `/integrations/${data.integrationId}?connected=${platform === 'facebook_messenger' ? 'facebook' : 'whatsapp'}`,
-            )
-          } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unknown error')
-            setLoading(false)
-          }
         },
         { scope },
       )
