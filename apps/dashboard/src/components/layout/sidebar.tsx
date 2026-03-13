@@ -22,6 +22,7 @@ import {
   Rss,
   FolderOpen,
   Pencil,
+  TrendingUp,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -67,9 +68,10 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Sage',
     pro: true,
     items: [
-      { href: '/sage/pipelines', label: 'Pipelines', icon: Kanban,     permissionKey: 'can_view_pipelines' },
-      { href: '/sage/projects',  label: 'Projects',  icon: FolderOpen, permissionKey: 'can_view_projects'  },
-      { href: '/sage/contacts',  label: 'Contacts',  icon: Users,      permissionKey: 'can_view_contacts'  },
+      { href: '/sage/pipelines', label: 'Pipelines',   icon: Kanban,      permissionKey: 'can_view_pipelines' },
+      { href: '/sage/projects',  label: 'Projects',    icon: FolderOpen,  permissionKey: 'can_view_projects'  },
+      { href: '/sage/contacts',  label: 'Contacts',    icon: Users,       permissionKey: 'can_view_contacts'  },
+      { href: '/sage/roi',       label: 'ROI',         icon: TrendingUp                                       },
     ],
   },
   {
@@ -99,7 +101,7 @@ interface SidebarProps {
 // Routes that should carry ?viewAs= when a manager is viewing a junior
 const VIEW_AS_ROUTES = new Set([
   '/dashboard', '/dashboard/email', '/dashboard/bots', '/dashboard/forms', '/dashboard/tickets',
-  '/sage/pipelines', '/sage/contacts',
+  '/sage/pipelines', '/sage/contacts', '/sage/roi',
 ])
 
 export function Sidebar({ workspace, callerRole, userPermissions, userName, userEmail }: SidebarProps) {
