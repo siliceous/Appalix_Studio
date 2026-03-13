@@ -129,15 +129,14 @@ export function FormsTable({ submissions, forms, filters, readonly = false }: Pr
             All submissions across your forms — {submissions.length} shown
           </p>
         </div>
-        {submissions.length > 0 && (
-          <button
-            onClick={exportCSV}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-white/5 border dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-colors shrink-0"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Export CSV
-          </button>
-        )}
+        <button
+          onClick={exportCSV}
+          disabled={submissions.length === 0}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-white/5 border dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <Download className="w-3.5 h-3.5" />
+          Export CSV
+        </button>
       </div>
 
       {/* ── Filter bar ── */}
