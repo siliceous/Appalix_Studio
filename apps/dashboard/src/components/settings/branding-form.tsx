@@ -1,11 +1,12 @@
 'use client'
 
 import React, { useState, useRef, useTransition } from 'react'
+import Link       from 'next/link'
 import Image      from 'next/image'
 import { Header } from '@/components/layout/header'
 import { cn }     from '@/lib/utils'
 import {
-  Upload, Palette, Globe, Eye, EyeOff, CheckCircle2, AlertCircle, X,
+  Upload, Palette, Globe, Eye, EyeOff, CheckCircle2, AlertCircle, X, ChevronLeft,
 } from 'lucide-react'
 import { type WorkspaceBranding, updateBranding, uploadBrandingLogo } from '@/app/actions/workspace-branding'
 
@@ -95,6 +96,10 @@ export function BrandingForm({ initialBranding, isAdmin }: Props) {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      <Link href="/settings" className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+        <ChevronLeft className="w-3.5 h-3.5" />
+        Back to Settings
+      </Link>
       <Header
         title="Branding & White-label"
         description="Customise the dashboard with your own logo, name, and brand colour. Ideal for agencies and resellers."

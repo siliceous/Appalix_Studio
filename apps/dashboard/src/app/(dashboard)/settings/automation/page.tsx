@@ -1,8 +1,10 @@
+import Link     from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { saveAutomationSettings } from '@/app/actions/automation-settings'
 import { Header } from '@/components/layout/header'
 import { SubmitButton } from '@/components/ui/submit-button'
+import { ChevronLeft } from 'lucide-react'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Automation Settings' }
@@ -38,9 +40,17 @@ export default async function AutomationSettingsPage({
   const cfg  = (membership.workspaces.automation_config ?? {}) as Record<string, string>
   const { saved } = await searchParams
 
+  const backLink = (
+    <Link href="/settings" className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mb-4">
+      <ChevronLeft className="w-3.5 h-3.5" />
+      Back to Settings
+    </Link>
+  )
+
   if (!PRO_PLANS.includes(plan)) {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
+        {backLink}
         <Header title="Automation" description="AI task automation settings" />
         <section className="bg-white rounded-xl border p-6 text-center">
           <div className="w-12 h-12 rounded-full bg-brand-50 flex items-center justify-center mx-auto mb-4">
@@ -65,6 +75,7 @@ export default async function AutomationSettingsPage({
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {backLink}
       <Header title="Automation" description="Configure AI-triggered email sending, documents, and approvals" />
 
       {saved && (
