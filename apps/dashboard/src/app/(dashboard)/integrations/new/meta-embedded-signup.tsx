@@ -25,15 +25,18 @@ export function MetaEmbeddedSignup({ platform, name, botId, appId }: Props) {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (window.FB) {
-      setSdkReady(true)
-      return
-    }
-
-    window.fbAsyncInit = function () {
+    function init() {
+      // Always reinitialize with the current appId (handles stale cached SDK)
       window.FB.init({ appId, version: 'v18.0', xfbml: false, cookie: true })
       setSdkReady(true)
     }
+
+    if (window.FB) {
+      init()
+      return
+    }
+
+    window.fbAsyncInit = init
 
     if (!document.getElementById('facebook-jssdk')) {
       const script = document.createElement('script')
@@ -41,6 +44,8 @@ export function MetaEmbeddedSignup({ platform, name, botId, appId }: Props) {
       script.src = 'https://connect.facebook.net/en_US/sdk.js'
       script.async = true
       document.head.appendChild(script)
+    } else {
+      // Script tag exists but FB not yet available — wait for fbAsyncInit
     }
   }, [appId])
 
