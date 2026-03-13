@@ -141,9 +141,7 @@ export function MetaEmbeddedSignup({ platform, name, botId, appId }: Props) {
       {!sdkReady && !loading && (
         <p className="text-xs text-gray-400 mt-2">Loading Facebook SDK…</p>
       )}
-      {sdkReady && !loading && !error && (
-        <p className="text-xs text-gray-400 mt-2">SDK ready</p>
-      )}
+
       {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
     </div>
   )
