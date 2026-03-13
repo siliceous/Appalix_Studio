@@ -49,10 +49,17 @@ export function MetaEmbeddedSignup({ platform, name, botId, appId }: Props) {
     setLoading(true)
     setError('')
 
+    // Verify FB is actually available
+    if (!window.FB || typeof window.FB.login !== 'function') {
+      setLoading(false)
+      setError('Facebook SDK not ready. Please hard-refresh the page (Cmd+Shift+R) and try again.')
+      return
+    }
+
     // Reset loading if the popup closes without a callback (e.g. popup blocked)
     const timeout = setTimeout(() => {
       setLoading(false)
-      setError('The login popup was closed or blocked. Please allow popups for this site and try again.')
+      setError('Timed out — popup was blocked or closed. Allow popups for this site and try again.')
     }, 90_000)
 
     const scope =
@@ -60,39 +67,45 @@ export function MetaEmbeddedSignup({ platform, name, botId, appId }: Props) {
         ? 'pages_messaging,pages_read_engagement,pages_manage_metadata,pages_show_list'
         : 'whatsapp_business_messaging,whatsapp_business_management'
 
-    window.FB.login(
-      async (res: { authResponse?: { accessToken: string }; status: string }) => {
-        clearTimeout(timeout)
+    try {
+      window.FB.login(
+        async (res: { authResponse?: { accessToken: string }; status: string }) => {
+          clearTimeout(timeout)
 
-        if (!res.authResponse?.accessToken) {
-          setLoading(false)
-          setError('Login cancelled. Please try again and complete the Facebook authorisation.')
-          return
-        }
+          if (!res.authResponse?.accessToken) {
+            setLoading(false)
+            setError(`Login cancelled (status: ${res.status}). Please try again and complete the Facebook authorisation.`)
+            return
+          }
 
-        try {
-          const r = await fetch('/api/oauth/meta/exchange', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              token: res.authResponse.accessToken,
-              platform,
-              name,
-              botId,
-            }),
-          })
-          const data = await r.json() as { integrationId?: string; error?: string }
-          if (!r.ok) throw new Error(data.error ?? 'Failed to save integration')
-          router.push(
-            `/integrations/${data.integrationId}?connected=${platform === 'facebook_messenger' ? 'facebook' : 'whatsapp'}`,
-          )
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Unknown error')
-          setLoading(false)
-        }
-      },
-      { scope },
-    )
+          try {
+            const r = await fetch('/api/oauth/meta/exchange', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                token: res.authResponse.accessToken,
+                platform,
+                name,
+                botId,
+              }),
+            })
+            const data = await r.json() as { integrationId?: string; error?: string }
+            if (!r.ok) throw new Error(data.error ?? 'Failed to save integration')
+            router.push(
+              `/integrations/${data.integrationId}?connected=${platform === 'facebook_messenger' ? 'facebook' : 'whatsapp'}`,
+            )
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Unknown error')
+            setLoading(false)
+          }
+        },
+        { scope },
+      )
+    } catch (err) {
+      clearTimeout(timeout)
+      setLoading(false)
+      setError(`FB.login() threw: ${err instanceof Error ? err.message : String(err)}`)
+    }
   }
 
   const isFB    = platform === 'facebook_messenger'
@@ -125,7 +138,10 @@ export function MetaEmbeddedSignup({ platform, name, botId, appId }: Props) {
         {label}
       </button>
       {!sdkReady && !loading && (
-        <p className="text-xs text-gray-400 mt-2">Loading SDK…</p>
+        <p className="text-xs text-gray-400 mt-2">Loading Facebook SDK…</p>
+      )}
+      {sdkReady && !loading && !error && (
+        <p className="text-xs text-gray-400 mt-2">SDK ready</p>
       )}
       {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
     </div>
