@@ -8,6 +8,8 @@ import type { ConvRow, BotOption, ConvFilters, TeamMember } from '@/app/(dashboa
 import { ROLE_RANK } from '@/lib/types'
 import type { WorkspaceMemberRole } from '@/lib/types'
 import { createAdminClient } from '@/lib/supabase/server'
+import { getTeamMemberProfile } from '@/app/actions/team-member-profile'
+import { TeamMemberBanner } from '@/components/team/team-member-banner'
 
 export const metadata: Metadata = { title: 'Bot Conversations' }
 
@@ -44,7 +46,7 @@ function getDateRange(preset: SubpagePreset, customFrom?: string, customTo?: str
 export default async function BotsPage({
   searchParams,
 }: {
-  searchParams: Promise<ConvFilters>
+  searchParams: Promise<ConvFilters & { activityDate?: string }>
 }) {
   const [params, autoSettings] = await Promise.all([searchParams, getAutoSettings()])
   const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as SubpagePreset
@@ -147,6 +149,11 @@ export default async function BotsPage({
   const { data: rawConversations } = await query
   const conversations = (rawConversations ?? []) as ConvRow[]
 
+  const profileData = viewAsUserId
+    ? await getTeamMemberProfile(viewAsUserId, params.activityDate)
+    : null
+  const profile = profileData && !('error' in profileData) ? profileData : null
+
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
       <SubpageToolbar
@@ -156,13 +163,21 @@ export default async function BotsPage({
         customTo={params.to}
         autoEnabled={autoSettings.bots_auto_enabled}
       />
+      {profile && (
+        <TeamMemberBanner
+          profile={profile}
+          currentPath="/dashboard/bots"
+          selectedDate={params.activityDate}
+        />
+      )}
       <div className="flex-1 overflow-y-auto">
         <ConversationsClient
           conversations={conversations}
           bots={bots}
           filters={params}
           teamMembers={teamMembers}
-          canAssign={callerRank >= ROLE_RANK.manager}
+          canAssign={callerRank >= ROLE_RANK.manager && !viewAsUserId}
+          readonly={!!viewAsUserId}
         />
       </div>
     </div>

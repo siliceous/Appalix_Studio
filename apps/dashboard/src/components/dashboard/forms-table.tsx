@@ -42,6 +42,7 @@ interface Props {
   submissions: SageFormSubmission[]
   forms: SageForm[]
   filters: FormFilters
+  readonly?: boolean
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -53,7 +54,7 @@ function buildUrl(base: string, filters: FormFilters): string {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export function FormsTable({ submissions, forms, filters }: Props) {
+export function FormsTable({ submissions, forms, filters, readonly = false }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [actioning, setActioning] = useState<Record<string, string>>({})
@@ -251,9 +252,9 @@ export function FormsTable({ submissions, forms, filters }: Props) {
                       {timeAgo(sub.created_at)}
                     </td>
 
-                    {/* Actions — only show for pending */}
+                    {/* Actions — only show for pending and not in readonly mode */}
                     <td className="px-5 py-3.5">
-                      {!effectiveActionType && actionState !== 'loading' ? (
+                      {!readonly && !effectiveActionType && actionState !== 'loading' ? (
                         <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => handleCreateLead(sub)}

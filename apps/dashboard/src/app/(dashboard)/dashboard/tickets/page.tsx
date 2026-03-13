@@ -6,6 +6,8 @@ import { ROLE_RANK } from '@/lib/types'
 import { TicketsClient } from '@/app/(dashboard)/sage/tickets/tickets-client'
 import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
+import { getTeamMemberProfile } from '@/app/actions/team-member-profile'
+import { TeamMemberBanner } from '@/components/team/team-member-banner'
 
 export const metadata: Metadata = { title: 'Tickets' }
 
@@ -37,7 +39,7 @@ function getDateRange(preset: SubpagePreset, customFrom?: string, customTo?: str
   return { from: null, to: null }
 }
 
-export default async function TicketsPage({ searchParams }: { searchParams: Promise<{ preset?: string; from?: string; to?: string; viewAs?: string }> }) {
+export default async function TicketsPage({ searchParams }: { searchParams: Promise<{ preset?: string; from?: string; to?: string; viewAs?: string; activityDate?: string }> }) {
   const [params, autoSettings] = await Promise.all([searchParams, getAutoSettings()])
   const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as SubpagePreset
   const { from: dateFrom, to: dateTo } = getDateRange(preset, params.from, params.to)
@@ -100,11 +102,19 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
   const tickets  = (data ?? []) as (SageTicket & { contact: Pick<SageContact, 'id' | 'name' | 'email'> | null })[]
   const contacts = (contactsRaw ?? []) as Pick<SageContact, 'id' | 'name'>[]
 
+  const profileData = viewAsUserId
+    ? await getTeamMemberProfile(viewAsUserId, params.activityDate)
+    : null
+  const profile = profileData && !('error' in profileData) ? profileData : null
+
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
       <SubpageToolbar sourceKey="tickets" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.tickets_auto_enabled} />
+      {profile && (
+        <TeamMemberBanner profile={profile} currentPath="/dashboard/tickets" selectedDate={params.activityDate} />
+      )}
       <div className="flex-1 overflow-y-auto">
-        <TicketsClient tickets={tickets} contacts={contacts} />
+        <TicketsClient tickets={tickets} contacts={contacts} readonly={!!viewAsUserId} />
       </div>
     </div>
   )

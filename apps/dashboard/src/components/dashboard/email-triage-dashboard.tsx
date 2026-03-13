@@ -42,6 +42,7 @@ interface Props {
   emailProvider:  'gmail' | 'microsoft' | null
   connectedEmail?: string | null
   autoSync?:      boolean
+  readonly?:      boolean
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -263,9 +264,10 @@ interface DetailCardProps {
   isDeleting:    boolean
   isAnalyzing:   boolean
   emailProvider: 'gmail' | 'microsoft' | null
+  readonly?:     boolean
 }
 
-function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, onAction, isDeleting, isAnalyzing, emailProvider, modalSize, onResize }: DetailCardProps) {
+function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, onAction, isDeleting, isAnalyzing, emailProvider, modalSize, onResize, readonly = false }: DetailCardProps) {
   const { email, meeting } = t
   const entities  = email.ai_entities
   const drafts    = email.ai_reply_drafts ?? []
@@ -805,8 +807,8 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
         )}
       </div>
 
-      {/* ── Sticky bottom action bar — shown in detail view (not reply mode, not post-send) ── */}
-      {!showReply && !sent && (
+      {/* ── Sticky bottom action bar — shown in detail view (not reply mode, not post-send, not readonly) ── */}
+      {!readonly && !showReply && !sent && (
         <div className="px-4 py-3 border-t dark:border-white/8 bg-white dark:bg-[#232323] flex items-center gap-2 shrink-0">
           {t.matchedContact && (
             <Link
@@ -855,7 +857,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEmail, autoSync }: Props) {
+export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEmail, autoSync, readonly = false }: Props) {
   const router = useRouter()
   const [dismissed,       setDismissed]       = useState<Set<string>>(new Set())
   const [actioned,        setActioned]        = useState<Map<string, string>>(new Map())
@@ -1175,6 +1177,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
     emailProvider,
     modalSize,
     onResize:     () => setModalSize(s => s === 'sm' ? 'md' : s === 'md' ? 'lg' : 'sm'),
+    readonly,
   }
 
   return (

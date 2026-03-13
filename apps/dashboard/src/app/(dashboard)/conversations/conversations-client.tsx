@@ -43,9 +43,10 @@ interface Props {
   filters:       ConvFilters
   teamMembers?:  TeamMember[]
   canAssign?:    boolean
+  readonly?:     boolean
 }
 
-export function ConversationsClient({ conversations, bots, filters, teamMembers = [], canAssign = false }: Props) {
+export function ConversationsClient({ conversations, bots, filters, teamMembers = [], canAssign = false, readonly = false }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [localAssign, setLocalAssign] = React.useState<Record<string, string | null>>({})
@@ -287,17 +288,21 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                           className="p-1.5 text-gray-400 hover:text-[#61c2ad] hover:bg-[#61c2ad]/10 rounded-lg transition-colors">
                           <ExternalLink className="w-3.5 h-3.5" />
                         </Link>
-                        <button
-                          onClick={() => handleRename(c.id, c.title)}
-                          title="Rename"
-                          className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors">
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <a href={`/api/conversations/${c.id}/export`} download
-                          title="Download transcript"
-                          className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors">
-                          <Download className="w-3.5 h-3.5" />
-                        </a>
+                        {!readonly && (
+                          <button
+                            onClick={() => handleRename(c.id, c.title)}
+                            title="Rename"
+                            className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {!readonly && (
+                          <a href={`/api/conversations/${c.id}/export`} download
+                            title="Download transcript"
+                            className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors">
+                            <Download className="w-3.5 h-3.5" />
+                          </a>
+                        )}
                       </div>
                     </td>
 

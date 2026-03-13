@@ -7,6 +7,8 @@ import type { SageForm, SageFormSubmission } from '@/app/actions/sage-forms'
 import { FormsTable, type FormFilters } from '@/components/dashboard/forms-table'
 import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
+import { getTeamMemberProfile } from '@/app/actions/team-member-profile'
+import { TeamMemberBanner } from '@/components/team/team-member-banner'
 
 export const metadata: Metadata = { title: 'Forms' }
 
@@ -41,7 +43,7 @@ function getDateRange(preset: SubpagePreset, customFrom?: string, customTo?: str
 export default async function FormsPage({
   searchParams,
 }: {
-  searchParams: Promise<FormFilters>
+  searchParams: Promise<FormFilters & { activityDate?: string }>
 }) {
   const [params, autoSettings] = await Promise.all([searchParams, getAutoSettings()])
   const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as SubpagePreset
@@ -143,6 +145,11 @@ export default async function FormsPage({
     })
   }
 
+  const profileData = viewAsUserId
+    ? await getTeamMemberProfile(viewAsUserId, params.activityDate)
+    : null
+  const profile = profileData && !('error' in profileData) ? profileData : null
+
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
       <SubpageToolbar
@@ -152,11 +159,15 @@ export default async function FormsPage({
         customTo={params.to}
         autoEnabled={autoSettings.forms_auto_enabled}
       />
+      {profile && (
+        <TeamMemberBanner profile={profile} currentPath="/dashboard/forms" selectedDate={params.activityDate} />
+      )}
       <div className="flex-1 overflow-y-auto">
         <FormsTable
           submissions={submissions}
           forms={forms}
           filters={params}
+          readonly={!!viewAsUserId}
         />
       </div>
     </div>

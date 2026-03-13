@@ -41,10 +41,11 @@ interface TicketsClientProps {
   contacts:   Pick<SageContact, 'id' | 'name'>[]
   callerRole?: string
   members?:   WorkspaceMemberSummary[]
+  readonly?:  boolean
 }
 
-export function TicketsClient({ tickets: initialTickets, contacts, callerRole, members = [] }: TicketsClientProps) {
-  const canWrite  = callerRole !== 'viewer'
+export function TicketsClient({ tickets: initialTickets, contacts, callerRole, members = [], readonly = false }: TicketsClientProps) {
+  const canWrite  = !readonly && callerRole !== 'viewer'
   const canAssign = members.length > 0
   const [tickets,      setTickets]      = useState(initialTickets)
   const [filter,       setFilter]       = useState('all')
