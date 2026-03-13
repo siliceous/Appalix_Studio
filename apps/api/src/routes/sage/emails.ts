@@ -75,8 +75,8 @@ export async function sageEmailRoutes(fastify: FastifyInstance) {
     const { workspace_id, batch_size } = request.body
     if (!workspace_id) return reply.status(400).send({ error: 'workspace_id is required' })
     try {
-      const applied = await backfillAutoActions(workspace_id, batch_size ?? 200)
-      return reply.send({ ok: true, applied })
+      const { applied, results } = await backfillAutoActions(workspace_id, batch_size ?? 200)
+      return reply.send({ ok: true, applied, results })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Backfill failed'
       fastify.log.error({ err, workspace_id }, 'Sage Auto backfill failed')

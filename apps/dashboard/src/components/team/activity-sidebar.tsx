@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useState, useEffect, useTransition } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ChevronRight, X, Briefcase, Users,
-  Ticket, Calendar, Clock, CheckCircle2, Phone, Video,
+  Ticket, Clock, CheckCircle2, Phone, Video,
 } from 'lucide-react'
 import type { ActivityEntry, ViewingAsInfo } from '@/app/actions/activity-feed'
 
@@ -105,11 +105,9 @@ interface Props {
   viewingAs?:  ViewingAsInfo | null
 }
 
-export function ActivitySidebar({ activity, date: initialDate, currentPath, viewingAs }: Props) {
+export function ActivitySidebar({ activity, date, currentPath, viewingAs }: Props) {
   const router = useRouter()
-  const [, startTransition] = useTransition()
   const [collapsed, setCollapsed] = useState(false)
-  const [date, setDate] = useState(initialDate)
 
   useEffect(() => {
     try {
@@ -128,13 +126,6 @@ export function ActivitySidebar({ activity, date: initialDate, currentPath, view
 
   const stopViewing = () => router.push(currentPath)
 
-  const changeDate = (newDate: string) => {
-    setDate(newDate)
-    const url = new URL(window.location.href)
-    url.searchParams.set('activityDate', newDate)
-    startTransition(() => router.push(url.toString()))
-  }
-
   const upcoming = activity.filter(a => a.is_upcoming)
   const past     = activity.filter(a => !a.is_upcoming)
 
@@ -142,7 +133,7 @@ export function ActivitySidebar({ activity, date: initialDate, currentPath, view
   if (collapsed) {
     return (
       <div
-        className="w-8 flex-shrink-0 border-l dark:border-white/8 bg-gray-50 dark:bg-[#181818] flex flex-col items-center py-4 gap-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/4 transition-colors"
+        className="w-8 flex-shrink-0 bg-gray-50 dark:bg-[#1c1c1c] flex flex-col items-center py-4 gap-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/4 transition-colors"
         onClick={toggleCollapsed}
         title="Show activity"
       >
@@ -159,7 +150,8 @@ export function ActivitySidebar({ activity, date: initialDate, currentPath, view
 
   // ── Expanded ───────────────────────────────────────────────────────────────
   return (
-    <div className="w-64 flex-shrink-0 border-l dark:border-white/8 bg-gray-50/80 dark:bg-[#181818] flex flex-col overflow-hidden">
+    <div className="w-64 flex-shrink-0 bg-gray-50 dark:bg-[#1c1c1c] flex flex-col overflow-hidden p-3">
+      <div className="flex flex-col flex-1 overflow-hidden bg-white dark:bg-[#242424] rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_16px_rgba(0,0,0,0.4)] border border-gray-200/70 dark:border-white/8">
 
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2.5 border-b dark:border-white/8 shrink-0">
@@ -200,23 +192,15 @@ export function ActivitySidebar({ activity, date: initialDate, currentPath, view
         </div>
       </div>
 
-      {/* Date picker row */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b dark:border-white/8 shrink-0">
-        <Calendar className="w-3 h-3 text-gray-400 shrink-0" />
-        <span className="text-[11px] text-gray-600 dark:text-gray-400 flex-1 truncate">{fmtDate(date + 'T12:00:00')}</span>
-        {upcoming.length > 0 && (
+      {/* Date label row */}
+      {upcoming.length > 0 && (
+        <div className="flex items-center gap-2 px-3 py-1.5 border-b dark:border-white/8 shrink-0">
+          <span className="text-[10px] text-gray-500 dark:text-gray-400 flex-1 truncate">{fmtDate(date + 'T12:00:00')}</span>
           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-100 dark:bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-500/20 font-medium shrink-0">
-            {upcoming.length}
+            {upcoming.length} upcoming
           </span>
-        )}
-        <input
-          type="date"
-          value={date}
-          max={new Date().toISOString().slice(0, 10)}
-          onChange={e => changeDate(e.target.value)}
-          className="text-[10px] bg-white dark:bg-white/5 border dark:border-white/10 rounded-md px-1.5 py-0.5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-brand-500/40 w-24 shrink-0"
-        />
-      </div>
+        </div>
+      )}
 
       {/* Feed */}
       <div className="flex-1 overflow-y-auto px-3 py-1">
@@ -240,6 +224,7 @@ export function ActivitySidebar({ activity, date: initialDate, currentPath, view
             )}
           </>
         )}
+      </div>
       </div>
     </div>
   )

@@ -17,6 +17,7 @@ import {
 import { timeAgo } from '@/lib/utils'
 import { sendEmail, scheduleMeetingFromEmail, getEmailSignature } from '@/app/actions/sage-emails'
 import { updateAutoSetting, dismissFeedItem, runAutoBackfill, setDefaultPipeline } from '@/app/actions/sage-auto-settings'
+import type { BackfillResultItem } from '@/app/actions/sage-auto-settings'
 import { getWorkspacePipelines, dashboardAddLead, dashboardAddTicket, batchMatchContacts } from '@/app/actions/sage-triage'
 import type { ContactMatch } from '@/app/actions/sage-triage'
 import type { SageEmail, Conversation, Lead, SageTicket, WorkspaceMemberRole } from '@/lib/types'
@@ -1156,8 +1157,8 @@ export function SageDashboardClient({
     return userName ? `${base}, ${userName}` : base
   }, [userName])
   const [sageAuto,      setSageAuto]      = useState(false)
-  const [backfilling,   setBackfilling]   = useState(false)
-  const [backfillDone,  setBackfillDone]  = useState<number | null>(null)
+  const [backfilling,      setBackfilling]      = useState(false)
+  const [backfillResults,  setBackfillResults]  = useState<BackfillResultItem[]>([])
   const [loading,    setLoading]    = useState(true)
   const [emails,     setEmails]     = useState<RawEmail[]>([])
   const [bots,       setBots]       = useState<RawBot[]>([])
@@ -1210,11 +1211,15 @@ export function SageDashboardClient({
   }
   const handleBackfill = async () => {
     setBackfilling(true)
-    setBackfillDone(null)
     const result = await runAutoBackfill()
     setBackfilling(false)
-    setBackfillDone(result.applied ?? 0)
-    setTimeout(() => setBackfillDone(null), 6000)
+    if (result.results && result.results.length > 0) {
+      setBackfillResults(prev => [...result.results!, ...prev])
+    }
+  }
+
+  const dismissBackfillResult = (id: string) => {
+    setBackfillResults(prev => prev.filter(r => r.id !== id))
   }
 
   const toggleSageAuto = async () => {
@@ -1542,7 +1547,7 @@ export function SageDashboardClient({
                     className="flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-lg border border-gray-200 dark:border-white/10 text-gray-400 hover:text-[#3a9e8a] hover:border-[#61c2ad]/40 transition-colors disabled:opacity-50 whitespace-nowrap"
                   >
                     {backfilling ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
-                    {backfillDone !== null ? `${backfillDone} processed` : 'Process existing'}
+                    {backfilling ? 'Processing…' : 'Process existing'}
                   </button>
                 )}
               </div>
@@ -1556,6 +1561,32 @@ export function SageDashboardClient({
           </div>
         </div>
       </div>
+
+      {/* ── Sage Auto process results ────────────────────────────────── */}
+      {backfillResults.length > 0 && (
+        <div className="mb-4 space-y-1.5">
+          {backfillResults.map(r => {
+            const pipeline = pipelines.find(p => p.id === r.pipelineId)
+            const channelLabel = r.channel === 'email' ? 'email' : r.channel === 'bots' ? 'bot chat' : r.channel === 'forms' ? 'form' : 'ticket'
+            const line = r.action === 'create_lead'
+              ? `Contact created from ${channelLabel} for "${r.name}"${pipeline ? ` — deal created under "${pipeline.name}"` : ''}`
+              : `Ticket created from ${channelLabel} for "${r.name}"`
+            return (
+              <div key={r.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10 border border-[#61c2ad]/20 dark:border-[#61c2ad]/15">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#3a9e8a] dark:text-[#61c2ad] shrink-0" />
+                <span className="text-xs text-gray-700 dark:text-gray-300 flex-1">{line}</span>
+                <button
+                  onClick={() => dismissBackfillResult(r.id)}
+                  className="shrink-0 p-0.5 rounded text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                  title="Dismiss"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* ── Sync inbox banner — shown when no email is connected ───────── */}
       {!emailConnected && !viewAsUserId && (

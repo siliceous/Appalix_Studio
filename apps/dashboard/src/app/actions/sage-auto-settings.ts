@@ -81,7 +81,15 @@ export async function setDefaultPipeline(pipelineId: string | null): Promise<voi
     )
 }
 
-export async function runAutoBackfill(): Promise<{ ok: boolean; applied?: number; error?: string }> {
+export interface BackfillResultItem {
+  id:         string
+  channel:    'email' | 'bots' | 'forms' | 'tickets'
+  action:     'create_lead' | 'create_ticket'
+  name:       string
+  pipelineId: string | null
+}
+
+export async function runAutoBackfill(): Promise<{ ok: boolean; applied?: number; results?: BackfillResultItem[]; error?: string }> {
   const workspaceId = await getWorkspaceId()
   if (!workspaceId) return { ok: false, error: 'Not authenticated' }
   if (!API_BASE || !SERVICE_KEY) return { ok: false, error: 'API not configured' }
@@ -92,7 +100,7 @@ export async function runAutoBackfill(): Promise<{ ok: boolean; applied?: number
       headers: { 'Content-Type': 'application/json', 'x-service-key': SERVICE_KEY },
       body:    JSON.stringify({ workspace_id: workspaceId }),
     })
-    const json = await res.json() as { ok: boolean; applied?: number; error?: string }
+    const json = await res.json() as { ok: boolean; applied?: number; results?: BackfillResultItem[]; error?: string }
     return json
   } catch {
     return { ok: false, error: 'Request failed' }

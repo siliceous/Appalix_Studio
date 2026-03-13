@@ -4,7 +4,7 @@ import React, { useCallback, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ClipboardList, Search, ChevronDown, X,
-  UserPlus, Ticket, CheckCircle2, Clock,
+  UserPlus, Ticket, CheckCircle2, Clock, Download,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import { formSubmissionCreateLead, formSubmissionCreateTicket, markSubmissionActioned } from '@/app/actions/sage-forms'
@@ -97,15 +97,47 @@ export function FormsTable({ submissions, forms, filters, readonly = false }: Pr
   const activeForm   = filters.form   ?? ''
   const activeStatus = filters.status ?? ''
 
+  const exportCSV = () => {
+    const headers = ['Name', 'Email', 'Form', 'Priority', 'Summary', 'Status', 'Submitted']
+    const rows = submissions.map(sub => {
+      const name   = sub.ai_entities?.name  ?? sub.fields.name  ?? 'Anonymous'
+      const email  = sub.ai_entities?.email ?? sub.fields.email ?? ''
+      const form   = forms.find(f => f.id === sub.form_id)?.name ?? ''
+      const status = sub.action_type === 'lead' ? 'Lead created'
+        : sub.action_type === 'ticket' ? 'Ticket created'
+        : sub.action_type === 'ignored' ? 'Ignored'
+        : 'Pending'
+      return [name, email, form, sub.ai_priority ?? '', sub.ai_summary ?? '', status, new Date(sub.created_at).toLocaleString()]
+    })
+    const csv = [headers, ...rows]
+      .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a'); a.href = url; a.download = 'form-submissions.csv'; a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-5 p-8">
 
       {/* ── Header ── */}
-      <div>
-        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Form Submissions</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-          All submissions across your forms — {submissions.length} shown
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Form Submissions</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            All submissions across your forms — {submissions.length} shown
+          </p>
+        </div>
+        {submissions.length > 0 && (
+          <button
+            onClick={exportCSV}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-white/5 border dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-colors shrink-0"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export CSV
+          </button>
+        )}
       </div>
 
       {/* ── Filter bar ── */}

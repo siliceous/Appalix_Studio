@@ -1607,7 +1607,15 @@ export async function reanalyzePendingEmails(workspaceId: string, batchSize = 50
 // analyzed before auto-execute existed.  Safe to re-run — executeAutoAction
 // has full dedup guards (won't create duplicate contacts or deals).
 
-export async function backfillAutoActions(workspaceId: string, batchSize = 200): Promise<number> {
+export interface BackfillResult {
+  id:          string
+  channel:     'email' | 'bots' | 'forms' | 'tickets'
+  action:      'create_lead' | 'create_ticket'
+  name:        string
+  pipelineId:  string | null
+}
+
+export async function backfillAutoActions(workspaceId: string, batchSize = 200): Promise<{ applied: number; results: BackfillResult[] }> {
   const { data: emails } = await supabase
     .from('sage_emails')
     .select('id, from_name, from_address, ai_action, ai_entities, ai_summary, ai_priority')
@@ -1617,12 +1625,13 @@ export async function backfillAutoActions(workspaceId: string, batchSize = 200):
     .not('ai_analyzed_at', 'is', null)
     .limit(batchSize)
 
-  if (!emails || emails.length === 0) return 0
+  if (!emails || emails.length === 0) return { applied: 0, results: [] }
 
   const settings = await getWorkspaceAutoSettings(workspaceId)
-  if (!isFullAutomation(settings, 'email')) return 0
+  if (!isFullAutomation(settings, 'email')) return { applied: 0, results: [] }
 
   let applied = 0
+  const results: BackfillResult[] = []
   for (const email of emails as { id: string; from_name: string | null; from_address: string; ai_action: string; ai_entities: Record<string, unknown> | null; ai_summary: string | null; ai_priority: string | null }[]) {
     const mappedAction: 'create_lead' | 'create_ticket' =
       email.ai_action === 'create_ticket' ? 'create_ticket' : 'create_lead'
@@ -1639,6 +1648,9 @@ export async function backfillAutoActions(workspaceId: string, batchSize = 200):
         priority:          email.ai_priority ?? null,
         defaultPipelineId: settings.default_pipeline_id,
       })
+      const entities = (email.ai_entities ?? {}) as Record<string, string>
+      const name = entities.name ?? email.from_name ?? entities.email ?? email.from_address ?? 'Unknown'
+      results.push({ id: email.id, channel: 'email', action: mappedAction, name, pipelineId: settings.default_pipeline_id })
       applied++
     } catch (err) {
       console.error(`[backfill-auto] failed for email ${email.id}:`, (err as Error).message)
@@ -1646,5 +1658,5 @@ export async function backfillAutoActions(workspaceId: string, batchSize = 200):
   }
 
   console.log(`[backfill-auto] applied=${applied} workspace=${workspaceId}`)
-  return applied
+  return { applied, results }
 }
