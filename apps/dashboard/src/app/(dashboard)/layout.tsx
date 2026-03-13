@@ -7,6 +7,7 @@ import { createWorkspace } from '@/app/actions/workspace'
 import { getUserPermissions } from '@/lib/permissions'
 import { getBranding } from '@/app/actions/workspace-branding'
 import { WelcomeModal } from '@/components/onboarding/welcome-modal'
+import { TrialBanner } from '@/components/layout/trial-banner'
 import type { Workspace, WorkspaceMemberRole } from '@/lib/types'
 
 // All dashboard pages are user-specific and require live DB access — never statically render.
@@ -77,6 +78,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
     )
   }
 
+  const isOnTrial = workspace.subscription_status === 'trialing'
+    && workspace.trial_ends_at != null
+    && new Date(workspace.trial_ends_at) > new Date()
+
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-[#1c1c1c] relative">
       {/* Subtle green ambient glow in dark mode */}
@@ -89,11 +94,24 @@ export default async function DashboardLayout({ children }: { children: React.Re
         userEmail={userEmail}
         branding={branding}
       />
-      <main className="flex-1 p-8 overflow-auto bg-gray-50 dark:bg-[#1c1c1c]">
-        {children}
-      </main>
-      <SageRightPanel workspaceId={workspace.id} />
-      <WelcomeModal userName={userName} />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {isOnTrial && workspace.trial_ends_at && (
+          <TrialBanner trialEndsAt={workspace.trial_ends_at} />
+        )}
+        <main className="flex-1 p-8 overflow-auto bg-gray-50 dark:bg-[#1c1c1c]">
+          {children}
+        </main>
+      </div>
+      <SageRightPanel
+        workspaceId={workspace.id}
+        plan={workspace.plan}
+        trialEndsAt={workspace.trial_ends_at}
+      />
+      <WelcomeModal
+        userName={userName}
+        plan={workspace.plan}
+        trialEndsAt={workspace.trial_ends_at}
+      />
       <ReminderWatcher />
     </div>
   )

@@ -395,10 +395,11 @@ export async function createWorkspace(formData: FormData) {
     .slice(0, 48) + '-' + suffix
 
   const admin = createAdminClient()
+  const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
 
   const { data: workspace, error } = await admin
     .from('workspaces')
-    .insert({ name, slug, plan: 'starter', subscription_status: 'trialing' })
+    .insert({ name, slug, plan: 'starter', subscription_status: 'trialing', trial_ends_at: trialEndsAt })
     .select()
     .single()
 

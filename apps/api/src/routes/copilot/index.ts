@@ -135,7 +135,7 @@ export async function copilotRoutes(fastify: FastifyInstance) {
       // Load workspace
       const { data: workspace } = await supabase
         .from('workspaces')
-        .select('id, name, plan')
+        .select('id, name, plan, subscription_status, trial_ends_at')
         .eq('id', workspace_id)
         .single()
 
@@ -143,9 +143,12 @@ export async function copilotRoutes(fastify: FastifyInstance) {
         return reply.status(404).send({ error: 'Workspace not found' })
       }
 
-      // Plan gate: Pro+ only
-      const allowedPlans = ['pro', 'scale', 'enterprise']
-      if (!allowedPlans.includes(workspace.plan)) {
+      // Plan gate: Pro+ or active trial
+      const allowedPlans = ['pro', 'team', 'enterprise']
+      const isOnTrial = workspace.subscription_status === 'trialing'
+        && workspace.trial_ends_at != null
+        && new Date(workspace.trial_ends_at) > new Date()
+      if (!allowedPlans.includes(workspace.plan) && !isOnTrial) {
         return reply.status(403).send({ error: 'Internal Copilot requires a Pro plan or above' })
       }
 

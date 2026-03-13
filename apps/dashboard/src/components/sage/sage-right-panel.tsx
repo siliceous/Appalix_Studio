@@ -9,8 +9,12 @@ interface Message {
   content: string
 }
 
+const PRO_PLANS = ['pro', 'team', 'enterprise']
+
 interface SageRightPanelProps {
   workspaceId: string
+  plan?:        string
+  trialEndsAt?: string | null
 }
 
 type PanelState = 'floating' | 'expanded' | 'closed'
@@ -33,7 +37,7 @@ const STARTER_PROMPTS = [
   'Find contact by name or email',
 ]
 
-export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
+export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt }: SageRightPanelProps) {
   const pathname    = usePathname()
   const [panelState, setPanelState] = useState<PanelState>('closed')
   const [messages,   setMessages]   = useState<Message[]>([])
@@ -232,6 +236,21 @@ export function SageRightPanel({ workspaceId }: SageRightPanelProps) {
 
   // ── Closed — floating sparkles button ────────────────────────────────────
   if (panelState === 'closed') {
+    const isTrialActive = trialEndsAt != null && new Date(trialEndsAt) > new Date()
+    const isLocked = !PRO_PLANS.includes(plan) && !isTrialActive
+
+    if (isLocked) {
+      return (
+        <a
+          href="/settings/upgrade"
+          title="Sage AI — Pro feature. Upgrade to unlock."
+          className="fixed bottom-6 right-6 z-[100] w-11 h-11 rounded-full bg-gray-300 dark:bg-gray-700 shadow-lg flex items-center justify-center opacity-60 cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          <Sparkles className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+        </a>
+      )
+    }
+
     return (
       <button
         onClick={() => setPanelState('floating')}

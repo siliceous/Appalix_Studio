@@ -40,19 +40,20 @@ export async function POST(req: NextRequest) {
   // Load workspace to get name + verify plan (also confirms user has access via RLS)
   const { data: membership } = await supabase
     .from('workspace_members')
-    .select('workspaces(id, name, plan)')
+    .select('workspaces(id, name, plan, subscription_status, trial_ends_at)')
     .eq('user_id', user.id)
     .eq('workspace_id', workspace_id)
     .single()
 
-  const ws = (membership as unknown as { workspaces: { id: string; name: string; plan: string } } | null)?.workspaces
+  const ws = (membership as unknown as { workspaces: { id: string; name: string; plan: string; subscription_status: string; trial_ends_at: string | null } } | null)?.workspaces
 
   if (!ws) {
     return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
   }
 
-  const allowedPlans = ['pro', 'scale', 'enterprise']
-  if (!allowedPlans.includes(ws.plan)) {
+  const allowedPlans = ['pro', 'team', 'enterprise']
+  const isOnTrial = ws.subscription_status === 'trialing' && ws.trial_ends_at != null && new Date(ws.trial_ends_at) > new Date()
+  if (!allowedPlans.includes(ws.plan) && !isOnTrial) {
     return NextResponse.json({ error: 'upgrade_required' }, { status: 403 })
   }
 
