@@ -21,6 +21,17 @@ const CRM_PROVIDERS: { emoji: string; name: string; desc: string; guide: string 
   { emoji: '📋', name: 'Monday.com', desc: 'Create Monday.com board items automatically when your bot captures a lead.',                    guide: '/resources/connect-monday' },
 ]
 
+// Action label shown on each platform card / connected row
+const PLATFORM_ACTION: Partial<Record<Platform, string>> = {
+  wordpress:          'Download ZIP plugin',
+  web_widget:         'Get embed code',
+  slack:              'Connect Slack',
+  google_chat:        'Connect Google Chat',
+  facebook_messenger: 'Connect Facebook',
+  whatsapp:           'Connect WhatsApp',
+  custom_api:         'View API docs',
+}
+
 // All supported platforms shown in the "add" grid
 const AVAILABLE_PLATFORMS: { platform: Platform; desc: string; guide: string }[] = [
   { platform: 'slack',              desc: 'Respond to messages in Slack channels and DMs',         guide: '/resources/connect-slack' },
@@ -65,7 +76,7 @@ export default async function IntegrationsPage({
     <div className="max-w-5xl mx-auto">
       <Header
         title="Integrations"
-        description="Connect your bots to messaging platforms"
+        description="Connect your bot to a channel — Slack, WhatsApp, your website, and more"
         action={
           <a
             href="/integrations/new"
@@ -90,7 +101,12 @@ export default async function IntegrationsPage({
                 <div className="flex-1">
                   <a href={`/integrations/${int.id}`} className="text-sm font-medium text-gray-900 hover:text-brand-700 transition-colors">{int.name}</a>
                   <p className="text-xs text-gray-400">
-                    Bot: {int.bots?.name ?? '—'} · Added {formatDate(int.created_at)}
+                    Bot:{' '}
+                    {int.bots?.name
+                      ? <span>{int.bots.name}</span>
+                      : <span className="text-amber-500 font-medium">No bot attached</span>
+                    }
+                    {' '}· Added {formatDate(int.created_at)}
                   </p>
                   {int.last_error && (
                     <p className="text-xs text-red-500 mt-0.5">{int.last_error}</p>
@@ -100,7 +116,7 @@ export default async function IntegrationsPage({
                   href={`/integrations/${int.id}`}
                   className="text-xs text-brand-600 hover:text-brand-700 font-medium transition-colors shrink-0"
                 >
-                  Setup guide →
+                  {PLATFORM_ACTION[int.platform] ?? 'Setup guide'} →
                 </a>
                 <IntegrationActions id={int.id} status={int.status} />
               </div>
@@ -143,7 +159,7 @@ export default async function IntegrationsPage({
                     Connect
                   </a>
                   <a href={guide} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
-                    Setup guide →
+                    {PLATFORM_ACTION[platform] ?? 'Setup guide'} →
                   </a>
                 </div>
               </div>

@@ -48,8 +48,8 @@ const ALL_STEPS = [
     id:    'integrations',
     step:  2,
     icon:  Puzzle,
-    label: 'Connect your integrations',
-    sub:   'Link Gmail, Slack, WhatsApp, or any channel your leads come through.',
+    label: 'Connect your bot to a channel',
+    sub:   'Add an integration to put your bot on Slack, WhatsApp, your website, and more.',
     href:  '/integrations',
   },
   {
@@ -63,9 +63,11 @@ const ALL_STEPS = [
 ]
 
 interface Props {
-  userName:    string | null
-  plan:        string
-  trialEndsAt: string | null
+  userName:        string | null
+  plan:            string
+  trialEndsAt:     string | null
+  /** Step IDs already completed server-side (has bot / integration / source) */
+  serverCompleted: string[]
 }
 
 function daysLeft(trialEndsAt: string): number {
@@ -74,7 +76,7 @@ function daysLeft(trialEndsAt: string): number {
 
 const PRO_PLANS = ['pro', 'team', 'enterprise']
 
-export function WelcomeModal({ userName, plan, trialEndsAt }: Props) {
+export function WelcomeModal({ userName, plan, trialEndsAt, serverCompleted }: Props) {
   const [open,      setOpen]      = useState(false)
   const [state,     setState]     = useState<OnboardingState>({ dismissed: false, completed: [] })
 
@@ -84,13 +86,16 @@ export function WelcomeModal({ userName, plan, trialEndsAt }: Props) {
 
   useEffect(() => {
     const s = loadState()
-    setState(s)
-    if (s.dismissed) return
-    const remaining = ALL_STEPS.filter(st => !s.completed.includes(st.id))
+    // Merge server-detected completions into localStorage state
+    const merged = { ...s, completed: Array.from(new Set([...s.completed, ...serverCompleted])) }
+    if (merged.completed.length !== s.completed.length) saveState(merged)
+    setState(merged)
+    if (merged.dismissed) return
+    const remaining = ALL_STEPS.filter(st => !merged.completed.includes(st.id))
     if (remaining.length === 0) return
     const t = setTimeout(() => setOpen(true), 600)
     return () => clearTimeout(t)
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const remaining = ALL_STEPS.filter(st => !state.completed.includes(st.id))
   const isFirstVisit = state.completed.length === 0

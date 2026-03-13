@@ -80,18 +80,18 @@ export async function createIntegration(formData: FormData) {
   }
 
   const admin = createAdminClient()
-  const { error } = await admin.from('integrations').insert({
+  const { data: inserted, error } = await admin.from('integrations').insert({
     workspace_id: membership.workspace_id,
     bot_id:       botId || null,
     platform,
     name,
     status:       'active',
     config,
-  })
+  }).select('id').single()
 
   if (error) throw new Error(error.message)
 
-  redirect('/integrations')
+  redirect(`/integrations/${(inserted as { id: string }).id}`)
 }
 
 export async function setIntegrationStatus(

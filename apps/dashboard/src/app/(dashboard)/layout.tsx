@@ -82,6 +82,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
     && workspace.trial_ends_at != null
     && new Date(workspace.trial_ends_at) > new Date()
 
+  // Detect completed onboarding steps from DB to pre-populate the welcome modal
+  const wsId = raw?.workspace_id ?? workspace.id
+  const [{ count: botCount }, { count: integrationCount }, { count: sourceCount }] = await Promise.all([
+    supabase.from('bots').select('id', { count: 'exact', head: true }).eq('workspace_id', wsId),
+    supabase.from('integrations').select('id', { count: 'exact', head: true }).eq('workspace_id', wsId),
+    supabase.from('sources').select('id', { count: 'exact', head: true }).eq('workspace_id', wsId),
+  ])
+  const serverCompleted: string[] = [
+    ...((botCount ?? 0) > 0         ? ['bot']          : []),
+    ...((integrationCount ?? 0) > 0 ? ['integrations'] : []),
+    ...((sourceCount ?? 0) > 0      ? ['knowledge']    : []),
+  ]
+
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-[#1c1c1c] relative">
       {/* Subtle green ambient glow in dark mode */}
@@ -111,6 +124,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         userName={userName}
         plan={workspace.plan}
         trialEndsAt={workspace.trial_ends_at}
+        serverCompleted={serverCompleted}
       />
       <ReminderWatcher />
     </div>
