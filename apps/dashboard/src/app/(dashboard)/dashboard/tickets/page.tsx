@@ -6,8 +6,8 @@ import { ROLE_RANK } from '@/lib/types'
 import { TicketsClient } from '@/app/(dashboard)/sage/tickets/tickets-client'
 import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
-import { getTeamMemberProfile } from '@/app/actions/team-member-profile'
-import { TeamMemberBanner } from '@/components/team/team-member-banner'
+import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
+import { ActivitySidebar } from '@/components/team/activity-sidebar'
 
 export const metadata: Metadata = { title: 'Tickets' }
 
@@ -102,19 +102,26 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
   const tickets  = (data ?? []) as (SageTicket & { contact: Pick<SageContact, 'id' | 'name' | 'email'> | null })[]
   const contacts = (contactsRaw ?? []) as Pick<SageContact, 'id' | 'name'>[]
 
-  const profileData = viewAsUserId
-    ? await getTeamMemberProfile(viewAsUserId, params.activityDate)
-    : null
-  const profile = profileData && !('error' in profileData) ? profileData : null
+  const activityDate = params.activityDate ?? new Date().toISOString().slice(0, 10)
+  const activityUserId = viewAsUserId ?? user.id
+  const [activity, viewingAs] = await Promise.all([
+    getActivityFeed(activityUserId, workspaceId, activityDate),
+    resolveViewingAs(params.viewAs, workspaceId),
+  ])
 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
-      <SubpageToolbar sourceKey="tickets" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.tickets_auto_enabled} />
-      {profile && (
-        <TeamMemberBanner profile={profile} currentPath="/dashboard/tickets" selectedDate={params.activityDate} />
-      )}
-      <div className="flex-1 overflow-y-auto">
-        <TicketsClient tickets={tickets} contacts={contacts} readonly={!!viewAsUserId} />
+      <SubpageToolbar sourceKey="tickets" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.tickets_auto_enabled} viewAsUserId={viewAsUserId} />
+      <div className="flex flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
+          <TicketsClient tickets={tickets} contacts={contacts} readonly={!!viewAsUserId} />
+        </div>
+        <ActivitySidebar
+          activity={activity}
+          date={activityDate}
+          currentPath="/dashboard/tickets"
+          viewingAs={viewingAs}
+        />
       </div>
     </div>
   )

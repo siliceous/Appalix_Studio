@@ -10,11 +10,12 @@ export type SubpagePreset = 'all' | 'today' | 'yesterday' | '7d' | '30d' | 'cust
 export type SubpageSource = 'email' | 'bots' | 'forms' | 'tickets'
 
 interface Props {
-  sourceKey:   SubpageSource
-  preset:      SubpagePreset
-  autoEnabled: boolean    // per-source setting from DB
-  customFrom?: string     // YYYY-MM-DD from URL
-  customTo?:   string     // YYYY-MM-DD from URL
+  sourceKey:    SubpageSource
+  preset:       SubpagePreset
+  autoEnabled:  boolean    // per-source setting from DB
+  customFrom?:  string     // YYYY-MM-DD from URL
+  customTo?:    string     // YYYY-MM-DD from URL
+  viewAsUserId?: string | null  // when a senior is viewing a junior
 }
 
 const PRESETS: { value: SubpagePreset; label: string }[] = [
@@ -40,7 +41,14 @@ const SOURCE_FIELD: Record<SubpageSource, keyof AutoSettings> = {
   tickets: 'tickets_auto_enabled',
 }
 
-export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, customTo }: Props) {
+const BASE_HREFS: Record<SubpageSource, string> = {
+  email:   '/dashboard/email',
+  bots:    '/dashboard/bots',
+  forms:   '/dashboard/forms',
+  tickets: '/dashboard/tickets',
+}
+
+export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, customTo, viewAsUserId }: Props) {
   const router   = useRouter()
   const pathname = usePathname()
   const [, startTransition] = useTransition()
@@ -56,6 +64,14 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
     setToDate(customTo   ?? '')
   }, [customFrom, customTo])
 
+  // Build URL preserving viewAs
+  const buildUrl = (base: string, extra?: Record<string, string>) => {
+    const url = new URL(base, 'http://x')
+    if (viewAsUserId) url.searchParams.set('viewAs', viewAsUserId)
+    if (extra) for (const [k, v] of Object.entries(extra)) url.searchParams.set(k, v)
+    return url.pathname + (url.search !== '?' ? url.search : '')
+  }
+
   const toggleAuto = async () => {
     const next = !localAuto
     setLocalAuto(next)  // optimistic
@@ -65,26 +81,26 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
 
   const handlePresetChange = (value: SubpagePreset) => {
     if (value === 'custom') {
-      startTransition(() => router.push(`${pathname}?preset=custom`))
+      startTransition(() => router.push(buildUrl(pathname, { preset: 'custom' })))
       return
     }
     startTransition(() => {
-      router.push(value === 'all' ? pathname : `${pathname}?preset=${value}`)
+      router.push(value === 'all' ? buildUrl(pathname) : buildUrl(pathname, { preset: value }))
     })
   }
 
   const applyCustomRange = () => {
     if (!fromDate || !toDate) return
     startTransition(() => {
-      router.push(`${pathname}?preset=custom&from=${fromDate}&to=${toDate}`)
+      router.push(buildUrl(pathname, { preset: 'custom', from: fromDate, to: toDate }))
     })
   }
 
-  const PAGES: { key: SubpageSource; label: string; href: string; Icon: React.ElementType; activeCls: string; hoverCls: string }[] = [
-    { key: 'email',   label: 'Email',   href: '/dashboard/email',   Icon: Mail,          activeCls: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/20 dark:text-blue-200 dark:border-blue-500/40',    hoverCls: 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/6 hover:text-blue-600 dark:hover:text-blue-400' },
-    { key: 'bots',    label: 'Bots',    href: '/dashboard/bots',    Icon: MessageSquare, activeCls: 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-500/20 dark:text-purple-200 dark:border-purple-500/40', hoverCls: 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/6 hover:text-purple-600 dark:hover:text-purple-400' },
-    { key: 'forms',   label: 'Forms',   href: '/dashboard/forms',   Icon: FileText,      activeCls: 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/20 dark:text-green-200 dark:border-green-500/40',   hoverCls: 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/6 hover:text-green-600 dark:hover:text-green-400' },
-    { key: 'tickets', label: 'Tickets', href: '/dashboard/tickets', Icon: TicketIcon,    activeCls: 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-500/20 dark:text-orange-200 dark:border-orange-500/40', hoverCls: 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/6 hover:text-orange-600 dark:hover:text-orange-400' },
+  const PAGES: { key: SubpageSource; label: string; Icon: React.ElementType; activeCls: string; hoverCls: string }[] = [
+    { key: 'email',   label: 'Email',   Icon: Mail,          activeCls: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/20 dark:text-blue-200 dark:border-blue-500/40',    hoverCls: 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/6 hover:text-blue-600 dark:hover:text-blue-400' },
+    { key: 'bots',    label: 'Bots',    Icon: MessageSquare, activeCls: 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-500/20 dark:text-purple-200 dark:border-purple-500/40', hoverCls: 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/6 hover:text-purple-600 dark:hover:text-purple-400' },
+    { key: 'forms',   label: 'Forms',   Icon: FileText,      activeCls: 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/20 dark:text-green-200 dark:border-green-500/40',   hoverCls: 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/6 hover:text-green-600 dark:hover:text-green-400' },
+    { key: 'tickets', label: 'Tickets', Icon: TicketIcon,    activeCls: 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-500/20 dark:text-orange-200 dark:border-orange-500/40', hoverCls: 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/6 hover:text-orange-600 dark:hover:text-orange-400' },
   ]
 
   return (
@@ -92,18 +108,18 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
       {/* Overview link + page pill buttons */}
       <div className="flex items-center gap-1.5 min-w-0 overflow-x-auto">
         <Link
-          href="/dashboard"
+          href={viewAsUserId ? `/dashboard?viewAs=${viewAsUserId}` : '/dashboard'}
           className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors shrink-0 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/6 mr-0.5"
         >
           <LayoutDashboard className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Overview</span>
         </Link>
         <div className="w-px h-5 bg-gray-200 dark:bg-white/10" />
-        {/* Sibling page pill buttons */}
+        {/* Sibling page pill buttons — carry viewAs when set */}
         {PAGES.map(p => (
           <Link
             key={p.key}
-            href={p.href}
+            href={viewAsUserId ? `${BASE_HREFS[p.key]}?viewAs=${viewAsUserId}` : BASE_HREFS[p.key]}
             className={[
               'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl border transition-colors whitespace-nowrap',
               sourceKey === p.key

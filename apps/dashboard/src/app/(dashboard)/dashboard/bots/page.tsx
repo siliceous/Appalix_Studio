@@ -8,8 +8,8 @@ import type { ConvRow, BotOption, ConvFilters, TeamMember } from '@/app/(dashboa
 import { ROLE_RANK } from '@/lib/types'
 import type { WorkspaceMemberRole } from '@/lib/types'
 import { createAdminClient } from '@/lib/supabase/server'
-import { getTeamMemberProfile } from '@/app/actions/team-member-profile'
-import { TeamMemberBanner } from '@/components/team/team-member-banner'
+import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
+import { ActivitySidebar } from '@/components/team/activity-sidebar'
 
 export const metadata: Metadata = { title: 'Bot Conversations' }
 
@@ -149,10 +149,12 @@ export default async function BotsPage({
   const { data: rawConversations } = await query
   const conversations = (rawConversations ?? []) as ConvRow[]
 
-  const profileData = viewAsUserId
-    ? await getTeamMemberProfile(viewAsUserId, params.activityDate)
-    : null
-  const profile = profileData && !('error' in profileData) ? profileData : null
+  const activityDate = params.activityDate ?? new Date().toISOString().slice(0, 10)
+  const activityUserId = viewAsUserId ?? user.id
+  const [activity, viewingAs] = await Promise.all([
+    getActivityFeed(activityUserId, workspaceId, activityDate),
+    resolveViewingAs(params.viewAs, workspaceId),
+  ])
 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
@@ -162,22 +164,24 @@ export default async function BotsPage({
         customFrom={params.from}
         customTo={params.to}
         autoEnabled={autoSettings.bots_auto_enabled}
+        viewAsUserId={viewAsUserId}
       />
-      {profile && (
-        <TeamMemberBanner
-          profile={profile}
+      <div className="flex flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
+          <ConversationsClient
+            conversations={conversations}
+            bots={bots}
+            filters={params}
+            teamMembers={teamMembers}
+            canAssign={callerRank >= ROLE_RANK.manager && !viewAsUserId}
+            readonly={!!viewAsUserId}
+          />
+        </div>
+        <ActivitySidebar
+          activity={activity}
+          date={activityDate}
           currentPath="/dashboard/bots"
-          selectedDate={params.activityDate}
-        />
-      )}
-      <div className="flex-1 overflow-y-auto">
-        <ConversationsClient
-          conversations={conversations}
-          bots={bots}
-          filters={params}
-          teamMembers={teamMembers}
-          canAssign={callerRank >= ROLE_RANK.manager && !viewAsUserId}
-          readonly={!!viewAsUserId}
+          viewingAs={viewingAs}
         />
       </div>
     </div>

@@ -7,8 +7,8 @@ import type { SageForm, SageFormSubmission } from '@/app/actions/sage-forms'
 import { FormsTable, type FormFilters } from '@/components/dashboard/forms-table'
 import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
-import { getTeamMemberProfile } from '@/app/actions/team-member-profile'
-import { TeamMemberBanner } from '@/components/team/team-member-banner'
+import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
+import { ActivitySidebar } from '@/components/team/activity-sidebar'
 
 export const metadata: Metadata = { title: 'Forms' }
 
@@ -145,10 +145,12 @@ export default async function FormsPage({
     })
   }
 
-  const profileData = viewAsUserId
-    ? await getTeamMemberProfile(viewAsUserId, params.activityDate)
-    : null
-  const profile = profileData && !('error' in profileData) ? profileData : null
+  const activityDate = params.activityDate ?? new Date().toISOString().slice(0, 10)
+  const activityUserId = viewAsUserId ?? user.id
+  const [activity, viewingAs] = await Promise.all([
+    getActivityFeed(activityUserId, workspaceId, activityDate),
+    resolveViewingAs(params.viewAs, workspaceId),
+  ])
 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
@@ -158,16 +160,22 @@ export default async function FormsPage({
         customFrom={params.from}
         customTo={params.to}
         autoEnabled={autoSettings.forms_auto_enabled}
+        viewAsUserId={viewAsUserId}
       />
-      {profile && (
-        <TeamMemberBanner profile={profile} currentPath="/dashboard/forms" selectedDate={params.activityDate} />
-      )}
-      <div className="flex-1 overflow-y-auto">
-        <FormsTable
-          submissions={submissions}
-          forms={forms}
-          filters={params}
-          readonly={!!viewAsUserId}
+      <div className="flex flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
+          <FormsTable
+            submissions={submissions}
+            forms={forms}
+            filters={params}
+            readonly={!!viewAsUserId}
+          />
+        </div>
+        <ActivitySidebar
+          activity={activity}
+          date={activityDate}
+          currentPath="/dashboard/forms"
+          viewingAs={viewingAs}
         />
       </div>
     </div>

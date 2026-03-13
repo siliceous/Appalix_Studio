@@ -6,7 +6,7 @@ import { ROLE_RANK } from '@/lib/types'
 import { EmailTriageDashboard, type TriageEmail, type TriageRecommendation } from '@/components/dashboard/email-triage-dashboard'
 import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
-import { getTeamMemberProfile } from '@/app/actions/team-member-profile'
+import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
 import { TeamMemberBanner } from '@/components/team/team-member-banner'
 
 export const metadata: Metadata = { title: 'Email Triage' }
@@ -198,17 +198,16 @@ export default async function EmailTriagePage({ searchParams }: { searchParams: 
   const P: Record<string, number> = { high: 0, medium: 1, low: 2 }
   triageEmails.sort((a, b) => (a.email.ai_priority ? (P[a.email.ai_priority] ?? 3) : 3) - (b.email.ai_priority ? (P[b.email.ai_priority] ?? 3) : 3))
 
-  const profileData = viewAsUserId
-    ? await getTeamMemberProfile(viewAsUserId, params.activityDate)
-    : null
-  const profile = profileData && !('error' in profileData) ? profileData : null
+  const activityDate = params.activityDate ?? new Date().toISOString().slice(0, 10)
+  const [activity, viewingAs] = await Promise.all([
+    getActivityFeed(effectiveUserId, workspaceId, activityDate),
+    resolveViewingAs(params.viewAs, workspaceId),
+  ])
 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
-      <SubpageToolbar sourceKey="email" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.email_auto_enabled} />
-      {profile && (
-        <TeamMemberBanner profile={profile} currentPath="/dashboard/email" selectedDate={params.activityDate} />
-      )}
+      <SubpageToolbar sourceKey="email" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.email_auto_enabled} viewAsUserId={viewAsUserId} />
+      <TeamMemberBanner activity={activity} date={activityDate} currentPath="/dashboard/email" viewingAs={viewingAs} selectedDate={params.activityDate} />
       <div className="flex flex-1 overflow-hidden">
         <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} connectedEmail={connectedEmail} autoSync={params.syncing === '1'} readonly={!!viewAsUserId} />
       </div>

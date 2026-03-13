@@ -4,13 +4,15 @@ import type { Metadata } from 'next'
 import type { WorkspaceMember, WorkspaceMemberRole } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
 import { SageDashboardClient } from '@/app/(dashboard)/sage/dashboard/dashboard-client'
+import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
+import { TeamMemberBanner } from '@/components/team/team-member-banner'
 
 export const metadata: Metadata = { title: 'Overview' }
 
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ viewAs?: string }>
+  searchParams: Promise<{ viewAs?: string; activityDate?: string }>
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -27,7 +29,7 @@ export default async function DashboardPage({
   const membership = membershipRaw as MRow | null
   if (!membership) redirect('/login')
 
-  const { viewAs } = await searchParams
+  const { viewAs, activityDate } = await searchParams
   const callerRank = ROLE_RANK[membership.role as WorkspaceMemberRole] ?? 0
 
   // Check if user has a connected email integration
@@ -120,19 +122,32 @@ export default async function DashboardPage({
       })
   }
 
+  const overviewActivityDate = activityDate ?? new Date().toISOString().slice(0, 10)
+  const [overviewActivity, viewingAs] = viewAsUserId
+    ? await Promise.all([
+        getActivityFeed(viewAsUserId, membership.workspace_id, overviewActivityDate),
+        resolveViewingAs(viewAs, membership.workspace_id),
+      ])
+    : [null, null]
+
   return (
-    <div className="overflow-y-auto">
-      <SageDashboardClient
-        workspaceId={membership.workspace_id}
-        callerRole={membership.role as WorkspaceMemberRole}
-        currentUserId={user.id}
-        viewAsUserId={viewAsUserId}
-        viewAsName={viewAsName}
-        teamMembers={teamMembers}
-        userName={firstName}
-        emailConnected={emailConnected}
-        connectProvider={connectProvider}
-      />
+    <div className="flex flex-col h-full">
+      {viewAsUserId && overviewActivity && (
+        <TeamMemberBanner activity={overviewActivity} date={overviewActivityDate} currentPath="/dashboard" viewingAs={viewingAs} selectedDate={activityDate} />
+      )}
+      <div className="flex-1 overflow-y-auto">
+        <SageDashboardClient
+          workspaceId={membership.workspace_id}
+          callerRole={membership.role as WorkspaceMemberRole}
+          currentUserId={user.id}
+          viewAsUserId={viewAsUserId}
+          viewAsName={viewAsName}
+          teamMembers={teamMembers}
+          userName={firstName}
+          emailConnected={emailConnected}
+          connectProvider={connectProvider}
+        />
+      </div>
     </div>
   )
 }

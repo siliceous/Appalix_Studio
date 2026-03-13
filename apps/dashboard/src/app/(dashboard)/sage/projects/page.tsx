@@ -4,15 +4,13 @@ import type { Metadata } from 'next'
 import type { WorkspaceMember, SageDeal, SageContact, SageCompany, SagePipelineStage, WorkspaceMemberRole } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
 import { ProjectsClient } from './projects-client'
-import { getTeamMemberProfile } from '@/app/actions/team-member-profile'
-import { TeamMemberBanner } from '@/components/team/team-member-banner'
 
 export const metadata: Metadata = { title: 'Projects' }
 
 export default async function ProjectsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ viewAs?: string; activityDate?: string }>
+  searchParams: Promise<{ viewAs?: string }>
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -30,7 +28,7 @@ export default async function ProjectsPage({
   const workspaceId = membership.workspace_id
   const callerRank  = ROLE_RANK[membership.role as WorkspaceMemberRole] ?? 0
 
-  const { viewAs, activityDate } = await searchParams
+  const { viewAs } = await searchParams
 
   // Resolve viewAs (managers+ only, target must rank below caller)
   let viewAsUserId: string | null = null
@@ -65,16 +63,8 @@ export default async function ProjectsPage({
     addOwner(supabase.from('sage_deals').select(SELECT).eq('workspace_id', workspaceId).eq('status', 'lost')).order('lost_at', { ascending: false }),
   ])
 
-  const profileData = viewAsUserId
-    ? await getTeamMemberProfile(viewAsUserId, activityDate)
-    : null
-  const profile = profileData && !('error' in profileData) ? profileData : null
-
   return (
     <div className="flex flex-col h-full">
-      {profile && (
-        <TeamMemberBanner profile={profile} currentPath="/sage/projects" selectedDate={activityDate} />
-      )}
       <div className="flex-1 overflow-auto">
         <ProjectsClient
           projects={(wonData  ?? []) as DealRow[]}

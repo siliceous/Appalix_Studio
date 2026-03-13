@@ -5,15 +5,13 @@ import { getUserPermissions } from '@/lib/permissions'
 import type { Metadata } from 'next'
 import type { WorkspaceMember, SageContact, WorkspaceMemberSummary, WorkspaceMemberRole } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
-import { getTeamMemberProfile } from '@/app/actions/team-member-profile'
-import { TeamMemberBanner } from '@/components/team/team-member-banner'
 
 export const metadata: Metadata = { title: 'Contacts · Sage' }
 
 export default async function ContactsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ viewAs?: string; activityDate?: string }>
+  searchParams: Promise<{ viewAs?: string }>
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -39,7 +37,7 @@ export default async function ContactsPage({
   const admin      = createAdminClient()
 
   // Resolve viewAs param (managers+ only, must be a lower-rank member)
-  const { viewAs, activityDate } = await searchParams
+  const { viewAs } = await searchParams
   let viewAsUserId: string | null = null
   if (viewAs && isManager) {
     const { data: targetRaw } = await admin
@@ -118,16 +116,8 @@ export default async function ContactsPage({
     deal_value: dealValueMap.get(c.id) ?? null,
   }))
 
-  const profileData = viewAsUserId
-    ? await getTeamMemberProfile(viewAsUserId, activityDate)
-    : null
-  const profile = profileData && !('error' in profileData) ? profileData : null
-
   return (
     <div className="flex flex-col h-full">
-      {profile && (
-        <TeamMemberBanner profile={profile} currentPath="/sage/contacts" selectedDate={activityDate} />
-      )}
       <div className="flex-1 overflow-hidden">
         <ContactsClient
           contacts={contacts}

@@ -7,18 +7,16 @@ import { PipelineBoard } from '@/components/sage/pipeline-board'
 import { PipelineViewAsPicker } from '@/components/sage/pipeline-view-as-picker'
 import type { WorkspaceMember, WorkspaceMemberSummary, WorkspaceMemberRole, SagePipeline, SagePipelineStage, SageDeal, SageContact } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
-import { getTeamMemberProfile } from '@/app/actions/team-member-profile'
-import { TeamMemberBanner } from '@/components/team/team-member-banner'
 
 export default async function PipelineBoardPage({
   params,
   searchParams,
 }: {
   params:       Promise<{ id: string }>
-  searchParams: Promise<{ deal?: string; viewAs?: string; activityDate?: string }>
+  searchParams: Promise<{ deal?: string; viewAs?: string }>
 }) {
   const { id }             = await params
-  const { deal: initialDealId, viewAs, activityDate } = await searchParams
+  const { deal: initialDealId, viewAs } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -125,11 +123,6 @@ export default async function PipelineBoardPage({
     }
   }
 
-  const profileData = viewAsUserId
-    ? await getTeamMemberProfile(viewAsUserId, activityDate)
-    : null
-  const profile = profileData && !('error' in profileData) ? profileData : null
-
   return (
     <div className="flex flex-col h-full">
       {/* Board header */}
@@ -150,10 +143,6 @@ export default async function PipelineBoardPage({
           viewAsUserId={viewAsUserId}
         />
       </div>
-
-      {profile && (
-        <TeamMemberBanner profile={profile} currentPath={`/sage/pipelines/${id}`} selectedDate={activityDate} />
-      )}
 
       {/* Board */}
       <div className="flex-1 overflow-hidden bg-gray-50 dark:bg-[#1c1c1c] flex flex-col min-h-0">
