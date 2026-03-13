@@ -28,5 +28,5 @@ export default async function NewIntegrationPage({
   const validPlatforms = ['web_widget','custom_api','slack','wordpress','facebook_messenger','whatsapp','google_chat','telegram']
   const selected = (validPlatforms.includes(qp ?? '') ? qp : 'web_widget') as Platform
 
-  return <NewIntegrationForm bots={bots} defaultPlatform={selected} />
+  return <NewIntegrationForm bots={bots} defaultPlatform={selected} metaAppId={process.env.META_APP_ID} />
 }

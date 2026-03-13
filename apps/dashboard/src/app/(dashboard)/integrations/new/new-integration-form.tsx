@@ -7,6 +7,7 @@ import { PLATFORM_META } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { ChevronLeft, ExternalLink } from 'lucide-react'
 import type { Platform } from '@/lib/types'
+import { MetaEmbeddedSignup } from './meta-embedded-signup'
 
 const PLATFORMS: { platform: Platform; desc: string; guide: string }[] = [
   { platform: 'web_widget',         desc: 'Embed a chat widget on any website',       guide: '/resources/embed-web-widget' },
@@ -98,9 +99,11 @@ const OAUTH_PLATFORMS: Partial<Record<Platform, { label: string; logo: React.Rea
 export function NewIntegrationForm({
   bots,
   defaultPlatform,
+  metaAppId,
 }: {
   bots: { id: string; name: string }[]
   defaultPlatform: Platform
+  metaAppId?: string
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -215,7 +218,26 @@ export function NewIntegrationForm({
         </div>
 
         {/* OAuth platforms: show one-click connect instead of credential form */}
-        {oauthConfig ? (
+        {(platform === 'facebook_messenger' || platform === 'whatsapp') && metaAppId ? (
+          <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5">
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Authorise access</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+              Click the button below to log in with Meta and connect your {platform === 'facebook_messenger' ? 'Facebook Page' : 'WhatsApp Business account'} — no tokens to copy.
+            </p>
+            {integrationName && bots.length > 0 ? (
+              <MetaEmbeddedSignup
+                platform={platform}
+                name={integrationName}
+                botId={selectedBotId}
+                appId={metaAppId}
+              />
+            ) : (
+              <p className="text-xs text-amber-500">
+                {bots.length === 0 ? 'Create a bot first.' : 'Enter an integration name above to continue.'}
+              </p>
+            )}
+          </div>
+        ) : oauthConfig ? (
           <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5">
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Authorise access</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
