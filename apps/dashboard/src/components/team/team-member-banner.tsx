@@ -7,7 +7,28 @@ import {
   FileText, Ticket, Users, Calendar, Clock, CheckCircle2, Phone, Video,
 } from 'lucide-react'
 import type { TeamMemberProfileData, ActivityEntry } from '@/app/actions/team-member-profile'
-import { formatEventLabel } from '@/app/actions/team-member-profile'
+
+const EVENT_LABELS: Record<string, string> = {
+  contact_created:  'Created contact',
+  contact_updated:  'Updated contact',
+  contact_assigned: 'Assigned contact',
+  deal_created:     'Created deal',
+  stage_changed:    'Moved deal stage',
+  status_changed:   'Updated status',
+  deal_assigned:    'Assigned deal',
+  ticket_created:   'Created ticket',
+  note_added:       'Added a note',
+  call_added:       'Logged a call',
+  meeting_added:    'Logged a meeting',
+  task_added:       'Added a task',
+  email_sent:       'Sent an email',
+  email_replied:    'Replied to email',
+}
+
+function formatEventLabel(eventType: string, entityName?: string | null): string {
+  const base = EVENT_LABELS[eventType] ?? eventType.replace(/_/g, ' ')
+  return entityName ? `${base}: ${entityName}` : base
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

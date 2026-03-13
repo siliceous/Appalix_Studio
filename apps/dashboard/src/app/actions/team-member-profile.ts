@@ -32,29 +32,6 @@ export interface TeamMemberProfileData {
   activity:   ActivityEntry[]
 }
 
-// Human-readable labels for event types
-const EVENT_LABELS: Record<string, string> = {
-  contact_created:  'Created contact',
-  contact_updated:  'Updated contact',
-  contact_assigned: 'Assigned contact',
-  deal_created:     'Created deal',
-  stage_changed:    'Moved deal stage',
-  status_changed:   'Updated status',
-  deal_assigned:    'Assigned deal',
-  ticket_created:   'Created ticket',
-  note_added:       'Added a note',
-  call_added:       'Logged a call',
-  meeting_added:    'Logged a meeting',
-  task_added:       'Added a task',
-  email_sent:       'Sent an email',
-  email_replied:    'Replied to email',
-}
-
-export function formatEventLabel(eventType: string, entityName?: string | null): string {
-  const base = EVENT_LABELS[eventType] ?? eventType.replace(/_/g, ' ')
-  return entityName ? `${base}: ${entityName}` : base
-}
-
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/)
   if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
