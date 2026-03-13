@@ -36,7 +36,7 @@ export default async function EditSourcePage({ params }: { params: Promise<{ id:
   const typeLabel = TYPE_LABEL[source.type] ?? source.type
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl mx-auto">
       <Header
         title={`Edit source — ${source.name}`}
         description={`Fix the ${typeLabel} source configuration and re-index`}

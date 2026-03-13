@@ -116,7 +116,7 @@ export function AutomationsClient({ initialConnected }: AutomationsClientProps) 
   }
 
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="p-8 max-w-3xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <Link href="/sage/contacts" className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">

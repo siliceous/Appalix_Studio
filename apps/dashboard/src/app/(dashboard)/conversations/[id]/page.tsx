@@ -38,7 +38,7 @@ export default async function ConversationDetailPage({
   const messages = (rawMessages ?? []) as Pick<Message, 'id' | 'role' | 'content' | 'tokens_input' | 'tokens_output' | 'response_time_ms' | 'is_error' | 'created_at'>[]
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>

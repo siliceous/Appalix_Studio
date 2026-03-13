@@ -40,7 +40,7 @@ export default async function NewSourcePage() {
   const allowedTypes: SourceType[] = PLAN_ALLOWED[plan] ?? ['url']
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl mx-auto">
       <Header
         title="Add source"
         description="Train your bot with a website, document, or custom text"

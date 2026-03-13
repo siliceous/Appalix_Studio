@@ -98,7 +98,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
   }
 
   return (
-    <div className="p-8 max-w-4xl">
+    <div className="p-8 max-w-4xl mx-auto">
       {/* Back */}
       <Link
         href="/sage/contacts"

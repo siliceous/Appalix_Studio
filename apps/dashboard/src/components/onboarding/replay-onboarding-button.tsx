@@ -1,12 +1,11 @@
 'use client'
 
 import { Sparkles } from 'lucide-react'
-
-const STORAGE_KEY = 'appalix_welcome_v1'
+import { resetOnboarding } from './welcome-modal'
 
 export function ReplayOnboardingButton() {
   function replay() {
-    try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ }
+    resetOnboarding()
     window.location.reload()
   }
 
