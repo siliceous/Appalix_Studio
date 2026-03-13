@@ -192,8 +192,8 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
             className={cn(
               'block rounded-lg px-2 py-2 transition-colors',
               settingsActive
-                ? 'bg-brand-50 dark:bg-[#61c2ad]/10 ring-1 ring-brand-200 dark:ring-[#61c2ad]/20'
-                : 'bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/8',
+                ? 'group-hover:bg-brand-50 dark:group-hover:bg-[#61c2ad]/10 group-hover:ring-1 group-hover:ring-brand-200 dark:group-hover:ring-[#61c2ad]/20'
+                : 'group-hover:bg-gray-50 dark:group-hover:bg-white/5 group-hover:hover:bg-gray-100 dark:group-hover:hover:bg-white/8',
             )}
           >
             <div className="flex items-center gap-2 min-w-0">
