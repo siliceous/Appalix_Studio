@@ -2,34 +2,37 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { X, GitBranch, Plug, LayoutDashboard, Sparkles, CheckCircle2, Circle, AlertTriangle, ArrowRight } from 'lucide-react'
+import { X, Bot, Puzzle, BookOpen, Sparkles, AlertTriangle, ArrowRight, ChevronRight } from 'lucide-react'
 
 const STORAGE_KEY = 'appalix_welcome_v1'
 
 const STEPS = [
   {
-    id:    'pipeline',
-    icon:  GitBranch,
-    label: 'Create your first pipeline',
-    sub:   'Set up stages to track your leads end-to-end.',
-    href:  '/sage/pipelines',
-    prompt: 'How do I create a pipeline in Appalix?',
+    id:     'bot',
+    step:   1,
+    icon:   Bot,
+    label:  'Create your first bot',
+    sub:    'Set up your AI agent — give it a name, persona, and instructions.',
+    href:   '/bots/new',
+    sagePrompt: "I just created my bot in Appalix. What should I do next to set it up properly?",
   },
   {
-    id:    'channel',
-    icon:  Plug,
-    label: 'Connect a channel',
-    sub:   'Link email, a bot, or a form to start capturing leads.',
-    href:  '/bots',
-    prompt: 'How do I connect a bot or email channel to start capturing leads?',
+    id:     'integrations',
+    step:   2,
+    icon:   Puzzle,
+    label:  'Connect your integrations',
+    sub:    'Link Gmail, Slack, WhatsApp, or any channel your leads come through.',
+    href:   '/integrations',
+    sagePrompt: "I'm on the integrations page. Walk me through connecting my first channel step by step.",
   },
   {
-    id:    'explore',
-    icon:  LayoutDashboard,
-    label: 'Explore the Sage dashboard',
-    sub:   'See your leads, tickets, and AI automation in one place.',
-    href:  '/sage/dashboard',
-    prompt: 'Walk me through the Sage dashboard — what can I do here?',
+    id:     'knowledge',
+    step:   3,
+    icon:   BookOpen,
+    label:  'Upload your knowledge base',
+    sub:    'Add your docs, website, or FAQs so Sage knows your business inside out.',
+    href:   '/sources',
+    sagePrompt: "I'm ready to upload my knowledge base. Walk me through adding sources in Appalix so Sage can learn about my business.",
   },
 ]
 
@@ -46,13 +49,11 @@ function daysLeft(trialEndsAt: string): number {
 const PRO_PLANS = ['pro', 'team', 'enterprise']
 
 export function WelcomeModal({ userName, plan, trialEndsAt }: Props) {
-  const [open,    setOpen]    = useState(false)
-  const [checked, setChecked] = useState<Set<string>>(new Set())
+  const [open, setOpen] = useState(false)
 
-  const isOnTrial  = trialEndsAt != null && new Date(trialEndsAt) > new Date()
-  const isPro      = PRO_PLANS.includes(plan)
-  const isStarter  = !isPro
-  const days       = trialEndsAt ? daysLeft(trialEndsAt) : 0
+  const isOnTrial = trialEndsAt != null && new Date(trialEndsAt) > new Date()
+  const isStarter = !PRO_PLANS.includes(plan)
+  const days      = trialEndsAt ? daysLeft(trialEndsAt) : 0
 
   useEffect(() => {
     try {
@@ -67,17 +68,13 @@ export function WelcomeModal({ userName, plan, trialEndsAt }: Props) {
     setOpen(false)
   }
 
-  function toggle(id: string) {
-    setChecked(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }
-
-  function openSage(prompt: string) {
+  function goWithSage(href: string, prompt: string) {
     dismiss()
-    window.dispatchEvent(new CustomEvent('sage:open', { detail: { prompt } }))
+    // Navigate first, then open Sage after a short delay so the page has loaded
+    window.location.href = href
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('sage:open', { detail: { prompt } }))
+    }, 800)
   }
 
   if (!open) return null
@@ -106,16 +103,13 @@ export function WelcomeModal({ userName, plan, trialEndsAt }: Props) {
             Welcome to Appalix, {firstName}
           </h2>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Get set up in a few steps — or let Sage guide you through everything.
+            3 steps to go live — follow them in order or let Sage guide you.
           </p>
 
-          {/* Trial badge */}
           {isOnTrial && (
             <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-500/10 dark:bg-[#61c2ad]/15 text-brand-700 dark:text-brand-300 text-[11px] font-medium">
               <Sparkles className="w-3 h-3" />
-              {days > 0
-                ? `${days}-day free trial — all Pro features unlocked`
-                : 'Trial active — all Pro features unlocked'}
+              {days > 0 ? `${days}-day free trial — all Pro features unlocked` : 'Trial active — all Pro features unlocked'}
             </div>
           )}
         </div>
@@ -124,80 +118,69 @@ export function WelcomeModal({ userName, plan, trialEndsAt }: Props) {
         {isStarter && isOnTrial && (
           <div className="mx-6 mt-4 flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
             <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
-            <div className="min-w-0">
-              <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
-                Sage AI is a Pro feature
-              </p>
-              <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
-                You're getting a free feel of it now. If you stay on the free plan after your trial, Sage chat will be disabled.{' '}
-                <Link href="/settings/upgrade" onClick={dismiss} className="underline underline-offset-2 font-medium">
-                  Upgrade to keep it →
-                </Link>
-              </p>
-            </div>
+            <p className="text-[11px] text-amber-700 dark:text-amber-400">
+              <span className="font-medium text-amber-800 dark:text-amber-300">Sage AI is a Pro feature.</span>{' '}
+              You're getting a free feel during your trial. Upgrade to keep it after.{' '}
+              <Link href="/settings/upgrade" onClick={dismiss} className="underline underline-offset-2 font-medium">
+                Upgrade →
+              </Link>
+            </p>
           </div>
         )}
 
-        {/* Checklist */}
+        {/* Steps */}
         <div className="px-6 py-4 space-y-2">
-          {STEPS.map(({ id, icon: Icon, label, sub, href, prompt }) => {
-            const done = checked.has(id)
-            return (
-              <div
-                key={id}
-                className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/8"
-              >
-                <button
-                  onClick={() => toggle(id)}
-                  className="mt-0.5 shrink-0 text-gray-300 dark:text-gray-600 hover:text-brand-500 dark:hover:text-brand-400 transition-colors"
-                >
-                  {done
-                    ? <CheckCircle2 className="w-5 h-5 text-brand-500" />
-                    : <Circle className="w-5 h-5" />}
-                </button>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <Icon className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{label}</p>
-                  </div>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">{sub}</p>
-                  <div className="flex items-center gap-3 mt-2">
-                    <Link
-                      href={href}
-                      onClick={dismiss}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 dark:text-brand-400 hover:underline"
-                    >
-                      Go there <ArrowRight className="w-3 h-3" />
-                    </Link>
-                    <span className="text-gray-300 dark:text-gray-700">·</span>
-                    <button
-                      onClick={() => openSage(prompt)}
-                      className="text-xs text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
-                    >
-                      Ask Sage to guide me
-                    </button>
-                  </div>
-                </div>
+          {STEPS.map(({ id, step, icon: Icon, label, sub, href, sagePrompt }) => (
+            <div
+              key={id}
+              className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-white/8 bg-gray-50 dark:bg-white/5"
+            >
+              {/* Step number */}
+              <div className="shrink-0 w-7 h-7 rounded-full bg-brand-100 dark:bg-[#61c2ad]/15 flex items-center justify-center">
+                <Icon className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" />
               </div>
-            )
-          })}
+
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-gray-400 dark:text-gray-500 leading-none mb-0.5">Step {step}</p>
+                <p className="text-sm font-medium text-gray-800 dark:text-gray-100 leading-snug">{label}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 leading-snug">{sub}</p>
+              </div>
+
+              {/* Actions */}
+              <div className="shrink-0 flex flex-col items-end gap-1.5">
+                <Link
+                  href={href}
+                  onClick={dismiss}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors whitespace-nowrap"
+                >
+                  Let's Go <ArrowRight className="w-3 h-3" />
+                </Link>
+                <button
+                  onClick={() => goWithSage(href, sagePrompt)}
+                  className="inline-flex items-center gap-0.5 text-[11px] text-gray-400 dark:text-gray-500 hover:text-brand-600 dark:hover:text-brand-400 transition-colors whitespace-nowrap"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  with Sage
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* Footer */}
-        <div className="px-6 pb-6 pt-2 space-y-2">
+        {/* Footer — Sage full walkthrough */}
+        <div className="px-6 pb-6 pt-1 space-y-2">
           <button
-            onClick={() => openSage("I'm new to Appalix — walk me through everything step by step.")}
+            onClick={() => goWithSage('/bots/new', "I'm brand new to Appalix. Start from step 1 — walk me through creating my bot, connecting integrations, and uploading my knowledge base, one step at a time.")}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium rounded-xl transition-colors"
           >
             <Sparkles className="w-4 h-4" />
-            Let Sage walk me through it
+            Let Sage walk me through all 3 steps
           </button>
           <button
             onClick={dismiss}
-            className="w-full text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 py-1.5 transition-colors"
+            className="w-full inline-flex items-center justify-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 py-1.5 transition-colors"
           >
-            I'll explore on my own
+            I'll explore on my own <ChevronRight className="w-3 h-3" />
           </button>
         </div>
       </div>
