@@ -45,6 +45,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/login') ||
     pathname.startsWith('/api/auth') ||
     pathname.startsWith('/api/webhooks') ||
+    pathname.startsWith('/api/slack') ||
     pathname.startsWith('/api/widget-chat') ||
     pathname.startsWith('/api/widget-config')
 
