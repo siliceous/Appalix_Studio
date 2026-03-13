@@ -13,15 +13,19 @@ export default async function BrandingPage() {
 
   const { data: membershipRaw } = await supabase
     .from('workspace_members')
-    .select('workspace_id, role')
+    .select('workspace_id, role, workspaces(plan)')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true })
     .limit(1)
     .single()
 
-  type Row = { workspace_id: string; role: string }
+  type Row = { workspace_id: string; role: string; workspaces: { plan: string } }
   const membership = membershipRaw as Row | null
   if (!membership) redirect('/login')
+
+  // Branding is Team & Enterprise only
+  const plan = membership.workspaces?.plan ?? 'individual'
+  if (!['team', 'enterprise'].includes(plan)) redirect('/settings/upgrade')
 
   const isAdmin = ['owner', 'admin'].includes(membership.role)
   const branding = await getBranding()

@@ -203,6 +203,46 @@ export default async function SettingsPage() {
         </div>
       </section>
 
+      {/* Branding — Team & Enterprise only */}
+      {['team', 'enterprise'].includes(workspace.plan) ? (
+        <section className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10">
+          <div className="px-6 py-5 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Branding</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                White-label the dashboard with your own logo, brand name, and colour. Ideal for agencies and resellers.
+              </p>
+            </div>
+            <a
+              href="/settings/branding"
+              className="shrink-0 px-4 py-2 text-sm font-medium border border-gray-300 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300 transition-colors"
+            >
+              Customise →
+            </a>
+          </div>
+        </section>
+      ) : (
+        <section className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 opacity-60">
+          <div className="px-6 py-5 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
+                Branding
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400">Team</span>
+              </h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                White-label the dashboard with your own logo, brand name, and colour. Available on Team and Enterprise plans.
+              </p>
+            </div>
+            <a
+              href="/settings/upgrade"
+              className="shrink-0 px-4 py-2 text-sm font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
+            >
+              Upgrade →
+            </a>
+          </div>
+        </section>
+      )}
+
       {/* Automation */}
       <section className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10">
         <div className="px-6 py-5 flex items-center justify-between">

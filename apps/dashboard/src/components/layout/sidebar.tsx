@@ -10,7 +10,6 @@ import {
   MessageSquare,
   Plug,
   BarChart2,
-  Settings,
   LogOut,
   BookOpen,
   Kanban,
@@ -21,10 +20,8 @@ import {
   Inbox,
   Rss,
   FolderOpen,
-  Pencil,
   TrendingUp,
   ListFilter,
-  Paintbrush,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -38,9 +35,9 @@ interface NavItem {
   label:           string
   icon:            React.ElementType
   sub?:            boolean
-  adminOnly?:      boolean                // hidden for viewers
-  adminPlus?:      boolean                // hidden for manager and below (requires admin+)
-  permissionKey?:  keyof UserPermissions  // hidden if permission is false
+  adminOnly?:      boolean
+  adminPlus?:      boolean
+  permissionKey?:  keyof UserPermissions
 }
 
 interface NavGroup {
@@ -52,11 +49,11 @@ interface NavGroup {
 const NAV_GROUPS: NavGroup[] = [
   {
     items: [
-      { href: '/dashboard',         label: 'Overview',  icon: LayoutDashboard },
-      { href: '/dashboard/email',   label: 'Emails',    icon: Mail,        sub: true },
-      { href: '/dashboard/bots',     label: 'Conversations', icon: MessageSquare, sub: true },
-      { href: '/dashboard/forms',   label: 'Forms',     icon: FileText,    sub: true },
-      { href: '/dashboard/tickets', label: 'Tickets',   icon: Ticket,      sub: true },
+      { href: '/dashboard',         label: 'Overview',       icon: LayoutDashboard },
+      { href: '/dashboard/email',   label: 'Emails',         icon: Mail,            sub: true },
+      { href: '/dashboard/bots',    label: 'Conversations',  icon: MessageSquare,   sub: true },
+      { href: '/dashboard/forms',   label: 'Forms',          icon: FileText,        sub: true },
+      { href: '/dashboard/tickets', label: 'Tickets',        icon: Ticket,          sub: true },
     ],
   },
   {
@@ -71,11 +68,11 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Sage',
     pro: true,
     items: [
-      { href: '/sage/pipelines', label: 'Pipelines',   icon: Kanban,      permissionKey: 'can_view_pipelines' },
-      { href: '/sage/projects',  label: 'Projects',    icon: FolderOpen,  permissionKey: 'can_view_projects'  },
-      { href: '/sage/contacts',  label: 'Contacts',    icon: Users,       permissionKey: 'can_view_contacts'  },
-      { href: '/sage/roi',       label: 'ROI',         icon: TrendingUp                                       },
-      { href: '/sage/rules',     label: 'Rules',       icon: ListFilter,  adminOnly: true                     },
+      { href: '/sage/pipelines', label: 'Pipelines', icon: Kanban,     permissionKey: 'can_view_pipelines' },
+      { href: '/sage/projects',  label: 'Projects',  icon: FolderOpen, permissionKey: 'can_view_projects'  },
+      { href: '/sage/contacts',  label: 'Contacts',  icon: Users,      permissionKey: 'can_view_contacts'  },
+      { href: '/sage/roi',       label: 'ROI',        icon: TrendingUp                                      },
+      { href: '/sage/rules',     label: 'Rules',      icon: ListFilter, adminOnly: true                    },
     ],
   },
   {
@@ -83,14 +80,12 @@ const NAV_GROUPS: NavGroup[] = [
     pro: true,
     items: [
       { href: '/forms/leads',   label: 'All Leads', icon: Inbox },
-      { href: '/forms/sources', label: 'Sources',   icon: Rss },
+      { href: '/forms/sources', label: 'Sources',   icon: Rss   },
     ],
   },
   {
     items: [
-      { href: '/analytics',         label: 'Analytics', icon: BarChart2  },
-      { href: '/settings',          label: 'Settings',  icon: Settings   },
-      { href: '/settings/branding', label: 'Branding',  icon: Paintbrush, adminOnly: true },
+      { href: '/analytics', label: 'Analytics', icon: BarChart2 },
     ],
   },
 ]
@@ -115,10 +110,10 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
   const searchParams = useSearchParams()
   const router      = useRouter()
   const viewAs      = searchParams.get('viewAs')
-  const supabase  = createClient()
-  const isProPlan  = ['pro', 'scale', 'enterprise'].includes(workspace.plan)
-  const isViewer   = callerRole === 'viewer'
-  const callerRank = ROLE_RANK[(callerRole ?? 'viewer') as WorkspaceMemberRole] ?? 1
+  const supabase    = createClient()
+  const isProPlan   = ['pro', 'team', 'enterprise'].includes(workspace.plan)
+  const isViewer    = callerRole === 'viewer'
+  const callerRank  = ROLE_RANK[(callerRole ?? 'viewer') as WorkspaceMemberRole] ?? 1
 
   async function signOut() {
     await supabase.auth.signOut()
@@ -130,22 +125,14 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
     return pathname.startsWith(href)
   }
 
-  // Plan badge colours
   const planBadgeCls =
     workspace.plan === 'enterprise' ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300' :
     workspace.plan === 'pro'        ? 'bg-brand-100 text-brand-700 dark:bg-[#61c2ad]/10 dark:text-[#61c2ad]' :
                                       'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
 
-  const planDotCls =
-    workspace.plan === 'enterprise' ? 'bg-purple-500' :
-    workspace.plan === 'pro'        ? 'bg-[#61c2ad]' : 'bg-gray-400'
+  const settingsActive = pathname.startsWith('/settings')
 
   return (
-    /*
-     * Outer wrapper: always occupies w-14 in the flex layout.
-     * The inner <aside> is absolute and expands OVER content on hover
-     * so nothing shifts/reflows.
-     */
     <div className="w-14 shrink-0 relative z-20">
       <aside className={cn(
         'group absolute inset-y-0 left-0 flex flex-col',
@@ -160,14 +147,12 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
 
           {/* Logo row */}
           <div className="flex items-center gap-2.5 mb-3 min-w-0">
-            {/* Brand mark — always visible */}
             <div
               className="w-8 h-8 shrink-0 rounded-xl flex items-center justify-center text-white font-black text-sm select-none"
               style={{ backgroundColor: branding?.primary_color ?? '#61c2ad' }}
             >
               {branding?.brand_name?.charAt(0).toUpperCase() ?? 'A'}
             </div>
-            {/* Full logo — fades in on hover */}
             <div className="overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-75 whitespace-nowrap">
               {branding?.logo_url ? (
                 <Image
@@ -200,8 +185,17 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
             </div>
           </div>
 
-          {/* Account identity */}
-          <div className="bg-gray-50 dark:bg-white/5 rounded-lg px-2 py-2">
+          {/* Account identity — clicking goes to Settings */}
+          <Link
+            href="/settings"
+            title="Settings"
+            className={cn(
+              'block rounded-lg px-2 py-2 transition-colors',
+              settingsActive
+                ? 'bg-brand-50 dark:bg-[#61c2ad]/10 ring-1 ring-brand-200 dark:ring-[#61c2ad]/20'
+                : 'bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/8',
+            )}
+          >
             <div className="flex items-center gap-2 min-w-0">
               {/* Avatar — always visible */}
               <div
@@ -209,24 +203,14 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
                 style={{ backgroundColor: branding?.primary_color ?? '#61c2ad' }}
               >
                 {userName
-                  ? userName.split(' ').map(w => w[0]).slice(0, 2).join('')
+                  ? userName.split(' ').map((w: string) => w[0]).slice(0, 2).join('')
                   : (userEmail?.[0] ?? '?')}
               </div>
-              {/* Name + email + edit — fades in on hover */}
+              {/* Name + email + plan — fades in on hover */}
               <div className="overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-75 min-w-0 flex-1">
-                <div className="flex items-center gap-1 min-w-0">
-                  <p className="text-xs font-medium text-gray-900 dark:text-white truncate leading-tight flex-1">
-                    {userName ?? userEmail ?? 'My Account'}
-                  </p>
-                  <Link
-                    href="/settings/profile"
-                    title="Edit profile"
-                    className="shrink-0 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-                    onClick={e => e.stopPropagation()}
-                  >
-                    <Pencil className="w-2.5 h-2.5" />
-                  </Link>
-                </div>
+                <p className="text-xs font-medium text-gray-900 dark:text-white truncate leading-tight">
+                  {userName ?? userEmail ?? 'My Account'}
+                </p>
                 {userName && userEmail && (
                   <p className="text-[10px] text-gray-400 truncate leading-tight mt-0.5">{userEmail}</p>
                 )}
@@ -235,22 +219,19 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
                 </span>
               </div>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* ── Navigation ───────────────────────────────────────── */}
-        <nav className="flex-1 px-2 py-3 space-y-3 overflow-y-auto">
+        <nav className="flex-1 px-2 py-3 space-y-3 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {NAV_GROUPS.map((group, gi) => {
             const locked = group.pro && !isProPlan
 
             return (
               <div key={gi}>
-                {/* Group label */}
                 {group.label && (
                   <div className="flex items-center gap-2 px-2 mb-1 h-5 overflow-hidden">
-                    {/* Collapsed: a short divider */}
                     <div className="w-4 h-px bg-gray-200 dark:bg-white/10 shrink-0 group-hover:hidden" />
-                    {/* Expanded: label text */}
                     <div className="hidden group-hover:flex items-center gap-1.5 overflow-hidden">
                       <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider whitespace-nowrap">
                         {group.label}
@@ -266,11 +247,11 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
 
                 <div className="space-y-0.5">
                   {group.items.filter(item => {
-                  if (isViewer && item.adminOnly) return false
-                  if (item.adminPlus && callerRank < ROLE_RANK.admin) return false
-                  if (item.permissionKey && userPermissions && !userPermissions[item.permissionKey]) return false
-                  return true
-                }).map(({ href, label, icon: Icon, sub }) => {
+                    if (isViewer && item.adminOnly) return false
+                    if (item.adminPlus && callerRank < ROLE_RANK.admin) return false
+                    if (item.permissionKey && userPermissions && !userPermissions[item.permissionKey]) return false
+                    return true
+                  }).map(({ href, label, icon: Icon, sub }) => {
                     const active = isActive(href)
 
                     const linkCls = cn(
