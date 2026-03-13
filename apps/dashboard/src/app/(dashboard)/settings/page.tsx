@@ -7,6 +7,7 @@ import { BusinessProfileSection } from '@/components/settings/business-profile-s
 import { TeamMembersSection, type MemberDisplay } from '@/components/settings/team-members-section'
 import { PermissionsSection, type MemberForPermissions } from '@/components/settings/permissions-section'
 import { RoundRobinToggle } from '@/components/settings/round-robin-toggle'
+import { ReplayOnboardingButton } from '@/components/onboarding/replay-onboarding-button'
 import { parseBusinessDescription } from '@/lib/business-profile'
 import { STATUS_COLORS, formatDate } from '@/lib/utils'
 import type { Metadata } from 'next'
@@ -200,6 +201,9 @@ export default async function SettingsPage() {
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Appearance</h2>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Choose your preferred dashboard theme.</p>
           <ThemeToggle />
+          <div className="mt-4 pt-4 border-t dark:border-white/10">
+            <ReplayOnboardingButton />
+          </div>
         </div>
       </section>
 
