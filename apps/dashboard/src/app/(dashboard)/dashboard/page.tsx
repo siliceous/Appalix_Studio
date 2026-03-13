@@ -131,24 +131,24 @@ export default async function DashboardPage({
     : [null, null]
 
   return (
-    <div className="flex flex-col h-full">
+    <>
       {viewAsUserId && overviewActivity && (
-        <TeamMemberBanner activity={overviewActivity} date={overviewActivityDate} currentPath="/dashboard" viewingAs={viewingAs} selectedDate={activityDate} />
+        <div className="-m-8 mb-0">
+          <TeamMemberBanner activity={overviewActivity} date={overviewActivityDate} currentPath="/dashboard" viewingAs={viewingAs} selectedDate={activityDate} />
+        </div>
       )}
-      <div className="flex-1 overflow-y-auto">
-        <SageDashboardClient
-          workspaceId={membership.workspace_id}
-          callerRole={membership.role as WorkspaceMemberRole}
-          currentUserId={user.id}
-          viewAsUserId={viewAsUserId}
-          viewAsName={viewAsName}
-          teamMembers={teamMembers}
-          userName={firstName}
-          emailConnected={emailConnected}
-          connectProvider={connectProvider}
-        />
-      </div>
-    </div>
+      <SageDashboardClient
+        workspaceId={membership.workspace_id}
+        callerRole={membership.role as WorkspaceMemberRole}
+        currentUserId={user.id}
+        viewAsUserId={viewAsUserId}
+        viewAsName={viewAsName}
+        teamMembers={teamMembers}
+        userName={firstName}
+        emailConnected={emailConnected}
+        connectProvider={connectProvider}
+      />
+    </>
   )
 }
 
