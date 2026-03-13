@@ -15,11 +15,11 @@ export interface AutoSettings {
 }
 
 const DEFAULTS: AutoSettings = {
-  global_auto_enabled:  true,
-  email_auto_enabled:   true,
-  bots_auto_enabled:    true,
-  forms_auto_enabled:   true,
-  tickets_auto_enabled: true,
+  global_auto_enabled:  false,
+  email_auto_enabled:   false,
+  bots_auto_enabled:    false,
+  forms_auto_enabled:   false,
+  tickets_auto_enabled: false,
   default_pipeline_id:  null,
 }
 
