@@ -131,7 +131,7 @@ interface ContactsClientProps {
 }
 
 export function ContactsClient({ contacts: initial, members, callerRole, teamMembers = [], viewAsUserId }: ContactsClientProps) {
-  const canWrite  = callerRole !== 'viewer'
+  const canWrite  = callerRole !== 'viewer' && !viewAsUserId
   const canAssign = (ROLE_RANK[callerRole as WorkspaceMemberRole] ?? 0) >= ROLE_RANK.manager
   const router = useRouter()
   const [contacts,       setContacts]       = useState(initial)
