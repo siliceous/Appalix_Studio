@@ -190,34 +190,32 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
             href="/settings"
             title="Settings"
             className={cn(
-              'block rounded-lg px-2 py-2 transition-colors',
+              'flex items-center gap-2.5 rounded-lg py-1.5 min-w-0 transition-colors',
               settingsActive
-                ? 'group-hover:bg-brand-50 dark:group-hover:bg-[#61c2ad]/10 group-hover:ring-1 group-hover:ring-brand-200 dark:group-hover:ring-[#61c2ad]/20'
-                : 'group-hover:bg-gray-50 dark:group-hover:bg-white/5 group-hover:hover:bg-gray-100 dark:group-hover:hover:bg-white/8',
+                ? 'group-hover:bg-brand-50 dark:group-hover:bg-[#61c2ad]/10 group-hover:ring-1 group-hover:ring-brand-200 dark:group-hover:ring-[#61c2ad]/20 group-hover:px-2'
+                : 'group-hover:bg-gray-50 dark:group-hover:bg-white/5 group-hover:hover:bg-gray-100 dark:group-hover:hover:bg-white/8 group-hover:px-2',
             )}
           >
-            <div className="flex items-center gap-2 min-w-0">
-              {/* Avatar — always visible */}
-              <div
-                className="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-white text-[10px] font-bold uppercase select-none"
-                style={{ backgroundColor: branding?.primary_color ?? '#61c2ad' }}
-              >
-                {userName
-                  ? userName.split(' ').map((w: string) => w[0]).slice(0, 2).join('')
-                  : (userEmail?.[0] ?? '?')}
-              </div>
-              {/* Name + email + plan — fades in on hover */}
-              <div className="overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-75 min-w-0 flex-1">
-                <p className="text-xs font-medium text-gray-900 dark:text-white truncate leading-tight">
-                  {userName ?? userEmail ?? 'My Account'}
-                </p>
-                {userName && userEmail && (
-                  <p className="text-[10px] text-gray-400 truncate leading-tight mt-0.5">{userEmail}</p>
-                )}
-                <span className={cn('inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none', planBadgeCls)}>
-                  {workspace.plan}
-                </span>
-              </div>
+            {/* Avatar — w-8 to align exactly under brand mark */}
+            <div
+              className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-white text-[10px] font-bold uppercase select-none"
+              style={{ backgroundColor: branding?.primary_color ?? '#61c2ad' }}
+            >
+              {userName
+                ? userName.split(' ').map((w: string) => w[0]).slice(0, 2).join('')
+                : (userEmail?.[0] ?? '?')}
+            </div>
+            {/* Name + email + plan — fades in on hover */}
+            <div className="overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-75 min-w-0 flex-1">
+              <p className="text-xs font-medium text-gray-900 dark:text-white truncate leading-tight">
+                {userName ?? userEmail ?? 'My Account'}
+              </p>
+              {userName && userEmail && (
+                <p className="text-[10px] text-gray-400 truncate leading-tight mt-0.5">{userEmail}</p>
+              )}
+              <span className={cn('inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none', planBadgeCls)}>
+                {workspace.plan}
+              </span>
             </div>
           </Link>
         </div>
