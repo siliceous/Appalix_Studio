@@ -61,6 +61,19 @@ const PLATFORM_FIELDS: Partial<Record<Platform, FieldConfig[]>> = {
   custom_api: [],
 }
 
+// Platforms that use OAuth instead of manual credential entry
+const OAUTH_PLATFORMS: Partial<Record<Platform, { label: string; logo: React.ReactNode; oauthPath: string }>> = {
+  slack: {
+    label:     'Connect with Slack',
+    oauthPath: '/api/oauth/slack',
+    logo: (
+      <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+        <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/>
+      </svg>
+    ),
+  },
+}
+
 export function NewIntegrationForm({
   bots,
   defaultPlatform,
@@ -72,6 +85,10 @@ export function NewIntegrationForm({
   const [isPending, startTransition] = useTransition()
   const [platform, setPlatform] = useState<Platform>(defaultPlatform)
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({})
+  const [integrationName, setIntegrationName] = useState('')
+  const [selectedBotId, setSelectedBotId] = useState(bots[0]?.id ?? '')
+
+  const oauthConfig = OAUTH_PLATFORMS[platform]
 
   const platformFields = PLATFORM_FIELDS[platform] ?? []
   const guideUrl = PLATFORMS.find(p => p.platform === platform)?.guide
@@ -146,6 +163,8 @@ export function NewIntegrationForm({
             <input
               required
               name="name"
+              value={integrationName}
+              onChange={e => setIntegrationName(e.target.value)}
               placeholder="e.g. Website Chat, Support Slack"
               className="w-full px-3 py-2 border dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-transparent"
             />
@@ -161,6 +180,8 @@ export function NewIntegrationForm({
             ) : (
               <select
                 name="bot_id"
+                value={selectedBotId}
+                onChange={e => setSelectedBotId(e.target.value)}
                 className="w-full px-3 py-2 border dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-[#2a2a2a]"
               >
                 <option value="">— select a bot —</option>
@@ -172,58 +193,92 @@ export function NewIntegrationForm({
           </div>
         </div>
 
-        {/* Platform-specific credential fields */}
-        {platformFields.length > 0 && (
-          <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Credentials</p>
-              {guideUrl && (
-                <a href={guideUrl} className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 font-medium">
-                  Where do I find these? <ExternalLink className="w-3 h-3" />
-                </a>
-              )}
-            </div>
-            {platformFields.map(field => (
-              <div key={field.name}>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {field.label}
-                  {field.optional && <span className="ml-1 text-xs font-normal text-gray-400">(optional)</span>}
-                </label>
-                <input
-                  type={field.type ?? 'text'}
-                  value={fieldValues[field.name] ?? ''}
-                  onChange={e => setField(field.name, e.target.value)}
-                  placeholder={field.placeholder}
-                  className="w-full px-3 py-2 border dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono dark:bg-transparent"
-                />
-                {field.hint && <p className="text-xs text-gray-400 mt-1">{field.hint}</p>}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {platform === 'custom_api' && (
+        {/* OAuth platforms: show one-click connect instead of credential form */}
+        {oauthConfig ? (
           <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5">
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Custom API</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              An API key will be auto-generated after you create this integration.{' '}
-              {guideUrl && <a href={guideUrl} className="text-brand-600 hover:underline">View API docs →</a>}
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Authorise access</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+              Click the button below. You&apos;ll be taken to {PLATFORM_META[platform]?.label} to approve access — no tokens to copy.
             </p>
+            <a
+              href={
+                bots.length > 0 && integrationName
+                  ? `${oauthConfig.oauthPath}?name=${encodeURIComponent(integrationName)}&bot_id=${encodeURIComponent(selectedBotId)}`
+                  : '#'
+              }
+              onClick={e => { if (!integrationName || bots.length === 0) e.preventDefault() }}
+              className={cn(
+                'inline-flex items-center gap-2.5 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors',
+                integrationName && bots.length > 0
+                  ? 'bg-[#4A154B] hover:bg-[#3d1140] text-white'
+                  : 'bg-gray-200 dark:bg-white/10 text-gray-400 cursor-not-allowed',
+              )}
+            >
+              {oauthConfig.logo}
+              {oauthConfig.label}
+            </a>
+            {(!integrationName || bots.length === 0) && (
+              <p className="text-xs text-amber-500 mt-2">
+                {bots.length === 0 ? 'Create a bot first.' : 'Enter an integration name above to continue.'}
+              </p>
+            )}
           </div>
-        )}
+        ) : (
+          <>
+            {/* Manual credential fields */}
+            {platformFields.length > 0 && (
+              <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Credentials</p>
+                  {guideUrl && (
+                    <a href={guideUrl} className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 font-medium">
+                      Where do I find these? <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+                {platformFields.map(field => (
+                  <div key={field.name}>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      {field.label}
+                      {field.optional && <span className="ml-1 text-xs font-normal text-gray-400">(optional)</span>}
+                    </label>
+                    <input
+                      type={field.type ?? 'text'}
+                      value={fieldValues[field.name] ?? ''}
+                      onChange={e => setField(field.name, e.target.value)}
+                      placeholder={field.placeholder}
+                      className="w-full px-3 py-2 border dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono dark:bg-transparent"
+                    />
+                    {field.hint && <p className="text-xs text-gray-400 mt-1">{field.hint}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
 
-        <div className="flex items-center gap-3">
-          <button
-            type="submit"
-            disabled={isPending || bots.length === 0}
-            className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
-          >
-            {isPending ? 'Creating…' : 'Create integration'}
-          </button>
-          <button type="button" onClick={() => router.back()} className="px-5 py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 transition-colors">
-            Cancel
-          </button>
-        </div>
+            {platform === 'custom_api' && (
+              <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5">
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Custom API</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  An API key will be auto-generated after you create this integration.{' '}
+                  {guideUrl && <a href={guideUrl} className="text-brand-600 hover:underline">View API docs →</a>}
+                </p>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                disabled={isPending || bots.length === 0}
+                className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                {isPending ? 'Creating…' : 'Create integration'}
+              </button>
+              <button type="button" onClick={() => router.back()} className="px-5 py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 transition-colors">
+                Cancel
+              </button>
+            </div>
+          </>
+        )}
       </form>
     </div>
   )
