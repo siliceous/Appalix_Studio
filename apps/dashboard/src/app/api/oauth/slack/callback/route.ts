@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
 
   if (error) {
     console.error('[oauth/slack/callback] insert failed:', error.message)
-    return NextResponse.redirect(`${appUrl}/integrations?error=save_failed`)
+    return NextResponse.redirect(`${appUrl}/integrations/new?platform=slack&error=${encodeURIComponent(error.message)}`)
   }
 
   // ── 5. Redirect to the integration detail page ───────────────────────────

@@ -44,6 +44,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/ai-assistant') ||
     pathname.startsWith('/login') ||
     pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/oauth') ||
     pathname.startsWith('/api/webhooks') ||
     pathname.startsWith('/api/slack') ||
     pathname.startsWith('/api/widget-chat') ||

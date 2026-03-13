@@ -6,6 +6,7 @@ import { CheckCircle2, Pencil, Download } from 'lucide-react'
 import type { Metadata } from 'next'
 import type { Integration } from '@/lib/types'
 import { CopyField } from './copy-field'
+import { ConnectedBanner } from './connected-banner'
 
 export const metadata: Metadata = { title: 'Integration setup' }
 
@@ -13,10 +14,13 @@ const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.appalix.ai'
 
 export default async function IntegrationSetupPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ connected?: string }>
 }) {
   const { id } = await params
+  const { connected } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -40,6 +44,7 @@ export default async function IntegrationSetupPage({
 
   return (
     <div className="max-w-2xl mx-auto">
+      {connected && <ConnectedBanner platform={PLATFORM_META[integration.platform]?.label ?? connected} />}
       <Header
         title={integration.name}
         description="Setup guide and credentials for this integration"
