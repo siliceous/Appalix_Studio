@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     // ── Auto-register app-level webhook (idempotent) ─────────────────────────
-    const apiUrl       = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.appalix.ai'
+    const apiUrl       = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://ap.appalix.ai'
     const webhookToken = process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN ?? verifyToken
     const appToken     = `${appId}|${appSecret}`
     try {

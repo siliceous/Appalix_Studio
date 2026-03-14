@@ -10,7 +10,7 @@ import { ConnectedBanner } from './connected-banner'
 
 export const metadata: Metadata = { title: 'Integration setup' }
 
-const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.appalix.ai'
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://ap.appalix.ai'
 
 export default async function IntegrationSetupPage({
   params,
