@@ -36,7 +36,8 @@ export async function GET(
     .single()
   if (!row) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const cfg      = row.config as Record<string, unknown>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cfg      = (row as any).config as Record<string, unknown>
   const botToken = cfg.bot_token as string
   if (!botToken) return NextResponse.json({ error: 'No bot token' }, { status: 400 })
 
