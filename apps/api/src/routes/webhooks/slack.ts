@@ -63,7 +63,9 @@ export async function slackRoutes(fastify: FastifyInstance) {
       // Process asynchronously
       setImmediate(async () => {
         try {
+          console.log('[slack webhook] processing message from integration:', integrationId)
           const { reply: aiReply } = await processMessage(incoming)
+          console.log('[slack webhook] AI reply generated, length:', aiReply?.length)
           const event = (body as never as { event: { channel: string; thread_ts?: string; ts?: string; user?: string } }).event
           await sendSlackReply({ text: aiReply }, event, cfg.bot_token)
         } catch (err) {

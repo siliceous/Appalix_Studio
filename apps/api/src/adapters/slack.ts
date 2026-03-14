@@ -83,6 +83,7 @@ export async function sendSlackReply(
   // For DMs (channel starts with 'D'), open the DM channel via conversations.open
   // to ensure we have a valid, accessible channel ID after any reinstalls.
   if (channelId.startsWith('D') && event.user) {
+    console.log('[sendSlackReply] DM detected, calling conversations.open for user:', event.user)
     const openRes = await fetch('https://slack.com/api/conversations.open', {
       method:  'POST',
       headers: {
@@ -93,7 +94,10 @@ export async function sendSlackReply(
     })
     const openData = await openRes.json() as { ok: boolean; channel?: { id: string }; error?: string }
     if (openData.ok && openData.channel?.id) {
+      console.log('[sendSlackReply] conversations.open resolved channel:', openData.channel.id)
       channelId = openData.channel.id
+    } else {
+      console.error('[sendSlackReply] conversations.open failed:', openData.error, '— falling back to original channel:', channelId)
     }
   }
 
@@ -104,6 +108,7 @@ export async function sendSlackReply(
     ...(reply.blocks ? { blocks: reply.blocks } : {}),
   }
 
+  console.log('[sendSlackReply] posting to channel:', channelId)
   const res = await fetch('https://slack.com/api/chat.postMessage', {
     method:  'POST',
     headers: {
@@ -115,8 +120,10 @@ export async function sendSlackReply(
 
   const data = await res.json() as { ok: boolean; error?: string }
   if (!data.ok) {
+    console.error('[sendSlackReply] chat.postMessage failed:', data.error, 'channel:', channelId)
     throw new Error(`Slack API error: ${data.error}`)
   }
+  console.log('[sendSlackReply] message posted successfully to:', channelId)
 }
 
 // ---------------------------------------------------------------
