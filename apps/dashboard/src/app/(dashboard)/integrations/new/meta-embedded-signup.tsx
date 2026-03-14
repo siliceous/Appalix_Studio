@@ -100,7 +100,7 @@ export function MetaEmbeddedSignup({ platform, name, botId, appId }: Props) {
               setLoading(false)
             })
         },
-        { scope, auth_type: 'rerequest' },
+        { scope, return_scopes: true },
       )
     } catch (err) {
       clearTimeout(timeout)
