@@ -80,24 +80,24 @@ export async function sendSlackReply(
 ): Promise<void> {
   let channelId = event.channel
 
-  // For DMs (channel starts with 'D'), open the DM channel via conversations.open
-  // to ensure we have a valid, accessible channel ID after any reinstalls.
-  if (channelId.startsWith('D') && event.user) {
-    console.log('[sendSlackReply] DM detected, calling conversations.open for user:', event.user)
+  // For DMs (channel starts with 'D'), use conversations.open with the channel ID
+  // to ensure the bot has the conversation open before posting.
+  if (channelId.startsWith('D')) {
+    console.log('[sendSlackReply] DM detected, calling conversations.open for channel:', channelId)
     const openRes = await fetch('https://slack.com/api/conversations.open', {
       method:  'POST',
       headers: {
         'Content-Type':  'application/json',
         'Authorization': `Bearer ${botToken}`,
       },
-      body: JSON.stringify({ users: event.user }),
+      body: JSON.stringify({ channel: channelId }),
     })
     const openData = await openRes.json() as { ok: boolean; channel?: { id: string }; error?: string }
     if (openData.ok && openData.channel?.id) {
       console.log('[sendSlackReply] conversations.open resolved channel:', openData.channel.id)
       channelId = openData.channel.id
     } else {
-      console.error('[sendSlackReply] conversations.open failed:', openData.error, '— falling back to original channel:', channelId)
+      console.error('[sendSlackReply] conversations.open failed:', openData.error, '— will try direct post to:', channelId)
     }
   }
 
