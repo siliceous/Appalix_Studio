@@ -85,10 +85,13 @@ export async function POST(
     .single()
   if (!row) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const existingConfig = (row as any).config as object
+
   const admin = createAdminClient()
   const { error } = await admin
     .from('integrations')
-    .update({ config: { ...(row.config as object), allowed_channels } })
+    .update({ config: { ...existingConfig, allowed_channels } })
     .eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
