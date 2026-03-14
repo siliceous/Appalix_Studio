@@ -26,10 +26,8 @@ const INTEGRATIONS: IntegrationCard[] = [
     description: 'Create and send invoices directly from deals. Stripe handles payment collection, receipts, and status tracking.',
     logo:        '💳',
     category:    'payments',
-    fields: [
-      { name: 'secret_key', label: 'Secret Key', type: 'password', placeholder: 'sk_live_…', hint: 'Found in Stripe Dashboard → Developers → API keys' },
-    ],
-    docsUrl:     'https://dashboard.stripe.com/apikeys',
+    fields:      [],
+    oauthPath:   '/api/oauth/stripe',
     tutorialUrl: '/resources/connect-sage-stripe',
   },
   {
