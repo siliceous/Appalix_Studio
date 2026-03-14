@@ -8,6 +8,7 @@ import type { Integration } from '@/lib/types'
 import { CopyField } from './copy-field'
 import { ConnectedBanner } from './connected-banner'
 import { SlackChannelPicker } from './slack-channel-picker'
+import { FacebookPageSwitcher } from './facebook-page-switcher'
 
 export const metadata: Metadata = { title: 'Integration setup' }
 
@@ -277,6 +278,7 @@ function SlackSetup({
 // ─── Facebook Messenger ───────────────────────────────────────────────────────
 
 function FacebookSetup({
+  integrationId,
   cfg,
 }: {
   integrationId: string
@@ -285,6 +287,7 @@ function FacebookSetup({
 }) {
   const pageName = (cfg.page_name as string) || ''
   const pageId   = (cfg.page_id   as string) || ''
+  const appId    = process.env.META_APP_ID ?? ''
 
   return (
     <div className="space-y-5">
@@ -302,6 +305,12 @@ function FacebookSetup({
           Your bot is live. Any message sent to this Facebook Page via Messenger will receive
           an automatic reply from your bot.
         </p>
+        <FacebookPageSwitcher
+          integrationId={integrationId}
+          appId={appId}
+          currentPageName={pageName}
+          currentPageId={pageId}
+        />
       </SetupSection>
       <SetupSection title="Testing">
         <p className="text-sm text-gray-600 dark:text-gray-400">
