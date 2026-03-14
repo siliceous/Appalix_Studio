@@ -39,22 +39,29 @@ export async function facebookRoutes(fastify: FastifyInstance) {
       // Acknowledge immediately
       reply.status(200).send()
 
+      console.log('[facebook global webhook] received body type:', (body as Record<string,unknown>).object)
       const entries = (body as never as { entry?: { id: string; messaging?: unknown[] }[] }).entry ?? []
       const pageId  = entries[0]?.id
+      console.log('[facebook global webhook] page_id from entry:', pageId, '— entry count:', entries.length)
       if (!pageId) return
 
       const integration = await resolveIntegrationByConfig('facebook_messenger', 'page_id', pageId)
       if (!integration) {
-        console.warn('[facebook global webhook] no integration for page_id:', pageId)
+        console.warn('[facebook global webhook] no integration found for page_id:', pageId)
         return
       }
+      console.log('[facebook global webhook] matched integration:', integration.id)
 
       const cfg = integration.config as Record<string, string>
 
-      if (!verifyFacebookSignature(rawBody, request.headers['x-hub-signature-256'] as string, cfg.app_secret || appSecret)) {
+      const sigHeader = request.headers['x-hub-signature-256'] as string
+      const secretUsed = cfg.app_secret || appSecret
+      console.log('[facebook global webhook] verifying signature — has cfg.app_secret:', !!cfg.app_secret, 'has env META_APP_SECRET:', !!appSecret, 'has sig header:', !!sigHeader)
+      if (!verifyFacebookSignature(rawBody, sigHeader, secretUsed)) {
         console.error('[facebook global webhook] invalid signature for page_id:', pageId)
         return
       }
+      console.log('[facebook global webhook] signature verified')
 
       const ctx = {
         integrationId: integration.id,

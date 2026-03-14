@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 declare global {
@@ -25,11 +25,12 @@ export function FacebookPageSwitcher({
   currentPageId: string
 }) {
   const router = useRouter()
-  const [sdkReady, setSdkReady] = useState(false)
-  const [loading, setLoading]   = useState(false)
-  const [error, setError]       = useState('')
-  const [pages, setPages]       = useState<Page[]>([])
+  const [sdkReady, setSdkReady]   = useState(false)
+  const [loading, setLoading]     = useState(false)
+  const [error, setError]         = useState('')
+  const [pages, setPages]         = useState<Page[]>([])
   const [longToken, setLongToken] = useState('')
+  const timeoutRef                = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     function init() {
@@ -47,20 +48,26 @@ export function FacebookPageSwitcher({
     }
   }, [appId])
 
+  function cancel() {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    setLoading(false)
+    setError('')
+  }
+
   function handleChangeClick() {
     if (!sdkReady || loading) return
     setLoading(true)
     setError('')
 
-    const timeout = setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       setLoading(false)
       setError('Timed out — popup was blocked or closed. Allow popups and try again.')
-    }, 90_000)
+    }, 20_000)
 
     try {
       window.FB.login(
         (res: { authResponse?: { accessToken: string }; status: string }) => {
-          clearTimeout(timeout)
+          if (timeoutRef.current) clearTimeout(timeoutRef.current)
           if (!res.authResponse?.accessToken) {
             setLoading(false)
             setError(`Login cancelled (status: ${res.status}). Please try again.`)
@@ -92,7 +99,7 @@ export function FacebookPageSwitcher({
         { scope: 'pages_messaging,pages_manage_metadata,pages_show_list', return_scopes: true },
       )
     } catch (err) {
-      clearTimeout(timeout)
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
       setLoading(false)
       setError(`FB.login() threw: ${err instanceof Error ? err.message : String(err)}`)
     }
@@ -154,17 +161,28 @@ export function FacebookPageSwitcher({
       )}
 
       {pages.length === 0 && (
-        <button
-          type="button"
-          onClick={handleChangeClick}
-          disabled={!sdkReady || loading}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 disabled:opacity-50 transition-colors"
-        >
-          <svg viewBox="0 0 24 24" className="w-4 h-4 text-blue-600" fill="currentColor">
-            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-          </svg>
-          {loading ? 'Connecting…' : `Change connected page`}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleChangeClick}
+            disabled={!sdkReady || loading}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 disabled:opacity-50 transition-colors"
+          >
+            <svg viewBox="0 0 24 24" className="w-4 h-4 text-blue-600" fill="currentColor">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+            </svg>
+            {loading ? 'Waiting for popup…' : 'Change connected page'}
+          </button>
+          {loading && (
+            <button
+              type="button"
+              onClick={cancel}
+              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 underline"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       )}
 
       {!sdkReady && !loading && pages.length === 0 && (
