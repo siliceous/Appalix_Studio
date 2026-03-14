@@ -17,6 +17,7 @@ export async function facebookRoutes(fastify: FastifyInstance) {
   }>('/facebook', async (request, reply) => {
     const { 'hub.mode': mode, 'hub.verify_token': token, 'hub.challenge': challenge } = request.query
     const globalToken = process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN
+    console.log('[facebook verify] mode:', mode, '| token match:', token === globalToken, '| env token set:', !!globalToken)
     if (mode === 'subscribe' && globalToken && token === globalToken) {
       return reply.send(challenge)
     }
