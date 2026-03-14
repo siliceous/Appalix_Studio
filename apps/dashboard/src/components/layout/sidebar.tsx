@@ -18,7 +18,6 @@ import {
   Mail,
   FileText,
   Inbox,
-  Rss,
   FolderOpen,
   TrendingUp,
   ListFilter,
@@ -80,7 +79,6 @@ const NAV_GROUPS: NavGroup[] = [
     pro: true,
     items: [
       { href: '/forms/leads',   label: 'All Leads', icon: Inbox },
-      { href: '/forms/sources', label: 'Sources',   icon: Rss   },
     ],
   },
   {

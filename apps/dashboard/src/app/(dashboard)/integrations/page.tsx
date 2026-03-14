@@ -1,12 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { Header } from '@/components/layout/header'
 import { Plug, Plus } from 'lucide-react'
 import { PLATFORM_META, formatDate } from '@/lib/utils'
 import { IntegrationActions } from './integration-actions'
 import { IntegrationsClient } from '@/app/(dashboard)/sage/integrations/integrations-client'
+import { SourcesClient } from '@/app/(dashboard)/forms/sources/sources-client'
 import type { Metadata } from 'next'
-import type { Platform, Integration } from '@/lib/types'
+import type { Platform, Integration, LeadAdSource, SageIntegration } from '@/lib/types'
 
 type IntegrationRow = Integration & { bots?: { name: string } | null }
 
@@ -58,11 +60,29 @@ export default async function IntegrationsPage({
   const membership = membershipRaw as { workspace_id: string } | null
   if (!membership) redirect('/login')
 
-  const [{ data: rawIntegrations }, { data: sageIntegrationsRaw }] = await Promise.all([
+  const EMAIL_PROVIDERS = ['mailchimp', 'activecampaign', 'convertkit', 'klaviyo', 'constantcontact'] as const
+  const SYNC_PROVIDERS  = ['mailchimp', 'activecampaign'] as const
+
+  const [{ data: rawIntegrations }, { data: sageIntegrationsRaw }, { data: sourcesRaw }, { data: emailIntegrationsRaw }, { data: leadCountsRaw }] = await Promise.all([
     supabase.from('integrations').select('*, bots(name)').eq('workspace_id', membership.workspace_id).order('created_at', { ascending: false }),
     supabase.from('sage_integrations').select('provider, status').eq('workspace_id', membership.workspace_id).eq('user_id', user.id),
+    supabase.from('lead_ad_sources').select('*').eq('workspace_id', membership.workspace_id),
+    supabase.from('sage_integrations').select('id, provider, status, updated_at').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', EMAIL_PROVIDERS),
+    supabase.from('leads').select('source_platform').eq('workspace_id', membership.workspace_id).in('source_platform', SYNC_PROVIDERS),
   ])
-  const integrations = (rawIntegrations ?? []) as IntegrationRow[]
+  const integrations      = (rawIntegrations ?? []) as IntegrationRow[]
+  const adSources         = (sourcesRaw ?? []) as LeadAdSource[]
+  const emailIntegrations = (emailIntegrationsRaw ?? []) as Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at'>[]
+  const leadCounts: Record<string, number> = {}
+  for (const row of leadCountsRaw ?? []) {
+    const p = (row as { source_platform: string }).source_platform
+    leadCounts[p] = (leadCounts[p] ?? 0) + 1
+  }
+
+  const headersList = await headers()
+  const host        = headersList.get('host') ?? 'appalix.ai'
+  const proto       = host.startsWith('localhost') ? 'http' : 'https'
+  const baseUrl     = `${proto}://${host}`
 
   const connectedPlatforms = new Set(integrations?.map((i) => i.platform))
 
@@ -150,16 +170,16 @@ export default async function IntegrationsPage({
                     <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 pt-1">
+                <div className="flex items-center gap-3 pt-1">
                   <a
                     href={`/integrations/new?platform=${platform}`}
-                    className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 font-medium transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
                   >
                     <Plug className="w-3 h-3" />
                     Connect
                   </a>
                   <a href={guide} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
-                    {PLATFORM_ACTION[platform] ?? 'Setup guide'} →
+                    Setup guide →
                   </a>
                 </div>
               </div>
@@ -191,6 +211,21 @@ export default async function IntegrationsPage({
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Lead ad sources — Google Ads & Meta */}
+      <section className="mb-8">
+        <div className="mb-3">
+          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Lead Ad Sources</h2>
+          <p className="text-xs text-gray-400 mt-0.5">Receive leads from Google Ads and Meta Lead Ad forms in real time.</p>
+        </div>
+        <SourcesClient
+          sources={adSources}
+          workspaceId={membership.workspace_id}
+          baseUrl={baseUrl}
+          emailIntegrations={emailIntegrations}
+          leadCounts={leadCounts}
+        />
       </section>
 
       {/* Divider */}
