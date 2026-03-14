@@ -7,6 +7,7 @@ import type { Metadata } from 'next'
 import type { Integration } from '@/lib/types'
 import { CopyField } from './copy-field'
 import { ConnectedBanner } from './connected-banner'
+import { SlackChannelPicker } from './slack-channel-picker'
 
 export const metadata: Metadata = { title: 'Integration setup' }
 
@@ -262,6 +263,12 @@ function SlackSetup({
           Subscribe to the <strong>message.channels</strong> and <strong>message.im</strong> bot events,
           then reinstall the app to your workspace.
         </p>
+      </SetupSection>
+      <SetupSection title="Active channels">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Choose which channels and DMs your bot responds in. Leave all unchecked to respond everywhere.
+        </p>
+        <SlackChannelPicker integrationId={integrationId} />
       </SetupSection>
     </div>
   )

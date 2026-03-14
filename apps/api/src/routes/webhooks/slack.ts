@@ -57,6 +57,15 @@ export async function slackRoutes(fastify: FastifyInstance) {
         return reply.status(200).send()  // Acknowledge unactionable events
       }
 
+      // If the user has restricted channels, ignore messages from others
+      const allowedChannels = (integration.config as Record<string, unknown>).allowed_channels as string[] | undefined
+      if (allowedChannels && allowedChannels.length > 0) {
+        const eventChannel = (body as never as { event?: { channel?: string } }).event?.channel
+        if (eventChannel && !allowedChannels.includes(eventChannel)) {
+          return reply.status(200).send()
+        }
+      }
+
       // Acknowledge immediately — Slack will retry if we don't respond in 3s
       reply.status(200).send()
 
