@@ -131,7 +131,43 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${appUrl}/integrations/new?platform=facebook_messenger&error=${encodeURIComponent(error.message)}`)
   }
 
-  // ── 7. Redirect to the integration detail page ───────────────────────────
+  // ── 7. Register app-level webhook (idempotent) and subscribe the page ──────
+  const apiUrl       = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://ap.appalix.ai'
+  const webhookToken = process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN ?? ''
+  const appToken     = `${appId}|${appSecret}`
+
+  try {
+    await fetch(`https://graph.facebook.com/v18.0/${appId}/subscriptions`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object:       'page',
+        callback_url: `${apiUrl}/webhooks/facebook`,
+        fields:       'messages,messaging_postbacks',
+        verify_token: webhookToken,
+        access_token: appToken,
+      }),
+    })
+  } catch (err) {
+    console.error('[oauth/facebook/callback] app webhook registration failed:', err)
+  }
+
+  if (pageId && pageToken) {
+    try {
+      await fetch(`https://graph.facebook.com/v18.0/${pageId}/subscribed_apps`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subscribed_fields: 'messages,messaging_postbacks',
+          access_token:      pageToken,
+        }),
+      })
+    } catch (err) {
+      console.error('[oauth/facebook/callback] page subscription failed:', err)
+    }
+  }
+
+  // ── 8. Redirect to the integration detail page ───────────────────────────
   const integrationId = (inserted as { id: string }).id
   return NextResponse.redirect(`${appUrl}/integrations/${integrationId}?connected=facebook`)
 }

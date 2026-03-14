@@ -46,10 +46,12 @@ await server.register(helmet, {
 })
 
 // Serve static files from /public (widget.js lives here)
+// wildcard: false prevents the catch-all GET /* from shadowing API routes
 await server.register(fastifyStatic, {
   root:           path.join(__dirname, '..', 'public'),
   prefix:         '/',
   decorateReply:  false,
+  wildcard:       false,
 })
 
 await server.register(cors, {
