@@ -8,11 +8,13 @@ import { randomBytes } from 'crypto'
  * for a long-lived token, fetches page/WABA details, and creates an integration.
  */
 export async function POST(req: NextRequest) {
-  const { token, platform, name, botId } = await req.json() as {
+  const { token, platform, name, botId, selectedPage } = await req.json() as {
     token: string
     platform: 'facebook_messenger' | 'whatsapp'
     name: string
     botId: string
+    /** Pre-selected page from the page picker (skips /me/accounts fetch) */
+    selectedPage?: { id: string; name: string; access_token: string }
   }
 
   if (!token || !platform) {
@@ -65,16 +67,25 @@ export async function POST(req: NextRequest) {
   // ── Facebook Messenger ────────────────────────────────────────────────────
   if (platform === 'facebook_messenger') {
     let pageToken = '', pageId = '', pageName = ''
-    try {
-      const res  = await fetch(`https://graph.facebook.com/v18.0/me/accounts?access_token=${longToken}`)
-      const data = await res.json() as {
-        data?: { access_token: string; id: string; name: string }[]
-        error?: { message: string }
+
+    if (selectedPage) {
+      // Page was chosen in the frontend picker — use it directly
+      pageToken = selectedPage.access_token
+      pageId    = selectedPage.id
+      pageName  = selectedPage.name
+    } else {
+      // Fallback: auto-pick first page (single-page accounts)
+      try {
+        const res  = await fetch(`https://graph.facebook.com/v18.0/me/accounts?access_token=${longToken}`)
+        const data = await res.json() as {
+          data?: { access_token: string; id: string; name: string }[]
+          error?: { message: string }
+        }
+        const first = data.data?.[0]
+        if (first) { pageToken = first.access_token; pageId = first.id; pageName = first.name }
+      } catch (err) {
+        console.error('[meta/exchange] /me/accounts failed:', err)
       }
-      const first = data.data?.[0]
-      if (first) { pageToken = first.access_token; pageId = first.id; pageName = first.name }
-    } catch (err) {
-      console.error('[meta/exchange] /me/accounts failed:', err)
     }
 
     const config = {
