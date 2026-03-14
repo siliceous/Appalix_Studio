@@ -62,12 +62,33 @@ export function parseFacebookEvents(
   return messages
 }
 
+/** Send a typing indicator via the Send API */
+async function sendTypingIndicator(
+  recipientId:     string,
+  pageAccessToken: string,
+  action:          'typing_on' | 'typing_off',
+): Promise<void> {
+  await fetch(
+    `https://graph.facebook.com/v21.0/me/messages?access_token=${pageAccessToken}`,
+    {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        recipient:     { id: recipientId },
+        sender_action: action,
+      }),
+    },
+  ).catch(() => { /* non-fatal */ })
+}
+
 /** Send a reply via the Send API */
 export async function sendFacebookReply(
   reply:           OutgoingMessage,
   recipientId:     string,
   pageAccessToken: string,
 ): Promise<void> {
+  await sendTypingIndicator(recipientId, pageAccessToken, 'typing_on')
+
   const res = await fetch(
     `https://graph.facebook.com/v21.0/me/messages?access_token=${pageAccessToken}`,
     {
@@ -80,6 +101,8 @@ export async function sendFacebookReply(
       }),
     },
   )
+
+  await sendTypingIndicator(recipientId, pageAccessToken, 'typing_off')
 
   if (!res.ok) {
     const err = await res.text()
