@@ -75,13 +75,32 @@ export function parseSlackEvent(
 /** Send a reply back to Slack using chat.postMessage */
 export async function sendSlackReply(
   reply:      OutgoingMessage,
-  event:      { channel: string; thread_ts?: string; ts?: string },
+  event:      { channel: string; thread_ts?: string; ts?: string; user?: string },
   botToken:   string,
 ): Promise<void> {
+  let channelId = event.channel
+
+  // For DMs (channel starts with 'D'), open the DM channel via conversations.open
+  // to ensure we have a valid, accessible channel ID after any reinstalls.
+  if (channelId.startsWith('D') && event.user) {
+    const openRes = await fetch('https://slack.com/api/conversations.open', {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${botToken}`,
+      },
+      body: JSON.stringify({ users: event.user }),
+    })
+    const openData = await openRes.json() as { ok: boolean; channel?: { id: string }; error?: string }
+    if (openData.ok && openData.channel?.id) {
+      channelId = openData.channel.id
+    }
+  }
+
   const body = {
-    channel:   event.channel,
+    channel:   channelId,
     text:      reply.text,
-    thread_ts: event.thread_ts ?? event.ts,
+    thread_ts: event.thread_ts,   // only thread in channels, not DMs
     ...(reply.blocks ? { blocks: reply.blocks } : {}),
   }
 
