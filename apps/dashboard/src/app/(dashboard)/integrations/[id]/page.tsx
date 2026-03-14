@@ -270,44 +270,37 @@ function SlackSetup({
 // ─── Facebook Messenger ───────────────────────────────────────────────────────
 
 function FacebookSetup({
-  integrationId,
   cfg,
-  apiUrl,
 }: {
   integrationId: string
   cfg: Record<string, unknown>
   apiUrl: string
 }) {
-  const webhookUrl   = `${apiUrl}/webhooks/facebook/${integrationId}`
-  const verifyToken  = (cfg.verify_token as string) || '(not set)'
+  const pageName = (cfg.page_name as string) || ''
+  const pageId   = (cfg.page_id   as string) || ''
 
   return (
     <div className="space-y-5">
-      <SetupSection title="Step 1 — Register your webhook in Meta">
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          In your{' '}
-          <a href="https://developers.facebook.com/apps" target="_blank" rel="noreferrer" className="text-brand-600 hover:underline">
-            Meta developer app
-          </a>
-          , go to <strong>Messenger → Settings → Webhooks</strong> and click <strong>Add Callback URL</strong>.
-          Enter the values below:
-        </p>
-        <div className="space-y-3">
+      <SetupSection title="Connected Facebook Page">
+        <div className="flex items-center gap-3">
+          <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
           <div>
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Callback URL</p>
-            <CopyField value={webhookUrl} />
-          </div>
-          <div>
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Verify Token</p>
-            <CopyField value={verifyToken} secret />
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {pageName || 'Facebook Page'}
+            </p>
+            {pageId && <p className="text-xs text-gray-400 mt-0.5">Page ID: {pageId}</p>}
           </div>
         </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
+          Your bot is live. Any message sent to this Facebook Page via Messenger will receive
+          an automatic reply from your bot.
+        </p>
       </SetupSection>
-      <SetupSection title="Step 2 — Subscribe to webhook fields">
+      <SetupSection title="Testing">
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          After the webhook is verified, subscribe to the <strong>messages</strong> and{' '}
-          <strong>messaging_postbacks</strong> fields for your Facebook Page.
-          Your bot will now reply to every message sent to the Page via Messenger.
+          Open Messenger and send a message to your Facebook Page. Your bot will reply within
+          a few seconds. Make sure the Page has Messaging turned on in{' '}
+          <strong>Page Settings → Messaging</strong>.
         </p>
       </SetupSection>
     </div>

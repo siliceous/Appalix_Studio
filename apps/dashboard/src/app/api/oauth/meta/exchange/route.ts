@@ -99,6 +99,50 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    // ── Auto-register app-level webhook (idempotent) ─────────────────────────
+    const apiUrl       = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.appalix.ai'
+    const webhookToken = process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN ?? verifyToken
+    const appToken     = `${appId}|${appSecret}`
+    try {
+      await fetch(`https://graph.facebook.com/v18.0/${appId}/subscriptions`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          object:       'page',
+          callback_url: `${apiUrl}/webhooks/facebook`,
+          fields:       'messages,messaging_postbacks',
+          verify_token: webhookToken,
+          access_token: appToken,
+        }),
+      })
+    } catch (err) {
+      console.error('[meta/exchange] app webhook registration failed:', err)
+    }
+
+    // ── Auto-subscribe this page to receive events ───────────────────────────
+    if (pageId && pageToken) {
+      try {
+        const subRes  = await fetch(
+          `https://graph.facebook.com/v18.0/${pageId}/subscribed_apps`,
+          {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              subscribed_fields: 'messages,messaging_postbacks',
+              access_token:      pageToken,
+            }),
+          },
+        )
+        const subData = await subRes.json() as { success?: boolean; error?: { message: string } }
+        if (!subData.success) {
+          console.error('[meta/exchange] page subscription failed:', subData.error?.message)
+        }
+      } catch (err) {
+        console.error('[meta/exchange] page subscription error:', err)
+      }
+    }
+
     return NextResponse.json({ integrationId: (inserted as { id: string }).id })
   }
 

@@ -298,3 +298,26 @@ export async function resolveIntegration(integrationId: string) {
 
   return data
 }
+
+/**
+ * Look up an active integration by a value stored in its JSONB config.
+ * Used for global webhooks (e.g. Facebook) that route by page_id instead of integrationId.
+ */
+export async function resolveIntegrationByConfig(
+  platform: string,
+  configKey: string,
+  configValue: string,
+) {
+  const { data, error } = await supabase
+    .from('integrations')
+    .select('id, workspace_id, bot_id, platform, config, status, webhook_secret')
+    .eq('platform', platform)
+    .eq('status', 'active')
+    .not('bot_id', 'is', null)
+    .filter(`config->${configKey}`, 'eq', `"${configValue}"`)
+    .limit(1)
+    .maybeSingle()
+
+  if (error || !data) return null
+  return data
+}
