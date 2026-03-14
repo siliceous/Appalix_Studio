@@ -25,8 +25,11 @@ export function SlackChannelPicker({ integrationId }: { integrationId: string })
       .then(r => r.json() as Promise<{ channels?: Channel[]; allowed_channels?: string[]; error?: string }>)
       .then(data => {
         if (data.error) { setError(data.error); return }
-        setChannels(data.channels ?? [])
-        setSelected(new Set(data.allowed_channels ?? []))
+        const chs = data.channels ?? []
+        setChannels(chs)
+        // Default: all checked (respond everywhere). If a saved list exists, use it.
+        const saved = data.allowed_channels ?? []
+        setSelected(new Set(saved.length > 0 ? saved : chs.map(c => c.id)))
       })
       .catch(() => setError('Failed to load channels'))
       .finally(() => setLoading(false))
@@ -88,19 +91,17 @@ export function SlackChannelPicker({ integrationId }: { integrationId: string })
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-xs text-gray-500 dark:text-gray-400">
-          {noneSelected
-            ? 'Bot responds in all channels and DMs'
-            : `${selected.size} channel${selected.size !== 1 ? 's' : ''} selected`}
+          Uncheck channels where you don&apos;t want the bot to respond
         </p>
         <div className="flex gap-3">
           {!allSelected && (
             <button type="button" onClick={selectAll} className="text-xs text-brand-600 hover:underline">
-              Select all
+              Check all
             </button>
           )}
           {!noneSelected && (
             <button type="button" onClick={clearAll} className="text-xs text-gray-400 hover:underline">
-              Clear (respond everywhere)
+              Uncheck all
             </button>
           )}
         </div>
