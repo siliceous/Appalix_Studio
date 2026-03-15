@@ -7,6 +7,7 @@
 import type { FastifyInstance } from 'fastify'
 import { supabase }              from '../../lib/supabase.js'
 import { analyzeFormSubmission } from '../../services/form-analyze.js'
+import { syncToMailchimp }       from '../../services/mailchimp-sync.js'
 
 interface SubmitBody {
   name?:    string
@@ -94,8 +95,11 @@ export async function formRoutes(fastify: FastifyInstance) {
 
       const submissionId = (submission as { id: string }).id
 
-      // Trigger AI analysis async (don't block the response)
-      setImmediate(() => { void analyzeFormSubmission(submissionId) })
+      // Trigger async tasks — don't block the response
+      setImmediate(() => {
+        void analyzeFormSubmission(submissionId)
+        void syncToMailchimp(workspace_id, fields)
+      })
 
       return reply.send({ ok: true, id: submissionId })
     }
