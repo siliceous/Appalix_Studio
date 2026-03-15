@@ -491,6 +491,10 @@ export async function dashboardAddTicket(opts: {
   const workspaceId = await getWorkspaceId()
   if (!workspaceId) return { error: 'Not authenticated' }
 
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const userId = user?.id ?? null
+
   const admin = createAdminClient()
   type Row = { id: string }
 
@@ -547,13 +551,16 @@ export async function dashboardAddTicket(opts: {
         description:  opts.description ?? null,
         priority:     opts.priority ?? 'medium',
         status:       'open',
+        owner_id:     userId,
         ...(contactId ? { contact_id: contactId } : {}),
       })
       .select('id').single()
 
     if (error || !created) return { error: error?.message ?? 'Failed to create ticket' }
     const ticketId = (created as Row).id
+    await logActivity(workspaceId, 'ticket', ticketId, 'ticket_created', { title: opts.title, priority: opts.priority ?? 'medium' })
     revalidatePath('/sage/tickets')
+    revalidatePath('/dashboard')
     return { ticketId, isExisting: false }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Unexpected error' }

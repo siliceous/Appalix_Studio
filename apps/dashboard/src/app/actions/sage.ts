@@ -628,6 +628,8 @@ export async function completeDealTask(activityId: string): Promise<{ error?: st
 
 export async function createTicket(formData: FormData) {
   const workspaceId = await getWorkspaceId()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   const admin = createAdminClient()
 
   const title          = (formData.get('title') as string).trim()
@@ -644,7 +646,7 @@ export async function createTicket(formData: FormData) {
 
   const { data, error } = await admin
     .from('sage_tickets')
-    .insert({ workspace_id: workspaceId, title, name, email, phone, occurred_at, description, priority, contact_id: contactId, deal_id: dealId, contact_method, related_url, status: 'open' })
+    .insert({ workspace_id: workspaceId, title, name, email, phone, occurred_at, description, priority, contact_id: contactId, deal_id: dealId, contact_method, related_url, status: 'open', owner_id: user?.id ?? null })
     .select('id')
     .single()
 
