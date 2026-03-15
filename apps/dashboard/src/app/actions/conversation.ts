@@ -96,7 +96,17 @@ export async function updateConversationPriority(conversationId: string, priorit
     .eq('workspace_id', membership.workspace_id)
 
   if (error) return { error: error.message }
-  void logConversationActivity(membership.workspace_id, user.id, conversationId, 'priority_changed', { priority })
+
+  const admin = createAdminClient()
+  const { data: convRow } = await (admin as any)
+    .from('conversations')
+    .select('title')
+    .eq('id', conversationId)
+    .eq('workspace_id', membership.workspace_id)
+    .single()
+  const convName = (convRow as { title?: string | null } | null)?.title ?? null
+
+  void logConversationActivity(membership.workspace_id, user.id, conversationId, 'priority_changed', { priority, name: convName })
   return {}
 }
 
