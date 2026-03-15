@@ -102,7 +102,7 @@ interface SidebarProps {
 // Routes that should carry ?viewAs= when a manager is viewing a junior
 const VIEW_AS_ROUTES = new Set([
   '/dashboard', '/dashboard/email', '/dashboard/bots', '/dashboard/forms', '/dashboard/tickets',
-  '/sage/pipelines', '/sage/contacts', '/sage/roi',
+  '/sage/pipelines', '/sage/contacts', '/sage/roi', '/my-activity',
 ])
 
 export function Sidebar({ workspace, callerRole, userPermissions, userName, userEmail, branding }: SidebarProps) {
