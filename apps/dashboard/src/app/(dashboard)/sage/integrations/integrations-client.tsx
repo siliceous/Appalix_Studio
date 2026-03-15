@@ -133,10 +133,8 @@ const INTEGRATIONS: IntegrationCard[] = [
     description: 'Add contacts as Kit subscribers and apply tags. Ideal for creators and course-based businesses.',
     logo:        '✉️',
     category:    'email_marketing',
-    fields: [
-      { name: 'api_key',    label: 'API Key',    type: 'password', placeholder: 'Your Kit API key', hint: 'Found in Kit → Settings → Advanced → API' },
-      { name: 'api_secret', label: 'API Secret', type: 'password', placeholder: 'Your Kit API secret' },
-    ],
+    fields:      [],
+    oauthPath:   '/api/oauth/kit',
     docsUrl: 'https://developers.kit.com/v4',
   },
   {
@@ -157,11 +155,8 @@ const INTEGRATIONS: IntegrationCard[] = [
     description: 'Add new contacts to Constant Contact lists and keep them in sync as contact details are updated.',
     logo:        '📬',
     category:    'email_marketing',
-    fields: [
-      { name: 'api_key',      label: 'API Key',      type: 'password', placeholder: 'Your Constant Contact API key' },
-      { name: 'access_token', label: 'Access Token', type: 'password', placeholder: 'OAuth access token', hint: 'Generate via Constant Contact developer portal' },
-      { name: 'list_id',      label: 'List ID',      type: 'text',     placeholder: 'Contact list ID to sync to' },
-    ],
+    fields:      [],
+    oauthPath:   '/api/oauth/constantcontact',
     docsUrl: 'https://developer.constantcontact.com/api_reference/',
   },
 ]

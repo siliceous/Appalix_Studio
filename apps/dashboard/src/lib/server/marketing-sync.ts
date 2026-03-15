@@ -1,16 +1,16 @@
 /**
- * Syncs a contact to all connected marketing platforms for a workspace.
- * Fire-and-forget — errors are logged, not thrown.
+ * Push a contact to all connected marketing platforms for a workspace.
+ * Used by server actions after contact create/update.
+ * Fire-and-forget — all errors are logged, not thrown.
  */
 import { createHash } from 'crypto'
-import { supabase }   from '../lib/supabase.js'
+import { createAdminClient } from '@/lib/supabase/server'
 
 interface ContactData {
-  email?:    string
-  name?:     string
-  phone?:    string
-  company?:  string
-  [key: string]: string | undefined
+  email?:      string | null
+  name?:       string | null
+  phone?:      string | null
+  company?:    string | null
 }
 
 type Cfg = Record<string, string>
@@ -23,7 +23,7 @@ function nameParts(name = '') {
 async function pushMailchimp(cfg: Cfg, c: ContactData) {
   if (!c.email || !cfg.access_token || !cfg.list_id) return
   const hash = createHash('md5').update(c.email.toLowerCase()).digest('hex')
-  const { first, last } = nameParts(c.name)
+  const { first, last } = nameParts(c.name ?? '')
   await fetch(`https://${cfg.server ?? 'us1'}.api.mailchimp.com/3.0/lists/${cfg.list_id}/members/${hash}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg.access_token}` },
@@ -33,7 +33,7 @@ async function pushMailchimp(cfg: Cfg, c: ContactData) {
       merge_fields: {
         ...(first && { FNAME: first }),
         ...(last  && { LNAME: last }),
-        ...(c.phone   && { PHONE: c.phone }),
+        ...(c.phone   && { PHONE:   c.phone }),
         ...(c.company && { COMPANY: c.company }),
       },
     }),
@@ -43,7 +43,7 @@ async function pushMailchimp(cfg: Cfg, c: ContactData) {
 async function pushKit(cfg: Cfg, c: ContactData) {
   const token = cfg.access_token ?? cfg.api_key
   if (!c.email || !token) return
-  const { first } = nameParts(c.name)
+  const { first } = nameParts(c.name ?? '')
   await fetch('https://api.kit.com/v4/subscribers', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -53,7 +53,7 @@ async function pushKit(cfg: Cfg, c: ContactData) {
 
 async function pushKlaviyo(cfg: Cfg, c: ContactData) {
   if (!c.email || !cfg.api_key) return
-  const { first, last } = nameParts(c.name)
+  const { first, last } = nameParts(c.name ?? '')
   const profileRes = await fetch('https://a.klaviyo.com/api/profiles/', {
     method: 'POST',
     headers: {
@@ -94,7 +94,7 @@ async function pushKlaviyo(cfg: Cfg, c: ContactData) {
 
 async function pushConstantContact(cfg: Cfg, c: ContactData) {
   if (!c.email || !cfg.access_token) return
-  const { first, last } = nameParts(c.name)
+  const { first, last } = nameParts(c.name ?? '')
   await fetch('https://api.cc.email/v3/contacts/sign_up_form', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg.access_token}` },
@@ -111,7 +111,7 @@ async function pushConstantContact(cfg: Cfg, c: ContactData) {
 
 async function pushActiveCampaign(cfg: Cfg, c: ContactData) {
   if (!c.email || !cfg.api_url || !cfg.api_key) return
-  const { first, last } = nameParts(c.name)
+  const { first, last } = nameParts(c.name ?? '')
   const base = cfg.api_url.replace(/\/$/, '')
   await fetch(`${base}/api/3/contact/sync`, {
     method: 'POST',
@@ -127,10 +127,11 @@ async function pushActiveCampaign(cfg: Cfg, c: ContactData) {
   }).catch(e => console.error('[sync/activecampaign]', e))
 }
 
-export async function syncContactToAllPlatforms(workspaceId: string, contact: ContactData): Promise<void> {
+export async function syncContactOutbound(workspaceId: string, contact: ContactData): Promise<void> {
   if (!contact.email) return
-
-  const { data: rows } = await supabase
+  const admin = createAdminClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: rows } = await (admin as any)
     .from('sage_integrations')
     .select('provider, config')
     .eq('workspace_id', workspaceId)
@@ -139,7 +140,7 @@ export async function syncContactToAllPlatforms(workspaceId: string, contact: Co
 
   if (!rows?.length) return
 
-  await Promise.allSettled(
+  void Promise.allSettled(
     (rows as Array<{ provider: string; config: Cfg }>).map(({ provider, config }) => {
       switch (provider) {
         case 'mailchimp':       return pushMailchimp(config, contact)
@@ -152,6 +153,3 @@ export async function syncContactToAllPlatforms(workspaceId: string, contact: Co
     })
   )
 }
-
-// Keep old export alias for backwards compat
-export { syncContactToAllPlatforms as syncToMailchimp }

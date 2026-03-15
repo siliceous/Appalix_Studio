@@ -4,6 +4,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import type { SageContact, SageTicketStatus, SageTicketPriority, SageDealStatus, SageContactType, SageContactVisibility, SageDealActivity } from '@/lib/types'
+import { syncContactOutbound } from '@/lib/server/marketing-sync'
 
 // ---------------------------------------------------------------
 // Helpers
@@ -106,6 +107,7 @@ export async function createContact(formData: FormData) {
 
   const contact = data as SageContact
   await logActivity(workspaceId, 'contact', contact.id, 'contact_created', { name })
+  void syncContactOutbound(workspaceId, { email: contact.email, name: contact.name, phone: contact.phone, company: contact.company_name })
   revalidatePath('/sage/contacts')
   return contact
 }
@@ -147,6 +149,7 @@ export async function updateContact(id: string, formData: FormData) {
   if (error) throw new Error(error.message)
 
   await logActivity(workspaceId, 'contact', id, 'contact_updated', { name })
+  void syncContactOutbound(workspaceId, { email: (data as SageContact).email, name: (data as SageContact).name, phone: (data as SageContact).phone, company: (data as SageContact).company_name })
   revalidatePath('/sage/contacts')
   revalidatePath(`/sage/contacts/${id}`)
   return data as SageContact
