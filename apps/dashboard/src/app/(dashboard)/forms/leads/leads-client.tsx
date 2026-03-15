@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { Trash2, ArrowRight, Search, ChevronDown, Inbox, Loader2, UserPlus } from 'lucide-react'
-import { deleteLead, moveLeadToPipeline } from '@/app/actions/leads'
+import { deleteLead, deleteLeads, moveLeadToPipeline } from '@/app/actions/leads'
 import { exportLeads } from '@/app/actions/csv-export'
 import { CsvExportButton } from '@/components/ui/csv-export-button'
 import type { Lead, LeadAdPlatform, LeadScore, WorkspaceMemberRole } from '@/lib/types'
@@ -67,6 +67,20 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
   const [moving, setMoving]           = useState<string | null>(null)
   const [assigning, setAssigning]     = useState<string | null>(null)
   const [, startTransition]           = useTransition()
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+  function handleBulkDelete() {
+    if (!window.confirm(`Delete ${selectedIds.size} lead(s)? This cannot be undone.`)) return
+    const ids = [...selectedIds]
+    startTransition(async () => {
+      await deleteLeads(ids)
+      setLeads(prev => prev.filter(l => !ids.includes(l.id)))
+      setSelectedIds(new Set())
+    })
+  }
 
   const filtered = leads.filter(l => {
     const q = search.toLowerCase()
@@ -80,6 +94,11 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
     const matchScore    = scoreFilter === 'all' || l.lead_score === scoreFilter
     return matchSearch && matchPlatform && matchScore
   })
+
+  const allSelected = filtered.length > 0 && filtered.every(l => selectedIds.has(l.id))
+  function toggleSelectAll() {
+    setSelectedIds(allSelected ? new Set() : new Set(filtered.map(l => l.id)))
+  }
 
   function handleDelete(id: string) {
     setDeleting(id)
@@ -185,6 +204,15 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
         </div>
 
         <div className="ml-auto flex items-center gap-3">
+          {selectedIds.size > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete {selectedIds.size}
+            </button>
+          )}
           <CsvExportButton action={exportLeads} />
           <p className="text-xs text-gray-400">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</p>
         </div>
@@ -196,6 +224,14 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 dark:border-white/8">
+                <th className="px-5 py-3 w-8">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-brand-600 cursor-pointer"
+                  />
+                </th>
                 <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Platform</th>
                 <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Name</th>
                 <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Email</th>
@@ -212,7 +248,16 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
             </thead>
             <tbody className="divide-y dark:divide-white/5">
               {filtered.map(lead => (
-                <tr key={lead.id} className="hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
+                <tr key={lead.id} className={`transition-colors ${selectedIds.has(lead.id) ? 'bg-brand-50 dark:bg-[#61c2ad]/8' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}>
+                  {/* Checkbox */}
+                  <td className="px-5 py-3.5" onClick={e => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(lead.id)}
+                      onChange={() => toggleSelect(lead.id)}
+                      className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-brand-600 cursor-pointer"
+                    />
+                  </td>
                   {/* Platform */}
                   <td className="px-5 py-3.5">
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${PLATFORM_COLOR[lead.source_platform]}`}>

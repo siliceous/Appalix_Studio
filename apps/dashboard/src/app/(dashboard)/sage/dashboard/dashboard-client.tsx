@@ -9,7 +9,7 @@ import {
   Plus, Kanban, CheckSquare, Zap, RefreshCw, Calendar,
   ChevronDown, X, ExternalLink, CheckCircle2, User,
   Phone, Building2, Sparkles, LayoutList, LayoutGrid,
-  Send, Reply, Loader2, ArrowLeft,
+  Send, Reply, Loader2, ArrowLeft, Maximize2, Minimize2,
   Bold, Italic, Underline, Strikethrough,
   AlignLeft, AlignJustify, List, ListOrdered, Paperclip,
   Palette, Highlighter, FileSignature, Type,
@@ -181,6 +181,18 @@ function ItemPopup({
 
   const [aiCollapsed, setAiCollapsed]         = useState(false)
   const [replySummaryCollapsed, setReplySummaryCollapsed] = useState(false)
+  const [popupSize, setPopupSize]             = useState<'sm' | 'md' | 'lg'>('md')
+  const [priorityValue,  setPriorityValue]    = useState<string | null>(null)
+  const [priorityOpen,   setPriorityOpen]     = useState(false)
+
+  const POPUP_PRIORITY_DOT: Record<string, string> = {
+    high: 'bg-[#61c2ad]', medium: 'bg-amber-400', low: 'bg-gray-300 dark:bg-gray-600',
+  }
+  const POPUP_PRIORITY_BADGE: Record<string, string> = {
+    high:   'bg-[#61c2ad]/10 text-[#3a9e8a] dark:text-[#61c2ad] border border-[#61c2ad]/30',
+    medium: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200/70 dark:border-amber-500/20',
+    low:    'bg-gray-100 dark:bg-white/5 text-gray-500 border border-gray-200 dark:border-white/10',
+  }
 
   // Reply compose state (email only)
   const [showReply, setShowReply]       = useState(false)
@@ -281,7 +293,7 @@ function ItemPopup({
 
   // Fetch full item
   useEffect(() => {
-    setData(null); setLoading(true); setPostAction(null); setActionError(null); setShowReply(false); setSendResult(null); setShowPipelinePicker(false); setIgnoring(false); setAiCollapsed(false); setReplySummaryCollapsed(false)
+    setData(null); setLoading(true); setPostAction(null); setActionError(null); setShowReply(false); setSendResult(null); setShowPipelinePicker(false); setIgnoring(false); setAiCollapsed(false); setReplySummaryCollapsed(false); setPriorityValue(null); setPriorityOpen(false)
     const supabase = createClient()
     const go = async () => {
       if (popup.kind === 'email') {
@@ -425,10 +437,12 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
   const iconCol = { email: 'text-blue-700 dark:text-blue-300', bot: 'text-purple-700 dark:text-purple-300', form: 'text-green-700 dark:text-green-300', ticket: 'text-amber-700 dark:text-amber-400' }[popup.kind]
   const label   = { email: 'Email Summary', bot: 'Chat Summary', form: 'Lead Details', ticket: 'Ticket Summary' }[popup.kind]
 
+  const sizeClass = popupSize === 'sm' ? 'sm:max-w-lg' : popupSize === 'lg' ? 'sm:max-w-[95vw]' : 'sm:max-w-2xl'
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:px-6 sm:py-8 bg-black/55 dark:bg-black/70"
       onClick={onClose}>
-      <div className="relative w-full sm:max-w-2xl bg-white dark:bg-[#2a2a2a] rounded-t-2xl sm:rounded-2xl shadow-2xl border-t sm:border dark:border-white/12 h-[96vh] sm:h-[calc(100vh-64px)] flex flex-col"
+      <div className={`relative w-full ${sizeClass} bg-white dark:bg-[#2a2a2a] rounded-t-2xl sm:rounded-2xl shadow-2xl border-t sm:border dark:border-white/12 h-[96vh] sm:h-[calc(100vh-64px)] flex flex-col transition-all duration-200`}
         onClick={e => e.stopPropagation()}>
 
         {/* Header */}
@@ -460,6 +474,13 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                 </Link>
               </>
             )}
+            <button
+              onClick={() => setPopupSize(s => s === 'sm' ? 'md' : s === 'md' ? 'lg' : 'sm')}
+              title={popupSize === 'sm' ? 'Original size' : popupSize === 'md' ? 'Full width' : 'Small'}
+              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+            >
+              {popupSize === 'lg' ? <Minimize2 className="w-4 h-4 text-gray-400" /> : <Maximize2 className="w-4 h-4 text-gray-400" />}
+            </button>
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors">
               <X className="w-4 h-4 text-gray-400" />
             </button>
@@ -491,12 +512,41 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                         {e.from_name && <p className="text-xs text-gray-400">{e.from_address}</p>}
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">{e.subject}</p>
                       </div>
-                      {e.ai_priority && (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0"
-                          style={{ background: `${P_COLORS[e.ai_priority] ?? '#9ca3af'}20`, color: P_COLORS[e.ai_priority] ?? '#9ca3af' }}>
-                          {e.ai_priority}
-                        </span>
-                      )}
+                      {(priorityValue ?? e.ai_priority) && (() => {
+                        const cp = priorityValue ?? e.ai_priority ?? 'low'
+                        return (
+                          <div className="relative shrink-0">
+                            <button
+                              onClick={ev => { ev.stopPropagation(); setPriorityOpen(v => !v) }}
+                              className={`flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-0.5 rounded-full cursor-pointer hover:opacity-80 transition-opacity ${POPUP_PRIORITY_BADGE[cp] ?? ''}`}
+                            >
+                              <span className={`w-1.5 h-1.5 rounded-full ${POPUP_PRIORITY_DOT[cp] ?? 'bg-gray-400'}`} />
+                              {cp}
+                              <ChevronDown className="w-3 h-3" />
+                            </button>
+                            {priorityOpen && (
+                              <div className="absolute right-0 top-full mt-1 z-30 bg-white dark:bg-[#2a2a2a] rounded-xl border border-gray-200 dark:border-white/12 shadow-lg overflow-hidden min-w-[100px]">
+                                {(['high', 'medium', 'low'] as const).map(p => (
+                                  <button
+                                    key={p}
+                                    onClick={ev => {
+                                      ev.stopPropagation()
+                                      setPriorityValue(p)
+                                      setPriorityOpen(false)
+                                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                      ;(createClient() as any).from('sage_emails').update({ ai_priority: p }).eq('id', e.id)
+                                    }}
+                                    className={`flex items-center gap-2 w-full px-3 py-2 text-[10px] font-semibold uppercase tracking-wide transition-colors hover:opacity-80 ${POPUP_PRIORITY_BADGE[p] ?? ''}`}
+                                  >
+                                    <span className={`w-1.5 h-1.5 rounded-full ${POPUP_PRIORITY_DOT[p] ?? 'bg-gray-400'}`} />
+                                    {p}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })()}
                     </div>
 
                     {/* AI Summary — collapsible */}

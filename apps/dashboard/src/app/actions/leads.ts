@@ -119,6 +119,19 @@ export async function deleteLead(id: string): Promise<void> {
   revalidatePath('/forms/leads')
 }
 
+export async function deleteLeads(ids: string[]): Promise<void> {
+  if (!ids.length) return
+  const workspaceId = await getWorkspaceId()
+  const admin       = createAdminClient()
+  const { error } = await admin
+    .from('leads')
+    .delete()
+    .in('id', ids)
+    .eq('workspace_id', workspaceId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/forms/leads')
+}
+
 /**
  * Move a lead into the Sage CRM pipeline.
  * Creates a SageContact + SageDeal in the first stage of the first pipeline.

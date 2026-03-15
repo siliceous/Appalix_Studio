@@ -747,6 +747,19 @@ export async function deleteTicket(id: string) {
   revalidatePath('/sage/tickets')
 }
 
+export async function deleteTickets(ids: string[]) {
+  if (!ids.length) return
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('sage_tickets')
+    .delete()
+    .in('id', ids)
+    .eq('workspace_id', workspaceId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/sage/tickets')
+}
+
 // ---------------------------------------------------------------
 // Sage Integrations
 // ---------------------------------------------------------------

@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { Ticket, Plus, Trash2, Mail, Pencil, Merge, X, Loader2, Search, ChevronDown } from 'lucide-react'
 import { TicketModal } from '@/components/sage/ticket-modal'
 import { TicketSlideOver } from '@/components/dashboard/ticket-slide-over'
-import { updateTicketStatus, deleteTicket, mergeTickets, assignTicket } from '@/app/actions/sage'
+import { updateTicketStatus, deleteTicket, deleteTickets, mergeTickets, assignTicket } from '@/app/actions/sage'
 import { exportTickets } from '@/app/actions/csv-export'
 import { CsvExportButton } from '@/components/ui/csv-export-button'
 import { timeAgo } from '@/lib/utils'
@@ -58,6 +58,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
   const [primaryId,    setPrimaryId]    = useState<string | null>(null)
   const [merging,      startMerge]      = useTransition()
   const [assigning,    startAssign]     = useTransition()
+  const [, startBulkDelete]            = useTransition()
   const [assignedMap,  setAssignedMap]  = useState<Record<string, string>>(() =>
     Object.fromEntries(initialTickets.map(t => [t.id, t.owner_id ?? '']))
   )
@@ -74,6 +75,16 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
     setSelectedIds(new Set())
     setShowMerge(false)
     setPrimaryId(null)
+  }
+
+  function handleBulkDelete() {
+    if (!window.confirm(`Delete ${selectedIds.size} ticket(s)? This cannot be undone.`)) return
+    const ids = [...selectedIds]
+    startBulkDelete(async () => {
+      await deleteTickets(ids)
+      setTickets(prev => prev.filter(t => !ids.includes(t.id)))
+      clearSelection()
+    })
   }
 
   async function handleMerge() {
@@ -143,6 +154,10 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
   }
 
   const selectedTickets = tickets.filter(t => selectedIds.has(t.id))
+  const allSelected = filtered.length > 0 && filtered.every(t => selectedIds.has(t.id))
+  function toggleSelectAll() {
+    setSelectedIds(allSelected ? new Set() : new Set(filtered.map(t => t.id)))
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-5 p-8">
@@ -205,6 +220,15 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
         </div>
         <div className="flex items-center gap-2">
           <CsvExportButton action={exportTickets} />
+          {canWrite && selectedIds.size > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-xl transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete {selectedIds.size}
+            </button>
+          )}
           {canWrite && selectedIds.size >= 2 && (
             <button
               onClick={() => { setPrimaryId([...selectedIds][0]); setShowMerge(true) }}
@@ -251,6 +275,18 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
               </button>
             )}
           </div>
+          {/* Select all */}
+          {canWrite && filtered.length > 0 && (
+            <label className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={allSelected}
+                onChange={toggleSelectAll}
+                className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-amber-500 cursor-pointer"
+              />
+              All
+            </label>
+          )}
           {/* Status pills */}
           <div className="flex items-center gap-1">
             {FILTERS.map(f => (
@@ -295,7 +331,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
 
               const isSelected = selectedIds.has(ticket.id)
               return (
-                <div key={ticket.id} onClick={() => setSlideTicket(ticket)} className={`flex items-start gap-4 px-5 py-4 transition-colors cursor-pointer ${isSelected ? 'bg-amber-50 dark:bg-amber-500/8' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}>
+                <div key={ticket.id} onClick={() => setSlideTicket(ticket)} className={`flex items-start gap-4 px-5 py-4 transition-colors cursor-pointer ${isSelected ? 'bg-brand-50 dark:bg-[#61c2ad]/12 ring-1 ring-inset ring-[#61c2ad]/20' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}>
                   {/* Checkbox — only for users who can write (merge requires canWrite) */}
                   {canWrite && (
                     <input

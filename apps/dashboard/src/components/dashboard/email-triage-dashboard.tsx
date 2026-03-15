@@ -6,13 +6,14 @@ import { useRouter } from 'next/navigation'
 import {
   Mail, AlertCircle, ArrowRight, Sparkles,
   Plus, RefreshCw, UserPlus,
-  Check, X, ChevronRight, Loader2, Trash2,
+  Check, X, ChevronRight, ChevronDown, Loader2, Trash2,
   Phone, Globe, Tag, Brain,
   Calendar, MapPin, Users, Clock,
   Maximize2, Minimize2, ArrowLeft, Reply,
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   List, ListOrdered, Link2, Paperclip, Palette,
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import { triageCreateLead, triageCreateTicket, triageAddDealNote } from '@/app/actions/sage-triage'
 import { syncEmails, deleteTriageEmails, reanalyzeEmails, sendEmail, rewriteEmail, markEmailRead } from '@/app/actions/sage-emails'
 import type { SageEmail, SageMeeting } from '@/lib/types'
@@ -277,6 +278,17 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
   // Lazy init so the editor and Send button are ready immediately on first render
   const [showReply,      setShowReply]      = useState(false)
   const [composeBody,    setComposeBody]    = useState(() => drafts[0]?.body ?? '')
+  const [summaryCollapsed, setSummaryCollapsed] = useState(false)
+  const [priorityValue,  setPriorityValue]  = useState<string | null>(null)
+  const [priorityOpen,   setPriorityOpen]   = useState(false)
+
+  const currentPriority = priorityValue ?? email.ai_priority ?? null
+
+  async function handlePriorityChange(p: string) {
+    setPriorityValue(p)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (createClient() as any).from('sage_emails').update({ ai_priority: p }).eq('id', email.id)
+  }
   const [attachments,    setAttachments]    = useState<EmailAttachment[]>([])
   const [sent,           setSent]           = useState(false)
   const [noteSaved,      setNoteSaved]      = useState(false)
@@ -295,6 +307,9 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
     setSendError(null)
     setAttachments([])
     setShowReply(false)
+    setSummaryCollapsed(false)
+    setPriorityValue(null)
+    setPriorityOpen(false)
     const draft = drafts[0]?.body ?? ''
     setComposeBody(draft)
     editorRef.current?.setHtml(draft.replace(/\n/g, '<br>'))
@@ -398,11 +413,31 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
                 <ArrowLeft className="w-3.5 h-3.5" /> Back
               </button>
             )}
-            {email.ai_priority && (
-              <span className={cn('text-[11px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wide border flex items-center gap-1.5', PRIORITY_BADGE[email.ai_priority])}>
-                <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT[email.ai_priority])} />
-                {email.ai_priority}
-              </span>
+            {currentPriority && (
+              <div className="relative">
+                <button
+                  onClick={e => { e.stopPropagation(); setPriorityOpen(v => !v) }}
+                  className={cn('text-[11px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wide border flex items-center gap-1.5 hover:opacity-80 transition-opacity', PRIORITY_BADGE[currentPriority])}
+                >
+                  <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT[currentPriority])} />
+                  {currentPriority}
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+                {priorityOpen && (
+                  <div className="absolute right-0 top-full mt-1 z-30 bg-white dark:bg-[#2a2a2a] rounded-xl border border-gray-200 dark:border-white/12 shadow-lg overflow-hidden min-w-[110px]">
+                    {(['high', 'medium', 'low'] as const).map(p => (
+                      <button
+                        key={p}
+                        onClick={e => { e.stopPropagation(); handlePriorityChange(p); setPriorityOpen(false) }}
+                        className={cn('flex items-center gap-2 w-full px-3 py-2 text-[11px] font-bold uppercase tracking-wide transition-colors hover:opacity-80', PRIORITY_BADGE[p])}
+                      >
+                        <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT[p])} />
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
             {email.ai_category && (
               <span className={cn('text-[11px] px-2.5 py-0.5 rounded-full font-semibold border', categoryClass(email.ai_category))}>
@@ -498,41 +533,56 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
           </div>
         ) : (
           <div className="rounded-xl bg-blue-50/40 dark:bg-blue-500/[0.07] border border-blue-100 dark:border-blue-500/20 overflow-hidden">
-            {/* Summary */}
+            {/* Summary header — always visible */}
             <div className="px-4 pt-3.5 pb-3">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2">
                   <Brain className="w-3.5 h-3.5 text-blue-500 shrink-0" />
                   <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">AI Summary</span>
                 </div>
-                {t.matchedDeal && (
-                  <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#61c2ad]/15 border border-[#61c2ad]/30 text-[#3d9585] dark:text-[#61c2ad] font-medium shrink-0">
-                    <RefreshCw className="w-2.5 h-2.5" />
-                    {t.matchedDeal.title}
-                  </span>
-                )}
+                <div className="flex items-center gap-1.5">
+                  {t.matchedDeal && (
+                    <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#61c2ad]/15 border border-[#61c2ad]/30 text-[#3d9585] dark:text-[#61c2ad] font-medium shrink-0">
+                      <RefreshCw className="w-2.5 h-2.5" />
+                      {t.matchedDeal.title}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => setSummaryCollapsed(v => !v)}
+                    title={summaryCollapsed ? 'Expand summary' : 'Collapse summary'}
+                    className="p-1 rounded-md hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-400 transition-colors"
+                  >
+                    <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', summaryCollapsed && 'rotate-180')} />
+                  </button>
+                </div>
               </div>
-              {email.ai_summary ? (
-                <p className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed">{email.ai_summary}</p>
-              ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                  {email.ai_reason ?? 'Low priority — no summary generated.'}
-                </p>
-              )}
-              {email.ai_reason && email.ai_summary && (
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5 italic">{email.ai_reason}</p>
-              )}
 
-              {/* Key points inline */}
-              {Array.isArray(email.ai_insights) && (email.ai_insights as string[]).length > 0 && (
-                <ul className="mt-3 space-y-1">
-                  {(email.ai_insights as string[]).map((insight, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-300">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0 mt-1.5" />
-                      {insight}
-                    </li>
-                  ))}
-                </ul>
+              {/* Collapsible body */}
+              {!summaryCollapsed && (
+                <>
+                  {email.ai_summary ? (
+                    <p className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed">{email.ai_summary}</p>
+                  ) : (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                      {email.ai_reason ?? 'Low priority — no summary generated.'}
+                    </p>
+                  )}
+                  {email.ai_reason && email.ai_summary && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5 italic">{email.ai_reason}</p>
+                  )}
+
+                  {/* Key points inline */}
+                  {Array.isArray(email.ai_insights) && (email.ai_insights as string[]).length > 0 && (
+                    <ul className="mt-3 space-y-1">
+                      {(email.ai_insights as string[]).map((insight, i) => (
+                        <li key={i} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-300">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0 mt-1.5" />
+                          {insight}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
               )}
             </div>
 
@@ -589,7 +639,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
             <div className="px-4 py-2.5 bg-gray-50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/8">
               <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Email</span>
             </div>
-            <div className="px-4 py-3.5 max-h-72 overflow-y-auto">
+            <div className="px-4 py-3.5">
               <p className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed font-mono">
                 {email.body_text ?? ''}
               </p>

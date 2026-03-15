@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { PLATFORM_META, timeAgo } from '@/lib/utils'
 import { renameConversation, assignConversation, deleteConversation } from '@/app/actions/conversation'
+import { deleteConversations } from '@/app/actions/bot-conversations'
 import { exportConversations } from '@/app/actions/csv-export'
 import { CsvExportButton } from '@/components/ui/csv-export-button'
 import type { ConvRow, BotOption, ConvFilters, TeamMember } from './page'
@@ -51,6 +52,24 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
   const [, startTransition] = useTransition()
   const [localAssign, setLocalAssign] = React.useState<Record<string, string | null>>({})
   const [assigning, setAssigning] = React.useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set())
+
+  const allSelected = conversations.length > 0 && selectedIds.size === conversations.length
+  function toggleSelectAll() {
+    setSelectedIds(allSelected ? new Set() : new Set(conversations.map(c => c.id)))
+  }
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+  function handleBulkDelete() {
+    if (!window.confirm(`Delete ${selectedIds.size} conversation(s)? This cannot be undone.`)) return
+    const ids = [...selectedIds]
+    startTransition(async () => {
+      await deleteConversations(ids)
+      setSelectedIds(new Set())
+      router.refresh()
+    })
+  }
 
   async function handleAssign(convId: string, userId: string | null) {
     setAssigning(convId)
@@ -98,7 +117,18 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
             Permanent record of every bot conversation — {conversations.length} shown
           </p>
         </div>
-        <CsvExportButton action={exportConversations} />
+        <div className="flex items-center gap-2">
+          {!readonly && selectedIds.size > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete {selectedIds.size}
+            </button>
+          )}
+          <CsvExportButton action={exportConversations} />
+        </div>
       </div>
 
       {/* ── Filter bar ── */}
@@ -195,6 +225,12 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b dark:border-white/8 bg-gray-50 dark:bg-white/[0.03]">
+                {!readonly && (
+                  <th className="px-4 py-3 w-px">
+                    <input type="checkbox" checked={allSelected} onChange={toggleSelectAll}
+                      className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-[#61c2ad] cursor-pointer" />
+                  </th>
+                )}
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Conversation</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Bot</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Platform</th>
@@ -210,8 +246,13 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                 const contactName = c.ai_entities?.name ?? null
                 const title = c.title ?? '(no title)'
                 return (
-                  <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors group">
-
+                  <tr key={c.id} className={`transition-colors group ${selectedIds.has(c.id) ? 'bg-red-50 dark:bg-red-500/5' : 'hover:bg-gray-50 dark:hover:bg-white/[0.03]'}`}>
+                    {!readonly && (
+                      <td className="px-4 py-3.5 w-px">
+                        <input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)}
+                          className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-[#61c2ad] cursor-pointer" />
+                      </td>
+                    )}
                     {/* Conversation title + contact name */}
                     <td className="px-5 py-3.5 max-w-[220px]">
                       <Link href={`/conversations/${c.id}`}
