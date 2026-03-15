@@ -1489,9 +1489,9 @@ export function SageDashboardClient({
       ...visForms.map(d   => ({ kind: 'form'   as const, data: d, time: d.created_at      })),
       ...visTickets.map(d => ({ kind: 'ticket' as const, data: d, time: d.created_at      })),
     ]
-    // List mode: high + medium only. Grid mode: all items, high+medium sorted to top.
+    // List mode: high + medium only (but always include tickets). Grid mode: all items.
     const items = feedView === 'list'
-      ? all.filter(item => itemPriority(item) <= 1)
+      ? all.filter(item => item.kind === 'ticket' || itemPriority(item) <= 1)
       : all
     return items.sort((a, b) => {
       const pd = itemPriority(a) - itemPriority(b)
