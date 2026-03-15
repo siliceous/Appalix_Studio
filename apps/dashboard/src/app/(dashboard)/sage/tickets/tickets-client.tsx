@@ -331,7 +331,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
 
               const isSelected = selectedIds.has(ticket.id)
               return (
-                <div key={ticket.id} onClick={() => setSlideTicket(ticket)} className={`flex items-start gap-4 px-5 py-4 transition-colors cursor-pointer ${isSelected ? 'bg-brand-50 dark:bg-[#61c2ad]/12 ring-1 ring-inset ring-[#61c2ad]/20' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}>
+                <div key={ticket.id} onClick={() => setSlideTicket(ticket)} className={`flex items-start gap-4 px-5 py-4 transition-colors cursor-pointer ${isSelected ? 'bg-[#61c2ad]/10 ring-1 ring-inset ring-[#61c2ad]/30' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}>
                   {/* Checkbox — only for users who can write (merge requires canWrite) */}
                   {canWrite && (
                     <input
