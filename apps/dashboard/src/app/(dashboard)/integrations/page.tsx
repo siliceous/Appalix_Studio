@@ -48,9 +48,9 @@ const AVAILABLE_PLATFORMS: { platform: Platform; desc: string; guide: string }[]
 export default async function IntegrationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ provider?: string; onboarding?: string; hint?: string }>
+  searchParams: Promise<{ provider?: string; onboarding?: string; hint?: string; connected?: string; error?: string }>
 }) {
-  const { provider: initialProvider, onboarding, hint } = await searchParams
+  const { provider: initialProvider, onboarding, hint, connected, error } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -230,6 +230,20 @@ export default async function IntegrationsPage({
 
       {/* Divider */}
       <div className="my-10 border-t dark:border-white/8" />
+
+      {/* OAuth connection feedback */}
+      {connected === '1' && initialProvider && (
+        <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#61c2ad]/10 border border-[#61c2ad]/30 text-sm text-[#2a7d6e] dark:text-[#61c2ad]">
+          <span className="text-lg">✅</span>
+          <span><strong className="capitalize">{initialProvider}</strong> connected successfully. You can now use it from Sage.</span>
+        </div>
+      )}
+      {error && (
+        <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-sm text-red-700 dark:text-red-400">
+          <span className="text-lg">⚠️</span>
+          <span>Connection failed: {decodeURIComponent(error)}. Please try again.</span>
+        </div>
+      )}
 
       {/* Sage integrations — payments, email, automation, ticketing, marketing */}
       <section>
