@@ -1212,6 +1212,12 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                     </>
                   )}
                   <div className="flex-1" />
+                  {popup.kind === 'email' && canReply && (
+                    <button onClick={() => setShowReply(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
+                      <Reply className="w-3.5 h-3.5" /> Reply
+                    </button>
+                  )}
                   <button onClick={handleIgnore}
                     className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors border dark:border-white/8">
                     <X className="w-3.5 h-3.5" /> Ignore
