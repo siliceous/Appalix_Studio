@@ -123,12 +123,11 @@ export default async function DashboardPage({
   }
 
   const overviewActivityDate = activityDate ?? new Date().toISOString().slice(0, 10)
-  const [overviewActivity, viewingAs] = viewAsUserId
-    ? await Promise.all([
-        getActivityFeed(viewAsUserId, membership.workspace_id, overviewActivityDate),
-        resolveViewingAs(viewAs, membership.workspace_id),
-      ])
-    : [null, null]
+  const effectiveUserId = viewAsUserId ?? user.id
+  const [overviewActivity, viewingAs] = await Promise.all([
+    getActivityFeed(effectiveUserId, membership.workspace_id, overviewActivityDate),
+    viewAsUserId ? resolveViewingAs(viewAs, membership.workspace_id) : Promise.resolve(null),
+  ])
 
   return (
     <>
