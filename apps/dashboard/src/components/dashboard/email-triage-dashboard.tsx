@@ -311,6 +311,14 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
     editorRef.current?.setHtml(draft.replace(/\n/g, '<br>'))
   }, [email.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Pre-load AI draft into editor when reply panel first opens
+  useEffect(() => {
+    if (showReply) {
+      const draft = drafts[0]?.body ?? ''
+      editorRef.current?.setHtml(draft.replace(/\n/g, '<br>'))
+    }
+  }, [showReply]) // eslint-disable-line react-hooks/exhaustive-deps
+
   async function handleSendReply() {
     const htmlBody = editorRef.current?.getHtml() ?? ''
     const plainText = editorRef.current?.getPlainText() ?? ''
@@ -471,7 +479,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
       <div className="flex-1 overflow-y-auto px-6 pb-6 pt-5 border-t dark:border-white/8 space-y-5">
 
         {/* Meeting details card — shown when a .ics was parsed from this email */}
-        {meeting && (
+        {!showReply && meeting && (
           <div className="rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 px-4 py-3.5 space-y-2.5">
             <div className="flex items-center gap-2">
               <Calendar className="w-3.5 h-3.5 text-indigo-500" />
@@ -513,8 +521,8 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
           </div>
         )}
 
-        {/* ── Unified AI Analysis card ── */}
-        {!email.ai_analyzed_at ? (
+        {/* ── Unified AI Analysis card — hidden in reply mode ── */}
+        {!showReply && (!email.ai_analyzed_at ? (
           <div className="rounded-xl bg-gray-100 dark:bg-white/8 border border-dashed border-gray-300 dark:border-white/20 px-4 py-3 flex items-center justify-center gap-2">
             <Brain className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400">AI analysis pending —</p>
@@ -627,7 +635,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
               </div>
             )}
           </div>
-        )}
+        ))}
 
         {/* Original email body — shown in detail view (not in reply mode) */}
         {!showReply && (email.body_text || email.body_html) && (
@@ -1326,7 +1334,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
         </div>
 
         {/* Priority-sorted list */}
-        <div key={refreshKey} className="flex-1 overflow-y-auto">
+        <div key={refreshKey} className="flex-1 overflow-y-auto pb-4">
           {visible.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-3 p-6 text-center">
               <div className="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-white/5 flex items-center justify-center">

@@ -104,5 +104,61 @@
   .dark textarea:focus {
     outline-color: #15A4AE;
   }
+
+  /* ── Happy mode — soft warm-teal light theme ── */
+  .happy body {
+    background-color: #f2f8f8;
+    color: #1e2d2d;
+  }
+
+  .happy * {
+    border-color: #d4e8e8;
+  }
+
+  /* Page & layout surfaces */
+  .happy .bg-gray-50  { background-color: #f2f8f8; }
+  .happy .bg-gray-100 { background-color: #e6f2f2; }
+  .happy .bg-white    { background-color: #ffffff; }
+
+  /* Softer, airier card shadows with a faint teal tint */
+  .happy .rounded-xl.bg-white,
+  .happy .rounded-2xl.bg-white,
+  .happy .rounded-lg.bg-white {
+    box-shadow: 0 1px 3px rgba(21,164,174,0.06), 0 4px 14px rgba(21,164,174,0.09);
+  }
+
+  /* Hover backgrounds */
+  .happy .hover\:bg-gray-50:hover,
+  .happy .hover\:bg-gray-100:hover {
+    background-color: #e6f2f2;
+  }
+
+  /* Dividers */
+  .happy .divide-y > * + * {
+    border-color: #d4e8e8;
+  }
+
+  /* Text — slightly teal-tinted instead of cold gray */
+  .happy .text-gray-900 { color: #1a2e2e; }
+  .happy .text-gray-800 { color: #243c3c; }
+  .happy .text-gray-700 { color: #375555; }
+  .happy .text-gray-600 { color: #4d6e6e; }
+  .happy .text-gray-500 { color: #6a8e8e; }
+  .happy .text-gray-400 { color: #8aabab; }
+
+  /* Form inputs */
+  .happy input:not([type="checkbox"]):not([type="radio"]),
+  .happy select,
+  .happy textarea {
+    background-color: #ffffff;
+    border-color: #c2dede;
+  }
+
+  /* Focus ring */
+  .happy input:focus,
+  .happy select:focus,
+  .happy textarea:focus {
+    outline-color: #15A4AE;
+  }
 }
 

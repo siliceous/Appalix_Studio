@@ -1,7 +1,7 @@
 'use client'
 
 import { useTheme } from 'next-themes'
-import { Sun, Moon } from 'lucide-react'
+import { Sun, Moon, Smile } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 export function ThemeToggle() {
@@ -11,29 +11,23 @@ export function ThemeToggle() {
   useEffect(() => setMounted(true), [])
   if (!mounted) return null
 
+  const activeClass = 'bg-brand-50 border-brand-300 text-brand-700'
+  const inactiveClass = 'border-gray-200 text-gray-600 hover:bg-gray-50'
+  const base = 'flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-medium transition-colors'
+
   return (
     <div className="flex gap-3">
-      <button
-        onClick={() => setTheme('light')}
-        className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-medium transition-colors ${
-          theme === 'light'
-            ? 'bg-brand-50 border-brand-300 text-brand-700 dark:bg-[#15A4AE]/10 dark:border-[#15A4AE]/40 dark:text-[#15A4AE]'
-            : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
-        }`}
-      >
+      <button onClick={() => setTheme('light')} className={`${base} ${theme === 'light' ? activeClass : inactiveClass}`}>
         <Sun className="w-4 h-4" />
         Light
       </button>
-      <button
-        onClick={() => setTheme('dark')}
-        className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-medium transition-colors ${
-          theme === 'dark'
-            ? 'bg-brand-50 border-brand-300 text-brand-700 dark:bg-[#15A4AE]/10 dark:border-[#15A4AE]/40 dark:text-[#15A4AE]'
-            : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
-        }`}
-      >
+      <button onClick={() => setTheme('dark')} className={`${base} ${theme === 'dark' ? activeClass : inactiveClass}`}>
         <Moon className="w-4 h-4" />
         Dark
+      </button>
+      <button onClick={() => setTheme('happy')} className={`${base} ${theme === 'happy' ? activeClass : inactiveClass}`}>
+        <Smile className="w-4 h-4" />
+        Happy
       </button>
     </div>
   )
