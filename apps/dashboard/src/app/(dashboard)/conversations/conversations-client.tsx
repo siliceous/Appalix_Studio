@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   MessageSquare, Search, ChevronDown, Download,
-  Pencil, ExternalLink, X,
+  Pencil, ExternalLink, X, Trash2,
 } from 'lucide-react'
 import { PLATFORM_META, timeAgo } from '@/lib/utils'
-import { renameConversation, assignConversation } from '@/app/actions/conversation'
+import { renameConversation, assignConversation, deleteConversation } from '@/app/actions/conversation'
 import { exportConversations } from '@/app/actions/csv-export'
 import { CsvExportButton } from '@/components/ui/csv-export-button'
 import type { ConvRow, BotOption, ConvFilters, TeamMember } from './page'
@@ -65,6 +65,14 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
     Object.keys(next).forEach(k => { if (!next[k as keyof ConvFilters]) delete next[k as keyof ConvFilters] })
     router.push(buildUrl('/dashboard/bots', next))
   }, [filters, router])
+
+  function handleDelete(id: string) {
+    if (!window.confirm('Delete this conversation? This cannot be undone.')) return
+    startTransition(async () => {
+      await deleteConversation(id)
+      router.refresh()
+    })
+  }
 
   function handleRename(id: string, currentTitle: string | null) {
     const newTitle = window.prompt('Rename conversation:', currentTitle ?? '')
@@ -193,7 +201,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Priority</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide max-w-[200px]">Summary</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Msgs</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Last active</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide min-w-[130px]">Last active</th>
                 {canAssign && <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Assigned to</th>}
                 <th className="text-right px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide w-px whitespace-nowrap">Actions</th>
               </tr>
@@ -280,7 +288,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                       </td>
                     )}
 
-                    {/* Actions: view, rename, download */}
+                    {/* Actions: view, rename, download, delete */}
                     <td className="px-5 py-3.5 w-px whitespace-nowrap">
                       <div className="flex items-center gap-1 justify-end">
                         <Link href={`/conversations/${c.id}`}
@@ -302,6 +310,14 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                             className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors">
                             <Download className="w-3.5 h-3.5" />
                           </a>
+                        )}
+                        {!readonly && (
+                          <button
+                            onClick={() => handleDelete(c.id)}
+                            title="Delete conversation"
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         )}
                       </div>
                     </td>
