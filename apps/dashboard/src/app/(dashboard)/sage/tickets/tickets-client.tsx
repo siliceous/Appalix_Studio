@@ -172,8 +172,8 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
       {/* Merge modal */}
       {showMerge && selectedIds.size >= 2 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={clearSelection} />
-          <div className="relative bg-white dark:bg-[#232323] rounded-2xl border dark:border-white/8 shadow-2xl w-full max-w-md p-6">
+          <div className="absolute inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm" onClick={clearSelection} />
+          <div className="relative bg-white dark:bg-[#2a2a2a] rounded-2xl border border-gray-200 dark:border-white/12 shadow-2xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Merge {selectedIds.size} Tickets</h2>
               <button onClick={clearSelection} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors">
@@ -183,7 +183,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Choose the primary ticket to keep. The others will be closed and their content appended to it.</p>
             <div className="space-y-2 mb-5">
               {selectedTickets.map(t => (
-                <label key={t.id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${primaryId === t.id ? 'border-brand-500 dark:border-[#61c2ad] bg-brand-50 dark:bg-[#61c2ad]/8' : 'border-gray-200 dark:border-white/8 hover:bg-gray-50 dark:hover:bg-white/3'}`}>
+                <label key={t.id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${primaryId === t.id ? 'border-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/12' : 'border-gray-200 dark:border-white/15 bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/8'}`}>
                   <input
                     type="radio"
                     name="primary"
