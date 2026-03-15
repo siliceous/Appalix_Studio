@@ -1476,7 +1476,7 @@ export function SageDashboardClient({
   const ticketSegs: DonutSegment[] = [{ name: 'High', value: tickets.filter(t => t.priority === 'high' || t.priority === 'urgent').length, fill: P_COLORS.high }, { name: 'Medium', value: tickets.filter(t => t.priority === 'medium').length, fill: P_COLORS.medium }, { name: 'Low', value: tickets.filter(t => t.priority === 'low').length, fill: P_COLORS.low }]
 
   // ── Timeline (uses pre-filtered visible arrays) ───────────────────────────
-  const P_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 }
+  const P_RANK: Record<string, number> = { urgent: 0, high: 0, medium: 1, low: 2 }
   function itemPriority(item: TItem): number {
     const d = item.data as unknown as Record<string, unknown>
     const p = (d.ai_priority ?? d.priority ?? d.lead_score ?? '') as string
