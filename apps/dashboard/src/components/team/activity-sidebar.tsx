@@ -39,9 +39,9 @@ const ENTITY_TYPE_LABEL: Record<string, string> = {
 function formatEventLabel(eventType: string, entityName?: string | null, entityType?: string | null, priorityFrom?: string | null, priorityTo?: string | null): string {
   if (eventType === 'priority_changed' && entityType) {
     const typeLabel = ENTITY_TYPE_LABEL[entityType] ?? entityType
+    const name  = entityName ? ` (${entityName})` : ''
     const arrow = priorityFrom && priorityTo ? ` ${priorityFrom} → ${priorityTo}` : (priorityTo ? ` → ${priorityTo}` : '')
-    const base = `Changed priority ${typeLabel}${arrow}`
-    return entityName ? `${base}: ${entityName}` : base
+    return `Changed priority for ${typeLabel}${name}${arrow}`
   }
   const base = EVENT_LABELS[eventType] ?? eventType.replace(/_/g, ' ')
   return entityName ? `${base}: ${entityName}` : base
