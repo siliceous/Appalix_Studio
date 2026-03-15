@@ -2100,7 +2100,7 @@ export function SageDashboardClient({
                           className={`px-4 py-2.5 flex items-center justify-between cursor-pointer ${tablet.bgClass}`}
                           onClick={() => setTopType(isActive ? null : tablet.key)}
                         >
-                          <div className={`flex items-center gap-2 text-xs font-semibold ${tablet.accentClass}`}>
+                          <div className="flex items-center gap-2 text-xs font-semibold text-white">
                             {tablet.icon}
                             {tablet.label}
                           </div>
