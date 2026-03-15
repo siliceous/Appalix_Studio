@@ -111,8 +111,8 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       {/* Contact card */}
       <div className="bg-white dark:bg-[#232323] rounded-2xl border dark:border-white/8 p-6 mb-6">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-brand-100 dark:bg-[#61c2ad]/15 flex items-center justify-center shrink-0">
-            <span className="text-xl font-bold text-brand-700 dark:text-[#61c2ad]">
+          <div className="w-14 h-14 rounded-2xl bg-brand-100 dark:bg-[#15A4AE]/15 flex items-center justify-center shrink-0">
+            <span className="text-xl font-bold text-brand-700 dark:text-[#15A4AE]">
               {contact.name.charAt(0).toUpperCase()}
             </span>
           </div>
@@ -120,12 +120,12 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
             <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{contact.name}</h1>
             <div className="flex flex-wrap items-center gap-4 mt-2">
               {contact.email && (
-                <a href={`mailto:${contact.email}`} className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] transition-colors">
+                <a href={`mailto:${contact.email}`} className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-[#15A4AE] transition-colors">
                   <Mail className="w-3.5 h-3.5" /> {contact.email}
                 </a>
               )}
               {contact.phone && (
-                <a href={`tel:${contact.phone}`} className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] transition-colors">
+                <a href={`tel:${contact.phone}`} className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-[#15A4AE] transition-colors">
                   <Phone className="w-3.5 h-3.5" /> {contact.phone}
                 </a>
               )}
@@ -211,7 +211,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
               <p className="px-5 py-8 text-sm text-gray-400 text-center">No activity recorded yet.</p>
             ) : activity.map(a => (
               <div key={a.id} className="flex items-start gap-3 px-5 py-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-brand-400 dark:bg-[#61c2ad] mt-1.5 shrink-0" />
+                <div className="w-1.5 h-1.5 rounded-full bg-brand-400 dark:bg-[#15A4AE] mt-1.5 shrink-0" />
                 <div>
                   <p className="text-xs text-gray-700 dark:text-gray-300">{eventLabel(a.event_type)}</p>
                   <p className="flex items-center gap-1 text-[10px] text-gray-400 mt-0.5">

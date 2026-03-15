@@ -181,7 +181,7 @@ export function LeadGenSection() {
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6 }}
             >
-              <span className="inline-block text-xs px-3 py-1 rounded-full bg-[#61c2ad]/10 border border-[#61c2ad]/20 text-[#61c2ad] font-semibold uppercase tracking-widest mb-5">
+              <span className="inline-block text-xs px-3 py-1 rounded-full bg-[#15A4AE]/10 border border-[#15A4AE]/20 text-[#15A4AE] font-semibold uppercase tracking-widest mb-5">
                 Lead generation & revenue growth
               </span>
               <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
@@ -200,7 +200,7 @@ export function LeadGenSection() {
             >
               {OUTCOMES.map((item) => (
                 <li key={item} className="flex items-center gap-3">
-                  <svg className="w-4 h-4 text-[#61c2ad] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <svg className="w-4 h-4 text-[#15A4AE] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                   <span className="text-sm text-gray-300">{item}</span>
@@ -252,7 +252,7 @@ export function LeadGenSection() {
                   <div className={`max-w-[88%] px-3 py-2 rounded-2xl text-[13px] leading-relaxed backdrop-blur-sm ${
                     msg.role === 'user'
                       ? 'bg-white/[0.12] border border-white/15 text-gray-100 rounded-br-sm'
-                      : 'bg-[#61c2ad]/[0.12] border border-[#61c2ad]/25 text-[#61c2ad] rounded-bl-sm'
+                      : 'bg-[#15A4AE]/[0.12] border border-[#15A4AE]/25 text-[#15A4AE] rounded-bl-sm'
                   }`}>
                     {msg.text}
                   </div>

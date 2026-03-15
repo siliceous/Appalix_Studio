@@ -27,13 +27,13 @@ interface Props {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const PRIORITY_DOT: Record<string, string> = {
-  high:   'bg-[#61c2ad]',
+  high:   'bg-[#15A4AE]',
   medium: 'bg-amber-400',
   low:    'bg-gray-300 dark:bg-gray-600',
 }
 
 const PRIORITY_BADGE: Record<string, string> = {
-  high:   'bg-[#61c2ad]/10 dark:bg-[#61c2ad]/15 text-[#3a9e8a] dark:text-[#61c2ad] border-[#61c2ad]/30 dark:border-[#61c2ad]/25',
+  high:   'bg-[#15A4AE]/10 dark:bg-[#15A4AE]/15 text-[#3a9e8a] dark:text-[#15A4AE] border-[#15A4AE]/30 dark:border-[#15A4AE]/25',
   medium: 'bg-amber-50 dark:bg-amber-500/10 text-amber-500/75 dark:text-amber-400/75 border-amber-200/70 dark:border-amber-500/18',
   low:    'bg-gray-100 dark:bg-white/5 text-gray-500 border-gray-200 dark:border-white/10',
 }
@@ -511,13 +511,13 @@ const [mDealTitle, setMDealTitle] = useState('')
             onClick={() => { setSelectedBotName(null); setSelectedId('') }}
             className={cn(
               'px-3 py-2.5 cursor-pointer transition-colors border-l-[3px]',
-              !selectedBotName ? 'border-l-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10' : 'border-l-transparent hover:bg-white dark:hover:bg-white/3',
+              !selectedBotName ? 'border-l-[#15A4AE] bg-[#15A4AE]/8 dark:bg-[#15A4AE]/10' : 'border-l-transparent hover:bg-white dark:hover:bg-white/3',
             )}
           >
             <p className={cn('text-xs font-semibold', !selectedBotName ? 'text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400')}>All Bots</p>
             <div className="flex items-center gap-1.5 mt-0.5">
               <p className="text-[10px] text-gray-400">{visible.length} convs</p>
-              {highConvs.length > 0 && <span className="text-[10px] font-bold text-[#61c2ad]">· {highConvs.length}H</span>}
+              {highConvs.length > 0 && <span className="text-[10px] font-bold text-[#15A4AE]">· {highConvs.length}H</span>}
               {medConvs.length > 0 && <span className="text-[10px] font-bold text-amber-400">· {medConvs.length}M</span>}
             </div>
           </div>
@@ -533,7 +533,7 @@ const [mDealTitle, setMDealTitle] = useState('')
               onClick={() => { setSelectedBotName(bot.name); setSelectedId('') }}
               className={cn(
                 'px-3 py-2.5 cursor-pointer transition-colors border-l-[3px]',
-                selectedBotName === bot.name ? 'border-l-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10' : 'border-l-transparent hover:bg-white dark:hover:bg-white/3',
+                selectedBotName === bot.name ? 'border-l-[#15A4AE] bg-[#15A4AE]/8 dark:bg-[#15A4AE]/10' : 'border-l-transparent hover:bg-white dark:hover:bg-white/3',
               )}
             >
               <p className={cn('text-xs font-medium truncate', selectedBotName === bot.name ? 'text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400')}>
@@ -541,7 +541,7 @@ const [mDealTitle, setMDealTitle] = useState('')
               </p>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <p className="text-[10px] text-gray-400">{bot.total} convs</p>
-                {bot.highCount > 0 && <span className="text-[10px] font-bold text-[#61c2ad]">· {bot.highCount}H</span>}
+                {bot.highCount > 0 && <span className="text-[10px] font-bold text-[#15A4AE]">· {bot.highCount}H</span>}
               </div>
             </div>
           ))}
@@ -597,7 +597,7 @@ const [mDealTitle, setMDealTitle] = useState('')
                 className={cn(
                   'flex items-stretch border-l-[3px] transition-colors cursor-pointer',
                   isActive
-                    ? priority === 'high'   ? 'border-l-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10'
+                    ? priority === 'high'   ? 'border-l-[#15A4AE] bg-[#15A4AE]/8 dark:bg-[#15A4AE]/10'
                     : priority === 'medium' ? 'border-l-amber-400 bg-amber-50 dark:bg-amber-500/8'
                     : priority === 'low'    ? 'border-l-gray-400  bg-gray-100 dark:bg-white/5'
                     :                         'border-l-blue-400  bg-blue-50 dark:bg-blue-500/8'

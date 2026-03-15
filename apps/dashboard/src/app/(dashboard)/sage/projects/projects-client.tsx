@@ -13,7 +13,7 @@ type Project = SageDeal & {
 }
 
 const PRIORITY_BADGE: Record<string, string> = {
-  high:   'bg-[#61c2ad]/10 dark:bg-[#61c2ad]/15 text-[#1f6157] dark:text-[#61c2ad] border border-[#61c2ad]/30',
+  high:   'bg-[#15A4AE]/10 dark:bg-[#15A4AE]/15 text-[#1f6157] dark:text-[#15A4AE] border border-[#15A4AE]/30',
   medium: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200/70 dark:border-amber-500/18',
   low:    'bg-gray-100 dark:bg-white/5 text-gray-500 border border-gray-200 dark:border-white/10',
 }
@@ -58,7 +58,7 @@ export function ProjectsClient({ projects, lostDeals }: Props) {
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
             {view === 'won' ? 'All won deals' : 'All lost deals'} — {list.length} deal{list.length !== 1 ? 's' : ''}
             {totalValue > 0 && (
-              <span className={`ml-2 font-medium ${view === 'won' ? 'text-[#1f6157] dark:text-[#61c2ad]' : 'text-red-500 dark:text-red-400'}`}>
+              <span className={`ml-2 font-medium ${view === 'won' ? 'text-[#1f6157] dark:text-[#15A4AE]' : 'text-red-500 dark:text-red-400'}`}>
                 · {formatCurrency(totalValue, currency)} total value
               </span>
             )}
@@ -71,8 +71,8 @@ export function ProjectsClient({ projects, lostDeals }: Props) {
             onClick={() => setView('won')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
               view === 'won'
-                ? 'bg-[#61c2ad]/10 dark:bg-[#61c2ad]/15 border-[#61c2ad]/30 text-[#1f6157] dark:text-[#61c2ad]'
-                : 'bg-white dark:bg-[#232323] border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-[#61c2ad]/30 hover:text-[#1f6157] dark:hover:text-[#61c2ad]'
+                ? 'bg-[#15A4AE]/10 dark:bg-[#15A4AE]/15 border-[#15A4AE]/30 text-[#1f6157] dark:text-[#15A4AE]'
+                : 'bg-white dark:bg-[#232323] border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-[#15A4AE]/30 hover:text-[#1f6157] dark:hover:text-[#15A4AE]'
             }`}
           >
             <Trophy className="w-3.5 h-3.5" />
@@ -104,7 +104,7 @@ export function ProjectsClient({ projects, lostDeals }: Props) {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder={`Search ${view === 'won' ? 'projects' : 'lost deals'}…`}
-            className="w-full pl-8 pr-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
+            className="w-full pl-8 pr-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
           />
         </div>
       </div>
@@ -157,7 +157,7 @@ export function ProjectsClient({ projects, lostDeals }: Props) {
                   {/* Contact */}
                   <td className="px-4 py-3.5 max-w-[180px]">
                     {p.contact ? (
-                      <Link href={`/sage/contacts/${p.contact.id}`} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-[#1f6157] dark:hover:text-[#61c2ad] transition-colors">
+                      <Link href={`/sage/contacts/${p.contact.id}`} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-[#1f6157] dark:hover:text-[#15A4AE] transition-colors">
                         <User className="w-3 h-3 shrink-0" />
                         <span className="truncate">{p.contact.name}</span>
                       </Link>

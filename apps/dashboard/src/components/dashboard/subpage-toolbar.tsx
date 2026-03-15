@@ -141,7 +141,7 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
             <select
               value={preset}
               onChange={e => handlePresetChange(e.target.value as SubpagePreset)}
-              className="appearance-none bg-gray-50 dark:bg-[#232323] border border-gray-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-300 rounded-lg pl-2.5 pr-6 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/40 cursor-pointer"
+              className="appearance-none bg-gray-50 dark:bg-[#232323] border border-gray-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-300 rounded-lg pl-2.5 pr-6 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 cursor-pointer"
             >
               {PRESETS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
             </select>
@@ -154,7 +154,7 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
                 type="date"
                 value={fromDate}
                 onChange={e => setFromDate(e.target.value)}
-                className="bg-gray-50 dark:bg-[#232323] border border-gray-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/40"
+                className="bg-gray-50 dark:bg-[#232323] border border-gray-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40"
               />
               <span className="text-xs text-gray-400">→</span>
               <input
@@ -162,12 +162,12 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
                 value={toDate}
                 min={fromDate || undefined}
                 onChange={e => setToDate(e.target.value)}
-                className="bg-gray-50 dark:bg-[#232323] border border-gray-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/40"
+                className="bg-gray-50 dark:bg-[#232323] border border-gray-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40"
               />
               <button
                 onClick={applyCustomRange}
                 disabled={!fromDate || !toDate}
-                className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-[#61c2ad]/10 text-[#3a9e8a] dark:text-[#61c2ad] border border-[#61c2ad]/25 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#61c2ad]/20 transition-colors"
+                className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-[#15A4AE]/10 text-[#3a9e8a] dark:text-[#15A4AE] border border-[#15A4AE]/25 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#15A4AE]/20 transition-colors"
               >
                 Apply
               </button>
@@ -186,11 +186,11 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
           className={[
             'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all',
             localAuto
-              ? 'bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10 border-[#61c2ad]/25 text-[#3a9e8a] dark:text-[#61c2ad]'
+              ? 'bg-[#15A4AE]/8 dark:bg-[#15A4AE]/10 border-[#15A4AE]/25 text-[#3a9e8a] dark:text-[#15A4AE]'
               : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-500',
           ].join(' ')}
         >
-          <Zap className={`w-3 h-3 ${localAuto ? 'text-[#61c2ad]' : 'text-gray-400'}`} />
+          <Zap className={`w-3 h-3 ${localAuto ? 'text-[#15A4AE]' : 'text-gray-400'}`} />
           <span>Auto</span>
           <span className="font-bold">{localAuto ? 'ON' : 'OFF'}</span>
         </button>

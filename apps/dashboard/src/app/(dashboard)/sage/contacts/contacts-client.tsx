@@ -44,7 +44,7 @@ function AssignCell({ contactId, value, members, onAssigned }: {
         onChange={e => handleChange(e.target.value)}
         disabled={pending}
         onClick={e => e.stopPropagation()}
-        className="appearance-none pl-2 pr-6 py-1 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/8 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad] transition-colors disabled:opacity-50 max-w-[130px]"
+        className="appearance-none pl-2 pr-6 py-1 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/8 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE] transition-colors disabled:opacity-50 max-w-[130px]"
       >
         <option value="">Unassigned</option>
         {members.map(m => (
@@ -106,7 +106,7 @@ const SORT_FIELDS: { key: string; label: string }[] = [
 
 const CONTACT_TYPE_META: Record<string, { label: string; color: string }> = {
   potential_customer: { label: 'Potential',  color: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400' },
-  active_customer:    { label: 'Active',     color: 'bg-brand-50 text-brand-700 dark:bg-[#61c2ad]/10 dark:text-[#61c2ad]' },
+  active_customer:    { label: 'Active',     color: 'bg-brand-50 text-brand-700 dark:bg-[#15A4AE]/10 dark:text-[#15A4AE]' },
   other:              { label: 'Other',      color: 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-400' },
 }
 
@@ -216,8 +216,8 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
     switch (key) {
       case 'name': return (
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-full bg-brand-100 dark:bg-[#61c2ad]/15 flex items-center justify-center shrink-0">
-            <span className="text-xs font-semibold text-brand-700 dark:text-[#61c2ad]">{c.name.charAt(0).toUpperCase()}</span>
+          <div className="w-7 h-7 rounded-full bg-brand-100 dark:bg-[#15A4AE]/15 flex items-center justify-center shrink-0">
+            <span className="text-xs font-semibold text-brand-700 dark:text-[#15A4AE]">{c.name.charAt(0).toUpperCase()}</span>
           </div>
           <span className="text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">{c.name}</span>
         </div>
@@ -252,12 +252,12 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
         ? <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400"><Phone className="w-3 h-3 shrink-0" />{c.phone}</span>
         : <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
       case 'website_url': return c.website_url
-        ? <a href={c.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-brand-600 dark:text-[#61c2ad] hover:underline"><Globe className="w-3 h-3 shrink-0" /><span className="truncate max-w-32">{c.website_url.replace(/^https?:\/\//, '')}</span></a>
+        ? <a href={c.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-brand-600 dark:text-[#15A4AE] hover:underline"><Globe className="w-3 h-3 shrink-0" /><span className="truncate max-w-32">{c.website_url.replace(/^https?:\/\//, '')}</span></a>
         : <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
       case 'deal_value': {
         const display = c.value ?? c.deal_value
         return display
-          ? <span className="text-xs font-semibold text-brand-600 dark:text-[#61c2ad] tabular-nums whitespace-nowrap">
+          ? <span className="text-xs font-semibold text-brand-600 dark:text-[#15A4AE] tabular-nums whitespace-nowrap">
               {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(display)}
             </span>
           : <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
@@ -278,7 +278,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
         if (!c.assigned_to) return <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
         const m = members.find(m => m.user_id === c.assigned_to)
         return (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-brand-50 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad] whitespace-nowrap">
+          <span className="text-xs px-2 py-0.5 rounded-full bg-brand-50 dark:bg-[#15A4AE]/10 text-brand-700 dark:text-[#15A4AE] whitespace-nowrap">
             {m ? (m.name || m.email) : c.assigned_to.slice(0, 8)}
           </span>
         )
@@ -331,7 +331,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search contacts…"
-            className="w-full pl-9 pr-4 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#232323] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+            className="w-full pl-9 pr-4 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#232323] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE]"
           />
         </div>
 
@@ -386,7 +386,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Filters</p>
                 {activeFilterCount > 0 && (
-                  <button onClick={() => setFilters(EMPTY_FILTER)} className="text-xs text-brand-600 dark:text-[#61c2ad] hover:underline">Clear all</button>
+                  <button onClick={() => setFilters(EMPTY_FILTER)} className="text-xs text-brand-600 dark:text-[#15A4AE] hover:underline">Clear all</button>
                 )}
               </div>
 
@@ -484,7 +484,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
                 const v = e.target.value
                 window.location.href = v ? `/sage/contacts?viewAs=${v}` : '/sage/contacts'
               }}
-              className="appearance-none pl-2.5 pr-7 py-2 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/8 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad] transition-colors"
+              className="appearance-none pl-2.5 pr-7 py-2 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/8 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE] transition-colors"
             >
               <option value="">My contacts</option>
               {teamMembers.map(m => (
@@ -531,7 +531,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
               {search || activeFilterCount > 0 ? 'No contacts match your filters.' : 'No contacts yet. Add your first one.'}
             </p>
             {!search && !activeFilterCount && canWrite && (
-              <button onClick={() => setShowModal(true)} className="mt-4 text-sm text-brand-600 dark:text-[#61c2ad] hover:underline">
+              <button onClick={() => setShowModal(true)} className="mt-4 text-sm text-brand-600 dark:text-[#15A4AE] hover:underline">
                 Add a contact →
               </button>
             )}

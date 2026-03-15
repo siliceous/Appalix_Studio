@@ -112,7 +112,7 @@ export default async function AnalyticsPage() {
                       </div>
                       <div className="h-1.5 rounded-full bg-gray-100 dark:bg-white/8">
                         <div
-                          className="h-1.5 rounded-full bg-brand-500 dark:bg-[#61c2ad]"
+                          className="h-1.5 rounded-full bg-brand-500 dark:bg-[#15A4AE]"
                           style={{ width: `${Math.round((count / total) * 100)}%` }}
                         />
                       </div>

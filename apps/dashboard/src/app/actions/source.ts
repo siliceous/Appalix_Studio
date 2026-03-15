@@ -94,6 +94,41 @@ export async function createSource(formData: FormData) {
     // The form submits only the path + metadata — no binary payload goes through Vercel.
     const preuploaded = (formData.get('file_path') as string)?.trim()
     if (!preuploaded) throw new Error('No file uploaded')
+
+    // Enforce storage quota before accepting the source record
+    const newFileSizeBytes = parseInt((formData.get('file_size_bytes') as string) || '0', 10) || 0
+    if (newFileSizeBytes > 0) {
+      const { data: ws } = await admin
+        .from('workspaces')
+        .select('storage_limit_bytes, extra_storage_gb')
+        .eq('id', workspaceId)
+        .single()
+
+      if (ws && ws.storage_limit_bytes !== null) {
+        const limitBytes = ws.storage_limit_bytes + (ws.extra_storage_gb ?? 0) * 10 * 1024 * 1024 * 1024
+
+        const { data: usageResult } = await admin
+          .from('sources')
+          .select('file_size_bytes')
+          .eq('workspace_id', workspaceId)
+          .not('file_size_bytes', 'is', null)
+
+        const usedBytes = (usageResult ?? []).reduce(
+          (sum: number, row: { file_size_bytes: number | null }) => sum + (row.file_size_bytes ?? 0),
+          0,
+        )
+
+        if (usedBytes + newFileSizeBytes > limitBytes) {
+          const limitGb  = (limitBytes / (1024 ** 3)).toFixed(0)
+          const usedMb   = (usedBytes  / (1024 ** 2)).toFixed(1)
+          throw new Error(
+            `Storage limit reached (${usedMb} MB used of ${limitGb} GB). ` +
+            `Purchase extra storage in Settings → Upgrade.`,
+          )
+        }
+      }
+    }
+
     filePath = preuploaded
     metadata = {
       mime_type:     (formData.get('mime_type') as string) || 'application/octet-stream',
@@ -101,15 +136,20 @@ export async function createSource(formData: FormData) {
     }
   }
 
+  const fileSizeBytes = (type === 'file' || type === 'excel' || type === 'csv')
+    ? (parseInt((formData.get('file_size_bytes') as string) || '0', 10) || null)
+    : null
+
   const { data, error } = await admin
     .from('sources')
     .insert({
-      workspace_id: workspaceId,
+      workspace_id:    workspaceId,
       type,
       name,
       url,
-      file_path: filePath,
-      status:    'pending',
+      file_path:       filePath,
+      file_size_bytes: fileSizeBytes,
+      status:          'pending',
       metadata,
     })
     .select('id')

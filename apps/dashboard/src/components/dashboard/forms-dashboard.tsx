@@ -17,13 +17,13 @@ import { timeAgo, cn } from '@/lib/utils'
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const PRIORITY_DOT: Record<string, string> = {
-  high:   'bg-[#61c2ad]',
+  high:   'bg-[#15A4AE]',
   medium: 'bg-amber-400',
   low:    'bg-gray-300 dark:bg-gray-600',
 }
 
 const PRIORITY_BADGE: Record<string, string> = {
-  high:   'bg-[#61c2ad]/10 dark:bg-[#61c2ad]/15 text-[#3a9e8a] dark:text-[#61c2ad] border border-[#61c2ad]/30',
+  high:   'bg-[#15A4AE]/10 dark:bg-[#15A4AE]/15 text-[#3a9e8a] dark:text-[#15A4AE] border border-[#15A4AE]/30',
   medium: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200/70 dark:border-amber-500/18',
   low:    'bg-gray-100 dark:bg-white/5 text-gray-500 border border-gray-200 dark:border-white/10',
 }
@@ -161,7 +161,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
             <div className="flex flex-col items-center justify-center h-full p-4 text-center">
               <ClipboardList className="w-6 h-6 text-gray-300 dark:text-gray-600 mb-2" />
               <p className="text-xs text-gray-400">No forms yet</p>
-              <button onClick={() => router.push('/forms/sources')} className="mt-2 text-xs text-brand-600 dark:text-[#61c2ad] hover:underline">
+              <button onClick={() => router.push('/forms/sources')} className="mt-2 text-xs text-brand-600 dark:text-[#15A4AE] hover:underline">
                 Create your first form
               </button>
             </div>
@@ -174,7 +174,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
                 onClick={() => setSelectedFormId(form.id)}
                 className={cn(
                   'group flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors border-l-[3px]',
-                  active ? 'border-l-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/15' : 'border-l-transparent hover:bg-white dark:hover:bg-white/3'
+                  active ? 'border-l-[#15A4AE] bg-[#15A4AE]/8 dark:bg-[#15A4AE]/15' : 'border-l-transparent hover:bg-white dark:hover:bg-white/3'
                 )}
               >
                 <div className="flex-1 min-w-0">
@@ -187,7 +187,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
                   <button
                     onClick={e => { e.stopPropagation(); setShowEmbed(form.id) }}
                     title="Get embed code"
-                    className="p-0.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] rounded"
+                    className="p-0.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#15A4AE] rounded"
                   >
                     <ChevronRight className="w-3 h-3" />
                   </button>
@@ -221,7 +221,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
           <button
             onClick={() => void runAnalyze()}
             disabled={isAnalyzing || !selectedFormId}
-            className="flex items-center gap-1 text-[10px] font-medium text-brand-600 dark:text-[#61c2ad] hover:opacity-80 disabled:opacity-40 transition-opacity"
+            className="flex items-center gap-1 text-[10px] font-medium text-brand-600 dark:text-[#15A4AE] hover:opacity-80 disabled:opacity-40 transition-opacity"
           >
             {isAnalyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
             Analyse
@@ -235,7 +235,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
             <div className="flex flex-col items-center justify-center h-full p-4 text-center">
               <ClipboardList className="w-6 h-6 text-gray-300 dark:text-gray-600 mb-2" />
               <p className="text-xs text-gray-400">No submissions yet</p>
-              <button onClick={() => setShowEmbed(selectedFormId)} className="mt-2 text-xs text-brand-600 dark:text-[#61c2ad] hover:underline">
+              <button onClick={() => setShowEmbed(selectedFormId)} className="mt-2 text-xs text-brand-600 dark:text-[#15A4AE] hover:underline">
                 Get embed code →
               </button>
             </div>
@@ -249,10 +249,10 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
                 className={cn(
                   'px-3 py-2.5 cursor-pointer transition-colors border-l-[3px]',
                   selectedId === sub.id
-                    ? sub.ai_priority === 'high'   ? 'border-l-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/15'
+                    ? sub.ai_priority === 'high'   ? 'border-l-[#15A4AE] bg-[#15A4AE]/8 dark:bg-[#15A4AE]/15'
                     : sub.ai_priority === 'medium' ? 'border-l-amber-400 bg-amber-50 dark:bg-amber-500/15'
                     : sub.ai_priority === 'low'    ? 'border-l-gray-400  bg-gray-100 dark:bg-white/8'
-                    :                                'border-l-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/15'
+                    :                                'border-l-[#15A4AE] bg-[#15A4AE]/8 dark:bg-[#15A4AE]/15'
                     : 'border-l-transparent hover:bg-white dark:hover:bg-white/3'
                 )}
               >
@@ -397,7 +397,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
                   <Brain className="w-4 h-4 text-gray-300 dark:text-gray-600 shrink-0" />
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">AI analysis pending</p>
-                    <button onClick={() => void runAnalyze()} className="text-xs text-brand-600 dark:text-[#61c2ad] hover:underline mt-0.5">
+                    <button onClick={() => void runAnalyze()} className="text-xs text-brand-600 dark:text-[#15A4AE] hover:underline mt-0.5">
                       Analyse now →
                     </button>
                   </div>
@@ -418,7 +418,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
                       <ul className="space-y-1.5">
                         {selected.ai_insights.map((insight, i) => (
                           <li key={i} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-300">
-                            <span className="text-[#61c2ad] shrink-0 mt-0.5">•</span>
+                            <span className="text-[#15A4AE] shrink-0 mt-0.5">•</span>
                             {insight}
                           </li>
                         ))}

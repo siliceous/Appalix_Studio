@@ -86,7 +86,7 @@ export function ManageStagesModal({ pipelineId, initialStages, onClose, onSaved 
                   value={stage}
                   onChange={e => updateStage(i, e.target.value)}
                   placeholder="Stage name"
-                  className="flex-1 px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+                  className="flex-1 px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE]"
                 />
                 <button
                   type="button"
@@ -103,7 +103,7 @@ export function ManageStagesModal({ pipelineId, initialStages, onClose, onSaved 
           <button
             type="button"
             onClick={addStage}
-            className="flex items-center gap-1.5 text-xs font-medium text-[#3d9585] dark:text-[#61c2ad] hover:opacity-80 transition-opacity"
+            className="flex items-center gap-1.5 text-xs font-medium text-[#3d9585] dark:text-[#15A4AE] hover:opacity-80 transition-opacity"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Stage

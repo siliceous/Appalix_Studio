@@ -111,11 +111,17 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return
   }
 
-  // Resolve billing period start from Stripe subscription
+  // Resolve billing period start and trial end from Stripe subscription
   let billingPeriodStart: string | null = null
+  let trialEndsAt: string | null = null
+  let initialStatus: ReturnType<typeof stripeStatusToInternal> = 'active'
   if (subscriptionId) {
     const sub = await stripe.subscriptions.retrieve(subscriptionId)
     billingPeriodStart = new Date(sub.current_period_start * 1000).toISOString()
+    initialStatus = stripeStatusToInternal(sub.status)
+    if (sub.trial_end) {
+      trialEndsAt = new Date(sub.trial_end * 1000).toISOString()
+    }
   }
 
   // Attach conversation overage metered item to the subscription
@@ -140,16 +146,17 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       .from('workspaces')
       .update({
         plan,
-        subscription_status:    'active',
+        subscription_status:    initialStatus,
         stripe_customer_id:     customerId ?? null,
         stripe_subscription_id: subscriptionId ?? null,
         billing_email:          email,
         billing_period_start:   billingPeriodStart,
+        ...(trialEndsAt   ? { trial_ends_at:   trialEndsAt   } : {}),
         ...(overageItemId ? { overage_item_id: overageItemId } : {}),
         ...PLAN_LIMITS[plan],
       })
       .eq('id', metadata.workspace_id)
-    console.log(`[stripe] Workspace ${metadata.workspace_id} upgraded to ${plan}`)
+    console.log(`[stripe] Workspace ${metadata.workspace_id} upgraded to ${plan} (status: ${initialStatus})`)
     return
   }
 
@@ -177,11 +184,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       name:                   workspaceName,
       slug:                   `${slug}-${Date.now().toString(36)}`,
       plan,
-      subscription_status:    'active',
+      subscription_status:    initialStatus,
       stripe_customer_id:     customerId ?? null,
       stripe_subscription_id: subscriptionId ?? null,
       billing_email:          email,
       billing_period_start:   billingPeriodStart,
+      trial_ends_at:          trialEndsAt,
       overage_item_id:        overageItemId,
       ...PLAN_LIMITS[plan],
     })
@@ -311,12 +319,13 @@ const PLAN_LIMITS: Record<Plan, {
   bot_limit: number | null
   extra_seat_limit: number | null
   extra_bot_limit: number | null
+  storage_limit_bytes: number | null
 }> = {
-  //                                                                              seats  bots  extra seats  extra bots
-  individual: { monthly_message_limit:  5_000, monthly_agent_run_limit:     0, seat_limit:   1, bot_limit:  1, extra_seat_limit:    2, extra_bot_limit: null },
-  pro:        { monthly_message_limit: 15_000, monthly_agent_run_limit:   150, seat_limit:   3, bot_limit:  3, extra_seat_limit:    6, extra_bot_limit: null },
-  team:       { monthly_message_limit: 50_000, monthly_agent_run_limit:   500, seat_limit:  10, bot_limit: 10, extra_seat_limit: null, extra_bot_limit: null },
-  enterprise: { monthly_message_limit: 999_999, monthly_agent_run_limit: 9_999, seat_limit: null, bot_limit: null, extra_seat_limit: null, extra_bot_limit: null },
+  //                                                                              seats  bots  extra seats  extra bots  storage
+  individual: { monthly_message_limit:  5_000, monthly_agent_run_limit:     0, seat_limit:   1, bot_limit:  1, extra_seat_limit:    2, extra_bot_limit: null, storage_limit_bytes:  2_147_483_648 },  //  2 GB
+  pro:        { monthly_message_limit: 15_000, monthly_agent_run_limit:   150, seat_limit:   3, bot_limit:  3, extra_seat_limit:    6, extra_bot_limit: null, storage_limit_bytes: 10_737_418_240 },  // 10 GB
+  team:       { monthly_message_limit: 50_000, monthly_agent_run_limit:   500, seat_limit:  10, bot_limit: 10, extra_seat_limit: null, extra_bot_limit: null, storage_limit_bytes: 32_212_254_720 },  // 30 GB
+  enterprise: { monthly_message_limit: 999_999, monthly_agent_run_limit: 9_999, seat_limit: null, bot_limit: null, extra_seat_limit: null, extra_bot_limit: null, storage_limit_bytes: null },            // unlimited
 }
 
 function getPlanFromPrice(price?: Stripe.Price): Plan {

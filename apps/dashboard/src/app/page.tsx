@@ -224,26 +224,26 @@ export default async function HomePage() {
         <ScrollReveal>
           <div className="max-w-4xl mx-auto relative overflow-hidden text-center">
             {/* Animated glow orbs */}
-            <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[480px] h-48 bg-[#61c2ad]/15 rounded-full blur-[100px] animate-pulse pointer-events-none" />
+            <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[480px] h-48 bg-[#15A4AE]/15 rounded-full blur-[100px] animate-pulse pointer-events-none" />
             <div className="absolute -bottom-24 -left-16 w-72 h-72 bg-[#3873BB]/10 rounded-full blur-[120px] animate-pulse pointer-events-none" style={{ animationDelay: '1.2s' }} />
-            <div className="absolute -bottom-16 -right-16 w-56 h-56 bg-[#61c2ad]/08 rounded-full blur-[100px] animate-pulse pointer-events-none" style={{ animationDelay: '2.4s' }} />
+            <div className="absolute -bottom-16 -right-16 w-56 h-56 bg-[#15A4AE]/08 rounded-full blur-[100px] animate-pulse pointer-events-none" style={{ animationDelay: '2.4s' }} />
 
             <div className="relative">
               {/* Badge row */}
-              <div className="inline-flex items-center gap-2.5 mb-7 px-3.5 py-1.5 rounded-full border border-[#61c2ad]/25 bg-[#61c2ad]/[0.08]">
+              <div className="inline-flex items-center gap-2.5 mb-7 px-3.5 py-1.5 rounded-full border border-[#15A4AE]/25 bg-[#15A4AE]/[0.08]">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#61c2ad] opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#61c2ad]" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#15A4AE] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#15A4AE]" />
                 </span>
-                <span className="text-[11px] font-semibold tracking-widest uppercase text-[#61c2ad]">New</span>
-                <span className="w-px h-3 bg-[#61c2ad]/30" />
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#61c2ad]/15 border border-[#61c2ad]/25 text-[#61c2ad] uppercase tracking-wide">Pro+</span>
+                <span className="text-[11px] font-semibold tracking-widest uppercase text-[#15A4AE]">New</span>
+                <span className="w-px h-3 bg-[#15A4AE]/30" />
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#15A4AE]/15 border border-[#15A4AE]/25 text-[#15A4AE] uppercase tracking-wide">Pro+</span>
               </div>
 
               {/* Headline */}
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-5 leading-tight tracking-tight">
                 Introducing{' '}
-                <span className="text-[#61c2ad]">Appalix Sage</span>
+                <span className="text-[#15A4AE]">Appalix Sage</span>
               </h2>
 
               {/* Description */}
@@ -264,7 +264,7 @@ export default async function HomePage() {
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
                   href="/ai-assistant"
-                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-[#61c2ad] hover:bg-[#4eada0] text-white text-sm font-semibold transition-all shadow-lg shadow-[#61c2ad]/25"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-[#15A4AE] hover:bg-[#4eada0] text-white text-sm font-semibold transition-all shadow-lg shadow-[#15A4AE]/25"
                 >
                   Explore Sage →
                 </Link>

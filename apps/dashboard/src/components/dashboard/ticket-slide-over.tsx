@@ -145,7 +145,7 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
                 <select
                   value={localPriority}
                   onChange={e => handlePriorityChange(e.target.value)}
-                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 ${priorityStyle.badge}`}
+                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 ${priorityStyle.badge}`}
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -187,7 +187,7 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
                 className={cn(
                   'px-4 py-2 text-xs font-medium border-b-2 transition-colors capitalize',
                   tab === t
-                    ? 'border-[#61c2ad] text-[#3a9e8a] dark:text-[#61c2ad]'
+                    ? 'border-[#15A4AE] text-[#3a9e8a] dark:text-[#15A4AE]'
                     : 'border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
                 )}
               >
@@ -259,21 +259,21 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
                       placeholder="Name"
                       value={editName}
                       onChange={e => setEditName(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/50"
+                      className="w-full px-2.5 py-1.5 text-xs border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50"
                     />
                     <input
                       type="email"
                       placeholder="Email"
                       value={editEmail}
                       onChange={e => setEditEmail(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/50"
+                      className="w-full px-2.5 py-1.5 text-xs border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50"
                     />
                     <input
                       type="tel"
                       placeholder="Phone"
                       value={editPhone}
                       onChange={e => setEditPhone(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/50"
+                      className="w-full px-2.5 py-1.5 text-xs border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50"
                     />
                     <div className="flex gap-2 pt-1">
                       <button
@@ -305,8 +305,8 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
                   </div>
                 ) : (
                   <div className="flex items-start gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-[#61c2ad]/10 flex items-center justify-center shrink-0 mt-0.5">
-                      <User className="w-4 h-4 text-brand-600 dark:text-[#61c2ad]" />
+                    <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-[#15A4AE]/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <User className="w-4 h-4 text-brand-600 dark:text-[#15A4AE]" />
                     </div>
                     <div className="space-y-1 min-w-0">
                       {(ticket.name ?? ticket.contact?.name) ? (
@@ -419,7 +419,7 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
                   }
                   value={actTitle}
                   onChange={e => setActTitle(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/50"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50"
                 />
               )}
 
@@ -433,7 +433,7 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
                 }
                 value={actBody}
                 onChange={e => setActBody(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/50 resize-none"
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50 resize-none"
               />
 
               {/* Due date (tasks only) */}
@@ -442,7 +442,7 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
                   type="datetime-local"
                   value={actDue}
                   onChange={e => setActDue(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/50"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50"
                 />
               )}
 
@@ -505,7 +505,7 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
                               {isTask && !isCompleted && (
                                 <button
                                   onClick={() => void handleCompleteTask(act.id)}
-                                  className="text-[10px] text-[#3a9e8a] dark:text-[#61c2ad] hover:underline"
+                                  className="text-[10px] text-[#3a9e8a] dark:text-[#15A4AE] hover:underline"
                                 >
                                   Mark done
                                 </button>

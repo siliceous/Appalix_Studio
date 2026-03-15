@@ -127,7 +127,7 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
 
   const planBadgeCls =
     workspace.plan === 'enterprise' ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300' :
-    workspace.plan === 'pro'        ? 'bg-brand-100 text-brand-700 dark:bg-[#61c2ad]/10 dark:text-[#61c2ad]' :
+    workspace.plan === 'pro'        ? 'bg-brand-100 text-brand-700 dark:bg-[#15A4AE]/10 dark:text-[#15A4AE]' :
                                       'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
 
   const settingsActive = pathname.startsWith('/settings')
@@ -149,7 +149,7 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
           <div className="flex items-center gap-2.5 mb-3 min-w-0">
             <div
               className="w-8 h-8 shrink-0 rounded-xl flex items-center justify-center text-white font-black text-sm select-none"
-              style={{ backgroundColor: branding?.primary_color ?? '#61c2ad' }}
+              style={{ backgroundColor: branding?.primary_color ?? '#15A4AE' }}
             >
               {branding?.brand_name?.charAt(0).toUpperCase() ?? 'A'}
             </div>
@@ -192,14 +192,14 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
             className={cn(
               'flex items-center gap-2.5 rounded-lg py-1.5 min-w-0 transition-colors',
               settingsActive
-                ? 'group-hover:bg-brand-50 dark:group-hover:bg-[#61c2ad]/10 group-hover:ring-1 group-hover:ring-brand-200 dark:group-hover:ring-[#61c2ad]/20 group-hover:px-2'
+                ? 'group-hover:bg-brand-50 dark:group-hover:bg-[#15A4AE]/10 group-hover:ring-1 group-hover:ring-brand-200 dark:group-hover:ring-[#15A4AE]/20 group-hover:px-2'
                 : 'group-hover:bg-gray-50 dark:group-hover:bg-white/5 group-hover:hover:bg-gray-100 dark:group-hover:hover:bg-white/8 group-hover:px-2',
             )}
           >
             {/* Avatar — w-8 to align exactly under brand mark */}
             <div
               className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-white text-[10px] font-bold uppercase select-none"
-              style={{ backgroundColor: branding?.primary_color ?? '#61c2ad' }}
+              style={{ backgroundColor: branding?.primary_color ?? '#15A4AE' }}
             >
               {userName
                 ? userName.split(' ').map((w: string) => w[0]).slice(0, 2).join('')
@@ -235,7 +235,7 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
                         {group.label}
                       </p>
                       {group.pro && !isProPlan && (
-                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-brand-100 dark:bg-[#61c2ad]/10 text-brand-600 dark:text-[#61c2ad] font-bold whitespace-nowrap">
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-brand-100 dark:bg-[#15A4AE]/10 text-brand-600 dark:text-[#15A4AE] font-bold whitespace-nowrap">
                           Pro
                         </span>
                       )}
@@ -258,7 +258,7 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
                         ? 'px-2 group-hover:pl-7 pr-2 py-1.5 text-xs'
                         : 'px-2 py-2 text-sm',
                       active
-                        ? 'bg-brand-50 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad] font-medium'
+                        ? 'bg-brand-50 dark:bg-[#15A4AE]/10 text-brand-700 dark:text-[#15A4AE] font-medium'
                         : locked
                           ? 'text-gray-400 dark:text-gray-600 hover:bg-gray-50 dark:hover:bg-white/5'
                           : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white',

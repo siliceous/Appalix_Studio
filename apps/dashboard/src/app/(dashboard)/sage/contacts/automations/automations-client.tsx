@@ -143,7 +143,7 @@ export function AutomationsClient({ initialConnected }: AutomationsClientProps) 
             <div
               key={card.provider}
               className={`bg-white dark:bg-[#232323] rounded-xl border transition-all ${
-                isConnected ? 'border-brand-200 dark:border-[#61c2ad]/30' : 'dark:border-white/8'
+                isConnected ? 'border-brand-200 dark:border-[#15A4AE]/30' : 'dark:border-white/8'
               }`}
             >
               {/* Card header */}
@@ -155,7 +155,7 @@ export function AutomationsClient({ initialConnected }: AutomationsClientProps) 
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{card.name}</span>
                     {isConnected && (
-                      <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-brand-50 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad] font-medium">
+                      <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-brand-50 dark:bg-[#15A4AE]/10 text-brand-700 dark:text-[#15A4AE] font-medium">
                         <Check className="w-2.5 h-2.5" /> Connected
                       </span>
                     )}
@@ -200,7 +200,7 @@ export function AutomationsClient({ initialConnected }: AutomationsClientProps) 
                         value={values[field.name] ?? ''}
                         onChange={e => handleFieldChange(card.provider, field.name, e.target.value)}
                         placeholder={field.placeholder}
-                        className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#232323] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+                        className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#232323] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE]"
                       />
                       {field.hint && <p className="text-[11px] text-gray-400 mt-1">{field.hint}</p>}
                     </div>

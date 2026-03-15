@@ -26,8 +26,10 @@ const INTEGRATIONS: IntegrationCard[] = [
     description: 'Create and send invoices directly from deals. Stripe handles payment collection, receipts, and status tracking.',
     logo:        '💳',
     category:    'payments',
-    fields:      [],
-    oauthPath:   '/api/oauth/stripe',
+    fields: [
+      { name: 'secret_key',      label: 'Secret Key',      type: 'password', placeholder: 'sk_live_…', hint: 'Found in Stripe Dashboard → Developers → API keys' },
+      { name: 'publishable_key', label: 'Publishable Key', type: 'text',     placeholder: 'pk_live_…', hint: 'Used for client-side payment forms (optional but recommended)' },
+    ],
     tutorialUrl: '/resources/connect-sage-stripe',
   },
   {
@@ -41,6 +43,18 @@ const INTEGRATIONS: IntegrationCard[] = [
     ],
     docsUrl:     'https://zapier.com/apps/webhook',
     tutorialUrl: '/resources/connect-sage-zapier',
+  },
+  {
+    provider:    'make',
+    name:        'Make (Integromat)',
+    description: 'Trigger Make scenarios when Sage events fire — leads captured, deals updated, tickets created, and more.',
+    logo:        '🔄',
+    category:    'automation',
+    fields: [
+      { name: 'webhook_url', label: 'Webhook URL', type: 'url', placeholder: 'https://hook.eu1.make.com/…', hint: 'Create a "Custom webhook" module in Make and paste the URL here' },
+    ],
+    docsUrl:     'https://www.make.com/en/help/tools/webhooks',
+    tutorialUrl: '/resources/connect-sage-make',
   },
   {
     provider:    'gmail',
@@ -96,12 +110,10 @@ const INTEGRATIONS: IntegrationCard[] = [
     description: 'Sync contacts to Mailchimp audiences automatically and pull lead form data into your Forms section for AI analysis.',
     logo:        '🐒',
     category:    'email_marketing',
-    fields: [
-      { name: 'api_key',  label: 'API Key',        type: 'password', placeholder: 'Your Mailchimp API key', hint: 'Found in Mailchimp → Account → Extras → API Keys' },
-      { name: 'server',   label: 'Server Prefix',   type: 'text',     placeholder: 'us1 (from https://us1.api.mailchimp.com)', hint: 'The subdomain in your Mailchimp API endpoint URL' },
-      { name: 'list_id',  label: 'Audience ID',     type: 'text',     placeholder: 'Your audience/list ID', hint: 'Found in Audience → Settings → Audience name and defaults' },
-    ],
-    docsUrl: 'https://mailchimp.com/developer/marketing/guides/quick-start/',
+    fields:      [],
+    oauthPath:   '/api/oauth/mailchimp',
+    docsUrl:     'https://mailchimp.com/developer/marketing/guides/quick-start/',
+    tutorialUrl: '/resources/connect-sage-mailchimp',
   },
   {
     provider:    'activecampaign',
@@ -279,7 +291,8 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                 const isExpanded     = expanded === integration.provider
                 const isSaving       = saving === integration.provider
                 const values         = formValues[integration.provider] ?? {}
-                const allFilled      = integration.fields.every(f => (values[f.name] ?? '').trim().length > 0)
+                const requiredFields  = integration.fields.filter(f => f.name !== 'publishable_key')
+                const allFilled      = requiredFields.every(f => (values[f.name] ?? '').trim().length > 0)
                 const emailProviders = ['gmail', 'microsoft']
                 const otherEmailConnected =
                   integration.category === 'email' &&
@@ -291,7 +304,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                     key={integration.provider}
                     className={`bg-white dark:bg-[#232323] rounded-xl border transition-all ${
                       isConnected
-                        ? 'border-brand-200 dark:border-[#61c2ad]/30'
+                        ? 'border-brand-200 dark:border-[#15A4AE]/30'
                         : 'dark:border-white/8'
                     }`}
                   >
@@ -304,11 +317,11 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{integration.name}</span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-[#61c2ad]/12 text-[#3a9e8a] dark:text-[#61c2ad] border border-[#61c2ad]/25">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-[#15A4AE]/12 text-[#3a9e8a] dark:text-[#15A4AE] border border-[#15A4AE]/25">
                             Sage
                           </span>
                           {isConnected && (
-                            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-brand-50 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad] font-medium">
+                            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-brand-50 dark:bg-[#15A4AE]/10 text-brand-700 dark:text-[#15A4AE] font-medium">
                               <Check className="w-2.5 h-2.5" /> Connected
                             </span>
                           )}
@@ -323,7 +336,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                           <Link
                             href={integration.tutorialUrl}
                             target="_blank"
-                            className="flex items-center gap-1 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad]"
+                            className="flex items-center gap-1 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors text-gray-400 hover:text-brand-600 dark:hover:text-[#15A4AE]"
                             title="Setup guide"
                           >
                             <BookOpen className="w-3.5 h-3.5" />
@@ -428,7 +441,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                               contentEditable
                               suppressContentEditableWarning
                               data-placeholder="Type your signature here… e.g. Name, title, phone, website"
-                              className="min-h-[100px] px-3 py-2.5 rounded-lg border dark:border-white/10 bg-white dark:bg-[#232323] text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad] empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400"
+                              className="min-h-[100px] px-3 py-2.5 rounded-lg border dark:border-white/10 bg-white dark:bg-[#232323] text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE] empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400"
                             />
 
                             <div className="flex items-center justify-between">
@@ -460,7 +473,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                               value={values[field.name] ?? ''}
                               onChange={e => handleFieldChange(integration.provider, field.name, e.target.value)}
                               placeholder={field.placeholder}
-                              className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#232323] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+                              className="w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#232323] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE]"
                             />
                             {field.hint && (
                               <p className="text-[11px] text-gray-400 mt-1">{field.hint}</p>

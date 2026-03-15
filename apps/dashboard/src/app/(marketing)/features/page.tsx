@@ -173,17 +173,17 @@ export default function FeaturesPage() {
                 <tbody>
                   {COMPARISON.map((row, i) =>
                     'sage' in row && row.sage ? (
-                      <tr key={row.feature} className="border-b border-[#61c2ad]/20 bg-[#61c2ad]/[0.04]">
+                      <tr key={row.feature} className="border-b border-[#15A4AE]/20 bg-[#15A4AE]/[0.04]">
                         <td className="py-3 pr-6">
-                          <span className="inline-flex items-center gap-1.5 text-[#61c2ad] font-semibold text-sm">
+                          <span className="inline-flex items-center gap-1.5 text-[#15A4AE] font-semibold text-sm">
                             <span className="text-[10px]">✦</span>
                             {row.feature}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-center text-gray-500">{row.starter}</td>
                         <td className="py-3 px-4 text-center text-gray-500">{row.core}</td>
-                        <td className="py-3 px-4 text-center text-[#61c2ad] font-semibold">{row.pro}</td>
-                        <td className="py-3 px-4 text-center text-[#61c2ad] font-semibold">{row.scale}</td>
+                        <td className="py-3 px-4 text-center text-[#15A4AE] font-semibold">{row.pro}</td>
+                        <td className="py-3 px-4 text-center text-[#15A4AE] font-semibold">{row.scale}</td>
                       </tr>
                     ) : (
                       <tr key={row.feature} className={`border-b border-white/5 ${i % 2 === 0 ? '' : 'bg-white/[0.02]'}`}>

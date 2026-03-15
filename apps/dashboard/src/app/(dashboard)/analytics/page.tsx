@@ -253,7 +253,7 @@ export default async function AnalyticsPage() {
                           </div>
                           <div className="w-24 bg-gray-100 dark:bg-white/8 rounded-full h-1.5 shrink-0">
                             <div
-                              className="bg-brand-500 dark:bg-[#61c2ad] h-1.5 rounded-full"
+                              className="bg-brand-500 dark:bg-[#15A4AE] h-1.5 rounded-full"
                               style={{ width: `${Math.round((count / total) * 100)}%` }}
                             />
                           </div>
@@ -282,7 +282,7 @@ export default async function AnalyticsPage() {
                           </div>
                           <div className="h-1.5 rounded-full bg-gray-100 dark:bg-white/8">
                             <div
-                              className="h-1.5 rounded-full bg-brand-500 dark:bg-[#61c2ad]"
+                              className="h-1.5 rounded-full bg-brand-500 dark:bg-[#15A4AE]"
                               style={{ width: `${Math.round((count / total) * 100)}%` }}
                             />
                           </div>

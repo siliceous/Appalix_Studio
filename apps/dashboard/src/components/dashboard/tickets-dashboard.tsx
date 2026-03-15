@@ -171,7 +171,7 @@ export function TicketsDashboard({ tickets: initialTickets }: { tickets: TicketR
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => setSlideTicket(selected)}
-                    className="flex items-center gap-1 text-xs text-brand-600 dark:text-[#61c2ad] hover:underline"
+                    className="flex items-center gap-1 text-xs text-brand-600 dark:text-[#15A4AE] hover:underline"
                     title="Open full detail & activity"
                   >
                     <Pencil className="w-3 h-3" />

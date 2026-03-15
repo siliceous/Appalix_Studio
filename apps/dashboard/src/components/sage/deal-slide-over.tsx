@@ -307,8 +307,8 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
             <div className="px-5 pt-5 pb-0 border-b dark:border-white/8 shrink-0">
               <div className="flex items-start gap-3 mb-4">
                 {/* Avatar */}
-                <div className="w-10 h-10 rounded-xl bg-brand-100 dark:bg-[#61c2ad]/15 flex items-center justify-center shrink-0">
-                  <span className="text-sm font-bold text-brand-700 dark:text-[#61c2ad]">
+                <div className="w-10 h-10 rounded-xl bg-brand-100 dark:bg-[#15A4AE]/15 flex items-center justify-center shrink-0">
+                  <span className="text-sm font-bold text-brand-700 dark:text-[#15A4AE]">
                     {dealTitle.charAt(0).toUpperCase()}
                   </span>
                 </div>
@@ -358,7 +358,7 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                   <button
                     onClick={() => setShowEditForm(v => !v)}
                     title="Edit deal"
-                    className={`p-1.5 rounded-lg transition-colors ${showEditForm ? 'bg-brand-50 dark:bg-[#61c2ad]/10 text-brand-600 dark:text-[#61c2ad]' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8'}`}
+                    className={`p-1.5 rounded-lg transition-colors ${showEditForm ? 'bg-brand-50 dark:bg-[#15A4AE]/10 text-brand-600 dark:text-[#15A4AE]' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8'}`}
                   >
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
@@ -379,7 +379,7 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                     onClick={() => setActiveTab(tab)}
                     className={`px-4 py-2 text-xs font-semibold capitalize transition-colors border-b-2 ${
                       activeTab === tab
-                        ? 'border-brand-600 dark:border-[#61c2ad] text-brand-700 dark:text-[#61c2ad]'
+                        ? 'border-brand-600 dark:border-[#15A4AE] text-brand-700 dark:text-[#15A4AE]'
                         : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                     }`}
                   >
@@ -428,16 +428,16 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1">Edit Deal</p>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Title</label>
-                  <input name="title" type="text" required defaultValue={dealTitle} className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]" />
+                  <input name="title" type="text" required defaultValue={dealTitle} className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE]" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Value</label>
-                    <input name="value" type="number" min="0" step="0.01" defaultValue={dealValue ?? ''} placeholder="0.00" className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]" />
+                    <input name="value" type="number" min="0" step="0.01" defaultValue={dealValue ?? ''} placeholder="0.00" className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE]" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Currency</label>
-                    <select name="currency" defaultValue={dealCurrency} className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]">
+                    <select name="currency" defaultValue={dealCurrency} className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE]">
                       <option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option>
                       <option value="AUD">AUD</option><option value="CAD">CAD</option><option value="NZD">NZD</option>
                     </select>
@@ -446,11 +446,11 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Close Date</label>
-                    <input name="close_date" type="date" defaultValue={dealCloseDate ?? ''} className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad] dark:[color-scheme:dark]" />
+                    <input name="close_date" type="date" defaultValue={dealCloseDate ?? ''} className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE] dark:[color-scheme:dark]" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Priority</label>
-                    <select name="priority" defaultValue={dealPriority ?? ''} className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]">
+                    <select name="priority" defaultValue={dealPriority ?? ''} className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE]">
                       <option value="">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
                     </select>
                   </div>
@@ -458,14 +458,14 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                 {stages && stages.length > 0 && (
                   <div>
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Stage</label>
-                    <select name="stage_id" defaultValue={(deal?.stage_id as string) ?? ''} className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]">
+                    <select name="stage_id" defaultValue={(deal?.stage_id as string) ?? ''} className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE]">
                       {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
                   </div>
                 )}
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Description</label>
-                  <textarea name="description" rows={2} defaultValue={dealDesc ?? ''} placeholder="Add notes…" className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad] resize-none" />
+                  <textarea name="description" rows={2} defaultValue={dealDesc ?? ''} placeholder="Add notes…" className="w-full px-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE] resize-none" />
                 </div>
                 <div className="flex gap-2 pt-1">
                   {confirmDelete ? (
@@ -604,8 +604,8 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                     <div className="rounded-xl border dark:border-white/8 overflow-hidden">
                       {/* Contact header */}
                       <div className="flex items-center gap-3 px-3.5 py-3 bg-gray-50 dark:bg-white/[0.03] border-b dark:border-white/8">
-                        <div className="w-9 h-9 rounded-full bg-brand-100 dark:bg-[#61c2ad]/15 flex items-center justify-center shrink-0">
-                          <span className="text-sm font-bold text-brand-700 dark:text-[#61c2ad]">
+                        <div className="w-9 h-9 rounded-full bg-brand-100 dark:bg-[#15A4AE]/15 flex items-center justify-center shrink-0">
+                          <span className="text-sm font-bold text-brand-700 dark:text-[#15A4AE]">
                             {contactName.charAt(0).toUpperCase()}
                           </span>
                         </div>
@@ -613,7 +613,7 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{contactName}</p>
                           {contactTitle && <p className="text-xs text-gray-400">{contactTitle}</p>}
                           {contactType && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-50 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad] font-medium capitalize">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-50 dark:bg-[#15A4AE]/10 text-brand-700 dark:text-[#15A4AE] font-medium capitalize">
                               {contactType.replace(/_/g, ' ')}
                             </span>
                           )}
@@ -622,12 +622,12 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => setEditingContactId(contactId)}
-                              className="p-1.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] hover:bg-gray-100 dark:hover:bg-white/8 rounded-lg transition-colors"
+                              className="p-1.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#15A4AE] hover:bg-gray-100 dark:hover:bg-white/8 rounded-lg transition-colors"
                               title="Edit contact"
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
-                            <a href={`/sage/contacts/${contactId}`} className="p-1.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] hover:bg-gray-100 dark:hover:bg-white/8 rounded-lg transition-colors">
+                            <a href={`/sage/contacts/${contactId}`} className="p-1.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#15A4AE] hover:bg-gray-100 dark:hover:bg-white/8 rounded-lg transition-colors">
                               <ExternalLink className="w-3.5 h-3.5" />
                             </a>
                           </div>
@@ -639,13 +639,13 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                         {contactEmail && (
                           <div className="flex items-center gap-2.5 px-3.5 py-2.5">
                             <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                            <a href={`mailto:${contactEmail}`} className="text-xs text-gray-700 dark:text-gray-300 hover:text-brand-600 dark:hover:text-[#61c2ad] transition-colors truncate">{contactEmail}</a>
+                            <a href={`mailto:${contactEmail}`} className="text-xs text-gray-700 dark:text-gray-300 hover:text-brand-600 dark:hover:text-[#15A4AE] transition-colors truncate">{contactEmail}</a>
                           </div>
                         )}
                         {contactPhone && (
                           <div className="flex items-center gap-2.5 px-3.5 py-2.5">
                             <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                            <a href={`tel:${contactPhone}`} className="text-xs text-gray-700 dark:text-gray-300 hover:text-brand-600 dark:hover:text-[#61c2ad] transition-colors">{contactPhone}</a>
+                            <a href={`tel:${contactPhone}`} className="text-xs text-gray-700 dark:text-gray-300 hover:text-brand-600 dark:hover:text-[#15A4AE] transition-colors">{contactPhone}</a>
                           </div>
                         )}
                         {contactCompany && (
@@ -657,7 +657,7 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                         {contactWebsite && (
                           <div className="flex items-center gap-2.5 px-3.5 py-2.5">
                             <Globe className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                            <a href={contactWebsite.startsWith('http') ? contactWebsite : `https://${contactWebsite}`} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-700 dark:text-gray-300 hover:text-brand-600 dark:hover:text-[#61c2ad] transition-colors truncate">
+                            <a href={contactWebsite.startsWith('http') ? contactWebsite : `https://${contactWebsite}`} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-700 dark:text-gray-300 hover:text-brand-600 dark:hover:text-[#15A4AE] transition-colors truncate">
                               {contactWebsite}
                             </a>
                           </div>
@@ -740,7 +740,7 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                           {overdue.length > 0 && (
                             <button
                               onClick={() => setActiveTab('activity')}
-                              className="text-[10px] text-brand-600 dark:text-[#61c2ad] hover:underline flex items-center gap-0.5"
+                              className="text-[10px] text-brand-600 dark:text-[#15A4AE] hover:underline flex items-center gap-0.5"
                             >
                               View all <ChevronRight className="w-3 h-3" />
                             </button>
@@ -770,7 +770,7 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                                       <button
                                         onClick={() => handleCompleteTask(act.id)}
                                         disabled={isPending}
-                                        className="flex items-center gap-1 text-[10px] text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] transition-colors disabled:opacity-50"
+                                        className="flex items-center gap-1 text-[10px] text-gray-400 hover:text-brand-600 dark:hover:text-[#15A4AE] transition-colors disabled:opacity-50"
                                       >
                                         <Check className="w-3 h-3" /> Done
                                       </button>
@@ -798,7 +798,7 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                   )}
 
                   {dealPipelineId && (
-                    <a href={`/sage/pipelines/${dealPipelineId}`} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] transition-colors">
+                    <a href={`/sage/pipelines/${dealPipelineId}`} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-brand-600 dark:hover:text-[#15A4AE] transition-colors">
                       View in Pipeline <ChevronRight className="w-3.5 h-3.5" />
                     </a>
                   )}
@@ -848,7 +848,7 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                         onClick={() => { setShowAddForm(true); setShowReminderForm(false); setAddType('call') }}
                         className={`flex-1 px-3 py-2.5 text-xs font-semibold transition-colors ${
                           showAddForm && addType !== 'note'
-                            ? 'text-brand-700 dark:text-[#61c2ad] border-b-2 border-brand-600 dark:border-[#61c2ad]'
+                            ? 'text-brand-700 dark:text-[#15A4AE] border-b-2 border-brand-600 dark:border-[#15A4AE]'
                             : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                         }`}
                       >
@@ -858,7 +858,7 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                         onClick={() => { setShowAddForm(true); setShowReminderForm(false); setAddType('note') }}
                         className={`flex-1 px-3 py-2.5 text-xs font-semibold transition-colors ${
                           showAddForm && addType === 'note'
-                            ? 'text-brand-700 dark:text-[#61c2ad] border-b-2 border-brand-600 dark:border-[#61c2ad]'
+                            ? 'text-brand-700 dark:text-[#15A4AE] border-b-2 border-brand-600 dark:border-[#15A4AE]'
                             : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                         }`}
                       >
@@ -886,7 +886,7 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                                     onClick={() => { setAddType(t); setShowTypeMenu(false) }}
                                     className={`w-full text-left px-3 py-2 text-xs transition-colors ${
                                       addType === t
-                                        ? 'text-brand-700 dark:text-[#61c2ad] bg-brand-50 dark:bg-[#61c2ad]/10'
+                                        ? 'text-brand-700 dark:text-[#15A4AE] bg-brand-50 dark:bg-[#15A4AE]/10'
                                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
                                     }`}
                                   >

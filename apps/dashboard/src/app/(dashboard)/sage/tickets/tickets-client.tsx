@@ -183,7 +183,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Choose the primary ticket to keep. The others will be closed and their content appended to it.</p>
             <div className="space-y-2 mb-5">
               {selectedTickets.map(t => (
-                <label key={t.id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${primaryId === t.id ? 'border-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/12' : 'border-gray-200 dark:border-white/15 bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/8'}`}>
+                <label key={t.id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${primaryId === t.id ? 'border-[#15A4AE] bg-[#15A4AE]/8 dark:bg-[#15A4AE]/12' : 'border-gray-200 dark:border-white/15 bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/8'}`}>
                   <input
                     type="radio"
                     name="primary"
@@ -208,7 +208,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
               <button
                 onClick={handleMerge}
                 disabled={!primaryId || merging}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm bg-[#61c2ad] hover:bg-[#4aab96] text-white font-medium rounded-xl transition-colors disabled:opacity-60"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm bg-[#15A4AE] hover:bg-[#4aab96] text-white font-medium rounded-xl transition-colors disabled:opacity-60"
               >
                 {merging ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Merge className="w-3.5 h-3.5" />}
                 {merging ? 'Merging…' : 'Merge'}
@@ -240,7 +240,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
           {canWrite && selectedIds.size >= 2 && (
             <button
               onClick={() => { setPrimaryId([...selectedIds][0]); setShowMerge(true) }}
-              className="flex items-center gap-2 px-4 py-2 bg-[#61c2ad] hover:bg-[#4aab96] text-white text-sm font-medium rounded-xl transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-[#15A4AE] hover:bg-[#4aab96] text-white text-sm font-medium rounded-xl transition-colors"
             >
               <Merge className="w-4 h-4" />
               Merge {selectedIds.size}
@@ -274,7 +274,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search tickets…"
-              className="w-full pl-8 pr-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
+              className="w-full pl-8 pr-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
             />
             {search && (
               <button onClick={() => setSearch('')}
@@ -290,7 +290,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
                 type="checkbox"
                 checked={allSelected}
                 onChange={toggleSelectAll}
-                className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-[#61c2ad] cursor-pointer"
+                className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-[#15A4AE] cursor-pointer"
               />
               All
             </label>
@@ -303,7 +303,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
                 onClick={() => setFilter(f.value)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                   filter === f.value
-                    ? 'bg-[#61c2ad]/15 dark:bg-[#61c2ad]/20 text-[#1f6157] dark:text-[#61c2ad] border border-[#61c2ad]/30'
+                    ? 'bg-[#15A4AE]/15 dark:bg-[#15A4AE]/20 text-[#1f6157] dark:text-[#15A4AE] border border-[#15A4AE]/30'
                     : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
                 }`}
               >
@@ -326,7 +326,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
               {filter === 'all' ? 'No tickets yet.' : `No ${filter} tickets.`}
             </p>
             {filter === 'all' && canWrite && (
-              <button onClick={() => setShowModal(true)} className="mt-3 text-sm text-brand-600 dark:text-[#61c2ad] hover:underline">
+              <button onClick={() => setShowModal(true)} className="mt-3 text-sm text-brand-600 dark:text-[#15A4AE] hover:underline">
                 Create your first ticket →
               </button>
             )}
@@ -340,7 +340,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
               const cpConfig = PRIORITY_CONFIG[currentPriority] ?? PRIORITY_CONFIG.medium
               const isSelected = selectedIds.has(ticket.id)
               return (
-                <div key={ticket.id} onClick={() => setSlideTicket(ticket)} className={`flex items-start gap-4 px-5 py-4 transition-colors cursor-pointer ${isSelected ? 'bg-[#61c2ad]/10 ring-1 ring-inset ring-[#61c2ad]/30' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}>
+                <div key={ticket.id} onClick={() => setSlideTicket(ticket)} className={`flex items-start gap-4 px-5 py-4 transition-colors cursor-pointer ${isSelected ? 'bg-[#15A4AE]/10 ring-1 ring-inset ring-[#15A4AE]/30' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}>
                   {/* Checkbox — only for users who can write (merge requires canWrite) */}
                   {canWrite && (
                     <input
@@ -348,7 +348,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
                       checked={isSelected}
                       onChange={() => toggleSelect(ticket.id)}
                       onClick={e => e.stopPropagation()}
-                      className="mt-1 shrink-0 w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-[#61c2ad] cursor-pointer"
+                      className="mt-1 shrink-0 w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-[#15A4AE] cursor-pointer"
                     />
                   )}
                   {/* Priority selector */}
@@ -357,7 +357,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
                       <select
                         value={currentPriority}
                         onChange={e => handlePriorityChange(ticket.id, e.target.value as SageTicketPriority)}
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-medium border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 ${cpConfig.color}`}
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-medium border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 ${cpConfig.color}`}
                       >
                         <option value="low">Low</option>
                         <option value="medium">Medium</option>
@@ -394,7 +394,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
                       <select
                         value={ticket.status}
                         onChange={e => handleStatusChange(ticket.id, e.target.value as SageTicketStatus)}
-                        className={`text-xs px-2.5 py-1 rounded-lg font-medium border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad] ${sc.color}`}
+                        className={`text-xs px-2.5 py-1 rounded-lg font-medium border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE] ${sc.color}`}
                       >
                         <option value="open">Open</option>
                         <option value="in_progress">In Progress</option>
@@ -415,7 +415,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
                           value={assignedMap[ticket.id] ?? ''}
                           onChange={e => handleAssign(ticket.id, e.target.value)}
                           disabled={assigning}
-                          className="appearance-none pl-2 pr-6 py-1 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/8 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad] transition-colors disabled:opacity-50 max-w-[120px]"
+                          className="appearance-none pl-2 pr-6 py-1 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/8 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE] transition-colors disabled:opacity-50 max-w-[120px]"
                         >
                           <option value="">Unassigned</option>
                           {members.map(m => (

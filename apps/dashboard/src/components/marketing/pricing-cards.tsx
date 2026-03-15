@@ -4,7 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { ContactSalesButton } from '@/components/marketing/contact-sales-button'
 
-const EXTRA_BOT  = { annual: 19, monthly: 29 }
+const EXTRA_BOT     = { annual: 19, monthly: 29 }
+const EXTRA_STORAGE = { annual: 5,  monthly: 7  }   // per 10 GB block
 
 const PLANS = [
   {
@@ -17,12 +18,14 @@ const PLANS = [
     seats: 1,
     bots: 1,
     conversations: '5,000',
+    storage: '2 GB',
     extraSeats: 'Up to 2 extra seats',
     extraBots: true,
     features: [
       '1 seat included',
       '1 AI bot',
       '5,000 messages / month',
+      '2 GB storage',
       'Sage AI CRM assistant',
       'Lead capture & pipeline',
       'Email & form integration',
@@ -41,12 +44,14 @@ const PLANS = [
     seats: 3,
     bots: 3,
     conversations: '15,000',
+    storage: '10 GB',
     extraSeats: 'Up to 6 extra seats',
     extraBots: true,
     features: [
       '3 seats included',
       '3 AI bots',
       '15,000 messages / month',
+      '10 GB storage',
       'Sage AI CRM assistant',
       'Lead capture & pipeline',
       'All platform integrations',
@@ -68,12 +73,14 @@ const PLANS = [
     seats: 10,
     bots: 10,
     conversations: '50,000',
+    storage: '30 GB',
     extraSeats: 'Unlimited extra seats',
     extraBots: true,
     features: [
       '10 seats included',
       '10 AI bots',
       '50,000 messages / month',
+      '30 GB storage',
       'Sage AI CRM assistant',
       'All platform integrations',
       'Human handoff',
@@ -203,20 +210,26 @@ export function PricingCards() {
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/8 text-gray-300 border border-white/10">
                   {plan.conversations} msg/mo
                 </span>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/8 text-gray-300 border border-white/10">
+                  {plan.storage} storage
+                </span>
               </div>
 
               {/* Extra seat + bot + overage notes */}
               <div className="flex flex-col gap-0.5 mb-4">
                 {plan.extraSeats && (
-                  <p className="text-[11px] text-[#61c2ad]">
+                  <p className="text-[11px] text-[#15A4AE]">
                     + {plan.extraSeats} at ${isAnnual ? EXTRA_SEAT.annual : EXTRA_SEAT.monthly}/seat/mo
                   </p>
                 )}
                 {plan.extraBots && (
-                  <p className="text-[11px] text-[#61c2ad]">
+                  <p className="text-[11px] text-[#15A4AE]">
                     + Extra bots at ${isAnnual ? EXTRA_BOT.annual : EXTRA_BOT.monthly}/bot/mo
                   </p>
                 )}
+                <p className="text-[11px] text-[#15A4AE]">
+                  + Extra storage at ${isAnnual ? EXTRA_STORAGE.annual : EXTRA_STORAGE.monthly}/10 GB/mo
+                </p>
                 <p className="text-[11px] text-gray-500">
                   $10 per 1,000 extra conversations
                 </p>
@@ -227,7 +240,7 @@ export function PricingCards() {
                 {plan.features.map((f) =>
                   f === 'Sage AI CRM assistant' ? (
                     <li key={f}>
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#61c2ad]/10 border border-[#61c2ad]/30 text-[#61c2ad] text-xs font-semibold">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#15A4AE]/10 border border-[#15A4AE]/30 text-[#15A4AE] text-xs font-semibold">
                         <span className="text-[10px]">✦</span>
                         Sage AI CRM assistant
                       </span>

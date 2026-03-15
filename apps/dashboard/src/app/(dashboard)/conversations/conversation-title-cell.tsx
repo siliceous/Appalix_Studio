@@ -28,7 +28,7 @@ export function ConversationTitleCell({ id, title }: Props) {
     <span className="group inline-flex items-center gap-1.5">
       <a
         href={`/conversations/${id}`}
-        className="font-medium text-gray-900 dark:text-gray-100 hover:text-brand-700 dark:hover:text-[#61c2ad]"
+        className="font-medium text-gray-900 dark:text-gray-100 hover:text-brand-700 dark:hover:text-[#15A4AE]"
       >
         {title ?? 'Untitled'}
       </a>
@@ -36,7 +36,7 @@ export function ConversationTitleCell({ id, title }: Props) {
         onClick={handleRename}
         disabled={isPending}
         title="Rename conversation"
-        className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] rounded transition-all disabled:opacity-30"
+        className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#15A4AE] rounded transition-all disabled:opacity-30"
       >
         <Pencil className="w-3 h-3" />
       </button>

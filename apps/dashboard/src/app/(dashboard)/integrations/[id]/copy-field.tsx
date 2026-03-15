@@ -48,7 +48,7 @@ export function CopyField({ value, secret = false, multiline = false }: CopyFiel
         )}
         <button
           onClick={handleCopy}
-          className="p-2 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 dark:hover:bg-[#61c2ad]/10 dark:hover:text-[#61c2ad] transition-colors"
+          className="p-2 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 dark:hover:bg-[#15A4AE]/10 dark:hover:text-[#15A4AE] transition-colors"
           title="Copy"
         >
           {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}

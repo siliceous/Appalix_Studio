@@ -50,7 +50,7 @@ export default function TeamOnboardingGuidePage() {
 
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
-            <span className="text-xs px-2 py-0.5 rounded-full bg-[#61c2ad]/15 text-[#61c2ad] border border-[#61c2ad]/20 font-medium">Guide</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#15A4AE]/15 text-[#15A4AE] border border-[#15A4AE]/20 font-medium">Guide</span>
             <span className="text-xs text-gray-500">15 min read · All plans</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">

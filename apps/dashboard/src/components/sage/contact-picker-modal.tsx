@@ -45,7 +45,7 @@ export function ContactPickerModal({ contacts, onSelect, onClose }: ContactPicke
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="Search contacts…"
-              className="w-full pl-8 pr-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+              className="w-full pl-8 pr-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE]"
             />
           </div>
         </div>
@@ -61,10 +61,10 @@ export function ContactPickerModal({ contacts, onSelect, onClose }: ContactPicke
             <button
               key={contact.id}
               onClick={() => { onSelect(contact); onClose() }}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-brand-50 dark:hover:bg-[#61c2ad]/8 transition-colors text-left"
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-brand-50 dark:hover:bg-[#15A4AE]/8 transition-colors text-left"
             >
-              <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-[#61c2ad]/15 flex items-center justify-center shrink-0">
-                <span className="text-xs font-semibold text-brand-600 dark:text-[#61c2ad]">
+              <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-[#15A4AE]/15 flex items-center justify-center shrink-0">
+                <span className="text-xs font-semibold text-brand-600 dark:text-[#15A4AE]">
                   {contact.name.charAt(0).toUpperCase()}
                 </span>
               </div>

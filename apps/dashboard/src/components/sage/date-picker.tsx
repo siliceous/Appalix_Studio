@@ -140,7 +140,7 @@ export function DatePicker({ name, value, onChange, placeholder = 'Pick a date',
                 key={label}
                 type="button"
                 onClick={() => select(date)}
-                className="flex-1 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-brand-50 dark:hover:bg-[#61c2ad]/10 hover:text-brand-700 dark:hover:text-[#61c2ad] hover:border-brand-300 dark:hover:border-[#61c2ad]/30 transition-colors"
+                className="flex-1 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-brand-50 dark:hover:bg-[#15A4AE]/10 hover:text-brand-700 dark:hover:text-[#15A4AE] hover:border-brand-300 dark:hover:border-[#15A4AE]/30 transition-colors"
               >
                 {label}
               </button>
@@ -180,9 +180,9 @@ export function DatePicker({ name, value, onChange, placeholder = 'Pick a date',
                   onClick={() => select(date)}
                   className={`w-full aspect-square flex items-center justify-center text-xs rounded-full font-medium transition-colors ${
                     isSelected
-                      ? 'bg-brand-600 dark:bg-[#61c2ad] text-white dark:text-[#1c1c1c] font-bold'
+                      ? 'bg-brand-600 dark:bg-[#15A4AE] text-white dark:text-[#1c1c1c] font-bold'
                       : isToday
-                      ? 'bg-brand-50 dark:bg-[#61c2ad]/15 text-brand-700 dark:text-[#61c2ad] font-bold'
+                      ? 'bg-brand-50 dark:bg-[#15A4AE]/15 text-brand-700 dark:text-[#15A4AE] font-bold'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/8'
                   }`}
                 >

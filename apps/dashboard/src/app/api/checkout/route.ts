@@ -19,8 +19,11 @@ const PRICE_IDS: Record<string, string | undefined> = {
   extra_seat_monthly: process.env.STRIPE_PRICE_EXTRA_SEAT_MONTHLY,
   extra_seat_annual:  process.env.STRIPE_PRICE_EXTRA_SEAT_ANNUAL,
   // Extra bot add-on
-  extra_bot_monthly:  process.env.STRIPE_PRICE_EXTRA_BOT_MONTHLY,
-  extra_bot_annual:   process.env.STRIPE_PRICE_EXTRA_BOT_ANNUAL,
+  extra_bot_monthly:     process.env.STRIPE_PRICE_EXTRA_BOT_MONTHLY,
+  extra_bot_annual:      process.env.STRIPE_PRICE_EXTRA_BOT_ANNUAL,
+  // Extra storage add-on — sold in 10 GB blocks, billed monthly or annually
+  extra_storage_monthly: process.env.STRIPE_PRICE_EXTRA_STORAGE_MONTHLY,
+  extra_storage_annual:  process.env.STRIPE_PRICE_EXTRA_STORAGE_ANNUAL,
   // NOTE: conversation overage (STRIPE_PRICE_OVERAGE_CONV) is a metered price
   // attached server-side after checkout in the webhook — not selectable here.
 }
@@ -77,13 +80,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: portal.url })
   }
 
-  // No subscription yet → new checkout session
+  // No subscription yet → new checkout session with 7-day free trial
   const session = await stripe.checkout.sessions.create({
     mode:                 'subscription',
     payment_method_types: ['card'],
     customer:             stripe_customer_id ?? undefined,
     customer_email:       stripe_customer_id ? undefined : user.email,
     line_items:           [{ price: priceId, quantity: 1 }],
+    subscription_data: {
+      trial_period_days: 7,
+    },
+    payment_method_collection: 'if_required',
     metadata: {
       plan,
       billing:      billing ?? 'monthly',

@@ -18,7 +18,7 @@ interface Post {
 
 const CATEGORY_COLORS: Record<string, string> = {
   Tutorial:       'bg-brand-600/15 text-brand-400 border-brand-600/20',
-  Guide:          'bg-[#61c2ad]/15 text-[#61c2ad] border-[#61c2ad]/20',
+  Guide:          'bg-[#15A4AE]/15 text-[#15A4AE] border-[#15A4AE]/20',
   'Developer Guide': 'bg-blue-500/15 text-blue-400 border-blue-500/20',
   Strategy:       'bg-purple-500/15 text-purple-400 border-purple-500/20',
   'Case Study':   'bg-yellow-500/15 text-yellow-400 border-yellow-500/20',

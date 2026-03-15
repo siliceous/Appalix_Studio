@@ -40,7 +40,7 @@ function FlowDot({
   return (
     <motion.circle
       r={2.8}
-      fill="#61c2ad"
+      fill="#15A4AE"
       initial={{ opacity: 0 }}
       animate={{
         cx: [x1, x2],
@@ -70,7 +70,7 @@ export function LeadFlowDiagram() {
         {SOURCES.map(s => (
           <line key={`sl-${s.label}`}
             x1={s.x} y1={SY + 13} x2={EX} y2={EYT}
-            stroke="#61c2ad" strokeWidth={0.7} strokeOpacity={0.18} strokeDasharray="3 3"
+            stroke="#15A4AE" strokeWidth={0.7} strokeOpacity={0.18} strokeDasharray="3 3"
           />
         ))}
 
@@ -78,7 +78,7 @@ export function LeadFlowDiagram() {
         {OUTPUTS.map(o => (
           <line key={`ol-${o.label}`}
             x1={EX} y1={EYB} x2={o.x} y2={OY - 13}
-            stroke="#61c2ad" strokeWidth={0.7} strokeOpacity={0.18} strokeDasharray="3 3"
+            stroke="#15A4AE" strokeWidth={0.7} strokeOpacity={0.18} strokeDasharray="3 3"
           />
         ))}
 
@@ -137,7 +137,7 @@ export function LeadFlowDiagram() {
           />
 
           {/* center dot */}
-          <circle cx={EX} cy={EYC} r={4.5} fill="#61c2ad" opacity={0.88} />
+          <circle cx={EX} cy={EYC} r={4.5} fill="#15A4AE" opacity={0.88} />
 
           {/* labels — offset right of the dot */}
           <text x={EX + 20} y={EYC - 5} textAnchor="middle" dominantBaseline="middle"
@@ -239,7 +239,7 @@ export function QualificationLoop() {
 
         {/* ── Orbiting dot ── */}
         {inView && (
-          <motion.circle r={4.5} fill="#61c2ad" opacity={0.9}
+          <motion.circle r={4.5} fill="#15A4AE" opacity={0.9}
             animate={{
               cx: DOT_PTS.map(p => p.x),
               cy: DOT_PTS.map(p => p.y),
@@ -263,7 +263,7 @@ export function QualificationLoop() {
           <circle cx={QCX} cy={QCY} r={38}
             fill="rgba(97,194,173,0.08)" stroke="rgba(97,194,173,0.38)" strokeWidth={1.5} />
           <text x={QCX} y={QCY - 6} textAnchor="middle" dominantBaseline="middle"
-            fill="#61c2ad" fontSize={10.5} fontWeight={700} fontFamily="system-ui,sans-serif">
+            fill="#15A4AE" fontSize={10.5} fontWeight={700} fontFamily="system-ui,sans-serif">
             Appalix
           </text>
           <text x={QCX} y={QCY + 9} textAnchor="middle" dominantBaseline="middle"
@@ -308,7 +308,7 @@ export function QualificationLoop() {
               {/* Orbit node glow */}
               <circle cx={pt.x} cy={pt.y} r={9} fill="rgba(97,194,173,0.18)" />
               {/* Orbit node dot */}
-              <circle cx={pt.x} cy={pt.y} r={5} fill="#61c2ad" opacity={0.85} />
+              <circle cx={pt.x} cy={pt.y} r={5} fill="#15A4AE" opacity={0.85} />
 
               {/* Dashed connector to box */}
               <line x1={pt.x} y1={pt.y} x2={cx2} y2={cy2}

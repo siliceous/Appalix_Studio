@@ -87,8 +87,8 @@ export function CopilotChat({ workspaceId, workspaceName, userName }: CopilotCha
       {/* Empty state */}
       {messages.length === 0 && (
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-brand-50 dark:bg-[#61c2ad]/10 border border-brand-200 dark:border-[#61c2ad]/20 flex items-center justify-center mb-5">
-            <Sparkles className="w-6 h-6 text-brand-600 dark:text-[#61c2ad]" />
+          <div className="w-14 h-14 rounded-2xl bg-brand-50 dark:bg-[#15A4AE]/10 border border-brand-200 dark:border-[#15A4AE]/20 flex items-center justify-center mb-5">
+            <Sparkles className="w-6 h-6 text-brand-600 dark:text-[#15A4AE]" />
           </div>
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
             Hi {userName.split(' ')[0]}, how can I help?
@@ -101,7 +101,7 @@ export function CopilotChat({ workspaceId, workspaceName, userName }: CopilotCha
               <button
                 key={s}
                 onClick={() => send(s)}
-                className="text-left px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:border-brand-300 dark:hover:border-[#61c2ad]/40 hover:bg-brand-50 dark:hover:bg-[#61c2ad]/5 text-sm text-gray-700 dark:text-gray-300 transition-colors"
+                className="text-left px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:border-brand-300 dark:hover:border-[#15A4AE]/40 hover:bg-brand-50 dark:hover:bg-[#15A4AE]/5 text-sm text-gray-700 dark:text-gray-300 transition-colors"
               >
                 {s}
               </button>
@@ -120,7 +120,7 @@ export function CopilotChat({ workspaceId, workspaceName, userName }: CopilotCha
               <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-xs font-semibold ${
                 m.role === 'user'
                   ? 'bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-gray-300'
-                  : 'bg-brand-100 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad]'
+                  : 'bg-brand-100 dark:bg-[#15A4AE]/10 text-brand-700 dark:text-[#15A4AE]'
               }`}>
                 {m.role === 'user' ? userName.charAt(0).toUpperCase() : 'AI'}
               </div>
@@ -150,7 +150,7 @@ export function CopilotChat({ workspaceId, workspaceName, userName }: CopilotCha
           {/* Typing indicator */}
           {loading && (
             <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad] shrink-0 flex items-center justify-center text-xs font-semibold">AI</div>
+              <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-[#15A4AE]/10 text-brand-700 dark:text-[#15A4AE] shrink-0 flex items-center justify-center text-xs font-semibold">AI</div>
               <div className="bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/10 rounded-2xl rounded-tl-sm px-4 py-3 flex gap-1.5 items-center">
                 <style>{`
                   @keyframes copilot-dot { 0%,60%,100%{opacity:0.2} 30%{opacity:1} }
@@ -169,7 +169,7 @@ export function CopilotChat({ workspaceId, workspaceName, userName }: CopilotCha
 
       {/* Input */}
       <div className="px-6 pb-6 pt-3 border-t bg-white dark:bg-[#232323] dark:border-white/8">
-        <div className="flex items-end gap-3 bg-gray-50 dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/10 rounded-2xl px-4 py-3 focus-within:border-brand-400 dark:focus-within:border-[#61c2ad]/50 focus-within:ring-2 focus-within:ring-brand-100 dark:focus-within:ring-[#61c2ad]/10 transition-all">
+        <div className="flex items-end gap-3 bg-gray-50 dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/10 rounded-2xl px-4 py-3 focus-within:border-brand-400 dark:focus-within:border-[#15A4AE]/50 focus-within:ring-2 focus-within:ring-brand-100 dark:focus-within:ring-[#15A4AE]/10 transition-all">
           <textarea
             ref={textareaRef}
             rows={1}

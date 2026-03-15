@@ -24,7 +24,7 @@ export function NewsletterSignup() {
         </p>
 
         {state?.success ? (
-          <p className="text-[#61c2ad] font-medium">{state.message}</p>
+          <p className="text-[#15A4AE] font-medium">{state.message}</p>
         ) : (
           <form action={action} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
             <input

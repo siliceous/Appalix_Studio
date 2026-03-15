@@ -48,7 +48,7 @@ export default async function EditBotPage({ params }: { params: Promise<{ id: st
                   defaultChecked={(bot.bot_type ?? 'widget') === value}
                   className="peer sr-only"
                 />
-                <div className="p-4 rounded-xl border-2 border-gray-200 dark:border-white/10 peer-checked:border-brand-500 dark:peer-checked:border-[#61c2ad]/60 peer-checked:bg-brand-50 dark:peer-checked:bg-[#61c2ad]/5 transition-colors h-full">
+                <div className="p-4 rounded-xl border-2 border-gray-200 dark:border-white/10 peer-checked:border-brand-500 dark:peer-checked:border-[#15A4AE]/60 peer-checked:bg-brand-50 dark:peer-checked:bg-[#15A4AE]/5 transition-colors h-full">
                   <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-white/5 peer-checked:bg-brand-100 flex items-center justify-center mb-2">
                     <Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   </div>

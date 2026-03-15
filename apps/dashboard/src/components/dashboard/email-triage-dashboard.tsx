@@ -48,13 +48,13 @@ interface Props {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const PRIORITY_DOT: Record<string, string> = {
-  high:   'bg-[#61c2ad]',
+  high:   'bg-[#15A4AE]',
   medium: 'bg-amber-400',
   low:    'bg-gray-300 dark:bg-gray-600',
 }
 
 const PRIORITY_BADGE: Record<string, string> = {
-  high:   'bg-[#61c2ad]/10 dark:bg-[#61c2ad]/15 text-[#3a9e8a] dark:text-[#61c2ad] border-[#61c2ad]/30 dark:border-[#61c2ad]/25',
+  high:   'bg-[#15A4AE]/10 dark:bg-[#15A4AE]/15 text-[#3a9e8a] dark:text-[#15A4AE] border-[#15A4AE]/30 dark:border-[#15A4AE]/25',
   medium: 'bg-amber-50 dark:bg-amber-500/10 text-amber-500/75 dark:text-amber-400/75 border-amber-200/70 dark:border-amber-500/18',
   low:    'bg-gray-100 dark:bg-white/5 text-gray-500 border-gray-200 dark:border-white/10',
 }
@@ -157,7 +157,7 @@ function TriageCard({ t, effectivePriority, isDone, actionLabel, isChecked, isSe
           : isDone
             ? 'border-green-200 dark:border-green-500/20'
             : ep === 'high'
-              ? 'border-[#61c2ad]/50 dark:border-[#61c2ad]/35'
+              ? 'border-[#15A4AE]/50 dark:border-[#15A4AE]/35'
               : ep === 'medium'
                 ? 'border-amber-200 dark:border-amber-500/25'
                 : ep === 'low'
@@ -211,13 +211,13 @@ function TriageCard({ t, effectivePriority, isDone, actionLabel, isChecked, isSe
         <div className="flex items-center gap-2">
           <div className={cn(
             'w-7 h-7 rounded-full flex items-center justify-center shrink-0',
-            ep === 'high'   ? 'bg-[#61c2ad]/15 dark:bg-[#61c2ad]/20'
+            ep === 'high'   ? 'bg-[#15A4AE]/15 dark:bg-[#15A4AE]/20'
             : ep === 'medium' ? 'bg-amber-100 dark:bg-amber-500/15'
             : 'bg-gray-100 dark:bg-white/5',
           )}>
             <span className={cn(
               'text-[11px] font-bold',
-              ep === 'high'   ? 'text-[#61c2ad]'
+              ep === 'high'   ? 'text-[#15A4AE]'
               : ep === 'medium' ? 'text-amber-600 dark:text-amber-400'
               : 'text-gray-500 dark:text-gray-400',
             )}>
@@ -538,7 +538,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
                 </div>
                 <div className="flex items-center gap-1.5">
                   {t.matchedDeal && (
-                    <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#61c2ad]/15 border border-[#61c2ad]/30 text-[#3d9585] dark:text-[#61c2ad] font-medium shrink-0">
+                    <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#15A4AE]/15 border border-[#15A4AE]/30 text-[#3d9585] dark:text-[#15A4AE] font-medium shrink-0">
                       <RefreshCw className="w-2.5 h-2.5" />
                       {t.matchedDeal.title}
                     </span>
@@ -801,12 +801,12 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
         {noteSaved && (
           <div className="rounded-xl border border-brand-200 dark:border-brand-500/30 px-4 py-2.5 flex items-center justify-between gap-2 bg-brand-50 dark:bg-brand-500/10">
             <div className="flex items-center gap-2">
-              <Check className="w-3.5 h-3.5 text-brand-600 dark:text-[#61c2ad]" />
-              <span className="text-[11px] font-medium text-brand-700 dark:text-[#61c2ad]">Reply sent · Note logged in Follow ups</span>
+              <Check className="w-3.5 h-3.5 text-brand-600 dark:text-[#15A4AE]" />
+              <span className="text-[11px] font-medium text-brand-700 dark:text-[#15A4AE]">Reply sent · Note logged in Follow ups</span>
             </div>
             <button
               onClick={() => { void markEmailRead(email.id); onDismiss(email.id); onClose() }}
-              className="text-[11px] font-semibold text-brand-700 dark:text-[#61c2ad] hover:opacity-70 transition-opacity"
+              className="text-[11px] font-semibold text-brand-700 dark:text-[#15A4AE] hover:opacity-70 transition-opacity"
             >
               Done →
             </button>
@@ -1292,8 +1292,8 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
           {/* Status badges */}
           <div className="flex items-center gap-2 flex-wrap">
             {highCount > 0 && (
-              <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#61c2ad]/10 text-[#3a9e8a] dark:text-[#61c2ad] font-semibold border border-[#61c2ad]/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#61c2ad]" />{highCount} High
+              <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#15A4AE]/10 text-[#3a9e8a] dark:text-[#15A4AE] font-semibold border border-[#15A4AE]/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#15A4AE]" />{highCount} High
               </span>
             )}
             {medCount > 0 && (
@@ -1360,7 +1360,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
                     'flex items-stretch border-l-[3px] transition-colors cursor-pointer',
                     isActive
                       ? priority === 'high'
-                        ? 'border-l-[#61c2ad] bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10'
+                        ? 'border-l-[#15A4AE] bg-[#15A4AE]/8 dark:bg-[#15A4AE]/10'
                         : priority === 'medium'
                           ? 'border-l-amber-400 bg-amber-50 dark:bg-amber-500/8'
                           : priority === 'low'
@@ -1490,11 +1490,11 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
               {gridHigh.length > 0 && (
                 <section>
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="w-2 h-2 rounded-full bg-[#61c2ad] shrink-0" />
-                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#3a9e8a] dark:text-[#61c2ad]">
+                    <span className="w-2 h-2 rounded-full bg-[#15A4AE] shrink-0" />
+                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#3a9e8a] dark:text-[#15A4AE]">
                       High Priority · {gridHigh.length}
                     </h3>
-                    <div className="flex-1 h-px bg-[#61c2ad]/30 dark:bg-[#61c2ad]/20" />
+                    <div className="flex-1 h-px bg-[#15A4AE]/30 dark:bg-[#15A4AE]/20" />
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
                     {gridHigh.map(t => (

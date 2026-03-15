@@ -197,7 +197,7 @@ export function ProductivitySection() {
                   <div className={`max-w-[88%] px-3 py-2 rounded-2xl text-[13px] leading-relaxed backdrop-blur-sm ${
                     msg.role === 'user'
                       ? 'bg-white/[0.12] border border-white/15 text-gray-100 rounded-br-sm'
-                      : 'bg-[#61c2ad]/[0.12] border border-[#61c2ad]/25 text-[#61c2ad] rounded-bl-sm'
+                      : 'bg-[#15A4AE]/[0.12] border border-[#15A4AE]/25 text-[#15A4AE] rounded-bl-sm'
                   }`}>
                     {msg.text}
                   </div>
@@ -214,7 +214,7 @@ export function ProductivitySection() {
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6 }}
             >
-              <span className="inline-block text-xs px-3 py-1 rounded-full bg-[#61c2ad]/10 border border-[#61c2ad]/20 text-[#61c2ad] font-semibold uppercase tracking-widest mb-5">
+              <span className="inline-block text-xs px-3 py-1 rounded-full bg-[#15A4AE]/10 border border-[#15A4AE]/20 text-[#15A4AE] font-semibold uppercase tracking-widest mb-5">
                 Productivity lift
               </span>
               <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
@@ -240,7 +240,7 @@ export function ProductivitySection() {
                   animate={isInView ? { opacity: 1, y: 0 } : {}}
                   transition={{ delay: 0.35 + i * 0.07, duration: 0.4 }}
                 >
-                  <p className="text-xs text-[#61c2ad] font-semibold uppercase tracking-wider mb-1">{s.role}</p>
+                  <p className="text-xs text-[#15A4AE] font-semibold uppercase tracking-wider mb-1">{s.role}</p>
                   <p className="text-sm text-gray-300 leading-snug">{s.shift}</p>
                 </motion.div>
               ))}
@@ -274,11 +274,11 @@ export function ProductivitySection() {
             >
               <Link
                 href="/ai-assistant"
-                className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-[#61c2ad]/8 border border-[#61c2ad]/20 hover:bg-[#61c2ad]/15 hover:border-[#61c2ad]/40 transition-all group"
+                className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-[#15A4AE]/8 border border-[#15A4AE]/20 hover:bg-[#15A4AE]/15 hover:border-[#15A4AE]/40 transition-all group"
               >
-                <span className="text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full bg-[#61c2ad]/15 border border-[#61c2ad]/25 text-[#61c2ad]">✦</span>
-                <span className="text-sm text-[#61c2ad] font-medium">Powered by Appalix Sage</span>
-                <span className="text-xs text-gray-500 group-hover:text-[#61c2ad] transition-colors">→</span>
+                <span className="text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full bg-[#15A4AE]/15 border border-[#15A4AE]/25 text-[#15A4AE]">✦</span>
+                <span className="text-sm text-[#15A4AE] font-medium">Powered by Appalix Sage</span>
+                <span className="text-xs text-gray-500 group-hover:text-[#15A4AE] transition-colors">→</span>
               </Link>
             </motion.div>
 

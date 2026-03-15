@@ -238,7 +238,7 @@ const PIPELINE_TEMPLATES: Record<string, { name: string; stages: Array<{ name: s
       { name: 'Proposal',       color: '#8b5cf6' },
       { name: 'Contract',       color: '#f59e0b' },
       { name: 'Onboarding',     color: '#10b981' },
-      { name: 'Active Client',  color: '#61c2ad' },
+      { name: 'Active Client',  color: '#15A4AE' },
     ],
   },
   consulting: {
@@ -248,7 +248,7 @@ const PIPELINE_TEMPLATES: Record<string, { name: string; stages: Array<{ name: s
       { name: 'Proposal',       color: '#3b82f6' },
       { name: 'Scoping',        color: '#8b5cf6' },
       { name: 'Approved',       color: '#f59e0b' },
-      { name: 'In Progress',    color: '#61c2ad' },
+      { name: 'In Progress',    color: '#15A4AE' },
       { name: 'Completed',      color: '#10b981' },
     ],
   },
@@ -267,7 +267,7 @@ const PIPELINE_TEMPLATES: Record<string, { name: string; stages: Array<{ name: s
       { name: 'Welcome',        color: '#6b7280' },
       { name: 'Setup',          color: '#3b82f6' },
       { name: 'Training',       color: '#8b5cf6' },
-      { name: 'Go-Live',        color: '#61c2ad' },
+      { name: 'Go-Live',        color: '#15A4AE' },
       { name: 'Review',         color: '#10b981' },
     ],
   },
@@ -295,7 +295,7 @@ export async function createPipeline(formData: FormData) {
   const pipelineId = (pipeline as { id: string }).id
 
   // Use custom stages from step 3 of modal if provided; fall back to template defaults
-  const fallbackColors = ['#6b7280', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec732e', '#10b981', '#ef4444', '#61c2ad']
+  const fallbackColors = ['#6b7280', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec732e', '#10b981', '#ef4444', '#15A4AE']
   const templateStages = template?.stages ?? [
     { name: 'To Do', color: '#6b7280' },
     { name: 'In Progress', color: '#3b82f6' },
@@ -346,7 +346,7 @@ export async function updatePipelineStages(pipelineId: string, stageNames: strin
     .select('name, color')
     .eq('pipeline_id', pipelineId)
   const colorMap = Object.fromEntries((existingStages ?? []).map(s => [s.name, s.color]))
-  const fallbackColors = ['#6b7280', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec732e', '#10b981', '#ef4444', '#61c2ad']
+  const fallbackColors = ['#6b7280', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec732e', '#10b981', '#ef4444', '#15A4AE']
 
   await admin.from('sage_pipeline_stages').delete().eq('pipeline_id', pipelineId)
 

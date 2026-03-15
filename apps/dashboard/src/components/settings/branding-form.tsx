@@ -16,7 +16,7 @@ interface Props {
 }
 
 const PRESET_COLORS = [
-  '#61c2ad', '#3b82f6', '#8b5cf6', '#ec4899',
+  '#15A4AE', '#3b82f6', '#8b5cf6', '#ec4899',
   '#f97316', '#22c55e', '#ef4444', '#14b8a6',
   '#6366f1', '#f59e0b', '#1e293b', '#64748b',
 ]
@@ -42,13 +42,13 @@ export function BrandingForm({ initialBranding, isAdmin }: Props) {
     brand_name:      null,
     logo_url:        null,
     favicon_url:     null,
-    primary_color:   '#61c2ad',
+    primary_color:   '#15A4AE',
     hide_powered_by: false,
     welcome_message: null,
   }
 
   const [brandName,      setBrandName]      = useState(defaults.brand_name      ?? '')
-  const [primaryColor,   setPrimaryColor]   = useState(defaults.primary_color   ?? '#61c2ad')
+  const [primaryColor,   setPrimaryColor]   = useState(defaults.primary_color   ?? '#15A4AE')
   const [hidePoweredBy,  setHidePoweredBy]  = useState(defaults.hide_powered_by ?? false)
   const [welcomeMessage, setWelcomeMessage] = useState(defaults.welcome_message ?? '')
   const [logoUrl,        setLogoUrl]        = useState(defaults.logo_url        ?? null)
@@ -217,7 +217,7 @@ export function BrandingForm({ initialBranding, isAdmin }: Props) {
             }}
             disabled={!isAdmin}
             maxLength={7}
-            placeholder="#61c2ad"
+            placeholder="#15A4AE"
             className="w-28 text-sm font-mono rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
           />
         </div>
@@ -241,7 +241,7 @@ export function BrandingForm({ initialBranding, isAdmin }: Props) {
             disabled={!isAdmin}
             className={cn(
               'relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed',
-              hidePoweredBy ? 'bg-brand-600 dark:bg-[#61c2ad]' : 'bg-gray-200 dark:bg-white/10',
+              hidePoweredBy ? 'bg-brand-600 dark:bg-[#15A4AE]' : 'bg-gray-200 dark:bg-white/10',
             )}
           >
             <span className={cn(
@@ -281,7 +281,7 @@ export function BrandingForm({ initialBranding, isAdmin }: Props) {
         </p>
         <a
           href="mailto:support@appalix.com?subject=Custom domain setup"
-          className="inline-flex items-center gap-2 text-xs text-brand-600 dark:text-[#61c2ad] hover:underline"
+          className="inline-flex items-center gap-2 text-xs text-brand-600 dark:text-[#15A4AE] hover:underline"
         >
           Contact support to set up →
         </a>

@@ -133,13 +133,13 @@ export function UpgradePlanCards({ currentPlan, hasSubscription }: Props) {
           <span className={`text-sm font-medium transition-colors ${isAnnual ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}`}>
             Annual
           </span>
-          <span className="text-xs bg-green-100 dark:bg-[#61c2ad]/10 text-green-700 dark:text-[#61c2ad] px-2 py-0.5 rounded-full font-semibold">
+          <span className="text-xs bg-green-100 dark:bg-[#15A4AE]/10 text-green-700 dark:text-[#15A4AE] px-2 py-0.5 rounded-full font-semibold">
             Save ~35%
           </span>
         </div>
         {!isAnnual && (
           <p className="text-xs text-gray-400 dark:text-gray-500 ml-0.5">
-            Switch to annual and save <span className="text-green-600 dark:text-[#61c2ad] font-semibold">~35% on average</span>
+            Switch to annual and save <span className="text-green-600 dark:text-[#15A4AE] font-semibold">~35% on average</span>
           </p>
         )}
       </div>

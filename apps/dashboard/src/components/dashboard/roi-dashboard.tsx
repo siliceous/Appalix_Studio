@@ -32,7 +32,7 @@ const PERIOD_OPTIONS: { value: RoiPeriod; label: string }[] = [
   { value: 'all', label: 'All time'      },
 ]
 
-const CHART_COLORS = ['#61c2ad', '#3a9e8a', '#8b5cf6', '#f59e0b', '#ef4444', '#6b7280']
+const CHART_COLORS = ['#15A4AE', '#3a9e8a', '#8b5cf6', '#f59e0b', '#ef4444', '#6b7280']
 
 const ACTION_LABELS: Record<string, string> = {
   create_lead:   'Lead',
@@ -56,13 +56,13 @@ function StatCard({
   return (
     <div className={`rounded-xl border p-5 flex flex-col gap-3 ${
       accent
-        ? 'bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10 border-[#61c2ad]/25'
+        ? 'bg-[#15A4AE]/8 dark:bg-[#15A4AE]/10 border-[#15A4AE]/25'
         : 'bg-white dark:bg-[#232323] border-gray-200 dark:border-white/8'
     }`}>
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{label}</span>
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-          accent ? 'bg-[#61c2ad]/20 text-[#3a9e8a] dark:text-[#61c2ad]' : 'bg-gray-100 dark:bg-white/8 text-gray-500'
+          accent ? 'bg-[#15A4AE]/20 text-[#3a9e8a] dark:text-[#15A4AE]' : 'bg-gray-100 dark:bg-white/8 text-gray-500'
         }`}>
           <Icon className="w-4 h-4" />
         </div>
@@ -115,7 +115,7 @@ export function ROIDashboard({ metrics }: Props) {
 
   // Funnel data
   const funnelData = [
-    { name: 'Open',   value: metrics.dealsOpen,  fill: '#61c2ad' },
+    { name: 'Open',   value: metrics.dealsOpen,  fill: '#15A4AE' },
     { name: 'Won',    value: metrics.dealsWon,   fill: '#3a9e8a' },
     { name: 'Lost',   value: metrics.dealsLost,  fill: '#ef4444' },
   ]
@@ -132,7 +132,7 @@ export function ROIDashboard({ metrics }: Props) {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-            <Zap className="w-5 h-5 text-[#61c2ad]" />
+            <Zap className="w-5 h-5 text-[#15A4AE]" />
             Sage ROI &amp; Performance
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -157,10 +157,10 @@ export function ROIDashboard({ metrics }: Props) {
       </div>
 
       {/* ── Time saved hero ── */}
-      <div className="bg-gradient-to-r from-[#61c2ad]/10 to-[#3a9e8a]/5 dark:from-[#61c2ad]/12 dark:to-[#3a9e8a]/5 rounded-2xl border border-[#61c2ad]/20 p-6">
+      <div className="bg-gradient-to-r from-[#15A4AE]/10 to-[#3a9e8a]/5 dark:from-[#15A4AE]/12 dark:to-[#3a9e8a]/5 rounded-2xl border border-[#15A4AE]/20 p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-[#61c2ad]/20 flex items-center justify-center">
-            <Clock className="w-5 h-5 text-[#3a9e8a] dark:text-[#61c2ad]" />
+          <div className="w-10 h-10 rounded-xl bg-[#15A4AE]/20 flex items-center justify-center">
+            <Clock className="w-5 h-5 text-[#3a9e8a] dark:text-[#15A4AE]" />
           </div>
           <div>
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Time saved by Sage AI</p>
@@ -168,7 +168,7 @@ export function ROIDashboard({ metrics }: Props) {
           </div>
         </div>
         <div className="flex items-end gap-2 mb-4">
-          <span className="text-4xl font-black text-[#3a9e8a] dark:text-[#61c2ad]">{fmtHours(metrics.timeSavedHours)}</span>
+          <span className="text-4xl font-black text-[#3a9e8a] dark:text-[#15A4AE]">{fmtHours(metrics.timeSavedHours)}</span>
           {workingDays >= 1 && (
             <span className="text-sm text-gray-400 dark:text-gray-500 mb-1">≈ {workingDays} working day{workingDays !== 1 ? 's' : ''}</span>
           )}
@@ -181,7 +181,7 @@ export function ROIDashboard({ metrics }: Props) {
           ].map(({ icon: Icon, label, count, mins }) => (
             <div key={label} className="bg-white/60 dark:bg-white/5 rounded-xl p-3 border border-white/50 dark:border-white/8">
               <div className="flex items-center gap-1.5 mb-1.5">
-                <Icon className="w-3.5 h-3.5 text-[#61c2ad]" />
+                <Icon className="w-3.5 h-3.5 text-[#15A4AE]" />
                 <span className="text-[11px] text-gray-500 dark:text-gray-400">{label}</span>
               </div>
               <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{count.toLocaleString()}</p>
@@ -309,7 +309,7 @@ export function ROIDashboard({ metrics }: Props) {
               {metrics.formsTriaged > 0 && (
                 <div className="h-2 bg-gray-100 dark:bg-white/8 rounded-full overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-[#61c2ad] transition-all"
+                    className="h-full rounded-full bg-[#15A4AE] transition-all"
                     style={{ width: `${Math.round((metrics.formsActioned / metrics.formsTriaged) * 100)}%` }}
                   />
                 </div>

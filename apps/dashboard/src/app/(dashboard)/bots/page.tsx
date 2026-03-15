@@ -114,16 +114,16 @@ export default async function BotsPage() {
               <div className="flex items-start justify-between mb-3">
                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
                   bot.bot_type === 'internal'
-                    ? 'bg-[#61c2ad]/10'
+                    ? 'bg-[#15A4AE]/10'
                     : 'bg-purple-100 dark:bg-purple-500/10'
                 }`}>
                   {bot.bot_type === 'internal'
-                    ? <Sparkles className="w-5 h-5 text-[#61c2ad]" />
+                    ? <Sparkles className="w-5 h-5 text-[#15A4AE]" />
                     : <Bot className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                   }
                 </div>
                 {bot.bot_type === 'internal' && (
-                  <span className="text-xs bg-[#61c2ad]/10 text-[#61c2ad] px-2 py-0.5 rounded-full font-medium">
+                  <span className="text-xs bg-[#15A4AE]/10 text-[#15A4AE] px-2 py-0.5 rounded-full font-medium">
                     Sage
                   </span>
                 )}
@@ -182,7 +182,7 @@ export default async function BotsPage() {
         <div className="xl:col-span-2 bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8">
           <div className="px-5 py-4 border-b dark:border-white/8 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Recent Conversations</h2>
-            <a href="/dashboard/bots" className="text-xs text-brand-600 dark:text-[#61c2ad] hover:underline">View all</a>
+            <a href="/dashboard/bots" className="text-xs text-brand-600 dark:text-[#15A4AE] hover:underline">View all</a>
           </div>
           <div className="divide-y dark:divide-white/5">
             {recentConversations?.length === 0 && (

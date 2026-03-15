@@ -13,7 +13,7 @@ const TEMPLATE_COLORS: Record<string, string> = {
   agency:      'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400',
   consulting:  'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
   support:     'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400',
-  onboarding:  'bg-brand-50 text-brand-700 dark:bg-[#61c2ad]/10 dark:text-[#61c2ad]',
+  onboarding:  'bg-brand-50 text-brand-700 dark:bg-[#15A4AE]/10 dark:text-[#15A4AE]',
 }
 
 export default function PipelinesPage() {
@@ -115,7 +115,7 @@ export default function PipelinesPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <Kanban className="w-4 h-4 text-brand-600 dark:text-[#61c2ad] shrink-0" />
+                      <Kanban className="w-4 h-4 text-brand-600 dark:text-[#15A4AE] shrink-0" />
                       <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{pipeline.name}</h3>
                     </div>
                     {pipeline.template_type && tc && (
@@ -140,12 +140,12 @@ export default function PipelinesPage() {
 
                 <Link
                   href={`/sage/pipelines/${pipeline.id}`}
-                  className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-brand-50 dark:hover:bg-[#61c2ad]/10 border dark:border-white/8 hover:border-brand-200 dark:hover:border-[#61c2ad]/30 transition-all group/link"
+                  className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-brand-50 dark:hover:bg-[#15A4AE]/10 border dark:border-white/8 hover:border-brand-200 dark:hover:border-[#15A4AE]/30 transition-all group/link"
                 >
-                  <span className="text-sm text-gray-600 dark:text-gray-400 group-hover/link:text-brand-700 dark:group-hover/link:text-[#61c2ad] font-medium transition-colors">
+                  <span className="text-sm text-gray-600 dark:text-gray-400 group-hover/link:text-brand-700 dark:group-hover/link:text-[#15A4AE] font-medium transition-colors">
                     Open board
                   </span>
-                  <ArrowRight className="w-4 h-4 text-gray-400 group-hover/link:text-brand-600 dark:group-hover/link:text-[#61c2ad] transition-colors" />
+                  <ArrowRight className="w-4 h-4 text-gray-400 group-hover/link:text-brand-600 dark:group-hover/link:text-[#15A4AE] transition-colors" />
                 </Link>
               </div>
             )

@@ -163,7 +163,7 @@ export function TeamMembersSection({ members: initialMembers, callerRole, caller
   const totalSeats = seatLimit !== null ? seatLimit + extraSeats : null
   const usedSeats  = members.length
   const pct        = totalSeats ? Math.min(100, Math.round((usedSeats / totalSeats) * 100)) : 0
-  const barColour  = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-400' : 'bg-[#61c2ad]'
+  const barColour  = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-400' : 'bg-[#15A4AE]'
 
   function handleRemoved(id: string) {
     setMembers((prev) => prev.filter((m) => m.id !== id))

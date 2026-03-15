@@ -256,7 +256,7 @@ export type SageContactSource       = 'chat' | 'manual' | 'import'
 export type SageContactType         = 'potential_customer' | 'active_customer' | 'other'
 export type SageContactVisibility   = 'everyone' | 'team' | 'only_me'
 export type SageIntegrationProvider =
-  | 'stripe' | 'gmail' | 'microsoft' | 'zapier' | 'freshdesk' | 'zendesk'
+  | 'stripe' | 'gmail' | 'microsoft' | 'zapier' | 'make' | 'freshdesk' | 'zendesk'
   | 'mailchimp' | 'activecampaign' | 'convertkit' | 'klaviyo' | 'constantcontact'
 export type SageIntegrationStatus   = 'connected' | 'disconnected' | 'error'
 export type SageActivityEntityType  = 'contact' | 'deal' | 'ticket' | 'company'

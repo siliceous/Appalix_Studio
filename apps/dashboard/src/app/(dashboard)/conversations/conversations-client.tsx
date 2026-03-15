@@ -152,7 +152,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
               placeholder="Search conversations…"
               onKeyDown={e => { if (e.key === 'Enter') pushFilter({ q: (e.target as HTMLInputElement).value || undefined }) }}
               onBlur={e => { if (e.target.value !== (filters.q ?? '')) pushFilter({ q: e.target.value || undefined }) }}
-              className="w-full pl-8 pr-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
+              className="w-full pl-8 pr-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
             />
             {filters.q && (
               <button onClick={() => pushFilter({ q: undefined })}
@@ -168,7 +168,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
               <select
                 value={activeBotId}
                 onChange={e => pushFilter({ bot: e.target.value || undefined })}
-                className="appearance-none pl-3 pr-8 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 cursor-pointer"
+                className="appearance-none pl-3 pr-8 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer"
               >
                 <option value="">All bots</option>
                 {bots.map(b => (
@@ -186,7 +186,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                 onClick={() => pushFilter({ status: s || undefined })}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                   activeStatus === s
-                    ? 'bg-[#61c2ad]/15 dark:bg-[#61c2ad]/20 text-[#1f6157] dark:text-[#61c2ad] border border-[#61c2ad]/30'
+                    ? 'bg-[#15A4AE]/15 dark:bg-[#15A4AE]/20 text-[#1f6157] dark:text-[#15A4AE] border border-[#15A4AE]/30'
                     : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
                 }`}>
                 {s === '' ? 'All status' : s.charAt(0).toUpperCase() + s.slice(1)}
@@ -201,7 +201,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
             onClick={() => pushFilter({ platform: undefined })}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
               activePlatform === 'all'
-                ? 'bg-[#61c2ad]/15 dark:bg-[#61c2ad]/20 text-[#1f6157] dark:text-[#61c2ad] border border-[#61c2ad]/30'
+                ? 'bg-[#15A4AE]/15 dark:bg-[#15A4AE]/20 text-[#1f6157] dark:text-[#15A4AE] border border-[#15A4AE]/30'
                 : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
             }`}>
             All platforms
@@ -211,7 +211,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
               onClick={() => pushFilter({ platform: p })}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                 activePlatform === p
-                  ? 'bg-[#61c2ad] text-white'
+                  ? 'bg-[#15A4AE] text-white'
                   : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
               }`}>
               {PLATFORM_META[p]?.label ?? p}
@@ -234,7 +234,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                 {!readonly && (
                   <th className="px-4 py-3 w-px">
                     <input type="checkbox" checked={allSelected} onChange={toggleSelectAll}
-                      className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-[#61c2ad] cursor-pointer" />
+                      className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-[#15A4AE] cursor-pointer" />
                   </th>
                 )}
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Conversation</th>
@@ -256,13 +256,13 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                     {!readonly && (
                       <td className="px-4 py-3.5 w-px">
                         <input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)}
-                          className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-[#61c2ad] cursor-pointer" />
+                          className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-[#15A4AE] cursor-pointer" />
                       </td>
                     )}
                     {/* Conversation title + contact name */}
                     <td className="px-5 py-3.5 max-w-[220px]">
                       <Link href={`/conversations/${c.id}`}
-                        className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-[#61c2ad] transition-colors truncate block">
+                        className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-[#15A4AE] transition-colors truncate block">
                         {c.sentiment && (
                           <span className={`mr-1.5 text-xs ${SENTIMENT_COLOR[c.sentiment] ?? ''}`}>●</span>
                         )}
@@ -296,7 +296,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                           value={localPriority[c.id] ?? c.ai_priority ?? ''}
                           onChange={e => handlePriorityChange(c.id, e.target.value)}
                           onClick={e => e.stopPropagation()}
-                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 ${PRIORITY_BADGE[(localPriority[c.id] ?? c.ai_priority) || 'low'] ?? PRIORITY_BADGE.low}`}
+                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 ${PRIORITY_BADGE[(localPriority[c.id] ?? c.ai_priority) || 'low'] ?? PRIORITY_BADGE.low}`}
                         >
                           <option value="">—</option>
                           <option value="low">low</option>
@@ -328,7 +328,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                           value={localAssign[c.id] !== undefined ? (localAssign[c.id] ?? '') : (c.assigned_to ?? '')}
                           disabled={assigning === c.id}
                           onChange={e => handleAssign(c.id, e.target.value || null)}
-                          className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 disabled:opacity-50 max-w-[130px]"
+                          className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-50 max-w-[130px]"
                         >
                           <option value="">Unassigned</option>
                           {teamMembers.map(m => (
@@ -343,7 +343,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                       <div className="flex items-center gap-1 justify-end">
                         <Link href={`/conversations/${c.id}`}
                           title="View full transcript"
-                          className="p-1.5 text-gray-400 hover:text-[#61c2ad] hover:bg-[#61c2ad]/10 rounded-lg transition-colors">
+                          className="p-1.5 text-gray-400 hover:text-[#15A4AE] hover:bg-[#15A4AE]/10 rounded-lg transition-colors">
                           <ExternalLink className="w-3.5 h-3.5" />
                         </Link>
                         {!readonly && (

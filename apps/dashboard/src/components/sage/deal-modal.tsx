@@ -16,7 +16,7 @@ interface DealModalProps {
   onClose:        () => void
 }
 
-const FIELD_CLS = 'w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]'
+const FIELD_CLS = 'w-full px-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE]'
 const LABEL_CLS = 'block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5'
 
 export function DealModal({

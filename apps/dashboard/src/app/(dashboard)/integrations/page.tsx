@@ -112,7 +112,7 @@ export default async function IntegrationsPage({
       {integrations && integrations.length > 0 && (
         <section className="mb-8">
           <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Connected</h2>
-          <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-[#61c2ad]/30 divide-y divide-[#61c2ad]/20">
+          <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-[#15A4AE]/30 divide-y divide-[#15A4AE]/20">
             {integrations.map((int) => (
               <div key={int.id} className="flex items-center gap-4 px-5 py-4">
                 <div className={`px-2.5 py-1 rounded-lg text-xs font-medium ${PLATFORM_META[int.platform]?.color}`}>
@@ -156,7 +156,7 @@ export default async function IntegrationsPage({
             return (
               <div
                 key={platform}
-                className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-[#61c2ad]/30 p-4 flex flex-col gap-2"
+                className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-[#15A4AE]/30 p-4 flex flex-col gap-2"
               >
                 <div className="flex items-start gap-3">
                   <div className={`mt-0.5 px-2 py-1 rounded-md text-xs font-medium shrink-0 ${PLATFORM_META[platform]?.color}`}>
@@ -194,7 +194,7 @@ export default async function IntegrationsPage({
         <p className="text-xs text-gray-400 mb-3">Configure lead routing on any integration's settings page. Select a provider below to view the setup guide.</p>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {CRM_PROVIDERS.map((crm) => (
-            <div key={crm.name} className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-[#61c2ad]/30 p-4 flex items-start gap-3">
+            <div key={crm.name} className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-[#15A4AE]/30 p-4 flex items-start gap-3">
               <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center text-base shrink-0">
                 {crm.emoji}
               </div>
@@ -233,7 +233,7 @@ export default async function IntegrationsPage({
 
       {/* OAuth connection feedback */}
       {connected === '1' && initialProvider && (
-        <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#61c2ad]/10 border border-[#61c2ad]/30 text-sm text-[#2a7d6e] dark:text-[#61c2ad]">
+        <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#15A4AE]/10 border border-[#15A4AE]/30 text-sm text-[#2a7d6e] dark:text-[#15A4AE]">
           <span className="text-lg">✅</span>
           <span><strong className="capitalize">{initialProvider}</strong> connected successfully. You can now use it from Sage.</span>
         </div>

@@ -202,11 +202,11 @@ export function BotsDashboard({
                 <div className="flex items-center gap-2.5">
                   <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
                     bot.bot_type === 'internal'
-                      ? 'bg-[#61c2ad]/10'
+                      ? 'bg-[#15A4AE]/10'
                       : 'bg-purple-100 dark:bg-purple-500/10'
                   }`}>
                     {bot.bot_type === 'internal'
-                      ? <Sparkles className="w-3.5 h-3.5 text-[#61c2ad]" />
+                      ? <Sparkles className="w-3.5 h-3.5 text-[#15A4AE]" />
                       : <Bot className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                     }
                   </div>
@@ -251,11 +251,11 @@ export function BotsDashboard({
               <div className="flex items-center gap-2">
                 <div className={`w-6 h-6 rounded-md flex items-center justify-center ${
                   selectedBot.bot_type === 'internal'
-                    ? 'bg-[#61c2ad]/10'
+                    ? 'bg-[#15A4AE]/10'
                     : 'bg-purple-100 dark:bg-purple-500/10'
                 }`}>
                   {selectedBot.bot_type === 'internal'
-                    ? <Sparkles className="w-3 h-3 text-[#61c2ad]" />
+                    ? <Sparkles className="w-3 h-3 text-[#15A4AE]" />
                     : <Bot className="w-3 h-3 text-purple-600 dark:text-purple-400" />
                   }
                 </div>

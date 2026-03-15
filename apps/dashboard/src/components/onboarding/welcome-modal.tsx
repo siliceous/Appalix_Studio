@@ -133,7 +133,7 @@ export function WelcomeModal({ userName, plan, trialEndsAt, serverCompleted }: P
       <div className="relative w-full max-w-md bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-2xl overflow-hidden">
 
         {/* Header */}
-        <div className="relative px-6 pt-6 pb-5 bg-gradient-to-br from-brand-50 to-white dark:from-[#61c2ad]/10 dark:to-[#1e1e1e]">
+        <div className="relative px-6 pt-6 pb-5 bg-gradient-to-br from-brand-50 to-white dark:from-[#15A4AE]/10 dark:to-[#1e1e1e]">
           <button
             onClick={dismiss}
             className="absolute top-4 right-4 p-1 rounded-full text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
@@ -177,7 +177,7 @@ export function WelcomeModal({ userName, plan, trialEndsAt, serverCompleted }: P
           )}
 
           {isOnTrial && isFirstVisit && (
-            <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-500/10 dark:bg-[#61c2ad]/15 text-brand-700 dark:text-brand-300 text-[11px] font-medium">
+            <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-500/10 dark:bg-[#15A4AE]/15 text-brand-700 dark:text-brand-300 text-[11px] font-medium">
               <Sparkles className="w-3 h-3" />
               {days > 0 ? `${days}-day free trial — all Pro features unlocked` : 'Trial active — all Pro features unlocked'}
             </div>
@@ -205,7 +205,7 @@ export function WelcomeModal({ userName, plan, trialEndsAt, serverCompleted }: P
               key={id}
               className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-white/8 bg-gray-50 dark:bg-white/5"
             >
-              <div className="shrink-0 w-7 h-7 rounded-full bg-brand-100 dark:bg-[#61c2ad]/15 flex items-center justify-center">
+              <div className="shrink-0 w-7 h-7 rounded-full bg-brand-100 dark:bg-[#15A4AE]/15 flex items-center justify-center">
                 <Icon className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" />
               </div>
 

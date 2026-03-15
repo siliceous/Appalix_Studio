@@ -16,7 +16,7 @@ const DEFAULTS: Omit<WorkspaceBranding, 'workspace_id'> = {
   brand_name:      null,
   logo_url:        null,
   favicon_url:     null,
-  primary_color:   '#61c2ad',
+  primary_color:   '#15A4AE',
   hide_powered_by: false,
   welcome_message: null,
 }

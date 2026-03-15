@@ -30,8 +30,8 @@ const CONTACT_CARDS = [
     title: 'General inquiries',
     desc: 'Anything else — partnerships, press, product feedback, or just saying hello.',
     email: 'sales@appalix.ai',
-    color: 'bg-[#61c2ad]/10 border-[#61c2ad]/20',
-    labelColor: 'text-[#61c2ad]',
+    color: 'bg-[#15A4AE]/10 border-[#15A4AE]/20',
+    labelColor: 'text-[#15A4AE]',
   },
 ]
 
@@ -129,10 +129,10 @@ export default function ContactPage() {
               </div>
 
               {/* Response time badge */}
-              <div className="mt-10 flex items-start gap-3 p-4 rounded-xl bg-[#61c2ad]/[0.07] border border-[#61c2ad]/20">
-                <span className="text-[#61c2ad] text-lg mt-0.5">⏱</span>
+              <div className="mt-10 flex items-start gap-3 p-4 rounded-xl bg-[#15A4AE]/[0.07] border border-[#15A4AE]/20">
+                <span className="text-[#15A4AE] text-lg mt-0.5">⏱</span>
                 <div>
-                  <p className="text-sm font-semibold text-[#61c2ad]">Fast response times</p>
+                  <p className="text-sm font-semibold text-[#15A4AE]">Fast response times</p>
                   <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
                     Sales inquiries are answered within a few hours.
                     All other messages within one business day.

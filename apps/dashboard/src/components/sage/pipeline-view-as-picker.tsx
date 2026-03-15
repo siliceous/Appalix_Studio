@@ -23,7 +23,7 @@ export function PipelineViewAsPicker({ pipelineId, teamMembers, viewAsUserId }: 
             ? `/sage/pipelines/${pipelineId}?viewAs=${v}`
             : `/sage/pipelines/${pipelineId}`
         }}
-        className="appearance-none pl-2.5 pr-7 py-1.5 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/8 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad] transition-colors"
+        className="appearance-none pl-2.5 pr-7 py-1.5 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/8 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE] transition-colors"
       >
         <option value="">My view</option>
         {teamMembers.map(m => (

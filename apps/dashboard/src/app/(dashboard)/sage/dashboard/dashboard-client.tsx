@@ -152,7 +152,7 @@ function PriorityDot({ priority, pulse = false }: { priority: string; pulse?: bo
 function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
   return (
     <button onClick={onChange} aria-label="Toggle"
-      className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors focus:outline-none ${checked ? 'bg-[#61c2ad]' : 'bg-gray-300 dark:bg-gray-600'}`}>
+      className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors focus:outline-none ${checked ? 'bg-[#15A4AE]' : 'bg-gray-300 dark:bg-gray-600'}`}>
       <span className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${checked ? 'translate-x-5' : 'translate-x-1'}`} />
     </button>
   )
@@ -189,10 +189,10 @@ function ItemPopup({
   const [actionTime,     setActionTime]       = useState<Date | null>(null)
 
   const POPUP_PRIORITY_DOT: Record<string, string> = {
-    high: 'bg-[#61c2ad]', medium: 'bg-amber-400', low: 'bg-gray-300 dark:bg-gray-600',
+    high: 'bg-[#15A4AE]', medium: 'bg-amber-400', low: 'bg-gray-300 dark:bg-gray-600',
   }
   const POPUP_PRIORITY_BADGE: Record<string, string> = {
-    high:   'bg-[#61c2ad]/10 text-[#3a9e8a] dark:text-[#61c2ad] border border-[#61c2ad]/30',
+    high:   'bg-[#15A4AE]/10 text-[#3a9e8a] dark:text-[#15A4AE] border border-[#15A4AE]/30',
     medium: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200/70 dark:border-amber-500/20',
     low:    'bg-gray-100 dark:bg-white/5 text-gray-500 border border-gray-200 dark:border-white/10',
   }
@@ -462,7 +462,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
               <Icon className={`w-4 h-4 ${iconCol}`} />
             </div>
             <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{label}</h2>
-            <Sparkles className="w-3.5 h-3.5 text-[#61c2ad]" />
+            <Sparkles className="w-3.5 h-3.5 text-[#15A4AE]" />
             {!postAction && contactMatch !== null && contactMatch !== undefined && (
               <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200/70 dark:border-blue-500/20 text-[10px] font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
                 Existing contact{contactMatch.dealId ? ' · has open deal' : ''}
@@ -508,9 +508,9 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                 if (postAction === 'deal_added') {
                   const label = wasNewContact ? 'Contact & Deal Created' : 'Deal Created'
                   return (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#61c2ad]/10 border border-[#61c2ad]/30 shrink-0">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#61c2ad] shrink-0" />
-                      <span className="text-xs font-semibold text-[#3a9e8a] dark:text-[#61c2ad]">{label}</span>
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#15A4AE]/10 border border-[#15A4AE]/30 shrink-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] shrink-0" />
+                      <span className="text-xs font-semibold text-[#3a9e8a] dark:text-[#15A4AE]">{label}</span>
                       {actionTime && <span className="text-[10px] text-gray-400 ml-auto">{fmtTime(actionTime)}</span>}
                     </div>
                   )
@@ -688,7 +688,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                       <div className="rounded-2xl border border-gray-200 overflow-hidden bg-white flex-1 flex flex-col min-h-0">
                         {/* Compose header — To row */}
                         <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-200 bg-gray-50">
-                          <Reply className="w-3.5 h-3.5 text-[#61c2ad] shrink-0" />
+                          <Reply className="w-3.5 h-3.5 text-[#15A4AE] shrink-0" />
                           <span className="text-xs font-semibold text-gray-700 shrink-0">To:</span>
                           <span className="text-xs text-gray-600 flex-1 truncate">
                             {e.from_name ? `${e.from_name} <${e.from_address}>` : e.from_address}
@@ -1091,7 +1091,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
               {/* ── Reply compose footer ── */}
               {showReply ? (
                 sendResult === 'sent' ? (
-                  <p className="flex items-center gap-1.5 text-sm font-semibold text-[#61c2ad]">
+                  <p className="flex items-center gap-1.5 text-sm font-semibold text-[#15A4AE]">
                     <CheckCircle2 className="w-4 h-4" /> Reply sent
                   </p>
                 ) : (
@@ -1111,7 +1111,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                           setIsEnhancing(false)
                         }
                       }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#61c2ad] hover:bg-[#61c2ad]/10 rounded-xl transition-colors disabled:opacity-50 border border-[#61c2ad]/30"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#15A4AE] hover:bg-[#15A4AE]/10 rounded-xl transition-colors disabled:opacity-50 border border-[#15A4AE]/30"
                     >
                       {isEnhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                       {isEnhancing ? 'Enhancing…' : 'Enhance with Sage AI'}
@@ -1128,7 +1128,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
               ) : postAction ? (
                 <>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-[#61c2ad] font-semibold">
+                    <p className="text-xs text-[#15A4AE] font-semibold">
                       {postAction === 'deal_added' ? 'Deal added to pipeline.' : 'Ticket created.'}
                     </p>
                     {ignoring && <p className="text-[11px] text-gray-400 mt-0.5">Closing…</p>}
@@ -1624,10 +1624,10 @@ export function SageDashboardClient({
           {/* Sage Auto */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2.5 bg-white dark:bg-[#232323] border dark:border-white/10 rounded-xl px-4 py-2">
-              <Zap className={`w-3.5 h-3.5 shrink-0 ${sageAuto ? 'text-[#61c2ad]' : 'text-gray-400'}`} />
+              <Zap className={`w-3.5 h-3.5 shrink-0 ${sageAuto ? 'text-[#15A4AE]' : 'text-gray-400'}`} />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sage Auto</span>
               <Toggle checked={sageAuto} onChange={toggleSageAuto} />
-              <span className={`text-xs font-bold ${sageAuto ? 'text-[#61c2ad]' : 'text-gray-400'}`}>
+              <span className={`text-xs font-bold ${sageAuto ? 'text-[#15A4AE]' : 'text-gray-400'}`}>
                 {sageAuto ? 'ON' : 'OFF'}
               </span>
               {/* Right side — always fills the gap */}
@@ -1640,7 +1640,7 @@ export function SageDashboardClient({
                       setDefaultPipelineId(val)
                       await setDefaultPipeline(val)
                     }}
-                    className="text-[11px] bg-gray-50 dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/40 cursor-pointer"
+                    className="text-[11px] bg-gray-50 dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 cursor-pointer"
                   >
                     <option value="">Default pipeline</option>
                     {pipelines.map(p => (
@@ -1653,7 +1653,7 @@ export function SageDashboardClient({
                     onClick={handleBackfill}
                     disabled={backfilling}
                     title="Process existing emails, bots & forms that were analysed before Sage Auto was enabled"
-                    className="flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-lg border border-gray-200 dark:border-white/10 text-gray-400 hover:text-[#3a9e8a] hover:border-[#61c2ad]/40 transition-colors disabled:opacity-50 whitespace-nowrap"
+                    className="flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-lg border border-gray-200 dark:border-white/10 text-gray-400 hover:text-[#3a9e8a] hover:border-[#15A4AE]/40 transition-colors disabled:opacity-50 whitespace-nowrap"
                   >
                     {backfilling ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
                     {backfilling ? 'Processing…' : 'Process existing'}
@@ -1662,7 +1662,7 @@ export function SageDashboardClient({
               </div>
             </div>
             {/* Status description — fades in briefly after toggle */}
-            <p className={`text-[11px] px-1 transition-opacity duration-500 ${showAutoDesc ? 'opacity-100' : 'opacity-0 pointer-events-none'} ${sageAuto ? 'text-[#61c2ad]' : 'text-gray-400 dark:text-gray-500'}`}>
+            <p className={`text-[11px] px-1 transition-opacity duration-500 ${showAutoDesc ? 'opacity-100' : 'opacity-0 pointer-events-none'} ${sageAuto ? 'text-[#15A4AE]' : 'text-gray-400 dark:text-gray-500'}`}>
               {sageAuto
                 ? 'Full automation ON — AI creates contacts & deals automatically.'
                 : 'Assist mode — AI analyses only. You act manually in the dashboard.'}
@@ -1681,8 +1681,8 @@ export function SageDashboardClient({
               ? `Contact created from ${channelLabel} for "${r.name}"${pipeline ? ` — deal created under "${pipeline.name}"` : ''}`
               : `Ticket created from ${channelLabel} for "${r.name}"`
             return (
-              <div key={r.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#61c2ad]/8 dark:bg-[#61c2ad]/10 border border-[#61c2ad]/20 dark:border-[#61c2ad]/15">
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#3a9e8a] dark:text-[#61c2ad] shrink-0" />
+              <div key={r.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#15A4AE]/8 dark:bg-[#15A4AE]/10 border border-[#15A4AE]/20 dark:border-[#15A4AE]/15">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#3a9e8a] dark:text-[#15A4AE] shrink-0" />
                 <span className="text-xs text-gray-700 dark:text-gray-300 flex-1">{line}</span>
                 <button
                   onClick={() => dismissBackfillResult(r.id)}
@@ -1701,7 +1701,7 @@ export function SageDashboardClient({
       {!emailConnected && !viewAsUserId && (
         <Link
           href={connectProvider ? `/integrations?provider=${connectProvider}` : '/integrations'}
-          className="flex items-center gap-3 mb-5 px-4 py-3 bg-[#61c2ad] rounded-xl hover:bg-[#4eab97] transition-colors group shadow-md"
+          className="flex items-center gap-3 mb-5 px-4 py-3 bg-[#15A4AE] rounded-xl hover:bg-[#4eab97] transition-colors group shadow-md"
         >
           <Mail className="w-5 h-5 text-white shrink-0" />
           <div className="flex-1 min-w-0">

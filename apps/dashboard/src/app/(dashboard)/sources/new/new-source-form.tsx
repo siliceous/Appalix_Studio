@@ -259,7 +259,7 @@ export function NewSourceForm({ allowedTypes }: Props) {
                   locked
                     ? 'border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/5 opacity-60 cursor-not-allowed'
                     : type === value
-                      ? 'border-brand-500 dark:border-[#61c2ad]/60 bg-brand-50 dark:bg-[#61c2ad]/10'
+                      ? 'border-brand-500 dark:border-[#15A4AE]/60 bg-brand-50 dark:bg-[#15A4AE]/10'
                       : 'border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5'
                 }`}
               >
@@ -269,7 +269,7 @@ export function NewSourceForm({ allowedTypes }: Props) {
                     {planLabel}
                   </span>
                 )}
-                <span className={locked ? 'text-gray-300 dark:text-white/20' : type === value ? 'text-brand-600 dark:text-[#61c2ad]' : 'text-gray-400 dark:text-gray-500'}>
+                <span className={locked ? 'text-gray-300 dark:text-white/20' : type === value ? 'text-brand-600 dark:text-[#15A4AE]' : 'text-gray-400 dark:text-gray-500'}>
                   {icon}
                 </span>
                 <div>

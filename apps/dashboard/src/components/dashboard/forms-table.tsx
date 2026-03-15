@@ -12,7 +12,7 @@ import type { SageForm, SageFormSubmission } from '@/app/actions/sage-forms'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const PRIORITY_BADGE: Record<string, string> = {
-  high:   'bg-[#61c2ad]/10 dark:bg-[#61c2ad]/15 text-[#1f6157] dark:text-[#61c2ad] border border-[#61c2ad]/30',
+  high:   'bg-[#15A4AE]/10 dark:bg-[#15A4AE]/15 text-[#1f6157] dark:text-[#15A4AE] border border-[#15A4AE]/30',
   medium: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200/70 dark:border-amber-500/18',
   low:    'bg-gray-100 dark:bg-white/5 text-gray-500 border border-gray-200 dark:border-white/10',
 }
@@ -24,7 +24,7 @@ const STATUS_BADGE: Record<string, string> = {
 }
 
 // ── Active pill style (consistent with conversations page) ────────────────────
-const ACTIVE_PILL   = 'bg-[#61c2ad]/15 dark:bg-[#61c2ad]/20 text-[#1f6157] dark:text-[#61c2ad] border border-[#61c2ad]/30'
+const ACTIVE_PILL   = 'bg-[#15A4AE]/15 dark:bg-[#15A4AE]/20 text-[#1f6157] dark:text-[#15A4AE] border border-[#15A4AE]/30'
 const INACTIVE_PILL = 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -154,7 +154,7 @@ export function FormsTable({ submissions, forms, filters, readonly = false }: Pr
               placeholder="Search by name or email…"
               onKeyDown={e => { if (e.key === 'Enter') pushFilter({ q: (e.target as HTMLInputElement).value || undefined }) }}
               onBlur={e => { if (e.target.value !== (filters.q ?? '')) pushFilter({ q: e.target.value || undefined }) }}
-              className="w-full pl-8 pr-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
+              className="w-full pl-8 pr-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
             />
             {filters.q && (
               <button onClick={() => pushFilter({ q: undefined })}
@@ -170,7 +170,7 @@ export function FormsTable({ submissions, forms, filters, readonly = false }: Pr
               <select
                 value={activeForm}
                 onChange={e => pushFilter({ form: e.target.value || undefined })}
-                className="appearance-none pl-3 pr-8 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 cursor-pointer"
+                className="appearance-none pl-3 pr-8 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer"
               >
                 <option value="">All forms</option>
                 {forms.map(f => (

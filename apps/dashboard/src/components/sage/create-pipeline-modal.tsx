@@ -46,7 +46,7 @@ const TEMPLATES = [
     name:        'Onboarding',
     description: 'Guide new customers through setup and go-live',
     icon:        Rocket,
-    color:       'bg-brand-100 dark:bg-[#61c2ad]/20 text-brand-700 dark:text-[#61c2ad]',
+    color:       'bg-brand-100 dark:bg-[#15A4AE]/20 text-brand-700 dark:text-[#15A4AE]',
     stages:      ['Welcome', 'Setup', 'Training', 'Go-Live', 'Review'],
   },
   {
@@ -156,19 +156,19 @@ export function CreatePipelineModal({ onClose }: CreatePipelineModalProps) {
                     onClick={() => setSelected(t.key)}
                     className={`relative text-left p-3 rounded-xl border-2 transition-all duration-150 ${
                       isSelected
-                        ? 'border-brand-500 dark:border-[#61c2ad] bg-brand-50 dark:bg-[#61c2ad]/12 shadow-sm'
+                        ? 'border-brand-500 dark:border-[#15A4AE] bg-brand-50 dark:bg-[#15A4AE]/12 shadow-sm'
                         : 'border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/4 hover:border-gray-300 dark:hover:border-white/20 hover:bg-white dark:hover:bg-white/7'
                     }`}
                   >
                     {isSelected && (
-                      <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-brand-600 dark:bg-[#61c2ad] flex items-center justify-center shrink-0">
+                      <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-brand-600 dark:bg-[#15A4AE] flex items-center justify-center shrink-0">
                         <Check className="w-2.5 h-2.5 text-white dark:text-[#1c1c1c]" />
                       </div>
                     )}
                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center mb-2 ${t.color}`}>
                       <Icon className="w-3.5 h-3.5" />
                     </div>
-                    <p className={`text-xs font-semibold mb-0.5 pr-4 leading-snug ${isSelected ? 'text-brand-800 dark:text-[#61c2ad]' : 'text-gray-900 dark:text-gray-100'}`}>
+                    <p className={`text-xs font-semibold mb-0.5 pr-4 leading-snug ${isSelected ? 'text-brand-800 dark:text-[#15A4AE]' : 'text-gray-900 dark:text-gray-100'}`}>
                       {t.name}
                     </p>
                     <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-2 leading-relaxed">{t.description}</p>
@@ -178,7 +178,7 @@ export function CreatePipelineModal({ onClose }: CreatePipelineModalProps) {
                           key={s}
                           className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
                             isSelected
-                              ? 'bg-brand-100 dark:bg-[#61c2ad]/20 text-brand-700 dark:text-[#61c2ad]'
+                              ? 'bg-brand-100 dark:bg-[#15A4AE]/20 text-brand-700 dark:text-[#15A4AE]'
                               : 'bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-400'
                           }`}
                         >
@@ -213,7 +213,7 @@ export function CreatePipelineModal({ onClose }: CreatePipelineModalProps) {
         {step === 'name' && (
           <div className="p-6 space-y-4">
             {template && (
-              <div className={`p-3 rounded-xl border ${template.color.includes('brand') ? 'bg-brand-50 dark:bg-[#61c2ad]/12 border-brand-100 dark:border-[#61c2ad]/25' : 'bg-gray-50 dark:bg-white/5 border-gray-100 dark:border-white/10'}`}>
+              <div className={`p-3 rounded-xl border ${template.color.includes('brand') ? 'bg-brand-50 dark:bg-[#15A4AE]/12 border-brand-100 dark:border-[#15A4AE]/25' : 'bg-gray-50 dark:bg-white/5 border-gray-100 dark:border-white/10'}`}>
                 <div className="flex items-center gap-2 mb-2">
                   <div className={`w-6 h-6 rounded-md flex items-center justify-center ${template.color}`}>
                     <template.icon className="w-3.5 h-3.5" />
@@ -242,7 +242,7 @@ export function CreatePipelineModal({ onClose }: CreatePipelineModalProps) {
                 placeholder="e.g. Q1 Sales 2026"
                 autoFocus
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleToStages() } }}
-                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE]"
               />
             </div>
 
@@ -289,7 +289,7 @@ export function CreatePipelineModal({ onClose }: CreatePipelineModalProps) {
                     value={stage}
                     onChange={e => updateStage(i, e.target.value)}
                     placeholder="Stage name"
-                    className="flex-1 px-3 py-1.5 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+                    className="flex-1 px-3 py-1.5 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE]"
                   />
                   <button
                     type="button"
@@ -306,7 +306,7 @@ export function CreatePipelineModal({ onClose }: CreatePipelineModalProps) {
             <button
               type="button"
               onClick={addStage}
-              className="flex items-center gap-1.5 text-xs font-medium text-[#3d9585] dark:text-[#61c2ad] hover:text-brand-700 dark:hover:text-[#61c2ad]/80 transition-colors"
+              className="flex items-center gap-1.5 text-xs font-medium text-[#3d9585] dark:text-[#15A4AE] hover:text-brand-700 dark:hover:text-[#15A4AE]/80 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
               Add Stage

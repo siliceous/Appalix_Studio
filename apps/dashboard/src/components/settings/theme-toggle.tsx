@@ -17,7 +17,7 @@ export function ThemeToggle() {
         onClick={() => setTheme('light')}
         className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-medium transition-colors ${
           theme === 'light'
-            ? 'bg-brand-50 border-brand-300 text-brand-700 dark:bg-[#61c2ad]/10 dark:border-[#61c2ad]/40 dark:text-[#61c2ad]'
+            ? 'bg-brand-50 border-brand-300 text-brand-700 dark:bg-[#15A4AE]/10 dark:border-[#15A4AE]/40 dark:text-[#15A4AE]'
             : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
         }`}
       >
@@ -28,7 +28,7 @@ export function ThemeToggle() {
         onClick={() => setTheme('dark')}
         className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-medium transition-colors ${
           theme === 'dark'
-            ? 'bg-brand-50 border-brand-300 text-brand-700 dark:bg-[#61c2ad]/10 dark:border-[#61c2ad]/40 dark:text-[#61c2ad]'
+            ? 'bg-brand-50 border-brand-300 text-brand-700 dark:bg-[#15A4AE]/10 dark:border-[#15A4AE]/40 dark:text-[#15A4AE]'
             : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
         }`}
       >

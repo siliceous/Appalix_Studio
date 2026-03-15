@@ -123,10 +123,10 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
 
   return (
     <div className="rounded-2xl shadow-[0_0_55px_12px_rgba(255,255,255,0.09),0_0_110px_30px_rgba(255,255,255,0.045)]">
-    <div className="w-full bg-white/[0.04] border border-[#61c2ad]/60 rounded-2xl overflow-hidden">
+    <div className="w-full bg-white/[0.04] border border-[#15A4AE]/60 rounded-2xl overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-white/5">
-        <div className="w-2.5 h-2.5 rounded-full bg-[#61c2ad] animate-pulse" />
+        <div className="w-2.5 h-2.5 rounded-full bg-[#15A4AE] animate-pulse" />
         <span className="text-xs text-gray-400 font-medium">Appalix AI Agent · Online</span>
       </div>
 
@@ -138,7 +138,7 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
               className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
                 m.role === 'user'
                   ? 'bg-[#2a2a2a] border border-white/10 text-gray-200 rounded-br-sm'
-                  : 'bg-[#2a2a2a] border border-white/10 text-[#61c2ad] rounded-bl-sm'
+                  : 'bg-[#2a2a2a] border border-white/10 text-[#15A4AE] rounded-bl-sm'
               }`}
             >
               {m.text}
@@ -164,7 +164,7 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
               <button
                 key={i}
                 onClick={() => handleFaqClick(faq, i)}
-                className="w-full text-left px-3.5 py-2 rounded-xl border border-[#61c2ad]/50 bg-[#61c2ad]/10 text-sm text-[#61c2ad] hover:bg-[#61c2ad]/20 hover:border-[#61c2ad]/70 transition-colors"
+                className="w-full text-left px-3.5 py-2 rounded-xl border border-[#15A4AE]/50 bg-[#15A4AE]/10 text-sm text-[#15A4AE] hover:bg-[#15A4AE]/20 hover:border-[#15A4AE]/70 transition-colors"
               >
                 {faq.q}
               </button>
@@ -182,9 +182,9 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
                   30% { opacity: 1; }
                 }
               `}</style>
-              <span className="w-2 h-2 rounded-full bg-[#61c2ad]" style={{ animation: 'dot-flash 1.4s infinite', animationDelay: '0ms' }} />
-              <span className="w-2 h-2 rounded-full bg-[#61c2ad]" style={{ animation: 'dot-flash 1.4s infinite', animationDelay: '280ms' }} />
-              <span className="w-2 h-2 rounded-full bg-[#61c2ad]" style={{ animation: 'dot-flash 1.4s infinite', animationDelay: '560ms' }} />
+              <span className="w-2 h-2 rounded-full bg-[#15A4AE]" style={{ animation: 'dot-flash 1.4s infinite', animationDelay: '0ms' }} />
+              <span className="w-2 h-2 rounded-full bg-[#15A4AE]" style={{ animation: 'dot-flash 1.4s infinite', animationDelay: '280ms' }} />
+              <span className="w-2 h-2 rounded-full bg-[#15A4AE]" style={{ animation: 'dot-flash 1.4s infinite', animationDelay: '560ms' }} />
             </div>
           </div>
         )}

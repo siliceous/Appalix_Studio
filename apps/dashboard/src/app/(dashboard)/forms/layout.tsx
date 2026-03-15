@@ -28,8 +28,8 @@ export default async function FormsLayout({ children }: { children: React.ReactN
   if (!isPro) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <div className="w-16 h-16 rounded-2xl bg-brand-50 dark:bg-[#61c2ad]/10 border border-brand-200 dark:border-[#61c2ad]/20 flex items-center justify-center mb-6">
-          <Inbox className="w-7 h-7 text-brand-600 dark:text-[#61c2ad]" />
+        <div className="w-16 h-16 rounded-2xl bg-brand-50 dark:bg-[#15A4AE]/10 border border-brand-200 dark:border-[#15A4AE]/20 flex items-center justify-center mb-6">
+          <Inbox className="w-7 h-7 text-brand-600 dark:text-[#15A4AE]" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">Lead Ad Forms</h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm max-w-md mb-8 leading-relaxed">

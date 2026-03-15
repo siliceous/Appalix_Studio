@@ -197,7 +197,7 @@ export function PipelineBoard({
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search deals…"
-            className="w-full pl-8 pr-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+            className="w-full pl-8 pr-3 py-1.5 text-sm border dark:border-white/10 rounded-lg bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE]"
           />
         </div>
 
@@ -207,7 +207,7 @@ export function PipelineBoard({
             onClick={() => { setShowSortMenu(v => !v); setShowFilterMenu(false) }}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
               sortKey !== 'none'
-                ? 'border-brand-400 bg-brand-50 dark:bg-brand-600/15 text-brand-700 dark:text-[#61c2ad]'
+                ? 'border-brand-400 bg-brand-50 dark:bg-brand-600/15 text-brand-700 dark:text-[#15A4AE]'
                 : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
             }`}
           >
@@ -222,7 +222,7 @@ export function PipelineBoard({
                   onClick={() => { setSortKey(key); setShowSortMenu(false) }}
                   className={`w-full text-left px-4 py-2 text-xs transition-colors ${
                     sortKey === key
-                      ? 'bg-brand-50 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad]'
+                      ? 'bg-brand-50 dark:bg-[#15A4AE]/10 text-brand-700 dark:text-[#15A4AE]'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
                   }`}
                 >
@@ -239,7 +239,7 @@ export function PipelineBoard({
             onClick={() => { setShowFilterMenu(v => !v); setShowSortMenu(false) }}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
               activeFilters > 0
-                ? 'border-brand-400 bg-brand-50 dark:bg-brand-600/15 text-brand-700 dark:text-[#61c2ad]'
+                ? 'border-brand-400 bg-brand-50 dark:bg-brand-600/15 text-brand-700 dark:text-[#15A4AE]'
                 : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
             }`}
           >
@@ -280,14 +280,14 @@ export function PipelineBoard({
           <button
             onClick={() => setViewMode('kanban')}
             title="Kanban view"
-            className={`p-1.5 transition-colors ${viewMode === 'kanban' ? 'bg-brand-50 dark:bg-[#61c2ad]/15 text-brand-600 dark:text-[#61c2ad]' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'}`}
+            className={`p-1.5 transition-colors ${viewMode === 'kanban' ? 'bg-brand-50 dark:bg-[#15A4AE]/15 text-brand-600 dark:text-[#15A4AE]' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'}`}
           >
             <KanbanSquare className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => setViewMode('list')}
             title="List view"
-            className={`p-1.5 transition-colors border-l dark:border-white/10 ${viewMode === 'list' ? 'bg-brand-50 dark:bg-[#61c2ad]/15 text-brand-600 dark:text-[#61c2ad]' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'}`}
+            className={`p-1.5 transition-colors border-l dark:border-white/10 ${viewMode === 'list' ? 'bg-brand-50 dark:bg-[#15A4AE]/15 text-brand-600 dark:text-[#15A4AE]' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'}`}
           >
             <LayoutList className="w-3.5 h-3.5" />
           </button>
@@ -379,12 +379,12 @@ export function PipelineBoard({
                               setDeals(prev => prev.map(d => d.id === deal.id ? { ...d, stage_id: newStageId } : d))
                               moveDeal(deal.id, newStageId).catch(() => setDeals(initialDeals))
                             }}
-                            className="text-[11px] px-2 py-0.5 rounded-full bg-[#61c2ad]/10 text-[#3d9585] dark:text-[#61c2ad] font-medium cursor-pointer border-none focus:outline-none focus:ring-1 focus:ring-[#61c2ad]/40 hover:bg-[#61c2ad]/20 transition-colors appearance-none"
+                            className="text-[11px] px-2 py-0.5 rounded-full bg-[#15A4AE]/10 text-[#3d9585] dark:text-[#15A4AE] font-medium cursor-pointer border-none focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 hover:bg-[#15A4AE]/20 transition-colors appearance-none"
                           >
                             {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                           </select>
                         ) : (
-                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#61c2ad]/10 text-[#3d9585] dark:text-[#61c2ad] font-medium">
+                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#15A4AE]/10 text-[#3d9585] dark:text-[#15A4AE] font-medium">
                             {stages.find(s => s.id === deal.stage_id)?.name ?? '—'}
                           </span>
                         )}
@@ -407,7 +407,7 @@ export function PipelineBoard({
                         {canWrite && (
                           <button
                             onClick={e => { e.stopPropagation(); setOpenEditOnDealId(deal.id); setSelectedDealId(deal.id) }}
-                            className="opacity-0 group-hover/row:opacity-100 p-1 text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] rounded transition-all"
+                            className="opacity-0 group-hover/row:opacity-100 p-1 text-gray-400 hover:text-brand-600 dark:hover:text-[#15A4AE] rounded transition-all"
                             title="Edit deal"
                           >
                             <Pencil className="w-3.5 h-3.5" />
@@ -443,12 +443,12 @@ export function PipelineBoard({
             >
               {/* Stage header */}
               <div className="flex items-center gap-2 mb-3">
-                <span className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#61c2ad]/15 dark:bg-[#61c2ad]/20 text-[#3d9585] dark:text-[#61c2ad] truncate">
+                <span className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#15A4AE]/15 dark:bg-[#15A4AE]/20 text-[#3d9585] dark:text-[#15A4AE] truncate">
                   {stage.name}
                 </span>
                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400 shrink-0 tabular-nums">{stageDeals.length}</span>
                 {total > 0 && (
-                  <span className="text-xs font-semibold text-[#3d9585] dark:text-[#61c2ad] shrink-0">
+                  <span className="text-xs font-semibold text-[#3d9585] dark:text-[#15A4AE] shrink-0">
                     {new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(total)}
                   </span>
                 )}
@@ -457,7 +457,7 @@ export function PipelineBoard({
               {/* Deal cards */}
               <div className={`flex-1 min-h-0 space-y-2 overflow-y-auto rounded-xl p-2 border-2 transition-colors ${
                 isDragOver
-                  ? 'border-brand-300 dark:border-[#61c2ad]/40 bg-brand-50/50 dark:bg-[#61c2ad]/5'
+                  ? 'border-brand-300 dark:border-[#15A4AE]/40 bg-brand-50/50 dark:bg-[#15A4AE]/5'
                   : 'border-transparent'
               }`}>
                 {stageDeals.map(deal => (
@@ -489,7 +489,7 @@ export function PipelineBoard({
                           {canWrite && (
                             <button
                               onClick={e => { e.stopPropagation(); setOpenEditOnDealId(deal.id); setSelectedDealId(deal.id) }}
-                              className="opacity-0 group-hover/title:opacity-100 p-0.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#61c2ad] rounded transition-all shrink-0"
+                              className="opacity-0 group-hover/title:opacity-100 p-0.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#15A4AE] rounded transition-all shrink-0"
                               title="Edit deal"
                             >
                               <Pencil className="w-3 h-3" />

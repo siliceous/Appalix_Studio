@@ -199,7 +199,7 @@ function RuleModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b dark:border-white/10">
           <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-brand-600 dark:text-[#61c2ad]" />
+            <Zap className="w-4 h-4 text-brand-600 dark:text-[#15A4AE]" />
             <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
               {initial.name ? 'Edit rule' : 'New automation rule'}
             </h2>
@@ -244,7 +244,7 @@ function RuleModal({
               <button
                 type="button"
                 onClick={addCondition}
-                className="text-[11px] text-brand-600 dark:text-[#61c2ad] hover:underline flex items-center gap-1"
+                className="text-[11px] text-brand-600 dark:text-[#15A4AE] hover:underline flex items-center gap-1"
               >
                 <Plus className="w-3 h-3" /> Add condition
               </button>
@@ -300,7 +300,7 @@ function RuleModal({
               onClick={() => setField('notify_owner', !form.notify_owner)}
               className={cn(
                 'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
-                form.notify_owner ? 'bg-brand-600 dark:bg-[#61c2ad]' : 'bg-gray-200 dark:bg-white/10',
+                form.notify_owner ? 'bg-brand-600 dark:bg-[#15A4AE]' : 'bg-gray-200 dark:bg-white/10',
               )}
             >
               <span className={cn(
@@ -403,7 +403,7 @@ function RuleCard({
               'font-medium',
               rule.action_type === 'ignore' ? 'text-gray-500' :
               rule.action_type === 'create_ticket' ? 'text-orange-600 dark:text-orange-400' :
-              'text-brand-700 dark:text-[#61c2ad]',
+              'text-brand-700 dark:text-[#15A4AE]',
             )}>
               {ACTION_LABELS[rule.action_type]}
             </span>
@@ -426,7 +426,7 @@ function RuleCard({
             className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
           >
             {rule.enabled
-              ? <ToggleRight className="w-4 h-4 text-brand-600 dark:text-[#61c2ad]" />
+              ? <ToggleRight className="w-4 h-4 text-brand-600 dark:text-[#15A4AE]" />
               : <ToggleLeft  className="w-4 h-4" />
             }
           </button>
@@ -521,11 +521,11 @@ export function RulesManager({ initialRules, pipelines }: Props) {
       </div>
 
       {/* How it works */}
-      <div className="flex items-start gap-3 p-4 rounded-xl bg-brand-50 dark:bg-[#61c2ad]/8 border border-brand-100 dark:border-[#61c2ad]/20 text-xs text-brand-800 dark:text-[#61c2ad]">
+      <div className="flex items-start gap-3 p-4 rounded-xl bg-brand-50 dark:bg-[#15A4AE]/8 border border-brand-100 dark:border-[#15A4AE]/20 text-xs text-brand-800 dark:text-[#15A4AE]">
         <Zap className="w-4 h-4 shrink-0 mt-0.5" />
         <div className="space-y-1">
           <p className="font-medium">How rules work</p>
-          <p className="text-brand-700 dark:text-[#61c2ad]/80">
+          <p className="text-brand-700 dark:text-[#15A4AE]/80">
             When Sage Auto processes an item, it checks your rules first. The highest-priority matching rule wins
             and overrides the default action and pipeline. If no rule matches, the workspace default applies.
             All conditions in a rule must pass (AND logic).

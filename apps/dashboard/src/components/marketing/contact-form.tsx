@@ -114,9 +114,9 @@ export function ContactForm() {
 
       {/* Submit */}
       {state?.success ? (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-[#61c2ad]/10 border border-[#61c2ad]/25">
-          <span className="text-[#61c2ad] text-xl">✓</span>
-          <p className="text-sm text-[#61c2ad] font-medium">{state.message}</p>
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-[#15A4AE]/10 border border-[#15A4AE]/25">
+          <span className="text-[#15A4AE] text-xl">✓</span>
+          <p className="text-sm text-[#15A4AE] font-medium">{state.message}</p>
         </div>
       ) : (
         <>

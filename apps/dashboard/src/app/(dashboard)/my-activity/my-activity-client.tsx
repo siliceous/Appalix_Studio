@@ -9,7 +9,7 @@ const ENTITY_COLORS: Record<string, string> = {
   ticket:       'bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400',
   conversation: 'bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300',
   lead:         'bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300',
-  deal:         'bg-[#61c2ad]/15 text-[#3a9e8a] dark:text-[#61c2ad]',
+  deal:         'bg-[#15A4AE]/15 text-[#3a9e8a] dark:text-[#15A4AE]',
   contact:      'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-300',
   task:         'bg-indigo-100 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300',
 }
@@ -89,7 +89,7 @@ export function MyActivityClient({ rows }: { rows: ActivityRow[] }) {
           <button
             onClick={() => downloadCsv(filtered)}
             disabled={filtered.length === 0}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-[#61c2ad] hover:bg-[#4aab96] text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-[#15A4AE] hover:bg-[#4aab96] text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Download className="w-4 h-4" />
             Export CSV
@@ -105,7 +105,7 @@ export function MyActivityClient({ rows }: { rows: ActivityRow[] }) {
               placeholder="Search activities…"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-8 pr-3 py-2 text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 text-gray-700 dark:text-gray-200 placeholder-gray-400"
+              className="w-full pl-8 pr-3 py-2 text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 text-gray-700 dark:text-gray-200 placeholder-gray-400"
             />
           </div>
           <div className="flex items-center gap-1.5">
@@ -113,7 +113,7 @@ export function MyActivityClient({ rows }: { rows: ActivityRow[] }) {
             <select
               value={typeFilter}
               onChange={e => setTypeFilter(e.target.value)}
-              className="text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40"
+              className="text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
             >
               {entityTypes.map(t => (
                 <option key={t} value={t}>{t === 'all' ? 'All types' : t.charAt(0).toUpperCase() + t.slice(1)}</option>

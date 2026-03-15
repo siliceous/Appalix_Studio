@@ -170,7 +170,7 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search leads…"
-            className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-[#232323] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+            className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-[#232323] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE]"
           />
         </div>
 
@@ -178,7 +178,7 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
           <select
             value={platformFilter}
             onChange={e => setPlatform(e.target.value as 'all' | LeadAdPlatform)}
-            className="appearance-none pl-3 pr-7 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-[#232323] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+            className="appearance-none pl-3 pr-7 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-[#232323] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE]"
           >
             <option value="all">All platforms</option>
             <option value="meta">Meta Ads</option>
@@ -193,7 +193,7 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
           <select
             value={scoreFilter}
             onChange={e => setScore(e.target.value as 'all' | LeadScore)}
-            className="appearance-none pl-3 pr-7 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-[#232323] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#61c2ad]"
+            className="appearance-none pl-3 pr-7 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-[#232323] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE]"
           >
             <option value="all">All scores</option>
             <option value="high">High priority</option>
@@ -248,7 +248,7 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
             </thead>
             <tbody className="divide-y dark:divide-white/5">
               {filtered.map(lead => (
-                <tr key={lead.id} className={`transition-colors ${selectedIds.has(lead.id) ? 'bg-brand-50 dark:bg-[#61c2ad]/8' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}>
+                <tr key={lead.id} className={`transition-colors ${selectedIds.has(lead.id) ? 'bg-brand-50 dark:bg-[#15A4AE]/8' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}>
                   {/* Checkbox */}
                   <td className="px-5 py-3.5" onClick={e => e.stopPropagation()}>
                     <input
@@ -296,7 +296,7 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
                   {/* Status */}
                   <td className="px-5 py-3.5">
                     {lead.pipeline_stage === 'crm_pipeline' ? (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand-50 dark:bg-[#61c2ad]/10 text-brand-700 dark:text-[#61c2ad]">
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand-50 dark:bg-[#15A4AE]/10 text-brand-700 dark:text-[#15A4AE]">
                         In Pipeline
                       </span>
                     ) : (
@@ -316,7 +316,7 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
                           <select
                             value={lead.assigned_to ?? ''}
                             onChange={e => handleAssign(lead.id, e.target.value || null)}
-                            className="appearance-none pl-2 pr-6 py-1 text-xs border border-gray-200 dark:border-white/10 rounded-md bg-white dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-[#61c2ad] max-w-[130px]"
+                            className="appearance-none pl-2 pr-6 py-1 text-xs border border-gray-200 dark:border-white/10 rounded-md bg-white dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-[#15A4AE] max-w-[130px]"
                           >
                             <option value="">Unassigned</option>
                             {teamMembers.map(m => (
@@ -346,7 +346,7 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
                           onClick={() => handleMoveToPipeline(lead.id)}
                           disabled={moving === lead.id}
                           title="Move to CRM Pipeline"
-                          className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-[#3d9585] dark:text-[#61c2ad] hover:bg-[#61c2ad]/10 rounded-md transition-colors disabled:opacity-50"
+                          className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-[#3d9585] dark:text-[#15A4AE] hover:bg-[#15A4AE]/10 rounded-md transition-colors disabled:opacity-50"
                         >
                           {moving === lead.id
                             ? <Loader2 className="w-3 h-3 animate-spin" />
