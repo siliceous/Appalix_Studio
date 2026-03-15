@@ -136,7 +136,7 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
     <div className="w-14 shrink-0 relative z-20">
       <aside className={cn(
         'group absolute inset-y-0 left-0 flex flex-col',
-        'w-14 hover:w-60',
+        'w-14 hover:w-[204px]',
         'bg-white dark:bg-[#232323] border-r dark:border-white/8',
         'transition-[width] duration-200 ease-in-out overflow-hidden',
         'hover:shadow-xl dark:hover:shadow-black/40',
