@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   X, FileText, Phone, Users, CheckSquare,
   User, Mail, Clock, Bot, Loader2, Ticket as TicketIcon, Check, Pencil,
@@ -53,7 +52,6 @@ interface Props {
 }
 
 export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
-  const router = useRouter()
   const [tab,          setTab]          = useState<'overview' | 'activity'>('overview')
   const [localStatus,   setLocalStatus]   = useState<SageTicketStatus>('open')
   const [localPriority, setLocalPriority] = useState<string>('medium')
@@ -97,8 +95,7 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
     if (!ticket) return
     setLocalStatus(status)
     onStatusChanged?.(ticket.id, status)
-    await updateTicketStatus(ticket.id, status)
-    router.refresh()
+    void updateTicketStatus(ticket.id, status)
   }
 
   async function handlePriorityChange(priority: string) {
@@ -292,7 +289,6 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
                           ticket.phone = editPhone.trim() || null
                           setSavingContact(false)
                           setEditingContact(false)
-                          router.refresh()
                         }}
                         disabled={savingContact}
                         className="flex-1 py-1.5 text-xs font-medium rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition-colors disabled:opacity-50"

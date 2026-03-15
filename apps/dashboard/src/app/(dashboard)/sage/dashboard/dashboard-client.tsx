@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect, useMemo, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { PieChart, Pie, Cell, Tooltip } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
@@ -172,7 +171,6 @@ function ItemPopup({
   onAction: (extra?: Array<{ kind: string; id: string }>) => void
   onPriorityChanged?: (emailId: string, priority: string) => void
 }) {
-  const router = useRouter()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [data, setData]               = useState<any>(null)
   const [loading, setLoading]         = useState(true)
@@ -577,7 +575,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                                       setPriorityValue(p)
                                       setPriorityOpen(false)
                                       onPriorityChanged?.(e.id, p)
-                                      updateEmailPriority(e.id, p).then(() => router.refresh())
+                                      void updateEmailPriority(e.id, p)
                                     }}
                                     className={`flex items-center gap-2 w-full px-3 py-2 text-[10px] font-semibold uppercase tracking-wide transition-colors hover:opacity-80 ${POPUP_PRIORITY_BADGE[p] ?? ''}`}
                                   >

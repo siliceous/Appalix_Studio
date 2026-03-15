@@ -265,7 +265,6 @@ interface DetailCardProps {
 }
 
 function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, onAction, onPriorityChanged, isDeleting, isAnalyzing, emailProvider, modalSize, onResize, readonly = false }: DetailCardProps) {
-  const router    = useRouter()
   const { email, meeting } = t
   const entities  = email.ai_entities
   const drafts    = email.ai_reply_drafts ?? []
@@ -284,8 +283,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
   async function handlePriorityChange(p: string) {
     setPriorityValue(p)
     onPriorityChanged?.(email.id, p)
-    await updateEmailPriority(email.id, p)
-    router.refresh()
+    void updateEmailPriority(email.id, p)
   }
   const [attachments,    setAttachments]    = useState<EmailAttachment[]>([])
   const [sent,           setSent]           = useState(false)
@@ -1035,7 +1033,6 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
       setSelectedIds(new Set())
       if (ids.includes(selectedEmailId)) setSelectedEmailId('')
       setRefreshKey(k => k + 1)
-      router.refresh()
     })
   }
 
@@ -1045,7 +1042,6 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
       setDismissed(prev => new Set([...prev, emailId]))
       if (emailId === selectedEmailId) setSelectedEmailId('')
       setRefreshKey(k => k + 1)
-      router.refresh()
     })
   }
 
@@ -1155,9 +1151,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
       if (result?.error) {
         setModalError(result.error)
       } else {
-        // Pair with refreshKey so scroll containers remount cleanly
         setRefreshKey(k => k + 1)
-        router.refresh()
       }
     })
   }
