@@ -1467,13 +1467,14 @@ export function SageDashboardClient({
   const visEmails  = useMemo(() => emails.filter(e  => !dismissedIds.has(`email-${e.id}`)),   [emails,   dismissedIds])
   const visBots    = useMemo(() => bots.filter(b    => !dismissedIds.has(`bot-${b.id}`)),     [bots,     dismissedIds])
   const visForms   = useMemo(() => forms.filter(f   => !dismissedIds.has(`form-${f.id}`)),    [forms,    dismissedIds])
-  const visTickets = useMemo(() => tickets.filter(t => !dismissedIds.has(`ticket-${t.id}`)), [tickets,  dismissedIds])
+  // Tickets are open support items — always show regardless of dismissal until status changes
+  const visTickets = useMemo(() => tickets, [tickets])
 
   // ── Donut segments (always reflect visible feed, same as triage counts) ──
   const emailSegs:  DonutSegment[] = [{ name: 'High', value: visEmails.filter(e => e.ai_priority === 'high').length, fill: P_COLORS.high }, { name: 'Medium', value: visEmails.filter(e => e.ai_priority === 'medium').length, fill: P_COLORS.medium }]
   const botSegs:    DonutSegment[] = [{ name: 'High', value: visBots.filter(b => b.ai_priority === 'high').length,   fill: P_COLORS.high }, { name: 'Medium', value: visBots.filter(b => b.ai_priority === 'medium').length,   fill: P_COLORS.medium }]
   const formSegs:   DonutSegment[] = [{ name: 'High', value: visForms.filter(f => f.lead_score === 'high').length, fill: P_COLORS.high }, { name: 'Medium', value: visForms.filter(f => f.lead_score === 'medium').length, fill: P_COLORS.medium }, { name: 'Low', value: visForms.filter(f => f.lead_score === 'low' || !f.lead_score).length, fill: P_COLORS.low }]
-  const ticketSegs: DonutSegment[] = [{ name: 'High', value: tickets.filter(t => t.priority === 'high' || t.priority === 'urgent').length, fill: P_COLORS.high }, { name: 'Medium', value: tickets.filter(t => t.priority === 'medium').length, fill: P_COLORS.medium }, { name: 'Low', value: tickets.filter(t => t.priority === 'low').length, fill: P_COLORS.low }]
+  const ticketSegs: DonutSegment[] = [{ name: 'High', value: visTickets.filter(t => t.priority === 'high' || t.priority === 'urgent').length, fill: P_COLORS.high }, { name: 'Medium', value: visTickets.filter(t => t.priority === 'medium').length, fill: P_COLORS.medium }, { name: 'Low', value: visTickets.filter(t => t.priority === 'low').length, fill: P_COLORS.low }]
 
   // ── Timeline (uses pre-filtered visible arrays) ───────────────────────────
   const P_RANK: Record<string, number> = { urgent: 0, high: 0, medium: 1, low: 2 }
