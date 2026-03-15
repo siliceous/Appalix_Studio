@@ -460,6 +460,11 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
             </div>
             <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{label}</h2>
             <Sparkles className="w-3.5 h-3.5 text-[#61c2ad]" />
+            {!postAction && contactMatch !== null && contactMatch !== undefined && (
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200/70 dark:border-blue-500/20 text-[10px] font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                Existing contact{contactMatch.dealId ? ' · has open deal' : ''}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {/* Quick-action buttons in header for email — only shown when compose is open */}
@@ -523,15 +528,6 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
                       <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">Ticket Created</span>
                       {actionTime && <span className="text-[10px] text-gray-400 ml-auto">{fmtTime(actionTime)}</span>}
-                    </div>
-                  )
-                }
-                if (!postAction && contactMatch !== null && contactMatch !== undefined) {
-                  return (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200/70 dark:border-blue-500/20 shrink-0">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
-                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">Existing contact</span>
-                      {contactMatch.dealId && <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-1">· has open deal</span>}
                     </div>
                   )
                 }
