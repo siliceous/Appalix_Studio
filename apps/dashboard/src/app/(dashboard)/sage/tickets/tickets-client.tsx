@@ -351,18 +351,19 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{ticket.title}</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{ticket.title}</p>
                     {ticket.description && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">{ticket.description}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 leading-relaxed">{ticket.description}</p>
                     )}
-                    {(ticket.name || ticket.contact) && (
-                      <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-1">
-                        <Mail className="w-3 h-3" />
-                        {ticket.name ?? ticket.contact?.name}
-                        {ticket.contact?.email && <span className="text-gray-300 dark:text-gray-600">· {ticket.contact.email}</span>}
-                      </p>
-                    )}
-                    <p className="text-[11px] text-gray-400 mt-1">{timeAgo(ticket.created_at)}</p>
+                    <div className="flex items-center gap-2.5 mt-1.5">
+                      {(ticket.name || ticket.contact) && (
+                        <p className="flex items-center gap-1 text-[11px] text-gray-400">
+                          <Mail className="w-3 h-3 shrink-0" />
+                          <span className="truncate max-w-[160px]">{ticket.name ?? ticket.contact?.name}</span>
+                        </p>
+                      )}
+                      <span className="text-[11px] text-gray-400">{timeAgo(ticket.created_at)}</span>
+                    </div>
                   </div>
 
                   {/* Status selector + actions */}
