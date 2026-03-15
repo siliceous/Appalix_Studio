@@ -1,6 +1,8 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect }    from 'next/navigation'
 import type { Metadata } from 'next'
+import type { WorkspaceMember, WorkspaceMemberRole } from '@/lib/types'
+import { ROLE_RANK } from '@/lib/types'
 import { MyActivityClient } from './my-activity-client'
 
 export const metadata: Metadata = { title: 'My Activity' }
@@ -50,28 +52,62 @@ export interface ActivityRow {
   created_at:  string
 }
 
-export default async function MyActivityPage() {
+export default async function MyActivityPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ viewAs?: string }>
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
   const { data: membershipRaw } = await supabase
     .from('workspace_members')
-    .select('workspace_id')
+    .select('workspace_id, role')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true })
     .limit(1)
     .single()
-  const workspaceId = (membershipRaw as { workspace_id: string } | null)?.workspace_id
-  if (!workspaceId) redirect('/login')
+  type MRow = Pick<WorkspaceMember, 'workspace_id' | 'role'>
+  const membership = membershipRaw as MRow | null
+  if (!membership) redirect('/login')
+
+  const { viewAs } = await searchParams
+  const callerRank = ROLE_RANK[membership.role as WorkspaceMemberRole] ?? 0
+
+  // Resolve viewAs — validate caller outranks the target
+  let targetUserId = user.id
+  let viewAsName: string | null = null
+  if (viewAs && callerRank >= ROLE_RANK.manager) {
+    const admin = createAdminClient()
+    const { data: targetRaw } = await admin
+      .from('workspace_members')
+      .select('user_id, role')
+      .eq('workspace_id', membership.workspace_id)
+      .eq('user_id', viewAs)
+      .single()
+    type TRow = { user_id: string; role: WorkspaceMemberRole }
+    const target = targetRaw as TRow | null
+    if (target && ROLE_RANK[target.role] < callerRank) {
+      targetUserId = target.user_id
+      const { data: profileRaw } = await admin
+        .from('user_profiles')
+        .select('first_name, last_name')
+        .eq('user_id', target.user_id)
+        .single()
+      type PRow = { first_name: string; last_name: string | null }
+      const p = profileRaw as PRow | null
+      viewAsName = p ? [p.first_name, p.last_name].filter(Boolean).join(' ') || viewAs : viewAs
+    }
+  }
 
   const admin = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: raw } = await (admin as any)
     .from('sage_activity_log')
     .select('id, event_type, entity_type, payload, created_at')
-    .eq('workspace_id', workspaceId)
-    .eq('user_id', user.id)
+    .eq('workspace_id', membership.workspace_id)
+    .eq('user_id', targetUserId)
     .order('created_at', { ascending: false })
     .limit(500)
 
@@ -90,5 +126,5 @@ export default async function MyActivityPage() {
     }
   })
 
-  return <MyActivityClient rows={rows} />
+  return <MyActivityClient rows={rows} viewAsName={viewAsName} />
 }

@@ -47,7 +47,7 @@ function downloadCsv(rows: ActivityRow[]) {
   a.click(); URL.revokeObjectURL(url)
 }
 
-export function MyActivityClient({ rows }: { rows: ActivityRow[] }) {
+export function MyActivityClient({ rows, viewAsName }: { rows: ActivityRow[]; viewAsName?: string | null }) {
   const [search,     setSearch]     = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
 
@@ -81,10 +81,12 @@ export function MyActivityClient({ rows }: { rows: ActivityRow[] }) {
 
       {/* Header */}
       <div className="px-8 pt-8 pb-5 border-b dark:border-white/8 shrink-0">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="max-w-3xl mx-auto flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">My Activity</h1>
-            <p className="text-sm text-gray-400 mt-0.5">Read-only log of all your actions · {rows.length} entries</p>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+              {viewAsName ? `${viewAsName}'s Activity` : 'My Activity'}
+            </h1>
+            <p className="text-sm text-gray-400 mt-0.5">Read-only log of all actions · {rows.length} entries</p>
           </div>
           <button
             onClick={() => downloadCsv(filtered)}
@@ -97,7 +99,7 @@ export function MyActivityClient({ rows }: { rows: ActivityRow[] }) {
         </div>
 
         {/* Filters */}
-        <div className="flex items-center gap-3 mt-4 flex-wrap">
+        <div className="max-w-3xl mx-auto flex items-center gap-3 mt-4 flex-wrap">
           <div className="relative flex-1 min-w-[180px] max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
             <input
@@ -140,7 +142,7 @@ export function MyActivityClient({ rows }: { rows: ActivityRow[] }) {
             <p className="text-sm font-medium">{rows.length === 0 ? 'No activity recorded yet' : 'No entries match your filters'}</p>
           </div>
         ) : (
-          <div className="space-y-8 max-w-3xl">
+          <div className="space-y-8 max-w-3xl mx-auto">
             {Array.from(grouped.entries()).map(([dateKey, dayRows]) => (
               <div key={dateKey}>
                 {/* Date separator */}
