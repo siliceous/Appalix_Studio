@@ -185,7 +185,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
       </div>
 
       {/* ── Table ── */}
-      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-hidden">
+      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-x-auto">
         {conversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <MessageSquare className="w-10 h-10 text-gray-200 dark:text-gray-600 mb-3" />
@@ -200,7 +200,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Platform</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Priority</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Msgs</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide min-w-[130px]">Last active</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide w-[160px]">Last active</th>
                 {canAssign && <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Assigned to</th>}
                 <th className="text-right px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide w-px whitespace-nowrap">Actions</th>
               </tr>
@@ -258,7 +258,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                     </td>
 
                     {/* Last active */}
-                    <td className="px-4 py-3.5 text-right text-xs text-gray-400 whitespace-nowrap">
+                    <td className="px-4 py-3.5 text-right text-xs text-gray-400 whitespace-nowrap w-[160px]">
                       {timeAgo(c.last_activity_at)}
                     </td>
 
