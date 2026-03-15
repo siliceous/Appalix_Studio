@@ -199,7 +199,6 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Bot</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Platform</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Priority</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide max-w-[200px]">Summary</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Msgs</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide min-w-[130px]">Last active</th>
                 {canAssign && <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Assigned to</th>}
@@ -252,14 +251,6 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                       ) : <span className="text-gray-300 dark:text-gray-600">—</span>}
                     </td>
 
-                    {/* AI Summary excerpt */}
-                    <td className="px-4 py-3.5 max-w-[200px]">
-                      {c.ai_summary ? (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={c.ai_summary}>
-                          {c.ai_summary.length > 90 ? c.ai_summary.slice(0, 90) + '…' : c.ai_summary}
-                        </p>
-                      ) : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>}
-                    </td>
 
                     {/* Message count */}
                     <td className="px-4 py-3.5 text-right text-sm text-gray-500 dark:text-gray-400">
