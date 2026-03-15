@@ -7,7 +7,7 @@ import { EmailTriageDashboard, type TriageEmail, type TriageRecommendation } fro
 import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
-import { TeamMemberBanner } from '@/components/team/team-member-banner'
+import { ActivitySidebar }    from '@/components/team/activity-sidebar'
 
 export const metadata: Metadata = { title: 'Email Triage' }
 
@@ -207,9 +207,11 @@ export default async function EmailTriagePage({ searchParams }: { searchParams: 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
       <SubpageToolbar sourceKey="email" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.email_auto_enabled} viewAsUserId={viewAsUserId} />
-      <TeamMemberBanner activity={activity} date={activityDate} currentPath="/dashboard/email" viewingAs={viewingAs} selectedDate={params.activityDate} />
       <div className="flex flex-1 overflow-hidden">
-        <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} connectedEmail={connectedEmail} autoSync={params.syncing === '1'} readonly={!!viewAsUserId} />
+        <div className="flex-1 overflow-hidden">
+          <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} connectedEmail={connectedEmail} autoSync={params.syncing === '1'} readonly={!!viewAsUserId} />
+        </div>
+        <ActivitySidebar activity={activity} date={activityDate} currentPath="/dashboard/email" viewingAs={viewingAs} />
       </div>
     </div>
   )

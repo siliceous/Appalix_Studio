@@ -283,6 +283,17 @@ export async function updateEmailPriority(emailId: string, priority: string): Pr
   if (!workspaceId) return { error: 'Unauthorized' }
 
   const admin = createAdminClient()
+
+  // Fetch subject before updating so we can include it in the activity log
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: emailRow } = await (admin as any)
+    .from('sage_emails')
+    .select('subject')
+    .eq('id', emailId)
+    .eq('workspace_id', workspaceId)
+    .single()
+  const subject = (emailRow as { subject?: string | null } | null)?.subject ?? null
+
   const { error } = await admin
     .from('sage_emails')
     .update({ ai_priority: priority })
@@ -296,7 +307,7 @@ export async function updateEmailPriority(emailId: string, priority: string): Pr
     entity_type:  'email',
     entity_id:    emailId,
     event_type:   'priority_changed',
-    payload:      { priority },
+    payload:      { priority, name: subject },
     user_id:      user.id,
   })
 
