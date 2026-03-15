@@ -447,12 +447,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
 
   const sizeClass = popupSize === 'sm' ? 'sm:max-w-lg' : popupSize === 'lg' ? 'sm:max-w-[95vw]' : 'sm:max-w-2xl'
 
-  // Reply is only available for high/medium/urgent priority emails.
-  // priorityValue tracks an in-popup change, falling back to the loaded email's priority.
-  const effectiveEmailPriority = popup.kind === 'email'
-    ? (priorityValue ?? (data as SageEmail | null)?.ai_priority ?? 'low')
-    : null
-  const canReply = effectiveEmailPriority !== 'low'
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:px-6 sm:py-8 bg-black/55 dark:bg-black/70"
@@ -1138,7 +1133,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                     </p>
                     {ignoring && <p className="text-[11px] text-gray-400 mt-0.5">Closing…</p>}
                   </div>
-                  {!ignoring && popup.kind === 'email' && canReply && (
+                  {!ignoring && popup.kind === 'email' && (
                     <button onClick={() => setShowReply(true)}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
                       <Reply className="w-3.5 h-3.5" /> Reply
@@ -1172,7 +1167,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                     </button>
                   )}
                   <div className="flex-1" />
-                  {popup.kind === 'email' && canReply && (
+                  {popup.kind === 'email' && (
                     <button onClick={() => setShowReply(true)}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
                       <Reply className="w-3.5 h-3.5" /> Reply
@@ -1212,7 +1207,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                     </>
                   )}
                   <div className="flex-1" />
-                  {popup.kind === 'email' && canReply && (
+                  {popup.kind === 'email' && (
                     <button onClick={() => setShowReply(true)}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
                       <Reply className="w-3.5 h-3.5" /> Reply
