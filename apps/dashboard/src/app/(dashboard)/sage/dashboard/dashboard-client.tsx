@@ -187,6 +187,8 @@ function ItemPopup({
   const [popupSize, setPopupSize]             = useState<'sm' | 'md' | 'lg'>('md')
   const [priorityValue,  setPriorityValue]    = useState<string | null>(null)
   const [priorityOpen,   setPriorityOpen]     = useState(false)
+  const [wasNewContact,  setWasNewContact]    = useState<boolean | null>(null)
+  const [actionTime,     setActionTime]       = useState<Date | null>(null)
 
   const POPUP_PRIORITY_DOT: Record<string, string> = {
     high: 'bg-[#61c2ad]', medium: 'bg-amber-400', low: 'bg-gray-300 dark:bg-gray-600',
@@ -360,10 +362,13 @@ function ItemPopup({
       phone = t.contact?.phone ?? null
     }
 
+    const isNew = contactMatch === null
     const result = await dashboardAddLead({ name, email, phone, company, interest, source: src, conversationId, pipelineId })
     setActionBusy(false)
     if (result.error) { setActionError(result.error); return }
     onAction()
+    setWasNewContact(isNew)
+    setActionTime(new Date())
     setPostAction('deal_added')
   }
 
@@ -409,6 +414,7 @@ function ItemPopup({
     if (result.error) { setActionError(result.error); return }
     const extra = result.ticketId ? [{ kind: 'ticket', id: result.ticketId }] : []
     onAction(extra)
+    setActionTime(new Date())
     setPostAction('ticket_added')
   }
 
@@ -500,6 +506,40 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
             <p className="text-sm text-gray-400 text-center py-12">Unable to load details.</p>
           ) : (
             <>
+              {/* ── Contact / deal status badge ── */}
+              {(() => {
+                const fmtTime = (d: Date) => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+                if (postAction === 'deal_added') {
+                  const label = wasNewContact ? 'Contact & Deal Created' : 'Deal Created'
+                  return (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#61c2ad]/10 border border-[#61c2ad]/30 shrink-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#61c2ad] shrink-0" />
+                      <span className="text-xs font-semibold text-[#3a9e8a] dark:text-[#61c2ad]">{label}</span>
+                      {actionTime && <span className="text-[10px] text-gray-400 ml-auto">{fmtTime(actionTime)}</span>}
+                    </div>
+                  )
+                }
+                if (postAction === 'ticket_added') {
+                  return (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200/70 dark:border-amber-500/25 shrink-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                      <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">Ticket Created</span>
+                      {actionTime && <span className="text-[10px] text-gray-400 ml-auto">{fmtTime(actionTime)}</span>}
+                    </div>
+                  )
+                }
+                if (!postAction && contactMatch !== null && contactMatch !== undefined) {
+                  return (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200/70 dark:border-blue-500/20 shrink-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">Existing contact</span>
+                      {contactMatch.dealId && <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-1">· has open deal</span>}
+                    </div>
+                  )
+                }
+                return null
+              })()}
+
               {/* ── Email popup ── */}
               {popup.kind === 'email' && (() => {
                 const e = data as SageEmail

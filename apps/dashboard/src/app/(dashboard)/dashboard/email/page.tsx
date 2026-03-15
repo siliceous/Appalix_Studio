@@ -207,10 +207,8 @@ export default async function EmailTriagePage({ searchParams }: { searchParams: 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
       <SubpageToolbar sourceKey="email" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.email_auto_enabled} viewAsUserId={viewAsUserId} />
-      <div className="flex flex-1 overflow-hidden">
-        <div className="flex-1 overflow-hidden">
-          <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} connectedEmail={connectedEmail} autoSync={params.syncing === '1'} readonly={!!viewAsUserId} />
-        </div>
+      <div className="flex flex-1 overflow-hidden min-h-0">
+        <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} connectedEmail={connectedEmail} autoSync={params.syncing === '1'} readonly={!!viewAsUserId} />
         <ActivitySidebar activity={activity} date={activityDate} currentPath="/dashboard/email" viewingAs={viewingAs} />
       </div>
     </div>
