@@ -126,5 +126,5 @@ export default async function MyActivityPage({
     }
   })
 
-  return <MyActivityClient rows={rows} viewAsName={viewAsName} />
+  return <MyActivityClient rows={rows} viewAsName={viewAsName} canExport={callerRank >= ROLE_RANK.manager} />
 }

@@ -47,7 +47,7 @@ function downloadCsv(rows: ActivityRow[]) {
   a.click(); URL.revokeObjectURL(url)
 }
 
-export function MyActivityClient({ rows, viewAsName }: { rows: ActivityRow[]; viewAsName?: string | null }) {
+export function MyActivityClient({ rows, viewAsName, canExport }: { rows: ActivityRow[]; viewAsName?: string | null; canExport?: boolean }) {
   const [search,     setSearch]     = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
 
@@ -88,14 +88,16 @@ export function MyActivityClient({ rows, viewAsName }: { rows: ActivityRow[]; vi
             </h1>
             <p className="text-sm text-gray-400 mt-0.5">Read-only log of all actions · {rows.length} entries</p>
           </div>
-          <button
-            onClick={() => downloadCsv(filtered)}
-            disabled={filtered.length === 0}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-[#15A4AE] hover:bg-[#4aab96] text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Download className="w-4 h-4" />
-            Export CSV
-          </button>
+          {canExport && (
+            <button
+              onClick={() => downloadCsv(filtered)}
+              disabled={filtered.length === 0}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-[#15A4AE] hover:bg-[#4aab96] text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Download className="w-4 h-4" />
+              Export CSV
+            </button>
+          )}
         </div>
 
         {/* Filters */}
