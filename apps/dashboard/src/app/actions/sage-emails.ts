@@ -275,6 +275,36 @@ export async function scheduleMeetingFromEmail(opts: {
  * Mark a triage email as read (is_read=true) so it no longer appears in triage.
  * Called explicitly when the user dismisses the post-send popup ("Done").
  */
+export async function updateEmailPriority(emailId: string, priority: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { error: 'Unauthorized' }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('sage_emails')
+    .update({ ai_priority: priority })
+    .eq('id', emailId)
+    .eq('workspace_id', workspaceId)
+
+  if (error) return { error: error.message }
+
+  await admin.from('sage_activity_log').insert({
+    workspace_id: workspaceId,
+    entity_type:  'email',
+    entity_id:    emailId,
+    event_type:   'priority_changed',
+    payload:      { priority },
+    user_id:      user.id,
+  })
+
+  revalidatePath('/dashboard/email')
+  revalidatePath('/dashboard')
+  return {}
+}
+
 export async function markEmailRead(emailId: string): Promise<void> {
   const admin = createAdminClient()
   await admin.from('sage_emails').update({ is_read: true }).eq('id', emailId)

@@ -8,7 +8,7 @@ import {
   Pencil, ExternalLink, X, Trash2,
 } from 'lucide-react'
 import { PLATFORM_META, timeAgo } from '@/lib/utils'
-import { renameConversation, assignConversation, deleteConversation } from '@/app/actions/conversation'
+import { renameConversation, assignConversation, deleteConversation, updateConversationPriority } from '@/app/actions/conversation'
 import { deleteConversations } from '@/app/actions/bot-conversations'
 import { exportConversations } from '@/app/actions/csv-export'
 import { CsvExportButton } from '@/components/ui/csv-export-button'
@@ -50,9 +50,10 @@ interface Props {
 export function ConversationsClient({ conversations, bots, filters, teamMembers = [], canAssign = false, readonly = false }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
-  const [localAssign, setLocalAssign] = React.useState<Record<string, string | null>>({})
-  const [assigning, setAssigning] = React.useState<string | null>(null)
-  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set())
+  const [localAssign,    setLocalAssign]    = React.useState<Record<string, string | null>>({})
+  const [assigning,      setAssigning]      = React.useState<string | null>(null)
+  const [selectedIds,    setSelectedIds]    = React.useState<Set<string>>(new Set())
+  const [localPriority,  setLocalPriority]  = React.useState<Record<string, string>>({})
 
   const allSelected = conversations.length > 0 && selectedIds.size === conversations.length
   function toggleSelectAll() {
@@ -69,6 +70,11 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
       setSelectedIds(new Set())
       router.refresh()
     })
+  }
+
+  function handlePriorityChange(convId: string, priority: string) {
+    setLocalPriority(prev => ({ ...prev, [convId]: priority }))
+    void updateConversationPriority(convId, priority)
   }
 
   async function handleAssign(convId: string, userId: string | null) {
@@ -285,7 +291,19 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
 
                     {/* AI Priority */}
                     <td className="px-4 py-3.5">
-                      {c.ai_priority ? (
+                      {!readonly ? (
+                        <select
+                          value={localPriority[c.id] ?? c.ai_priority ?? ''}
+                          onChange={e => handlePriorityChange(c.id, e.target.value)}
+                          onClick={e => e.stopPropagation()}
+                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 ${PRIORITY_BADGE[(localPriority[c.id] ?? c.ai_priority) || 'low'] ?? PRIORITY_BADGE.low}`}
+                        >
+                          <option value="">—</option>
+                          <option value="low">low</option>
+                          <option value="medium">medium</option>
+                          <option value="high">high</option>
+                        </select>
+                      ) : c.ai_priority ? (
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${PRIORITY_BADGE[c.ai_priority] ?? PRIORITY_BADGE.low}`}>
                           {c.ai_priority}
                         </span>

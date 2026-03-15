@@ -13,9 +13,8 @@ import {
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   List, ListOrdered, Link2, Paperclip, Palette,
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 import { triageCreateLead, triageCreateTicket, triageAddDealNote } from '@/app/actions/sage-triage'
-import { syncEmails, deleteTriageEmails, reanalyzeEmails, sendEmail, rewriteEmail, markEmailRead } from '@/app/actions/sage-emails'
+import { syncEmails, deleteTriageEmails, reanalyzeEmails, sendEmail, rewriteEmail, markEmailRead, updateEmailPriority } from '@/app/actions/sage-emails'
 import type { SageEmail, SageMeeting } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { RichTextEditor, type RichTextEditorRef, type EmailAttachment } from '@/components/sage/rich-text-editor'
@@ -62,12 +61,6 @@ const PRIORITY_BADGE: Record<string, string> = {
 
 const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 }
 
-function sortByPriority(a: TriageEmail, b: TriageEmail): number {
-  const pa = a.email.ai_priority ? (PRIORITY_ORDER[a.email.ai_priority] ?? 3) : 3
-  const pb = b.email.ai_priority ? (PRIORITY_ORDER[b.email.ai_priority] ?? 3) : 3
-  if (pa !== pb) return pa - pb
-  return new Date(b.email.received_at).getTime() - new Date(a.email.received_at).getTime()
-}
 
 function formatDate(iso: string) {
   const d   = new Date(iso)
@@ -139,18 +132,20 @@ function categoryClass(cat: string): string {
 // ─── Compact Triage Card (grid view) ─────────────────────────────────────────
 
 interface CardProps {
-  t:          TriageEmail
-  isDone:     boolean
-  actionLabel: string | undefined
-  isChecked:  boolean
-  isSelected: boolean
-  onSelect:   (id: string) => void
-  onToggle:   (id: string) => void
+  t:                TriageEmail
+  effectivePriority: string | null
+  isDone:           boolean
+  actionLabel:      string | undefined
+  isChecked:        boolean
+  isSelected:       boolean
+  onSelect:         (id: string) => void
+  onToggle:         (id: string) => void
 }
 
-function TriageCard({ t, isDone, actionLabel, isChecked, isSelected, onSelect, onToggle }: CardProps) {
+function TriageCard({ t, effectivePriority, isDone, actionLabel, isChecked, isSelected, onSelect, onToggle }: CardProps) {
   const { email } = t
   const entities = email.ai_entities
+  const ep = effectivePriority
 
   return (
     <div
@@ -161,11 +156,11 @@ function TriageCard({ t, isDone, actionLabel, isChecked, isSelected, onSelect, o
           ? 'ring-2 ring-blue-400/40 dark:ring-blue-400/30 border-blue-200 dark:border-blue-500/30'
           : isDone
             ? 'border-green-200 dark:border-green-500/20'
-            : email.ai_priority === 'high'
+            : ep === 'high'
               ? 'border-[#61c2ad]/50 dark:border-[#61c2ad]/35'
-              : email.ai_priority === 'medium'
+              : ep === 'medium'
                 ? 'border-amber-200 dark:border-amber-500/25'
-                : email.ai_priority === 'low'
+                : ep === 'low'
                   ? 'border-transparent'
                   : 'border-gray-200 dark:border-white/8',
       )}
@@ -173,10 +168,10 @@ function TriageCard({ t, isDone, actionLabel, isChecked, isSelected, onSelect, o
       {/* Top row: badges + time + checkbox */}
       <div className="flex items-center justify-between px-4 pt-3 pb-2">
         <div className="flex items-center gap-1.5 flex-wrap">
-          {email.ai_priority ? (
-            <span className={cn('flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border', PRIORITY_BADGE[email.ai_priority])}>
-              <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT[email.ai_priority])} />
-              {email.ai_priority}
+          {ep ? (
+            <span className={cn('flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border', PRIORITY_BADGE[ep])}>
+              <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT[ep])} />
+              {ep}
             </span>
           ) : (
             <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/5 text-gray-500 border border-gray-200 dark:border-white/8 font-medium">
@@ -216,14 +211,14 @@ function TriageCard({ t, isDone, actionLabel, isChecked, isSelected, onSelect, o
         <div className="flex items-center gap-2">
           <div className={cn(
             'w-7 h-7 rounded-full flex items-center justify-center shrink-0',
-            email.ai_priority === 'high'   ? 'bg-[#61c2ad]/15 dark:bg-[#61c2ad]/20'
-            : email.ai_priority === 'medium' ? 'bg-amber-100 dark:bg-amber-500/15'
+            ep === 'high'   ? 'bg-[#61c2ad]/15 dark:bg-[#61c2ad]/20'
+            : ep === 'medium' ? 'bg-amber-100 dark:bg-amber-500/15'
             : 'bg-gray-100 dark:bg-white/5',
           )}>
             <span className={cn(
               'text-[11px] font-bold',
-              email.ai_priority === 'high'   ? 'text-[#61c2ad]'
-              : email.ai_priority === 'medium' ? 'text-amber-600 dark:text-amber-400'
+              ep === 'high'   ? 'text-[#61c2ad]'
+              : ep === 'medium' ? 'text-amber-600 dark:text-amber-400'
               : 'text-gray-500 dark:text-gray-400',
             )}>
               {(email.from_name ?? email.from_address).charAt(0).toUpperCase()}
@@ -252,23 +247,25 @@ function TriageCard({ t, isDone, actionLabel, isChecked, isSelected, onSelect, o
 type ModalSize = 'sm' | 'md' | 'lg'
 
 interface DetailCardProps {
-  t:             TriageEmail
-  allEmails:     TriageEmail[]
-  actioned:      Map<string, string>
-  modalSize?:    ModalSize
-  onResize?:     () => void
-  onAction:      (t: TriageEmail, mode: 'lead' | 'ticket' | 'deal_note') => void
-  onDismiss:     (id: string) => void
-  onDelete:      (id: string) => void
-  onClose:       () => void
-  onAnalyze:     (id: string) => void
-  isDeleting:    boolean
-  isAnalyzing:   boolean
-  emailProvider: 'gmail' | 'microsoft' | null
-  readonly?:     boolean
+  t:                  TriageEmail
+  allEmails:          TriageEmail[]
+  actioned:           Map<string, string>
+  modalSize?:         ModalSize
+  onResize?:          () => void
+  onAction:           (t: TriageEmail, mode: 'lead' | 'ticket' | 'deal_note') => void
+  onDismiss:          (id: string) => void
+  onDelete:           (id: string) => void
+  onClose:            () => void
+  onAnalyze:          (id: string) => void
+  onPriorityChanged?: (emailId: string, priority: string) => void
+  isDeleting:         boolean
+  isAnalyzing:        boolean
+  emailProvider:      'gmail' | 'microsoft' | null
+  readonly?:          boolean
 }
 
-function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, onAction, isDeleting, isAnalyzing, emailProvider, modalSize, onResize, readonly = false }: DetailCardProps) {
+function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, onAction, onPriorityChanged, isDeleting, isAnalyzing, emailProvider, modalSize, onResize, readonly = false }: DetailCardProps) {
+  const router    = useRouter()
   const { email, meeting } = t
   const entities  = email.ai_entities
   const drafts    = email.ai_reply_drafts ?? []
@@ -286,8 +283,9 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
 
   async function handlePriorityChange(p: string) {
     setPriorityValue(p)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (createClient() as any).from('sage_emails').update({ ai_priority: p }).eq('id', email.id)
+    onPriorityChanged?.(email.id, p)
+    await updateEmailPriority(email.id, p)
+    router.refresh()
   }
   const [attachments,    setAttachments]    = useState<EmailAttachment[]>([])
   const [sent,           setSent]           = useState(false)
@@ -376,9 +374,9 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
     <div
       className={cn(
         'flex flex-col h-full bg-white dark:bg-[#232323] rounded-2xl border shadow-sm overflow-hidden',
-        email.ai_priority === 'high'
+        currentPriority === 'high'
           ? 'border-blue-200 dark:border-blue-500/25'
-          : email.ai_priority === 'medium'
+          : currentPriority === 'medium'
             ? 'border-amber-200 dark:border-amber-500/25'
             : 'border-gray-200 dark:border-white/8',
       )}
@@ -921,7 +919,16 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
   const [isReanalyzing,     startReanalyzeTransition] = useTransition()
   const [syncMsg,         setSyncMsg]         = useState<string | null>(null)
   const [analyzeMsg,      setAnalyzeMsg]      = useState<string | null>(null)
-  const [selectedIds,     setSelectedIds]     = useState<Set<string>>(new Set())
+  const [selectedIds,       setSelectedIds]       = useState<Set<string>>(new Set())
+  const [priorityOverrides, setPriorityOverrides] = useState<Map<string, string>>(new Map())
+
+  function handlePriorityOverride(emailId: string, priority: string) {
+    setPriorityOverrides(prev => new Map(prev).set(emailId, priority))
+  }
+
+  function effP(t: TriageEmail): string | null {
+    return priorityOverrides.get(t.email.id) ?? t.email.ai_priority ?? null
+  }
 
   // Ref so the interval callback can always see the latest pending count
   const pendingCountRef     = useRef(0)
@@ -1156,9 +1163,9 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
   }
 
   const visible         = triageEmails.filter(t => !dismissed.has(t.email.id))
-  const highEmails      = visible.filter(t => t.email.ai_priority === 'high')
-  const medEmails       = visible.filter(t => t.email.ai_priority === 'medium')
-  const lowEmails       = visible.filter(t => t.email.ai_priority === 'low')
+  const highEmails      = visible.filter(t => effP(t) === 'high')
+  const medEmails       = visible.filter(t => effP(t) === 'medium')
+  const lowEmails       = visible.filter(t => effP(t) === 'low')
   const pendingEmails   = visible.filter(t => !t.email.ai_analyzed_at)
   const highCount       = highEmails.length
   const medCount        = medEmails.length
@@ -1173,7 +1180,12 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
     }
   }, [unanalyzedCount, runAutoAnalyze])
 
-  const sortedVisible       = [...visible].sort(sortByPriority)
+  const sortedVisible       = [...visible].sort((a, b) => {
+    const pa = effP(a) ? (PRIORITY_ORDER[effP(a)!] ?? 3) : 3
+    const pb = effP(b) ? (PRIORITY_ORDER[effP(b)!] ?? 3) : 3
+    if (pa !== pb) return pa - pb
+    return new Date(b.email.received_at).getTime() - new Date(a.email.received_at).getTime()
+  })
   const selectedTriageEmail = selectedEmailId ? visible.find(t => t.email.id === selectedEmailId) ?? null : null
 
   // ── Contact grouping: one card per sender, primary = highest priority ───────
@@ -1223,10 +1235,11 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
     onClose:      () => setSelectedEmailId(''),
     onAnalyze:    handleAnalyzeOne,
     isDeleting,
-    isAnalyzing:  isReanalyzing,
+    isAnalyzing:       isReanalyzing,
     emailProvider,
     modalSize,
-    onResize:     () => setModalSize(s => s === 'sm' ? 'md' : s === 'md' ? 'lg' : 'sm'),
+    onResize:          () => setModalSize(s => s === 'sm' ? 'md' : s === 'md' ? 'lg' : 'sm'),
+    onPriorityChanged: handlePriorityOverride,
     readonly,
   }
 
@@ -1342,7 +1355,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
             dedupedSorted.map(t => {
               const isChecked  = selectedIds.has(t.email.id)
               const isActive   = selectedEmailId === t.email.id
-              const priority   = t.email.ai_priority
+              const priority   = effP(t)
               const groupKey   = t.matchedContact?.id ?? t.email.from_address
               const groupCount = (senderGroupMap.get(groupKey) ?? []).length
               return (
@@ -1491,7 +1504,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
                     {gridHigh.map(t => (
-                      <TriageCard key={t.email.id} t={t}
+                      <TriageCard key={t.email.id} t={t} effectivePriority={effP(t)}
                         isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
                         isChecked={selectedIds.has(t.email.id)} isSelected={selectedEmailId === t.email.id}
                         onSelect={id => setSelectedEmailId(selectedEmailId === id ? '' : id)}
@@ -1514,7 +1527,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
                     {gridMed.map(t => (
-                      <TriageCard key={t.email.id} t={t}
+                      <TriageCard key={t.email.id} t={t} effectivePriority={effP(t)}
                         isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
                         isChecked={selectedIds.has(t.email.id)} isSelected={selectedEmailId === t.email.id}
                         onSelect={id => setSelectedEmailId(selectedEmailId === id ? '' : id)}
@@ -1537,7 +1550,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
                     {gridLow.map(t => (
-                      <TriageCard key={t.email.id} t={t}
+                      <TriageCard key={t.email.id} t={t} effectivePriority={effP(t)}
                         isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
                         isChecked={selectedIds.has(t.email.id)} isSelected={selectedEmailId === t.email.id}
                         onSelect={id => setSelectedEmailId(selectedEmailId === id ? '' : id)}
@@ -1566,7 +1579,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
                     {gridPending.map(t => (
-                      <TriageCard key={t.email.id} t={t}
+                      <TriageCard key={t.email.id} t={t} effectivePriority={effP(t)}
                         isDone={actioned.has(t.email.id)} actionLabel={actioned.get(t.email.id)}
                         isChecked={selectedIds.has(t.email.id)} isSelected={selectedEmailId === t.email.id}
                         onSelect={id => setSelectedEmailId(selectedEmailId === id ? '' : id)}

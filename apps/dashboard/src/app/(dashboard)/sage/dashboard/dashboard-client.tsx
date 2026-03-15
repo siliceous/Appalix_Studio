@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { PieChart, Pie, Cell, Tooltip } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
@@ -15,7 +16,7 @@ import {
   Palette, Highlighter, FileSignature, Type,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
-import { sendEmail, scheduleMeetingFromEmail, getEmailSignature } from '@/app/actions/sage-emails'
+import { sendEmail, scheduleMeetingFromEmail, getEmailSignature, updateEmailPriority } from '@/app/actions/sage-emails'
 import { updateAutoSetting, dismissFeedItem, runAutoBackfill, setDefaultPipeline } from '@/app/actions/sage-auto-settings'
 import type { BackfillResultItem } from '@/app/actions/sage-auto-settings'
 import { getWorkspacePipelines, dashboardAddLead, dashboardAddTicket, batchMatchContacts } from '@/app/actions/sage-triage'
@@ -162,14 +163,16 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
 type PopupState = { kind: 'email' | 'bot' | 'form' | 'ticket'; id: string }
 
 function ItemPopup({
-  popup, pipelines, contactMatch, onClose, onAction,
+  popup, pipelines, contactMatch, onClose, onAction, onPriorityChanged,
 }: {
   popup: PopupState
   pipelines: { id: string; name: string }[]
   contactMatch: ContactMatch | null | undefined
   onClose: () => void
   onAction: (extra?: Array<{ kind: string; id: string }>) => void
+  onPriorityChanged?: (emailId: string, priority: string) => void
 }) {
+  const router = useRouter()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [data, setData]               = useState<any>(null)
   const [loading, setLoading]         = useState(true)
@@ -533,8 +536,8 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                                       ev.stopPropagation()
                                       setPriorityValue(p)
                                       setPriorityOpen(false)
-                                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                      ;(createClient() as any).from('sage_emails').update({ ai_priority: p }).eq('id', e.id)
+                                      onPriorityChanged?.(e.id, p)
+                                      updateEmailPriority(e.id, p).then(() => router.refresh())
                                     }}
                                     className={`flex items-center gap-2 w-full px-3 py-2 text-[10px] font-semibold uppercase tracking-wide transition-colors hover:opacity-80 ${POPUP_PRIORITY_BADGE[p] ?? ''}`}
                                   >
@@ -1475,6 +1478,9 @@ export function SageDashboardClient({
           pipelines={pipelines}
           contactMatch={contactMatches[popup.id]}
           onClose={() => setPopup(null)}
+          onPriorityChanged={(emailId, priority) => {
+            setEmails(prev => prev.map(e => e.id === emailId ? { ...e, ai_priority: priority } : e))
+          }}
           onAction={(extra) => {
             if (popup) {
               // Always dismiss the source feed item

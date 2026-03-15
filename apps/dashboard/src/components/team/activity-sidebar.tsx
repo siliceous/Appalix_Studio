@@ -9,20 +9,24 @@ import {
 import type { ActivityEntry, ViewingAsInfo } from '@/app/actions/activity-feed'
 
 const EVENT_LABELS: Record<string, string> = {
-  contact_created:  'Created contact',
-  contact_updated:  'Updated contact',
-  contact_assigned: 'Assigned contact',
-  deal_created:     'Created deal',
-  stage_changed:    'Moved deal stage',
-  status_changed:   'Updated status',
-  deal_assigned:    'Assigned deal',
-  ticket_created:   'Created ticket',
-  note_added:       'Added a note',
-  call_added:       'Logged a call',
-  meeting_added:    'Logged a meeting',
-  task_added:       'Added a task',
-  email_sent:       'Sent an email',
-  email_replied:    'Replied to email',
+  contact_created:       'Created contact',
+  contact_updated:       'Updated contact',
+  contact_assigned:      'Assigned contact',
+  deal_created:          'Created deal',
+  stage_changed:         'Moved deal stage',
+  status_changed:        'Updated status',
+  deal_assigned:         'Assigned deal',
+  ticket_created:        'Created ticket',
+  note_added:            'Added a note',
+  call_added:            'Logged a call',
+  meeting_added:         'Logged a meeting',
+  task_added:            'Added a task',
+  email_sent:            'Sent an email',
+  email_replied:         'Replied to email',
+  priority_changed:      'Changed priority',
+  conversation_renamed:  'Renamed conversation',
+  conversation_assigned: 'Assigned conversation',
+  lead_moved:            'Moved lead to pipeline',
 }
 
 function formatEventLabel(eventType: string, entityName?: string | null): string {
@@ -53,10 +57,13 @@ const ROLE_LABELS: Record<string, string> = {
 }
 
 const ENTITY_ICON: Record<string, React.ElementType> = {
-  contact: Users,
-  deal:    Briefcase,
-  ticket:  Ticket,
-  task:    CheckCircle2,
+  contact:      Users,
+  deal:         Briefcase,
+  ticket:       Ticket,
+  task:         CheckCircle2,
+  email:        Briefcase,
+  conversation: Briefcase,
+  lead:         Briefcase,
 }
 
 const UPCOMING_ICON: Record<string, React.ElementType> = {

@@ -10,7 +10,7 @@ import {
   addTicketActivity, getTicketActivities, completeTicketTask,
   type TicketActivityType,
 } from '@/app/actions/sage-tickets'
-import { updateTicketStatus, updateTicketContactInfo } from '@/app/actions/sage'
+import { updateTicketStatus, updateTicketPriority, updateTicketContactInfo } from '@/app/actions/sage'
 import { timeAgo, cn } from '@/lib/utils'
 import type { SageTicket, SageContact, SageTicketStatus, SageTicketActivity } from '@/lib/types'
 
@@ -55,7 +55,8 @@ interface Props {
 export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
   const router = useRouter()
   const [tab,          setTab]          = useState<'overview' | 'activity'>('overview')
-  const [localStatus,  setLocalStatus]  = useState<SageTicketStatus>('open')
+  const [localStatus,   setLocalStatus]   = useState<SageTicketStatus>('open')
+  const [localPriority, setLocalPriority] = useState<string>('medium')
   const [activities,   setActivities]   = useState<SageTicketActivity[]>([])
   const [actType,      setActType]      = useState<TicketActivityType>('note')
   const [actTitle,     setActTitle]     = useState('')
@@ -73,6 +74,7 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
   useEffect(() => {
     if (!ticket) return
     setLocalStatus(ticket.status)
+    setLocalPriority(ticket.priority ?? 'medium')
     setTab('overview')
     setActTitle(''); setActBody(''); setActDue('')
   }, [ticket?.id])
@@ -99,6 +101,13 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
     router.refresh()
   }
 
+  async function handlePriorityChange(priority: string) {
+    if (!ticket) return
+    setLocalPriority(priority)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await updateTicketPriority(ticket.id, priority as any)
+  }
+
   async function handleLogActivity() {
     if (!ticket || (!actBody.trim() && !actTitle.trim())) return
     startTransition(async () => {
@@ -115,7 +124,7 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
 
   if (!ticket) return null
 
-  const priorityStyle = PRIORITY_STYLES[ticket.priority] ?? PRIORITY_STYLES.low
+  const priorityStyle = PRIORITY_STYLES[localPriority] ?? PRIORITY_STYLES.low
   const statusStyle   = STATUS_STYLES[localStatus]
   const source        = ticket.contact_method === 'email' ? 'Email' : 'Bot'
 
@@ -136,9 +145,16 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
             <div className="min-w-0 flex-1">
               {/* Badges row */}
               <div className="flex items-center gap-1.5 mb-2">
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${priorityStyle.badge}`}>
-                  {priorityStyle.label}
-                </span>
+                <select
+                  value={localPriority}
+                  onChange={e => handlePriorityChange(e.target.value)}
+                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 ${priorityStyle.badge}`}
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusStyle.badge}`}>
                   {statusStyle.label}
                 </span>

@@ -4,11 +4,11 @@ import { useState, useTransition } from 'react'
 import { Ticket, Plus, Trash2, Mail, Pencil, Merge, X, Loader2, Search, ChevronDown } from 'lucide-react'
 import { TicketModal } from '@/components/sage/ticket-modal'
 import { TicketSlideOver } from '@/components/dashboard/ticket-slide-over'
-import { updateTicketStatus, deleteTicket, deleteTickets, mergeTickets, assignTicket } from '@/app/actions/sage'
+import { updateTicketStatus, updateTicketPriority, deleteTicket, deleteTickets, mergeTickets, assignTicket } from '@/app/actions/sage'
 import { exportTickets } from '@/app/actions/csv-export'
 import { CsvExportButton } from '@/components/ui/csv-export-button'
 import { timeAgo } from '@/lib/utils'
-import type { SageTicket, SageContact, SageTicketStatus, WorkspaceMemberSummary } from '@/lib/types'
+import type { SageTicket, SageContact, SageTicketStatus, SageTicketPriority, WorkspaceMemberSummary } from '@/lib/types'
 
 type TicketWithContact = SageTicket & { contact: Pick<SageContact, 'id' | 'name' | 'email'> | null }
 
@@ -61,6 +61,9 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
   const [, startBulkDelete]            = useTransition()
   const [assignedMap,  setAssignedMap]  = useState<Record<string, string>>(() =>
     Object.fromEntries(initialTickets.map(t => [t.id, t.owner_id ?? '']))
+  )
+  const [priorityMap,  setPriorityMap]  = useState<Record<string, string>>(() =>
+    Object.fromEntries(initialTickets.map(t => [t.id, t.priority ?? 'medium']))
   )
 
   function toggleSelect(id: string) {
@@ -142,6 +145,11 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
     startAssign(async () => { await assignTicket(ticketId, next) })
   }
 
+  function handlePriorityChange(ticketId: string, priority: SageTicketPriority) {
+    setPriorityMap(prev => ({ ...prev, [ticketId]: priority }))
+    void updateTicketPriority(ticketId, priority)
+  }
+
   async function handleDelete(id: string) {
     if (!confirm('Delete this ticket?')) return
     setDeleting(id)
@@ -200,7 +208,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
               <button
                 onClick={handleMerge}
                 disabled={!primaryId || merging}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors disabled:opacity-60"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm bg-[#61c2ad] hover:bg-[#4aab96] text-white font-medium rounded-xl transition-colors disabled:opacity-60"
               >
                 {merging ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Merge className="w-3.5 h-3.5" />}
                 {merging ? 'Merging…' : 'Merge'}
@@ -232,7 +240,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
           {canWrite && selectedIds.size >= 2 && (
             <button
               onClick={() => { setPrimaryId([...selectedIds][0]); setShowMerge(true) }}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-xl transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-[#61c2ad] hover:bg-[#4aab96] text-white text-sm font-medium rounded-xl transition-colors"
             >
               <Merge className="w-4 h-4" />
               Merge {selectedIds.size}
@@ -282,7 +290,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
                 type="checkbox"
                 checked={allSelected}
                 onChange={toggleSelectAll}
-                className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-amber-500 cursor-pointer"
+                className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-[#61c2ad] cursor-pointer"
               />
               All
             </label>
@@ -326,9 +334,10 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
         ) : (
           <div className="divide-y dark:divide-white/8">
             {filtered.map(ticket => {
-              const pc = PRIORITY_CONFIG[ticket.priority] ?? PRIORITY_CONFIG.medium
               const sc = STATUS_CONFIG[ticket.status] ?? STATUS_CONFIG.open
 
+              const currentPriority = priorityMap[ticket.id] ?? ticket.priority ?? 'medium'
+              const cpConfig = PRIORITY_CONFIG[currentPriority] ?? PRIORITY_CONFIG.medium
               const isSelected = selectedIds.has(ticket.id)
               return (
                 <div key={ticket.id} onClick={() => setSlideTicket(ticket)} className={`flex items-start gap-4 px-5 py-4 transition-colors cursor-pointer ${isSelected ? 'bg-[#61c2ad]/10 ring-1 ring-inset ring-[#61c2ad]/30' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}>
@@ -339,14 +348,27 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
                       checked={isSelected}
                       onChange={() => toggleSelect(ticket.id)}
                       onClick={e => e.stopPropagation()}
-                      className="mt-1 shrink-0 w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-amber-500 cursor-pointer"
+                      className="mt-1 shrink-0 w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-[#61c2ad] cursor-pointer"
                     />
                   )}
-                  {/* Priority dot */}
-                  <div className="mt-0.5 shrink-0">
-                    <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full font-medium ${pc.color}`}>
-                      {pc.label}
-                    </span>
+                  {/* Priority selector */}
+                  <div className="mt-0.5 shrink-0" onClick={e => e.stopPropagation()}>
+                    {canWrite ? (
+                      <select
+                        value={currentPriority}
+                        onChange={e => handlePriorityChange(ticket.id, e.target.value as SageTicketPriority)}
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-medium border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#61c2ad]/40 ${cpConfig.color}`}
+                      >
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                      </select>
+                    ) : (
+                      <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full font-medium ${cpConfig.color}`}>
+                        {cpConfig.label}
+                      </span>
+                    )}
                   </div>
 
                   {/* Content */}

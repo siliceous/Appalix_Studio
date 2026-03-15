@@ -259,6 +259,20 @@ export async function moveLeadToPipeline(leadId: string): Promise<void> {
     event_data: { pipeline_id: pipelineId, stage_id: stageId, contact_id: contactId },
   })
 
+  // Log to activity feed
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    void admin.from('sage_activity_log').insert({
+      workspace_id: workspaceId,
+      entity_type:  'lead',
+      entity_id:    leadId,
+      event_type:   'lead_moved',
+      payload:      { name: lead.name, title: dealTitle },
+      user_id:      user.id,
+    })
+  }
+
   revalidatePath('/forms/leads')
   revalidatePath('/sage/pipelines')
 }
