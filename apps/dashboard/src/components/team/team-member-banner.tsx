@@ -36,10 +36,11 @@ const ENTITY_TYPE_LABEL: Record<string, string> = {
   lead:         'form',
 }
 
-function formatEventLabel(eventType: string, entityName?: string | null, entityType?: string | null): string {
+function formatEventLabel(eventType: string, entityName?: string | null, entityType?: string | null, priorityFrom?: string | null, priorityTo?: string | null): string {
   if (eventType === 'priority_changed' && entityType) {
     const typeLabel = ENTITY_TYPE_LABEL[entityType] ?? entityType
-    const base = `Changed priority ${typeLabel}`
+    const arrow = priorityFrom && priorityTo ? ` ${priorityFrom} → ${priorityTo}` : (priorityTo ? ` → ${priorityTo}` : '')
+    const base = `Changed priority ${typeLabel}${arrow}`
     return entityName ? `${base}: ${entityName}` : base
   }
   const base = EVENT_LABELS[eventType] ?? eventType.replace(/_/g, ' ')
@@ -100,7 +101,7 @@ function ActivityItem({ entry }: { entry: ActivityEntry }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs text-gray-800 dark:text-gray-200 leading-snug">
-          {formatEventLabel(entry.event_type, entry.entity_name, entry.entity_type)}
+          {formatEventLabel(entry.event_type, entry.entity_name, entry.entity_type, entry.priority_from, entry.priority_to)}
         </p>
         <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 flex items-center gap-1">
           <Clock className="w-2.5 h-2.5" />

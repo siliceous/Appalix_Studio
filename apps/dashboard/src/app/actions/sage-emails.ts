@@ -288,14 +288,15 @@ export async function updateEmailPriority(emailId: string, priority: string): Pr
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: emailRow } = await (admin as any)
     .from('sage_emails')
-    .select('subject, from_name, from_address')
+    .select('subject, from_name, from_address, ai_priority')
     .eq('id', emailId)
     .eq('workspace_id', workspaceId)
     .single()
-  const row     = emailRow as { subject?: string | null; from_name?: string | null; from_address?: string | null } | null
-  const sender  = row?.from_name ?? row?.from_address ?? null
-  const subject = row?.subject ?? null
-  const name    = sender && subject ? `${sender} · ${subject}` : (subject ?? sender ?? null)
+  const row         = emailRow as { subject?: string | null; from_name?: string | null; from_address?: string | null; ai_priority?: string | null } | null
+  const sender      = row?.from_name ?? row?.from_address ?? null
+  const subject     = row?.subject ?? null
+  const name        = sender && subject ? `${sender} · ${subject}` : (subject ?? sender ?? null)
+  const oldPriority = row?.ai_priority ?? null
 
   const { error } = await admin
     .from('sage_emails')
@@ -310,7 +311,7 @@ export async function updateEmailPriority(emailId: string, priority: string): Pr
     entity_type:  'email',
     entity_id:    emailId,
     event_type:   'priority_changed',
-    payload:      { priority, name },
+    payload:      { from: oldPriority, to: priority, name },
     user_id:      user.id,
   })
 

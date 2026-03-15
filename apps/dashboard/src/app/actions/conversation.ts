@@ -89,6 +89,16 @@ export async function updateConversationPriority(conversationId: string, priorit
   const membership = membershipRaw as { workspace_id: string } | null
   if (!membership) return { error: 'Unauthorized' }
 
+  const admin = createAdminClient()
+  const { data: convRow } = await (admin as any)
+    .from('conversations')
+    .select('title, ai_priority')
+    .eq('id', conversationId)
+    .eq('workspace_id', membership.workspace_id)
+    .single()
+  const convName    = (convRow as { title?: string | null; ai_priority?: string | null } | null)?.title ?? null
+  const oldPriority = (convRow as { title?: string | null; ai_priority?: string | null } | null)?.ai_priority ?? null
+
   const { error } = await supabase
     .from('conversations')
     .update({ ai_priority: priority } as never)
@@ -97,16 +107,7 @@ export async function updateConversationPriority(conversationId: string, priorit
 
   if (error) return { error: error.message }
 
-  const admin = createAdminClient()
-  const { data: convRow } = await (admin as any)
-    .from('conversations')
-    .select('title')
-    .eq('id', conversationId)
-    .eq('workspace_id', membership.workspace_id)
-    .single()
-  const convName = (convRow as { title?: string | null } | null)?.title ?? null
-
-  void logConversationActivity(membership.workspace_id, user.id, conversationId, 'priority_changed', { priority, name: convName })
+  void logConversationActivity(membership.workspace_id, user.id, conversationId, 'priority_changed', { from: oldPriority, to: priority, name: convName })
   return {}
 }
 

@@ -30,10 +30,11 @@ const ENTITY_TYPE_LABEL: Record<string, string> = {
   email: 'email', ticket: 'ticket', conversation: 'bot', lead: 'form',
 }
 
-function formatLabel(eventType: string, entityType: string, entityName: string | null): string {
+function formatLabel(eventType: string, entityType: string, entityName: string | null, priorityFrom?: string | null, priorityTo?: string | null): string {
   if (eventType === 'priority_changed' && entityType) {
     const t = ENTITY_TYPE_LABEL[entityType] ?? entityType
-    const base = `Changed priority ${t}`
+    const arrow = priorityFrom && priorityTo ? ` ${priorityFrom} → ${priorityTo}` : (priorityTo ? ` → ${priorityTo}` : '')
+    const base = `Changed priority ${t}${arrow}`
     return entityName ? `${base}: ${entityName}` : base
   }
   const base = EVENT_LABELS[eventType] ?? eventType.replace(/_/g, ' ')
@@ -76,13 +77,15 @@ export default async function MyActivityPage() {
 
   type RawRow = { id: string; event_type: string; entity_type: string; payload: Record<string, unknown>; created_at: string }
   const rows: ActivityRow[] = ((raw ?? []) as RawRow[]).map(r => {
-    const entityName = (r.payload?.name ?? r.payload?.title ?? null) as string | null
+    const entityName    = (r.payload?.name ?? r.payload?.title ?? null) as string | null
+    const priorityFrom  = (r.payload?.from as string | null) ?? null
+    const priorityTo    = (r.payload?.to   as string | null) ?? null
     return {
       id:          r.id,
       event_type:  r.event_type,
       entity_type: r.entity_type,
       entity_name: entityName,
-      label:       formatLabel(r.event_type, r.entity_type, entityName),
+      label:       formatLabel(r.event_type, r.entity_type, entityName, priorityFrom, priorityTo),
       created_at:  r.created_at,
     }
   })

@@ -698,11 +698,12 @@ export async function updateTicketPriority(id: string, priority: SageTicketPrior
 
   const { data: ticketRow } = await admin
     .from('sage_tickets')
-    .select('title')
+    .select('title, priority')
     .eq('id', id)
     .eq('workspace_id', workspaceId)
     .single()
-  const ticketTitle = (ticketRow as { title?: string | null } | null)?.title ?? null
+  const ticketTitle   = (ticketRow as { title?: string | null; priority?: string | null } | null)?.title ?? null
+  const oldPriority   = (ticketRow as { title?: string | null; priority?: string | null } | null)?.priority ?? null
 
   const { error } = await admin
     .from('sage_tickets')
@@ -712,7 +713,7 @@ export async function updateTicketPriority(id: string, priority: SageTicketPrior
 
   if (error) throw new Error(error.message)
 
-  await logActivity(workspaceId, 'ticket', id, 'priority_changed', { priority, name: ticketTitle })
+  await logActivity(workspaceId, 'ticket', id, 'priority_changed', { from: oldPriority, to: priority, name: ticketTitle })
   revalidatePath('/sage/tickets')
   revalidatePath('/dashboard/tickets')
 }

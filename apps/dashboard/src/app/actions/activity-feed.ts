@@ -6,13 +6,15 @@ import type { WorkspaceMemberRole } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
 
 export interface ActivityEntry {
-  id:          string
-  event_type:  string
-  entity_type: string
-  entity_name: string | null
-  created_at:  string
-  is_upcoming: boolean
-  due_at?:     string | null
+  id:             string
+  event_type:     string
+  entity_type:    string
+  entity_name:    string | null
+  priority_from?: string | null
+  priority_to?:   string | null
+  created_at:     string
+  is_upcoming:    boolean
+  due_at?:        string | null
 }
 
 export interface ViewingAsInfo {
@@ -73,9 +75,11 @@ export async function getActivityFeed(
     id:          row.id,
     event_type:  row.event_type,
     entity_type: row.entity_type,
-    entity_name: (row.payload?.name ?? row.payload?.title ?? null) as string | null,
-    created_at:  row.created_at,
-    is_upcoming: false,
+    entity_name:    (row.payload?.name ?? row.payload?.title ?? null) as string | null,
+    priority_from:  (row.payload?.from as string | null) ?? null,
+    priority_to:    (row.payload?.to   as string | null) ?? null,
+    created_at:     row.created_at,
+    is_upcoming:    false,
   }))
 
   type UpRow = { id: string; type: string; title: string | null; due_at: string }
