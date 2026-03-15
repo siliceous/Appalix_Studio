@@ -574,6 +574,7 @@ export type ContactMatch = {
   contactName: string
   dealId?: string
   dealTitle?: string
+  dealPipelineId?: string
 }
 
 export async function batchMatchContacts(
@@ -624,14 +625,14 @@ export async function batchMatchContacts(
   if (matchedEntries.length > 0) {
     const contactIds = [...new Set(matchedEntries.map(([, v]) => v!.contactId))]
     const { data: deals } = await admin.from('sage_deals')
-      .select('id, title, contact_id')
+      .select('id, title, contact_id, pipeline_id')
       .eq('workspace_id', workspaceId).eq('status', 'open')
       .in('contact_id', contactIds)
     if (deals) {
-      const dealMap = new Map((deals as { id: string; title: string; contact_id: string }[]).map(d => [d.contact_id, d]))
+      const dealMap = new Map((deals as { id: string; title: string; contact_id: string; pipeline_id: string | null }[]).map(d => [d.contact_id, d]))
       for (const [itemId, match] of matchedEntries) {
         const deal = dealMap.get(match!.contactId)
-        if (deal) result[itemId] = { ...match!, dealId: deal.id, dealTitle: deal.title }
+        if (deal) result[itemId] = { ...match!, dealId: deal.id, dealTitle: deal.title, dealPipelineId: deal.pipeline_id ?? undefined }
       }
     }
   }

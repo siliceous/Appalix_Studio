@@ -15,7 +15,7 @@ import {
   Palette, Highlighter, FileSignature, Type,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
-import { sendEmail, scheduleMeetingFromEmail, getEmailSignature, updateEmailPriority } from '@/app/actions/sage-emails'
+import { sendEmail, scheduleMeetingFromEmail, getEmailSignature, updateEmailPriority, enhanceEmailReply } from '@/app/actions/sage-emails'
 import { updateAutoSetting, dismissFeedItem, runAutoBackfill, setDefaultPipeline } from '@/app/actions/sage-auto-settings'
 import type { BackfillResultItem } from '@/app/actions/sage-auto-settings'
 import { getWorkspacePipelines, dashboardAddLead, dashboardAddTicket, batchMatchContacts } from '@/app/actions/sage-triage'
@@ -200,6 +200,7 @@ function ItemPopup({
   // Reply compose state (email only)
   const [showReply, setShowReply]       = useState(false)
   const [replyBody, setReplyBody]       = useState('')
+  const [isEnhancing, setIsEnhancing]   = useState(false)
   const [emailSignature, setEmailSignature] = useState<string | null>(null)
   const [sending, setSending]           = useState(false)
   const [sendResult, setSendResult]     = useState<string | null>(null)
@@ -446,6 +447,13 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
 
   const sizeClass = popupSize === 'sm' ? 'sm:max-w-lg' : popupSize === 'lg' ? 'sm:max-w-[95vw]' : 'sm:max-w-2xl'
 
+  // Reply is only available for high/medium/urgent priority emails.
+  // priorityValue tracks an in-popup change, falling back to the loaded email's priority.
+  const effectiveEmailPriority = popup.kind === 'email'
+    ? (priorityValue ?? (data as SageEmail | null)?.ai_priority ?? 'low')
+    : null
+  const canReply = effectiveEmailPriority !== 'low'
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:px-6 sm:py-8 bg-black/55 dark:bg-black/70"
       onClick={onClose}>
@@ -469,22 +477,12 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
           <div className="flex items-center gap-2">
             {/* Quick-action buttons in header for email — only shown when compose is open */}
             {popup.kind === 'email' && !loading && data && showReply && (
-              <>
-                <button
-                  onClick={() => setShowReply(false)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 hover:text-gray-800 dark:hover:text-gray-200 transition-colors border border-gray-200 dark:border-white/10"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" /> Back
-                </button>
-                <Link
-                  href="/sage/pipelines"
-                  onClick={onClose}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
-                >
-                  <Kanban className="w-3.5 h-3.5" />
-                  Open Pipeline
-                </Link>
-              </>
+              <button
+                onClick={() => setShowReply(false)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 hover:text-gray-800 dark:hover:text-gray-200 transition-colors border border-gray-200 dark:border-white/10"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" /> Back
+              </button>
             )}
             <button
               onClick={() => setPopupSize(s => s === 'sm' ? 'md' : s === 'md' ? 'lg' : 'sm')}
@@ -650,9 +648,9 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                       )
                     )}
 
-                    {/* Full email body — always flex-1 when not replying */}
-                    {!showReply && e.body_text && (
-                      <div className="border border-gray-200 rounded-xl overflow-hidden flex-1 flex flex-col min-h-0 bg-white">
+                    {/* Full email body — always visible */}
+                    {e.body_text && (
+                      <div className="border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden flex-1 flex flex-col min-h-0 bg-white dark:bg-[#1e1e1e]">
                         <div className="px-4 py-2.5 border-b border-gray-200 bg-gray-50 shrink-0">
                           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Email</p>
                         </div>
@@ -1104,6 +1102,25 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                 ) : (
                   <>
                     <div className="flex-1" />
+                    <button
+                      disabled={isEnhancing}
+                      onClick={async () => {
+                        setIsEnhancing(true)
+                        try {
+                          const currentHtml = replyRef.current?.innerHTML ?? ''
+                          const result = await enhanceEmailReply((data as SageEmail).id, currentHtml)
+                          if (result.enhanced && replyRef.current) {
+                            replyRef.current.innerHTML = result.enhanced.replace(/\n/g, '<br>')
+                          }
+                        } finally {
+                          setIsEnhancing(false)
+                        }
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#61c2ad] hover:bg-[#61c2ad]/10 rounded-xl transition-colors disabled:opacity-50 border border-[#61c2ad]/30"
+                    >
+                      {isEnhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                      {isEnhancing ? 'Enhancing…' : 'Enhance with Sage AI'}
+                    </button>
                     <button onClick={handleSendReply} disabled={sending || !replyBody.trim()}
                       className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50">
                       {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
@@ -1121,7 +1138,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                     </p>
                     {ignoring && <p className="text-[11px] text-gray-400 mt-0.5">Closing…</p>}
                   </div>
-                  {!ignoring && popup.kind === 'email' && (
+                  {!ignoring && popup.kind === 'email' && canReply && (
                     <button onClick={() => setShowReply(true)}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
                       <Reply className="w-3.5 h-3.5" /> Reply
@@ -1143,7 +1160,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                     <User className="w-3.5 h-3.5" /> View Contact
                   </Link>
                   {contactMatch.dealId ? (
-                    <Link href={`/sage/deals/${contactMatch.dealId}`} onClick={onClose}
+                    <Link href={contactMatch.dealPipelineId ? `/sage/pipelines/${contactMatch.dealPipelineId}` : '/sage/pipelines'} onClick={onClose}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#2a7d6e] bg-[#2a7d6e]/10 hover:bg-[#2a7d6e]/20 rounded-xl transition-colors border border-[#2a7d6e]/25">
                       <Kanban className="w-3.5 h-3.5" /> View Deal
                     </Link>
@@ -1155,7 +1172,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                     </button>
                   )}
                   <div className="flex-1" />
-                  {popup.kind === 'email' && (
+                  {popup.kind === 'email' && canReply && (
                     <button onClick={() => setShowReply(true)}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
                       <Reply className="w-3.5 h-3.5" /> Reply
@@ -1954,9 +1971,9 @@ export function SageDashboardClient({
                   label: 'Emails',
                   icon: <Mail className="w-3.5 h-3.5" />,
                   accentClass: 'text-blue-700 dark:text-blue-300',
-                  borderClass: 'border-blue-200 dark:border-blue-500/30',
-                  bgClass: 'bg-blue-100 dark:bg-blue-500/25',
-                  count: visEmails.length,
+                  borderClass: 'border-blue-300 dark:border-blue-500/30',
+                  bgClass: 'bg-blue-200 dark:bg-blue-500/25',
+                  count: visEmails.filter(e => e.ai_priority === 'high' || e.ai_priority === 'urgent' || e.ai_priority === 'medium').length,
                   rows: sortedEmails.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No emails this period.</p>
                     : sortedEmails.map(e => (
@@ -1981,8 +1998,8 @@ export function SageDashboardClient({
                   label: 'Bot Chats',
                   icon: <MessageSquare className="w-3.5 h-3.5" />,
                   accentClass: 'text-purple-700 dark:text-purple-300',
-                  borderClass: 'border-purple-200 dark:border-purple-500/30',
-                  bgClass: 'bg-purple-100 dark:bg-purple-500/25',
+                  borderClass: 'border-purple-300 dark:border-purple-500/30',
+                  bgClass: 'bg-purple-200 dark:bg-purple-500/25',
                   count: visBots.length,
                   rows: sortedBots.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No bot chats this period.</p>
@@ -2009,8 +2026,8 @@ export function SageDashboardClient({
                   label: 'Form Submissions',
                   icon: <FileText className="w-3.5 h-3.5" />,
                   accentClass: 'text-green-700 dark:text-green-300',
-                  borderClass: 'border-green-200 dark:border-green-500/30',
-                  bgClass: 'bg-green-100 dark:bg-green-500/25',
+                  borderClass: 'border-green-300 dark:border-green-500/30',
+                  bgClass: 'bg-green-200 dark:bg-green-500/25',
                   count: visForms.length,
                   rows: sortedForms.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No form submissions this period.</p>
@@ -2035,8 +2052,8 @@ export function SageDashboardClient({
                   label: 'Tickets',
                   icon: <TicketIcon className="w-3.5 h-3.5" />,
                   accentClass: 'text-amber-700 dark:text-amber-400',
-                  borderClass: 'border-amber-200/70 dark:border-amber-500/25',
-                  bgClass: 'bg-amber-50 dark:bg-amber-500/15',
+                  borderClass: 'border-amber-300 dark:border-amber-500/25',
+                  bgClass: 'bg-amber-100 dark:bg-amber-500/15',
                   count: visTickets.length,
                   rows: sortedTickets.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No tickets this period.</p>

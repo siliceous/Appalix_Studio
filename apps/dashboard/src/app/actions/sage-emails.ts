@@ -3,6 +3,9 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import Anthropic from '@anthropic-ai/sdk'
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 const API_BASE    = process.env.API_BASE_URL
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -325,6 +328,60 @@ export async function markEmailRead(emailId: string): Promise<void> {
   await admin.from('sage_emails').update({ is_read: true }).eq('id', emailId)
   revalidatePath('/dashboard')
   revalidatePath('/sage/emails')
+}
+
+export async function enhanceEmailReply(
+  emailId: string,
+  currentDraft: string,
+): Promise<{ enhanced?: string; error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { error: 'Unauthorized' }
+
+  const admin = createAdminClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: emailRow } = await (admin as any)
+    .from('sage_emails')
+    .select('subject, from_name, from_address, body_text, ai_summary')
+    .eq('id', emailId)
+    .eq('workspace_id', workspaceId)
+    .single()
+
+  type EmailRow = { subject?: string | null; from_name?: string | null; from_address?: string | null; body_text?: string | null; ai_summary?: string | null }
+  const email = emailRow as EmailRow | null
+  if (!email) return { error: 'Email not found' }
+
+  const context = [
+    email?.subject   ? `Subject: ${email.subject}`          : '',
+    email?.from_name ? `From: ${email.from_name}`           : `From: ${email.from_address ?? 'unknown'}`,
+    email?.ai_summary ? `Summary: ${email.ai_summary}`      : '',
+    email?.body_text  ? `Original email:\n${email.body_text.slice(0, 1500)}` : '',
+  ].filter(Boolean).join('\n')
+
+  const draftText = currentDraft.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+
+  try {
+    const response = await anthropic.messages.create({
+      model:      'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
+      messages:   [{
+        role:    'user',
+        content: `You are an expert email writer. Improve the following reply email draft to be professional, clear, and concise while preserving the original intent and tone.
+
+Context:
+${context}
+
+Current draft:
+${draftText || '(empty — write a professional reply from scratch based on the email context)'}
+
+Return ONLY the improved reply text with no preamble, no subject line, no "Here is your improved reply:" prefix. Just the email body text ready to send. Use proper paragraphs.`,
+      }],
+    })
+
+    const enhanced = (response.content[0] as { type: string; text: string }).text?.trim() ?? ''
+    return { enhanced }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'AI enhancement failed' }
+  }
 }
 
 /**
