@@ -104,9 +104,9 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
   ]
 
   return (
-    <nav className="px-4 border-b dark:border-white/8 bg-white dark:bg-[#1c1c1c] grid grid-cols-[1fr_auto] items-center shrink-0 gap-x-4 min-h-[52px]">
+    <nav className="px-4 border-b dark:border-white/8 bg-white dark:bg-[#1c1c1c] grid grid-cols-[1fr_auto] items-end shrink-0 gap-x-4 min-h-[52px] pb-2">
       {/* Overview link + page pill buttons */}
-      <div className="flex items-center gap-1.5 min-w-0 overflow-x-auto">
+      <div className="flex items-end gap-1.5 min-w-0 overflow-x-auto">
         <Link
           href={viewAsUserId ? `/dashboard?viewAs=${viewAsUserId}` : '/dashboard'}
           className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors shrink-0 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/6 mr-0.5"
@@ -114,7 +114,7 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
           <LayoutDashboard className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Overview</span>
         </Link>
-        <div className="w-px h-5 bg-gray-200 dark:bg-white/10" />
+        <div className="w-px h-5 bg-gray-200 dark:bg-white/10 self-center" />
         {/* Sibling page pill buttons — carry viewAs when set */}
         {PAGES.map(p => (
           <Link
@@ -134,9 +134,9 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
       </div>
 
       {/* Controls */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-end gap-2.5">
         {/* Date preset + optional custom range inputs */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-end gap-2">
           <div className="relative">
             <select
               value={preset}
@@ -149,7 +149,7 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
           </div>
 
           {preset === 'custom' && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-end gap-1.5">
               <input
                 type="date"
                 value={fromDate}
