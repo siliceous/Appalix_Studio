@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     'Meta lead ads integration',
     'AI sales pipeline tool',
   ],
-  robots: { index: false, follow: false },
+  alternates: { canonical: 'https://appalix.ai/test' },
 }
 
 const SOURCES = [
