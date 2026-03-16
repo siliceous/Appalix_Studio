@@ -78,7 +78,7 @@ function PriorityDot({ p }: { p: string }) {
 
 /* ─── Mini SVG donut ───────────────────────────────────────────────────── */
 function MiniDonut({ high, medium, low, total, color }: { high: number; medium: number; low: number; total: number; color: string }) {
-  const r = 22, cx = 28, cy = 28, stroke = 8
+  const r = 28, cx = 36, cy = 36, stroke = 10
   const circ = 2 * Math.PI * r
   const pHigh   = total ? (high   / total) * circ : 0
   const pMedium = total ? (medium / total) * circ : 0
@@ -95,7 +95,7 @@ function MiniDonut({ high, medium, low, total, color }: { high: number; medium: 
   }
   const c = COLORS[color] ?? COLORS.blue
   return (
-    <svg width={56} height={56} className="block">
+    <svg width={72} height={72} className="block">
       {/* Track */}
       <circle cx={cx} cy={cy} r={r} fill="none" stroke={trackColor} strokeWidth={stroke} />
       {total > 0 && <>
@@ -106,7 +106,7 @@ function MiniDonut({ high, medium, low, total, color }: { high: number; medium: 
         {/* High */}
         {pHigh > 0 && <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.h} strokeWidth={stroke} strokeDasharray={`${pHigh} ${circ - pHigh}`} strokeDashoffset={offH} transform={`rotate(-90 ${cx} ${cy})`} strokeLinecap="butt" />}
       </>}
-      <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="middle" fontSize="11" fontWeight="700" fill="#111827">{total}</text>
+      <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="middle" fontSize="13" fontWeight="700" fill="#111827">{total}</text>
     </svg>
   )
 }
@@ -122,32 +122,32 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
       <div className="relative rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-2xl">
 
         {/* macOS chrome */}
-        <div className="flex items-center justify-between px-4 py-2.5 bg-gray-100 border-b border-gray-200">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-            <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-            <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+        <div className="flex items-center justify-between px-5 py-3 bg-gray-100 border-b border-gray-200">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-red-400" />
+            <div className="w-3 h-3 rounded-full bg-yellow-400" />
+            <div className="w-3 h-3 rounded-full bg-green-400" />
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-0.5 rounded bg-white border border-gray-200">
-            <span className="text-[9px] text-gray-400">app.appalix.ai/dashboard</span>
+          <div className="flex items-center gap-2 px-4 py-1 rounded-md bg-white border border-gray-200">
+            <span className="text-xs text-gray-400">app.appalix.ai/dashboard</span>
           </div>
-          <div className="w-14" />
+          <div className="w-16" />
         </div>
 
         {/* App layout */}
-        <div className="flex" style={{ height: 520 }}>
+        <div className="flex" style={{ height: 700 }}>
 
           {/* ── Sidebar ─────────────────────────────────────────────── */}
-          <div className="w-40 shrink-0 bg-white border-r border-gray-100 flex flex-col py-2">
+          <div className="w-52 shrink-0 bg-white border-r border-gray-100 flex flex-col py-2">
             {/* Logo */}
-            <div className="px-3 py-2 mb-2 border-b border-gray-100">
-              <div className="flex items-center gap-1.5 mb-1">
-                <div className="w-5 h-5 rounded bg-[#15A4AE]/15 flex items-center justify-center">
-                  <span className="text-[#15A4AE] text-[8px] font-bold">A</span>
+            <div className="px-4 py-3 mb-2 border-b border-gray-100">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-6 h-6 rounded-md bg-[#15A4AE]/15 flex items-center justify-center">
+                  <span className="text-[#15A4AE] text-[10px] font-bold">A</span>
                 </div>
-                <span className="text-[10px] font-bold text-gray-900">Appalix</span>
+                <span className="text-xs font-bold text-gray-900">Appalix</span>
               </div>
-              <div className="flex items-center gap-1 text-[8px] text-gray-400">
+              <div className="flex items-center gap-1 text-[10px] text-gray-400">
                 <span>My Workspace</span><span>▾</span>
               </div>
             </div>
@@ -155,18 +155,18 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
             {SIDEBAR_GROUPS.map((g, gi) => (
               <div key={gi} className="mb-1">
                 {g.label && (
-                  <p className="px-3 pt-2 pb-0.5 text-[7px] font-semibold uppercase tracking-widest text-gray-400">{g.label}</p>
+                  <p className="px-4 pt-2 pb-1 text-[9px] font-semibold uppercase tracking-widest text-gray-400">{g.label}</p>
                 )}
                 {g.items.map((item) => (
                   <div
                     key={item.label}
-                    className={`flex items-center gap-1.5 px-3 py-1 text-[9px] transition-colors ${
+                    className={`flex items-center gap-2 px-4 py-1.5 text-[11px] transition-colors ${
                       item.active
                         ? 'bg-[#15A4AE]/10 text-[#15A4AE] font-semibold'
                         : 'text-gray-500'
-                    } ${item.sub ? 'pl-6' : ''}`}
+                    } ${item.sub ? 'pl-8' : ''}`}
                   >
-                    <span className={`text-[9px] ${item.color || (item.active ? 'text-[#15A4AE]' : 'text-gray-400')}`}>{item.icon}</span>
+                    <span className={`text-[11px] ${item.color || (item.active ? 'text-[#15A4AE]' : 'text-gray-400')}`}>{item.icon}</span>
                     {item.label}
                   </div>
                 ))}
@@ -174,65 +174,92 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
             ))}
 
             {/* Bottom user */}
-            <div className="mt-auto px-3 py-2 border-t border-gray-100 flex items-center gap-1.5">
-              <div className="w-5 h-5 rounded-full bg-[#15A4AE]/20 flex items-center justify-center text-[7px] text-[#15A4AE] font-bold">J</div>
+            <div className="mt-auto px-4 py-3 border-t border-gray-100 flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-[#15A4AE]/20 flex items-center justify-center text-[9px] text-[#15A4AE] font-bold">J</div>
               <div>
-                <p className="text-[8px] text-gray-800 font-medium leading-none">James</p>
-                <p className="text-[7px] text-gray-400 mt-0.5">Pro Plan</p>
+                <p className="text-[10px] text-gray-800 font-medium leading-none">James</p>
+                <p className="text-[9px] text-gray-400 mt-0.5">Pro Plan</p>
               </div>
             </div>
           </div>
 
           {/* ── Main content ────────────────────────────────────────── */}
-          <div className="flex-1 overflow-y-auto bg-gray-50 p-3 flex flex-col gap-3">
+          <div className="flex-1 overflow-y-auto bg-gray-50 p-4 flex flex-col gap-4">
 
             {/* Page header */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
               <div>
-                <p className="text-[10px] font-bold text-gray-900">Good morning, James 👋</p>
-                <p className="text-[8px] text-gray-400">Mon, 16 Mar 2026 · Last 30 days</p>
+                <p className="text-sm font-bold text-gray-900">Good morning, James 👋</p>
+                <p className="text-[10px] text-gray-500 mt-0.5">Here&apos;s what needs your attention today</p>
               </div>
-              <div className="px-2 py-1 rounded-lg bg-[#15A4AE] text-[8px] text-white font-semibold">+ New Bot</div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Add Contact */}
+                <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#2a7d6e] text-[10px] text-white font-medium">+ Add Contact</div>
+                {/* Pipelines */}
+                <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-600 text-[10px] text-white font-medium">⧉ Pipelines</div>
+                {/* View as */}
+                <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-[10px] text-gray-500">
+                  View as… <span className="text-gray-400">▾</span>
+                </div>
+                {/* Date dropdown */}
+                <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-[10px] text-gray-600 font-medium">
+                  Last 7 days <span className="text-gray-400">▾</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Sage Auto bar */}
+            <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-xl border border-gray-200 shadow-sm">
+              <span className="text-[#15A4AE] text-[11px]">⚡</span>
+              <span className="text-[11px] font-medium text-gray-700">Sage Auto</span>
+              {/* Toggle */}
+              <div className="relative w-8 h-4 rounded-full bg-[#15A4AE] shrink-0">
+                <div className="absolute right-0.5 top-0.5 w-3 h-3 rounded-full bg-white shadow-sm" />
+              </div>
+              <span className="text-[10px] font-bold text-[#15A4AE]">ON</span>
+              <div className="ml-auto flex items-center gap-1 px-2 py-1 rounded-lg border border-gray-200 bg-gray-50 text-[9px] text-gray-500">
+                Junior Sales Pipeline <span className="text-gray-400">▾</span>
+              </div>
             </div>
 
             {/* Connect inbox banner */}
-            <div className="flex items-center gap-2 px-3 py-2 bg-[#15A4AE] rounded-xl">
-              <span className="text-white text-[10px]">✉</span>
+            <div className="flex items-center gap-3 px-4 py-2.5 bg-[#15A4AE] rounded-xl">
+              <span className="text-white text-sm">✉</span>
               <div className="flex-1">
-                <p className="text-[9px] font-bold text-white leading-none">Connect &amp; sync your inbox</p>
-                <p className="text-[7px] text-white/80">Link Gmail or Outlook so Sage can prioritise your emails.</p>
+                <p className="text-[11px] font-bold text-white leading-none">Connect &amp; sync your inbox</p>
+                <p className="text-[9px] text-white/80 mt-0.5">Link Gmail or Outlook so Sage can prioritise your emails.</p>
               </div>
-              <span className="text-[8px] font-bold text-white shrink-0">Get started →</span>
+              <span className="text-[10px] font-bold text-white shrink-0">Get started →</span>
             </div>
 
             {/* 4 Donut cards */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="text-[7px] font-semibold uppercase tracking-widest text-gray-400">Overview</p>
-                <span className="text-[7px] text-gray-400">Collapse ▾</span>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[9px] font-semibold uppercase tracking-widest text-gray-400">Overview</p>
+                <span className="text-[9px] text-gray-400">Collapse ▾</span>
               </div>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-3">
                 {[
-                  { label: 'Emails',     sub: 'high & medium unread', color: 'blue',   iconCls: 'text-blue-500',   high: 4, medium: 7, low: 3, total: 14 },
-                  { label: 'Bot Chats',  sub: 'high & medium active', color: 'purple', iconCls: 'text-purple-500', high: 2, medium: 5, low: 6, total: 13 },
-                  { label: 'Forms',      sub: 'all submissions',      color: 'green',  iconCls: 'text-green-500',  high: 3, medium: 4, low: 2, total: 9  },
-                  { label: 'Tickets',    sub: 'all tickets',          color: 'amber',  iconCls: 'text-amber-500',  high: 1, medium: 3, low: 4, total: 8  },
+                  { label: 'Emails',    sub: 'high & medium unread', color: 'blue',   iconCls: 'text-blue-500',   high: 4, medium: 7, low: 3, total: 14 },
+                  { label: 'Bot Chats', sub: 'high & medium active', color: 'purple', iconCls: 'text-purple-500', high: 2, medium: 5, low: 6, total: 13 },
+                  { label: 'Forms',     sub: 'all submissions',      color: 'green',  iconCls: 'text-green-500',  high: 3, medium: 4, low: 2, total: 9  },
+                  { label: 'Tickets',   sub: 'all tickets',          color: 'amber',  iconCls: 'text-amber-500',  high: 1, medium: 3, low: 4, total: 8  },
                 ].map((c) => (
-                  <div key={c.label} className="bg-white rounded-xl border border-gray-200 p-2.5 flex flex-col items-center shadow-sm">
-                    <div className="w-full flex items-center justify-between mb-1.5">
+                  <div key={c.label} className="bg-white rounded-xl border border-gray-200 p-3 flex flex-col items-center shadow-sm">
+                    <div className="w-full flex items-center justify-between mb-2">
                       <div>
-                        <p className={`text-[8px] font-semibold ${c.iconCls}`}>{c.label}</p>
-                        <p className="text-[6.5px] text-gray-400 leading-snug">{c.sub}</p>
+                        <p className={`text-[11px] font-semibold ${c.iconCls}`}>{c.label}</p>
+                        <p className="text-[9px] text-gray-400 leading-snug">{c.sub}</p>
                       </div>
-                      <span className={`text-[10px] ${c.iconCls}`}>
+                      <span className={`text-sm ${c.iconCls}`}>
                         {c.color === 'blue' ? '✉' : c.color === 'purple' ? '💬' : c.color === 'green' ? '📋' : '🎫'}
                       </span>
                     </div>
                     <MiniDonut high={c.high} medium={c.medium} low={c.low} total={c.total} color={c.color} />
-                    <div className="flex items-center gap-1.5 mt-1 flex-wrap justify-center">
+                    <div className="flex items-center gap-2 mt-2 flex-wrap justify-center">
                       {[{ label: `${c.high} high`, dot: 'bg-green-400' }, { label: `${c.medium} med`, dot: 'bg-yellow-400' }, { label: `${c.low} low`, dot: 'bg-gray-300' }].map((s) => (
-                        <span key={s.label} className="flex items-center gap-0.5 text-[6px] text-gray-400">
-                          <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                        <span key={s.label} className="flex items-center gap-1 text-[8px] text-gray-400">
+                          <span className={`w-2 h-2 rounded-full ${s.dot}`} />
                           {s.label}
                         </span>
                       ))}
@@ -243,37 +270,37 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
             </div>
 
             {/* 2:1 split — Activity Feed + Tasks */}
-            <div className="grid grid-cols-3 gap-2 flex-1 min-h-0">
+            <div className="grid grid-cols-3 gap-3 flex-1 min-h-0">
 
               {/* Activity Feed (2/3) */}
               <div className="col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-                <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-[9px] font-semibold text-gray-900">Activity Feed</p>
-                    <div className="flex items-center gap-0.5 bg-gray-100 rounded px-0.5 py-0.5">
-                      <div className="w-4 h-3 rounded-sm bg-white flex items-center justify-center"><span className="text-[6px] text-gray-700">≡</span></div>
-                      <div className="w-4 h-3 rounded-sm flex items-center justify-center"><span className="text-[6px] text-gray-400">⊞</span></div>
+                <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-semibold text-gray-900">Activity Feed</p>
+                    <div className="flex items-center gap-0.5 bg-gray-100 rounded p-0.5">
+                      <div className="w-5 h-4 rounded bg-white flex items-center justify-center shadow-sm"><span className="text-[8px] text-gray-700">≡</span></div>
+                      <div className="w-5 h-4 rounded flex items-center justify-center"><span className="text-[8px] text-gray-400">⊞</span></div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-[8px]">
-                    <span className="flex items-center gap-0.5 text-blue-500">✉ 14</span>
-                    <span className="flex items-center gap-0.5 text-purple-500">💬 13</span>
-                    <span className="flex items-center gap-0.5 text-green-500">📋 9</span>
-                    <span className="flex items-center gap-0.5 text-amber-500">🎫 8</span>
+                  <div className="flex items-center gap-3 text-[10px]">
+                    <span className="flex items-center gap-1 text-blue-500">✉ 14</span>
+                    <span className="flex items-center gap-1 text-purple-500">💬 13</span>
+                    <span className="flex items-center gap-1 text-green-500">📋 9</span>
+                    <span className="flex items-center gap-1 text-amber-500">🎫 8</span>
                   </div>
                 </div>
                 <div className="divide-y divide-gray-50 overflow-y-auto">
                   {FEED.map((item, i) => (
-                    <div key={i} className="flex items-start gap-2 px-3 py-2 hover:bg-gray-50 transition-colors">
+                    <div key={i} className="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors">
                       <PriorityDot p={item.priority} />
-                      <div className={`w-5 h-5 rounded shrink-0 flex items-center justify-center ${item.iconBg}`}>
-                        <span className={`text-[8px] ${item.iconColor}`}>{item.icon}</span>
+                      <div className={`w-6 h-6 rounded-md shrink-0 flex items-center justify-center ${item.iconBg}`}>
+                        <span className={`text-[11px] ${item.iconColor}`}>{item.icon}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[8px] font-semibold text-gray-900 truncate leading-snug">{item.title}</p>
-                        <p className="text-[7px] text-gray-400 truncate">{item.sub}</p>
+                        <p className="text-[11px] font-semibold text-gray-900 truncate leading-snug">{item.title}</p>
+                        <p className="text-[9px] text-gray-400 truncate mt-0.5">{item.sub}</p>
                       </div>
-                      <span className="text-[7px] text-gray-400 shrink-0">{item.time}</span>
+                      <span className="text-[9px] text-gray-400 shrink-0">{item.time}</span>
                     </div>
                   ))}
                 </div>
@@ -281,45 +308,45 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
 
               {/* Tasks (1/3) */}
               <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-                <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
-                  <div className="flex items-center gap-1">
-                    <span className="text-[9px] text-gray-400">☑</span>
-                    <p className="text-[9px] font-semibold text-gray-900">Tasks</p>
+                <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-gray-400">☑</span>
+                    <p className="text-xs font-semibold text-gray-900">Tasks</p>
                   </div>
-                  <span className="text-[7px] font-bold px-1 py-0.5 rounded-full bg-gray-100 text-gray-500">{PENDING_TASKS.length + UPCOMING_TASKS.length}</span>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{PENDING_TASKS.length + UPCOMING_TASKS.length}</span>
                 </div>
 
                 {/* Pending */}
-                <div className="px-3 py-1 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-                  <span className="text-[7px] font-semibold uppercase tracking-wide text-gray-400">Pending</span>
-                  <span className="text-[7px] font-bold px-1 py-0.5 rounded-full bg-red-50 text-red-500">{PENDING_TASKS.length}</span>
+                <div className="px-4 py-1.5 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                  <span className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Pending</span>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-50 text-red-500">{PENDING_TASKS.length}</span>
                 </div>
                 <div className="divide-y divide-gray-50">
                   {PENDING_TASKS.map((t, i) => (
-                    <div key={i} className="flex items-start gap-2 px-3 py-2">
-                      <div className="w-3.5 h-3.5 mt-0.5 rounded border-2 border-gray-300 shrink-0" />
+                    <div key={i} className="flex items-start gap-2.5 px-4 py-3">
+                      <div className="w-4 h-4 mt-0.5 rounded border-2 border-gray-300 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-[8px] font-medium text-gray-900 truncate leading-snug">{t.title}</p>
-                        <p className="text-[7px] text-gray-400">{t.sub}</p>
-                        <p className="text-[7px] text-red-500 font-medium mt-0.5">{t.due}</p>
+                        <p className="text-[10px] font-medium text-gray-900 truncate leading-snug">{t.title}</p>
+                        <p className="text-[9px] text-gray-400 mt-0.5">{t.sub}</p>
+                        <p className="text-[9px] text-red-500 font-medium mt-0.5">{t.due}</p>
                       </div>
                     </div>
                   ))}
                 </div>
 
                 {/* Upcoming */}
-                <div className="px-3 py-1 bg-gray-50 border-y border-gray-100 flex items-center justify-between">
-                  <span className="text-[7px] font-semibold uppercase tracking-wide text-gray-400">Upcoming</span>
-                  <span className="text-[7px] font-bold px-1 py-0.5 rounded-full bg-gray-100 text-gray-500">{UPCOMING_TASKS.length}</span>
+                <div className="px-4 py-1.5 bg-gray-50 border-y border-gray-100 flex items-center justify-between">
+                  <span className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Upcoming</span>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{UPCOMING_TASKS.length}</span>
                 </div>
                 <div className="divide-y divide-gray-50">
                   {UPCOMING_TASKS.map((t, i) => (
-                    <div key={i} className="flex items-start gap-2 px-3 py-2">
-                      <div className="w-3.5 h-3.5 mt-0.5 rounded border-2 border-gray-200 shrink-0" />
+                    <div key={i} className="flex items-start gap-2.5 px-4 py-3">
+                      <div className="w-4 h-4 mt-0.5 rounded border-2 border-gray-200 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-[8px] font-medium text-gray-900 truncate leading-snug">{t.title}</p>
-                        <p className="text-[7px] text-gray-400">{t.sub}</p>
-                        <p className="text-[7px] text-gray-400 mt-0.5">📅 {t.due}</p>
+                        <p className="text-[10px] font-medium text-gray-900 truncate leading-snug">{t.title}</p>
+                        <p className="text-[9px] text-gray-400 mt-0.5">{t.sub}</p>
+                        <p className="text-[9px] text-gray-400 mt-0.5">📅 {t.due}</p>
                       </div>
                     </div>
                   ))}
@@ -440,7 +467,7 @@ export default function ProductPage() {
 
       {/* ── Dashboard preview ─────────────────────────────────────────── */}
       <section className="pb-24 px-6">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <ScrollReveal>
             <DashboardPreview onClick={() => setModalOpen(true)} />
           </ScrollReveal>
