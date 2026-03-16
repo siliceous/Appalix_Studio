@@ -149,9 +149,10 @@ export default function TestLandingPage() {
 
           <FadeUp delay={0.2}>
             <p className="text-base sm:text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto mb-4">
-              Appalix connects every source your leads come from — web forms, email inboxes,
-              chatbot conversations, Google Ads, and Meta Lead Ads — then uses AI to qualify,
-              score, and move them through your pipeline automatically.
+              <span className="text-white font-semibold">Introducing Appalix Sage.</span>
+              {' '}It analyses your emails, powers intelligent bots that capture conversations, and extracts key data from every form submission across your website, Google Ads, and Facebook campaigns.
+              <br /><br />
+              Each enquiry is instantly transformed into an opportunity and organised directly within your CRM, all within seconds, 24/7.
             </p>
           </FadeUp>
 
