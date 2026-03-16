@@ -43,6 +43,11 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/contact') ||
     pathname.startsWith('/ai-assistant') ||
     pathname.startsWith('/test') ||
+    pathname.startsWith('/product') ||
+    pathname.startsWith('/bot') ||
+    pathname.startsWith('/email') ||
+    pathname.startsWith('/forms') ||
+    pathname.startsWith('/tickets') ||
     pathname.startsWith('/privacy') ||
     pathname.startsWith('/terms') ||
     pathname.startsWith('/login') ||

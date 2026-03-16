@@ -174,6 +174,95 @@ export function LeadFlowDiagram() {
 }
 
 // ─────────────────────────────────────────────────────────────────
+// PAIN ORBIT  (scattered icons wandering helplessly)
+// ─────────────────────────────────────────────────────────────────
+
+const POC = { x: 200, y: 200 }
+
+const PAIN_ICONS = [
+  { label: 'Forms',   icon: '📋', rx: 108, ry:  98, speed: 22, startDeg:   0 },
+  { label: 'Email',   icon: '📧', rx: 120, ry: 110, speed: 17, startDeg: 110 },
+  { label: 'Chatbot', icon: '💬', rx:  95, ry: 118, speed: 26, startDeg: 220 },
+  { label: 'Tickets', icon: '🎫', rx: 114, ry:  92, speed: 19, startDeg: 320 },
+]
+
+function painOrbitPts(rx: number, ry: number, startDeg: number, n = 72) {
+  return Array.from({ length: n + 1 }, (_, i) => {
+    const angle = ((startDeg + i * (360 / n)) * Math.PI) / 180
+    return { x: POC.x + rx * Math.cos(angle), y: POC.y + ry * Math.sin(angle) }
+  })
+}
+
+export function PainOrbit() {
+  const ref = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { once: false, margin: '-60px' })
+
+  return (
+    <div ref={ref} className="rounded-2xl bg-white/[0.02] border border-white/8 p-4 sm:p-6 overflow-hidden">
+      <svg viewBox="0 0 400 400" className="w-full" style={{ maxHeight: 560 }}>
+
+        {/* ── Dashed orbit rings (dim, irregular) ── */}
+        {PAIN_ICONS.map((ic) => (
+          <ellipse key={`ring-${ic.label}`}
+            cx={POC.x} cy={POC.y} rx={ic.rx} ry={ic.ry}
+            fill="none" stroke="rgba(255,255,255,0.06)"
+            strokeWidth={1} strokeDasharray="4 7"
+          />
+        ))}
+
+        {/* ── Centre broken circle ── */}
+        <motion.circle cx={POC.x} cy={POC.y} r={48}
+          fill="rgba(239,68,68,0.04)" stroke="rgba(239,68,68,0.18)"
+          strokeWidth={1.5} strokeDasharray="6 5"
+          animate={{ rotate: [0, 360] }}
+          transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
+          style={{ transformOrigin: `${POC.x}px ${POC.y}px` }}
+        />
+        <text x={POC.x} y={POC.y - 8} textAnchor="middle" dominantBaseline="middle"
+          fill="rgba(255,255,255,0.18)" fontSize={26} fontFamily="system-ui,sans-serif">
+          ?
+        </text>
+        <text x={POC.x} y={POC.y + 14} textAnchor="middle" dominantBaseline="middle"
+          fill="rgba(255,255,255,0.1)" fontSize={9} fontFamily="system-ui,sans-serif">
+          no system
+        </text>
+
+        {/* ── Wandering icons ── */}
+        {PAIN_ICONS.map((ic) => {
+          const pts = painOrbitPts(ic.rx, ic.ry, ic.startDeg)
+          return inView ? (
+            <motion.g key={`pain-${ic.label}`}
+              animate={{ x: pts.map(p => p.x), y: pts.map(p => p.y) }}
+              transition={{ duration: ic.speed, repeat: Infinity, ease: 'linear' }}
+            >
+              {/* Warning glow */}
+              <circle cx={0} cy={0} r={22} fill="rgba(239,68,68,0.05)" />
+              {/* Icon */}
+              <text x={0} y={0} textAnchor="middle" dominantBaseline="middle"
+                fontSize={22} fontFamily="system-ui,sans-serif" opacity={0.55}>
+                {ic.icon}
+              </text>
+              {/* Label */}
+              <text x={0} y={18} textAnchor="middle" dominantBaseline="middle"
+                fill="rgba(255,255,255,0.3)" fontSize={8} fontFamily="system-ui,sans-serif">
+                {ic.label}
+              </text>
+              {/* ! badge */}
+              <circle cx={14} cy={-14} r={7} fill="rgba(239,68,68,0.7)" />
+              <text x={14} y={-14} textAnchor="middle" dominantBaseline="middle"
+                fill="white" fontSize={9} fontWeight={700} fontFamily="system-ui,sans-serif">
+                !
+              </text>
+            </motion.g>
+          ) : null
+        })}
+
+      </svg>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────
 // QUALIFICATION LOOP  (circular 4-step flow)
 // ─────────────────────────────────────────────────────────────────
 

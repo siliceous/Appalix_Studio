@@ -24,12 +24,6 @@ export const metadata: Metadata = {
 
 const SOURCES = [
   {
-    icon: '📋',
-    tag: 'Forms',
-    title: 'Web forms & lead ads',
-    desc: 'Connect Google Ads Lead Forms and Meta Lead Ads directly. Embed your own form on any page. Every submission arrives scored and ready to act on.',
-  },
-  {
     icon: '📧',
     tag: 'Email',
     title: 'Gmail & Outlook inbox',
@@ -40,6 +34,12 @@ const SOURCES = [
     tag: 'Chatbots',
     title: 'AI chatbot conversations',
     desc: 'Deploy chatbots on your website, WhatsApp, Facebook Messenger, and Slack. Leads captured mid-conversation feed straight into your pipeline.',
+  },
+  {
+    icon: '📋',
+    tag: 'Forms',
+    title: 'Web forms & lead ads',
+    desc: 'Connect Google Ads Lead Forms and Meta Lead Ads directly. Embed your own form on any page. Every submission arrives scored and ready to act on.',
   },
   {
     icon: '📊',
@@ -92,7 +92,7 @@ const PROBLEMS = [
   },
   {
     icon: '💬',
-    title: 'Chatbot conversations never reach your CRM',
+    title: 'Chatbot leads never reach your CRM',
     desc: 'Your bot captures a hot lead. It lives in a chat log no one checks.',
   },
 ]
@@ -127,39 +127,50 @@ export default function TestLandingPage() {
     <div className="pt-24">
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
-      <section className="relative py-20 px-6 overflow-hidden">
+      <section className="relative py-6 lg:py-10 px-8 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-[#15A4AE]/15 rounded-full blur-[140px] pointer-events-none" />
 
-        <div className="relative max-w-4xl mx-auto text-center">
+        <div className="relative max-w-6xl mx-auto text-center">
           <FadeUp delay={0}>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#15A4AE]/40 bg-[#15A4AE]/10 text-[#15A4AE] text-xs font-medium mb-6">
+            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-[#15A4AE]/40 bg-[#15A4AE]/10 text-white font-medium mb-10" style={{ fontSize: '14px' }}>
               <span className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] animate-pulse" />
-              Every lead. Every channel. Automated.
+              STOP STITCHING TOOLS AND PAYING MORE INDIVIDUALLY FOR EACH APP
             </div>
           </FadeUp>
 
           <FadeUp delay={0.1}>
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6">
-              Imagine an AI powered CRM that captures, understands, and organises every opportunity from your email, Bot and forms{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#15A4AE] to-[#3d9585]">
-                Automatically.
-              </span>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.25] mb-8 text-white max-w-4xl mx-auto">
+              Imagine a single AI platform having chatbots, lead forms, email AI tools, CRM, and ticketing systems all built in.
             </h1>
           </FadeUp>
 
           <FadeUp delay={0.2}>
-            <p className="text-base sm:text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto mb-4">
-              <span className="text-white font-semibold">Introducing Appalix Sage.</span>
-              {' '}It analyses your emails, powers intelligent bots that capture conversations, and extracts key data from every form submission across your website, Google Ads, and Facebook campaigns.
-              <br /><br />
-              Each enquiry is instantly transformed into an opportunity and organised directly within your CRM, all within seconds, 24/7.
+            <h2 className="text-2xl sm:text-3xl text-white font-semibold max-w-3xl mx-auto mb-4">
+              Introducing Appalix Sage.
+            </h2>
+            <div className="flex flex-wrap justify-center gap-2 max-w-4xl mx-auto mb-4">
+              {[
+                'powers multiple intelligent bots',
+                'analyses emails with AI',
+                'extracts key data from every form submission',
+                'integrates with marketing tools, Google Ads & Facebook',
+                'creates tickets automatically when needed',
+              ].map(point => (
+                <span key={point} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#15A4AE]/30 bg-[#15A4AE]/8 text-gray-300 capitalize text-base">
+                  <span className="w-2 h-2 rounded-full bg-[#15A4AE] shrink-0" />
+                  {point}
+                </span>
+              ))}
+            </div>
+            <p className="text-lg sm:text-xl text-gray-400 leading-relaxed max-w-3xl mx-auto mb-4">
+              Each enquiry is instantly transformed into an opportunity and prioritises them as <span className="text-[#15A4AE] font-medium">High</span>, <span className="text-yellow-400 font-medium">Medium</span>, or <span className="text-blue-300 font-medium">Low</span>. It organises them directly within a built-in CRM suite, all within seconds, 24/7.
             </p>
           </FadeUp>
 
           <FadeUp delay={0.25}>
-            <ul className="flex flex-col sm:flex-row gap-2 justify-center text-sm text-gray-400 mb-8">
-              {['No credit card required', 'All sources included', 'Live in under 15 minutes'].map(item => (
-                <li key={item} className="flex items-center gap-1.5 sm:px-3">
+            <ul className="flex flex-row gap-6 justify-center text-base text-gray-400 mb-5">
+              {['No credit card required', 'All sources included'].map(item => (
+                <li key={item} className="flex items-center gap-2">
                   <svg className="w-4 h-4 text-[#15A4AE] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
@@ -170,16 +181,16 @@ export default function TestLandingPage() {
           </FadeUp>
 
           <FadeUp delay={0.3}>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/login"
-                className="px-8 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors"
+                className="px-10 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white text-lg font-medium rounded-xl transition-colors"
               >
                 Start a 7 Day Free Trial
               </Link>
               <Link
                 href="/features"
-                className="px-8 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors"
+                className="px-10 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white text-lg font-medium rounded-xl transition-colors"
               >
                 See all features →
               </Link>
@@ -189,22 +200,94 @@ export default function TestLandingPage() {
       </section>
 
       {/* ── Problem strip ────────────────────────────────────────────── */}
-      <section className="py-16 px-6 border-t border-white/5">
-        <div className="max-w-5xl mx-auto">
-          <ScrollReveal className="text-center mb-12">
-            <p className="text-xs text-[#15A4AE] uppercase tracking-widest font-semibold mb-3">Why leads go cold</p>
-            <h2 className="text-2xl sm:text-3xl font-bold">
+      <section className="py-20 px-8 border-t border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <ScrollReveal className="text-center mb-14">
+            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">Why leads go cold</p>
+            <h2 className="text-4xl sm:text-5xl font-bold">
               Your leads are scattered. Your pipeline is manual.<br className="hidden sm:block" />
               Things fall through the gaps.
             </h2>
           </ScrollReveal>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-14">
             {PROBLEMS.map((p, i) => (
               <ScrollReveal key={p.title} delay={i * 0.1}>
-                <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/10">
-                  <span className="text-3xl block mb-4">{p.icon}</span>
-                  <h3 className="font-semibold text-white mb-2 leading-snug">{p.title}</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed">{p.desc}</p>
+                <div className="p-8 rounded-2xl bg-white/[0.03] border border-white/10">
+                  <span className="text-4xl block mb-5">{p.icon}</span>
+                  <h3 className="text-xl font-semibold text-white mb-3 leading-snug whitespace-nowrap">{p.title}</h3>
+                  <p className="text-lg text-gray-400 leading-relaxed">{p.desc}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+
+          {/* Comparison table */}
+          <ScrollReveal className="mb-14 overflow-x-auto rounded-2xl border border-white/10">
+            <table className="w-full text-lg border-collapse">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left py-6 px-6 bg-white/[0.02] w-1/3">
+                    <span className="text-2xl font-bold text-white">Features</span>
+                  </th>
+                  <th className="py-6 px-6 text-center w-1/3 bg-red-950/30">
+                    <span className="flex flex-col items-center gap-1">
+                      <span className="text-xl font-bold text-gray-200">Traditional Tools</span>
+                      <span className="text-gray-500 font-normal" style={{ fontSize: '14px' }}>Multiple apps, more cost</span>
+                    </span>
+                  </th>
+                  <th className="py-6 px-6 text-center w-1/3 bg-[#15A4AE]/10">
+                    <span className="flex flex-col items-center gap-1">
+                      <span className="text-xl font-bold text-[#15A4AE]">Appalix Sage</span>
+                      <span className="text-[#15A4AE]/60 font-normal" style={{ fontSize: '14px' }}>All in one platform</span>
+                    </span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ['Chatbot',             'Dumb rule-based bot, no CRM sync',          'AI chatbot trained on your content — captures leads, answers questions & syncs to CRM instantly'],
+                  ['Lead capture',        'Manual forms + separate chatbot tools',     'AI captures from email, forms & bots automatically'],
+                  ['CRM entry',           'Copy-paste by your team',                   'Every enquiry auto-logged as an opportunity in seconds'],
+                  ['Email management',    'Separate inbox tool or plugin',             'Built-in AI email analysis & response suggestions'],
+                  ['Ticketing / support', 'Another tool (Zendesk, Freshdesk…)',        'Unified inbox — leads and support in one place'],
+                  ['Follow-up',           'Manual reminders, things fall through',     'Automated follow-up sequences triggered instantly'],
+                  ['Cost',                'Multiple subscriptions, 5–8 tools',         'One platform, one price'],
+                  ['Setup time',          'Weeks of integration work',                 'Live in under 15 minutes'],
+                  ['Availability',        'Business hours only',                       '24 / 7 AI, never sleeps'],
+                ].map(([feature, before, after]) => (
+                  <tr key={feature} className="border-b border-white/5 last:border-0">
+                    <td className="py-4 px-6 text-white font-semibold bg-white/[0.02]">{feature}</td>
+                    <td className="py-4 px-6 text-center text-gray-200 bg-red-950/10">{before}</td>
+                    <td className="py-4 px-6 text-center text-white bg-[#15A4AE]/[0.06]">{after}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* ── Sources grid ─────────────────────────────────────────────── */}
+      <section className="py-24 px-8 border-t border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <ScrollReveal className="text-center mb-14">
+            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">Every source, one Dashboard</p>
+            <h2 className="text-4xl sm:text-5xl font-bold mb-5">Stop checking everywhere for leads</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed">
+              Whether a lead came from a paid ad, a chatbot conversation, or a cold email reply — Appalix sees it, scores it, and acts on it.
+            </p>
+          </ScrollReveal>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {SOURCES.map((s, i) => (
+              <ScrollReveal key={s.title} delay={i * 0.07}>
+                <div className="p-8 rounded-2xl bg-white/5 border border-white/10 hover:border-[#15A4AE]/30 hover:bg-white/[0.07] transition-all h-full flex flex-col group">
+                  <div className="w-14 h-14 rounded-xl bg-[#15A4AE]/10 border border-[#15A4AE]/20 flex items-center justify-center text-3xl mb-5 group-hover:bg-[#15A4AE]/15 transition-colors shrink-0">
+                    {s.icon}
+                  </div>
+                  <span className="text-sm text-[#15A4AE] font-semibold uppercase tracking-widest mb-2">{s.tag}</span>
+                  <h3 className="text-xl font-semibold text-white mb-3 leading-snug">{s.title}</h3>
+                  <p className="text-lg text-gray-400 leading-relaxed flex-1">{s.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -213,15 +296,18 @@ export default function TestLandingPage() {
       </section>
 
       {/* ── Flow diagram ─────────────────────────────────────────────── */}
-      <section className="py-24 px-6 border-t border-white/5">
-        <div className="max-w-5xl mx-auto">
+      <section className="py-24 px-8 border-t border-white/5">
+        <div className="max-w-7xl mx-auto">
           <ScrollReveal className="text-center mb-14">
-            <p className="text-xs text-[#15A4AE] uppercase tracking-widest font-semibold mb-3">How it works</p>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              One platform captures, qualifies,<br className="hidden sm:block" /> and routes every lead
+            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">How it works</p>
+            <h2 className="text-4xl sm:text-5xl font-bold mb-6">
+              One platform captures, qualifies, and routes every lead
             </h2>
-            <p className="text-gray-400 max-w-xl mx-auto text-sm leading-relaxed">
-              No manual tagging. No missed follow-ups. No leads lost in inboxes.
+            <p className="text-xl sm:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed mb-4">
+              Every enquiry — whether it arrives via email, a website form, a chatbot conversation, Google Ads, or a Facebook campaign — is automatically captured, analysed, and transformed into a qualified opportunity inside your CRM within seconds.
+            </p>
+            <p className="text-lg sm:text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
+              No manual tagging. No missed follow-ups. No leads lost in inboxes. Just a clean, organised pipeline that works for you 24/7 — even while you sleep.
             </p>
           </ScrollReveal>
 
@@ -231,44 +317,16 @@ export default function TestLandingPage() {
           </ScrollReveal>
 
           {/* 3-step cards below */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mt-10">
             {STEPS.map((s, i) => (
               <ScrollReveal key={s.step} delay={i * 0.12}>
-                <div className="relative p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-[#15A4AE]/30 transition-colors group h-full">
+                <div className="relative p-8 rounded-2xl bg-white/5 border border-white/10 hover:border-[#15A4AE]/30 transition-colors group h-full">
                   {i < STEPS.length - 1 && (
                     <div className="hidden sm:block absolute top-10 -right-3 w-6 h-px bg-[#15A4AE]/30 z-10" />
                   )}
-                  <p className="text-4xl font-black text-white/10 group-hover:text-[#15A4AE]/20 transition-colors mb-4 leading-none select-none">{s.step}</p>
-                  <h3 className="font-semibold text-white mb-2">{s.title}</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed">{s.desc}</p>
-                </div>
-              </ScrollReveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Sources grid ─────────────────────────────────────────────── */}
-      <section className="py-24 px-6 border-t border-white/5">
-        <div className="max-w-7xl mx-auto">
-          <ScrollReveal className="text-center mb-14">
-            <p className="text-xs text-[#15A4AE] uppercase tracking-widest font-semibold mb-3">Every source, one inbox</p>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Stop checking five places for leads</h2>
-            <p className="text-gray-400 max-w-xl mx-auto text-sm leading-relaxed">
-              Whether a lead came from a paid ad, a chatbot conversation, or a cold email reply — Appalix sees it, scores it, and acts on it.
-            </p>
-          </ScrollReveal>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {SOURCES.map((s, i) => (
-              <ScrollReveal key={s.title} delay={i * 0.07}>
-                <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-[#15A4AE]/30 hover:bg-white/[0.07] transition-all h-full flex flex-col group">
-                  <div className="w-11 h-11 rounded-xl bg-[#15A4AE]/10 border border-[#15A4AE]/20 flex items-center justify-center text-2xl mb-5 group-hover:bg-[#15A4AE]/15 transition-colors shrink-0">
-                    {s.icon}
-                  </div>
-                  <span className="text-xs text-[#15A4AE] font-semibold uppercase tracking-widest mb-2">{s.tag}</span>
-                  <h3 className="font-semibold text-white mb-2 leading-snug">{s.title}</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed flex-1">{s.desc}</p>
+                  <p className="text-5xl font-black text-white/10 group-hover:text-[#15A4AE]/20 transition-colors mb-5 leading-none select-none">{s.step}</p>
+                  <h3 className="text-xl font-semibold text-white mb-3">{s.title}</h3>
+                  <p className="text-lg text-gray-400 leading-relaxed">{s.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -277,12 +335,12 @@ export default function TestLandingPage() {
       </section>
 
       {/* ── Qualification loop ───────────────────────────────────────── */}
-      <section className="py-24 px-6 border-t border-white/5">
-        <div className="max-w-5xl mx-auto">
+      <section className="py-24 px-8 border-t border-white/5">
+        <div className="max-w-7xl mx-auto">
           <ScrollReveal className="text-center mb-14">
-            <p className="text-xs text-[#15A4AE] uppercase tracking-widest font-semibold mb-3">AI qualification process</p>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">How every lead gets scored and acted on</h2>
-            <p className="text-gray-400 max-w-xl mx-auto text-sm leading-relaxed">
+            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">AI qualification process</p>
+            <h2 className="text-4xl sm:text-5xl font-bold mb-5">How every lead gets scored and acted on</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed">
               The moment a lead arrives from any channel, Appalix AI runs it through a continuous qualification loop — so your team only deals with leads that are ready.
             </p>
           </ScrollReveal>
@@ -349,7 +407,7 @@ export default function TestLandingPage() {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#15A4AE]/30 bg-[#15A4AE]/[0.08] text-[#15A4AE] text-[11px] font-semibold uppercase tracking-widest">
               <span className="text-[10px]">✦</span> Meet Sage
             </div>
-            <h2 className="text-3xl sm:text-4xl font-bold leading-snug">
+            <h2 className="text-4xl sm:text-5xl font-bold leading-snug">
               Your AI that never misses a lead — and always knows what to do next
             </h2>
             <p className="text-gray-400 leading-relaxed">
@@ -405,7 +463,7 @@ export default function TestLandingPage() {
         <div className="max-w-4xl mx-auto text-center">
           <ScrollReveal>
             <p className="text-xs text-[#15A4AE] uppercase tracking-widest font-semibold mb-3">Integrations</p>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Connects with the tools your leads already come from</h2>
+            <h2 className="text-4xl sm:text-5xl font-bold mb-4">Connects with the tools your leads already come from</h2>
             <p className="text-gray-400 mb-10 text-sm max-w-lg mx-auto">
               Native connections to every major ad platform, email provider, CRM, and automation tool.
             </p>
@@ -432,7 +490,7 @@ export default function TestLandingPage() {
         <div className="max-w-3xl mx-auto text-center">
           <ScrollReveal>
             <p className="text-xs text-[#15A4AE] uppercase tracking-widest font-semibold mb-3">Pricing</p>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Simple pricing that scales with your lead volume</h2>
+            <h2 className="text-4xl sm:text-5xl font-bold mb-4">Simple pricing that scales with your lead volume</h2>
             <p className="text-gray-400 mb-8 text-sm">Plans from $29/mo. 7-day free trial on all plans. No credit card required.</p>
           </ScrollReveal>
           <ScrollReveal delay={0.1}>
@@ -471,7 +529,7 @@ export default function TestLandingPage() {
       <section className="py-24 px-6 border-t border-white/5">
         <div className="max-w-3xl mx-auto">
           <ScrollReveal className="text-center mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold">Frequently asked questions</h2>
+            <h2 className="text-4xl sm:text-5xl font-bold">Frequently asked questions</h2>
           </ScrollReveal>
           <div className="space-y-5">
             {FAQS.map((faq, i) => (
@@ -492,7 +550,7 @@ export default function TestLandingPage() {
           <div className="relative max-w-4xl mx-auto text-center">
             <div className="absolute inset-0 bg-[#15A4AE]/[0.05] rounded-3xl blur-3xl pointer-events-none" />
             <div className="relative p-12 rounded-3xl border border-[#15A4AE]/20 bg-white/[0.02]">
-              <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+              <h2 className="text-4xl sm:text-5xl font-bold mb-4">
                 Every lead deserves a fast follow-up.<br className="hidden sm:block" />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#15A4AE] to-[#3d9585]">
                   Let AI handle it.
