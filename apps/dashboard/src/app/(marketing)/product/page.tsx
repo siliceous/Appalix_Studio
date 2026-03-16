@@ -222,16 +222,6 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
               </div>
             </div>
 
-            {/* Connect inbox banner */}
-            <div className="flex items-center gap-3 px-4 py-2.5 bg-[#15A4AE] rounded-xl">
-              <span className="text-white text-sm">✉</span>
-              <div className="flex-1">
-                <p className="text-[11px] font-bold text-white leading-none">Connect &amp; sync your inbox</p>
-                <p className="text-[9px] text-white/80 mt-0.5">Link Gmail or Outlook so Sage can prioritise your emails.</p>
-              </div>
-              <span className="text-[10px] font-bold text-white shrink-0">Get started →</span>
-            </div>
-
             {/* 4 Donut cards */}
             <div>
               <div className="flex items-center justify-between mb-2">
