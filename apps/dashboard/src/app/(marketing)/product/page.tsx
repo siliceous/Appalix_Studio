@@ -186,8 +186,8 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
           {/* ── Main content ────────────────────────────────────────── */}
           <div className="flex-1 overflow-y-auto bg-gray-50 p-4 flex flex-col gap-4">
 
-            {/* Page header */}
-            <div className="flex items-start justify-between gap-3 flex-wrap">
+            {/* Page header + Sage Auto merged */}
+            <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
                 <p className="text-sm font-bold text-gray-900">Good morning, James 👋</p>
                 <p className="text-[10px] text-gray-500 mt-0.5">Here&apos;s what needs your attention today</p>
@@ -205,20 +205,21 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                 <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-[10px] text-gray-600 font-medium">
                   Last 7 days <span className="text-gray-400">▾</span>
                 </div>
-              </div>
-            </div>
-
-            {/* Sage Auto bar */}
-            <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-xl border border-gray-200 shadow-sm">
-              <span className="text-[#15A4AE] text-[11px]">⚡</span>
-              <span className="text-[11px] font-medium text-gray-700">Sage Auto</span>
-              {/* Toggle */}
-              <div className="relative w-8 h-4 rounded-full bg-[#15A4AE] shrink-0">
-                <div className="absolute right-0.5 top-0.5 w-3 h-3 rounded-full bg-white shadow-sm" />
-              </div>
-              <span className="text-[10px] font-bold text-[#15A4AE]">ON</span>
-              <div className="ml-auto flex items-center gap-1 px-2 py-1 rounded-lg border border-gray-200 bg-gray-50 text-[9px] text-gray-500">
-                Junior Sales Pipeline <span className="text-gray-400">▾</span>
+                {/* Divider */}
+                <div className="w-px h-5 bg-gray-200" />
+                {/* Sage Auto toggle */}
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white">
+                  <span className="text-[#15A4AE] text-[10px]">⚡</span>
+                  <span className="text-[10px] font-medium text-gray-700">Sage Auto</span>
+                  <div className="relative w-7 h-3.5 rounded-full bg-[#15A4AE] shrink-0">
+                    <div className="absolute right-0.5 top-0.5 w-2.5 h-2.5 rounded-full bg-white shadow-sm" />
+                  </div>
+                  <span className="text-[9px] font-bold text-[#15A4AE]">ON</span>
+                </div>
+                {/* Pipeline dropdown */}
+                <div className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-[9px] text-gray-500">
+                  Junior Sales Pipeline <span className="text-gray-400">▾</span>
+                </div>
               </div>
             </div>
 
