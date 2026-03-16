@@ -216,10 +216,6 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                   </div>
                   <span className="text-[9px] font-bold text-[#15A4AE]">ON</span>
                 </div>
-                {/* Pipeline dropdown */}
-                <div className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-[9px] text-gray-500">
-                  Junior Sales Pipeline <span className="text-gray-400">▾</span>
-                </div>
               </div>
             </div>
 
