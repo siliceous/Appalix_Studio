@@ -12,11 +12,21 @@ function Tip({ label, children, dir = 'top', clickable = false }: {
   clickable?: boolean
 }) {
   const [show, setShow] = useState(false)
-  const pos = dir === 'bottom'
-    ? 'top-full left-1/2 -translate-x-1/2 mt-2'
+
+  // Bubble position + arrow (rotated square) per direction
+  const wrapPos = dir === 'bottom'
+    ? 'top-full left-1/2 -translate-x-1/2 mt-[9px]'
     : dir === 'right'
-    ? 'left-full top-1/2 -translate-y-1/2 ml-2'
-    : 'bottom-full left-1/2 -translate-x-1/2 mb-2'
+    ? 'left-full top-1/2 -translate-y-1/2 ml-[9px]'
+    : 'bottom-full left-1/2 -translate-x-1/2 mb-[9px]'
+
+  // Arrow: rotated square, two borders match bubble border, other two hidden by bubble bg
+  const arrowEl = dir === 'bottom'
+    ? <span className="absolute -top-[5px] left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-white border-l border-t border-gray-200 rotate-45" />
+    : dir === 'right'
+    ? <span className="absolute -left-[5px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border-l border-b border-gray-200 rotate-45" />
+    : <span className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-white border-r border-b border-gray-200 rotate-45" />
+
   return (
     <div
       className="relative"
@@ -25,9 +35,10 @@ function Tip({ label, children, dir = 'top', clickable = false }: {
     >
       {children}
       {show && (
-        <div className={`pointer-events-none absolute ${pos} z-40 w-max max-w-[190px]`}>
-          <div className="px-2.5 py-1.5 rounded-lg bg-gray-900 text-white text-[9px] leading-snug shadow-xl">
-            {clickable && <span className="text-[#61c2ad] font-bold mr-1">*</span>}{label}
+        <div className={`pointer-events-none absolute ${wrapPos} z-40 w-max max-w-[200px]`}>
+          <div className="relative px-3 py-2 rounded-lg bg-white text-gray-900 text-[11px] font-medium leading-snug shadow-lg border border-gray-200">
+            {arrowEl}
+            {clickable && <span className="text-[#15A4AE] font-bold mr-1">●</span>}{label}
           </div>
         </div>
       )}
@@ -265,7 +276,7 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                       className={`flex items-center gap-2 px-4 py-1.5 text-[11px] transition-colors cursor-default ${
                         item.active
                           ? 'bg-[#15A4AE]/10 text-[#15A4AE] font-semibold'
-                          : 'text-gray-500'
+                          : 'text-gray-600'
                       } ${item.sub ? 'pl-8' : ''}`}
                     >
                       <span className={`text-[11px] ${item.color || (item.active ? 'text-[#15A4AE]' : 'text-gray-400')}`}>{item.icon}</span>
@@ -295,7 +306,7 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                 <p className="text-sm font-bold text-gray-900">
                   {viewAsName ? `Viewing as ${viewAsName}` : 'Good morning, James 👋'}
                 </p>
-                <p className="text-[10px] text-gray-500 mt-0.5">Here&apos;s what needs your attention today</p>
+                <p className="text-[10px] text-gray-600 mt-0.5">Here&apos;s what needs your attention today</p>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 {/* Add Contact */}
@@ -401,7 +412,7 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                     <div className="w-full flex items-center justify-between mb-2">
                       <div>
                         <p className={`text-[11px] font-semibold ${c.iconCls}`}>{c.label}</p>
-                        <p className="text-[9px] text-gray-400 leading-snug">{c.sub}</p>
+                        <p className="text-[9px] text-gray-600 leading-snug">{c.sub}</p>
                       </div>
                       <span className={`text-sm ${c.iconCls}`}>
                         {c.color === 'blue' ? '✉' : c.color === 'purple' ? '💬' : c.color === 'green' ? '📋' : '🎫'}
@@ -410,7 +421,7 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                     <MiniDonut high={c.high} medium={c.medium} low={c.low} total={c.total} color={c.color} />
                     <div className="flex items-center gap-2 mt-2 flex-wrap justify-center">
                       {[{ label: `${c.high} high`, dot: 'bg-green-400' }, { label: `${c.medium} med`, dot: 'bg-yellow-400' }, { label: `${c.low} low`, dot: 'bg-gray-300' }].map((s) => (
-                        <span key={s.label} className="flex items-center gap-1 text-[8px] text-gray-400">
+                        <span key={s.label} className="flex items-center gap-1 text-[9px] text-gray-500">
                           <span className={`w-2 h-2 rounded-full ${s.dot}`} />
                           {s.label}
                         </span>
@@ -478,9 +489,9 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-[11px] font-semibold text-gray-900 truncate leading-snug">{item.title}</p>
-                            <p className="text-[9px] text-gray-400 truncate mt-0.5">{item.sub}</p>
+                            <p className="text-[9px] text-gray-600 truncate mt-0.5">{item.sub}</p>
                           </div>
-                          <span className="text-[9px] text-gray-400 shrink-0">{item.time}</span>
+                          <span className="text-[9px] text-gray-500 shrink-0">{item.time}</span>
                         </div>
                       </Tip>
                     ))}
@@ -515,7 +526,7 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                                 <PriorityDot p={row.p} />
                                 <div className="flex-1 min-w-0">
                                   <p className="text-[10px] font-semibold text-gray-900 truncate">{row.title}</p>
-                                  <p className="text-[8px] text-gray-400 truncate mt-0.5">{row.sub}</p>
+                                  <p className="text-[9px] text-gray-600 truncate mt-0.5">{row.sub}</p>
                                 </div>
                               </div>
                             ))}
@@ -553,7 +564,7 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                         <div className="w-4 h-4 mt-0.5 rounded border-2 border-gray-300 shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-[10px] font-medium text-gray-900 truncate leading-snug">{t.title}</p>
-                          <p className="text-[9px] text-gray-400 mt-0.5">{t.sub}</p>
+                          <p className="text-[9px] text-gray-600 mt-0.5">{t.sub}</p>
                           <p className="text-[9px] text-red-500 font-medium mt-0.5">{t.due}</p>
                         </div>
                       </div>
@@ -575,8 +586,8 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                         <div className="w-4 h-4 mt-0.5 rounded border-2 border-gray-200 shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-[10px] font-medium text-gray-900 truncate leading-snug">{t.title}</p>
-                          <p className="text-[9px] text-gray-400 mt-0.5">{t.sub}</p>
-                          <p className="text-[9px] text-gray-400 mt-0.5">📅 {t.due}</p>
+                          <p className="text-[9px] text-gray-600 mt-0.5">{t.sub}</p>
+                          <p className="text-[9px] text-gray-500 mt-0.5">📅 {t.due}</p>
                         </div>
                       </div>
                     </Tip>
