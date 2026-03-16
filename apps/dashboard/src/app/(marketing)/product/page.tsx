@@ -4,40 +4,74 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { FadeUp, ScrollReveal } from '@/components/marketing/animate'
 
+/* ─── Tooltip ───────────────────────────────────────────────────────────── */
+function Tip({ label, children, dir = 'top', clickable = false }: {
+  label: string
+  children: React.ReactNode
+  dir?: 'top' | 'bottom' | 'right'
+  clickable?: boolean
+}) {
+  const [show, setShow] = useState(false)
+  const pos = dir === 'bottom'
+    ? 'top-full left-1/2 -translate-x-1/2 mt-2'
+    : dir === 'right'
+    ? 'left-full top-1/2 -translate-y-1/2 ml-2'
+    : 'bottom-full left-1/2 -translate-x-1/2 mb-2'
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      {children}
+      {show && (
+        <div className={`pointer-events-none absolute ${pos} z-40 w-max max-w-[190px]`}>
+          <div className="px-2.5 py-1.5 rounded-lg bg-gray-900 text-white text-[9px] leading-snug shadow-xl">
+            {clickable && <span className="text-[#61c2ad] font-bold mr-1">*</span>}{label}
+          </div>
+        </div>
+      )}
+      {clickable && show && (
+        <span className="pointer-events-none absolute -inset-0.5 rounded-lg border border-[#15A4AE]/50" />
+      )}
+    </div>
+  )
+}
+
 /* ─── Sidebar structure (mirrors real app) ─────────────────────────────── */
 const SIDEBAR_GROUPS = [
   {
     label: null,
     items: [
-      { label: 'Overview',      icon: '⊞', active: true,  sub: false, color: '' },
-      { label: 'Emails',        icon: '✉', active: false, sub: true,  color: 'text-blue-500' },
-      { label: 'Conversations', icon: '💬', active: false, sub: true,  color: 'text-purple-500' },
-      { label: 'Forms',         icon: '📋', active: false, sub: true,  color: 'text-green-500' },
-      { label: 'Tickets',       icon: '🎫', active: false, sub: true,  color: 'text-amber-500' },
+      { label: 'Overview',      icon: '⊞', active: true,  sub: false, color: '',                tip: 'Your command centre — real-time overview of all activity' },
+      { label: 'Emails',        icon: '✉', active: false, sub: true,  color: 'text-blue-500',   tip: 'Manage all email threads with AI-drafted replies' },
+      { label: 'Conversations', icon: '💬', active: false, sub: true,  color: 'text-purple-500', tip: 'Live bot chats from every channel in one inbox' },
+      { label: 'Forms',         icon: '📋', active: false, sub: true,  color: 'text-green-500',  tip: 'All form submissions, enriched and routed automatically' },
+      { label: 'Tickets',       icon: '🎫', active: false, sub: true,  color: 'text-amber-500',  tip: 'Support tickets auto-created and prioritised by AI' },
     ],
   },
   {
     label: 'Agent',
     items: [
-      { label: 'Bots',           icon: '🤖', active: false, sub: false, color: '' },
-      { label: 'Integrations',   icon: '🔗', active: false, sub: false, color: '' },
-      { label: 'Knowledge Base', icon: '📚', active: false, sub: false, color: '' },
+      { label: 'Bots',           icon: '🤖', active: false, sub: false, color: '', tip: 'Build and deploy AI bots for web, WhatsApp, Telegram, and more' },
+      { label: 'Integrations',   icon: '🔗', active: false, sub: false, color: '', tip: 'Connect HubSpot, Slack, Salesforce, WhatsApp, and 50+ tools' },
+      { label: 'Knowledge Base', icon: '📚', active: false, sub: false, color: '', tip: 'Train your bot with URLs, PDFs, and documents — ready in minutes' },
     ],
   },
   {
     label: 'Sage',
     items: [
-      { label: 'Pipelines', icon: '⧉', active: false, sub: false, color: '' },
-      { label: 'Projects',  icon: '📁', active: false, sub: false, color: '' },
-      { label: 'Contacts',  icon: '👥', active: false, sub: false, color: '' },
-      { label: 'ROI',       icon: '📈', active: false, sub: false, color: '' },
+      { label: 'Pipelines', icon: '⧉', active: false, sub: false, color: '', tip: 'Visual sales pipelines — deals created automatically by Sage Auto' },
+      { label: 'Projects',  icon: '📁', active: false, sub: false, color: '', tip: 'Manage projects linked to your deals and contacts' },
+      { label: 'Contacts',  icon: '👥', active: false, sub: false, color: '', tip: 'Every lead and customer captured from any channel' },
+      { label: 'ROI',       icon: '📈', active: false, sub: false, color: '', tip: 'Track revenue generated from AI-assisted conversations' },
     ],
   },
   {
     label: 'Other',
     items: [
-      { label: 'Analytics',    icon: '📊', active: false, sub: false, color: '' },
-      { label: 'My Activity',  icon: '🕐', active: false, sub: false, color: '' },
+      { label: 'Analytics',    icon: '📊', active: false, sub: false, color: '', tip: 'Deep performance analytics for emails, bots, forms, and tickets' },
+      { label: 'My Activity',  icon: '🕐', active: false, sub: false, color: '', tip: 'Your personal activity log and action history' },
     ],
   },
 ]
@@ -226,17 +260,18 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                   <p className="px-4 pt-2 pb-1 text-[9px] font-semibold uppercase tracking-widest text-gray-400">{g.label}</p>
                 )}
                 {g.items.map((item) => (
-                  <div
-                    key={item.label}
-                    className={`flex items-center gap-2 px-4 py-1.5 text-[11px] transition-colors ${
-                      item.active
-                        ? 'bg-[#15A4AE]/10 text-[#15A4AE] font-semibold'
-                        : 'text-gray-500'
-                    } ${item.sub ? 'pl-8' : ''}`}
-                  >
-                    <span className={`text-[11px] ${item.color || (item.active ? 'text-[#15A4AE]' : 'text-gray-400')}`}>{item.icon}</span>
-                    {item.label}
-                  </div>
+                  <Tip key={item.label} label={item.tip} dir="right">
+                    <div
+                      className={`flex items-center gap-2 px-4 py-1.5 text-[11px] transition-colors cursor-default ${
+                        item.active
+                          ? 'bg-[#15A4AE]/10 text-[#15A4AE] font-semibold'
+                          : 'text-gray-500'
+                      } ${item.sub ? 'pl-8' : ''}`}
+                    >
+                      <span className={`text-[11px] ${item.color || (item.active ? 'text-[#15A4AE]' : 'text-gray-400')}`}>{item.icon}</span>
+                      {item.label}
+                    </div>
+                  </Tip>
                 ))}
               </div>
             ))}
@@ -264,18 +299,24 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 {/* Add Contact */}
-                <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#2a7d6e] text-[10px] text-white font-medium cursor-default">+ Add Contact</div>
+                <Tip label="Create a new contact — AI pre-fills details from the conversation" dir="bottom" clickable>
+                  <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#2a7d6e] text-[10px] text-white font-medium cursor-default">+ Add Contact</div>
+                </Tip>
                 {/* Pipelines */}
-                <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-600 text-[10px] text-white font-medium cursor-default">⧉ Pipelines</div>
+                <Tip label="Open your sales pipelines — deals created automatically by Sage Auto" dir="bottom" clickable>
+                  <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-600 text-[10px] text-white font-medium cursor-default">⧉ Pipelines</div>
+                </Tip>
 
                 {/* View as dropdown */}
                 <div className="relative">
-                  <button
-                    onClick={(e) => { stop(e); setShowViewAs(v => !v); setShowDate(false) }}
-                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${showViewAs || viewAsName ? 'border-[#15A4AE]/50 bg-[#15A4AE]/5 text-[#15A4AE]' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'}`}
-                  >
-                    {viewAsName ? `👤 ${viewAsName}` : 'View as…'} <span className="text-gray-400">▾</span>
-                  </button>
+                  <Tip label="View the dashboard as any team member — managers see full team activity" dir="bottom" clickable>
+                    <button
+                      onClick={(e) => { stop(e); setShowViewAs(v => !v); setShowDate(false) }}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${showViewAs || viewAsName ? 'border-[#15A4AE]/50 bg-[#15A4AE]/5 text-[#15A4AE]' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'}`}
+                    >
+                      {viewAsName ? `👤 ${viewAsName}` : 'View as…'} <span className="text-gray-400">▾</span>
+                    </button>
+                  </Tip>
                   {showViewAs && (
                     <div className="absolute right-0 top-full mt-1 z-20 w-44 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
                       <p className="px-3 pt-2 pb-1 text-[8px] font-semibold uppercase tracking-widest text-gray-400">Managers</p>
@@ -306,12 +347,14 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
 
                 {/* Date dropdown */}
                 <div className="relative">
-                  <button
-                    onClick={(e) => { stop(e); setShowDate(v => !v); setShowViewAs(false) }}
-                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${showDate ? 'border-[#15A4AE]/50 bg-[#15A4AE]/5 text-[#15A4AE]' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`}
-                  >
-                    {selectedDate} <span className="text-gray-400">▾</span>
-                  </button>
+                  <Tip label="Filter all activity by time period" dir="bottom" clickable>
+                    <button
+                      onClick={(e) => { stop(e); setShowDate(v => !v); setShowViewAs(false) }}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${showDate ? 'border-[#15A4AE]/50 bg-[#15A4AE]/5 text-[#15A4AE]' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`}
+                    >
+                      {selectedDate} <span className="text-gray-400">▾</span>
+                    </button>
+                  </Tip>
                   {showDate && (
                     <div className="absolute right-0 top-full mt-1 z-20 w-36 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
                       {DATE_OPTIONS.map(d => (
@@ -327,14 +370,16 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                 {/* Divider */}
                 <div className="w-px h-5 bg-gray-200" />
                 {/* Sage Auto toggle */}
-                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white">
-                  <span className="text-[#15A4AE] text-[10px]">⚡</span>
-                  <span className="text-[10px] font-medium text-gray-700">Sage Auto</span>
-                  <div className="relative w-7 h-3.5 rounded-full bg-[#15A4AE] shrink-0">
-                    <div className="absolute right-0.5 top-0.5 w-2.5 h-2.5 rounded-full bg-white shadow-sm" />
+                <Tip label="AI automatically creates contacts and deals from incoming emails, bots, and forms" dir="bottom">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white cursor-default">
+                    <span className="text-[#15A4AE] text-[10px]">⚡</span>
+                    <span className="text-[10px] font-medium text-gray-700">Sage Auto</span>
+                    <div className="relative w-7 h-3.5 rounded-full bg-[#15A4AE] shrink-0">
+                      <div className="absolute right-0.5 top-0.5 w-2.5 h-2.5 rounded-full bg-white shadow-sm" />
+                    </div>
+                    <span className="text-[9px] font-bold text-[#15A4AE]">ON</span>
                   </div>
-                  <span className="text-[9px] font-bold text-[#15A4AE]">ON</span>
-                </div>
+                </Tip>
               </div>
             </div>
 
@@ -346,12 +391,13 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
               </div>
               <div className="grid grid-cols-4 gap-3">
                 {[
-                  { label: 'Emails',    sub: 'high & medium unread', color: 'blue',   iconCls: 'text-blue-500',   high: 4, medium: 7, low: 3, total: 14 },
-                  { label: 'Bot Chats', sub: 'high & medium active', color: 'purple', iconCls: 'text-purple-500', high: 2, medium: 5, low: 6, total: 13 },
-                  { label: 'Forms',     sub: 'all submissions',      color: 'green',  iconCls: 'text-green-500',  high: 3, medium: 4, low: 2, total: 9  },
-                  { label: 'Tickets',   sub: 'all tickets',          color: 'amber',  iconCls: 'text-amber-500',  high: 1, medium: 3, low: 4, total: 8  },
+                  { label: 'Emails',    sub: 'high & medium unread', color: 'blue',   iconCls: 'text-blue-500',   high: 4, medium: 7, low: 3, total: 14, tip: 'Unread emails scored by AI — green = urgent reply needed, yellow = follow up soon' },
+                  { label: 'Bot Chats', sub: 'high & medium active', color: 'purple', iconCls: 'text-purple-500', high: 2, medium: 5, low: 6, total: 13, tip: 'Active bot conversations across all channels — high priority means a hot lead is waiting' },
+                  { label: 'Forms',     sub: 'all submissions',      color: 'green',  iconCls: 'text-green-500',  high: 3, medium: 4, low: 2, total: 9,  tip: 'Form submissions from demo requests, contact forms, and lead captures — AI pre-qualifies each' },
+                  { label: 'Tickets',   sub: 'all tickets',          color: 'amber',  iconCls: 'text-amber-500',  high: 1, medium: 3, low: 4, total: 8,  tip: 'Open support tickets with AI-suggested replies — resolve faster without lifting a finger' },
                 ].map((c) => (
-                  <div key={c.label} className="bg-white rounded-xl border border-gray-200 p-3 flex flex-col items-center shadow-sm">
+                  <Tip key={c.label} label={c.tip} dir="bottom">
+                  <div className="bg-white rounded-xl border border-gray-200 p-3 flex flex-col items-center shadow-sm">
                     <div className="w-full flex items-center justify-between mb-2">
                       <div>
                         <p className={`text-[11px] font-semibold ${c.iconCls}`}>{c.label}</p>
@@ -371,6 +417,7 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                       ))}
                     </div>
                   </div>
+                  </Tip>
                 ))}
               </div>
             </div>
@@ -382,32 +429,39 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
               <div className="col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden" onClick={stop}>
                 <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <p className="text-xs font-semibold text-gray-900">Activity Feed</p>
+                    <Tip label="All activity in one feed — emails, chats, forms, and tickets" dir="bottom">
+                      <p className="text-xs font-semibold text-gray-900 cursor-default">Activity Feed</p>
+                    </Tip>
                     {/* List / Grid toggle */}
                     <div className="flex items-center gap-0.5 bg-gray-100 rounded p-0.5">
-                      <button onClick={(e) => handleListGrid(e, 'list')}
-                        className={`w-5 h-4 rounded flex items-center justify-center transition-colors ${feedView === 'list' ? 'bg-white shadow-sm text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}>
-                        <span className="text-[8px]">≡</span>
-                      </button>
-                      <button onClick={(e) => handleListGrid(e, 'grid')}
-                        className={`w-5 h-4 rounded flex items-center justify-center transition-colors ${feedView === 'grid' ? 'bg-white shadow-sm text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}>
-                        <span className="text-[8px]">⊞</span>
-                      </button>
+                      <Tip label="List view — chronological feed of all activity" dir="bottom" clickable>
+                        <button onClick={(e) => handleListGrid(e, 'list')}
+                          className={`w-5 h-4 rounded flex items-center justify-center transition-colors ${feedView === 'list' ? 'bg-white shadow-sm text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}>
+                          <span className="text-[8px]">≡</span>
+                        </button>
+                      </Tip>
+                      <Tip label="Grid view — items grouped by channel type" dir="bottom" clickable>
+                        <button onClick={(e) => handleListGrid(e, 'grid')}
+                          className={`w-5 h-4 rounded flex items-center justify-center transition-colors ${feedView === 'grid' ? 'bg-white shadow-sm text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}>
+                          <span className="text-[8px]">⊞</span>
+                        </button>
+                      </Tip>
                     </div>
                   </div>
                   {/* Type count buttons */}
                   <div className="flex items-center gap-3 text-[10px]">
                     {[
-                      { key: 'email',  icon: '✉',  count: 14, cls: 'text-blue-500',   activeCls: 'font-bold underline' },
-                      { key: 'bot',    icon: '💬', count: 13, cls: 'text-purple-500', activeCls: 'font-bold underline' },
-                      { key: 'form',   icon: '📋', count: 9,  cls: 'text-green-500',  activeCls: 'font-bold underline' },
-                      { key: 'ticket', icon: '🎫', count: 8,  cls: 'text-amber-500',  activeCls: 'font-bold underline' },
+                      { key: 'email',  icon: '✉',  count: 14, cls: 'text-blue-500',   activeCls: 'font-bold underline', tip: 'Click to view emails only in grid mode' },
+                      { key: 'bot',    icon: '💬', count: 13, cls: 'text-purple-500', activeCls: 'font-bold underline', tip: 'Click to view bot chats only in grid mode' },
+                      { key: 'form',   icon: '📋', count: 9,  cls: 'text-green-500',  activeCls: 'font-bold underline', tip: 'Click to view form submissions only in grid mode' },
+                      { key: 'ticket', icon: '🎫', count: 8,  cls: 'text-amber-500',  activeCls: 'font-bold underline', tip: 'Click to view tickets only in grid mode' },
                     ].map(t => (
-                      <button key={t.key} onClick={(e) => handleTypeClick(e, t.key)}
-                        className={`flex items-center gap-1 ${t.cls} hover:opacity-80 transition-opacity ${activeType === t.key ? t.activeCls : ''}`}
-                        title={`Show ${t.key} items`}>
-                        {t.icon} {t.count}
-                      </button>
+                      <Tip key={t.key} label={t.tip} dir="bottom" clickable>
+                        <button onClick={(e) => handleTypeClick(e, t.key)}
+                          className={`flex items-center gap-1 ${t.cls} hover:opacity-80 transition-opacity ${activeType === t.key ? t.activeCls : ''}`}>
+                          {t.icon} {t.count}
+                        </button>
+                      </Tip>
                     ))}
                   </div>
                 </div>
@@ -416,17 +470,19 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                 {feedView === 'list' && (
                   <div className="divide-y divide-gray-50 overflow-y-auto">
                     {FEED.map((item, i) => (
-                      <div key={i} className="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors">
-                        <PriorityDot p={item.priority} />
-                        <div className={`w-6 h-6 rounded-md shrink-0 flex items-center justify-center ${item.iconBg}`}>
-                          <span className={`text-[11px] ${item.iconColor}`}>{item.icon}</span>
+                      <Tip key={i} label="Click to open — AI summary, suggested reply, and one-click actions" dir="top" clickable>
+                        <div className="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors cursor-default">
+                          <PriorityDot p={item.priority} />
+                          <div className={`w-6 h-6 rounded-md shrink-0 flex items-center justify-center ${item.iconBg}`}>
+                            <span className={`text-[11px] ${item.iconColor}`}>{item.icon}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[11px] font-semibold text-gray-900 truncate leading-snug">{item.title}</p>
+                            <p className="text-[9px] text-gray-400 truncate mt-0.5">{item.sub}</p>
+                          </div>
+                          <span className="text-[9px] text-gray-400 shrink-0">{item.time}</span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[11px] font-semibold text-gray-900 truncate leading-snug">{item.title}</p>
-                          <p className="text-[9px] text-gray-400 truncate mt-0.5">{item.sub}</p>
-                        </div>
-                        <span className="text-[9px] text-gray-400 shrink-0">{item.time}</span>
-                      </div>
+                      </Tip>
                     ))}
                   </div>
                 )}
@@ -474,46 +530,56 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
               {/* Tasks (1/3) */}
               <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden" onClick={stop}>
                 <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-gray-400">☑</span>
-                    <p className="text-xs font-semibold text-gray-900">Tasks</p>
-                  </div>
+                  <Tip label="Tasks linked to your deals and contacts — overdue items are highlighted in red" dir="top">
+                    <div className="flex items-center gap-1.5 cursor-default">
+                      <span className="text-xs text-gray-400">☑</span>
+                      <p className="text-xs font-semibold text-gray-900">Tasks</p>
+                    </div>
+                  </Tip>
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{PENDING_TASKS.length + UPCOMING_TASKS.length}</span>
                 </div>
 
                 {/* Pending */}
                 <div className="px-4 py-1.5 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-                  <span className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Pending</span>
+                  <Tip label="Overdue tasks that need immediate attention" dir="top">
+                    <span className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 cursor-default">Pending</span>
+                  </Tip>
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-50 text-red-500">{PENDING_TASKS.length}</span>
                 </div>
                 <div className="divide-y divide-gray-50">
                   {PENDING_TASKS.map((t, i) => (
-                    <div key={i} className="flex items-start gap-2.5 px-4 py-3">
-                      <div className="w-4 h-4 mt-0.5 rounded border-2 border-gray-300 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-medium text-gray-900 truncate leading-snug">{t.title}</p>
-                        <p className="text-[9px] text-gray-400 mt-0.5">{t.sub}</p>
-                        <p className="text-[9px] text-red-500 font-medium mt-0.5">{t.due}</p>
+                    <Tip key={i} label="Click to mark complete, reassign, or view the linked deal" dir="top" clickable>
+                      <div className="flex items-start gap-2.5 px-4 py-3 hover:bg-gray-50 transition-colors cursor-default">
+                        <div className="w-4 h-4 mt-0.5 rounded border-2 border-gray-300 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] font-medium text-gray-900 truncate leading-snug">{t.title}</p>
+                          <p className="text-[9px] text-gray-400 mt-0.5">{t.sub}</p>
+                          <p className="text-[9px] text-red-500 font-medium mt-0.5">{t.due}</p>
+                        </div>
                       </div>
-                    </div>
+                    </Tip>
                   ))}
                 </div>
 
                 {/* Upcoming */}
                 <div className="px-4 py-1.5 bg-gray-50 border-y border-gray-100 flex items-center justify-between">
-                  <span className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Upcoming</span>
+                  <Tip label="Scheduled tasks and follow-ups coming up this week" dir="top">
+                    <span className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 cursor-default">Upcoming</span>
+                  </Tip>
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{UPCOMING_TASKS.length}</span>
                 </div>
                 <div className="divide-y divide-gray-50">
                   {UPCOMING_TASKS.map((t, i) => (
-                    <div key={i} className="flex items-start gap-2.5 px-4 py-3">
-                      <div className="w-4 h-4 mt-0.5 rounded border-2 border-gray-200 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-medium text-gray-900 truncate leading-snug">{t.title}</p>
-                        <p className="text-[9px] text-gray-400 mt-0.5">{t.sub}</p>
-                        <p className="text-[9px] text-gray-400 mt-0.5">📅 {t.due}</p>
+                    <Tip key={i} label="Click to view details, add notes, or reschedule" dir="top" clickable>
+                      <div className="flex items-start gap-2.5 px-4 py-3 hover:bg-gray-50 transition-colors cursor-default">
+                        <div className="w-4 h-4 mt-0.5 rounded border-2 border-gray-200 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] font-medium text-gray-900 truncate leading-snug">{t.title}</p>
+                          <p className="text-[9px] text-gray-400 mt-0.5">{t.sub}</p>
+                          <p className="text-[9px] text-gray-400 mt-0.5">📅 {t.due}</p>
+                        </div>
                       </div>
-                    </div>
+                    </Tip>
                   ))}
                 </div>
               </div>
