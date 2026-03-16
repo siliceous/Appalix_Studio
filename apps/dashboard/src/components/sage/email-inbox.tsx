@@ -813,7 +813,7 @@ export function EmailInbox({
                 {mailView === 'trash' ? 'Trash is empty' : mailView === 'drafts' ? 'No drafts' : emails.length === 0 ? 'No emails yet' : 'No emails match filter'}
               </p>
               {emails.length === 0 && (
-                <Link href="/integrations"
+                <Link href="/onboarding/connect"
                   className="flex items-center gap-2 text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2.5 hover:bg-amber-500/15 transition-colors">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                   Connect Gmail or Outlook
@@ -1138,10 +1138,10 @@ export function EmailInbox({
               </p>
             </div>
             {emails.length === 0 && (
-              <Link href="/integrations"
+              <Link href="/onboarding/connect"
                 className="flex items-center gap-2 text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2.5 hover:bg-amber-500/15 transition-colors">
                 <AlertCircle className="w-4 h-4 shrink-0" />
-                Connect Gmail or Outlook in Sage → Integrations
+                Connect Gmail or Outlook
                 <ArrowRight className="w-3.5 h-3.5 shrink-0 ml-auto" />
               </Link>
             )}
