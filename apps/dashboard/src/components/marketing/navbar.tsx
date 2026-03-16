@@ -6,7 +6,7 @@ const NAV_LINKS = [
   { label: 'Dashboard',     href: '/product'       },
   { label: 'Email',         href: '/email'         },
   { label: 'Bot',           href: '/bot'           },
-  { label: 'Forms',         href: '/forms'         },
+  { label: 'Forms',         href: '/smart-forms'   },
   { label: 'Tickets',       href: '/tickets'       },
   { label: 'Sage',          href: '/ai-assistant',   badge: true },
   { label: 'Integrations',  href: '/platforms'     },

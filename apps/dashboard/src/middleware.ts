@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/product') ||
     pathname.startsWith('/bot') ||
     pathname.startsWith('/email') ||
-    pathname.startsWith('/forms') ||
+    pathname.startsWith('/smart-forms') ||
     pathname.startsWith('/tickets') ||
     pathname.startsWith('/privacy') ||
     pathname.startsWith('/terms') ||

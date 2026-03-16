@@ -106,7 +106,7 @@ function FormsPreview({ onClick }: { onClick: () => void }) {
             <div className="w-3 h-3 rounded-full bg-green-400" />
           </div>
           <div className="flex items-center gap-2 px-4 py-1 rounded-md bg-white border border-gray-200">
-            <span className="text-xs text-gray-400">app.appalix.ai/forms</span>
+            <span className="text-xs text-gray-400">app.appalix.ai/smart-forms</span>
           </div>
           <div className="w-16" />
         </div>
