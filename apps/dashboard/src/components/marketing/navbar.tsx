@@ -3,6 +3,7 @@ import Image from 'next/image'
 
 const NAV_LINKS = [
   { label: 'AI Agent',      href: '/'              },
+  { label: 'Dashboard',     href: '/dashboard'     },
   { label: 'Features',      href: '/features'      },
   { label: 'Sage',          href: '/ai-assistant',   badge: true },
   { label: 'Integrations',  href: '/platforms'     },
