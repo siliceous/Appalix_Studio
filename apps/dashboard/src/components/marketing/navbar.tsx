@@ -22,7 +22,7 @@ export function MarketingNavbar() {
             alt="Appalix"
             width={120}
             height={36}
-            className="object-contain invert"
+            className="object-contain mix-blend-screen"
             priority
           />
         </Link>

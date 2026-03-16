@@ -42,6 +42,9 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/security') ||
     pathname.startsWith('/contact') ||
     pathname.startsWith('/ai-assistant') ||
+    pathname.startsWith('/test') ||
+    pathname.startsWith('/privacy') ||
+    pathname.startsWith('/terms') ||
     pathname.startsWith('/login') ||
     pathname.startsWith('/api/auth') ||
     pathname.startsWith('/api/oauth') ||
