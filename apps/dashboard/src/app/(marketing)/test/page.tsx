@@ -140,10 +140,9 @@ export default function TestLandingPage() {
 
           <FadeUp delay={0.1}>
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6">
-              Every lead, captured<br />
-              and acted on —{' '}
+              Imagine a CRM that captures, understands, and organises every opportunity{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#15A4AE] to-[#3d9585]">
-                automatically
+                automatically.
               </span>
             </h1>
           </FadeUp>
