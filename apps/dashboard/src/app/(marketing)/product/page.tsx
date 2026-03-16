@@ -111,11 +111,79 @@ function MiniDonut({ high, medium, low, total, color }: { high: number; medium: 
   )
 }
 
+/* ─── View-as dropdown data ─────────────────────────────────────────────── */
+const VIEW_AS_MANAGERS  = ['Sarah K.', 'Tom Reid']
+const VIEW_AS_EMPLOYEES = ['Amy Chen', 'Priya Sharma', 'Luca Bianchi', 'James Wu', 'Oliver Park']
+const DATE_OPTIONS      = ['Today', 'Yesterday', 'Last 7 days', 'Last 30 days']
+
+/* ─── Grid-mode tablet data ─────────────────────────────────────────────── */
+const GRID_TABLETS = [
+  {
+    key: 'email', label: 'Emails', icon: '✉', accentCls: 'text-blue-600',
+    borderCls: 'border-blue-200', bgCls: 'bg-blue-50',
+    rows: [
+      { p: 'high',   title: 'RE: Pricing enquiry — Henderson & Co',  sub: 'Wants to upgrade to Pro' },
+      { p: 'high',   title: 'Intro: partnership opportunity',         sub: 'partner@growthhq.com' },
+      { p: 'medium', title: 'Follow-up: WhatsApp integration help',  sub: 'Priya Sharma' },
+      { p: 'medium', title: 'Q: Can I white-label the widget?',       sub: 'mark@brandco.com' },
+    ],
+  },
+  {
+    key: 'bot', label: 'Bot Chats', icon: '💬', accentCls: 'text-purple-600',
+    borderCls: 'border-purple-200', bgCls: 'bg-purple-50',
+    rows: [
+      { p: 'high',   title: 'High-intent visitor — /pricing page',   sub: 'Website Bot · 8 msgs' },
+      { p: 'high',   title: 'Demo request via chat widget',           sub: 'Website Bot · 12 msgs' },
+      { p: 'medium', title: 'General enquiry — support hours',        sub: 'WhatsApp Agent · 3 msgs' },
+      { p: 'low',    title: 'FAQ: How does billing work?',            sub: 'Website Bot · 2 msgs' },
+    ],
+  },
+  {
+    key: 'form', label: 'Forms', icon: '📋', accentCls: 'text-green-600',
+    borderCls: 'border-green-200', bgCls: 'bg-green-50',
+    rows: [
+      { p: 'medium', title: 'Sarah Mitchell — Demo request',          sub: 'sarah@acmecorp.com' },
+      { p: 'medium', title: 'Carlos Rivera — Contact us',             sub: 'carlos@fintech.io' },
+      { p: 'low',    title: 'Luca Bianchi — Contact us',              sub: 'luca@bianchi.it' },
+    ],
+  },
+  {
+    key: 'ticket', label: 'Tickets', icon: '🎫', accentCls: 'text-amber-600',
+    borderCls: 'border-amber-200', bgCls: 'bg-amber-50',
+    rows: [
+      { p: 'medium', title: 'Widget not loading on mobile Safari',    sub: 'James Owens' },
+      { p: 'medium', title: 'Telegram bot not responding',            sub: 'Aiko Tanaka' },
+      { p: 'low',    title: 'Export to CSV not working',              sub: 'Peter Voss' },
+    ],
+  },
+]
+
 /* ─── Dashboard Preview (accurate light-mode mockup) ───────────────────── */
 function DashboardPreview({ onClick }: { onClick: () => void }) {
+  const [feedView,      setFeedView]      = useState<'list' | 'grid'>('list')
+  const [activeType,    setActiveType]    = useState<string | null>(null)
+  const [showViewAs,    setShowViewAs]    = useState(false)
+  const [viewAsName,    setViewAsName]    = useState<string | null>(null)
+  const [showDate,      setShowDate]      = useState(false)
+  const [selectedDate,  setSelectedDate]  = useState('Last 7 days')
+
+  function stop(e: React.MouseEvent) { e.stopPropagation() }
+
+  function handleTypeClick(e: React.MouseEvent, key: string) {
+    stop(e)
+    setFeedView('grid')
+    setActiveType(prev => prev === key ? null : key)
+  }
+
+  function handleListGrid(e: React.MouseEvent, v: 'list' | 'grid') {
+    stop(e)
+    setFeedView(v)
+    if (v === 'list') setActiveType(null)
+  }
+
   return (
-    <div className="group relative cursor-pointer" onClick={onClick} role="button" aria-label="Open demo">
-      {/* Hover glow */}
+    <div className="group relative" role="button" aria-label="Open demo">
+      {/* Hover glow — only shows on the outer shell, not on interactive children */}
       <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-brand-600/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
       {/* Window shell */}
@@ -187,24 +255,75 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
           <div className="flex-1 overflow-y-auto bg-gray-50 p-4 flex flex-col gap-4">
 
             {/* Page header + Sage Auto merged */}
-            <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center justify-between gap-3 flex-wrap" onClick={stop}>
               <div>
-                <p className="text-sm font-bold text-gray-900">Good morning, James 👋</p>
+                <p className="text-sm font-bold text-gray-900">
+                  {viewAsName ? `Viewing as ${viewAsName}` : 'Good morning, James 👋'}
+                </p>
                 <p className="text-[10px] text-gray-500 mt-0.5">Here&apos;s what needs your attention today</p>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 {/* Add Contact */}
-                <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#2a7d6e] text-[10px] text-white font-medium">+ Add Contact</div>
+                <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#2a7d6e] text-[10px] text-white font-medium cursor-default">+ Add Contact</div>
                 {/* Pipelines */}
-                <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-600 text-[10px] text-white font-medium">⧉ Pipelines</div>
-                {/* View as */}
-                <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-[10px] text-gray-500">
-                  View as… <span className="text-gray-400">▾</span>
+                <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-600 text-[10px] text-white font-medium cursor-default">⧉ Pipelines</div>
+
+                {/* View as dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={(e) => { stop(e); setShowViewAs(v => !v); setShowDate(false) }}
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${showViewAs || viewAsName ? 'border-[#15A4AE]/50 bg-[#15A4AE]/5 text-[#15A4AE]' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'}`}
+                  >
+                    {viewAsName ? `👤 ${viewAsName}` : 'View as…'} <span className="text-gray-400">▾</span>
+                  </button>
+                  {showViewAs && (
+                    <div className="absolute right-0 top-full mt-1 z-20 w-44 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                      <p className="px-3 pt-2 pb-1 text-[8px] font-semibold uppercase tracking-widest text-gray-400">Managers</p>
+                      {VIEW_AS_MANAGERS.map(n => (
+                        <button key={n} onClick={(e) => { stop(e); setViewAsName(n); setShowViewAs(false) }}
+                          className={`w-full text-left px-3 py-1.5 text-[10px] flex items-center gap-2 hover:bg-gray-50 transition-colors ${viewAsName === n ? 'text-[#15A4AE] font-semibold' : 'text-gray-700'}`}>
+                          <span className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center text-[7px] text-blue-600 font-bold shrink-0">{n[0]}</span>
+                          {n} <span className="ml-auto text-[8px] text-gray-400">Manager</span>
+                        </button>
+                      ))}
+                      <p className="px-3 pt-2 pb-1 text-[8px] font-semibold uppercase tracking-widest text-gray-400 border-t border-gray-100 mt-1">Employees</p>
+                      {VIEW_AS_EMPLOYEES.map(n => (
+                        <button key={n} onClick={(e) => { stop(e); setViewAsName(n); setShowViewAs(false) }}
+                          className={`w-full text-left px-3 py-1.5 text-[10px] flex items-center gap-2 hover:bg-gray-50 transition-colors ${viewAsName === n ? 'text-[#15A4AE] font-semibold' : 'text-gray-700'}`}>
+                          <span className="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center text-[7px] text-gray-500 font-bold shrink-0">{n[0]}</span>
+                          {n} <span className="ml-auto text-[8px] text-gray-400">Employee</span>
+                        </button>
+                      ))}
+                      {viewAsName && (
+                        <button onClick={(e) => { stop(e); setViewAsName(null); setShowViewAs(false) }}
+                          className="w-full text-left px-3 py-2 text-[10px] text-gray-400 hover:text-gray-600 border-t border-gray-100 hover:bg-gray-50 transition-colors">
+                          ← Back to my view
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
+
                 {/* Date dropdown */}
-                <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-[10px] text-gray-600 font-medium">
-                  Last 7 days <span className="text-gray-400">▾</span>
+                <div className="relative">
+                  <button
+                    onClick={(e) => { stop(e); setShowDate(v => !v); setShowViewAs(false) }}
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${showDate ? 'border-[#15A4AE]/50 bg-[#15A4AE]/5 text-[#15A4AE]' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`}
+                  >
+                    {selectedDate} <span className="text-gray-400">▾</span>
+                  </button>
+                  {showDate && (
+                    <div className="absolute right-0 top-full mt-1 z-20 w-36 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                      {DATE_OPTIONS.map(d => (
+                        <button key={d} onClick={(e) => { stop(e); setSelectedDate(d); setShowDate(false) }}
+                          className={`w-full text-left px-3 py-1.5 text-[10px] hover:bg-gray-50 transition-colors ${selectedDate === d ? 'text-[#15A4AE] font-semibold bg-[#15A4AE]/5' : 'text-gray-700'}`}>
+                          {selectedDate === d && '✓ '}{d}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
+
                 {/* Divider */}
                 <div className="w-px h-5 bg-gray-200" />
                 {/* Sage Auto toggle */}
@@ -220,7 +339,7 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
             </div>
 
             {/* 4 Donut cards */}
-            <div>
+            <div onClick={stop}>
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[9px] font-semibold uppercase tracking-widest text-gray-400">Overview</p>
                 <span className="text-[9px] text-gray-400">Collapse ▾</span>
@@ -260,41 +379,100 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
             <div className="grid grid-cols-3 gap-3 flex-1 min-h-0">
 
               {/* Activity Feed (2/3) */}
-              <div className="col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
+              <div className="col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden" onClick={stop}>
                 <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <p className="text-xs font-semibold text-gray-900">Activity Feed</p>
+                    {/* List / Grid toggle */}
                     <div className="flex items-center gap-0.5 bg-gray-100 rounded p-0.5">
-                      <div className="w-5 h-4 rounded bg-white flex items-center justify-center shadow-sm"><span className="text-[8px] text-gray-700">≡</span></div>
-                      <div className="w-5 h-4 rounded flex items-center justify-center"><span className="text-[8px] text-gray-400">⊞</span></div>
+                      <button onClick={(e) => handleListGrid(e, 'list')}
+                        className={`w-5 h-4 rounded flex items-center justify-center transition-colors ${feedView === 'list' ? 'bg-white shadow-sm text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}>
+                        <span className="text-[8px]">≡</span>
+                      </button>
+                      <button onClick={(e) => handleListGrid(e, 'grid')}
+                        className={`w-5 h-4 rounded flex items-center justify-center transition-colors ${feedView === 'grid' ? 'bg-white shadow-sm text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}>
+                        <span className="text-[8px]">⊞</span>
+                      </button>
                     </div>
                   </div>
+                  {/* Type count buttons */}
                   <div className="flex items-center gap-3 text-[10px]">
-                    <span className="flex items-center gap-1 text-blue-500">✉ 14</span>
-                    <span className="flex items-center gap-1 text-purple-500">💬 13</span>
-                    <span className="flex items-center gap-1 text-green-500">📋 9</span>
-                    <span className="flex items-center gap-1 text-amber-500">🎫 8</span>
+                    {[
+                      { key: 'email',  icon: '✉',  count: 14, cls: 'text-blue-500',   activeCls: 'font-bold underline' },
+                      { key: 'bot',    icon: '💬', count: 13, cls: 'text-purple-500', activeCls: 'font-bold underline' },
+                      { key: 'form',   icon: '📋', count: 9,  cls: 'text-green-500',  activeCls: 'font-bold underline' },
+                      { key: 'ticket', icon: '🎫', count: 8,  cls: 'text-amber-500',  activeCls: 'font-bold underline' },
+                    ].map(t => (
+                      <button key={t.key} onClick={(e) => handleTypeClick(e, t.key)}
+                        className={`flex items-center gap-1 ${t.cls} hover:opacity-80 transition-opacity ${activeType === t.key ? t.activeCls : ''}`}
+                        title={`Show ${t.key} items`}>
+                        {t.icon} {t.count}
+                      </button>
+                    ))}
                   </div>
                 </div>
-                <div className="divide-y divide-gray-50 overflow-y-auto">
-                  {FEED.map((item, i) => (
-                    <div key={i} className="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors">
-                      <PriorityDot p={item.priority} />
-                      <div className={`w-6 h-6 rounded-md shrink-0 flex items-center justify-center ${item.iconBg}`}>
-                        <span className={`text-[11px] ${item.iconColor}`}>{item.icon}</span>
+
+                {/* LIST VIEW */}
+                {feedView === 'list' && (
+                  <div className="divide-y divide-gray-50 overflow-y-auto">
+                    {FEED.map((item, i) => (
+                      <div key={i} className="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors">
+                        <PriorityDot p={item.priority} />
+                        <div className={`w-6 h-6 rounded-md shrink-0 flex items-center justify-center ${item.iconBg}`}>
+                          <span className={`text-[11px] ${item.iconColor}`}>{item.icon}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] font-semibold text-gray-900 truncate leading-snug">{item.title}</p>
+                          <p className="text-[9px] text-gray-400 truncate mt-0.5">{item.sub}</p>
+                        </div>
+                        <span className="text-[9px] text-gray-400 shrink-0">{item.time}</span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-semibold text-gray-900 truncate leading-snug">{item.title}</p>
-                        <p className="text-[9px] text-gray-400 truncate mt-0.5">{item.sub}</p>
-                      </div>
-                      <span className="text-[9px] text-gray-400 shrink-0">{item.time}</span>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* GRID VIEW — 4 collapsible tablets */}
+                {feedView === 'grid' && (
+                  <div className="flex flex-col gap-2 p-3 overflow-y-auto">
+                    {GRID_TABLETS.map(tablet => {
+                      const isActive    = activeType === tablet.key
+                      const isCollapsed = activeType !== null && !isActive
+                      return (
+                        <div key={tablet.key} className={`rounded-xl border overflow-hidden transition-all duration-200 ${isActive ? tablet.borderCls : 'border-gray-100'}`}>
+                          {/* Tablet header */}
+                          <button
+                            onClick={(e) => { stop(e); setActiveType(prev => prev === tablet.key ? null : tablet.key) }}
+                            className={`w-full px-3 py-2 flex items-center justify-between ${isActive ? tablet.bgCls : 'bg-gray-50 hover:bg-gray-100'} transition-colors`}
+                          >
+                            <div className={`flex items-center gap-2 text-[10px] font-semibold ${tablet.accentCls}`}>
+                              <span>{tablet.icon}</span>{tablet.label}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${tablet.bgCls} ${tablet.accentCls}`}>{tablet.rows.length}</span>
+                              <span className={`text-[9px] ${tablet.accentCls} transition-transform duration-200 ${isActive ? 'rotate-180 inline-block' : ''}`}>▾</span>
+                            </div>
+                          </button>
+                          {/* Tablet rows */}
+                          <div className={`overflow-hidden transition-all duration-200 divide-y divide-gray-50 ${isCollapsed ? 'max-h-0' : isActive ? 'max-h-72' : 'max-h-24'}`}>
+                            {tablet.rows.map((row, ri) => (
+                              <div key={ri} className="flex items-start gap-2.5 px-3 py-2 hover:bg-gray-50 transition-colors">
+                                <PriorityDot p={row.p} />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[10px] font-semibold text-gray-900 truncate">{row.title}</p>
+                                  <p className="text-[8px] text-gray-400 truncate mt-0.5">{row.sub}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Tasks (1/3) */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden" onClick={stop}>
                 <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs text-gray-400">☑</span>
@@ -344,16 +522,17 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
         </div>
       </div>
 
-      {/* Click overlay */}
-      <div className="absolute inset-0 flex items-center justify-center rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
-        <div className="flex items-center gap-2.5 px-5 py-2.5 rounded-xl bg-brand-600 text-white text-sm font-medium shadow-lg">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          See it live
-        </div>
-      </div>
+      {/* "See it live" button — bottom-right, always visible on hover */}
+      <button
+        onClick={onClick}
+        className="absolute bottom-5 right-5 flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
+      >
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        See it live
+      </button>
     </div>
   )
 }
