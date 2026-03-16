@@ -1700,7 +1700,7 @@ export function SageDashboardClient({
       {/* ── Sync inbox banner — shown when no email is connected ───────── */}
       {!emailConnected && !viewAsUserId && (
         <Link
-          href={connectProvider ? `/integrations?provider=${connectProvider}` : '/integrations'}
+          href={connectProvider ? `/onboarding/connect?provider=${connectProvider}` : '/onboarding/connect'}
           className="flex items-center gap-3 mb-5 px-4 py-3 bg-[#15A4AE] rounded-xl hover:bg-[#4eab97] transition-colors group shadow-md"
         >
           <Mail className="w-5 h-5 text-white shrink-0" />
