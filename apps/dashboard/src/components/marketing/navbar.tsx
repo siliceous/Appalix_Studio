@@ -4,12 +4,13 @@ import Image from 'next/image'
 const NAV_LINKS = [
   { label: 'AI Agent',      href: '/'              },
   { label: 'Dashboard',     href: '/product'       },
-  { label: 'Features',      href: '/features'      },
+  { label: 'Email',         href: '/email'         },
+  { label: 'Bot',           href: '/bot'           },
+  { label: 'Forms',         href: '/forms'         },
+  { label: 'Tickets',       href: '/tickets'       },
   { label: 'Sage',          href: '/ai-assistant',   badge: true },
   { label: 'Integrations',  href: '/platforms'     },
   { label: 'Pricing',       href: '/pricing'       },
-  { label: 'Security',      href: '/security'      },
-  { label: 'Resources',     href: '/resources'     },
 ]
 
 export function MarketingNavbar() {
