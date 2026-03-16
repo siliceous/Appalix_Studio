@@ -92,24 +92,23 @@ export default async function HomePage() {
             <FadeUp delay={0}>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-brand-600/40 bg-brand-600/10 text-brand-400 text-xs font-medium mb-6">
                 <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse" />
-                Limitless AI. Delivered.
+                Your AI sales team. Always on, always closing.
               </div>
             </FadeUp>
 
             <FadeUp delay={0.1}>
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-snug mb-6">
-                Let AI turn visitors into<br />
+                Imagine a single AI platform<br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-brand-600">
-                  long term paying clients
+                  replacing chatbots, lead forms,
                 </span><br />
-                while you focus on your<br />
-                core competencies
+                CRM, and email tools.
               </h1>
             </FadeUp>
 
             <FadeUp delay={0.2}>
               <p className="text-base sm:text-xl lg:text-2xl text-white leading-relaxed max-w-3xl mx-auto mb-4">
-                Deploy AI agents trained on your website and business content across every customer touchpoint. Answer questions, capture leads, and convert visitors into customers 24/7.
+                Stop stitching tools together and paying for them individually. Switch to Appalix Sage.
               </p>
             </FadeUp>
 
