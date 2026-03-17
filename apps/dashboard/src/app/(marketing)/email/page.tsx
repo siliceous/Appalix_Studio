@@ -6,22 +6,24 @@ import { FadeUp, ScrollReveal } from '@/components/marketing/animate'
 
 /* ─── Tooltip ───────────────────────────────────────────────────────────── */
 function Tip({ label, children, dir = 'top', clickable = false }: {
-  label: string; children: React.ReactNode; dir?: 'top' | 'bottom' | 'right'; clickable?: boolean
+  label: string; children: React.ReactNode; dir?: 'top' | 'bottom' | 'right' | 'left'; clickable?: boolean
 }) {
   const [show, setShow] = useState(false)
-  const wrapPos = dir === 'bottom' ? 'top-full left-1/2 -translate-x-1/2 mt-[9px]'
+  const wrapPos =
+    dir === 'bottom' ? 'top-full left-1/2 -translate-x-1/2 mt-[9px]'
     : dir === 'right' ? 'left-full top-1/2 -translate-y-1/2 ml-[9px]'
+    : dir === 'left'  ? 'right-full top-1/2 -translate-y-1/2 mr-[9px]'
     : 'bottom-full left-1/2 -translate-x-1/2 mb-[9px]'
-  const arrowEl = dir === 'bottom'
-    ? <span className="absolute -top-[5px] left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-white border-l border-t border-gray-200 rotate-45" />
-    : dir === 'right'
-    ? <span className="absolute -left-[5px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border-l border-b border-gray-200 rotate-45" />
+  const arrowEl =
+    dir === 'bottom' ? <span className="absolute -top-[5px] left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-white border-l border-t border-gray-200 rotate-45" />
+    : dir === 'right' ? <span className="absolute -left-[5px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border-l border-b border-gray-200 rotate-45" />
+    : dir === 'left'  ? <span className="absolute -right-[5px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border-r border-t border-gray-200 rotate-45" />
     : <span className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-white border-r border-b border-gray-200 rotate-45" />
   return (
     <div className="relative" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
       {children}
       {show && (
-        <div className={`pointer-events-none absolute ${wrapPos} z-40 w-max max-w-[200px]`}>
+        <div className={`pointer-events-none absolute ${wrapPos} z-50 w-max max-w-[200px]`}>
           <div className="relative px-3 py-2 rounded-lg bg-white text-gray-900 text-[11px] font-medium leading-snug shadow-lg border border-gray-200">
             {arrowEl}
             {clickable && <span className="text-[#15A4AE] font-bold mr-1">●</span>}{label}
@@ -33,424 +35,691 @@ function Tip({ label, children, dir = 'top', clickable = false }: {
   )
 }
 
-/* ─── Priority dot ──────────────────────────────────────────────────────── */
-function PriorityDot({ p }: { p: string }) {
-  const cls = p === 'high' ? 'bg-green-500' : p === 'medium' ? 'bg-yellow-400' : 'bg-gray-300'
-  if (p === 'high') return (
-    <span className="relative flex h-2 w-2 shrink-0 mt-1">
-      <span className={`animate-ping absolute inset-0 rounded-full ${cls} opacity-60`} />
-      <span className={`relative rounded-full h-2 w-2 ${cls}`} />
-    </span>
-  )
-  return <span className={`w-2 h-2 rounded-full shrink-0 mt-1 ${cls}`} />
+/* ─── Data ──────────────────────────────────────────────────────────────── */
+type Priority = 'high' | 'medium' | 'low'
+
+type DemoEmail = {
+  id: string
+  from_name: string
+  from_address: string
+  subject: string
+  received_at: string
+  priority: Priority
+  category: string
+  ai_summary: string
+  ai_insights: string[]
+  body_text: string
+  entities: {
+    name?: string; company?: string; phone?: string; website?: string
+    product_interest?: string; intent_signals?: string[]; urgency_signals?: string[]
+  }
+  recommendation: 'create_lead' | 'create_ticket' | 'ignore'
 }
 
-/* ─── Email thread data ──────────────────────────────────────────────────── */
-const THREADS = [
+const EMAILS: DemoEmail[] = [
   {
-    id: 1, folder: 'inbox',
-    from: 'David Henderson', email: 'david@hendersonco.com', avatar: 'DH',
-    subject: 'RE: Pricing enquiry — Henderson & Co',
-    snippet: 'Thanks for the quick reply — we want to upgrade to Pro with 3 licences and need the invoice today…',
-    aiSummary: 'Client wants to upgrade to Pro plan, 3 licences. Ready to purchase today. High urgency.',
-    aiPoints: ['Upgrade intent confirmed', 'Needs invoice same day', 'Decision maker on thread'],
-    time: '2m', priority: 'high', starred: true, unread: true,
-    body: 'Hi James,\n\nThanks for the quick response. We\'ve decided to move forward with the Pro plan and need 3 licences for our team.\n\nCould you send over the invoice today? We\'d like to get started this week.\n\nBest regards,\nDavid',
+    id: 'e1',
+    from_name: 'Marcus Webb',
+    from_address: 'marcus@growthco.io',
+    subject: 'Interested in your AI chat solution',
+    received_at: '2026-03-17T09:14:00Z',
+    priority: 'high',
+    category: 'Sales',
+    ai_summary: 'Marcus is evaluating AI chat tools for a 120-person sales team. Ready to start a trial this week and has budget approved.',
+    ai_insights: [
+      'Decision maker — VP of Sales at GrowthCo',
+      'Budget approved for Q1 purchase',
+      'Wants a 30-min demo call ASAP',
+    ],
+    body_text: "Hi, I came across Appalix and I'm very interested in the AI agent for our sales team. We have about 120 reps. Is it possible to schedule a demo this week? Budget is approved.",
+    entities: {
+      name: 'Marcus Webb', company: 'GrowthCo', phone: '+1 415 555 0198',
+      website: 'growthco.io', product_interest: 'AI Agent',
+      intent_signals: ['Ready to buy', 'Demo request'],
+      urgency_signals: ['This week', 'Q1 deadline'],
+    },
+    recommendation: 'create_lead',
   },
   {
-    id: 2, folder: 'inbox',
-    from: 'Priya Sharma', email: 'priya@logisticsco.com', avatar: 'PS',
-    subject: 'Follow-up: WhatsApp integration help',
-    snippet: 'Hi, we\'re trying to set up the WhatsApp channel but keep getting error 403 when connecting…',
-    aiSummary: 'Technical issue with WhatsApp OAuth. Error 403 suggests permission scope problem.',
-    aiPoints: ['WhatsApp connection failing', 'Error 403 = scope issue', 'May need re-auth'],
-    time: '18m', priority: 'medium', starred: false, unread: true,
-    body: 'Hi,\n\nWe\'re trying to connect WhatsApp but keep getting a 403 error when we click the Connect button. We\'ve tried three times now.\n\nAny idea what\'s wrong?\n\nPriya',
+    id: 'e2',
+    from_name: 'Priya Nair',
+    from_address: 'priya@techflow.dev',
+    subject: 'Re: Onboarding — API key not working',
+    received_at: '2026-03-17T08:45:00Z',
+    priority: 'high',
+    category: 'Support',
+    ai_summary: 'Customer cannot authenticate via API. Getting 401 on all POST requests. They are blocked on their launch.',
+    ai_insights: [
+      'API key was just regenerated — old key still being used',
+      'Launch is tomorrow — urgent to resolve',
+    ],
+    body_text: "Hi, I've been trying to use the API key from my dashboard but I keep getting 401 Unauthorized. I've double-checked the header format. We're launching tomorrow so this is urgent!",
+    entities: {
+      name: 'Priya Nair', company: 'TechFlow',
+      urgency_signals: ['Launching tomorrow', 'Urgent'],
+    },
+    recommendation: 'create_ticket',
   },
   {
-    id: 3, folder: 'inbox',
-    from: 'Carlos Rivera', email: 'carlos@fintech.io', avatar: 'CR',
-    subject: 'Intro: partnership opportunity',
-    snippet: 'Hi, I run partnerships at Fintech.io and we\'d love to explore a co-sell arrangement…',
-    aiSummary: 'Partnership inquiry from Fintech.io. Potential co-sell arrangement. Forward to BD team.',
-    aiPoints: ['Partnership inquiry', 'Co-sell opportunity', 'Route to BD team'],
-    time: '1h', priority: 'high', starred: false, unread: false,
-    body: 'Hi team,\n\nI run partnerships at Fintech.io. We serve 800+ fintech companies and think there\'s a great co-sell opportunity with Appalix.\n\nWould love 20 minutes to explore this.\n\nBest,\nCarlos',
+    id: 'e3',
+    from_name: 'Daniel Okoro',
+    from_address: 'daniel@nexiocrm.com',
+    subject: 'Partnership opportunity — CRM integration',
+    received_at: '2026-03-17T07:30:00Z',
+    priority: 'medium',
+    category: 'Partnership',
+    ai_summary: 'Daniel wants to explore a white-label or API partnership to embed Appalix chat into Nexio CRM.',
+    ai_insights: [
+      'They have 400+ SMB customers on their CRM',
+      'Looking for a rev-share or OEM licensing deal',
+    ],
+    body_text: "Hello, we run a CRM product with 400 SMB clients and we'd love to embed your AI chat. Would you be open to a white-label arrangement or API licensing? Happy to jump on a call.",
+    entities: {
+      name: 'Daniel Okoro', company: 'Nexio CRM', website: 'nexiocrm.com',
+      product_interest: 'White-label / API',
+      intent_signals: ['Partnership discussion', 'Rev-share interest'],
+    },
+    recommendation: 'create_lead',
   },
   {
-    id: 4, folder: 'inbox',
-    from: 'mark@brandco.com', email: 'mark@brandco.com', avatar: 'MB',
-    subject: 'Can I white-label the widget?',
-    snippet: 'We\'re an agency and want to resell your product under our brand name…',
-    aiSummary: 'Agency asking about white-label options. Resale interest. Scale plan candidate.',
-    aiPoints: ['White-label inquiry', 'Agency reseller potential', 'Qualify for Scale plan'],
-    time: '2h', priority: 'medium', starred: false, unread: false,
-    body: 'Hi,\n\nWe run a digital agency and would like to offer AI chat to our 40+ clients. Is white-labelling available?\n\nMark',
+    id: 'e4',
+    from_name: 'Sophie Chen',
+    from_address: 'sophie@bluewave.co',
+    subject: 'Invoice INV-0831 — payment confirmation',
+    received_at: '2026-03-16T15:20:00Z',
+    priority: 'low',
+    category: 'Invoice',
+    ai_summary: 'Customer is confirming payment for INV-0831 ($299). No action required.',
+    ai_insights: ['Payment confirmed via bank transfer', 'No further action needed'],
+    body_text: "Hi, just wanted to confirm that payment for INV-0831 was sent via bank transfer yesterday. Please let me know when you receive it. Thanks!",
+    entities: { name: 'Sophie Chen', company: 'BlueWave' },
+    recommendation: 'ignore',
   },
   {
-    id: 5, folder: 'sent',
-    from: 'James (You)', email: 'james@appalix.ai', avatar: 'J',
-    subject: 'RE: Quarterly review scheduled',
-    snippet: 'Thanks for confirming — I\'ll have the deck ready before our 10am call…',
-    aiSummary: 'Internal follow-up email confirming quarterly review prep.',
-    aiPoints: ['Deck to be ready', '10am call confirmed'],
-    time: '3h', priority: 'low', starred: false, unread: false,
-    body: 'Thanks for confirming. I\'ll have the deck ready 30 minutes before our 10am call.\n\nJames',
-  },
-  {
-    id: 6, folder: 'inbox',
-    from: 'Aiko Tanaka', email: 'aiko@tanakacorp.co.jp', avatar: 'AT',
-    subject: 'Invoice #2041 — question',
-    snippet: 'Could you clarify the charge on line 3? The amount looks different from last month…',
-    aiSummary: 'Billing query on invoice line item. Low urgency, forward to accounts.',
-    aiPoints: ['Billing clarification needed', 'Line 3 discrepancy', 'Low priority'],
-    time: '1d', priority: 'low', starred: false, unread: false,
-    body: 'Hi,\n\nCould you clarify the charge on line 3 of invoice #2041? It\'s £12 more than last month.\n\nAiko',
+    id: 'e5',
+    from_name: 'Ravi Sharma',
+    from_address: 'ravi@scalex.io',
+    subject: 'Trial feedback — really impressed',
+    received_at: '2026-03-16T11:05:00Z',
+    priority: 'medium',
+    category: 'Sales',
+    ai_summary: 'Ravi is on trial and loves the product. Asking about upgrading to the Pro plan.',
+    ai_insights: [
+      'Strong buying signal — wants to upgrade',
+      'Currently on trial, 5 days remaining',
+    ],
+    body_text: "Hi, we've been trialing Appalix for 2 weeks now and the team loves it. Can you tell me more about the Pro plan pricing? I think we're ready to upgrade.",
+    entities: {
+      name: 'Ravi Sharma', company: 'ScaleX',
+      product_interest: 'Pro Plan upgrade',
+      intent_signals: ['Ready to upgrade', 'Trial converting'],
+    },
+    recommendation: 'create_lead',
   },
 ]
 
-const NAV = [
-  { key: 'inbox', label: 'Inbox',    count: 4  },
-  { key: 'sent',  label: 'Sent',     count: 0  },
-  { key: 'drafts',label: 'Drafts',   count: 1  },
-  { key: 'all',   label: 'All Mail', count: 0  },
-  { key: 'trash', label: 'Trash',    count: 0  },
-]
+const PRIORITY_DOT: Record<Priority, string> = {
+  high:   'bg-[#15A4AE]',
+  medium: 'bg-amber-400',
+  low:    'bg-gray-300',
+}
 
-/* ─── Email Preview ─────────────────────────────────────────────────────── */
-function EmailPreview({ onClick }: { onClick: () => void }) {
-  const [folder,      setFolder]      = useState('inbox')
-  const [selectedId,  setSelectedId]  = useState(1)
-  const [starred,     setStarred]     = useState<Record<number, boolean>>({ 1: true })
-  const [replyOpen,   setReplyOpen]   = useState(false)
-  const [replyText,   setReplyText]   = useState('')
+const PRIORITY_BADGE: Record<Priority, string> = {
+  high:   'bg-[#15A4AE]/10 text-[#3a9e8a] border-[#15A4AE]/30',
+  medium: 'bg-amber-50 text-amber-600 border-amber-200',
+  low:    'bg-gray-100 text-gray-500 border-gray-200',
+}
 
-  function stop(e: React.MouseEvent) { e.stopPropagation() }
+function categoryClass(cat: string): string {
+  if (cat === 'Sales')       return 'bg-teal-50 text-teal-600 border-teal-200'
+  if (cat === 'Support')     return 'bg-sky-50 text-sky-600 border-sky-200'
+  if (cat === 'Invoice')     return 'bg-violet-50 text-violet-600 border-violet-200'
+  if (cat === 'Partnership') return 'bg-cyan-50 text-cyan-600 border-cyan-200'
+  return 'bg-gray-100 text-gray-500 border-gray-200'
+}
 
-  const displayed = folder === 'all' ? THREADS : THREADS.filter(t => t.folder === folder)
-  const thread    = THREADS.find(t => t.id === selectedId) ?? THREADS[0]
-
-  return (
-    <div className="group relative" role="button" aria-label="Open demo">
-      <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-[#15A4AE]/25 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-      <div className="relative rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-2xl">
-
-        {/* macOS chrome */}
-        <div className="flex items-center justify-between px-5 py-3 bg-gray-100 border-b border-gray-200">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-400" />
-            <div className="w-3 h-3 rounded-full bg-yellow-400" />
-            <div className="w-3 h-3 rounded-full bg-green-400" />
-          </div>
-          <div className="flex items-center gap-2 px-4 py-1 rounded-md bg-white border border-gray-200">
-            <span className="text-xs text-gray-400">app.appalix.ai/sage/emails</span>
-          </div>
-          <div className="w-16" />
-        </div>
-
-        <div className="flex" style={{ height: 620 }}>
-
-          {/* Left sidebar — nav */}
-          <div className="w-36 shrink-0 bg-white border-r border-gray-100 flex flex-col py-3" onClick={stop}>
-            <div className="px-3 mb-3">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-5 h-5 rounded-md bg-[#15A4AE]/15 flex items-center justify-center">
-                  <span className="text-[#15A4AE] text-[9px] font-bold">A</span>
-                </div>
-                <span className="text-[11px] font-bold text-gray-900">Appalix</span>
-              </div>
-            </div>
-
-            <Tip label="Compose a new email — Sage pre-drafts it from context" dir="right" clickable>
-              <button className="mx-3 mb-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#15A4AE] text-white text-[10px] font-semibold hover:bg-[#0e8f99] transition-colors">
-                ✏ Compose
-              </button>
-            </Tip>
-
-            {NAV.map(n => (
-              <Tip key={n.key} label={`View your ${n.label.toLowerCase()} — AI scores every thread for priority`} dir="right" clickable>
-                <button
-                  onClick={(e) => { stop(e); setFolder(n.key) }}
-                  className={`w-full flex items-center justify-between px-3 py-1.5 text-[11px] transition-colors ${folder === n.key ? 'bg-[#15A4AE]/10 text-[#15A4AE] font-semibold' : 'text-gray-500 hover:bg-gray-50'}`}
-                >
-                  <span>{n.label}</span>
-                  {n.count > 0 && <span className={`text-[9px] font-bold px-1.5 rounded-full ${folder === n.key ? 'bg-[#15A4AE]/20 text-[#15A4AE]' : 'bg-gray-100 text-gray-500'}`}>{n.count}</span>}
-                </button>
-              </Tip>
-            ))}
-
-            <div className="mt-auto px-3 py-3 border-t border-gray-100">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-[#15A4AE]/20 flex items-center justify-center text-[9px] text-[#15A4AE] font-bold">J</div>
-                <div>
-                  <p className="text-[10px] font-medium text-gray-800 leading-none">James</p>
-                  <p className="text-[9px] text-gray-400 mt-0.5">Pro Plan</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Middle — thread list */}
-          <div className="w-64 shrink-0 border-r border-gray-100 flex flex-col bg-gray-50" onClick={stop}>
-            {/* Search */}
-            <div className="px-3 py-2.5 border-b border-gray-100 bg-white">
-              <Tip label="Search by sender, subject, or keyword" dir="bottom">
-                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-gray-100 cursor-default">
-                  <span className="text-gray-400 text-[11px]">🔍</span>
-                  <span className="text-[10px] text-gray-400">Search emails…</span>
-                </div>
-              </Tip>
-            </div>
-
-            <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
-              {displayed.length === 0 && (
-                <p className="px-4 py-8 text-[11px] text-gray-400 text-center">No emails in {folder}</p>
-              )}
-              {displayed.map(t => (
-                <Tip key={t.id} label="Click to open thread — AI summary and reply assist ready" dir="right" clickable>
-                  <div
-                    onClick={(e) => { stop(e); setSelectedId(t.id); setReplyOpen(false); setReplyText('') }}
-                    className={`px-3 py-2.5 cursor-pointer transition-colors border-l-2 ${selectedId === t.id ? 'bg-white border-[#15A4AE]' : 'hover:bg-white border-transparent'}`}
-                  >
-                    <div className="flex items-start gap-2">
-                      <PriorityDot p={t.priority} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-0.5">
-                          <p className={`text-[10px] truncate ${t.unread ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>{t.from}</p>
-                          <span className="text-[8px] text-gray-400 shrink-0 ml-1">{t.time}</span>
-                        </div>
-                        <p className={`text-[10px] truncate ${t.unread ? 'font-semibold text-gray-800' : 'text-gray-600'}`}>{t.subject}</p>
-                        <p className="text-[9px] text-gray-500 truncate mt-0.5">{t.snippet}</p>
-                        {t.priority === 'high' && (
-                          <span className="mt-1 inline-block text-[8px] font-semibold text-[#15A4AE] bg-[#15A4AE]/10 px-1.5 py-0.5 rounded-full">AI: {t.aiSummary.split('.')[0]}</span>
-                        )}
-                      </div>
-                      <Tip label="Star important emails to pin them to the top" dir="top" clickable>
-                        <button
-                          onClick={(e) => { stop(e); setStarred(s => ({ ...s, [t.id]: !s[t.id] })) }}
-                          className={`text-[11px] shrink-0 mt-0.5 transition-colors ${starred[t.id] ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-300'}`}
-                        >★</button>
-                      </Tip>
-                    </div>
-                  </div>
-                </Tip>
-              ))}
-            </div>
-          </div>
-
-          {/* Right — thread detail + AI insights */}
-          <div className="flex-1 flex flex-col bg-white min-w-0" onClick={stop}>
-
-            {/* Thread header */}
-            <div className="px-4 py-3 border-b border-gray-100 flex items-start justify-between">
-              <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-bold text-gray-900 truncate pr-4">{thread.subject}</h3>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <div className="w-4 h-4 rounded-full bg-[#15A4AE]/20 flex items-center justify-center text-[8px] font-bold text-[#15A4AE] shrink-0">{thread.avatar[0]}</div>
-                  <p className="text-[10px] text-gray-600">{thread.from} <span className="text-gray-400">· {thread.email}</span></p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <Tip label="Add a calendar event from this email" dir="bottom" clickable>
-                  <button className="w-6 h-6 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-500 text-[11px] flex items-center justify-center transition-colors">📅</button>
-                </Tip>
-                <Tip label="Forward this email to a colleague" dir="bottom" clickable>
-                  <button className="w-6 h-6 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-500 text-[11px] flex items-center justify-center transition-colors">↗</button>
-                </Tip>
-                <Tip label="Move to folder" dir="bottom" clickable>
-                  <button className="w-6 h-6 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-500 text-[11px] flex items-center justify-center transition-colors">📁</button>
-                </Tip>
-                <Tip label="Delete email" dir="bottom" clickable>
-                  <button className="w-6 h-6 rounded-md bg-gray-100 hover:bg-red-100 text-gray-500 hover:text-red-500 text-[11px] flex items-center justify-center transition-colors">🗑</button>
-                </Tip>
-              </div>
-            </div>
-
-            {/* Thread body + AI panel */}
-            <div className="flex-1 overflow-y-auto flex">
-
-              {/* Email body */}
-              <div className="flex-1 px-4 py-4 min-w-0">
-                <div className="bg-white rounded-xl border border-gray-100 p-3 mb-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-6 h-6 rounded-full bg-[#15A4AE]/20 flex items-center justify-center text-[9px] font-bold text-[#15A4AE] shrink-0">{thread.avatar}</div>
-                    <div>
-                      <p className="text-[10px] font-semibold text-gray-900">{thread.from}</p>
-                      <p className="text-[8px] text-gray-400">{thread.time} ago</p>
-                    </div>
-                    <PriorityDot p={thread.priority} />
-                  </div>
-                  <p className="text-[11px] text-gray-700 leading-relaxed whitespace-pre-line">{thread.body}</p>
-                </div>
-
-                {/* Reply/Forward buttons */}
-                <div className="flex items-center gap-2 mb-3">
-                  <Tip label="Reply with AI-drafted response — edit before sending" dir="top" clickable>
-                    <button
-                      onClick={(e) => { stop(e); setReplyOpen(true); setReplyText('') }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-[10px] text-gray-600 hover:border-[#15A4AE]/50 hover:text-[#15A4AE] transition-colors bg-white"
-                    >
-                      ↩ Reply
-                    </button>
-                  </Tip>
-                  <Tip label="Forward this thread to a colleague" dir="top" clickable>
-                    <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-[10px] text-gray-600 hover:border-gray-300 transition-colors bg-white">
-                      ↗ Forward
-                    </button>
-                  </Tip>
-                </div>
-
-                {/* Inline reply box */}
-                {replyOpen && (
-                  <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm" onClick={stop}>
-                    <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-                      <span className="text-[9px] text-gray-500">Replying to <span className="font-medium">{thread.from}</span></span>
-                      <Tip label="Generate an AI draft reply based on this thread" dir="top" clickable>
-                        <button
-                          onClick={(e) => { stop(e); setReplyText(`Hi ${thread.from.split(' ')[0]},\n\nThanks for your message. I'll look into this right away and get back to you shortly.\n\nBest,\nJames`) }}
-                          className="flex items-center gap-1 text-[9px] text-[#15A4AE] font-medium hover:text-[#0e8f99] transition-colors"
-                        >
-                          <span>✦</span> AI Draft
-                        </button>
-                      </Tip>
-                    </div>
-                    <textarea
-                      value={replyText}
-                      onChange={e => setReplyText(e.target.value)}
-                      onClick={stop}
-                      placeholder="Write a reply…"
-                      rows={3}
-                      className="w-full px-3 py-2 text-[11px] text-gray-800 placeholder-gray-400 resize-none focus:outline-none"
-                    />
-                    <div className="px-3 py-2 bg-gray-50 border-t border-gray-100 flex justify-end">
-                      <Tip label="Send reply and auto-log to CRM" dir="top" clickable>
-                        <button className="px-3 py-1.5 rounded-lg bg-[#15A4AE] text-white text-[10px] font-medium hover:bg-[#0e8f99] transition-colors">Send →</button>
-                      </Tip>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* AI Insights sidebar */}
-              <div className="w-44 shrink-0 border-l border-gray-100 bg-gray-50 px-3 py-3 overflow-y-auto">
-                <Tip label="AI analysis of this email — automatically updated" dir="top">
-                  <div className="flex items-center gap-1.5 mb-3 cursor-default">
-                    <span className="text-[#15A4AE] text-xs">✦</span>
-                    <p className="text-[10px] font-bold text-gray-900">AI Insights</p>
-                  </div>
-                </Tip>
-                <div className="mb-3">
-                  <p className="text-[9px] font-semibold text-gray-500 uppercase tracking-widest mb-1">Summary</p>
-                  <p className="text-[10px] text-gray-700 leading-relaxed">{thread.aiSummary}</p>
-                </div>
-                <div>
-                  <p className="text-[9px] font-semibold text-gray-500 uppercase tracking-widest mb-1">Key Points</p>
-                  <div className="space-y-1">
-                    {thread.aiPoints.map((p, i) => (
-                      <div key={i} className="flex items-start gap-1.5">
-                        <span className="text-[#15A4AE] text-[9px] mt-0.5 shrink-0">·</span>
-                        <p className="text-[10px] text-gray-700 leading-snug">{p}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-[9px] font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Quick Actions</p>
-                  <Tip label="Create a deal in your CRM linked to this email" dir="top" clickable>
-                    <button className="w-full text-left px-2 py-1.5 rounded-lg text-[9px] text-gray-600 hover:bg-white hover:border hover:border-gray-200 transition-colors flex items-center gap-1.5 cursor-default">
-                      <span className="text-[#15A4AE]">⧉</span> Create Deal
-                    </button>
-                  </Tip>
-                  <Tip label="Save sender as a contact in Sage CRM" dir="top" clickable>
-                    <button className="w-full text-left px-2 py-1.5 rounded-lg text-[9px] text-gray-600 hover:bg-white hover:border hover:border-gray-200 transition-colors flex items-center gap-1.5 cursor-default">
-                      <span className="text-[#15A4AE]">👤</span> Add Contact
-                    </button>
-                  </Tip>
-                  <Tip label="Create a task to follow up on this email" dir="top" clickable>
-                    <button className="w-full text-left px-2 py-1.5 rounded-lg text-[9px] text-gray-600 hover:bg-white hover:border hover:border-gray-200 transition-colors flex items-center gap-1.5 cursor-default">
-                      <span className="text-[#15A4AE]">☑</span> Add Task
-                    </button>
-                  </Tip>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <button onClick={onClick} className="absolute bottom-5 right-5 flex items-center gap-2 px-4 py-2 rounded-xl bg-[#15A4AE] hover:bg-[#0e8f99] text-white text-xs font-semibold shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        See it live
-      </button>
-    </div>
-  )
+function formatTime(iso: string) {
+  const d = new Date(iso)
+  const now = new Date('2026-03-17T10:00:00Z')
+  const diffH = (now.getTime() - d.getTime()) / 3_600_000
+  if (diffH < 24) return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 /* ─── Demo Modal ────────────────────────────────────────────────────────── */
 function DemoModal({ onClose }: { onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
-      <div className="relative w-full max-w-lg bg-[#222] border border-white/10 rounded-2xl p-8 shadow-2xl" onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors flex items-center justify-center text-sm">✕</button>
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-brand-600/40 bg-brand-600/10 text-brand-400 text-xs font-medium mb-5">
-          <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse" />Live demo · No credit card needed
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-[#15A4AE]/10 flex items-center justify-center mx-auto mb-4">
+          <svg className="w-7 h-7 text-[#15A4AE]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
         </div>
-        <h2 className="text-2xl font-bold text-white mb-2">See Email AI in action</h2>
-        <p className="text-sm text-gray-400 leading-relaxed mb-7">Watch Sage score, prioritise, and draft replies to your real inbox — connect your email in 60 seconds.</p>
-        <div className="flex flex-col gap-3">
-          <Link href="/login" onClick={onClose} className="w-full py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors text-sm text-center">Start a 7-day free trial — free</Link>
-          <Link href="/contact" onClick={onClose} className="w-full py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm text-center">Book a live demo →</Link>
-        </div>
-        <div className="mt-6 pt-5 border-t border-white/5 flex items-center justify-center gap-5">
-          {['No credit card', 'Cancel anytime', '7-day free trial'].map(t => (
-            <span key={t} className="flex items-center gap-1.5 text-[11px] text-gray-500">
-              <svg className="w-3 h-3 text-brand-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>{t}
-            </span>
-          ))}
-        </div>
+        <h3 className="text-lg font-bold text-gray-900 mb-2">Try Email Triage</h3>
+        <p className="text-sm text-gray-500 mb-6">Connect your inbox and let AI prioritise every email for you — automatically.</p>
+        <Link href="/login" className="block w-full py-2.5 bg-[#15A4AE] hover:bg-[#0f8a94] text-white text-sm font-semibold rounded-xl transition-colors">
+          Get started free
+        </Link>
+        <button onClick={onClose} className="mt-3 text-xs text-gray-400 hover:text-gray-600 transition-colors">Maybe later</button>
       </div>
     </div>
   )
 }
 
-const FEATURES = [
-  { icon: '✦', tag: 'AI Drafts',       title: 'Replies written before you open the email',   desc: 'Sage reads the thread, scores urgency, and drafts a personalised reply. Review, tweak, and send in seconds — not minutes.' },
-  { icon: '🎯', tag: 'Priority Scoring',title: 'Never miss a hot lead in your inbox',         desc: 'Every email gets an AI priority score. High-intent messages rise to the top automatically — no manual sorting.' },
-  { icon: '👥', tag: 'Team Inbox',      title: 'One inbox for your whole team',               desc: 'Assign threads, leave internal notes, and see who\'s handling what — all without leaving the email view.' },
-  { icon: '🔗', tag: 'CRM Sync',        title: 'Every email auto-logged to your CRM',         desc: 'Conversations, contacts, and deals created automatically from email threads. HubSpot, Salesforce, and 30+ integrations.' },
-]
+/* ─── Triage Preview ────────────────────────────────────────────────────── */
+function TriagePreview({ onOpenDemo }: { onOpenDemo: () => void }) {
+  const [selected, setSelected]   = useState<string>('e1')
+  const [actioned, setActioned]   = useState<Record<string, string>>({})
+  const [showReply, setShowReply] = useState(false)
+  const [replyText, setReplyText] = useState('')
 
-export default function EmailPage() {
-  const [modalOpen, setModalOpen] = useState(false)
+  const selectedEmail = EMAILS.find(e => e.id === selected) ?? null
+  const highCount     = EMAILS.filter(e => e.priority === 'high').length
+  const medCount      = EMAILS.filter(e => e.priority === 'medium').length
+
+  function handleAction(emailId: string, label: string) {
+    setActioned(prev => ({ ...prev, [emailId]: label }))
+  }
+
   return (
-    <div className="bg-[#1c1c1c] min-h-screen text-white">
-      <section className="relative pt-36 pb-20 px-6 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-brand-600/15 rounded-full blur-[140px] pointer-events-none" />
-        <div className="relative max-w-4xl mx-auto text-center">
-          <FadeUp delay={0}><div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-brand-600/40 bg-brand-600/10 text-brand-400 text-xs font-medium mb-6"><span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse" />AI-powered email management</div></FadeUp>
-          <FadeUp delay={0.1}><h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-snug mb-6">Inbox zero, every day —<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-brand-600">without the effort</span></h1></FadeUp>
-          <FadeUp delay={0.2}><p className="text-base sm:text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto mb-10">Sage reads every incoming email, scores urgency, and drafts the perfect reply — so your team responds faster and misses nothing.</p></FadeUp>
-          <FadeUp delay={0.3}><div className="flex flex-col sm:flex-row gap-3 justify-center"><Link href="/login" className="px-7 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors text-sm">Start a 7 Day Free Trial</Link><button onClick={() => setModalOpen(true)} className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm">See it in action →</button></div></FadeUp>
-        </div>
-      </section>
-      <section className="pb-24 px-6">
-        <div className="max-w-7xl mx-auto">
-          <ScrollReveal><EmailPreview onClick={() => setModalOpen(true)} /></ScrollReveal>
-          <ScrollReveal delay={0.1}><p className="text-center text-xs text-gray-600 mt-4">Click emails to open threads — AI insights and draft reply appear instantly</p></ScrollReveal>
-        </div>
-      </section>
-      <section className="py-20 px-6 border-t border-white/5">
-        <div className="max-w-7xl mx-auto">
-          <ScrollReveal className="text-center mb-14"><p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Email Intelligence</p><h2 className="text-3xl sm:text-4xl font-bold mb-4">Your inbox, handled by AI</h2><p className="text-gray-400 max-w-xl mx-auto text-sm leading-relaxed">From triage to reply, Sage handles the email workflow so your team focuses on closing deals.</p></ScrollReveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {FEATURES.map((f, i) => (<ScrollReveal key={f.tag} delay={i * 0.05}><div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-brand-600/30 transition-colors"><span className="text-xs text-brand-400 font-semibold uppercase tracking-widest mb-2 block">{f.tag}</span><p className="text-xl mb-1">{f.icon}</p><h3 className="text-base font-bold text-white mb-2">{f.title}</h3><p className="text-sm text-gray-400 leading-relaxed">{f.desc}</p></div></ScrollReveal>))}
+    <div className="flex h-[540px] bg-[#f5f5f5] overflow-hidden rounded-b-2xl">
+
+      {/* ── Left sidebar ── */}
+      <aside className="w-[220px] shrink-0 flex flex-col border-r border-gray-200 bg-gray-50 overflow-hidden">
+
+        {/* Header */}
+        <div className="px-3 py-3 border-b border-gray-200 shrink-0">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              <div>
+                <Tip label="Email Triage — AI-sorted inbox" dir="right">
+                  <p className="text-xs font-bold text-gray-900 cursor-default">Triage</p>
+                </Tip>
+                <p className="text-[9px] text-gray-400 truncate">you@company.com</p>
+              </div>
+            </div>
+            <Tip label="Sync inbox to fetch latest emails" dir="bottom">
+              <button className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Sync
+              </button>
+            </Tip>
+          </div>
+
+          {/* Priority badges */}
+          <div className="flex items-center gap-1 flex-wrap">
+            <Tip label="High-priority emails needing immediate attention" dir="bottom">
+              <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-[#15A4AE]/10 text-[#3a9e8a] font-semibold border border-[#15A4AE]/30 cursor-default">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#15A4AE]" />{highCount} High
+              </span>
+            </Tip>
+            <Tip label="Medium-priority emails" dir="bottom">
+              <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 font-semibold border border-amber-200 cursor-default">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />{medCount} Med
+              </span>
+            </Tip>
+            <Tip label="Re-analyse all emails with AI" dir="bottom" clickable>
+              <button className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 font-semibold border border-blue-200 hover:bg-blue-100 transition-colors">
+                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                Analyse 5
+              </button>
+            </Tip>
           </div>
         </div>
-      </section>
-      <section className="py-24 px-6 border-t border-white/5 text-center">
-        <ScrollReveal><h2 className="text-3xl sm:text-4xl font-bold mb-4">Ready to clear your inbox?</h2><p className="text-gray-400 mb-8 text-sm max-w-md mx-auto">Connect your email in 60 seconds. No credit card required.</p><Link href="/login" className="inline-block px-8 py-4 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors text-sm">Start free trial →</Link></ScrollReveal>
-      </section>
-      {modalOpen && <DemoModal onClose={() => setModalOpen(false)} />}
+
+        {/* Email list */}
+        <div className="flex-1 overflow-y-auto">
+          {EMAILS.map(email => {
+            const isActive   = selected === email.id
+            const priority   = email.priority
+            const borderCls  =
+              isActive
+                ? priority === 'high'   ? 'border-l-[#15A4AE] bg-[#15A4AE]/8'
+                  : priority === 'medium' ? 'border-l-amber-400 bg-amber-50'
+                  : 'border-l-gray-400 bg-gray-100'
+                : 'border-l-transparent hover:bg-white'
+            return (
+              <Tip key={email.id} label={`${email.priority} priority · ${email.category}`} dir="right">
+                <div
+                  onClick={() => { setSelected(email.id); setShowReply(false) }}
+                  className={`flex items-stretch border-l-[3px] transition-colors cursor-pointer ${borderCls}`}
+                >
+                  <div className="flex-1 min-w-0 px-2.5 py-2">
+                    <div className="flex items-start gap-1.5">
+                      <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${PRIORITY_DOT[priority]}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-[11px] font-semibold truncate ${actioned[email.id] ? 'text-gray-400' : 'text-gray-800'}`}>
+                          {email.from_name}
+                        </p>
+                        <p className="text-[10px] text-gray-400 truncate leading-snug">{email.subject}</p>
+                      </div>
+                      <span className="text-[9px] text-gray-400 shrink-0 tabular-nums">{formatTime(email.received_at)}</span>
+                    </div>
+                  </div>
+                </div>
+              </Tip>
+            )
+          })}
+        </div>
+      </aside>
+
+      {/* ── Right: Detail card ── */}
+      <div className="flex-1 overflow-hidden flex flex-col">
+        {selectedEmail ? (
+          <div className="flex flex-col h-full bg-white m-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+
+            {/* Detail header */}
+            <div className="px-5 pt-4 pb-3 shrink-0">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <Tip label="Email subject line" dir="bottom">
+                    <h3 className="text-sm font-bold text-gray-900 leading-snug cursor-default">{selectedEmail.subject}</h3>
+                  </Tip>
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                      <span className="text-[10px] font-bold text-blue-600">{selectedEmail.from_name.charAt(0)}</span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-900">{selectedEmail.from_name}</p>
+                      <p className="text-[10px] text-gray-400">{selectedEmail.from_address}</p>
+                    </div>
+                    <span className="text-gray-200 mx-0.5">·</span>
+                    <span className="text-[10px] text-gray-400">{formatTime(selectedEmail.received_at)}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Tip label="AI-assigned priority — click to change" dir="bottom" clickable>
+                    <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border cursor-pointer ${PRIORITY_BADGE[selectedEmail.priority]}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${PRIORITY_DOT[selectedEmail.priority]}`} />
+                      {selectedEmail.priority}
+                    </span>
+                  </Tip>
+                  <Tip label={`Email category: ${selectedEmail.category}`} dir="bottom">
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border cursor-default ${categoryClass(selectedEmail.category)}`}>
+                      {selectedEmail.category}
+                    </span>
+                  </Tip>
+                  <Tip label="Delete this email from triage" dir="bottom">
+                    <button className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </Tip>
+                </div>
+              </div>
+            </div>
+
+            {/* Detail content */}
+            <div className="flex-1 overflow-y-auto px-5 pb-4 pt-3 border-t border-gray-100 space-y-3">
+
+              {/* AI Summary card */}
+              {!showReply && (
+                <div className="rounded-xl bg-blue-50/40 border border-blue-100 overflow-hidden">
+                  <div className="px-4 pt-3 pb-2">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <svg className="w-3 h-3 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                      <Tip label="AI-generated summary of this email" dir="right">
+                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wide cursor-default">AI Summary</span>
+                      </Tip>
+                    </div>
+                    <p className="text-xs text-gray-800 leading-relaxed">{selectedEmail.ai_summary}</p>
+                    <ul className="mt-2 space-y-1">
+                      {selectedEmail.ai_insights.map((ins, i) => (
+                        <li key={i} className="flex items-start gap-1.5 text-[11px] text-gray-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0 mt-1.5" />{ins}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  {/* Entity + signal tags */}
+                  <div className="flex flex-wrap gap-1.5 px-4 py-2 border-t border-gray-100 bg-white/60">
+                    {selectedEmail.entities.name && (
+                      <Tip label="Contact name extracted by AI" dir="top">
+                        <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-gray-100 border border-gray-200 text-gray-600 cursor-default">
+                          <svg className="w-2.5 h-2.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                          {selectedEmail.entities.name}
+                        </span>
+                      </Tip>
+                    )}
+                    {selectedEmail.entities.company && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-gray-100 border border-gray-200 text-gray-600 cursor-default">
+                        {selectedEmail.entities.company}
+                      </span>
+                    )}
+                    {selectedEmail.entities.phone && (
+                      <Tip label="Phone number extracted by AI" dir="top">
+                        <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-gray-100 border border-gray-200 text-gray-600 cursor-default">
+                          <svg className="w-2.5 h-2.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                          {selectedEmail.entities.phone}
+                        </span>
+                      </Tip>
+                    )}
+                    {selectedEmail.entities.product_interest && (
+                      <Tip label="Product the sender is interested in" dir="top">
+                        <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-blue-50 border border-blue-100 text-blue-700 cursor-default">
+                          <svg className="w-2.5 h-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+                          {selectedEmail.entities.product_interest}
+                        </span>
+                      </Tip>
+                    )}
+                    {(selectedEmail.entities.intent_signals ?? []).map((s, i) => (
+                      <Tip key={i} label="Buying intent signal detected by AI" dir="top">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-teal-50 border border-teal-100 text-teal-700 cursor-default">{s}</span>
+                      </Tip>
+                    ))}
+                    {(selectedEmail.entities.urgency_signals ?? []).map((s, i) => (
+                      <Tip key={i} label="Urgency signal detected by AI" dir="top">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-50 border border-amber-100 text-amber-700 cursor-default">⚡ {s}</span>
+                      </Tip>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Email body */}
+              {!showReply && (
+                <div className="rounded-xl border border-gray-200 overflow-hidden">
+                  <div className="px-3 py-2 bg-gray-50 border-b border-gray-100">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Email</span>
+                  </div>
+                  <div className="px-3 py-2.5">
+                    <p className="text-xs text-gray-700 leading-relaxed font-mono">{selectedEmail.body_text}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Reply composer */}
+              {showReply && (
+                <div className="rounded-xl border border-gray-200 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-1.5 bg-gray-50 border-b border-gray-100">
+                    <span className="text-[10px] font-semibold text-gray-400 uppercase w-4 shrink-0">To</span>
+                    <span className="text-xs text-gray-700 truncate">{selectedEmail.from_name} &lt;{selectedEmail.from_address}&gt;</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-1.5 bg-gray-50 border-b border-gray-100">
+                    <span className="text-[10px] font-semibold text-gray-400 uppercase w-4 shrink-0">Re</span>
+                    <span className="text-xs text-gray-600 flex-1 truncate">Re: {selectedEmail.subject}</span>
+                    <Tip label="Schedule a meeting with this sender" dir="left" clickable>
+                      <button className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 font-medium hover:bg-emerald-100 transition-colors shrink-0">
+                        <svg className="w-2.5 h-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                        Schedule Meeting
+                      </button>
+                    </Tip>
+                  </div>
+                  <Tip label="AI-drafted reply — edit before sending" dir="top">
+                    <textarea
+                      value={replyText}
+                      onChange={e => setReplyText(e.target.value)}
+                      placeholder="Write your reply…"
+                      className="w-full px-4 py-3 text-xs text-gray-800 resize-none focus:outline-none h-[80px] placeholder-gray-400"
+                    />
+                  </Tip>
+                  <div className="flex items-center gap-1 px-3 py-1.5 border-t border-gray-100 bg-gray-50">
+                    {['B','I','U'].map(f => (
+                      <button key={f} className="w-5 h-5 rounded text-[11px] font-bold text-gray-500 hover:bg-gray-200 transition-colors flex items-center justify-center">{f}</button>
+                    ))}
+                    <span className="w-px h-4 bg-gray-200 mx-0.5" />
+                    <Tip label="Attach a file" dir="top">
+                      <button className="w-5 h-5 rounded text-gray-400 hover:bg-gray-200 hover:text-gray-700 transition-colors flex items-center justify-center">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                      </button>
+                    </Tip>
+                    <div className="flex-1" />
+                    <Tip label="Rewrite with AI for a more professional tone" dir="top" clickable>
+                      <button className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-600 font-semibold hover:bg-blue-100 transition-colors">
+                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+                        AI Rewrite
+                      </button>
+                    </Tip>
+                  </div>
+                </div>
+              )}
+
+              {/* Actioned state */}
+              {actioned[selectedEmail.id] && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-xl">
+                  <svg className="w-3.5 h-3.5 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  <span className="text-xs font-medium text-green-700">{actioned[selectedEmail.id]}</span>
+                </div>
+              )}
+
+            </div>
+
+            {/* Sticky action bar */}
+            {!showReply && (
+              <div className="px-4 py-2.5 border-t border-gray-100 bg-white flex items-center gap-2 shrink-0">
+                {!actioned[selectedEmail.id] && selectedEmail.recommendation === 'create_lead' && (
+                  <Tip label="Create a Lead + Deal in your CRM from this email" dir="top" clickable>
+                    <button
+                      onClick={() => handleAction(selectedEmail.id, 'Lead + deal created')}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                      Add Deal
+                    </button>
+                  </Tip>
+                )}
+                {!actioned[selectedEmail.id] && selectedEmail.recommendation === 'create_ticket' && (
+                  <Tip label="Create a support ticket from this email" dir="top" clickable>
+                    <button
+                      onClick={() => handleAction(selectedEmail.id, 'Ticket created')}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                      Create Ticket
+                    </button>
+                  </Tip>
+                )}
+                <div className="flex-1" />
+                <Tip label="Open reply composer to respond to this email" dir="top" clickable>
+                  <button
+                    onClick={() => setShowReply(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#15A4AE] hover:bg-[#0f8a94] text-white transition-colors shadow-sm"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
+                    Reply
+                  </button>
+                </Tip>
+                <Tip label="Mark as done and remove from triage queue" dir="top">
+                  <button
+                    onClick={() => handleAction(selectedEmail.id, 'Ignored')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors"
+                  >
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    Ignore
+                  </button>
+                </Tip>
+              </div>
+            )}
+
+            {/* Reply send bar */}
+            {showReply && (
+              <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50 flex items-center gap-2 shrink-0">
+                <Tip label="Dismiss and go back to detail view" dir="top">
+                  <button
+                    onClick={() => setShowReply(false)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors"
+                  >
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    Ignore
+                  </button>
+                </Tip>
+                <div className="flex-1" />
+                <Tip label="Send reply email" dir="top" clickable>
+                  <button
+                    onClick={() => { handleAction(selectedEmail.id, 'Reply sent'); setShowReply(false) }}
+                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold bg-[#15A4AE] hover:bg-[#0f8a94] text-white transition-colors"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                    Send
+                  </button>
+                </Tip>
+              </div>
+            )}
+
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-sm text-gray-400">
+            Select an email to view details
+          </div>
+        )}
+      </div>
+
     </div>
+  )
+}
+
+/* ─── Main page ─────────────────────────────────────────────────────────── */
+export default function EmailPage() {
+  const [showDemo, setShowDemo] = useState(false)
+
+  return (
+    <main className="bg-[#111] min-h-screen text-white pt-16">
+
+      {showDemo && <DemoModal onClose={() => setShowDemo(false)} />}
+
+      {/* ── Hero ── */}
+      <section className="max-w-5xl mx-auto px-6 pt-20 pb-10 text-center">
+        <FadeUp>
+          <span className="inline-block text-xs font-semibold tracking-widest text-[#15A4AE] uppercase mb-4">
+            Email Triage
+          </span>
+          <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-5">
+            AI that reads your inbox<br />
+            <span className="text-[#15A4AE]">so you don't have to</span>
+          </h1>
+          <p className="text-gray-400 text-lg max-w-xl mx-auto mb-8">
+            Every inbound email is automatically analysed, prioritised, and turned into a lead, ticket, or reply draft — before you even open it.
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={() => setShowDemo(true)}
+              className="px-6 py-2.5 bg-[#15A4AE] hover:bg-[#0f8a94] text-white text-sm font-semibold rounded-xl transition-colors"
+            >
+              Get started free
+            </button>
+            <Link href="/pricing" className="px-6 py-2.5 border border-white/15 text-gray-300 hover:text-white text-sm font-medium rounded-xl transition-colors">
+              View pricing
+            </Link>
+          </div>
+        </FadeUp>
+      </section>
+
+      {/* ── Interactive preview ── */}
+      <section className="max-w-5xl mx-auto px-6 pb-20">
+        <FadeUp delay={0.1}>
+          <div className="rounded-2xl border border-white/10 overflow-hidden bg-[#1a1a1a] shadow-2xl">
+            <div className="flex items-center gap-2 px-4 py-3 bg-[#222] border-b border-white/8">
+              <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+              <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
+              <span className="w-3 h-3 rounded-full bg-[#28c840]" />
+              <div className="flex-1 mx-4 bg-[#2a2a2a] rounded-md px-3 py-1 text-[11px] text-gray-500">
+                app.appalix.ai/sage/triage
+              </div>
+            </div>
+            <TriagePreview onOpenDemo={() => setShowDemo(true)} />
+          </div>
+        </FadeUp>
+      </section>
+
+      {/* ── Feature cards ── */}
+      <section className="max-w-5xl mx-auto px-6 pb-24">
+        <ScrollReveal>
+          <h2 className="text-2xl font-bold text-center mb-10">How it works</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                icon: (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                ),
+                title: 'AI Priority Scoring',
+                desc: 'Every email gets a High / Medium / Low priority score based on intent signals, urgency, and sender context — automatically.',
+              },
+              {
+                icon: (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                  </svg>
+                ),
+                title: 'One-click Lead & Ticket Creation',
+                desc: 'AI pre-fills contact name, company, email, and deal title from the email. Create a lead or ticket in one click.',
+              },
+              {
+                icon: (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                  </svg>
+                ),
+                title: 'AI Reply Drafts',
+                desc: 'For every high-priority email, Appalix drafts a reply for you. Edit, rewrite with AI, and send — all without leaving triage.',
+              },
+              {
+                icon: (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                ),
+                title: 'Smart Categorisation',
+                desc: 'Sales, Support, Invoice, Partnership, Meeting and more — each email is auto-tagged so you can filter instantly.',
+              },
+              {
+                icon: (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                ),
+                title: 'Auto-sync & Real-time',
+                desc: 'Inbox syncs every 60 seconds. New emails are automatically analysed in the background — no manual refresh needed.',
+              },
+              {
+                icon: (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                ),
+                title: 'Meeting Scheduling',
+                desc: 'Reply to any email and add a calendar invite in one click — links straight to Google Calendar or Outlook.',
+              },
+            ].map((c, i) => (
+              <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#15A4AE]/30 transition-colors">
+                <div className="w-10 h-10 rounded-xl bg-[#15A4AE]/10 flex items-center justify-center text-[#15A4AE] mb-4">
+                  {c.icon}
+                </div>
+                <h3 className="font-semibold text-white mb-2">{c.title}</h3>
+                <p className="text-sm text-gray-400 leading-relaxed">{c.desc}</p>
+              </div>
+            ))}
+          </div>
+        </ScrollReveal>
+      </section>
+
+      {/* ── CTA ── */}
+      <section className="max-w-2xl mx-auto px-6 pb-24 text-center">
+        <ScrollReveal>
+          <h2 className="text-3xl font-bold mb-4">Zero inbox, zero effort</h2>
+          <p className="text-gray-400 mb-8">Connect Gmail or Outlook and let AI handle the triage for you.</p>
+          <button
+            onClick={() => setShowDemo(true)}
+            className="px-8 py-3 bg-[#15A4AE] hover:bg-[#0f8a94] text-white font-semibold rounded-xl transition-colors"
+          >
+            Start for free
+          </button>
+        </ScrollReveal>
+      </section>
+
+    </main>
   )
 }
