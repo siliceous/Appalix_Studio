@@ -61,8 +61,7 @@ export async function uploadUserAvatar(
   revalidatePath('/settings/profile')
   revalidatePath('/', 'layout')
 
-  // Append timestamp to bust browser cache when re-uploading to the same path
-  return { ok: true, url: `${publicUrl}?v=${Date.now()}` }
+  return { ok: true, url: publicUrl }
 }
 
 export async function removeUserAvatar(): Promise<{ ok: boolean; error?: string }> {
