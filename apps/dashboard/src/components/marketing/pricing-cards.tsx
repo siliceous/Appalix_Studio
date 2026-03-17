@@ -183,10 +183,10 @@ export function PricingCards() {
           return (
             <div
               key={plan.key}
-              className={`relative flex flex-col rounded-2xl p-6 border transition-colors h-full ${
+              className={`relative flex flex-col rounded-2xl p-6 border h-full ${
                 plan.popular
-                  ? 'bg-[#15A4AE]/10 border-[#15A4AE]/50 shadow-xl shadow-[#15A4AE]/20 -translate-y-4'
-                  : 'bg-white/5 border-white/10 hover:border-white/20'
+                  ? 'bg-[#15A4AE]/10 border-[#15A4AE]/50 shadow-xl shadow-[#15A4AE]/20 -translate-y-4 transition-all duration-300 ease-out hover:-translate-y-8 hover:shadow-2xl hover:shadow-[#15A4AE]/40 hover:border-[#15A4AE]/80'
+                  : 'bg-white/5 border-white/10 hover:border-white/30 hover:-translate-y-2 hover:shadow-lg hover:shadow-white/5 transition-all duration-300 ease-out'
               }`}
             >
               {plan.popular && (
@@ -205,25 +205,25 @@ export function PricingCards() {
 
               {/* Price */}
               <div className="mb-4">
-                <div className="flex items-baseline justify-between">
+                <div className="flex items-baseline gap-3">
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-black text-white">${price}</span>
                     <span className="text-gray-400 text-base">/mo</span>
                   </div>
                   {plan.annualPrice !== null && plan.monthlyPrice !== null && (
                     <div className="flex items-baseline gap-0.5">
-                      <span className="relative text-[30px] font-black text-gray-500">
+                      <span className="relative text-[20px] font-normal text-white">
                         ${isAnnual ? plan.monthlyPrice : plan.annualPrice}
                         <span className="absolute inset-0 flex items-center pointer-events-none">
-                          <span className="w-full h-[2px] bg-[#15A4AE] block" style={{ transform: 'rotate(-18deg)' }} />
+                          <span className="w-full h-[2px] bg-[#ec732e] block" style={{ transform: 'rotate(-18deg)' }} />
                         </span>
                       </span>
-                      <span className="text-gray-600 text-sm">/mo</span>
+                      <span className="text-white/60 text-xs">/mo</span>
                     </div>
                   )}
                 </div>
                 {billed && (
-                  <p className="text-xs text-gray-500 mt-1">Billed ${billed}/year</p>
+                  <p className="text-xs text-white/70 mt-1">Billed ${billed}/year</p>
                 )}
               </div>
 
@@ -291,8 +291,8 @@ export function PricingCards() {
                 href="/login"
                 className={`block text-center text-sm font-medium py-2.5 rounded-xl transition-colors ${
                   plan.popular
-                    ? 'bg-[#15A4AE] hover:bg-[#0e8f99] text-white'
-                    : 'border border-white/20 hover:border-white/40 text-gray-300 hover:text-white'
+                    ? 'bg-[#15A4AE] hover:bg-[#0e8f99] text-white shadow-lg shadow-[#15A4AE]/30 hover:shadow-[#15A4AE]/60'
+                    : 'border border-white/20 hover:border-[#15A4AE]/60 text-gray-300 hover:text-white hover:shadow-lg hover:shadow-[#15A4AE]/30 hover:bg-[#15A4AE]/10'
                 }`}
               >
                 {plan.cta}
