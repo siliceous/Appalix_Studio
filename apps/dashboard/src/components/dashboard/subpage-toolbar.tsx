@@ -1,9 +1,9 @@
 'use client'
 
-import React, { useState, useEffect, useTransition } from 'react'
+import React, { useState, useEffect, useTransition, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
-import { LayoutDashboard, ChevronDown, Zap, Mail, MessageSquare, FileText, Ticket as TicketIcon } from 'lucide-react'
+import { LayoutDashboard, ChevronDown, Zap, Mail, MessageSquare, FileText, Ticket as TicketIcon, Calendar } from 'lucide-react'
 import { updateAutoSetting, type AutoSettings } from '@/app/actions/sage-auto-settings'
 
 export type SubpagePreset = 'all' | 'today' | 'yesterday' | '7d' | '30d' | 'custom'
@@ -18,14 +18,6 @@ interface Props {
   viewAsUserId?: string | null  // when a senior is viewing a junior
 }
 
-const PRESETS: { value: SubpagePreset; label: string }[] = [
-  { value: 'all',       label: 'All time'      },
-  { value: 'today',     label: 'Today'         },
-  { value: 'yesterday', label: 'Yesterday'     },
-  { value: '7d',        label: 'Last 7 days'   },
-  { value: '30d',       label: 'Last 30 days'  },
-  { value: 'custom',    label: 'Date range...' },
-]
 
 const SOURCE_LABEL: Record<SubpageSource, string> = {
   email:   'emails',
@@ -55,6 +47,8 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
   const [localAuto, setLocalAuto] = useState(autoEnabled)
   const [fromDate, setFromDate]   = useState(customFrom ?? '')
   const [toDate,   setToDate]     = useState(customTo   ?? '')
+  const [showCal,  setShowCal]    = useState(false)
+  const calRef = useRef<HTMLDivElement>(null)
 
   // Sync when server re-renders with updated prop
   useEffect(() => { setLocalAuto(autoEnabled) }, [autoEnabled])
@@ -63,6 +57,16 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
     setFromDate(customFrom ?? '')
     setToDate(customTo   ?? '')
   }, [customFrom, customTo])
+
+  // Close calendar on outside click
+  useEffect(() => {
+    if (!showCal) return
+    const handler = (e: MouseEvent) => {
+      if (calRef.current && !calRef.current.contains(e.target as Node)) setShowCal(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showCal])
 
   // Build URL preserving viewAs
   const buildUrl = (base: string, extra?: Record<string, string>) => {
@@ -135,42 +139,76 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
 
       {/* Controls */}
       <div className="flex items-end gap-2.5">
-        {/* Date preset + optional custom range inputs */}
-        <div className="flex items-end gap-2">
-          <div className="relative">
-            <select
-              value={preset}
-              onChange={e => handlePresetChange(e.target.value as SubpagePreset)}
-              className="appearance-none bg-gray-50 dark:bg-[#232323] border border-gray-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-300 rounded-lg pl-2.5 pr-6 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 cursor-pointer"
-            >
-              {PRESETS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
-          </div>
+        {/* Calendar date picker */}
+        <div className="relative" ref={calRef}>
+          <button
+            onClick={() => setShowCal(v => !v)}
+            title="Filter by date"
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+              preset !== 'all'
+                ? 'border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] bg-[#15A4AE]/5'
+                : 'border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-[#232323] hover:bg-gray-100 dark:hover:bg-white/8'
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            {preset === 'all'       ? 'All time'
+            : preset === 'today'    ? 'Today'
+            : preset === 'yesterday'? 'Yesterday'
+            : preset === '7d'       ? 'Last 7 days'
+            : preset === '30d'      ? 'Last 30 days'
+            : fromDate && toDate    ? `${fromDate} → ${toDate}`
+            : 'Custom'}
+            <ChevronDown className="w-3 h-3 opacity-60" />
+          </button>
 
-          {preset === 'custom' && (
-            <div className="flex items-end gap-1.5">
-              <input
-                type="date"
-                value={fromDate}
-                onChange={e => setFromDate(e.target.value)}
-                className="bg-gray-50 dark:bg-[#232323] border border-gray-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40"
-              />
-              <span className="text-xs text-gray-400">→</span>
-              <input
-                type="date"
-                value={toDate}
-                min={fromDate || undefined}
-                onChange={e => setToDate(e.target.value)}
-                className="bg-gray-50 dark:bg-[#232323] border border-gray-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40"
-              />
-              <button
-                onClick={applyCustomRange}
-                disabled={!fromDate || !toDate}
-                className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-[#15A4AE]/10 text-[#3a9e8a] dark:text-[#15A4AE] border border-[#15A4AE]/25 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#15A4AE]/20 transition-colors"
-              >
-                Apply
-              </button>
+          {showCal && (
+            <div className="absolute right-0 top-full mt-2 z-50 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/12 rounded-2xl shadow-xl p-4 w-72">
+              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-3">Quick Presets</p>
+              <div className="grid grid-cols-3 gap-1.5 mb-4">
+                {(['all', 'today', 'yesterday', '7d', '30d'] as SubpagePreset[]).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => { handlePresetChange(p); if (p !== 'custom') setShowCal(false) }}
+                    className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      preset === p
+                        ? 'bg-[#15A4AE] text-white'
+                        : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/12'
+                    }`}
+                  >
+                    {p === 'all' ? 'All time' : p === 'today' ? 'Today' : p === 'yesterday' ? 'Yest.' : p === '7d' ? '7 days' : '30 days'}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Custom Range</p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-gray-400 w-7 shrink-0">From</span>
+                  <input
+                    type="date"
+                    value={fromDate}
+                    onChange={e => { setFromDate(e.target.value); handlePresetChange('custom') }}
+                    className="flex-1 text-xs bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-2.5 py-1.5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-gray-400 w-7 shrink-0">To</span>
+                  <input
+                    type="date"
+                    value={toDate}
+                    min={fromDate || undefined}
+                    onChange={e => setToDate(e.target.value)}
+                    className="flex-1 text-xs bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-2.5 py-1.5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40"
+                  />
+                </div>
+              </div>
+              {fromDate && toDate && (
+                <button
+                  onClick={() => { applyCustomRange(); setShowCal(false) }}
+                  className="mt-3 w-full py-1.5 bg-[#15A4AE] hover:bg-[#1290a0] text-white text-xs font-semibold rounded-lg transition-colors"
+                >
+                  Apply
+                </button>
+              )}
             </div>
           )}
         </div>
