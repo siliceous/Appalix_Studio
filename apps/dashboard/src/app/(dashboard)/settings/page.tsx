@@ -8,6 +8,7 @@ import { TeamMembersSection, type MemberDisplay } from '@/components/settings/te
 import { PermissionsSection, type MemberForPermissions } from '@/components/settings/permissions-section'
 import { RoundRobinToggle } from '@/components/settings/round-robin-toggle'
 import { ReplayOnboardingButton } from '@/components/onboarding/replay-onboarding-button'
+import { ProfileForm } from './profile/profile-form'
 import { parseBusinessDescription } from '@/lib/business-profile'
 import { STATUS_COLORS, formatDate } from '@/lib/utils'
 import type { Metadata } from 'next'
@@ -52,17 +53,18 @@ export default async function SettingsPage() {
     userEmailMap[u.id] = u.email ?? ''
   }
 
-  // Fetch names from user_profiles
+  // Fetch names + avatar from user_profiles
   const memberUserIds = rawMemberList.map((m) => m.user_id)
   const { data: profiles } = await admin
     .from('user_profiles')
-    .select('user_id, first_name, last_name')
+    .select('user_id, first_name, last_name, avatar_url')
     .in('user_id', memberUserIds)
-  type ProfileRow = { user_id: string; first_name: string; last_name: string | null }
+  type ProfileRow = { user_id: string; first_name: string; last_name: string | null; avatar_url: string | null }
   const profileMap: Record<string, ProfileRow> = {}
   for (const p of (profiles ?? []) as ProfileRow[]) {
     profileMap[p.user_id] = p
   }
+  const myProfile = profileMap[user.id] ?? null
 
   const members: MemberDisplay[] = rawMemberList.map((m) => {
     const profile = profileMap[m.user_id]
@@ -106,6 +108,14 @@ export default async function SettingsPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <Header title="Settings" description="Workspace configuration and billing" />
+
+      {/* Profile */}
+      <ProfileForm
+        firstName={myProfile?.first_name ?? ''}
+        lastName={myProfile?.last_name ?? ''}
+        email={user.email ?? ''}
+        avatarUrl={myProfile?.avatar_url ?? null}
+      />
 
       {/* Business Profile */}
       <BusinessProfileSection workspaceId={workspace.id} initialData={profileData} />

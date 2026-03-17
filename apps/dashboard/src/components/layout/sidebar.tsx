@@ -213,7 +213,7 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
 
           {/* Account identity — clicking goes to Profile */}
           <Link
-            href="/settings/profile"
+            href="/settings"
             title="Edit profile"
             className={cn(
               'flex items-center gap-2.5 rounded-lg py-1.5 min-w-0 transition-colors',
