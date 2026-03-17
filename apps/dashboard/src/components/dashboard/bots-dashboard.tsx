@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Bot, Sparkles, MessageSquare, Plus, Inbox, CheckCircle, X } from 'lucide-react'
+import { Bot, Sparkles, MessageSquare, Plus, Inbox, CheckCircle, X, Mail } from 'lucide-react'
 import { timeAgo, PLATFORM_META } from '@/lib/utils'
 import type { Bot as BotRow } from '@/lib/types'
 import { triageCreateLead, triageCreateTicket } from '@/app/actions/sage-triage'
+import { EmailComposeModal } from '@/components/dashboard/email-compose-modal'
 
 export type BotConversation = {
   id: string
@@ -65,6 +66,7 @@ export function BotsDashboard({
   const [actioned, setActioned]   = useState<Map<string, string>>(new Map())
   const [modalMode, setModalMode] = useState<ModalMode>(null)
   const [activeConv, setActiveConv] = useState<BotConversation | null>(null)
+  const [emailConv,  setEmailConv]  = useState<BotConversation | null>(null)
   const [isPending, startTransition] = useTransition()
 
   // Lead form
@@ -357,6 +359,13 @@ export function BotsDashboard({
                             {rec === 'create_lead' ? 'Ticket' : 'Lead'}
                           </button>
                           <button
+                            onClick={() => setEmailConv(conv)}
+                            className="p-1 text-gray-400 hover:text-[#15A4AE] transition-colors"
+                            title="Reply via email"
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                          </button>
+                          <button
                             onClick={() => setDismissed(s => new Set(s).add(conv.id))}
                             className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                             title="Ignore"
@@ -440,6 +449,20 @@ export function BotsDashboard({
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Modal: Email Reply ─────────────────────────────── */}
+      {emailConv && (
+        <EmailComposeModal
+          subject={`Re: ${emailConv.title ?? 'Bot conversation'}`}
+          context={[
+            emailConv.title   ? `Conversation: ${emailConv.title}` : '',
+            emailConv.platform ? `Platform: ${emailConv.platform}` : '',
+            `Messages exchanged: ${emailConv.message_count ?? 0}`,
+          ].filter(Boolean).join('\n')}
+          onClose={() => setEmailConv(null)}
+          onSent={() => setActioned(m => new Map(m).set(emailConv.id, 'Email sent'))}
+        />
       )}
 
       {/* ── Modal: Create Ticket ───────────────────────────── */}

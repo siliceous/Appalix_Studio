@@ -3,8 +3,9 @@
 import { useState, useEffect, useTransition } from 'react'
 import {
   X, FileText, Phone, Users, CheckSquare,
-  User, Mail, Clock, Bot, Loader2, Ticket as TicketIcon, Check, Pencil,
+  User, Mail, Clock, Bot, Loader2, Ticket as TicketIcon, Check, Pencil, Send,
 } from 'lucide-react'
+import { EmailComposeModal } from '@/components/dashboard/email-compose-modal'
 import {
   addTicketActivity, getTicketActivities, completeTicketTask,
   type TicketActivityType,
@@ -66,7 +67,8 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
   const [editName,  setEditName]  = useState('')
   const [editEmail, setEditEmail] = useState('')
   const [editPhone, setEditPhone] = useState('')
-  const [savingContact, setSavingContact] = useState(false)
+  const [savingContact,  setSavingContact]  = useState(false)
+  const [showEmailModal, setShowEmailModal] = useState(false)
 
   // Reset when ticket changes
   useEffect(() => {
@@ -379,6 +381,17 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
                 )}
               </div>
 
+              {/* Reply via Email */}
+              {(ticket.email ?? ticket.contact?.email) && (
+                <button
+                  onClick={() => setShowEmailModal(true)}
+                  className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold rounded-xl border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] hover:bg-[#15A4AE]/8 transition-colors"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  Reply via Email
+                </button>
+              )}
+
             </div>
           )}
 
@@ -523,6 +536,20 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
           )}
         </div>
       </div>
+
+      {showEmailModal && (
+        <EmailComposeModal
+          to={ticket.email ?? ticket.contact?.email ?? ''}
+          toName={ticket.name ?? ticket.contact?.name ?? undefined}
+          subject={`Re: ${ticket.title}`}
+          context={[
+            ticket.title       ? `Ticket: ${ticket.title}`           : '',
+            ticket.description ? `Details: ${ticket.description}`    : '',
+            `Status: ${localStatus} · Priority: ${localPriority}`,
+          ].filter(Boolean).join('\n')}
+          onClose={() => setShowEmailModal(false)}
+        />
+      )}
     </>
   )
 }

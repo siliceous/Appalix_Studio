@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation'
 import {
   ClipboardList, Plus, Sparkles, Loader2, X, Check,
   UserPlus, Ticket, Brain, Trash2, ChevronRight,
-  Mail, Phone, Building2, MessageSquare, Tag,
+  Mail, Phone, Building2, MessageSquare, Tag, Send,
 } from 'lucide-react'
 import {
   deleteForm, analyzeFormSubmissions,
   formSubmissionCreateLead, formSubmissionCreateTicket, markSubmissionActioned,
   type SageForm, type SageFormSubmission,
 } from '@/app/actions/sage-forms'
+import { EmailComposeModal } from '@/components/dashboard/email-compose-modal'
 import { timeAgo, cn } from '@/lib/utils'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -55,6 +56,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
   const [isPending,      startTransition]    = useTransition()
   const [isAnalyzing,    setIsAnalyzing]     = useState(false)
   const [actionResult,   setActionResult]    = useState<Map<string, string>>(new Map())
+  const [showEmailModal, setShowEmailModal]  = useState(false)
   const detailRef = useRef<HTMLDivElement>(null)
 
   const formSubmissions = submissions
@@ -449,6 +451,15 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
                       <Ticket className="w-3.5 h-3.5" />
                       Create Ticket
                     </button>
+                    {(selected.fields.email ?? (selected.ai_entities as { email?: string } | null)?.email) && (
+                      <button
+                        onClick={() => setShowEmailModal(true)}
+                        className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] hover:bg-[#15A4AE]/8 transition-colors"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        Email
+                      </button>
+                    )}
                     <button
                       onClick={() => void handleIgnore()}
                       className="flex items-center gap-1.5 px-3 py-2 text-xs rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
@@ -468,6 +479,21 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
           </div>
         )}
       </div>
+
+      {/* ── Email compose modal ──────────────────────────────────── */}
+      {showEmailModal && selected && (
+        <EmailComposeModal
+          to={selected.fields.email ?? (selected.ai_entities as { email?: string } | null)?.email ?? ''}
+          toName={(selected.fields.name ?? (selected.ai_entities as { name?: string } | null)?.name) ?? undefined}
+          subject={`Re: Your enquiry`}
+          context={[
+            selected.fields.name    ? `Name: ${selected.fields.name}`                                                   : '',
+            selected.ai_summary                                         ? `Summary: ${selected.ai_summary}`             : '',
+            selected.fields.message ? `Message: ${selected.fields.message}`                                             : '',
+          ].filter(Boolean).join('\n')}
+          onClose={() => setShowEmailModal(false)}
+        />
+      )}
 
       {/* ── Embed code overlay ───────────────────────────────────── */}
       {showEmbed && (

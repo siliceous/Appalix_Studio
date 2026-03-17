@@ -385,6 +385,42 @@ Return ONLY the improved reply text with no preamble, no subject line, no "Here 
 }
 
 /**
+ * Generate a first-draft email from plain context (bot conversation, ticket, form submission).
+ * Used by EmailComposeModal when opened from outside the email inbox.
+ */
+export async function draftEmailFromContext(params: {
+  toName?:  string
+  subject:  string
+  context:  string
+}): Promise<{ draft: string } | { error: string }> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { error: 'Unauthorized' }
+
+  try {
+    const response = await anthropic.messages.create({
+      model:      'claude-haiku-4-5-20251001',
+      max_tokens: 512,
+      messages:   [{
+        role:    'user',
+        content: `Write a short, professional outreach or follow-up email based on the context below.
+
+${params.toName ? `Recipient: ${params.toName}` : ''}
+Subject: ${params.subject}
+Context:
+${params.context}
+
+Return ONLY the email body text — no subject line, no "Here is your email:" preamble. Use proper paragraphs. Keep it concise (3–5 sentences).`,
+      }],
+    })
+
+    const draft = (response.content[0] as { type: string; text: string }).text?.trim() ?? ''
+    return { draft }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Draft generation failed' }
+  }
+}
+
+/**
  * Fetch the HTML signature saved for the workspace's connected email account.
  */
 export async function getEmailSignature(): Promise<{ html: string | null }> {
