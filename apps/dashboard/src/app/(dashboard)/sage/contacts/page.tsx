@@ -54,14 +54,13 @@ export default async function ContactsPage({
   }
 
   // Build contacts query based on role / viewAs
+  // All roles see own + unassigned contacts; contacts assigned to others are hidden until
+  // the manager uses "My view" picker to browse that team member's contacts.
   let contactsQuery = supabase.from('sage_contacts').select('*').eq('workspace_id', membership.workspace_id)
   if (viewAsUserId) {
     contactsQuery = contactsQuery.eq('assigned_to', viewAsUserId)
-  } else if (isManager) {
-    // managers see their own + unassigned (no filter needed — already scoped by workspace)
   } else {
-    // employees see only their assigned contacts
-    contactsQuery = contactsQuery.eq('assigned_to', user.id)
+    contactsQuery = contactsQuery.or(`assigned_to.eq.${user.id},assigned_to.is.null`)
   }
   contactsQuery = contactsQuery.order('created_at', { ascending: false })
 

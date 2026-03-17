@@ -52,14 +52,14 @@ export default async function PipelineBoardPage({
     }
   }
 
-  // Determine deal filter: viewAs → that user; manager → all; employee → own
+  // Determine deal filter:
+  //   viewAs        → that user's deals only
+  //   default (any role) → own deals + unassigned; assigned-to-others deals are hidden
   const dealSelect = 'id, title, value, currency, status, stage_id, close_date, priority, company_name, created_at, contact:sage_contacts(id, name)'
   const baseDealsQ = supabase.from('sage_deals').select(dealSelect).eq('pipeline_id', id).eq('workspace_id', workspaceId).order('created_at')
   const filteredDealsQ = viewAsUserId
     ? baseDealsQ.eq('owner_id', viewAsUserId)
-    : isManager
-      ? baseDealsQ
-      : baseDealsQ.eq('owner_id', user.id)
+    : baseDealsQ.or(`owner_id.eq.${user.id},owner_id.is.null`)
 
   const [
     { data: pipelineRaw },
