@@ -1343,6 +1343,8 @@ export function SageDashboardClient({
   const [doneBusy,   setDoneBusy]   = useState<string | null>(null)
   const [feedView,    setFeedView]   = useState<'list' | 'grid'>('list')
   const [taskView,    setTaskView]   = useState<'list' | 'grid'>('list')
+  const [showFeedCal, setShowFeedCal] = useState(false)
+  const feedCalRef = useRef<HTMLDivElement>(null)
   const [topType,     setTopType]    = useState<'email' | 'bot' | 'form' | 'ticket' | null>(null)
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
   const [donutsCollapsed, setDonutsCollapsed] = useState(false)
@@ -1404,6 +1406,16 @@ export function SageDashboardClient({
     if (autoDescTimer.current) clearTimeout(autoDescTimer.current)
     autoDescTimer.current = setTimeout(() => setShowAutoDesc(false), 10000)
   }
+
+  // Close feed calendar on outside click
+  useEffect(() => {
+    if (!showFeedCal) return
+    const handler = (e: MouseEvent) => {
+      if (feedCalRef.current && !feedCalRef.current.contains(e.target as Node)) setShowFeedCal(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showFeedCal])
 
   const handleDismiss = async (kind: 'email' | 'bot' | 'form' | 'ticket', id: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -1870,6 +1882,74 @@ export function SageDashboardClient({
                   <LayoutGrid className="w-3.5 h-3.5" />
                 </button>
               </div>
+              {/* Date filter */}
+              <div className="relative" ref={feedCalRef}>
+                <button
+                  onClick={() => setShowFeedCal(v => !v)}
+                  title="Filter by date"
+                  className={`flex items-center gap-1.5 p-1.5 rounded-lg border transition-colors text-xs ${
+                    dateRange !== '7d'
+                      ? 'border-[#15A4AE]/40 text-[#15A4AE] bg-[#15A4AE]/5'
+                      : 'border-gray-200 dark:border-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
+                  }`}
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline font-medium">
+                    {dateRange === 'today' ? 'Today' : dateRange === 'yesterday' ? 'Yesterday' : dateRange === '7d' ? '7d' : dateRange === '30d' ? '30d' : 'Custom'}
+                  </span>
+                </button>
+                {showFeedCal && (
+                  <div className="absolute left-0 top-full mt-2 z-30 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/12 rounded-2xl shadow-xl p-4 w-72">
+                    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-3">Date Range</p>
+                    {/* Quick presets */}
+                    <div className="grid grid-cols-4 gap-1.5 mb-4">
+                      {(['today', 'yesterday', '7d', '30d'] as const).map(preset => (
+                        <button
+                          key={preset}
+                          onClick={() => { handleDateChange(preset); setShowFeedCal(false) }}
+                          className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                            dateRange === preset
+                              ? 'bg-[#15A4AE] text-white'
+                              : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/12'
+                          }`}
+                        >
+                          {preset === 'today' ? 'Today' : preset === 'yesterday' ? 'Yest.' : preset === '7d' ? '7 days' : '30 days'}
+                        </button>
+                      ))}
+                    </div>
+                    {/* Custom range */}
+                    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Custom Range</p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-gray-400 w-7 shrink-0">From</span>
+                        <input
+                          type="date"
+                          value={customFrom}
+                          onChange={e => { setCustomFrom(e.target.value); handleDateChange('custom') }}
+                          className="flex-1 text-xs bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-2.5 py-1.5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-gray-400 w-7 shrink-0">To</span>
+                        <input
+                          type="date"
+                          value={customTo}
+                          onChange={e => { setCustomTo(e.target.value); handleDateChange('custom') }}
+                          className="flex-1 text-xs bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-2.5 py-1.5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40"
+                        />
+                      </div>
+                    </div>
+                    {customFrom && customTo && dateRange === 'custom' && (
+                      <button
+                        onClick={() => setShowFeedCal(false)}
+                        className="mt-3 w-full py-1.5 bg-[#15A4AE] hover:bg-[#1290a0] text-white text-xs font-semibold rounded-lg transition-colors"
+                      >
+                        Apply
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
             {/* Type icon counts — clickable in both views; in grid view also brings that tablet to top */}
             <div className="flex items-center gap-3 text-xs">
@@ -2296,10 +2376,10 @@ export function SageDashboardClient({
 
             // Grid view: group by source kind
             if (taskView === 'grid') {
-              const groups: { kind: AnyTask['kind']; label: string; color: string; badgeClass: string; tasks: AnyTask[] }[] = [
-                { kind: 'deal',   label: 'Deal Tasks',   color: 'text-[#15A4AE]',   badgeClass: 'bg-[#15A4AE]/10 text-[#15A4AE]',         tasks: allTasks.filter(t => t.kind === 'deal') },
-                { kind: 'ticket', label: 'Ticket Tasks', color: 'text-amber-600 dark:text-amber-400', badgeClass: 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400', tasks: allTasks.filter(t => t.kind === 'ticket') },
-              ].filter(g => g.tasks.length > 0)
+              const groups = ([
+                { kind: 'deal'   as const, label: 'Deal Tasks',   color: 'text-[#15A4AE]',   badgeClass: 'bg-[#15A4AE]/10 text-[#15A4AE]',         tasks: allTasks.filter(t => t.kind === 'deal') },
+                { kind: 'ticket' as const, label: 'Ticket Tasks', color: 'text-amber-600 dark:text-amber-400', badgeClass: 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400', tasks: allTasks.filter(t => t.kind === 'ticket') },
+              ] as { kind: AnyTask['kind']; label: string; color: string; badgeClass: string; tasks: AnyTask[] }[]).filter(g => g.tasks.length > 0)
 
               return (
                 <div className="overflow-y-auto max-h-[680px] p-4 grid grid-cols-1 gap-3">
