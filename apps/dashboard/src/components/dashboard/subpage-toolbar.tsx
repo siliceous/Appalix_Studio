@@ -9,6 +9,8 @@ import { updateAutoSetting, type AutoSettings } from '@/app/actions/sage-auto-se
 export type SubpagePreset = 'all' | 'today' | 'yesterday' | '7d' | '30d' | 'custom'
 export type SubpageSource = 'email' | 'bots' | 'forms' | 'tickets'
 
+interface TeamMemberOption { user_id: string; name: string; email?: string }
+
 interface Props {
   sourceKey:    SubpageSource
   preset:       SubpagePreset
@@ -16,6 +18,7 @@ interface Props {
   customFrom?:  string     // YYYY-MM-DD from URL
   customTo?:    string     // YYYY-MM-DD from URL
   viewAsUserId?: string | null  // when a senior is viewing a junior
+  teamMembers?:  TeamMemberOption[]  // managers+ only — for "My view" picker
 }
 
 
@@ -40,7 +43,7 @@ const BASE_HREFS: Record<SubpageSource, string> = {
   tickets: '/dashboard/tickets',
 }
 
-export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, customTo, viewAsUserId }: Props) {
+export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, customTo, viewAsUserId, teamMembers }: Props) {
   const router   = useRouter()
   const pathname = usePathname()
   const [, startTransition] = useTransition()
@@ -212,6 +215,29 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
             </div>
           )}
         </div>
+
+        {/* My view / team member picker — managers+ only */}
+        {teamMembers && teamMembers.length > 0 && (
+          <div className="relative">
+            <select
+              value={viewAsUserId ?? ''}
+              onChange={e => {
+                const v = e.target.value
+                const url = new URL(window.location.href)
+                if (v) url.searchParams.set('viewAs', v)
+                else url.searchParams.delete('viewAs')
+                router.push(url.pathname + url.search)
+              }}
+              className="appearance-none pl-2.5 pr-7 py-1.5 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/8 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE] transition-colors"
+            >
+              <option value="">My view</option>
+              {teamMembers.map(m => (
+                <option key={m.user_id} value={m.user_id}>{m.name || m.email}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+          </div>
+        )}
 
         {/* Per-source Sage Auto toggle */}
         <button

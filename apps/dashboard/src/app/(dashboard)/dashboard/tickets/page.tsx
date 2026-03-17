@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect }     from 'next/navigation'
 import type { Metadata } from 'next'
 import type { WorkspaceMember, SageTicket, SageContact, WorkspaceMemberRole } from '@/lib/types'
@@ -102,6 +102,22 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
   const tickets  = (data ?? []) as (SageTicket & { contact: Pick<SageContact, 'id' | 'name' | 'email'> | null })[]
   const contacts = (contactsRaw ?? []) as Pick<SageContact, 'id' | 'name'>[]
 
+  // Team members for "My view" picker (managers+ only)
+  const adminClient = createAdminClient()
+  const teamMembers = await (async () => {
+    if (callerRank < ROLE_RANK.manager) return []
+    const [membersRes, profilesRes] = await Promise.all([
+      adminClient.from('workspace_members').select('user_id, role').eq('workspace_id', workspaceId).not('accepted_at', 'is', null),
+      adminClient.from('user_profiles').select('user_id, first_name, last_name'),
+    ])
+    type PRow = { user_id: string; first_name: string; last_name: string | null }
+    type MRow = { user_id: string; role: WorkspaceMemberRole }
+    const pMap = new Map((profilesRes.data ?? [] as PRow[]).map((p: PRow) => [p.user_id, p]))
+    return ((membersRes.data ?? []) as MRow[])
+      .filter(m => (ROLE_RANK[m.role] ?? 0) < callerRank && m.user_id !== user.id)
+      .map(m => { const p = pMap.get(m.user_id); return { user_id: m.user_id, name: p ? [p.first_name, p.last_name].filter(Boolean).join(' ') : '' } })
+  })()
+
   const activityDate = params.activityDate ?? new Date().toISOString().slice(0, 10)
   const activityUserId = viewAsUserId ?? user.id
   const [activity, viewingAs] = await Promise.all([
@@ -111,7 +127,7 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
-      <SubpageToolbar sourceKey="tickets" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.tickets_auto_enabled} viewAsUserId={viewAsUserId} />
+      <SubpageToolbar sourceKey="tickets" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.tickets_auto_enabled} viewAsUserId={viewAsUserId} teamMembers={teamMembers} />
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 overflow-y-auto">
           <TicketsClient tickets={tickets} contacts={contacts} readonly={!!viewAsUserId} />

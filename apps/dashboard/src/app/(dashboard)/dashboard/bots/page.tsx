@@ -165,6 +165,7 @@ export default async function BotsPage({
         customTo={params.to}
         autoEnabled={autoSettings.bots_auto_enabled}
         viewAsUserId={viewAsUserId}
+        teamMembers={teamMembers}
       />
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 overflow-y-auto">

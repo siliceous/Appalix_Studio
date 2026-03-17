@@ -102,6 +102,22 @@ export default async function MyActivityPage({
   }
 
   const admin = createAdminClient()
+
+  // Team members for "My view" picker (managers+ only)
+  const teamMembers = await (async () => {
+    if (callerRank < ROLE_RANK.manager) return []
+    const [membersRes, profilesRes] = await Promise.all([
+      admin.from('workspace_members').select('user_id, role').eq('workspace_id', membership.workspace_id).not('accepted_at', 'is', null),
+      admin.from('user_profiles').select('user_id, first_name, last_name'),
+    ])
+    type PRow = { user_id: string; first_name: string; last_name: string | null }
+    type MRow = { user_id: string; role: WorkspaceMemberRole }
+    const pMap = new Map((profilesRes.data ?? [] as PRow[]).map((p: PRow) => [p.user_id, p]))
+    return ((membersRes.data ?? []) as MRow[])
+      .filter(m => (ROLE_RANK[m.role] ?? 0) < callerRank && m.user_id !== user.id)
+      .map(m => { const p = pMap.get(m.user_id); return { user_id: m.user_id, name: p ? [p.first_name, p.last_name].filter(Boolean).join(' ') : '' } })
+  })()
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: raw } = await (admin as any)
     .from('sage_activity_log')
@@ -126,5 +142,6 @@ export default async function MyActivityPage({
     }
   })
 
-  return <MyActivityClient rows={rows} viewAsName={viewAsName} canExport={callerRank >= ROLE_RANK.manager} />
+  const viewAsUserId = targetUserId !== user.id ? targetUserId : null
+  return <MyActivityClient rows={rows} viewAsName={viewAsName} viewAsUserId={viewAsUserId} canExport={callerRank >= ROLE_RANK.manager} teamMembers={teamMembers} />
 }
