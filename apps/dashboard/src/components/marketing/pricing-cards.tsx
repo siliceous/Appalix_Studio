@@ -39,7 +39,7 @@ const PLANS = [
     name: 'Pro',
     annualPrice: 99,
     monthlyPrice: 149,
-    desc: 'More power, more bots, more collaboration.',
+    desc: 'More power, more bots, more success.',
     popular: true,
     seats: 3,
     bots: 3,
@@ -192,7 +192,7 @@ export function PricingCards() {
 
               {/* Price */}
               <div className="mb-5">
-                <div className="flex items-baseline gap-2 flex-wrap">
+                <div className="flex items-baseline gap-2 flex-wrap justify-between">
                   <span className="text-4xl font-black text-white">${price}</span>
                   <span className="text-gray-400 text-base">/mo</span>
                   {plan.annualPrice !== null && plan.monthlyPrice !== null && (
