@@ -1,6 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 export async function saveUserName(formData: FormData) {
@@ -50,12 +51,18 @@ export async function uploadUserAvatar(
     .getPublicUrl(path)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase as any).from('user_profiles').upsert(
+  const { error: dbError } = await (supabase as any).from('user_profiles').upsert(
     { user_id: user.id, avatar_url: publicUrl, updated_at: new Date().toISOString() },
     { onConflict: 'user_id' },
   )
 
-  return { ok: true, url: publicUrl }
+  if (dbError) return { ok: false, error: dbError.message }
+
+  revalidatePath('/settings/profile')
+  revalidatePath('/', 'layout')
+
+  // Append timestamp to bust browser cache when re-uploading to the same path
+  return { ok: true, url: `${publicUrl}?v=${Date.now()}` }
 }
 
 export async function removeUserAvatar(): Promise<{ ok: boolean; error?: string }> {
@@ -68,6 +75,9 @@ export async function removeUserAvatar(): Promise<{ ok: boolean; error?: string 
     { user_id: user.id, avatar_url: null, updated_at: new Date().toISOString() },
     { onConflict: 'user_id' },
   )
+
+  revalidatePath('/settings/profile')
+  revalidatePath('/', 'layout')
 
   return { ok: true }
 }

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Image from 'next/image'
-import { Sparkles, MessageSquare, Plus, Inbox, CheckCircle, X, Mail } from 'lucide-react'
+import { MessageSquare, Plus, Inbox, CheckCircle, X, Mail } from 'lucide-react'
 import { timeAgo, PLATFORM_META } from '@/lib/utils'
 import type { Bot as BotRow } from '@/lib/types'
 import { triageCreateLead, triageCreateTicket } from '@/app/actions/sage-triage'
@@ -204,15 +204,8 @@ export function BotsDashboard({
                 ].join(' ')}
               >
                 <div className="flex items-center gap-2.5">
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                    bot.bot_type === 'internal'
-                      ? 'bg-[#15A4AE]/10'
-                      : 'bg-purple-100 dark:bg-purple-500/10'
-                  }`}>
-                    {bot.bot_type === 'internal'
-                      ? <Sparkles className="w-3.5 h-3.5 text-[#15A4AE]" />
-                      : <Image src="/favicon.png" alt="Bot" width={14} height={14} className="w-3.5 h-3.5 object-contain" />
-                    }
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-white dark:bg-white/5">
+                    <Image src="/favicon.png" alt="Bot" width={14} height={14} className="w-3.5 h-3.5 object-contain" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate leading-5">
@@ -253,15 +246,8 @@ export function BotsDashboard({
             {/* Header */}
             <div className="px-5 py-3 border-b border-gray-100 dark:border-white/8 shrink-0 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className={`w-6 h-6 rounded-md flex items-center justify-center ${
-                  selectedBot.bot_type === 'internal'
-                    ? 'bg-[#15A4AE]/10'
-                    : 'bg-purple-100 dark:bg-purple-500/10'
-                }`}>
-                  {selectedBot.bot_type === 'internal'
-                    ? <Sparkles className="w-3 h-3 text-[#15A4AE]" />
-                    : <Image src="/favicon.png" alt="Bot" width={12} height={12} className="w-3 h-3 object-contain" />
-                  }
+                <div className="w-6 h-6 rounded-md flex items-center justify-center bg-white dark:bg-white/5">
+                  <Image src="/favicon.png" alt="Bot" width={12} height={12} className="w-3 h-3 object-contain" />
                 </div>
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   {selectedBot.name}
