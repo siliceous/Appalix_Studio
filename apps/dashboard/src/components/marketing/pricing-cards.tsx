@@ -210,7 +210,7 @@ export function PricingCards() {
                   )}
                 </div>
                 {plan.annualPrice !== null && plan.monthlyPrice !== null && (
-                  <p className="text-sm text-gray-400 mt-1 flex items-center gap-2">
+                  <p className="text-sm text-gray-400 mt-3 flex items-center gap-2">
                     {isAnnual ? (
                       <>
                         <span>Billed ${plan.annualPrice * 12}/year</span>
