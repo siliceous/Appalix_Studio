@@ -30,7 +30,6 @@ interface PipelineBoardProps {
 }
 
 type SortKey = 'none' | 'value_desc' | 'close_date' | 'created_desc' | 'priority'
-type FilterStatus = 'open' | 'won' | 'lost'
 type FilterPriority = 'low' | 'medium' | 'high'
 
 const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 }
@@ -74,7 +73,6 @@ export function PipelineBoard({
   const [sortKey,          setSortKey]          = useState<SortKey>('none')
   const [showSortMenu,     setShowSortMenu]     = useState(false)
   const [showFilterMenu,   setShowFilterMenu]   = useState(false)
-  const [filterStatuses,   setFilterStatuses]   = useState<FilterStatus[]>(['open'])
   const [filterPriorities, setFilterPriorities] = useState<FilterPriority[]>([])
   const [viewMode,         setViewMode]         = useState<'kanban' | 'list'>('kanban')
 
@@ -96,9 +94,8 @@ export function PipelineBoard({
       )
     }
 
-    if (filterStatuses.length > 0) {
-      d = d.filter(deal => filterStatuses.includes(deal.status as FilterStatus))
-    }
+    // Pipeline only shows open deals — won/lost go to /sage/projects
+    d = d.filter(deal => deal.status === 'open')
 
     if (filterPriorities.length > 0) {
       d = d.filter(deal => deal.priority && filterPriorities.includes(deal.priority as FilterPriority))
@@ -120,7 +117,7 @@ export function PipelineBoard({
     }
 
     return d
-  }, [deals, searchQuery, sortKey, filterStatuses, filterPriorities])
+  }, [deals, searchQuery, sortKey, filterPriorities])
 
   function stageTotal(stageId: string) {
     return visibleDeals
@@ -155,15 +152,11 @@ export function PipelineBoard({
     moveDeal(dealId, stageId).catch(() => setDeals(initialDeals))
   }
 
-  function toggleFilterStatus(s: FilterStatus) {
-    setFilterStatuses(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])
-  }
-
   function toggleFilterPriority(p: FilterPriority) {
     setFilterPriorities(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])
   }
 
-  const activeFilters = filterStatuses.length + filterPriorities.length
+  const activeFilters = filterPriorities.length
 
   const statusColors: Record<string, string> = {
     open: 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
@@ -249,15 +242,6 @@ export function PipelineBoard({
           {showFilterMenu && (
             <div className="absolute top-full left-0 mt-1.5 w-48 bg-white dark:bg-[#2a2a2a] border dark:border-white/10 rounded-xl shadow-lg z-20 p-3 space-y-3">
               <div>
-                <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1.5">Status</p>
-                {(['open', 'won', 'lost'] as FilterStatus[]).map(s => (
-                  <label key={s} className="flex items-center gap-2 py-0.5 cursor-pointer">
-                    <input type="checkbox" checked={filterStatuses.includes(s)} onChange={() => toggleFilterStatus(s)} className="accent-brand-600" />
-                    <span className="text-xs capitalize text-gray-700 dark:text-gray-300">{s}</span>
-                  </label>
-                ))}
-              </div>
-              <div>
                 <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1.5">Priority</p>
                 {(['high', 'medium', 'low'] as FilterPriority[]).map(p => (
                   <label key={p} className="flex items-center gap-2 py-0.5 cursor-pointer">
@@ -267,7 +251,7 @@ export function PipelineBoard({
                 ))}
               </div>
               {activeFilters > 0 && (
-                <button onClick={() => { setFilterStatuses([]); setFilterPriorities([]) }} className="text-xs text-red-500 hover:text-red-600 font-medium">
+                <button onClick={() => setFilterPriorities([])} className="text-xs text-red-500 hover:text-red-600 font-medium">
                   Clear filters
                 </button>
               )}
@@ -442,23 +426,23 @@ export function PipelineBoard({
               onDrop={e => handleDrop(e, stage.id)}
             >
               {/* Stage header */}
-              <div className="flex items-center gap-2 mb-3">
-                <span className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#15A4AE]/15 dark:bg-[#15A4AE]/20 text-[#3d9585] dark:text-[#15A4AE] truncate">
-                  {stage.name}
-                </span>
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 shrink-0 tabular-nums">{stageDeals.length}</span>
-                {total > 0 && (
-                  <span className="text-xs font-semibold text-[#3d9585] dark:text-[#15A4AE] shrink-0">
-                    {new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(total)}
-                  </span>
-                )}
+              <div className="flex items-center justify-between px-3 py-2 rounded-lg mb-3 bg-[#15A4AE] dark:bg-[#0d8e9a]">
+                <span className="text-xs font-semibold text-white truncate">{stage.name}</span>
+                <div className="flex items-center gap-2 shrink-0 ml-2">
+                  <span className="text-xs font-bold text-white tabular-nums">{stageDeals.length}</span>
+                  {total > 0 && (
+                    <span className="text-[11px] text-white/70 font-medium">
+                      {new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(total)}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Deal cards */}
-              <div className={`flex-1 min-h-0 space-y-2 overflow-y-auto rounded-xl p-2 border-2 transition-colors ${
+              <div className={`flex-1 min-h-0 space-y-2 overflow-y-auto rounded-xl p-2 border transition-colors ${
                 isDragOver
-                  ? 'border-brand-300 dark:border-[#15A4AE]/40 bg-brand-50/50 dark:bg-[#15A4AE]/5'
-                  : 'border-transparent'
+                  ? 'border-[#15A4AE]/40 bg-[#15A4AE]/5'
+                  : 'border-[#15A4AE]/12 dark:border-white/5 bg-gray-50/60 dark:bg-white/[0.02]'
               }`}>
                 {stageDeals.map(deal => (
                   <div

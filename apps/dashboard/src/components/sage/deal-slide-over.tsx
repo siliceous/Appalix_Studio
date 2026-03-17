@@ -206,13 +206,8 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
         status:     newStatus,
       })
     }
-    // Reload deal detail in background to update banners/activity
-    if (dealId) {
-      getDealDetail(dealId).then(res => {
-        setDeal(res.deal)
-        setActivities(res.activities)
-      })
-    }
+    // Navigate to projects — won/lost deals live there
+    router.push('/sage/projects')
   }
 
   async function handleSubmitReminder() {
