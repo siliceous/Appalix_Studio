@@ -252,7 +252,7 @@ export function PricingCards() {
                 <p className="text-sm text-[#15A4AE]">
                   + Extra storage at ${isAnnual ? EXTRA_STORAGE.annual : EXTRA_STORAGE.monthly}/10 GB/mo
                 </p>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-[#15A4AE]">
                   $10 per 1,000 extra conversations
                 </p>
               </div>
