@@ -35,7 +35,7 @@ export function MarketingFooter() {
               alt="Appalix"
               width={110}
               height={32}
-              className="object-contain invert mb-4"
+              className="object-contain mb-4"
             />
             <p className="text-sm text-gray-500 leading-relaxed">
               Turn visitors into loyal, long term paying clients 24X7 while you focus on your core competencies.
