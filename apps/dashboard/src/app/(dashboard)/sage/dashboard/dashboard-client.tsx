@@ -469,7 +469,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
             <Sparkles className="w-3.5 h-3.5 text-[#15A4AE]" />
             {!postAction && contactMatch !== null && contactMatch !== undefined && (
               <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200/70 dark:border-blue-500/20 text-[10px] font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                Existing contact{contactMatch.dealId ? ' · has open deal' : ''}
+                Existing contact{contactMatch.dealId ? ' · has deal' : ''}
               </span>
             )}
           </div>
@@ -1530,7 +1530,12 @@ export function SageDashboardClient({
         ...newTickets.map(t => ({ id: t.id, email: t.contact?.email ?? undefined, name: t.contact?.name ?? undefined, phone: t.contact?.phone ?? undefined })),
       ]
       setContactMatches(Object.fromEntries(matchItems.map(i => [i.id, undefined])))
-      batchMatchContacts(matchItems).then(results => { if (!cancelled) setContactMatches(results) })
+      batchMatchContacts(matchItems)
+        .then(results => { if (!cancelled) setContactMatches(results) })
+        .catch(() => {
+          // On error fall back to null (no match) so the UI doesn't stay stuck on "Checking…"
+          if (!cancelled) setContactMatches(Object.fromEntries(matchItems.map(i => [i.id, null])))
+        })
     }).catch((err: unknown) => {
       console.error('[dash:promise-all-threw]', err)
     })

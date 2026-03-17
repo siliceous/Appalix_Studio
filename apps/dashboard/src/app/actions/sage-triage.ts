@@ -603,13 +603,17 @@ export type ContactMatch = {
 export async function batchMatchContacts(
   items: Array<{ id: string; email?: string | null; name?: string | null; phone?: string | null }>
 ): Promise<Record<string, ContactMatch | null>> {
+  // Always return null (no match) for every item — never leave items as undefined
+  const nullResult: Record<string, ContactMatch | null> = {}
+  for (const item of items) nullResult[item.id] = null
+
+  try {
   const workspaceId = await getWorkspaceId()
-  if (!workspaceId) return {}
+  if (!workspaceId) return nullResult
 
   const admin = createAdminClient()
   type CR = { id: string; name: string; email?: string | null; phone?: string | null }
-  const result: Record<string, ContactMatch | null> = {}
-  for (const item of items) result[item.id] = null
+  const result: Record<string, ContactMatch | null> = { ...nullResult }
 
   // 1. Batch email match
   const emailItems = items.filter(i => i.email)
@@ -666,4 +670,7 @@ export async function batchMatchContacts(
   }
 
   return result
+  } catch {
+    return nullResult
+  }
 }
