@@ -171,7 +171,7 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
                       alt="Appalix"
                       width={88}
                       height={26}
-                      className="object-contain mix-blend-multiply dark:mix-blend-normal dark:invert"
+                      className="object-contain"
                       priority
                     />
                   )}
