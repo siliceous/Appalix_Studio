@@ -341,14 +341,18 @@ function ItemPopup({
     if (popup.kind === 'email') {
       const e = data as SageEmail
       const aiName = e.ai_entities?.name
-      name  = (aiName && aiName.length < 80) ? aiName : (e.from_name ?? e.from_address)
+      // Only use AI-extracted name if it looks like an actual name (≤4 words, no digits, no sentence punctuation)
+      const looksLikeName = aiName && aiName.trim().split(/\s+/).length <= 4 && !/[\d,;!?]/.test(aiName)
+      name  = looksLikeName ? aiName! : (e.from_name ?? e.from_address)
       email = e.from_address   // always use the actual sender address — ai_entities.email can differ
       phone = e.ai_entities?.phone ?? null
       company  = e.ai_entities?.company ?? null
       interest = e.ai_entities?.product_interest ?? null
     } else if (popup.kind === 'bot') {
       const c = data as Conversation
-      name  = (c as any).ai_entities?.name ?? c.title ?? 'Contact'
+      const botAiName = (c as any).ai_entities?.name as string | undefined
+      const botNameOk = botAiName && botAiName.trim().split(/\s+/).length <= 4 && !/[\d,;!?]/.test(botAiName)
+      name  = botNameOk ? botAiName! : (c.title ?? 'Contact')
       email = (c as any).ai_entities?.email ?? null
       phone = (c as any).ai_entities?.phone ?? null
       company  = (c as any).ai_entities?.company ?? null
@@ -392,13 +396,16 @@ function ItemPopup({
     if (popup.kind === 'email') {
       const e = data as SageEmail
       const aiNameT = e.ai_entities?.name
-      name  = (aiNameT && aiNameT.length < 80) ? aiNameT : (e.from_name ?? e.from_address)
+      const aiNameTOk = aiNameT && aiNameT.trim().split(/\s+/).length <= 4 && !/[\d,;!?]/.test(aiNameT)
+      name  = aiNameTOk ? aiNameT! : (e.from_name ?? e.from_address)
       email = e.from_address   // always use actual sender address
       phone = e.ai_entities?.phone ?? null
       title = e.subject; desc = e.ai_summary ?? null; priority = e.ai_priority ?? 'medium'
     } else if (popup.kind === 'bot') {
       const c = data as Conversation
-      name  = (c as any).ai_entities?.name ?? c.title ?? 'Contact'
+      const botAiNameT = (c as any).ai_entities?.name as string | undefined
+      const botNameTOk = botAiNameT && botAiNameT.trim().split(/\s+/).length <= 4 && !/[\d,;!?]/.test(botAiNameT)
+      name  = botNameTOk ? botAiNameT! : (c.title ?? 'Contact')
       email = (c as any).ai_entities?.email ?? null
       phone = (c as any).ai_entities?.phone ?? null
       title = c.title ?? 'Support ticket'; desc = (c as any).ai_summary ?? null; priority = (c as any).ai_priority ?? 'medium'
