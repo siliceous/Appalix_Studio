@@ -148,32 +148,35 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
 
           {/* Logo row */}
           <div className="flex items-center gap-2.5 mb-3 min-w-0">
-            {branding?.favicon_url ? (
-              <Image
-                src={branding.favicon_url}
-                alt={branding.brand_name ?? 'Icon'}
-                width={32}
-                height={32}
-                className="w-8 h-8 shrink-0 rounded-xl object-cover select-none"
-                priority
-              />
-            ) : branding?.brand_name ? (
-              <div
-                className="w-8 h-8 shrink-0 rounded-xl flex items-center justify-center text-white font-black text-sm select-none"
-                style={{ backgroundColor: branding.primary_color ?? '#15A4AE' }}
-              >
-                {branding.brand_name.charAt(0).toUpperCase()}
-              </div>
-            ) : (
-              <Image
-                src="/favicon.png"
-                alt="Appalix"
-                width={32}
-                height={32}
-                className="w-8 h-8 shrink-0 rounded-xl object-contain select-none"
-                priority
-              />
-            )}
+            {/* Icon — visible when collapsed, hidden when expanded */}
+            <div className="shrink-0 group-hover:hidden">
+              {branding?.favicon_url ? (
+                <Image
+                  src={branding.favicon_url}
+                  alt={branding.brand_name ?? 'Icon'}
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 rounded-xl object-cover select-none"
+                  priority
+                />
+              ) : branding?.brand_name ? (
+                <div
+                  className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-black text-sm select-none"
+                  style={{ backgroundColor: branding.primary_color ?? '#15A4AE' }}
+                >
+                  {branding.brand_name.charAt(0).toUpperCase()}
+                </div>
+              ) : (
+                <Image
+                  src="/favicon.png"
+                  alt="Appalix"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 rounded-xl object-contain select-none"
+                  priority
+                />
+              )}
+            </div>
             <div className="overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-75 whitespace-nowrap">
               {branding?.logo_url ? (
                 <Image
@@ -206,10 +209,10 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
             </div>
           </div>
 
-          {/* Account identity — clicking goes to Settings */}
+          {/* Account identity — clicking goes to Profile */}
           <Link
-            href="/settings"
-            title="Settings"
+            href="/settings/profile"
+            title="Edit profile"
             className={cn(
               'flex items-center gap-2.5 rounded-lg py-1.5 min-w-0 transition-colors',
               settingsActive
@@ -238,10 +241,10 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
             )}
             {/* Name + email + plan — fades in on hover */}
             <div className="overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-75 min-w-0 flex-1">
-              <p className="text-xs font-medium text-gray-900 dark:text-white truncate leading-tight">
-                {userName ?? userEmail ?? 'My Account'}
+              <p className="text-xs font-bold text-gray-900 dark:text-white truncate leading-tight">
+                {userName ?? 'My Account'}
               </p>
-              {userName && userEmail && (
+              {userEmail && (
                 <p className="text-[10px] text-gray-400 truncate leading-tight mt-0.5">{userEmail}</p>
               )}
               <span className={cn('inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none', planBadgeCls)}>
