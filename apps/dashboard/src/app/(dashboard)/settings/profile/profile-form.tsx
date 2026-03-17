@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useRef, useTransition } from 'react'
-import Image from 'next/image'
 import { Upload, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { saveUserName, uploadUserAvatar, removeUserAvatar } from '@/app/actions/user-profile'
 import { AvatarCropModal } from '@/components/settings/avatar-crop-modal'
@@ -46,20 +45,27 @@ export function ProfileForm({ firstName, lastName, email, avatarUrl: initialAvat
     reader.readAsDataURL(file)
   }
 
-  // Step 2: crop confirmed → upload blob
+  // Step 2: crop confirmed → show preview instantly, upload in background
   async function handleCropConfirm(blob: Blob) {
     setCropSrc(null)
     setError(null)
     setUploading(true)
 
+    // Show cropped image immediately via object URL while uploading
+    const previewUrl = URL.createObjectURL(blob)
+    setAvatarUrl(previewUrl)
+
     const fd = new FormData()
     fd.append('file', blob, 'avatar.jpg')
     const result = await uploadUserAvatar(fd)
 
+    URL.revokeObjectURL(previewUrl)
     setUploading(false)
+
     if (result.ok && result.url) {
       setAvatarUrl(result.url)
     } else {
+      setAvatarUrl(initialAvatarUrl) // revert on error
       setError(result.error ?? 'Upload failed')
     }
   }
@@ -101,14 +107,8 @@ export function ProfileForm({ firstName, lastName, email, avatarUrl: initialAvat
           <div className="relative shrink-0">
             <div className="w-16 h-16 rounded-full overflow-hidden bg-[#15A4AE] flex items-center justify-center">
               {avatarUrl ? (
-                <Image
-                  src={avatarUrl}
-                  alt="Profile picture"
-                  width={64}
-                  height={64}
-                  className="w-full h-full object-cover"
-                  unoptimized
-                />
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
               ) : (
                 <span className="text-white text-lg font-bold uppercase select-none">{initials}</span>
               )}
