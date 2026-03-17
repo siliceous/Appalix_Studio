@@ -192,15 +192,20 @@ export function PricingCards() {
 
               {/* Price */}
               <div className="mb-5">
-                <div className="flex items-baseline gap-2 flex-wrap justify-between">
-                  <span className="text-4xl font-black text-white">${price}</span>
-                  <span className="text-gray-400 text-base">/mo</span>
+                <div className="flex items-baseline justify-between">
+                  <span className="flex items-baseline gap-1">
+                    <span className="text-4xl font-black text-white">${price}</span>
+                    <span className="text-gray-400 text-base">/mo</span>
+                  </span>
                   {plan.annualPrice !== null && plan.monthlyPrice !== null && (
-                    <span className="relative inline-block text-4xl font-black text-gray-500">
-                      ${isAnnual ? plan.monthlyPrice : plan.annualPrice}
-                      <span className="absolute inset-0 flex items-center pointer-events-none">
-                        <span className="w-full h-0.5 bg-[#15A4AE] block" style={{ transform: 'rotate(-12deg)' }} />
+                    <span className="relative inline-flex items-baseline gap-0.5 text-4xl font-black text-gray-500">
+                      <span className="relative">
+                        ${isAnnual ? plan.monthlyPrice : plan.annualPrice}
+                        <span className="absolute inset-0 flex items-center pointer-events-none">
+                          <span className="w-full h-0.5 bg-[#15A4AE] block" style={{ transform: 'rotate(-12deg)' }} />
+                        </span>
                       </span>
+                      <span className="text-gray-500 text-base font-normal">/mo</span>
                     </span>
                   )}
                 </div>
