@@ -23,47 +23,30 @@ export async function saveUserName(formData: FormData) {
   redirect('/settings')
 }
 
-/**
- * Step 1 of client-side upload: get a signed upload URL so the browser can
- * PUT the blob directly to Supabase Storage (avoids server-side binary handling).
- */
-export async function getAvatarUploadUrl(): Promise<{
-  ok: boolean
-  signedUrl?: string
-  token?: string
-  path?: string
-  publicUrl?: string
-  error?: string
-}> {
+export async function uploadUserAvatar(
+  formData: FormData,
+): Promise<{ ok: boolean; url?: string; error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { ok: false, error: 'Not authenticated' }
+
+  const file = formData.get('file') as File | null
+  if (!file || file.size === 0) return { ok: false, error: 'No file provided' }
+  if (file.size > 500 * 1024) return { ok: false, error: 'Avatar must be under 500 KB' }
 
   const admin = createAdminClient()
   const path  = `${user.id}/avatar.jpg`
 
-  const { data, error } = await admin.storage
+  // Upload File directly — no Buffer/ArrayBuffer conversion that can corrupt binary data
+  const { error: uploadError } = await admin.storage
     .from('user-avatars')
-    .createSignedUploadUrl(path)
+    .upload(path, file, { contentType: 'image/jpeg', upsert: true })
 
-  if (error || !data) return { ok: false, error: error?.message ?? 'Could not create upload URL' }
+  if (uploadError) return { ok: false, error: uploadError.message }
 
   const { data: { publicUrl } } = admin.storage
     .from('user-avatars')
     .getPublicUrl(path)
-
-  return { ok: true, signedUrl: data.signedUrl, token: data.token, path, publicUrl }
-}
-
-/**
- * Step 2: after the browser has uploaded the file, save the public URL to the DB.
- */
-export async function saveAvatarUrl(
-  publicUrl: string,
-): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { ok: false, error: 'Not authenticated' }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: dbError } = await (supabase as any).from('user_profiles')
@@ -75,7 +58,7 @@ export async function saveAvatarUrl(
   revalidatePath('/settings/profile')
   revalidatePath('/', 'layout')
 
-  return { ok: true }
+  return { ok: true, url: publicUrl }
 }
 
 export async function removeUserAvatar(): Promise<{ ok: boolean; error?: string }> {

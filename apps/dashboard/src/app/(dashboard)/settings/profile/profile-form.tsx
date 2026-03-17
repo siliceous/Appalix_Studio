@@ -3,7 +3,7 @@
 import React, { useState, useRef, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Upload, AlertCircle, CheckCircle2 } from 'lucide-react'
-import { saveUserName, getAvatarUploadUrl, saveAvatarUrl, removeUserAvatar } from '@/app/actions/user-profile'
+import { saveUserName, uploadUserAvatar, removeUserAvatar } from '@/app/actions/user-profile'
 import { AvatarCropModal } from '@/components/settings/avatar-crop-modal'
 
 interface Props {
@@ -57,35 +57,18 @@ export function ProfileForm({ firstName, lastName, email, avatarUrl: initialAvat
     const previewUrl = URL.createObjectURL(blob)
     setAvatarUrl(previewUrl)
 
-    try {
-      // Get a signed upload URL — no binary data goes through the server action
-      const urlResult = await getAvatarUploadUrl()
-      if (!urlResult.ok || !urlResult.signedUrl || !urlResult.publicUrl) {
-        throw new Error(urlResult.error ?? 'Could not get upload URL')
-      }
+    const fd = new FormData()
+    fd.append('file', blob, 'avatar.jpg')
+    const result = await uploadUserAvatar(fd)
+    setUploading(false)
 
-      // PUT blob directly to Supabase Storage — bypasses server-side Buffer conversion
-      const uploadRes = await fetch(urlResult.signedUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'image/jpeg' },
-        body: blob,
-      })
-      if (!uploadRes.ok) throw new Error(`Upload failed: ${uploadRes.status}`)
-
-      // Save the public URL to the database
-      const saveResult = await saveAvatarUrl(urlResult.publicUrl)
-      if (!saveResult.ok) throw new Error(saveResult.error ?? 'Failed to save')
-
-      // Keep showing previewUrl — Supabase CDN may not serve publicUrl instantly.
-      // publicUrl is saved in DB; it will be loaded on next page visit.
-      router.refresh() // update sidebar immediately
-    } catch (err) {
+    if (result.ok) {
+      // Keep showing previewUrl — public URL may need a moment to propagate on CDN
+      router.refresh() // update sidebar
+    } else {
       setAvatarUrl(initialAvatarUrl)
       URL.revokeObjectURL(previewUrl)
-      setError(err instanceof Error ? err.message : 'Upload failed')
-    } finally {
-      setUploading(false)
-      // Don't revoke previewUrl on success — it's still being displayed
+      setError(result.error ?? 'Upload failed')
     }
   }
 
