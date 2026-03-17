@@ -1,8 +1,51 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, createContext, useContext } from 'react'
 import Link from 'next/link'
 import { ContactSalesButton } from '@/components/marketing/contact-sales-button'
+
+// Shared billing context so toggle and cards can be split across the page
+export const BillingContext = createContext<{ isAnnual: boolean; setIsAnnual: (v: boolean) => void }>({
+  isAnnual: true,
+  setIsAnnual: () => {},
+})
+
+export function BillingToggle() {
+  const { isAnnual, setIsAnnual } = useContext(BillingContext)
+  return (
+    <div className="flex items-center justify-center gap-3">
+      <span className={`text-sm font-medium transition-colors ${!isAnnual ? 'text-white' : 'text-gray-500'}`}>
+        Monthly
+      </span>
+      <button
+        onClick={() => setIsAnnual(!isAnnual)}
+        aria-label="Toggle billing period"
+        className={`relative w-12 h-6 rounded-full transition-colors ${isAnnual ? 'bg-brand-600' : 'bg-gray-600'}`}
+      >
+        <span
+          className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+            isAnnual ? 'translate-x-6' : 'translate-x-0'
+          }`}
+        />
+      </button>
+      <span className={`text-sm font-medium transition-colors ${isAnnual ? 'text-white' : 'text-gray-500'}`}>
+        Annual
+      </span>
+      <span className="text-xs bg-green-500/20 text-green-400 px-2.5 py-1 rounded-full font-semibold">
+        Save up to 35%
+      </span>
+    </div>
+  )
+}
+
+export function BillingProvider({ children }: { children: React.ReactNode }) {
+  const [isAnnual, setIsAnnual] = useState(true)
+  return (
+    <BillingContext.Provider value={{ isAnnual, setIsAnnual }}>
+      {children}
+    </BillingContext.Provider>
+  )
+}
 
 const EXTRA_SEAT    = { annual: 29, monthly: 45 }
 const EXTRA_BOT     = { annual: 19, monthly: 29 }
@@ -126,33 +169,10 @@ const TIERED_PLANS = PLANS.filter(p => p.key !== 'enterprise')
 const ENTERPRISE   = PLANS.find(p => p.key === 'enterprise')!
 
 export function PricingCards() {
-  const [isAnnual, setIsAnnual] = useState(true)
+  const { isAnnual } = useContext(BillingContext)
 
   return (
     <section className="py-12 px-6">
-      {/* Billing toggle */}
-      <div className="flex items-center justify-center gap-3 mb-10 mt-6">
-        <span className={`text-sm font-medium transition-colors ${!isAnnual ? 'text-white' : 'text-gray-500'}`}>
-          Monthly
-        </span>
-        <button
-          onClick={() => setIsAnnual(!isAnnual)}
-          aria-label="Toggle billing period"
-          className={`relative w-12 h-6 rounded-full transition-colors ${isAnnual ? 'bg-brand-600' : 'bg-gray-600'}`}
-        >
-          <span
-            className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-              isAnnual ? 'translate-x-6' : 'translate-x-0'
-            }`}
-          />
-        </button>
-        <span className={`text-sm font-medium transition-colors ${isAnnual ? 'text-white' : 'text-gray-500'}`}>
-          Annual
-        </span>
-        <span className="text-xs bg-green-500/20 text-green-400 px-2.5 py-1 rounded-full font-semibold">
-          Save up to 35%
-        </span>
-      </div>
 
       {/* ── 3 plan cards ── */}
       <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">

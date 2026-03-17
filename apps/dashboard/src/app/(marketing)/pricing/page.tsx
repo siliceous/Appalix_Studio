@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ScrollReveal } from '@/components/marketing/animate'
-import { PricingCards } from '@/components/marketing/pricing-cards'
+import { PricingCards, BillingProvider, BillingToggle } from '@/components/marketing/pricing-cards'
 import { TopupCards } from '@/components/marketing/topup-cards'
 import { ContactSalesButton } from '@/components/marketing/contact-sales-button'
 
@@ -40,6 +40,7 @@ const FAQS = [
 
 export default function PricingPage() {
   return (
+    <BillingProvider>
     <div className="pt-24">
       {/* Hero */}
       <section className="relative py-20 px-6 text-center overflow-hidden">
@@ -64,6 +65,9 @@ export default function PricingPage() {
               <Link href="/platforms" className="text-sm text-brand-400 hover:text-brand-300 transition-colors">
                 View integrations →
               </Link>
+            </div>
+            <div className="mt-8">
+              <BillingToggle />
             </div>
           </ScrollReveal>
         </div>
@@ -116,5 +120,6 @@ export default function PricingPage() {
         </ScrollReveal>
       </section>
     </div>
+    </BillingProvider>
   )
 }
