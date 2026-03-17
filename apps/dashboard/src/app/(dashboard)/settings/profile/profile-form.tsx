@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { Upload, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { saveUserName, getAvatarUploadUrl, saveAvatarUrl, removeUserAvatar } from '@/app/actions/user-profile'
 import { AvatarCropModal } from '@/components/settings/avatar-crop-modal'
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function ProfileForm({ firstName, lastName, email, avatarUrl: initialAvatarUrl }: Props) {
+  const router                          = useRouter()
   const [avatarUrl,    setAvatarUrl]    = useState(initialAvatarUrl)
   const [cropSrc,      setCropSrc]      = useState<string | null>(null)
   const [uploading,    setUploading]    = useState(false)
@@ -75,6 +77,7 @@ export function ProfileForm({ firstName, lastName, email, avatarUrl: initialAvat
       if (!saveResult.ok) throw new Error(saveResult.error ?? 'Failed to save')
 
       setAvatarUrl(urlResult.publicUrl)
+      router.refresh() // refresh sidebar so it picks up the new avatar
     } catch (err) {
       setAvatarUrl(initialAvatarUrl)
       setError(err instanceof Error ? err.message : 'Upload failed')
@@ -89,7 +92,7 @@ export function ProfileForm({ firstName, lastName, email, avatarUrl: initialAvat
     setRemoving(true)
     const result = await removeUserAvatar()
     setRemoving(false)
-    if (result.ok) setAvatarUrl(null)
+    if (result.ok) { setAvatarUrl(null); router.refresh() }
     else setError(result.error ?? 'Failed to remove')
   }
 
@@ -122,7 +125,12 @@ export function ProfileForm({ firstName, lastName, email, avatarUrl: initialAvat
             <div className="w-16 h-16 rounded-full overflow-hidden bg-[#15A4AE] flex items-center justify-center">
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  className="block w-full h-full object-cover"
+                  onError={() => setAvatarUrl(null)}
+                />
               ) : (
                 <span className="text-white text-lg font-bold uppercase select-none">{initials}</span>
               )}
