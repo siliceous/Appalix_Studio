@@ -50,11 +50,11 @@ export async function uploadUserAvatar(
     .from('user-avatars')
     .getPublicUrl(path)
 
+  // Use update (not upsert) — avoids NOT NULL violation on first_name when no row exists yet
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: dbError } = await (supabase as any).from('user_profiles').upsert(
-    { user_id: user.id, avatar_url: publicUrl, updated_at: new Date().toISOString() },
-    { onConflict: 'user_id' },
-  )
+  const { error: dbError } = await (supabase as any).from('user_profiles')
+    .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
+    .eq('user_id', user.id)
 
   if (dbError) return { ok: false, error: dbError.message }
 
@@ -71,10 +71,9 @@ export async function removeUserAvatar(): Promise<{ ok: boolean; error?: string 
   if (!user) return { ok: false, error: 'Not authenticated' }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase as any).from('user_profiles').upsert(
-    { user_id: user.id, avatar_url: null, updated_at: new Date().toISOString() },
-    { onConflict: 'user_id' },
-  )
+  await (supabase as any).from('user_profiles')
+    .update({ avatar_url: null, updated_at: new Date().toISOString() })
+    .eq('user_id', user.id)
 
   revalidatePath('/settings/profile')
   revalidatePath('/', 'layout')
