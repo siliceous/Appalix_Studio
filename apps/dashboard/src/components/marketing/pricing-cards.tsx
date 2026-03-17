@@ -192,8 +192,11 @@ export function PricingCards() {
                   </div>
                   {plan.annualPrice !== null && plan.monthlyPrice !== null && (
                     <div className="flex items-baseline gap-0.5">
-                      <span className="text-[30px] font-black text-gray-500 line-through decoration-[#15A4AE]">
+                      <span className="relative text-[30px] font-black text-gray-500">
                         ${isAnnual ? plan.monthlyPrice : plan.annualPrice}
+                        <span className="absolute inset-0 flex items-center pointer-events-none">
+                          <span className="w-full h-[2px] bg-[#15A4AE] block" style={{ transform: 'rotate(-18deg)' }} />
+                        </span>
                       </span>
                       <span className="text-gray-600 text-sm">/mo</span>
                     </div>
