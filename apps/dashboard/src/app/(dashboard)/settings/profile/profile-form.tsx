@@ -59,7 +59,6 @@ export function ProfileForm({ firstName, lastName, email, avatarUrl: initialAvat
     fd.append('file', blob, 'avatar.jpg')
     const result = await uploadUserAvatar(fd)
 
-    URL.revokeObjectURL(previewUrl)
     setUploading(false)
 
     if (result.ok && result.url) {
@@ -68,6 +67,8 @@ export function ProfileForm({ firstName, lastName, email, avatarUrl: initialAvat
       setAvatarUrl(initialAvatarUrl) // revert on error
       setError(result.error ?? 'Upload failed')
     }
+    // Revoke after state update so there's no flash of teal background
+    setTimeout(() => URL.revokeObjectURL(previewUrl), 2000)
   }
 
   async function handleRemove() {
