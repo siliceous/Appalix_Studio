@@ -131,18 +131,29 @@ export default function TestLandingPage() {
       <section className="relative py-6 lg:py-10 px-8 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-[#15A4AE]/15 rounded-full blur-[140px] pointer-events-none" />
 
-        <div className="relative max-w-6xl mx-auto text-center">
+
+<div className="relative max-w-6xl mx-auto text-center">
           <FadeUp delay={0}>
             <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-[#15A4AE]/40 bg-[#15A4AE]/10 text-white font-medium mb-10" style={{ fontSize: '14px' }}>
               <span className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] animate-pulse" />
-              STOP STITCHING TOOLS AND PAYING MORE INDIVIDUALLY FOR EACH APP
+              STOP STITCHING TOOLS . ONE APP DOES ALL
+              <span className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] animate-pulse" />
             </div>
           </FadeUp>
 
           <FadeUp delay={0.1}>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.25] mb-8 text-white max-w-4xl mx-auto">
-              Imagine a single AI platform having chatbots, email AI tools, lead forms, CRM, and ticketing system — all built in.
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.25] mb-4 text-white max-w-4xl mx-auto">
+              Chatbots, AI email analyzer, lead forms, support tickets &amp; CRM.<br className="hidden sm:block" /> One platform. All built in.
             </h1>
+            <h2
+              className="text-2xl sm:text-3xl font-semibold text-white mb-8"
+              style={{
+                textShadow: '0 0 20px #15A4AE, 0 0 50px #15A4AE80',
+                WebkitTextStroke: '0.5px #15A4AE',
+              }}
+            >
+              Introducing Appalix Sage.
+            </h2>
           </FadeUp>
 
           <FadeUp delay={0.2}>
@@ -151,7 +162,7 @@ export default function TestLandingPage() {
                 'powers multiple intelligent bots',
                 'analyses emails with AI',
                 'extracts key data from every form submission',
-                'integrates with marketing tools like Mailchimp',
+                'integrates with marketing tools like Mailchimp and more',
                 'integrates with Google Ads & Facebook',
                 'creates tickets automatically when needed',
               ].map(point => (
@@ -162,10 +173,10 @@ export default function TestLandingPage() {
               ))}
             </div>
             <h2 className="text-xl sm:text-2xl text-gray-300 leading-relaxed max-w-3xl mx-auto mb-4">
-              Each enquiry is instantly transformed into an opportunity and prioritised as{' '}
+              Each enquiry is instantly transformed into an opportunity. Prioritised as{' '}
               <span className="text-[#15A4AE] font-semibold">High</span>,{' '}
               <span className="text-yellow-400 font-semibold">Medium</span>, &amp;{' '}
-              <span className="text-blue-300 font-semibold">Low</span>, organised directly within a built-in CRM suite, all within seconds, 24/7.
+              <span className="text-blue-300 font-semibold">Low</span>. Organised seamlessly in a built-in CRM suite. <span className="whitespace-nowrap">All within seconds — 24/7.</span>
             </h2>
           </FadeUp>
 
