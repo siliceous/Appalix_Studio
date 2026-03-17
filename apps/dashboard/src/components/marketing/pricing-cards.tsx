@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { ContactSalesButton } from '@/components/marketing/contact-sales-button'
 
+const EXTRA_SEAT    = { annual: 29, monthly: 45 }
 const EXTRA_BOT     = { annual: 19, monthly: 29 }
 const EXTRA_STORAGE = { annual: 5,  monthly: 7  }   // per 10 GB block
 
@@ -39,7 +40,7 @@ const PLANS = [
     name: 'Pro',
     annualPrice: 99,
     monthlyPrice: 149,
-    desc: 'More power, more bots, more success.',
+    desc: 'For growing teams that need more power and collaboration.',
     popular: true,
     seats: 3,
     bots: 3,
@@ -97,11 +98,12 @@ const PLANS = [
     name: 'Enterprise',
     annualPrice: null,
     monthlyPrice: null,
-    desc: 'Custom solution built around your organisation\'s needs.',
+    desc: "Custom solution built around your organisation's needs.",
     popular: false,
     seats: null,
     bots: null,
     conversations: 'Unlimited',
+    storage: null,
     extraSeats: null,
     extraBots: false,
     features: [
@@ -120,10 +122,8 @@ const PLANS = [
   },
 ]
 
-const EXTRA_SEAT = { annual: 29, monthly: 45 }
-
-const TIERED_PLANS  = PLANS.filter(p => p.key !== 'enterprise')
-const ENTERPRISE    = PLANS.find(p => p.key === 'enterprise')!
+const TIERED_PLANS = PLANS.filter(p => p.key !== 'enterprise')
+const ENTERPRISE   = PLANS.find(p => p.key === 'enterprise')!
 
 export function PricingCards() {
   const [isAnnual, setIsAnnual] = useState(true)
@@ -131,128 +131,102 @@ export function PricingCards() {
   return (
     <section className="py-12 px-6">
       {/* Billing toggle */}
-      <div className="flex flex-col items-center gap-2 mb-10">
-        <div className="flex items-center gap-3">
-          <span className={`text-sm font-medium transition-colors ${!isAnnual ? 'text-white' : 'text-gray-500'}`}>
-            Monthly
-          </span>
-          <button
-            onClick={() => setIsAnnual(!isAnnual)}
-            aria-label="Toggle billing period"
-            className={`relative w-12 h-6 rounded-full transition-colors ${isAnnual ? 'bg-brand-600' : 'bg-gray-600'}`}
-          >
-            <span
-              className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                isAnnual ? 'translate-x-6' : 'translate-x-0'
-              }`}
-            />
-          </button>
-          <span className={`text-sm font-medium transition-colors ${isAnnual ? 'text-white' : 'text-gray-500'}`}>
-            Annual
-          </span>
-          <span className="text-xs bg-green-500/20 text-green-400 px-2.5 py-1 rounded-full font-semibold">
-            Save up to 35%
-          </span>
-        </div>
-        {!isAnnual && (
-          <p className="text-xs text-gray-500">
-            Switch to annual billing and save <span className="text-green-400 font-semibold">up to 35%</span>
-          </p>
-        )}
+      <div className="flex items-center justify-center gap-3 mb-10">
+        <span className={`text-sm font-medium transition-colors ${!isAnnual ? 'text-white' : 'text-gray-500'}`}>
+          Monthly
+        </span>
+        <button
+          onClick={() => setIsAnnual(!isAnnual)}
+          aria-label="Toggle billing period"
+          className={`relative w-12 h-6 rounded-full transition-colors ${isAnnual ? 'bg-brand-600' : 'bg-gray-600'}`}
+        >
+          <span
+            className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+              isAnnual ? 'translate-x-6' : 'translate-x-0'
+            }`}
+          />
+        </button>
+        <span className={`text-sm font-medium transition-colors ${isAnnual ? 'text-white' : 'text-gray-500'}`}>
+          Annual
+        </span>
+        <span className="text-xs bg-green-500/20 text-green-400 px-2.5 py-1 rounded-full font-semibold">
+          Save up to 35%
+        </span>
       </div>
 
       {/* ── 3 plan cards ── */}
       <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
         {TIERED_PLANS.map((plan) => {
-          const price = isAnnual ? plan.annualPrice : plan.monthlyPrice
+          const price   = isAnnual ? plan.annualPrice : plan.monthlyPrice
+          const billed  = isAnnual ? plan.annualPrice! * 12 : null
+
           return (
             <div
               key={plan.key}
               className={`relative flex flex-col rounded-2xl p-6 border transition-colors h-full ${
                 plan.popular
-                  ? 'bg-brand-600/10 border-brand-600/50 shadow-lg shadow-brand-600/10'
+                  ? 'bg-[#15A4AE]/10 border-[#15A4AE]/50 shadow-lg shadow-[#15A4AE]/10'
                   : 'bg-white/5 border-white/10 hover:border-white/20'
               }`}
             >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="text-xs font-semibold bg-brand-600 text-white px-3 py-1 rounded-full whitespace-nowrap">
+                  <span className="text-xs font-semibold bg-[#15A4AE] text-white px-3 py-1 rounded-full whitespace-nowrap">
                     Most Popular
                   </span>
                 </div>
               )}
 
               {/* Plan name + desc */}
-              <div className="mb-5">
-                <h3 className={`font-bold text-xl mb-1 ${plan.popular ? 'text-brand-300' : 'text-white'}`}>
-                  {plan.name}
-                </h3>
+              <div className="mb-4">
+                <h3 className="font-bold text-xl text-white mb-1">{plan.name}</h3>
                 <p className="text-sm text-gray-400 leading-relaxed">{plan.desc}</p>
               </div>
 
               {/* Price */}
-              <div className="mb-5">
-                <div className="flex items-baseline justify-between">
-                  <span className="flex items-baseline gap-1">
-                    <span className="text-4xl font-black text-white">${price}</span>
-                    <span className="text-gray-400 text-base">/mo</span>
-                  </span>
-                  {plan.annualPrice !== null && plan.monthlyPrice !== null && (
-                    <span className="relative inline-flex items-baseline gap-0.5 text-4xl font-black text-gray-500">
-                      <span className="relative">
-                        ${isAnnual ? plan.monthlyPrice : plan.annualPrice}
-                        <span className="absolute inset-0 flex items-center pointer-events-none">
-                          <span className="w-full h-0.5 bg-[#15A4AE] block" style={{ transform: 'rotate(-12deg)' }} />
-                        </span>
-                      </span>
-                      <span className="text-gray-500 text-base font-normal">/mo</span>
-                    </span>
-                  )}
+              <div className="mb-4">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-black text-white">${price}</span>
+                  <span className="text-gray-400 text-base">/mo</span>
                 </div>
-                {plan.annualPrice !== null && plan.monthlyPrice !== null && (
-                  <p className="text-sm text-gray-400 mt-3 flex items-center gap-2">
-                    {isAnnual ? (
-                      <>
-                        <span>Billed ${plan.annualPrice * 12}/year</span>
-                        <span className="text-green-400 font-semibold">Save ${(plan.monthlyPrice - plan.annualPrice) * 12}/year</span>
-                      </>
-                    ) : (
-                      <span>Or ${plan.annualPrice}/mo billed annually</span>
-                    )}
-                  </p>
+                {billed && (
+                  <p className="text-xs text-gray-500 mt-1">Billed ${billed}/year</p>
                 )}
               </div>
 
-              {/* Seat / bot / conversation stats */}
-              <div className="grid grid-cols-2 gap-2 mb-5">
+              {/* Stats pills — single row */}
+              <div className="flex flex-wrap gap-1.5 mb-4">
                 {[
                   `${plan.seats} seat${plan.seats !== 1 ? 's' : ''}`,
-                  plan.bots !== null ? `${plan.bots} bot${plan.bots !== 1 ? 's' : ''}` : 'Unlimited bots',
+                  `${plan.bots} bot${plan.bots !== 1 ? 's' : ''}`,
                   `${plan.conversations} msg/mo`,
                   plan.storage ? `${plan.storage} storage` : null,
                 ].filter(Boolean).map(stat => (
-                  <span key={stat!} className="flex items-center justify-center text-xs font-medium px-2.5 py-1 rounded-full bg-[#15A4AE]/10 border border-[#15A4AE]/30 text-white text-center">
+                  <span
+                    key={stat!}
+                    className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/8 border border-white/10 text-gray-300"
+                  >
                     {stat}
                   </span>
                 ))}
               </div>
 
-              {/* Extra seat + bot + overage notes */}
-              <div className="flex flex-col gap-1.5 mb-5 border-t border-white/10 pt-4">
+              {/* Extra pricing lines */}
+              <div className="flex flex-col gap-1 mb-4 border-t border-white/8 pt-3">
                 {plan.extraSeats && (
-                  <p className="text-base text-[#15A4AE] whitespace-nowrap">
+                  <p className="text-xs text-[#15A4AE]">
                     + {plan.extraSeats} at ${isAnnual ? EXTRA_SEAT.annual : EXTRA_SEAT.monthly}/seat/mo
                   </p>
                 )}
                 {plan.extraBots && (
-                  <p className="text-base text-[#15A4AE] whitespace-nowrap">
+                  <p className="text-xs text-[#15A4AE]">
                     + Extra bots at ${isAnnual ? EXTRA_BOT.annual : EXTRA_BOT.monthly}/bot/mo
                   </p>
                 )}
-                <p className="text-base text-[#15A4AE] whitespace-nowrap">
+                <p className="text-xs text-[#15A4AE]">
                   + Extra storage at ${isAnnual ? EXTRA_STORAGE.annual : EXTRA_STORAGE.monthly}/10 GB/mo
                 </p>
-                <p className="text-base text-[#15A4AE] whitespace-nowrap">
+                <p className="text-xs text-[#15A4AE]">
                   $10 per 1,000 extra conversations
                 </p>
               </div>
@@ -263,14 +237,13 @@ export function PricingCards() {
                   f === 'Sage AI CRM assistant' ? (
                     <li key={f}>
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#15A4AE]/10 border border-[#15A4AE]/30 text-[#15A4AE] text-xs font-semibold">
-                        <span className="text-[10px]">✦</span>
-                        Sage AI CRM assistant
+                        + Sage AI CRM assistant
                       </span>
                     </li>
                   ) : (
                     <li key={f} className="flex items-start gap-2 text-sm">
                       <svg
-                        className={`w-4 h-4 mt-0.5 shrink-0 ${plan.popular ? 'text-brand-400' : 'text-gray-500'}`}
+                        className="w-4 h-4 mt-0.5 shrink-0 text-[#15A4AE]"
                         fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -285,7 +258,7 @@ export function PricingCards() {
                 href="/login"
                 className={`block text-center text-sm font-medium py-2.5 rounded-xl transition-colors ${
                   plan.popular
-                    ? 'bg-[#1a8c76] hover:bg-[#14705d] text-white'
+                    ? 'bg-[#15A4AE] hover:bg-[#0e8f99] text-white'
                     : 'border border-white/20 hover:border-white/40 text-gray-300 hover:text-white'
                 }`}
               >
@@ -296,20 +269,15 @@ export function PricingCards() {
         })}
       </div>
 
-      {/* ── Enterprise star entry ── */}
+      {/* ── Enterprise banner ── */}
       <div className="max-w-5xl mx-auto mt-4">
         <div className="relative flex flex-col sm:flex-row items-center gap-6 rounded-2xl px-8 py-6 border border-white/10 bg-gradient-to-r from-white/[0.04] via-white/[0.07] to-white/[0.04] hover:border-white/20 transition-colors overflow-hidden">
-          {/* Subtle star glow */}
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-64 h-24 bg-amber-400/5 rounded-full blur-2xl" />
           </div>
-
-          {/* Star badge */}
           <div className="shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-amber-400/10 border border-amber-400/20">
             <span className="text-amber-400 text-xl">★</span>
           </div>
-
-          {/* Text block */}
           <div className="flex-1 text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
               <h3 className="font-bold text-lg text-white">Enterprise</h3>
@@ -322,8 +290,6 @@ export function PricingCards() {
               Available exclusively through consultation with the Appalix team.
             </p>
           </div>
-
-          {/* CTA */}
           <div className="shrink-0">
             <ContactSalesButton
               label={ENTERPRISE.cta}
