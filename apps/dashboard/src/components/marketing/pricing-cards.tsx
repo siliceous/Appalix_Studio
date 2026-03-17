@@ -131,7 +131,7 @@ export function PricingCards() {
   return (
     <section className="py-12 px-6">
       {/* Billing toggle */}
-      <div className="flex items-center justify-center gap-3 mb-10">
+      <div className="flex items-center justify-center gap-3 mb-10 mt-6">
         <span className={`text-sm font-medium transition-colors ${!isAnnual ? 'text-white' : 'text-gray-500'}`}>
           Monthly
         </span>
