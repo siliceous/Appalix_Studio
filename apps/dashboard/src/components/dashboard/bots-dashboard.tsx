@@ -67,6 +67,7 @@ export function BotsDashboard({
   const [modalMode, setModalMode] = useState<ModalMode>(null)
   const [activeConv, setActiveConv] = useState<BotConversation | null>(null)
   const [emailConv,  setEmailConv]  = useState<BotConversation | null>(null)
+  const [emailFromModal, setEmailFromModal] = useState<{ to: string; toName: string; context: string } | null>(null)
   const [isPending, startTransition] = useTransition()
 
   // Lead form
@@ -440,6 +441,18 @@ export function BotsDashboard({
               >
                 {isPending ? 'Creating…' : 'Create Lead'}
               </button>
+              {leadEmail && (
+                <button
+                  onClick={() => {
+                    setEmailFromModal({ to: leadEmail, toName: leadName, context: `Conversation: ${activeConv?.title ?? ''}\n${leadNotes}` })
+                    setModalMode(null)
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] rounded-lg hover:bg-[#15A4AE]/8 transition-colors"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  Reply
+                </button>
+              )}
               <button
                 onClick={() => setModalMode(null)}
                 className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
@@ -451,17 +464,28 @@ export function BotsDashboard({
         </div>
       )}
 
-      {/* ── Modal: Email Reply ─────────────────────────────── */}
+      {/* ── Modal: Email Reply (from row) ──────────────────── */}
       {emailConv && (
         <EmailComposeModal
           subject={`Re: ${emailConv.title ?? 'Bot conversation'}`}
           context={[
-            emailConv.title   ? `Conversation: ${emailConv.title}` : '',
+            emailConv.title    ? `Conversation: ${emailConv.title}` : '',
             emailConv.platform ? `Platform: ${emailConv.platform}` : '',
             `Messages exchanged: ${emailConv.message_count ?? 0}`,
           ].filter(Boolean).join('\n')}
           onClose={() => setEmailConv(null)}
           onSent={() => setActioned(m => new Map(m).set(emailConv.id, 'Email sent'))}
+        />
+      )}
+
+      {/* ── Modal: Email Reply (from lead/ticket modal) ─────── */}
+      {emailFromModal && (
+        <EmailComposeModal
+          to={emailFromModal.to}
+          toName={emailFromModal.toName}
+          subject="Following up on your enquiry"
+          context={emailFromModal.context}
+          onClose={() => setEmailFromModal(null)}
         />
       )}
 
@@ -527,6 +551,18 @@ export function BotsDashboard({
               >
                 {isPending ? 'Creating…' : 'Create Ticket'}
               </button>
+              {ticketEmail && (
+                <button
+                  onClick={() => {
+                    setEmailFromModal({ to: ticketEmail, toName: ticketName, context: `Ticket: ${ticketTitle}\n${ticketDesc}` })
+                    setModalMode(null)
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] rounded-lg hover:bg-[#15A4AE]/8 transition-colors"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  Reply
+                </button>
+              )}
               <button
                 onClick={() => setModalMode(null)}
                 className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
