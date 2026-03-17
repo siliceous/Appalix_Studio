@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useTransition } from 'react'
 import { Upload, AlertCircle, CheckCircle2 } from 'lucide-react'
-import { saveUserName, uploadUserAvatar, removeUserAvatar } from '@/app/actions/user-profile'
+import { saveUserName, getAvatarUploadUrl, saveAvatarUrl, removeUserAvatar } from '@/app/actions/user-profile'
 import { AvatarCropModal } from '@/components/settings/avatar-crop-modal'
 
 interface Props {
@@ -45,30 +45,43 @@ export function ProfileForm({ firstName, lastName, email, avatarUrl: initialAvat
     reader.readAsDataURL(file)
   }
 
-  // Step 2: crop confirmed → show preview instantly, upload in background
+  // Step 2: crop confirmed → preview instantly, upload blob directly to Supabase via signed URL
   async function handleCropConfirm(blob: Blob) {
     setCropSrc(null)
     setError(null)
     setUploading(true)
 
-    // Show cropped image immediately via object URL while uploading
+    // Show cropped image immediately while uploading
     const previewUrl = URL.createObjectURL(blob)
     setAvatarUrl(previewUrl)
 
-    const fd = new FormData()
-    fd.append('file', blob, 'avatar.jpg')
-    const result = await uploadUserAvatar(fd)
+    try {
+      // Get a signed upload URL — no binary data goes through the server action
+      const urlResult = await getAvatarUploadUrl()
+      if (!urlResult.ok || !urlResult.signedUrl || !urlResult.publicUrl) {
+        throw new Error(urlResult.error ?? 'Could not get upload URL')
+      }
 
-    setUploading(false)
+      // PUT blob directly to Supabase Storage — bypasses server-side Buffer conversion
+      const uploadRes = await fetch(urlResult.signedUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'image/jpeg' },
+        body: blob,
+      })
+      if (!uploadRes.ok) throw new Error(`Upload failed: ${uploadRes.status}`)
 
-    if (result.ok && result.url) {
-      setAvatarUrl(result.url)
-    } else {
-      setAvatarUrl(initialAvatarUrl) // revert on error
-      setError(result.error ?? 'Upload failed')
+      // Save the public URL to the database
+      const saveResult = await saveAvatarUrl(urlResult.publicUrl)
+      if (!saveResult.ok) throw new Error(saveResult.error ?? 'Failed to save')
+
+      setAvatarUrl(urlResult.publicUrl)
+    } catch (err) {
+      setAvatarUrl(initialAvatarUrl)
+      setError(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploading(false)
+      setTimeout(() => URL.revokeObjectURL(previewUrl), 2000)
     }
-    // Revoke after state update so there's no flash of teal background
-    setTimeout(() => URL.revokeObjectURL(previewUrl), 2000)
   }
 
   async function handleRemove() {

@@ -23,34 +23,48 @@ export async function saveUserName(formData: FormData) {
   redirect('/settings')
 }
 
-export async function uploadUserAvatar(
-  formData: FormData,
-): Promise<{ ok: boolean; url?: string; error?: string }> {
+/**
+ * Step 1 of client-side upload: get a signed upload URL so the browser can
+ * PUT the blob directly to Supabase Storage (avoids server-side binary handling).
+ */
+export async function getAvatarUploadUrl(): Promise<{
+  ok: boolean
+  signedUrl?: string
+  token?: string
+  path?: string
+  publicUrl?: string
+  error?: string
+}> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { ok: false, error: 'Not authenticated' }
 
-  const file = formData.get('file') as File | null
-  if (!file) return { ok: false, error: 'No file provided' }
-  if (!file.type.startsWith('image/')) return { ok: false, error: 'File must be an image' }
-  if (file.size > 500 * 1024) return { ok: false, error: 'Avatar must be under 500 KB' }
+  const admin = createAdminClient()
+  const path  = `${user.id}/avatar.jpg`
 
-  const admin  = createAdminClient()
-  const ext    = file.name.split('.').pop() ?? 'jpg'
-  const path   = `${user.id}/avatar.${ext}`
-  const buffer = Buffer.from(await file.arrayBuffer())
-
-  const { error: uploadError } = await admin.storage
+  const { data, error } = await admin.storage
     .from('user-avatars')
-    .upload(path, buffer, { contentType: file.type, upsert: true })
+    .createSignedUploadUrl(path)
 
-  if (uploadError) return { ok: false, error: uploadError.message }
+  if (error || !data) return { ok: false, error: error?.message ?? 'Could not create upload URL' }
 
   const { data: { publicUrl } } = admin.storage
     .from('user-avatars')
     .getPublicUrl(path)
 
-  // Use update (not upsert) — avoids NOT NULL violation on first_name when no row exists yet
+  return { ok: true, signedUrl: data.signedUrl, token: data.token, path, publicUrl }
+}
+
+/**
+ * Step 2: after the browser has uploaded the file, save the public URL to the DB.
+ */
+export async function saveAvatarUrl(
+  publicUrl: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Not authenticated' }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: dbError } = await (supabase as any).from('user_profiles')
     .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
@@ -61,7 +75,7 @@ export async function uploadUserAvatar(
   revalidatePath('/settings/profile')
   revalidatePath('/', 'layout')
 
-  return { ok: true, url: publicUrl }
+  return { ok: true }
 }
 
 export async function removeUserAvatar(): Promise<{ ok: boolean; error?: string }> {
