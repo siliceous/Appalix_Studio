@@ -1,3 +1,4 @@
+import React from 'react'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { FadeUp, ScrollReveal } from '@/components/marketing/animate'
@@ -131,28 +132,126 @@ export default function TestLandingPage() {
       <section className="relative py-6 lg:py-10 px-8 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-[#15A4AE]/15 rounded-full blur-[140px] pointer-events-none" />
 
+        {/* Floating icons */}
+        <style>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50%       { transform: translateY(-14px); }
+          }
+        `}</style>
+        {([
+          {
+            content: (s: string) => (
+              <svg viewBox="0 0 64 50" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: `calc(${s} * 0.45)`, height: `calc(${s} * 0.35)` }}>
+                {/* Antenna */}
+                <line x1="32" y1="2" x2="32" y2="10" stroke="#A855F7" strokeWidth="3" strokeLinecap="round"/>
+                <circle cx="32" cy="2" r="3" fill="#A855F7"/>
+                {/* Head */}
+                <rect x="10" y="10" width="44" height="36" rx="8" fill="#E9D5FF"/>
+                {/* Arms — same level as eyes */}
+                <rect x="0" y="20" width="12" height="10" rx="5" fill="#D8B4FE"/>
+                <rect x="52" y="20" width="12" height="10" rx="5" fill="#D8B4FE"/>
+                {/* Eyes */}
+                <circle cx="24" cy="25" r="5" fill="white"/>
+                <circle cx="40" cy="25" r="5" fill="white"/>
+                <circle cx="25" cy="26" r="2.5" fill="#7E22CE"/>
+                <circle cx="41" cy="26" r="2.5" fill="#7E22CE"/>
+                {/* Mouth */}
+                <rect x="22" y="36" width="20" height="4" rx="2" fill="#7E22CE" opacity="0.5"/>
+              </svg>
+            ),
+            top: '8%', left: '4%', delay: '0s', size: '195px', tilt: -15,
+          },
+          {
+            content: (s: string) => (
+              <svg viewBox="0 0 64 48" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: `calc(${s} * 0.45)`, height: `calc(${s} * 0.45 * 0.75)` }}>
+                <rect x="1.5" y="1.5" width="61" height="45" rx="5" fill="white" stroke="#4285F4" strokeWidth="3"/>
+                <path d="M2 6L32 30L62 6" stroke="#EA4335" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              </svg>
+            ),
+            top: '12%', right: '5%', delay: '0.6s', size: '180px', tilt: 15,
+          },
+          {
+            content: (s: string) => (
+              <svg viewBox="0 0 56 68" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: `calc(${s} * 0.42)`, height: `calc(${s} * 0.51)` }}>
+                {/* Card */}
+                <rect x="1.5" y="1.5" width="53" height="65" rx="6" fill="#DCFCE7" stroke="#16A34A" strokeWidth="2"/>
+                {/* Top bar */}
+                <rect x="1.5" y="1.5" width="53" height="12" rx="6" fill="#BBF7D0"/>
+                <circle cx="10" cy="7.5" r="2" fill="#16A34A" opacity="0.7"/>
+                <circle cx="17" cy="7.5" r="2" fill="#16A34A" opacity="0.5"/>
+                <circle cx="24" cy="7.5" r="2" fill="#16A34A" opacity="0.3"/>
+                {/* Label 1 */}
+                <rect x="8" y="20" width="16" height="3" rx="1.5" fill="#15803D" opacity="0.5"/>
+                {/* Input 1 */}
+                <rect x="8" y="26" width="40" height="7" rx="3" fill="white" stroke="#BBF7D0" strokeWidth="1"/>
+                {/* Label 2 */}
+                <rect x="8" y="37" width="20" height="3" rx="1.5" fill="#15803D" opacity="0.5"/>
+                {/* Input 2 */}
+                <rect x="8" y="43" width="40" height="7" rx="3" fill="white" stroke="#BBF7D0" strokeWidth="1"/>
+                {/* Submit button */}
+                <rect x="8" y="55" width="40" height="8" rx="3" fill="#16A34A"/>
+                <rect x="17" y="57.5" width="22" height="3" rx="1.5" fill="white" opacity="0.9"/>
+              </svg>
+            ),
+            top: '32%', right: '16%', delay: '1.2s', size: '165px', tilt: 15,
+          },
+          {
+            content: (s: string) => (
+              <svg viewBox="0 0 80 36" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: `calc(${s} * 0.75)`, height: `calc(${s} * 0.34)` }}>
+                <rect x="1.5" y="1.5" width="77" height="33" rx="4" fill="#FEF3C7" stroke="#D97706" strokeWidth="2"/>
+                <circle cx="14" cy="18" r="6" fill="#FDE68A" opacity="0.8"/>
+                <line x1="14" y1="1.5" x2="14" y2="34.5" stroke="#D97706" strokeWidth="2" strokeDasharray="4 3" opacity="0.5"/>
+                <circle cx="66" cy="18" r="6" fill="#FDE68A" opacity="0.8"/>
+                <line x1="66" y1="1.5" x2="66" y2="34.5" stroke="#D97706" strokeWidth="2" strokeDasharray="4 3" opacity="0.5"/>
+                <rect x="22" y="13" width="36" height="10" rx="3" fill="#FDE68A" opacity="0.6"/>
+                <text x="40" y="22" textAnchor="middle" fill="#92400E" fontSize="7" fontWeight="700" fontFamily="sans-serif">Tickets</text>
+              </svg>
+            ),
+            top: '32%', left: '16%', delay: '0.3s', size: '165px', tilt: -15,
+          },
+        ] as Array<{ content: string | ((s: string) => React.ReactNode); top: string; left?: string; right?: string; delay: string; size: string; tilt: number }>).map(({ content, top, left, right, delay, size, tilt }, i) => (
+          <div
+            key={i}
+            className="absolute pointer-events-none select-none hidden lg:block"
+            style={{ top, left, right, transform: `rotate(${tilt}deg)` }}
+          >
+            <div
+              className="flex items-center justify-center rounded-2xl"
+              style={{
+                width: size, height: size,
+                fontSize: `calc(${size} * 0.5)`,
+                animation: `float 4s ease-in-out ${delay} infinite`,
+              }}
+            >
+              {typeof content === 'function' ? content(size) : content}
+            </div>
+          </div>
+        ))}
 
-<div className="relative max-w-6xl mx-auto text-center">
+        <div className="relative max-w-6xl mx-auto text-center">
           <FadeUp delay={0}>
             <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-[#15A4AE]/40 bg-[#15A4AE]/10 text-white font-medium mb-10" style={{ fontSize: '14px' }}>
               <span className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] animate-pulse" />
-              STOP STITCHING TOOLS . ONE APP DOES ALL
+              STOP STITCHING TOOLS . ONE APP — DOES ALL
               <span className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] animate-pulse" />
             </div>
           </FadeUp>
 
           <FadeUp delay={0.1}>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.25] mb-4 text-white max-w-4xl mx-auto">
-              Chatbots, AI email analyzer, lead forms, support tickets &amp; CRM.<br className="hidden sm:block" /> One platform. All built in.
+              Chatbots, AI email analyzer, lead forms, support tickets &amp; <span style={{ color: 'white', textShadow: '0 0 20px #15A4AE, 0 0 50px #15A4AE80', WebkitTextStroke: '0.5px #15A4AE' }}>CRM</span>.<br className="hidden sm:block" /> One platform. All built in.
             </h1>
             <h2
-              className="text-2xl sm:text-3xl font-semibold text-white mb-8"
+              className="text-2xl sm:text-3xl font-semibold text-white mb-8 inline-flex items-center gap-2 justify-center flex-wrap"
               style={{
                 textShadow: '0 0 20px #15A4AE, 0 0 50px #15A4AE80',
                 WebkitTextStroke: '0.5px #15A4AE',
               }}
             >
+              <span className="text-yellow-300" style={{ textShadow: 'none', WebkitTextStroke: '0' }}>⚡</span>
               Introducing Appalix Sage.
+              <span className="text-gray-300" style={{ textShadow: 'none', WebkitTextStroke: '0' }}>🔗</span>
             </h2>
           </FadeUp>
 
