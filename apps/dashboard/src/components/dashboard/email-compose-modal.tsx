@@ -151,22 +151,21 @@ export function EmailComposeModal({
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto px-5 py-3 min-h-[140px]">
+          <div className="flex-1 flex flex-col overflow-hidden px-5 py-3">
             {generating ? (
-              <div className="flex items-center gap-2 text-sm text-gray-400 py-6">
+              <div className="flex items-center gap-2 text-sm text-gray-400 py-4 shrink-0">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Generating AI draft…
               </div>
             ) : genError ? (
-              <p className="text-xs text-red-500 mb-2">{genError}</p>
+              <p className="text-xs text-red-500 mb-2 shrink-0">{genError}</p>
             ) : null}
             <textarea
               ref={bodyRef}
-              rows={8}
               value={body}
               onChange={e => setBody(e.target.value)}
               placeholder="Compose email…"
-              className="w-full text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 bg-transparent focus:outline-none resize-none leading-relaxed"
+              className="flex-1 w-full text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 bg-transparent focus:outline-none resize-none leading-relaxed overflow-y-auto"
             />
           </div>
 

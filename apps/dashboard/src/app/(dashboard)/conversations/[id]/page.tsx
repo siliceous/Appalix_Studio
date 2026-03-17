@@ -40,48 +40,50 @@ export default async function ConversationDetailPage({
 
   return (
     <div className="max-w-3xl mx-auto">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <a href="/dashboard/bots" className="text-xs text-gray-400 hover:text-brand-600 mb-1 block">
-            ← Conversations
-          </a>
-          <RenameConversationTitle id={id} title={conversation.title} />
-          <div className="flex items-center gap-3 mt-1.5">
-            {conversation.platform && (
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PLATFORM_META[conversation.platform]?.color}`}>
-                {PLATFORM_META[conversation.platform]?.label}
-              </span>
-            )}
-            <span className="text-xs text-gray-400">{formatDate(conversation.created_at)}</span>
-            <span className="text-xs text-gray-400">{conversation.message_count} messages</span>
-            {conversation.bots?.name && (
-              <span className="text-xs text-gray-400">Bot: {conversation.bots.name}</span>
-            )}
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-10 bg-gray-50 dark:bg-[#1c1c1c] -mx-8 px-8 pt-6 pb-4 mb-4 border-b border-gray-100 dark:border-white/8">
+        <div className="flex items-start justify-between">
+          <div>
+            <a href="/dashboard/bots" className="text-xs text-gray-400 hover:text-brand-600 mb-1 block">
+              ← Conversations
+            </a>
+            <RenameConversationTitle id={id} title={conversation.title} />
+            <div className="flex items-center gap-3 mt-1.5">
+              {conversation.platform && (
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PLATFORM_META[conversation.platform]?.color}`}>
+                  {PLATFORM_META[conversation.platform]?.label}
+                </span>
+              )}
+              <span className="text-xs text-gray-400">{formatDate(conversation.created_at)}</span>
+              <span className="text-xs text-gray-400">{conversation.message_count} messages</span>
+              {conversation.bots?.name && (
+                <span className="text-xs font-medium text-[#15A4AE]">Bot: {conversation.bots.name}</span>
+              )}
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {conversation.ai_entities?.email && (
-            <ConversationEmailReplyButton
-              to={conversation.ai_entities.email}
-              toName={conversation.ai_entities.name ?? undefined}
-              subject={`Following up — ${conversation.title ?? 'your conversation'}`}
-              context={[
-                conversation.title   ? `Conversation: ${conversation.title}` : '',
-                conversation.ai_summary ? `Summary: ${conversation.ai_summary}` : '',
-                conversation.summary    ? `Summary: ${conversation.summary}`    : '',
-              ].filter(Boolean).join('\n')}
-            />
-          )}
-          <a
-            href={`/api/conversations/${id}/export`}
-            download
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 border text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Download
-          </a>
-          <DeleteConversationButton id={id} />
+          <div className="flex items-center gap-2 shrink-0">
+            {conversation.ai_entities?.email && (
+              <ConversationEmailReplyButton
+                to={conversation.ai_entities.email}
+                toName={conversation.ai_entities.name ?? undefined}
+                subject={`Following up — ${conversation.title ?? 'your conversation'}`}
+                context={[
+                  conversation.title   ? `Conversation: ${conversation.title}` : '',
+                  conversation.ai_summary ? `Summary: ${conversation.ai_summary}` : '',
+                  conversation.summary    ? `Summary: ${conversation.summary}`    : '',
+                ].filter(Boolean).join('\n')}
+              />
+            )}
+            <a
+              href={`/api/conversations/${id}/export`}
+              download
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 border text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Download
+            </a>
+            <DeleteConversationButton id={id} />
+          </div>
         </div>
       </div>
 
