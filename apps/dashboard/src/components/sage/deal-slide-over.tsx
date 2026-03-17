@@ -138,6 +138,10 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
   const [showReminderTypeMenu, setShowReminderTypeMenu] = useState(false)
 
   useEffect(() => {
+    // Reset delete/edit UI state every time a new deal is opened
+    setConfirmDelete(false)
+    setDeleting(false)
+    setShowEditForm(openEditForm ?? false)
     if (!dealId) { setDeal(null); setActivities([]); setReminders([]); return }
     setLoading(true)
     setActiveTab('overview')
@@ -150,6 +154,7 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
       setReminders(rems)
       setLoading(false)
     })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dealId])
 
   useEffect(() => {
@@ -484,9 +489,13 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                         onClick={async () => {
                           if (!dealId) return
                           setDeleting(true)
-                          await deleteDeal(dealId)
-                          onDealDeleted?.(dealId)
-                          onClose()
+                          try {
+                            await deleteDeal(dealId)
+                            onDealDeleted?.(dealId)
+                            onClose()
+                          } catch {
+                            setDeleting(false)
+                          }
                         }}
                         className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-60"
                       >
