@@ -68,6 +68,38 @@ export async function updateBranding(
   return { ok: true }
 }
 
+export async function uploadBrandingIcon(
+  formData: FormData,
+): Promise<{ ok: boolean; url?: string; error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { ok: false, error: 'Not authenticated' }
+
+  const file = formData.get('file') as File | null
+  if (!file) return { ok: false, error: 'No file provided' }
+
+  if (!file.type.startsWith('image/')) return { ok: false, error: 'File must be an image' }
+  if (file.size > 1 * 1024 * 1024) return { ok: false, error: 'Icon must be under 1 MB' }
+
+  const admin  = createAdminClient()
+  const ext    = file.name.split('.').pop() ?? 'png'
+  const path   = `${workspaceId}/icon.${ext}`
+  const buffer = Buffer.from(await file.arrayBuffer())
+
+  const { error: uploadError } = await admin.storage
+    .from('workspace-logos')
+    .upload(path, buffer, { contentType: file.type, upsert: true })
+
+  if (uploadError) return { ok: false, error: uploadError.message }
+
+  const { data: { publicUrl } } = admin.storage
+    .from('workspace-logos')
+    .getPublicUrl(path)
+
+  await updateBranding({ favicon_url: publicUrl })
+
+  return { ok: true, url: publicUrl }
+}
+
 export async function uploadBrandingLogo(
   formData: FormData,
 ): Promise<{ ok: boolean; url?: string; error?: string }> {

@@ -8,7 +8,7 @@ import { cn }     from '@/lib/utils'
 import {
   Upload, Palette, Globe, Eye, EyeOff, CheckCircle2, AlertCircle, X, ChevronLeft,
 } from 'lucide-react'
-import { type WorkspaceBranding, updateBranding, uploadBrandingLogo } from '@/app/actions/workspace-branding'
+import { type WorkspaceBranding, updateBranding, uploadBrandingLogo, uploadBrandingIcon } from '@/app/actions/workspace-branding'
 
 interface Props {
   initialBranding: WorkspaceBranding | null
@@ -52,11 +52,29 @@ export function BrandingForm({ initialBranding, isAdmin }: Props) {
   const [hidePoweredBy,  setHidePoweredBy]  = useState(defaults.hide_powered_by ?? false)
   const [welcomeMessage, setWelcomeMessage] = useState(defaults.welcome_message ?? '')
   const [logoUrl,        setLogoUrl]        = useState(defaults.logo_url        ?? null)
+  const [iconUrl,        setIconUrl]        = useState(defaults.favicon_url     ?? null)
   const [logoUploading,  setLogoUploading]  = useState(false)
+  const [iconUploading,  setIconUploading]  = useState(false)
   const [saving,         startSave]         = useTransition()
   const [status,         setStatus]         = useState<'idle' | 'saved' | 'error'>('idle')
   const [errorMsg,       setErrorMsg]       = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const iconRef = useRef<HTMLInputElement>(null)
+
+  async function handleIconUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setIconUploading(true)
+    const fd = new FormData()
+    fd.append('file', file)
+    const result = await uploadBrandingIcon(fd)
+    setIconUploading(false)
+    if (result.ok && result.url) {
+      setIconUrl(result.url)
+    } else {
+      setErrorMsg(result.error ?? 'Upload failed')
+    }
+  }
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -83,6 +101,7 @@ export function BrandingForm({ initialBranding, isAdmin }: Props) {
         hide_powered_by: hidePoweredBy,
         welcome_message: welcomeMessage.trim() || null,
         logo_url:        logoUrl,
+        favicon_url:     iconUrl,
       })
       if (result.ok) {
         setStatus('saved')
@@ -163,6 +182,68 @@ export function BrandingForm({ initialBranding, isAdmin }: Props) {
             accept="image/*"
             className="hidden"
             onChange={handleLogoUpload}
+          />
+        </div>
+      </section>
+
+      {/* Sidebar icon */}
+      <section className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-6">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Sidebar icon</h2>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+          Replaces the initial letter in the sidebar corner. Square image recommended, max 1 MB.
+        </p>
+        <div className="flex items-center gap-4">
+          {/* Preview */}
+          <div className="w-10 h-10 rounded-xl border dark:border-white/10 bg-gray-50 dark:bg-white/5 flex items-center justify-center overflow-hidden shrink-0">
+            {iconUrl ? (
+              <Image
+                src={iconUrl}
+                alt="Sidebar icon"
+                width={40}
+                height={40}
+                className="object-contain w-full h-full"
+              />
+            ) : brandName ? (
+              <div
+                className="w-full h-full flex items-center justify-center text-white font-black text-sm"
+                style={{ backgroundColor: primaryColor }}
+              >
+                {brandName.charAt(0).toUpperCase()}
+              </div>
+            ) : (
+              <Image src="/favicon.png" alt="Default icon" width={40} height={40} className="object-contain w-full h-full" />
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => iconRef.current?.click()}
+              disabled={!isAdmin || iconUploading}
+              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              {iconUploading ? 'Uploading…' : 'Upload icon'}
+            </button>
+            {iconUrl && (
+              <button
+                type="button"
+                onClick={() => setIconUrl(null)}
+                disabled={!isAdmin}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                title="Remove icon"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <input
+            ref={iconRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleIconUpload}
           />
         </div>
       </section>

@@ -147,7 +147,16 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
 
           {/* Logo row */}
           <div className="flex items-center gap-2.5 mb-3 min-w-0">
-            {branding?.brand_name ? (
+            {branding?.favicon_url ? (
+              <Image
+                src={branding.favicon_url}
+                alt={branding.brand_name ?? 'Icon'}
+                width={32}
+                height={32}
+                className="w-8 h-8 shrink-0 rounded-xl object-cover select-none"
+                priority
+              />
+            ) : branding?.brand_name ? (
               <div
                 className="w-8 h-8 shrink-0 rounded-xl flex items-center justify-center text-white font-black text-sm select-none"
                 style={{ backgroundColor: branding.primary_color ?? '#15A4AE' }}
