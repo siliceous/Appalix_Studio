@@ -3,8 +3,9 @@
 import React, { useState, useTransition, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import {
-  Bot, Brain, Check, X, ChevronRight, Loader2,
+  Brain, Check, X, ChevronRight, Loader2,
   UserPlus, Ticket, Sparkles, Plus, Phone, Tag, Pencil, Trash2,
 } from 'lucide-react'
 import { triageCreateLead, triageCreateTicket } from '@/app/actions/sage-triage'
@@ -132,7 +133,7 @@ function DetailCard({ tc, actioned, onAction, onDismiss, onClose, onAnalyze, onR
             <div className="flex items-center gap-2 mt-2.5 flex-wrap">
               {/* Bot badge */}
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-xs font-semibold text-blue-700 dark:text-blue-400">
-                <Bot className="w-3 h-3" /> {botName}
+                <Image src="/favicon.png" alt="Bot" width={12} height={12} className="w-3 h-3 object-contain" /> {botName}
               </span>
               {/* Platform badge */}
               {meta && (
@@ -486,7 +487,7 @@ const [mDealTitle, setMDealTitle] = useState('')
       <aside className="w-[168px] shrink-0 flex flex-col border-r dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
         <div className="px-3 py-3 border-b dark:border-white/8 shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <Bot className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+            <Image src="/favicon.png" alt="Bots" width={14} height={14} className="w-3.5 h-3.5 shrink-0 object-contain" />
             <h2 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide">Bots</h2>
           </div>
           <button
@@ -524,7 +525,7 @@ const [mDealTitle, setMDealTitle] = useState('')
 
           {botList.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-32 gap-2 p-4 text-center">
-              <Bot className="w-5 h-5 text-gray-300 dark:text-gray-600" />
+              <Image src="/favicon.png" alt="Bot" width={20} height={20} className="w-5 h-5 object-contain opacity-30 dark:opacity-20" />
               <p className="text-[11px] text-gray-400">No bots yet</p>
             </div>
           ) : botList.map(bot => (
@@ -578,7 +579,7 @@ const [mDealTitle, setMDealTitle] = useState('')
         <div className="flex-1 overflow-y-auto">
           {convListVisible.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-2 p-4 text-center">
-              <Bot className="w-6 h-6 text-gray-300 dark:text-gray-600" />
+              <Image src="/favicon.png" alt="Bot" width={24} height={24} className="w-6 h-6 object-contain opacity-30 dark:opacity-20" />
               <p className="text-xs text-gray-400">
                 {triageConversations.length === 0 ? 'No conversations yet' : 'No conversations for this bot'}
               </p>
@@ -640,7 +641,7 @@ const [mDealTitle, setMDealTitle] = useState('')
         {!selectedTc ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 p-8 text-center">
             <div className="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-white/5 flex items-center justify-center">
-              <Bot className="w-6 h-6 text-gray-300 dark:text-gray-600" />
+              <Image src="/favicon.png" alt="Bot" width={24} height={24} className="w-6 h-6 object-contain opacity-30 dark:opacity-20" />
             </div>
             <p className="text-sm text-gray-400 dark:text-gray-500">Select a conversation to view the AI triage</p>
           </div>

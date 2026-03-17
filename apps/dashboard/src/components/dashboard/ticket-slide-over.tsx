@@ -3,8 +3,9 @@
 import { useState, useEffect, useTransition } from 'react'
 import {
   X, FileText, Phone, Users, CheckSquare,
-  User, Mail, Clock, Bot, Loader2, Ticket as TicketIcon, Check, Pencil, Send,
+  User, Mail, Clock, Loader2, Ticket as TicketIcon, Check, Pencil, Send,
 } from 'lucide-react'
+import Image from 'next/image'
 import { EmailComposeModal } from '@/components/dashboard/email-compose-modal'
 import {
   addTicketActivity, getTicketActivities, completeTicketTask,
@@ -358,7 +359,7 @@ export function TicketSlideOver({ ticket, onClose, onStatusChanged }: Props) {
                   <p className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                     {source === 'Email'
                       ? <Mail className="w-3 h-3" />
-                      : <Bot className="w-3 h-3" />
+                      : <Image src="/favicon.png" alt="Bot" width={12} height={12} className="w-3 h-3 object-contain" />
                     }
                     via {source}
                   </p>

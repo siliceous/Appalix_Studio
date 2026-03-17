@@ -1,7 +1,8 @@
 import { createClient }  from '@/lib/supabase/server'
 import { redirect }       from 'next/navigation'
 import { Header }         from '@/components/layout/header'
-import { Bot, Plus, Plug, Sparkles, MessageSquare, TrendingUp } from 'lucide-react'
+import Image from 'next/image'
+import { Plus, Plug, Sparkles, MessageSquare, TrendingUp } from 'lucide-react'
 import { formatDate, formatTokens, formatCost, timeAgo, PLATFORM_META } from '@/lib/utils'
 import type { Metadata } from 'next'
 import type { Bot as BotRow, Conversation, UsageEvent } from '@/lib/types'
@@ -96,7 +97,7 @@ export default async function BotsPage() {
       {/* ── Bots grid ─────────────────────────────────────────────────────── */}
       {bots?.length === 0 ? (
         <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col items-center justify-center py-16 text-center">
-          <Bot className="w-10 h-10 text-gray-300 dark:text-gray-600 mb-3" />
+          <Image src="/favicon.png" alt="Bots" width={40} height={40} className="w-10 h-10 mb-3 opacity-30 dark:opacity-20" />
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">No bots yet</p>
           <p className="text-xs text-gray-400 mb-5">Create your first bot to start handling conversations.</p>
           <a href="/bots/new" className="px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:bg-brand-700 transition-colors">
@@ -115,11 +116,11 @@ export default async function BotsPage() {
                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
                   bot.bot_type === 'internal'
                     ? 'bg-[#15A4AE]/10'
-                    : 'bg-purple-100 dark:bg-purple-500/10'
+                    : 'bg-white dark:bg-white/5'
                 }`}>
                   {bot.bot_type === 'internal'
                     ? <Sparkles className="w-5 h-5 text-[#15A4AE]" />
-                    : <Bot className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    : <Image src="/favicon.png" alt="Bot" width={22} height={22} className="w-5 h-5 object-contain" />
                   }
                 </div>
                 {bot.bot_type === 'internal' && (

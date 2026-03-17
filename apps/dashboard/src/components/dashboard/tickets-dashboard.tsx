@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { TicketCheck, User, Clock, Mail, ExternalLink, Inbox, Bot, Pencil } from 'lucide-react'
+import Image from 'next/image'
+import { TicketCheck, User, Clock, Mail, ExternalLink, Inbox, Pencil } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import type { SageTicket, SageContact, SageTicketStatus } from '@/lib/types'
 import { TicketSlideOver } from './ticket-slide-over'
@@ -113,7 +114,7 @@ export function TicketsDashboard({ tickets: initialTickets }: { tickets: TicketR
                       <div className="flex items-center gap-1.5 mt-1">
                         {source === 'bot' ? (
                           <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 shrink-0">
-                            <Bot className="w-2.5 h-2.5" />
+                            <Image src="/favicon.png" alt="Bot" width={10} height={10} className="w-2.5 h-2.5 object-contain" />
                             Bot
                           </span>
                         ) : (
@@ -199,7 +200,7 @@ export function TicketsDashboard({ tickets: initialTickets }: { tickets: TicketR
                 </span>
                 {ticketSource(selected) === 'bot' ? (
                   <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 flex items-center gap-1">
-                    <Bot className="w-3 h-3" />
+                    <Image src="/favicon.png" alt="Bot" width={12} height={12} className="w-3 h-3 object-contain" />
                     via Bot
                   </span>
                 ) : (

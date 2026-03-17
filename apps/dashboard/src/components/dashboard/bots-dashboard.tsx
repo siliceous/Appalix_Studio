@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Bot, Sparkles, MessageSquare, Plus, Inbox, CheckCircle, X, Mail } from 'lucide-react'
+import Image from 'next/image'
+import { Sparkles, MessageSquare, Plus, Inbox, CheckCircle, X, Mail } from 'lucide-react'
 import { timeAgo, PLATFORM_META } from '@/lib/utils'
 import type { Bot as BotRow } from '@/lib/types'
 import { triageCreateLead, triageCreateTicket } from '@/app/actions/sage-triage'
@@ -154,7 +155,7 @@ export function BotsDashboard({
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-[#1c1c1c]">
         <div className="text-center">
-          <Bot className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+          <Image src="/favicon.png" alt="Bots" width={40} height={40} className="w-10 h-10 mx-auto mb-3 opacity-30 dark:opacity-20" />
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">No bots yet</p>
           <p className="text-xs text-gray-400 mb-5">Create your first bot to start capturing leads.</p>
           <a
@@ -210,7 +211,7 @@ export function BotsDashboard({
                   }`}>
                     {bot.bot_type === 'internal'
                       ? <Sparkles className="w-3.5 h-3.5 text-[#15A4AE]" />
-                      : <Bot className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                      : <Image src="/favicon.png" alt="Bot" width={14} height={14} className="w-3.5 h-3.5 object-contain" />
                     }
                   </div>
                   <div className="flex-1 min-w-0">
@@ -259,7 +260,7 @@ export function BotsDashboard({
                 }`}>
                   {selectedBot.bot_type === 'internal'
                     ? <Sparkles className="w-3 h-3 text-[#15A4AE]" />
-                    : <Bot className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                    : <Image src="/favicon.png" alt="Bot" width={12} height={12} className="w-3 h-3 object-contain" />
                   }
                 </div>
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
