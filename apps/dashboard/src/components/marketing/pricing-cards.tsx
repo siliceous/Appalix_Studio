@@ -192,9 +192,15 @@ export function PricingCards() {
 
               {/* Price */}
               <div className="mb-5">
-                <div className="flex items-baseline gap-1.5">
+                <div className="flex items-baseline gap-2 flex-wrap">
                   <span className="text-4xl font-black text-white">${price}</span>
                   <span className="text-gray-400 text-base">/mo</span>
+                  {plan.annualPrice !== null && plan.monthlyPrice !== null && (
+                    <span className="text-4xl font-black line-through border border-[#15A4AE]/60 rounded px-1 text-transparent"
+                      style={{ WebkitTextStroke: '1px #15A4AE', textStroke: '1px #15A4AE' }}>
+                      ${isAnnual ? plan.monthlyPrice : plan.annualPrice}
+                    </span>
+                  )}
                 </div>
                 {plan.annualPrice !== null && plan.monthlyPrice !== null && (
                   <p className="text-sm text-gray-400 mt-1">
@@ -203,6 +209,20 @@ export function PricingCards() {
                       : `Or $${plan.annualPrice}/mo billed annually`}
                   </p>
                 )}
+              </div>
+
+              {/* Seat / bot / conversation stats */}
+              <div className="grid grid-cols-2 gap-2 mb-5">
+                {[
+                  `${plan.seats} seat${plan.seats !== 1 ? 's' : ''}`,
+                  plan.bots !== null ? `${plan.bots} bot${plan.bots !== 1 ? 's' : ''}` : 'Unlimited bots',
+                  `${plan.conversations} msg/mo`,
+                  plan.storage ? `${plan.storage} storage` : null,
+                ].filter(Boolean).map(stat => (
+                  <span key={stat!} className="flex items-center justify-center text-xs font-medium px-2.5 py-1 rounded-full bg-[#15A4AE]/10 border border-[#15A4AE]/30 text-white text-center">
+                    {stat}
+                  </span>
+                ))}
               </div>
 
               {/* Extra seat + bot + overage notes */}
