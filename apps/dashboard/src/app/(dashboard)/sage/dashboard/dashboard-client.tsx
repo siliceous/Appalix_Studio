@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import { sendEmail, scheduleMeetingFromEmail, getEmailSignature, updateEmailPriority, enhanceEmailReply } from '@/app/actions/sage-emails'
+import { EmailComposeModal } from '@/components/dashboard/email-compose-modal'
 import { updateAutoSetting, dismissFeedItem, runAutoBackfill, setDefaultPipeline } from '@/app/actions/sage-auto-settings'
 import type { BackfillResultItem } from '@/app/actions/sage-auto-settings'
 import { getWorkspacePipelines, dashboardAddLead, dashboardAddTicket, batchMatchContacts } from '@/app/actions/sage-triage'
@@ -196,6 +197,9 @@ function ItemPopup({
     medium: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200/70 dark:border-amber-500/20',
     low:    'bg-gray-100 dark:bg-white/5 text-gray-500 border border-gray-200 dark:border-white/10',
   }
+
+  // Bot email reply modal
+  const [showBotEmailModal, setShowBotEmailModal] = useState(false)
 
   // Reply compose state (email only)
   const [showReply, setShowReply]       = useState(false)
@@ -1139,6 +1143,12 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                       <Reply className="w-3.5 h-3.5" /> Reply
                     </button>
                   )}
+                  {!ignoring && popup.kind === 'bot' && (data as Conversation)?.ai_entities?.email && (
+                    <button onClick={() => setShowBotEmailModal(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] hover:bg-[#15A4AE]/8 rounded-xl transition-colors">
+                      <Mail className="w-3.5 h-3.5" /> Reply via Email
+                    </button>
+                  )}
                   {!ignoring && (
                     <button onClick={handleIgnore}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/8 hover:bg-gray-200 dark:hover:bg-white/12 rounded-xl transition-colors">
@@ -1171,6 +1181,12 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                     <button onClick={() => setShowReply(true)}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
                       <Reply className="w-3.5 h-3.5" /> Reply
+                    </button>
+                  )}
+                  {popup.kind === 'bot' && (data as Conversation)?.ai_entities?.email && (
+                    <button onClick={() => setShowBotEmailModal(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] hover:bg-[#15A4AE]/8 rounded-xl transition-colors">
+                      <Mail className="w-3.5 h-3.5" /> Reply via Email
                     </button>
                   )}
                   <button onClick={handleIgnore}
@@ -1213,6 +1229,12 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                       <Reply className="w-3.5 h-3.5" /> Reply
                     </button>
                   )}
+                  {popup.kind === 'bot' && (data as Conversation)?.ai_entities?.email && (
+                    <button onClick={() => setShowBotEmailModal(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] hover:bg-[#15A4AE]/8 rounded-xl transition-colors">
+                      <Mail className="w-3.5 h-3.5" /> Reply via Email
+                    </button>
+                  )}
                   <button onClick={handleIgnore}
                     className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors border dark:border-white/8">
                     <X className="w-3.5 h-3.5" /> Ignore
@@ -1224,6 +1246,19 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
           </div>
         )}
       </div>
+
+      {showBotEmailModal && popup.kind === 'bot' && (data as Conversation)?.ai_entities?.email && (
+        <EmailComposeModal
+          to={(data as Conversation).ai_entities!.email!}
+          toName={(data as Conversation).ai_entities?.name ?? undefined}
+          subject={`Following up — ${(data as Conversation).title ?? 'your conversation'}`}
+          context={[
+            (data as Conversation).title      ? `Conversation: ${(data as Conversation).title}` : '',
+            (data as Conversation).ai_summary ? `Summary: ${(data as Conversation).ai_summary}` : '',
+          ].filter(Boolean).join('\n')}
+          onClose={() => setShowBotEmailModal(false)}
+        />
+      )}
     </div>
   )
 }
