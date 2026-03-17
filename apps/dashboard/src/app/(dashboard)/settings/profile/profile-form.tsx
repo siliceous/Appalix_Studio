@@ -76,14 +76,16 @@ export function ProfileForm({ firstName, lastName, email, avatarUrl: initialAvat
       const saveResult = await saveAvatarUrl(urlResult.publicUrl)
       if (!saveResult.ok) throw new Error(saveResult.error ?? 'Failed to save')
 
-      setAvatarUrl(urlResult.publicUrl)
-      router.refresh() // refresh sidebar so it picks up the new avatar
+      // Keep showing previewUrl — Supabase CDN may not serve publicUrl instantly.
+      // publicUrl is saved in DB; it will be loaded on next page visit.
+      router.refresh() // update sidebar immediately
     } catch (err) {
       setAvatarUrl(initialAvatarUrl)
+      URL.revokeObjectURL(previewUrl)
       setError(err instanceof Error ? err.message : 'Upload failed')
     } finally {
       setUploading(false)
-      setTimeout(() => URL.revokeObjectURL(previewUrl), 2000)
+      // Don't revoke previewUrl on success — it's still being displayed
     }
   }
 
@@ -129,7 +131,6 @@ export function ProfileForm({ firstName, lastName, email, avatarUrl: initialAvat
                   src={avatarUrl}
                   alt=""
                   className="block w-full h-full object-cover"
-                  onError={() => setAvatarUrl(null)}
                 />
               ) : (
                 <span className="text-white text-lg font-bold uppercase select-none">{initials}</span>
