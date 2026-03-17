@@ -39,16 +39,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const branding = workspace ? await getBranding() : null
 
-  // Fetch user's display name for the sidebar account identity
+  // Fetch user's display name + avatar for the sidebar account identity
   const { data: profileRaw } = await supabase
     .from('user_profiles')
-    .select('first_name, last_name')
+    .select('first_name, last_name, avatar_url')
     .eq('user_id', user.id)
     .maybeSingle()
-  type ProfileRow = { first_name: string; last_name: string | null }
+  type ProfileRow = { first_name: string; last_name: string | null; avatar_url: string | null }
   const profile = profileRaw as ProfileRow | null
-  const userName  = profile ? [profile.first_name, profile.last_name].filter(Boolean).join(' ') : null
-  const userEmail = user.email ?? null
+  const userName   = profile ? [profile.first_name, profile.last_name].filter(Boolean).join(' ') : null
+  const userEmail  = user.email ?? null
+  const userAvatar = profile?.avatar_url ?? null
 
   if (!workspace) {
     return (
@@ -105,6 +106,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         userPermissions={userPermissions ?? undefined}
         userName={userName}
         userEmail={userEmail}
+        userAvatar={userAvatar}
         branding={branding}
       />
       <div className="flex-1 flex flex-col overflow-hidden">

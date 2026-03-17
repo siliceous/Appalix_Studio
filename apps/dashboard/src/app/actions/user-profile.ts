@@ -1,7 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 export async function saveUserName(formData: FormData) {
   const supabase = await createClient()
@@ -20,4 +20,54 @@ export async function saveUserName(formData: FormData) {
   )
 
   redirect('/settings')
+}
+
+export async function uploadUserAvatar(
+  formData: FormData,
+): Promise<{ ok: boolean; url?: string; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Not authenticated' }
+
+  const file = formData.get('file') as File | null
+  if (!file) return { ok: false, error: 'No file provided' }
+  if (!file.type.startsWith('image/')) return { ok: false, error: 'File must be an image' }
+  if (file.size > 2 * 1024 * 1024) return { ok: false, error: 'Avatar must be under 2 MB' }
+
+  const admin  = createAdminClient()
+  const ext    = file.name.split('.').pop() ?? 'jpg'
+  const path   = `${user.id}/avatar.${ext}`
+  const buffer = Buffer.from(await file.arrayBuffer())
+
+  const { error: uploadError } = await admin.storage
+    .from('user-avatars')
+    .upload(path, buffer, { contentType: file.type, upsert: true })
+
+  if (uploadError) return { ok: false, error: uploadError.message }
+
+  const { data: { publicUrl } } = admin.storage
+    .from('user-avatars')
+    .getPublicUrl(path)
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any).from('user_profiles').upsert(
+    { user_id: user.id, avatar_url: publicUrl, updated_at: new Date().toISOString() },
+    { onConflict: 'user_id' },
+  )
+
+  return { ok: true, url: publicUrl }
+}
+
+export async function removeUserAvatar(): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Not authenticated' }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any).from('user_profiles').upsert(
+    { user_id: user.id, avatar_url: null, updated_at: new Date().toISOString() },
+    { onConflict: 'user_id' },
+  )
+
+  return { ok: true }
 }

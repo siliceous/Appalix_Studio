@@ -96,6 +96,7 @@ interface SidebarProps {
   userPermissions?: UserPermissions
   userName?:        string | null
   userEmail?:       string | null
+  userAvatar?:      string | null
   branding?:        WorkspaceBranding | null
 }
 
@@ -105,7 +106,7 @@ const VIEW_AS_ROUTES = new Set([
   '/sage/pipelines', '/sage/contacts', '/sage/roi', '/my-activity',
 ])
 
-export function Sidebar({ workspace, callerRole, userPermissions, userName, userEmail, branding }: SidebarProps) {
+export function Sidebar({ workspace, callerRole, userPermissions, userName, userEmail, userAvatar, branding }: SidebarProps) {
   const pathname    = usePathname()
   const searchParams = useSearchParams()
   const router      = useRouter()
@@ -217,14 +218,24 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
             )}
           >
             {/* Avatar — w-8 to align exactly under brand mark */}
-            <div
-              className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-white text-[10px] font-bold uppercase select-none"
-              style={{ backgroundColor: branding?.primary_color ?? '#15A4AE' }}
-            >
-              {userName
-                ? userName.split(' ').map((w: string) => w[0]).slice(0, 2).join('')
-                : (userEmail?.[0] ?? '?')}
-            </div>
+            {userAvatar ? (
+              <Image
+                src={userAvatar}
+                alt={userName ?? 'Avatar'}
+                width={32}
+                height={32}
+                className="w-8 h-8 shrink-0 rounded-full object-cover select-none"
+              />
+            ) : (
+              <div
+                className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-white text-[10px] font-bold uppercase select-none"
+                style={{ backgroundColor: branding?.primary_color ?? '#15A4AE' }}
+              >
+                {userName
+                  ? userName.split(' ').map((w: string) => w[0]).slice(0, 2).join('')
+                  : (userEmail?.[0] ?? '?')}
+              </div>
+            )}
             {/* Name + email + plan — fades in on hover */}
             <div className="overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-75 min-w-0 flex-1">
               <p className="text-xs font-medium text-gray-900 dark:text-white truncate leading-tight">
