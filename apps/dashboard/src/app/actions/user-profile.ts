@@ -33,7 +33,7 @@ export async function uploadUserAvatar(
   const file = formData.get('file') as File | null
   if (!file) return { ok: false, error: 'No file provided' }
   if (!file.type.startsWith('image/')) return { ok: false, error: 'File must be an image' }
-  if (file.size > 2 * 1024 * 1024) return { ok: false, error: 'Avatar must be under 2 MB' }
+  if (file.size > 500 * 1024) return { ok: false, error: 'Avatar must be under 500 KB' }
 
   const admin  = createAdminClient()
   const ext    = file.name.split('.').pop() ?? 'jpg'
