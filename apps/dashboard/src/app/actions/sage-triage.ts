@@ -255,6 +255,27 @@ export async function triageCreateTicket(data: {
       contactId = (created as CR | null)?.id ?? null
     }
 
+    // Check for any existing ticket for this contact (most recent first)
+    if (contactId) {
+      const { data: existingTicket } = await admin.from('sage_tickets').select('id')
+        .eq('workspace_id', workspaceId).eq('contact_id', contactId)
+        .order('created_at', { ascending: false })
+        .limit(1).maybeSingle()
+      if (existingTicket) {
+        const ticketId = (existingTicket as CR).id
+        await (admin as any).from('sage_ticket_activities').insert({
+          workspace_id: workspaceId,
+          ticket_id:    ticketId,
+          type:         'note',
+          title:        'Received an email',
+          body:         data.description ?? null,
+        })
+        revalidatePath('/dashboard')
+        revalidatePath('/sage/tickets')
+        return { ticketId }
+      }
+    }
+
     const { data: ticket, error: ticketErr } = await admin
       .from('sage_tickets')
       .insert({
@@ -479,7 +500,7 @@ export async function dashboardAddLead(opts: {
 
 // ── Hard-coded dedup: add ticket from dashboard ──────────────────────────────
 // Dedup priority: email → name → phone (cannot be overwritten)
-// If existing open ticket found for contact → log activity, no duplicate
+// If any existing ticket found for contact → log activity, no duplicate
 export async function dashboardAddTicket(opts: {
   name: string
   email?: string | null
@@ -519,10 +540,11 @@ export async function dashboardAddTicket(opts: {
       if (c) contactId = (c as Row).id
     }
 
-    // 2. Check for existing open ticket for this contact
+    // 2. Check for any existing ticket for this contact (most recent first)
     if (contactId) {
       const { data: existing } = await admin.from('sage_tickets').select('id')
-        .eq('workspace_id', workspaceId).eq('contact_id', contactId).eq('status', 'open')
+        .eq('workspace_id', workspaceId).eq('contact_id', contactId)
+        .order('created_at', { ascending: false })
         .limit(1).maybeSingle()
 
       if (existing) {
