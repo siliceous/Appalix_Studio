@@ -180,7 +180,7 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
                 />
               )}
             </div>
-            <div className="overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-75 whitespace-nowrap">
+            <div className="w-0 group-hover:w-auto overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-75 whitespace-nowrap">
               {branding?.logo_url ? (
                 <Image
                   src={branding.logo_url}
