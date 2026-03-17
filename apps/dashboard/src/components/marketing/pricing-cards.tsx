@@ -240,19 +240,19 @@ export function PricingCards() {
               {/* Extra seat + bot + overage notes */}
               <div className="flex flex-col gap-1.5 mb-5 border-t border-white/10 pt-4">
                 {plan.extraSeats && (
-                  <p className="text-sm text-[#15A4AE]">
+                  <p className="text-base text-[#15A4AE] whitespace-nowrap">
                     + {plan.extraSeats} at ${isAnnual ? EXTRA_SEAT.annual : EXTRA_SEAT.monthly}/seat/mo
                   </p>
                 )}
                 {plan.extraBots && (
-                  <p className="text-sm text-[#15A4AE]">
+                  <p className="text-base text-[#15A4AE] whitespace-nowrap">
                     + Extra bots at ${isAnnual ? EXTRA_BOT.annual : EXTRA_BOT.monthly}/bot/mo
                   </p>
                 )}
-                <p className="text-sm text-[#15A4AE]">
+                <p className="text-base text-[#15A4AE] whitespace-nowrap">
                   + Extra storage at ${isAnnual ? EXTRA_STORAGE.annual : EXTRA_STORAGE.monthly}/10 GB/mo
                 </p>
-                <p className="text-sm text-[#15A4AE]">
+                <p className="text-base text-[#15A4AE] whitespace-nowrap">
                   $10 per 1,000 extra conversations
                 </p>
               </div>
