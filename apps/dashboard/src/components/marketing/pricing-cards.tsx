@@ -196,17 +196,24 @@ export function PricingCards() {
                   <span className="text-4xl font-black text-white">${price}</span>
                   <span className="text-gray-400 text-base">/mo</span>
                   {plan.annualPrice !== null && plan.monthlyPrice !== null && (
-                    <span className="text-4xl font-black line-through border border-[#15A4AE]/60 rounded px-1 text-transparent"
-                      style={{ WebkitTextStroke: '1px #15A4AE', textStroke: '1px #15A4AE' }}>
+                    <span className="relative inline-block text-4xl font-black text-gray-500">
                       ${isAnnual ? plan.monthlyPrice : plan.annualPrice}
+                      <span className="absolute inset-0 flex items-center pointer-events-none">
+                        <span className="w-full h-0.5 bg-[#15A4AE] block" style={{ transform: 'rotate(-12deg)' }} />
+                      </span>
                     </span>
                   )}
                 </div>
                 {plan.annualPrice !== null && plan.monthlyPrice !== null && (
-                  <p className="text-sm text-gray-400 mt-1">
-                    {isAnnual
-                      ? `Billed $${plan.annualPrice * 12}/year`
-                      : `Or $${plan.annualPrice}/mo billed annually`}
+                  <p className="text-sm text-gray-400 mt-1 flex items-center gap-2">
+                    {isAnnual ? (
+                      <>
+                        <span>Billed ${plan.annualPrice * 12}/year</span>
+                        <span className="text-green-400 font-semibold">Save ${(plan.monthlyPrice - plan.annualPrice) * 12}/year</span>
+                      </>
+                    ) : (
+                      <span>Or ${plan.annualPrice}/mo billed annually</span>
+                    )}
                   </p>
                 )}
               </div>
