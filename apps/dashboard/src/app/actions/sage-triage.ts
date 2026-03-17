@@ -116,18 +116,18 @@ export async function triageCreateLead(data: {
 
     if (isNew) await logActivity(workspaceId, 'contact', contactId, 'contact_created', { source: 'email_triage' })
 
-    // 2. Check for existing open deal — if found, link conversation and return (no duplicate)
-    const { data: openDeal } = await admin
+    // 2. Check for any existing deal — if found, link conversation and return (no duplicate)
+    const { data: anyDeal } = await admin
       .from('sage_deals')
       .select('id')
       .eq('workspace_id', workspaceId)
       .eq('contact_id', contactId)
-      .eq('status', 'open')
+      .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
 
-    if (openDeal) {
-      const dealId = (openDeal as { id: string }).id
+    if (anyDeal) {
+      const dealId = (anyDeal as { id: string }).id
       if (data.conversationId) {
         await admin.from('sage_deals')
           .update({ source_conversation_id: data.conversationId })
@@ -410,13 +410,14 @@ export async function dashboardAddLead(opts: {
       await logActivity(workspaceId, 'contact', contactId, 'contact_created', { source: `${opts.source}_triage` })
     }
 
-    // 2. Check for existing open deal
-    const { data: openDeal } = await admin.from('sage_deals').select('id')
-      .eq('workspace_id', workspaceId).eq('contact_id', contactId).eq('status', 'open')
+    // 2. Check for any existing deal for this contact (most recent first, any status)
+    const { data: anyDeal } = await admin.from('sage_deals').select('id, status')
+      .eq('workspace_id', workspaceId).eq('contact_id', contactId)
+      .order('created_at', { ascending: false })
       .limit(1).maybeSingle()
 
-    if (openDeal) {
-      const dealId = (openDeal as { id: string }).id
+    if (anyDeal) {
+      const dealId = (anyDeal as { id: string; status: string }).id
       const activityTitle =
         opts.source === 'email' ? 'Received an email'
         : opts.source === 'bot' ? 'Received a bot conversation'
@@ -620,16 +621,21 @@ export async function batchMatchContacts(
     if (c) result[item.id] = { contactId: (c as CR).id, contactName: (c as CR).name }
   }
 
-  // 4. For each matched contact, look up open deal
+  // 4. For each matched contact, look up most recent deal (any status)
   const matchedEntries = Object.entries(result).filter(([, v]) => v !== null)
   if (matchedEntries.length > 0) {
     const contactIds = [...new Set(matchedEntries.map(([, v]) => v!.contactId))]
     const { data: deals } = await admin.from('sage_deals')
-      .select('id, title, contact_id, pipeline_id')
-      .eq('workspace_id', workspaceId).eq('status', 'open')
+      .select('id, title, contact_id, pipeline_id, status')
+      .eq('workspace_id', workspaceId)
       .in('contact_id', contactIds)
+      .order('created_at', { ascending: false })
     if (deals) {
-      const dealMap = new Map((deals as { id: string; title: string; contact_id: string; pipeline_id: string | null }[]).map(d => [d.contact_id, d]))
+      // Build map keeping only the first (most recent) deal per contact
+      const dealMap = new Map<string, { id: string; title: string; contact_id: string; pipeline_id: string | null }>()
+      for (const d of deals as { id: string; title: string; contact_id: string; pipeline_id: string | null }[]) {
+        if (!dealMap.has(d.contact_id)) dealMap.set(d.contact_id, d)
+      }
       for (const [itemId, match] of matchedEntries) {
         const deal = dealMap.get(match!.contactId)
         if (deal) result[itemId] = { ...match!, dealId: deal.id, dealTitle: deal.title, dealPipelineId: deal.pipeline_id ?? undefined }
