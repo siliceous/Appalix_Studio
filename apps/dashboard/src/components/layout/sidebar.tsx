@@ -224,11 +224,10 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
           >
             {/* Avatar — w-8 to align exactly under brand mark */}
             {userAvatar ? (
-              <Image
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
                 src={userAvatar}
                 alt={userName ?? 'Avatar'}
-                width={32}
-                height={32}
                 className="w-8 h-8 shrink-0 rounded-full object-cover select-none"
               />
             ) : (

@@ -35,18 +35,29 @@ export async function uploadUserAvatar(
   if (buffer.length === 0) return { ok: false, error: 'Empty image data' }
   if (buffer.length > 500 * 1024) return { ok: false, error: 'Avatar must be under 500 KB' }
 
-  const admin = createAdminClient()
-  const path  = `${user.id}/avatar.jpg`
+  const admin    = createAdminClient()
+  const newPath  = `${user.id}/avatar_${Date.now()}.jpg`
 
+  // Upload with a unique timestamped filename so CDN and Next.js image cache
+  // never serve a stale/corrupt version from a previous upload.
   const { error: uploadError } = await admin.storage
     .from('user-avatars')
-    .upload(path, buffer, { contentType: 'image/jpeg', upsert: true })
+    .upload(newPath, buffer, { contentType: 'image/jpeg', upsert: false })
 
   if (uploadError) return { ok: false, error: uploadError.message }
 
   const { data: { publicUrl } } = admin.storage
     .from('user-avatars')
-    .getPublicUrl(path)
+    .getPublicUrl(newPath)
+
+  // Clean up old avatar files for this user
+  const { data: existing } = await admin.storage.from('user-avatars').list(user.id)
+  const toDelete = (existing ?? [])
+    .filter(f => f.name !== `avatar_${newPath.split('avatar_')[1]}`)
+    .map(f => `${user.id}/${f.name}`)
+  if (toDelete.length > 0) {
+    await admin.storage.from('user-avatars').remove(toDelete)
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: dbError } = await (supabase as any).from('user_profiles')
