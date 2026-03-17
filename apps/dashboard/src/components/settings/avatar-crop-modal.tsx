@@ -7,7 +7,7 @@ import { X, Check } from 'lucide-react'
 
 interface Props {
   imageSrc: string
-  onConfirm: (blob: Blob) => void
+  onConfirm: (previewUrl: string, base64: string) => void
   onCancel: () => void
 }
 
@@ -16,15 +16,14 @@ function createImage(url: string): Promise<HTMLImageElement> {
     const img = new Image()
     img.addEventListener('load', () => resolve(img))
     img.addEventListener('error', reject)
-    img.setAttribute('crossOrigin', 'anonymous')
     img.src = url
   })
 }
 
-async function cropToBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> {
+async function cropToDataUrl(imageSrc: string, pixelCrop: Area): Promise<string> {
   const image  = await createImage(imageSrc)
   const canvas = document.createElement('canvas')
-  const size   = 256 // output at 256×256
+  const size   = 256
   canvas.width  = size
   canvas.height = size
   const ctx = canvas.getContext('2d')!
@@ -34,13 +33,7 @@ async function cropToBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> {
     pixelCrop.width, pixelCrop.height,
     0, 0, size, size,
   )
-  return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => blob ? resolve(blob) : reject(new Error('Canvas toBlob failed')),
-      'image/jpeg',
-      0.9,
-    )
-  })
+  return canvas.toDataURL('image/jpeg', 0.9) // data:image/jpeg;base64,...
 }
 
 export function AvatarCropModal({ imageSrc, onConfirm, onCancel }: Props) {
@@ -57,8 +50,9 @@ export function AvatarCropModal({ imageSrc, onConfirm, onCancel }: Props) {
     if (!croppedArea) return
     setProcessing(true)
     try {
-      const blob = await cropToBlob(imageSrc, croppedArea)
-      onConfirm(blob)
+      const dataUrl = await cropToDataUrl(imageSrc, croppedArea)
+      const base64  = dataUrl.split(',')[1] // strip "data:image/jpeg;base64,"
+      onConfirm(dataUrl, base64)
     } finally {
       setProcessing(false)
     }

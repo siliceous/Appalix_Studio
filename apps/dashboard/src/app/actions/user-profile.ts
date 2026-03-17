@@ -24,23 +24,23 @@ export async function saveUserName(formData: FormData) {
 }
 
 export async function uploadUserAvatar(
-  formData: FormData,
+  base64: string,
 ): Promise<{ ok: boolean; url?: string; error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { ok: false, error: 'Not authenticated' }
 
-  const file = formData.get('file') as File | null
-  if (!file || file.size === 0) return { ok: false, error: 'No file provided' }
-  if (file.size > 500 * 1024) return { ok: false, error: 'Avatar must be under 500 KB' }
+  // Decode base64 → Buffer (text-based transfer avoids binary corruption)
+  const buffer = Buffer.from(base64, 'base64')
+  if (buffer.length === 0) return { ok: false, error: 'Empty image data' }
+  if (buffer.length > 500 * 1024) return { ok: false, error: 'Avatar must be under 500 KB' }
 
   const admin = createAdminClient()
   const path  = `${user.id}/avatar.jpg`
 
-  // Upload File directly — no Buffer/ArrayBuffer conversion that can corrupt binary data
   const { error: uploadError } = await admin.storage
     .from('user-avatars')
-    .upload(path, file, { contentType: 'image/jpeg', upsert: true })
+    .upload(path, buffer, { contentType: 'image/jpeg', upsert: true })
 
   if (uploadError) return { ok: false, error: uploadError.message }
 

@@ -47,27 +47,22 @@ export function ProfileForm({ firstName, lastName, email, avatarUrl: initialAvat
     reader.readAsDataURL(file)
   }
 
-  // Step 2: crop confirmed → preview instantly, upload blob directly to Supabase via signed URL
-  async function handleCropConfirm(blob: Blob) {
+  // Step 2: crop confirmed → preview instantly, upload base64 to server
+  async function handleCropConfirm(previewUrl: string, base64: string) {
     setCropSrc(null)
     setError(null)
     setUploading(true)
 
-    // Show cropped image immediately while uploading
-    const previewUrl = URL.createObjectURL(blob)
+    // Show the data URL immediately — no object URL needed, no revoke issues
     setAvatarUrl(previewUrl)
 
-    const fd = new FormData()
-    fd.append('file', blob, 'avatar.jpg')
-    const result = await uploadUserAvatar(fd)
+    const result = await uploadUserAvatar(base64)
     setUploading(false)
 
     if (result.ok) {
-      // Keep showing previewUrl — public URL may need a moment to propagate on CDN
       router.refresh() // update sidebar
     } else {
       setAvatarUrl(initialAvatarUrl)
-      URL.revokeObjectURL(previewUrl)
       setError(result.error ?? 'Upload failed')
     }
   }
