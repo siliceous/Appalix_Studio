@@ -1342,6 +1342,7 @@ export function SageDashboardClient({
   const [popup,      setPopup]      = useState<PopupState | null>(null)
   const [doneBusy,   setDoneBusy]   = useState<string | null>(null)
   const [feedView,    setFeedView]   = useState<'list' | 'grid'>('list')
+  const [taskView,    setTaskView]   = useState<'list' | 'grid'>('list')
   const [topType,     setTopType]    = useState<'email' | 'bot' | 'form' | 'ticket' | null>(null)
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
   const [donutsCollapsed, setDonutsCollapsed] = useState(false)
@@ -2201,10 +2202,26 @@ export function SageDashboardClient({
             <div className="flex items-center gap-2">
               <CheckSquare className="w-4 h-4 text-gray-400" />
               <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Tasks</h2>
+              {(tasks.length + ticketTasks.length) > 0 && (
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400">{tasks.length + ticketTasks.length}</span>
+              )}
             </div>
-            {(tasks.length + ticketTasks.length) > 0 && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400">{tasks.length + ticketTasks.length}</span>
-            )}
+            <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/8 rounded-lg p-0.5">
+              <button
+                onClick={() => setTaskView('list')}
+                title="List view"
+                className={`p-1.5 rounded-md transition-colors ${taskView === 'list' ? 'bg-white dark:bg-white/15 text-gray-700 dark:text-gray-200 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+              >
+                <LayoutList className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setTaskView('grid')}
+                title="Grid view"
+                className={`p-1.5 rounded-md transition-colors ${taskView === 'grid' ? 'bg-white dark:bg-white/15 text-gray-700 dark:text-gray-200 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           {loading ? (
@@ -2277,6 +2294,33 @@ export function SageDashboardClient({
               </div>
             )
 
+            // Grid view: group by source kind
+            if (taskView === 'grid') {
+              const groups: { kind: AnyTask['kind']; label: string; color: string; badgeClass: string; tasks: AnyTask[] }[] = [
+                { kind: 'deal',   label: 'Deal Tasks',   color: 'text-[#15A4AE]',   badgeClass: 'bg-[#15A4AE]/10 text-[#15A4AE]',         tasks: allTasks.filter(t => t.kind === 'deal') },
+                { kind: 'ticket', label: 'Ticket Tasks', color: 'text-amber-600 dark:text-amber-400', badgeClass: 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400', tasks: allTasks.filter(t => t.kind === 'ticket') },
+              ].filter(g => g.tasks.length > 0)
+
+              return (
+                <div className="overflow-y-auto max-h-[680px] p-4 grid grid-cols-1 gap-3">
+                  {groups.map(group => (
+                    <div key={group.kind} className="bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-100 dark:border-white/8 overflow-hidden">
+                      <div className="px-4 py-2.5 flex items-center justify-between border-b border-gray-100 dark:border-white/8">
+                        <span className={`text-xs font-semibold ${group.color}`}>{group.label}</span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${group.badgeClass}`}>{group.tasks.length}</span>
+                      </div>
+                      <div className="divide-y divide-gray-100 dark:divide-white/6">
+                        {group.tasks.map(task => renderTask(task, e =>
+                          task.kind === 'deal' ? markTaskDone(task.id, e) : markTicketTaskDone(task.id, e)
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            }
+
+            // List view (default): chronological with Pending / Upcoming sections
             return (
               <div className="overflow-y-auto max-h-[680px]">
                 {/* Pending */}
