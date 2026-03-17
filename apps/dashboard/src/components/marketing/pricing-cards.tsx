@@ -165,7 +165,7 @@ export function PricingCards() {
               key={plan.key}
               className={`relative flex flex-col rounded-2xl p-6 border transition-colors h-full ${
                 plan.popular
-                  ? 'bg-[#15A4AE]/10 border-[#15A4AE]/50 shadow-lg shadow-[#15A4AE]/10'
+                  ? 'bg-[#15A4AE]/10 border-[#15A4AE]/50 shadow-xl shadow-[#15A4AE]/20 -translate-y-4'
                   : 'bg-white/5 border-white/10 hover:border-white/20'
               }`}
             >
