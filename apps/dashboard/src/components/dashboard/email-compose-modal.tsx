@@ -90,13 +90,13 @@ export function EmailComposeModal({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]"
+        className="fixed inset-0 z-50 bg-black/55 dark:bg-black/70"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-        <div className="w-full max-w-lg bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-2xl border border-gray-200 dark:border-white/10 flex flex-col pointer-events-auto max-h-[90vh]">
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:px-6 sm:py-8 pointer-events-none">
+        <div className="relative w-full sm:max-w-2xl bg-white dark:bg-[#2a2a2a] rounded-t-2xl sm:rounded-2xl shadow-2xl border-t sm:border border-gray-200 dark:border-white/12 flex flex-col pointer-events-auto h-[96vh] sm:h-[calc(100vh-64px)]">
 
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3.5 border-b dark:border-white/8 shrink-0">

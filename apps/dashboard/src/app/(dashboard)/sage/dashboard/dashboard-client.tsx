@@ -1201,6 +1201,18 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                       <Mail className="w-3.5 h-3.5" /> Reply via Email
                     </button>
                   )}
+                  {popup.kind === 'form' && (data as Lead)?.email && (
+                    <button onClick={() => setOutboundEmail({ to: (data as Lead).email!, toName: (data as Lead).name ?? undefined, subject: `Following up — ${(data as Lead).form_name ?? 'your enquiry'}`, context: [(data as Lead).name ? `Name: ${(data as Lead).name}` : '', (data as Lead).campaign_name ? `Campaign: ${(data as Lead).campaign_name}` : ''].filter(Boolean).join('\n') })}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] hover:bg-[#15A4AE]/8 rounded-xl transition-colors">
+                      <Mail className="w-3.5 h-3.5" /> Reply via Email
+                    </button>
+                  )}
+                  {popup.kind === 'ticket' && ((data as {email?:string|null})?.email ?? (data as {contact?:{email?:string|null}|null})?.contact?.email) && (
+                    <button onClick={() => { const t = data as {title?:string;description?:string;email?:string|null;name?:string|null;contact?:{email?:string|null;name?:string|null}|null}; const toEmail = t.contact?.email ?? t.email ?? ''; const toName = t.contact?.name ?? t.name ?? undefined; setOutboundEmail({ to: toEmail, toName: toName ?? undefined, subject: `Re: ${t.title ?? 'your ticket'}`, context: [t.title ? `Ticket: ${t.title}` : '', t.description ? `Details: ${t.description}` : ''].filter(Boolean).join('\n') }) }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] hover:bg-[#15A4AE]/8 rounded-xl transition-colors">
+                      <Mail className="w-3.5 h-3.5" /> Reply via Email
+                    </button>
+                  )}
                   <button onClick={handleIgnore}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/8 hover:bg-gray-200 dark:hover:bg-white/12 rounded-xl transition-colors">
                     <X className="w-3.5 h-3.5" /> Ignore
@@ -1243,6 +1255,18 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                   )}
                   {popup.kind === 'bot' && (data as Conversation)?.ai_entities?.email && (
                     <button onClick={() => setOutboundEmail({ to: (data as Conversation).ai_entities!.email!, toName: (data as Conversation).ai_entities?.name ?? undefined, subject: `Following up — ${(data as Conversation).title ?? 'your conversation'}`, context: [(data as Conversation).title ? `Conversation: ${(data as Conversation).title}` : '', (data as Conversation).ai_summary ? `Summary: ${(data as Conversation).ai_summary}` : ''].filter(Boolean).join('\n') })}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] hover:bg-[#15A4AE]/8 rounded-xl transition-colors">
+                      <Mail className="w-3.5 h-3.5" /> Reply via Email
+                    </button>
+                  )}
+                  {popup.kind === 'form' && (data as Lead)?.email && (
+                    <button onClick={() => setOutboundEmail({ to: (data as Lead).email!, toName: (data as Lead).name ?? undefined, subject: `Following up — ${(data as Lead).form_name ?? 'your enquiry'}`, context: [(data as Lead).name ? `Name: ${(data as Lead).name}` : '', (data as Lead).campaign_name ? `Campaign: ${(data as Lead).campaign_name}` : ''].filter(Boolean).join('\n') })}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] hover:bg-[#15A4AE]/8 rounded-xl transition-colors">
+                      <Mail className="w-3.5 h-3.5" /> Reply via Email
+                    </button>
+                  )}
+                  {popup.kind === 'ticket' && ((data as {email?:string|null})?.email ?? (data as {contact?:{email?:string|null}|null})?.contact?.email) && (
+                    <button onClick={() => { const t = data as {title?:string;description?:string;email?:string|null;name?:string|null;contact?:{email?:string|null;name?:string|null}|null}; const toEmail = t.contact?.email ?? t.email ?? ''; const toName = t.contact?.name ?? t.name ?? undefined; setOutboundEmail({ to: toEmail, toName: toName ?? undefined, subject: `Re: ${t.title ?? 'your ticket'}`, context: [t.title ? `Ticket: ${t.title}` : '', t.description ? `Details: ${t.description}` : ''].filter(Boolean).join('\n') }) }}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] hover:bg-[#15A4AE]/8 rounded-xl transition-colors">
                       <Mail className="w-3.5 h-3.5" /> Reply via Email
                     </button>
