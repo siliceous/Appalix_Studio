@@ -4,6 +4,7 @@ import { PLATFORM_META, formatDate } from '@/lib/utils'
 import { Download } from 'lucide-react'
 import { DeleteConversationButton } from './delete-button'
 import { RenameConversationTitle } from './rename-title'
+import { ConversationEmailReplyButton } from './email-reply-button'
 import type { Metadata } from 'next'
 import type { Conversation, Message } from '@/lib/types'
 
@@ -60,6 +61,18 @@ export default async function ConversationDetailPage({
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {conversation.ai_entities?.email && (
+            <ConversationEmailReplyButton
+              to={conversation.ai_entities.email}
+              toName={conversation.ai_entities.name ?? undefined}
+              subject={`Following up — ${conversation.title ?? 'your conversation'}`}
+              context={[
+                conversation.title   ? `Conversation: ${conversation.title}` : '',
+                conversation.ai_summary ? `Summary: ${conversation.ai_summary}` : '',
+                conversation.summary    ? `Summary: ${conversation.summary}`    : '',
+              ].filter(Boolean).join('\n')}
+            />
+          )}
           <a
             href={`/api/conversations/${id}/export`}
             download
