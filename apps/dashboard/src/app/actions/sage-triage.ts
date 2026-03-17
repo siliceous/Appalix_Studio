@@ -61,7 +61,7 @@ export async function triageCreateLead(data: {
   const admin = createAdminClient()
 
   try {
-    // 1. Find or create contact: email → name (phone not available in email triage)
+    // 1. Find or create contact: email → name → company
     type CR = { id: string }
     let contactId: string
     let isNew = false
@@ -76,6 +76,11 @@ export async function triageCreateLead(data: {
       const { data: byName } = await admin.from('sage_contacts').select('id')
         .eq('workspace_id', workspaceId).ilike('name', data.name.trim()).limit(1).maybeSingle()
       if (byName) existing = byName as CR
+    }
+    if (!existing && data.company) {
+      const { data: byCompany } = await admin.from('sage_contacts').select('id')
+        .eq('workspace_id', workspaceId).ilike('company_name', data.company.trim()).limit(1).maybeSingle()
+      if (byCompany) existing = byCompany as CR
     }
 
     if (existing) {
@@ -378,7 +383,7 @@ export async function dashboardAddLead(opts: {
     let contactId: string
     let isNew = true
 
-    // 1. Dedup: email → name → phone
+    // 1. Dedup: email → name → phone → company
     let existing: CR | null = null
     if (opts.email) {
       const { data: r } = await admin.from('sage_contacts').select('id')
@@ -393,6 +398,11 @@ export async function dashboardAddLead(opts: {
     if (!existing && opts.phone) {
       const { data: r } = await admin.from('sage_contacts').select('id')
         .eq('workspace_id', workspaceId).eq('phone', opts.phone).limit(1).maybeSingle()
+      if (r) existing = r as CR
+    }
+    if (!existing && opts.company) {
+      const { data: r } = await admin.from('sage_contacts').select('id')
+        .eq('workspace_id', workspaceId).ilike('company_name', opts.company.trim()).limit(1).maybeSingle()
       if (r) existing = r as CR
     }
 
@@ -601,7 +611,7 @@ export type ContactMatch = {
 }
 
 export async function batchMatchContacts(
-  items: Array<{ id: string; email?: string | null; name?: string | null; phone?: string | null }>
+  items: Array<{ id: string; email?: string | null; name?: string | null; phone?: string | null; company?: string | null }>
 ): Promise<Record<string, ContactMatch | null>> {
   // Always return null (no match) for every item — never leave items as undefined
   const nullResult: Record<string, ContactMatch | null> = {}
@@ -647,7 +657,15 @@ export async function batchMatchContacts(
     if (c) result[item.id] = { contactId: (c as CR).id, contactName: (c as CR).name }
   }
 
-  // 4. For each matched contact, look up most recent deal (any status)
+  // 4. Company match for still-unmatched (fallback — matches any contact at that company)
+  const byCompany = items.filter(i => result[i.id] === null && i.company)
+  for (const item of byCompany) {
+    const { data: c } = await admin.from('sage_contacts').select('id, name')
+      .eq('workspace_id', workspaceId).ilike('company_name', item.company!.trim()).limit(1).maybeSingle()
+    if (c) result[item.id] = { contactId: (c as CR).id, contactName: (c as CR).name }
+  }
+
+  // 6. For each matched contact, look up most recent deal (any status)
   const matchedEntries = Object.entries(result).filter(([, v]) => v !== null)
   if (matchedEntries.length > 0) {
     const contactIds = [...new Set(matchedEntries.map(([, v]) => v!.contactId))]
