@@ -443,10 +443,7 @@ export function BotsDashboard({
               </button>
               {leadEmail && (
                 <button
-                  onClick={() => {
-                    setEmailFromModal({ to: leadEmail, toName: leadName, context: `Conversation: ${activeConv?.title ?? ''}\n${leadNotes}` })
-                    setModalMode(null)
-                  }}
+                  onClick={() => setEmailFromModal({ to: leadEmail, toName: leadName, context: `Conversation: ${activeConv?.title ?? ''}\n${leadNotes}` })}
                   className="flex items-center gap-1.5 px-3 py-2 text-sm border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] rounded-lg hover:bg-[#15A4AE]/8 transition-colors"
                 >
                   <Mail className="w-3.5 h-3.5" />
@@ -553,10 +550,7 @@ export function BotsDashboard({
               </button>
               {ticketEmail && (
                 <button
-                  onClick={() => {
-                    setEmailFromModal({ to: ticketEmail, toName: ticketName, context: `Ticket: ${ticketTitle}\n${ticketDesc}` })
-                    setModalMode(null)
-                  }}
+                  onClick={() => setEmailFromModal({ to: ticketEmail, toName: ticketName, context: `Ticket: ${ticketTitle}\n${ticketDesc}` })}
                   className="flex items-center gap-1.5 px-3 py-2 text-sm border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] rounded-lg hover:bg-[#15A4AE]/8 transition-colors"
                 >
                   <Mail className="w-3.5 h-3.5" />
