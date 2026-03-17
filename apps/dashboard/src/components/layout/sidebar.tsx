@@ -149,7 +149,7 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
         <div className="px-3 py-4 border-b dark:border-white/8 shrink-0">
 
           {/* Logo row */}
-          <div className="flex items-center gap-2.5 mb-3 min-w-0">
+          <div className="flex items-center justify-center group-hover:justify-start gap-2.5 mb-3 min-w-0">
             {/* Icon — visible when collapsed, hidden when expanded */}
             <div className="shrink-0 group-hover:hidden">
               {branding?.favicon_url ? (
