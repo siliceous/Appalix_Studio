@@ -185,9 +185,19 @@ export function PricingCards() {
 
               {/* Price */}
               <div className="mb-4">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-white">${price}</span>
-                  <span className="text-gray-400 text-base">/mo</span>
+                <div className="flex items-baseline gap-3">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-black text-white">${price}</span>
+                    <span className="text-gray-400 text-base">/mo</span>
+                  </div>
+                  {plan.annualPrice !== null && plan.monthlyPrice !== null && (
+                    <div className="flex items-baseline gap-0.5">
+                      <span className="text-[30px] font-black text-gray-500 line-through decoration-[#15A4AE]">
+                        ${isAnnual ? plan.monthlyPrice : plan.annualPrice}
+                      </span>
+                      <span className="text-gray-600 text-sm">/mo</span>
+                    </div>
+                  )}
                 </div>
                 {billed && (
                   <p className="text-xs text-gray-500 mt-1">Billed ${billed}/year</p>
