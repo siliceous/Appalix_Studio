@@ -90,26 +90,31 @@ export default async function HomePage() {
         <div className="relative max-w-7xl mx-auto">
           <div className="max-w-3xl mx-auto text-center mb-16">
             <FadeUp delay={0}>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-brand-600/40 bg-brand-600/10 text-brand-400 text-xs font-medium mb-6">
-                <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse" />
-                Limitless AI. Delivered.
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mb-6 flex-wrap">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-brand-600/40 bg-brand-600/10 text-brand-400 text-xs font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse shrink-0" />
+                  Integrates with Mailchimp &amp; ActiveCampaign
+                </div>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/15 bg-white/5 text-gray-300 text-xs font-medium">
+                  <span className="text-[11px]">📢</span>
+                  Google Ads &amp; Facebook Lead Ads
+                </div>
               </div>
             </FadeUp>
 
             <FadeUp delay={0.1}>
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-snug mb-6">
-                Let AI turn visitors into<br />
+                Imagine a single AI platform —<br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-brand-600">
-                  long term paying clients
+                  chatbots, email, leads,
                 </span><br />
-                while you focus on your<br />
-                core competencies
+                CRM &amp; ticketing, all built in
               </h1>
             </FadeUp>
 
             <FadeUp delay={0.2}>
               <p className="text-base sm:text-xl lg:text-2xl text-white leading-relaxed max-w-3xl mx-auto mb-4">
-                Deploy AI agents trained on your website and business content across every customer touchpoint. Answer questions, capture leads, and convert visitors into customers 24/7.
+                Each enquiry is instantly transformed into an opportunity and prioritised as High, Medium &amp; Low — organised directly within a built-in CRM suite, all within seconds, 24/7.
               </p>
             </FadeUp>
 
