@@ -39,7 +39,7 @@ const PLANS = [
     name: 'Pro',
     annualPrice: 99,
     monthlyPrice: 149,
-    desc: 'For growing teams that need more power and collaboration.',
+    desc: 'More power, more bots, more collaboration.',
     popular: true,
     seats: 3,
     bots: 3,
@@ -183,54 +183,44 @@ export function PricingCards() {
               )}
 
               {/* Plan name + desc */}
-              <div className="mb-4">
-                <h3 className={`font-bold text-lg mb-1 ${plan.popular ? 'text-brand-300' : 'text-white'}`}>
+              <div className="mb-5">
+                <h3 className={`font-bold text-xl mb-1 ${plan.popular ? 'text-brand-300' : 'text-white'}`}>
                   {plan.name}
                 </h3>
-                <p className="text-xs text-gray-400 leading-relaxed">{plan.desc}</p>
+                <p className="text-sm text-gray-400 leading-relaxed">{plan.desc}</p>
               </div>
 
               {/* Price */}
-              <div className="mb-4">
-                <span className="text-3xl font-black text-white">${price}</span>
-                <span className="text-gray-500 text-sm">/mo</span>
-                {isAnnual && price !== null && (
-                  <p className="text-xs text-gray-400 mt-0.5">Billed ${price * 12}/year</p>
+              <div className="mb-5">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-4xl font-black text-white">${price}</span>
+                  <span className="text-gray-400 text-base">/mo</span>
+                </div>
+                {plan.annualPrice !== null && plan.monthlyPrice !== null && (
+                  <p className="text-sm text-gray-400 mt-1">
+                    {isAnnual
+                      ? `Billed $${plan.annualPrice * 12}/year`
+                      : `Or $${plan.annualPrice}/mo billed annually`}
+                  </p>
                 )}
               </div>
 
-              {/* Seat / bot / conversation stats */}
-              <div className="flex flex-wrap gap-1.5 mb-4">
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/8 text-gray-300 border border-white/10">
-                  {plan.seats} seat{plan.seats !== 1 ? 's' : ''}
-                </span>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/8 text-gray-300 border border-white/10">
-                  {plan.bots !== null ? `${plan.bots} bot${plan.bots !== 1 ? 's' : ''}` : 'Unlimited bots'}
-                </span>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/8 text-gray-300 border border-white/10">
-                  {plan.conversations} msg/mo
-                </span>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/8 text-gray-300 border border-white/10">
-                  {plan.storage} storage
-                </span>
-              </div>
-
               {/* Extra seat + bot + overage notes */}
-              <div className="flex flex-col gap-0.5 mb-4">
+              <div className="flex flex-col gap-1.5 mb-5 border-t border-white/10 pt-4">
                 {plan.extraSeats && (
-                  <p className="text-[11px] text-[#15A4AE]">
+                  <p className="text-sm text-[#15A4AE]">
                     + {plan.extraSeats} at ${isAnnual ? EXTRA_SEAT.annual : EXTRA_SEAT.monthly}/seat/mo
                   </p>
                 )}
                 {plan.extraBots && (
-                  <p className="text-[11px] text-[#15A4AE]">
+                  <p className="text-sm text-[#15A4AE]">
                     + Extra bots at ${isAnnual ? EXTRA_BOT.annual : EXTRA_BOT.monthly}/bot/mo
                   </p>
                 )}
-                <p className="text-[11px] text-[#15A4AE]">
+                <p className="text-sm text-[#15A4AE]">
                   + Extra storage at ${isAnnual ? EXTRA_STORAGE.annual : EXTRA_STORAGE.monthly}/10 GB/mo
                 </p>
-                <p className="text-[11px] text-gray-500">
+                <p className="text-sm text-gray-400">
                   $10 per 1,000 extra conversations
                 </p>
               </div>
