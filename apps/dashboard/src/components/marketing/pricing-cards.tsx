@@ -40,7 +40,7 @@ const PLANS = [
     name: 'Pro',
     annualPrice: 99,
     monthlyPrice: 149,
-    desc: 'For growing teams that need more power and collaboration.',
+    desc: 'More power, more bots, more success.',
     popular: true,
     seats: 3,
     bots: 3,
