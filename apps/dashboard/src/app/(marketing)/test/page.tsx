@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { FadeUp, ScrollReveal } from '@/components/marketing/animate'
 import { LeadFlowDiagram, QualificationLoop } from '@/components/marketing/lead-flow-diagram'
+import { PricingCards } from '@/components/marketing/pricing-cards'
 
 export const metadata: Metadata = {
   title: 'Appalix — AI Lead Capture & Pipeline Management from Every Channel',
@@ -140,20 +141,18 @@ export default function TestLandingPage() {
 
           <FadeUp delay={0.1}>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.25] mb-8 text-white max-w-4xl mx-auto">
-              Imagine a single AI platform having chatbots, lead forms, email AI tools, CRM, and ticketing systems all built in.
+              Imagine a single AI platform having chatbots, email AI tools, lead forms, CRM, and ticketing system — all built in.
             </h1>
           </FadeUp>
 
           <FadeUp delay={0.2}>
-            <h2 className="text-2xl sm:text-3xl text-white font-semibold max-w-3xl mx-auto mb-4">
-              Introducing Appalix Sage.
-            </h2>
-            <div className="flex flex-wrap justify-center gap-2 max-w-4xl mx-auto mb-4">
+            <div className="flex flex-wrap justify-center gap-2 max-w-4xl mx-auto mb-6">
               {[
                 'powers multiple intelligent bots',
                 'analyses emails with AI',
                 'extracts key data from every form submission',
-                'integrates with marketing tools, Google Ads & Facebook',
+                'integrates with marketing tools like Mailchimp',
+                'integrates with Google Ads & Facebook',
                 'creates tickets automatically when needed',
               ].map(point => (
                 <span key={point} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#15A4AE]/30 bg-[#15A4AE]/8 text-gray-300 capitalize text-base">
@@ -162,26 +161,16 @@ export default function TestLandingPage() {
                 </span>
               ))}
             </div>
-            <p className="text-lg sm:text-xl text-gray-400 leading-relaxed max-w-3xl mx-auto mb-4">
-              Each enquiry is instantly transformed into an opportunity and prioritises them as <span className="text-[#15A4AE] font-medium">High</span>, <span className="text-yellow-400 font-medium">Medium</span>, or <span className="text-blue-300 font-medium">Low</span>. It organises them directly within a built-in CRM suite, all within seconds, 24/7.
-            </p>
-          </FadeUp>
-
-          <FadeUp delay={0.25}>
-            <ul className="flex flex-row gap-6 justify-center text-base text-gray-400 mb-5">
-              {['No credit card required', 'All sources included'].map(item => (
-                <li key={item} className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-[#15A4AE] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  {item}
-                </li>
-              ))}
-            </ul>
+            <h2 className="text-xl sm:text-2xl text-gray-300 leading-relaxed max-w-3xl mx-auto mb-4">
+              Each enquiry is instantly transformed into an opportunity and prioritised as{' '}
+              <span className="text-[#15A4AE] font-semibold">High</span>,{' '}
+              <span className="text-yellow-400 font-semibold">Medium</span>, &amp;{' '}
+              <span className="text-blue-300 font-semibold">Low</span>, organised directly within a built-in CRM suite, all within seconds, 24/7.
+            </h2>
           </FadeUp>
 
           <FadeUp delay={0.3}>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
               <Link
                 href="/login"
                 className="px-10 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white text-lg font-medium rounded-xl transition-colors"
@@ -487,41 +476,13 @@ export default function TestLandingPage() {
 
       {/* ── Pricing teaser ───────────────────────────────────────────── */}
       <section className="py-24 px-6 border-t border-white/5">
-        <div className="max-w-3xl mx-auto text-center">
-          <ScrollReveal>
-            <p className="text-xs text-[#15A4AE] uppercase tracking-widest font-semibold mb-3">Pricing</p>
+        <div className="max-w-7xl mx-auto">
+          <ScrollReveal className="text-center mb-4">
+            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-3">Pricing</p>
             <h2 className="text-4xl sm:text-5xl font-bold mb-4">Simple pricing that scales with your lead volume</h2>
-            <p className="text-gray-400 mb-8 text-sm">Plans from $29/mo. 7-day free trial on all plans. No credit card required.</p>
+            <p className="text-gray-400 mb-2 text-base">7-day free trial on all plans. No credit card required.</p>
           </ScrollReveal>
-          <ScrollReveal delay={0.1}>
-            <div className="flex flex-wrap justify-center gap-3 mb-8">
-              {[
-                { name: 'Starter', price: '$29' },
-                { name: 'Core',    price: '$39' },
-                { name: 'Pro',     price: '$79',  popular: true },
-                { name: 'Scale',   price: '$249' },
-                { name: 'Enterprise', price: 'Custom' },
-              ].map(p => (
-                <Link
-                  key={p.name}
-                  href="/pricing"
-                  className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${
-                    p.popular
-                      ? 'bg-[#15A4AE]/20 border-[#15A4AE]/50 text-[#15A4AE] hover:bg-[#15A4AE]/30'
-                      : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20 hover:text-gray-200'
-                  }`}
-                >
-                  {p.name} <span className={p.popular ? 'text-white font-bold' : 'text-gray-300'}>{p.price}</span>
-                  {p.popular && <span className="ml-2 text-xs bg-[#1a8c76] text-white px-1.5 py-0.5 rounded-full">Popular</span>}
-                </Link>
-              ))}
-            </div>
-          </ScrollReveal>
-          <ScrollReveal delay={0.15}>
-            <Link href="/pricing" className="text-sm text-[#15A4AE] hover:text-[#4eada0] transition-colors">
-              Compare all plans →
-            </Link>
-          </ScrollReveal>
+          <PricingCards />
         </div>
       </section>
 

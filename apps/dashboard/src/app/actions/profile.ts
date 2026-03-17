@@ -153,6 +153,9 @@ export async function saveProfile(formData: FormData) {
   const industry    = (formData.get('industry')          as string | null)?.trim() || null
   const whatYouSell = (formData.get('what_you_sell')     as string | null)?.trim() || null
   const targetCust  = (formData.get('target_customers')  as string | null)?.trim() || null
+  const country     = (formData.get('country')           as string | null)?.trim() || null
+  const timezone    = (formData.get('timezone')          as string | null)?.trim() || null
+  const currency    = (formData.get('currency')          as string | null)?.trim() || null
 
   if (!firstName) return
 
@@ -164,6 +167,9 @@ export async function saveProfile(formData: FormData) {
     first_name: firstName,
     last_name:  lastName,
     company,
+    country,
+    timezone,
+    currency,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id' })
 

@@ -85,67 +85,73 @@ export default async function HomePage() {
       {/* ── Hero ───────────────────────────────────────────────────── */}
       <section className="relative pt-36 pb-24 px-6 overflow-hidden">
         {/* Glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-brand-600/20 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-[#15A4AE]/15 rounded-full blur-[140px] pointer-events-none" />
 
-        <div className="relative max-w-7xl mx-auto">
-          <div className="max-w-3xl mx-auto text-center mb-16">
+        <div className="relative max-w-6xl mx-auto">
+          <div className="max-w-4xl mx-auto text-center mb-16">
             <FadeUp delay={0}>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mb-6 flex-wrap">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-brand-600/40 bg-brand-600/10 text-brand-400 text-xs font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse shrink-0" />
-                  Integrates with Mailchimp &amp; ActiveCampaign
-                </div>
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/15 bg-white/5 text-gray-300 text-xs font-medium">
-                  <span className="text-[11px]">📢</span>
-                  Google Ads &amp; Facebook Lead Ads
-                </div>
+              <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-brand-600/40 bg-brand-600/10 text-white font-medium mb-10 text-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse shrink-0" />
+                STOP STITCHING TOOLS AND PAYING MORE INDIVIDUALLY FOR EACH APP
               </div>
             </FadeUp>
 
             <FadeUp delay={0.1}>
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-snug mb-6">
-                Imagine a single AI platform —<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-brand-600">
-                  chatbots, email, leads,
-                </span><br />
-                CRM &amp; ticketing, all built in
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.25] mb-8 text-white">
+                Imagine a single AI platform having chatbots, lead forms, email AI tools, CRM, and ticketing systems all built in.
               </h1>
             </FadeUp>
 
             <FadeUp delay={0.2}>
-              <p className="text-base sm:text-xl lg:text-2xl text-white leading-relaxed max-w-3xl mx-auto mb-4">
-                Each enquiry is instantly transformed into an opportunity and prioritised as High, Medium &amp; Low — organised directly within a built-in CRM suite, all within seconds, 24/7.
+              <h2 className="text-2xl sm:text-3xl text-white font-semibold max-w-3xl mx-auto mb-4">
+                Introducing Appalix Sage.
+              </h2>
+              <div className="flex flex-wrap justify-center gap-2 max-w-4xl mx-auto mb-4">
+                {[
+                  'powers multiple intelligent bots',
+                  'analyses emails with AI',
+                  'extracts key data from every form submission',
+                  'integrates with marketing tools, Google Ads & Facebook',
+                  'creates tickets automatically when needed',
+                ].map(point => (
+                  <span key={point} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-brand-600/30 bg-brand-600/8 text-gray-300 capitalize text-base">
+                    <span className="w-2 h-2 rounded-full bg-brand-400 shrink-0" />
+                    {point}
+                  </span>
+                ))}
+              </div>
+              <p className="text-lg sm:text-xl text-gray-400 leading-relaxed max-w-3xl mx-auto mb-4">
+                Each enquiry is instantly transformed into an opportunity and prioritises them as{' '}
+                <span className="text-[#15A4AE] font-medium">High</span>,{' '}
+                <span className="text-yellow-400 font-medium">Medium</span>, or{' '}
+                <span className="text-blue-300 font-medium">Low</span>. It organises them directly within a built-in CRM suite, all within seconds, 24/7.
               </p>
             </FadeUp>
 
             <FadeUp delay={0.25}>
-              <ul className="flex flex-col sm:flex-row gap-2 justify-center text-sm text-gray-300 mb-8">
-                <li className="flex items-center gap-1.5">
-                  <svg className="w-4 h-4 text-brand-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Personalized onboarding help
-                </li>
-                <li className="flex items-center gap-1.5 sm:ml-4">
-                  <svg className="w-4 h-4 text-brand-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Friendly pricing as you scale
-                </li>
+              <ul className="flex flex-row gap-6 justify-center text-base text-gray-400 mb-5">
+                {['No credit card required', 'All sources included'].map(item => (
+                  <li key={item} className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-brand-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    {item}
+                  </li>
+                ))}
               </ul>
             </FadeUp>
 
             <FadeUp delay={0.3}>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
                   href="/login"
-                  className="px-6 py-3 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors text-sm"
+                  className="px-10 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white text-lg font-medium rounded-xl transition-colors"
                 >
                   Start a 7 Day Free Trial
                 </Link>
                 <Link
                   href="/features"
-                  className="px-6 py-3 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm"
+                  className="px-10 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white text-lg font-medium rounded-xl transition-colors"
                 >
                   See all features →
                 </Link>

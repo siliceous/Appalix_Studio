@@ -205,7 +205,7 @@ export function PricingCards() {
 
               {/* Price */}
               <div className="mb-4">
-                <div className="flex items-baseline gap-3">
+                <div className="flex items-baseline justify-between">
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-black text-white">${price}</span>
                     <span className="text-gray-400 text-base">/mo</span>

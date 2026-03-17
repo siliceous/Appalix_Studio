@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Upload, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { saveUserName, uploadUserAvatar, removeUserAvatar } from '@/app/actions/user-profile'
 import { AvatarCropModal } from '@/components/settings/avatar-crop-modal'
+import { useUserAvatar } from '@/contexts/user-avatar-context'
 
 interface Props {
   firstName:  string
@@ -15,6 +16,7 @@ interface Props {
 
 export function ProfileForm({ firstName, lastName, email, avatarUrl: initialAvatarUrl }: Props) {
   const router                          = useRouter()
+  const { setAvatarUrl: setSidebarAvatar } = useUserAvatar()
   const [avatarUrl,    setAvatarUrl]    = useState(initialAvatarUrl)
   const [cropSrc,      setCropSrc]      = useState<string | null>(null)
   const [uploading,    setUploading]    = useState(false)
@@ -53,16 +55,16 @@ export function ProfileForm({ firstName, lastName, email, avatarUrl: initialAvat
     setError(null)
     setUploading(true)
 
-    // Show the data URL immediately — no object URL needed, no revoke issues
+    // Show the data URL immediately in both this form and the sidebar
     setAvatarUrl(previewUrl)
+    setSidebarAvatar(previewUrl)
 
     const result = await uploadUserAvatar(base64)
     setUploading(false)
 
-    if (result.ok) {
-      router.refresh() // update sidebar
-    } else {
+    if (!result.ok) {
       setAvatarUrl(initialAvatarUrl)
+      setSidebarAvatar(initialAvatarUrl)
       setError(result.error ?? 'Upload failed')
     }
   }
@@ -72,8 +74,13 @@ export function ProfileForm({ firstName, lastName, email, avatarUrl: initialAvat
     setRemoving(true)
     const result = await removeUserAvatar()
     setRemoving(false)
-    if (result.ok) { setAvatarUrl(null); router.refresh() }
-    else setError(result.error ?? 'Failed to remove')
+    if (result.ok) {
+      setAvatarUrl(null)
+      setSidebarAvatar(null)
+      router.refresh()
+    } else {
+      setError(result.error ?? 'Failed to remove')
+    }
   }
 
   function handleSave(formData: FormData) {

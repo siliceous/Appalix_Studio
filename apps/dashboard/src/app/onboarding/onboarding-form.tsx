@@ -3,6 +3,7 @@
 import { useState, useRef, useTransition, KeyboardEvent } from 'react'
 import { saveProfile, scrapeBusinessProfile } from '@/app/actions/profile'
 import { Loader2, LinkIcon, CheckCircle, X } from 'lucide-react'
+import { COUNTRIES, getCountryInfo } from '@/lib/countries'
 
 const inputCls =
   'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent'
@@ -104,6 +105,9 @@ export default function OnboardingForm({ inviteEmail: _inviteEmail }: { inviteEm
   const [industry,        setIndustry]         = useState('')
   const [whatYouSell,     setWhatYouSell]      = useState<string[]>([])
   const [targetCustomers, setTargetCustomers]  = useState<string[]>([])
+  const [country,         setCountry]          = useState('')
+
+  const countryInfo = getCountryInfo(country)
 
   async function handleAutoFill() {
     if (!profileUrl.trim()) return
@@ -198,6 +202,28 @@ export default function OnboardingForm({ inviteEmail: _inviteEmail }: { inviteEm
           value={company} onChange={e => setCompany(e.target.value)}
           className={inputCls}
         />
+      </div>
+
+      {/* Country */}
+      <div>
+        <label htmlFor="country" className={labelCls}>Country</label>
+        <select
+          id="country" name="country"
+          value={country} onChange={e => setCountry(e.target.value)}
+          className={inputCls}
+        >
+          <option value="">Select your country…</option>
+          {COUNTRIES.map(c => (
+            <option key={c.name} value={c.name}>{c.name}</option>
+          ))}
+        </select>
+        {countryInfo && (
+          <p className="mt-1 text-xs text-gray-400">
+            Timezone: {countryInfo.timezone} · Currency: {countryInfo.currency} ({countryInfo.symbol})
+          </p>
+        )}
+        <input type="hidden" name="timezone" value={countryInfo?.timezone ?? ''} />
+        <input type="hidden" name="currency" value={countryInfo?.currency ?? ''} />
       </div>
 
       {/* Industry */}

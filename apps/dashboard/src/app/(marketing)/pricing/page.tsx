@@ -66,12 +66,13 @@ export default function PricingPage() {
                 View integrations →
               </Link>
             </div>
-            <div className="mt-8">
-              <BillingToggle />
-            </div>
           </ScrollReveal>
         </div>
       </section>
+
+      <div className="flex justify-center pb-8">
+        <BillingToggle />
+      </div>
 
       <PricingCards />
 

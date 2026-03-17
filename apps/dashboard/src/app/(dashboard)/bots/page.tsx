@@ -2,7 +2,7 @@ import { createClient }  from '@/lib/supabase/server'
 import { redirect }       from 'next/navigation'
 import { Header }         from '@/components/layout/header'
 import Image from 'next/image'
-import { Bot, Plus, Plug, Sparkles, MessageSquare, TrendingUp } from 'lucide-react'
+import { Bot, Plus, Plug, MessageSquare, TrendingUp } from 'lucide-react'
 import { formatDate, formatTokens, formatCost, timeAgo, PLATFORM_META } from '@/lib/utils'
 import type { Metadata } from 'next'
 import type { Bot as BotRow, Conversation, UsageEvent } from '@/lib/types'
@@ -113,15 +113,8 @@ export default async function BotsPage() {
               className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-5 hover:shadow-sm transition-shadow group"
             >
               <div className="flex items-start justify-between mb-3">
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                  bot.bot_type === 'internal'
-                    ? 'bg-[#15A4AE]/10'
-                    : 'bg-white dark:bg-white/5'
-                }`}>
-                  {bot.bot_type === 'internal'
-                    ? <Sparkles className="w-5 h-5 text-[#15A4AE]" />
-                    : <Image src="/favicon.png" alt="Bot" width={22} height={22} className="w-5 h-5 object-contain" />
-                  }
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-white dark:bg-white/5">
+                  <Image src="/favicon.png" alt="Bot" width={22} height={22} className="w-5 h-5 object-contain" />
                 </div>
                 {bot.bot_type === 'internal' && (
                   <span className="text-xs bg-[#15A4AE]/10 text-[#15A4AE] px-2 py-0.5 rounded-full font-medium">

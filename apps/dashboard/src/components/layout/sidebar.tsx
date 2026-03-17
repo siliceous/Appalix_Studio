@@ -30,6 +30,7 @@ import { useRouter } from 'next/navigation'
 import type { Workspace, UserPermissions, WorkspaceMemberRole } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
 import type { WorkspaceBranding } from '@/app/actions/workspace-branding'
+import { useUserAvatar } from '@/contexts/user-avatar-context'
 
 interface NavItem {
   href:            string
@@ -98,7 +99,6 @@ interface SidebarProps {
   userPermissions?: UserPermissions
   userName?:        string | null
   userEmail?:       string | null
-  userAvatar?:      string | null
   branding?:        WorkspaceBranding | null
 }
 
@@ -108,7 +108,8 @@ const VIEW_AS_ROUTES = new Set([
   '/sage/pipelines', '/sage/contacts', '/sage/roi', '/my-activity',
 ])
 
-export function Sidebar({ workspace, callerRole, userPermissions, userName, userEmail, userAvatar, branding }: SidebarProps) {
+export function Sidebar({ workspace, callerRole, userPermissions, userName, userEmail, branding }: SidebarProps) {
+  const { avatarUrl: userAvatar } = useUserAvatar()
   const pathname    = usePathname()
   const searchParams = useSearchParams()
   const router      = useRouter()
