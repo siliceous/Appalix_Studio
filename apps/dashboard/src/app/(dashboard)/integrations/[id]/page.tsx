@@ -418,8 +418,9 @@ function TelegramSetup({
   cfg: Record<string, unknown>
   apiUrl: string
 }) {
-  const webhookUrl = `${apiUrl}/webhooks/telegram/${integrationId}`
-  const botToken   = (cfg.bot_token as string) || '(not set)'
+  const webhookUrl   = `${apiUrl}/webhooks/telegram/${integrationId}`
+  const botToken     = (cfg.bot_token as string) || '(not set)'
+  const botUsername  = cfg.bot_username as string | undefined
 
   return (
     <div className="space-y-5">
@@ -468,10 +469,10 @@ function TelegramSetup({
           Group chats work too: add the bot to any group and it responds to every message.
         </p>
         <a
-          href="tg://"
+          href={botUsername ? `tg://resolve?domain=${botUsername}` : 'tg://'}
           className="inline-flex items-center gap-2 px-4 py-2 bg-[#15A4AE] hover:bg-[#0e8f98] text-white text-sm font-medium rounded-lg transition-colors"
         >
-          Open Telegram app →
+          {botUsername ? `Open @${botUsername} →` : 'Open Telegram app →'}
         </a>
       </div>
     </div>

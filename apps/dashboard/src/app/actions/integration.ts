@@ -93,20 +93,29 @@ export async function createIntegration(formData: FormData) {
 
   const integrationId = (inserted as { id: string }).id
 
-  // Auto-register Telegram webhook so the user never needs to run a curl command
+  // Auto-register Telegram webhook and fetch bot username
   if (platform === 'telegram') {
     const botToken      = config.bot_token as string
     const webhookSecret = config.webhook_secret_token as string
     const apiBase       = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.appalix.ai'
     const webhookUrl    = `${apiBase}/webhooks/telegram/${integrationId}`
     try {
-      await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ url: webhookUrl, secret_token: webhookSecret }),
-      })
+      const [, getMeRes] = await Promise.all([
+        fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ url: webhookUrl, secret_token: webhookSecret }),
+        }),
+        fetch(`https://api.telegram.org/bot${botToken}/getMe`),
+      ])
+      const me = await getMeRes.json() as { ok: boolean; result?: { username?: string } }
+      if (me.ok && me.result?.username) {
+        await admin.from('integrations').update({
+          config: { ...config, bot_username: me.result.username },
+        }).eq('id', integrationId)
+      }
     } catch {
-      // Non-fatal — webhook can be re-registered from the setup page if needed
+      // Non-fatal
     }
   }
 
