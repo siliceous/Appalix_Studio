@@ -12,6 +12,7 @@ import { LeadGenSection } from '@/components/marketing/leadgen-section'
 import { ProductivitySection } from '@/components/marketing/productivity-section'
 import { WorkflowSection } from '@/components/marketing/workflow-section'
 import { createAdminClient } from '@/lib/supabase/server'
+import { BookDemoButton } from '@/components/marketing/book-demo-modal'
 
 export const metadata: Metadata = {
   title: 'Appalix — AI Sales Agent | Convert Visitors to Clients 24/7',
@@ -149,12 +150,7 @@ export default async function HomePage() {
                 >
                   Start a 7 Day Free Trial
                 </Link>
-                <Link
-                  href="/features"
-                  className="px-10 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white text-lg font-medium rounded-xl transition-colors"
-                >
-                  See all features →
-                </Link>
+                <BookDemoButton label="Book a demo →" className="px-10 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white text-lg font-medium rounded-xl transition-colors" />
               </div>
             </FadeUp>
           </div>
@@ -349,9 +345,7 @@ export default async function HomePage() {
             ))}
           </div>
           <div className="text-center mt-8">
-            <Link href="/features" className="text-sm text-brand-400 hover:text-brand-300 transition-colors">
-              See all features →
-            </Link>
+            <BookDemoButton label="Book a demo →" className="text-sm text-brand-400 hover:text-brand-300 transition-colors" />
           </div>
         </div>
       </section>

@@ -4,6 +4,12 @@ import type { Metadata } from 'next'
 import { FadeUp, ScrollReveal } from '@/components/marketing/animate'
 import { LeadFlowDiagram, QualificationLoop } from '@/components/marketing/lead-flow-diagram'
 import { PricingCards } from '@/components/marketing/pricing-cards'
+import { DashboardPreview } from '@/components/marketing/dashboard-preview'
+import { BotPreview } from '@/components/marketing/bot-preview'
+import { BookDemoButton } from '@/components/marketing/book-demo-modal'
+import { EmailPreview } from '@/components/marketing/email-preview'
+import { FormsPreview } from '@/components/marketing/forms-preview'
+import { TicketsPreview } from '@/components/marketing/tickets-preview'
 
 export const metadata: Metadata = {
   title: 'Appalix — AI Lead Capture & Pipeline Management from Every Channel',
@@ -302,27 +308,25 @@ export default function TestLandingPage() {
               >
                 Start a 7 Day Free Trial
               </Link>
-              <Link
-                href="/features"
-                className="px-10 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white text-lg font-medium rounded-xl transition-colors"
-              >
-                See all features →
-              </Link>
+              <BookDemoButton label="Book a demo →" className="px-10 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white text-lg font-medium rounded-xl transition-colors" />
             </div>
           </FadeUp>
         </div>
       </section>
 
       {/* ── Problem strip ────────────────────────────────────────────── */}
-      <section className="py-20 px-8 border-t border-white/5">
+      <section className="pt-20 pb-10 px-8 border-t border-white/5">
         <div className="max-w-7xl mx-auto">
           <ScrollReveal className="text-center mb-14">
             <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">Why leads go cold</p>
-            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto">
-              Your leads are scattered,<br />
-              pipeline manual.<br />
-              Things fall through the gaps.
+            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">
+              Is your pipeline manual?<br />
+              Are leads scattered over many apps?<br />
+              Do deals slip away through gaps?
             </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-2xl leading-relaxed">
+              An inbox nobody checks on time. A bot that can&apos;t answer real questions. A CRM your team stopped updating. Sound familiar?
+            </p>
           </ScrollReveal>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-14">
@@ -342,7 +346,7 @@ export default function TestLandingPage() {
             <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">The hidden tax</p>
             <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">The real cost of stitching tools together</h2>
             <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed">
-              A bot that can't answer real questions. An inbox nobody checks. A CRM your team stopped updating. Sound familiar?
+              You&apos;re paying heavily — once for the stack of apps, and again every time a sync breaks and a lead falls through the gap.
             </p>
           </ScrollReveal>
           <ScrollReveal>
@@ -350,7 +354,7 @@ export default function TestLandingPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[
                   { icon: '💸', title: 'You\'re paying for 6–8 apps', desc: 'A chatbot tool. A CRM. An email platform. A ticketing system. A form builder. An analytics tool. Each with its own monthly bill — and none of them talk to each other properly.' },
-                  { icon: '🔌', title: 'Integrations break silently', desc: 'That Zapier zap that syncs your form submissions to your CRM? It failed 3 days ago. You won\'t know until a lead chases you — or doesn\'t.' },
+                  { icon: '🔌', title: 'Integrations break silently', desc: 'That zap that syncs your form submissions to your CRM? It failed 3 days ago. You won\'t know until a lead chases you — or doesn\'t.' },
                   { icon: '🕳️', title: 'Data falls through the cracks', desc: 'A lead fills your form. Your chatbot talks to someone else. Your inbox gets a third enquiry. Three sources, zero single view. Your team is guessing.' },
                   { icon: '⏱️', title: 'Setup takes weeks, not minutes', desc: 'Every new tool means onboarding, configuration, training, and a new login. Your team spends more time managing tools than talking to customers.' },
                   { icon: '😤', title: 'Context is always missing', desc: 'Your support team can\'t see the sales conversation. Your sales team can\'t see the support tickets. Every handoff means someone starts from scratch.' },
@@ -359,8 +363,8 @@ export default function TestLandingPage() {
                   <div key={i} className="flex gap-4 items-start">
                     <span className="text-2xl shrink-0 mt-0.5">{item.icon}</span>
                     <div>
-                      <h4 className="text-sm font-semibold text-white mb-1">{item.title}</h4>
-                      <p className="text-sm text-gray-400 leading-relaxed">{item.desc}</p>
+                      <h4 className="text-xl font-semibold text-white mb-3 leading-snug">{item.title}</h4>
+                      <p className="text-lg text-gray-400 leading-relaxed">{item.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -368,8 +372,383 @@ export default function TestLandingPage() {
             </div>
           </ScrollReveal>
 
-          {/* Every source, one Dashboard */}
-          <ScrollReveal className="text-center mb-10 mt-24">
+          {/* Comparison heading */}
+          <ScrollReveal className="text-center mt-24 mb-10">
+            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">Side by side</p>
+            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">
+              Compare the Power Of Appalix Sage<br className="hidden sm:block" /> with Traditional tools.
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed">
+              One platform. Every tool you need. No stitching, no gaps.
+            </p>
+          </ScrollReveal>
+
+          {/* Comparison table — features-page style */}
+          <ScrollReveal className="mb-14 overflow-x-auto">
+            <table className="w-full text-lg">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left py-4 pr-4 text-white font-semibold text-lg w-[22%]">Features</th>
+                  <th className="py-4 px-4 text-center font-bold text-amber-400 text-lg w-[39%]">
+                    Traditional Tools
+                    <span className="block text-sm text-amber-400/50 font-normal mt-1">Multiple apps · more cost</span>
+                  </th>
+                  <th className="py-4 px-4 text-center font-bold text-[#15A4AE] text-lg w-[39%]">
+                    Appalix Sage
+                    <span className="ml-2 text-[10px] bg-[#15A4AE] text-white px-1.5 py-0.5 rounded-full align-middle font-semibold">All-in-one</span>
+                    <span className="block text-sm text-[#15A4AE]/70 font-normal mt-1">One platform · one price</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ['Chatbot',             'Rule-based, scripted replies only',                    'AI trained on your content — answers anything'],
+                  ['Lead capture',        'Manual forms + separate tools',                        'Auto-captured from email, forms & bots'],
+                  ['CRM entry',           'Copy-paste by your team',                              'Every enquiry auto-logged in seconds'],
+                  ['Email management',    'Separate inbox tool or plugin',                        'Built-in AI triage & reply drafts'],
+                  ['Ticketing / support', 'Another tool (Zendesk, Freshdesk…)',                   'Unified inbox — leads & support in one place'],
+                  ['Follow-up',           'Manual reminders, things fall through',                'Automated sequences triggered instantly'],
+                  ['Cost',                'Multiple subscriptions · 5–8 tools',                  'One platform · one price'],
+                  ['Setup time',          'Weeks of integration work',                            'Live in under 15 minutes'],
+                  ['Availability',        'Business hours only',                                  '24 / 7 AI · never sleeps'],
+                ].map(([feature, before, after], i) => (
+                  <tr key={feature} className={`border-b border-white/5 ${i % 2 !== 0 ? 'bg-white/[0.02]' : ''}`}>
+                    <td className="py-3.5 pr-4 text-gray-300 font-semibold">{feature}</td>
+                    <td className="py-3.5 px-4 text-center text-amber-200">{before}</td>
+                    <td className="py-3.5 px-4 text-center text-white font-medium bg-[#15A4AE]/[0.04]">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="text-[#15A4AE] text-sm shrink-0">✓</span>
+                        {after}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* ── Dashboard showcase ───────────────────────────────────────── */}
+      <section className="pt-12 pb-24 px-8 border-t border-white/5">
+        <div className="max-w-7xl mx-auto">
+
+          {/* Hero */}
+          <ScrollReveal className="text-center mb-16">
+            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">Your command centre</p>
+            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">
+              Your command centre for AI-powered growth
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed">
+              Every bot, lead, and conversation in one place. Real-time visibility across all your emails, bots, forms, and tickets — with AI that scores and surfaces what matters before you have to ask.
+            </p>
+          </ScrollReveal>
+
+          {/* Dashboard preview — exact copy from product page */}
+          <ScrollReveal delay={0.1} className="mb-16">
+            <p className="text-center text-white text-sm mb-4">Hover on the screen to explore — click to see full details</p>
+            <DashboardPreview />
+          </ScrollReveal>
+
+          {/* 4 feature pills */}
+          <ScrollReveal>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+              {[
+                { icon: '📊', tag: 'Analytics', title: 'Live performance at a glance', desc: 'Emails, bot chats, forms, and tickets tracked in real time with AI priority scoring on every item.' },
+                { icon: '🤖', tag: 'Bot Management', title: 'All your bots, one workspace', desc: 'Create, train, and deploy multiple bots. Each bot gets its own knowledge base, branding, and analytics.' },
+                { icon: '🎯', tag: 'Lead Capture', title: 'Every lead, automatically logged', desc: 'Names, emails, and phone numbers collected mid-conversation and routed straight to your CRM.' },
+                { icon: '🔗', tag: 'Integrations', title: 'Connect your entire stack', desc: 'HubSpot, Salesforce, Slack, WhatsApp, and 50+ more — all configured from one place.' },
+              ].map((item, i) => (
+                <ScrollReveal key={item.tag} delay={i * 0.07}>
+                  <div className="p-8 rounded-2xl bg-white/5 border border-white/10 hover:border-[#15A4AE]/30 hover:bg-white/[0.07] transition-all h-full flex flex-col group">
+                    <div className="w-14 h-14 rounded-xl bg-[#15A4AE]/10 border border-[#15A4AE]/20 flex items-center justify-center text-3xl mb-5 group-hover:bg-[#15A4AE]/15 transition-colors shrink-0">
+                      {item.icon}
+                    </div>
+                    <span className="text-sm text-[#15A4AE] font-semibold uppercase tracking-widest mb-2">{item.tag}</span>
+                    <h3 className="text-xl font-semibold text-white mb-3 leading-snug">{item.title}</h3>
+                    <p className="text-lg text-gray-400 leading-relaxed flex-1">{item.desc}</p>
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+          </ScrollReveal>
+
+          {/* Stats bar */}
+          <ScrollReveal>
+            <div className="rounded-2xl bg-white/[0.03] border border-white/10 px-8 py-8 grid grid-cols-2 sm:grid-cols-4 gap-8 text-center mb-16">
+              {[
+                { value: '95+',   label: 'Languages supported', sub: 'Auto-detected' },
+                { value: '<5s',   label: 'Average response time', sub: 'Across all bots' },
+                { value: '68%',   label: 'Fewer support tickets', sub: 'Typical reduction' },
+                { value: '6,000+', label: 'Apps via Zapier', sub: 'One-click connect' },
+              ].map(stat => (
+                <div key={stat.label}>
+                  <p className="text-3xl font-bold text-white mb-1">{stat.value}</p>
+                  <p className="text-sm text-gray-400">{stat.label}</p>
+                  <p className="text-xs text-gray-600">{stat.sub}</p>
+                </div>
+              ))}
+            </div>
+          </ScrollReveal>
+
+          {/* Control panel callout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
+            <ScrollReveal delay={0.15} className="space-y-6">
+              <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold">Your control panel</p>
+              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mb-5">
+                One dashboard.<br />All mails, bots, forms and tickets in control.
+              </h2>
+              <p className="text-gray-400 text-xl leading-relaxed">
+                Whether you&apos;re running one bot or twenty, the Appalix dashboard gives you a single source of truth. Real-time metrics, AI priority scoring, and one-click access to every conversation.
+              </p>
+              <ul className="space-y-3">
+                {[
+                  'Daily AI summaries delivered to your inbox every morning',
+                  'Priority scoring on every email, chat, form, and ticket',
+                  'Lead routing to your CRM with zero manual entry',
+                  'Tasks panel — pending and upcoming, always visible',
+                ].map(item => (
+                  <li key={item} className="flex gap-3 items-start">
+                    <svg className="w-4 h-4 text-[#15A4AE] shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-lg text-gray-300">{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                <Link href="/login" className="px-10 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white text-lg font-medium rounded-xl transition-colors">
+                  Start a 7 Day Free Trial
+                </Link>
+                <BookDemoButton label="Book a demo →" className="px-10 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white text-lg font-medium rounded-xl transition-colors" />
+              </div>
+            </ScrollReveal>
+
+            {/* How it works steps */}
+            <ScrollReveal className="space-y-5">
+              <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-2">How it works</p>
+              <p className="text-2xl font-bold text-white mb-6">Live in minutes, not months</p>
+              {[
+                { step: '01', title: 'Connect your Gmail or Outlook', desc: 'Link your inbox in seconds — AI starts reading, prioritising, and actioning emails immediately.' },
+                { step: '02', title: 'Create your bot', desc: 'Build and train an AI bot on your content — deploy to your website, WhatsApp, or any channel in minutes.' },
+                { step: '03', title: 'Link your forms', desc: 'Connect Meta Leads, Google Ads, and web forms — every submission flows straight into your pipeline.' },
+              ].map((s) => (
+                <div key={s.step} className="flex gap-5 items-start p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-[#15A4AE]/30 transition-colors group">
+                  <p className="text-4xl font-black text-white/10 group-hover:text-[#15A4AE]/20 transition-colors leading-none select-none shrink-0">{s.step}</p>
+                  <div>
+                    <h3 className="text-xl font-semibold text-white mb-2">{s.title}</h3>
+                    <p className="text-lg text-gray-400 leading-relaxed">{s.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </ScrollReveal>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ── Bot Builder showcase ─────────────────────────────────────── */}
+      <section className="pt-12 pb-24 px-8 border-t border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <ScrollReveal className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#15A4AE]/40 bg-[#15A4AE]/10 text-[#15A4AE] text-xs font-medium mb-6">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] animate-pulse" />
+              AI bot builder · no code required
+            </div>
+            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">
+              Deploy AI bots to<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#61c2ad] to-[#15A4AE]">every channel in minutes</span>
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed mb-8">
+              Build, train, and deploy AI chatbots that capture leads, answer questions, and resolve support queries — 24/7 across web, WhatsApp, Telegram, and more.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <a href="/login" className="px-7 py-3.5 bg-[#15A4AE] hover:bg-[#0e8f99] text-white font-medium rounded-xl transition-colors text-sm">Start a 7 Day Free Trial</a>
+              <a href="/bot" className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm">See it in action →</a>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal>
+            <BotPreview />
+          </ScrollReveal>
+          <ScrollReveal delay={0.1}>
+            <p className="text-center text-xs text-gray-600 mt-4">Hover any bot card or conversation to explore — click to see full details</p>
+          </ScrollReveal>
+
+          {/* Bot Intelligence features */}
+          <ScrollReveal className="text-center mt-20 mb-12">
+            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">Bot Intelligence</p>
+            <h3 className="text-3xl sm:text-4xl font-bold leading-[1.5] max-w-3xl mx-auto mb-4">Your 24/7 AI sales &amp; support team</h3>
+            <p className="text-gray-400 max-w-xl mx-auto text-xl leading-relaxed">Deploy once, run everywhere. Your bots handle the conversations while you focus on closing deals.</p>
+          </ScrollReveal>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+            {[
+              { icon: '🌐', tag: 'Multi-Channel',  title: 'One bot, every channel',           desc: 'Deploy the same bot to your website, WhatsApp, Telegram, Instagram DMs, and Facebook Messenger from a single dashboard.' },
+              { icon: '📚', tag: 'Knowledge Base', title: 'Train on your content in minutes', desc: 'Upload URLs, PDFs, and documents. Sage learns your product, FAQs, and pricing — and stays up to date automatically.' },
+              { icon: '🎯', tag: 'Lead Capture',   title: 'Every visitor becomes a lead',     desc: 'Sage asks for email and phone mid-conversation, then creates a contact and deal in your CRM automatically.' },
+              { icon: '📊', tag: 'Analytics',      title: "Know exactly what's working",      desc: 'Conversation volume, lead capture rate, resolution rate, and CSAT — all tracked per bot, per channel.' },
+            ].map((f, i) => (
+              <ScrollReveal key={f.tag} delay={i * 0.05} className="h-full">
+                <div className="h-full bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#15A4AE]/30 transition-colors flex flex-col">
+                  <span className="text-xs text-[#15A4AE] font-semibold uppercase tracking-widest mb-2 block">{f.tag}</span>
+                  <p className="text-xl mb-1">{f.icon}</p>
+                  <h4 className="text-base font-bold text-white mb-2">{f.title}</h4>
+                  <p className="text-sm text-gray-400 leading-relaxed flex-1">{f.desc}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Email Triage ─────────────────────────────────────────────── */}
+      <section className="pt-12 pb-24 px-8 border-t border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <ScrollReveal className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#15A4AE]/40 bg-[#15A4AE]/10 text-[#15A4AE] text-xs font-medium mb-6">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] animate-pulse" />
+              Email Triage
+            </div>
+            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">
+              AI that reads your inbox<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#61c2ad] to-[#15A4AE]">so you don&apos;t have to</span>
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed mb-8">
+              Every inbound email is automatically analysed, prioritised, and turned into a lead, ticket, or reply draft — before you even open it.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <a href="/login" className="px-7 py-3.5 bg-[#15A4AE] hover:bg-[#0e8f99] text-white font-medium rounded-xl transition-colors text-sm">Get started free</a>
+              <a href="/email" className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm">See it in action →</a>
+            </div>
+          </ScrollReveal>
+          <ScrollReveal>
+            <EmailPreview />
+          </ScrollReveal>
+          <ScrollReveal className="mt-20 mb-12 text-center">
+            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">How it works</p>
+            <h3 className="text-3xl sm:text-4xl font-bold leading-[1.5] max-w-3xl mx-auto">Turn every email into action, automatically</h3>
+          </ScrollReveal>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { title: 'AI Priority Scoring',               desc: 'Every email gets a High / Medium / Low priority score based on intent signals, urgency, and sender context — automatically.' },
+              { title: 'One-click Lead & Ticket Creation',  desc: 'AI pre-fills contact name, company, email, and deal title from the email. Create a lead or ticket in one click.' },
+              { title: 'AI Reply Drafts',                   desc: 'For every high-priority email, Appalix drafts a reply for you. Edit, rewrite with AI, and send — all without leaving triage.' },
+              { title: 'Smart Categorisation',              desc: 'Sales, Support, Invoice, Partnership, Meeting and more — each email is auto-tagged so you can filter instantly.' },
+              { title: 'Auto-sync & Real-time',             desc: 'Inbox syncs every 60 seconds. New emails are automatically analysed in the background — no manual refresh needed.' },
+              { title: 'Meeting Scheduling',                desc: 'Reply to any email and add a calendar invite in one click — links straight to Google Calendar or Outlook.' },
+            ].map((c, i) => (
+              <ScrollReveal key={c.title} delay={i * 0.05} className="h-full">
+                <div className="h-full bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#15A4AE]/30 transition-colors flex flex-col">
+                  <h4 className="text-base font-bold text-white mb-2">{c.title}</h4>
+                  <p className="text-sm text-gray-400 leading-relaxed flex-1">{c.desc}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Forms / Lead Capture ──────────────────────────────────────── */}
+      <section className="pt-12 pb-24 px-8 border-t border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <ScrollReveal className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#15A4AE]/40 bg-[#15A4AE]/10 text-[#15A4AE] text-xs font-medium mb-6">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] animate-pulse" />
+              AI-enriched lead capture from ad platforms
+            </div>
+            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">
+              Every ad lead, captured<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#61c2ad] to-[#15A4AE]">and routed automatically</span>
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed mb-8">
+              Connect Meta Leads and Google Ads — every submission lands in your dashboard, enriched by AI and routed to the right person before you even open it.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <a href="/login" className="px-7 py-3.5 bg-[#15A4AE] hover:bg-[#0e8f99] text-white font-medium rounded-xl transition-colors text-sm">Start a 7 Day Free Trial</a>
+              <a href="/smart-forms" className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm">See it in action →</a>
+            </div>
+          </ScrollReveal>
+          <ScrollReveal>
+            <FormsPreview />
+          </ScrollReveal>
+          <ScrollReveal delay={0.1}>
+            <p className="text-center text-xs text-gray-600 mt-4">Click any lead to expand details — filter by ad platform or search by name</p>
+          </ScrollReveal>
+          <ScrollReveal className="mt-20 mb-12 text-center">
+            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">Lead Intelligence</p>
+            <h3 className="text-3xl sm:text-4xl font-bold leading-[1.5] max-w-3xl mx-auto">Ad leads that actually convert</h3>
+          </ScrollReveal>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { icon: '📘', tag: 'Meta Leads',    title: 'Facebook & Instagram leads — zero delay', desc: 'Every Meta lead ad submission lands in your dashboard instantly — name, email, phone, and ad source captured automatically.' },
+              { icon: '🔴', tag: 'Google Ads',    title: 'Google lead forms, fully automated',      desc: 'Connect your Google Ads account and all lead form submissions flow directly into Appalix — no manual CSV exports ever again.' },
+              { icon: '⚡', tag: 'Smart Routing', title: 'Right lead, right person, instantly',     desc: 'AI reads each lead and routes to the right team member based on source, location, or deal size — automatically.' },
+              { icon: '🔗', tag: 'CRM Sync',      title: 'Every lead lands in your CRM instantly',  desc: 'Leads become contacts and deals in HubSpot, Salesforce, or Pipedrive the moment they arrive — no manual entry.' },
+            ].map((f, i) => (
+              <ScrollReveal key={f.tag} delay={i * 0.05} className="h-full">
+                <div className="h-full bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#15A4AE]/30 transition-colors flex flex-col">
+                  <span className="text-xs text-[#15A4AE] font-semibold uppercase tracking-widest mb-2 block">{f.tag}</span>
+                  <p className="text-xl mb-1">{f.icon}</p>
+                  <h4 className="text-base font-bold text-white mb-2">{f.title}</h4>
+                  <p className="text-sm text-gray-400 leading-relaxed flex-1">{f.desc}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Support Tickets ───────────────────────────────────────────── */}
+      <section className="pt-12 pb-24 px-8 border-t border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <ScrollReveal className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#15A4AE]/40 bg-[#15A4AE]/10 text-[#15A4AE] text-xs font-medium mb-6">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] animate-pulse" />
+              Support Tickets
+            </div>
+            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">
+              Every issue tracked,<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#61c2ad] to-[#15A4AE]">nothing falls through</span>
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed mb-8">
+              Prioritise, assign, and resolve customer tickets from every channel — all in one focused list.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <a href="/login" className="px-7 py-3.5 bg-[#15A4AE] hover:bg-[#0e8f99] text-white font-medium rounded-xl transition-colors text-sm">Get started free</a>
+              <a href="/tickets" className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm">See it in action →</a>
+            </div>
+          </ScrollReveal>
+          <ScrollReveal>
+            <TicketsPreview />
+          </ScrollReveal>
+          <ScrollReveal className="mt-20 mb-12 text-center">
+            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">Built for fast support teams</p>
+            <h3 className="text-3xl sm:text-4xl font-bold leading-[1.5] max-w-3xl mx-auto">Built for fast support teams</h3>
+          </ScrollReveal>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { title: 'Smart Prioritisation', desc: 'Urgent, High, Medium and Low priorities with colour-coded labels. Change priority inline without opening the ticket.' },
+              { title: 'Team Assignment',       desc: 'Assign any ticket to a team member with a single click. See who owns what at a glance — no spreadsheets needed.' },
+              { title: 'Merge Duplicates',      desc: 'Select two or more tickets and merge them into one. Keep the primary thread, close the rest automatically.' },
+              { title: 'Instant Search',        desc: 'Full-text search across ticket title, description, and contact name — results appear as you type.' },
+              { title: 'CSV Export',            desc: 'Export your full ticket history to CSV for reporting, audits, or migrating to another system.' },
+              { title: 'Status Workflow',       desc: 'Open → In Progress → Pending → Resolved → Closed. Update status inline on every row without leaving the list.' },
+            ].map((c, i) => (
+              <ScrollReveal key={c.title} delay={i * 0.05} className="h-full">
+                <div className="h-full bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#15A4AE]/30 transition-colors flex flex-col">
+                  <h4 className="text-base font-bold text-white mb-2">{c.title}</h4>
+                  <p className="text-sm text-gray-400 leading-relaxed flex-1">{c.desc}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Every source, one Dashboard ──────────────────────────────── */}
+      <section className="py-20 px-8 border-t border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <ScrollReveal className="text-center mb-10">
             <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">Every source, one Dashboard</p>
             <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">Stop checking everywhere for leads</h2>
             <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed">
@@ -390,61 +769,8 @@ export default function TestLandingPage() {
               </ScrollReveal>
             ))}
           </div>
-
-          {/* Comparison heading */}
-          <ScrollReveal className="text-center mt-24 mb-10">
-            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">Side by side</p>
-            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">
-              Compare the Power Of Appalix Sage<br className="hidden sm:block" /> with Traditional tools.
-            </h2>
-          </ScrollReveal>
-
-          {/* Comparison table */}
-          <ScrollReveal className="mb-14 overflow-x-auto rounded-2xl border border-white/10">
-            <table className="w-full text-lg border-collapse">
-              <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left py-6 px-6 bg-white/[0.02] w-1/3">
-                    <span className="text-2xl font-bold text-white">Features</span>
-                  </th>
-                  <th className="py-6 px-6 text-center w-1/3 bg-red-950/30">
-                    <span className="flex flex-col items-center gap-1">
-                      <span className="text-xl font-bold text-gray-200">Traditional Tools</span>
-                      <span className="text-gray-500 font-normal" style={{ fontSize: '14px' }}>Multiple apps, more cost</span>
-                    </span>
-                  </th>
-                  <th className="py-6 px-6 text-center w-1/3 bg-[#15A4AE]/10">
-                    <span className="flex flex-col items-center gap-1">
-                      <span className="text-xl font-bold text-[#15A4AE]">Appalix Sage</span>
-                      <span className="text-[#15A4AE]/60 font-normal" style={{ fontSize: '14px' }}>All in one platform</span>
-                    </span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  ['Chatbot',             'Rule-based bot with scripted replies — can\'t handle real questions, never updates your CRM', 'AI chatbot trained on your content — captures leads, answers questions & syncs to CRM instantly'],
-                  ['Lead capture',        'Manual forms + separate chatbot tools',     'AI captures from email, forms & bots automatically'],
-                  ['CRM entry',           'Copy-paste by your team',                   'Every enquiry auto-logged as an opportunity in seconds'],
-                  ['Email management',    'Separate inbox tool or plugin',             'Built-in AI email analysis & response suggestions'],
-                  ['Ticketing / support', 'Another tool (Zendesk, Freshdesk…)',        'Unified inbox — leads and support in one place'],
-                  ['Follow-up',           'Manual reminders, things fall through',     'Automated follow-up sequences triggered instantly'],
-                  ['Cost',                'Multiple subscriptions, 5–8 tools',         'One platform, one price'],
-                  ['Setup time',          'Weeks of integration work',                 'Live in under 15 minutes'],
-                  ['Availability',        'Business hours only',                       '24 / 7 AI, never sleeps'],
-                ].map(([feature, before, after]) => (
-                  <tr key={feature} className="border-b border-white/5 last:border-0">
-                    <td className="py-4 px-6 text-white font-semibold bg-white/[0.02]">{feature}</td>
-                    <td className="py-4 px-6 text-center text-gray-200 bg-red-950/10">{before}</td>
-                    <td className="py-4 px-6 text-center text-white bg-[#15A4AE]/[0.06]">{after}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </ScrollReveal>
         </div>
       </section>
-
 
       {/* ── Flow diagram ─────────────────────────────────────────────── */}
       <section className="py-24 px-8 border-t border-white/5">
@@ -454,11 +780,8 @@ export default function TestLandingPage() {
             <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">
               One platform captures, qualifies, and routes every lead
             </h2>
-            <p className="text-xl sm:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed mb-4">
-              Every enquiry — whether it arrives via email, a website form, a chatbot conversation, Google Ads, or a Facebook campaign — is automatically captured, analysed, and transformed into a qualified opportunity inside your CRM within seconds.
-            </p>
-            <p className="text-lg sm:text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-              No manual tagging. No missed follow-ups. No leads lost in inboxes. Just a clean, organised pipeline that works for you 24/7 — even while you sleep.
+            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed">
+              Every enquiry — email, form, chatbot, or paid ad — is automatically captured, scored, and dropped into your pipeline. No manual tagging. No missed follow-ups. No leads lost in inboxes.
             </p>
           </ScrollReveal>
 
@@ -689,12 +1012,7 @@ export default function TestLandingPage() {
                 >
                   Start a 7 Day Free Trial
                 </Link>
-                <Link
-                  href="/features"
-                  className="px-8 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors"
-                >
-                  See all features →
-                </Link>
+                <BookDemoButton label="Book a demo →" className="px-8 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors" />
               </div>
               <p className="text-xs text-gray-500 mt-5">7-day free trial · No credit card required · Cancel anytime</p>
             </div>
