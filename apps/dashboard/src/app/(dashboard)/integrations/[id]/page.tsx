@@ -12,7 +12,7 @@ import { FacebookPageSwitcher } from './facebook-page-switcher'
 
 export const metadata: Metadata = { title: 'Integration setup' }
 
-const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://ap.appalix.ai'
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.appalix.ai'
 
 export default async function IntegrationSetupPage({
   params,
