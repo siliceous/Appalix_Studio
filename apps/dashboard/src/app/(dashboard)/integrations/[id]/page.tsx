@@ -469,10 +469,12 @@ function TelegramSetup({
           Group chats work too: add the bot to any group and it responds to every message.
         </p>
         <a
-          href={botUsername ? `tg://resolve?domain=${botUsername}` : 'tg://'}
+          href={botUsername ? `https://t.me/${botUsername}` : 'https://t.me'}
+          target="_blank"
+          rel="noreferrer"
           className="inline-flex items-center gap-2 px-4 py-2 bg-[#15A4AE] hover:bg-[#0e8f98] text-white text-sm font-medium rounded-lg transition-colors"
         >
-          {botUsername ? `Open @${botUsername} →` : 'Open Telegram app →'}
+          {botUsername ? `Open @${botUsername} →` : 'Open Telegram →'}
         </a>
       </div>
     </div>
