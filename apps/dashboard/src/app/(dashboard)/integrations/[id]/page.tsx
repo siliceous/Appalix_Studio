@@ -414,16 +414,8 @@ function TelegramSetup({
   cfg: Record<string, unknown>
   apiUrl: string
 }) {
-  const webhookUrl    = `${apiUrl}/webhooks/telegram/${integrationId}`
-  const secretToken   = (cfg.webhook_secret_token as string) || '(not set)'
-  const botToken      = (cfg.bot_token as string) || '(not set)'
-
-  const registerCmd = `curl -X POST "https://api.telegram.org/bot${botToken}/setWebhook" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "url": "${webhookUrl}",
-    "secret_token": "${secretToken}"
-  }'`
+  const webhookUrl = `${apiUrl}/webhooks/telegram/${integrationId}`
+  const botToken   = (cfg.bot_token as string) || '(not set)'
 
   return (
     <div className="space-y-5">
@@ -442,25 +434,14 @@ function TelegramSetup({
         </div>
       </SetupSection>
 
-      <SetupSection title="Step 2 — Register your webhook">
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Run this command once from your terminal to tell Telegram where to send messages.
-          The <code className="text-xs bg-gray-100 dark:bg-white/10 px-1 py-0.5 rounded">secret_token</code> is
-          auto-generated and verified on every incoming request.
+      <SetupSection title="Step 2 — Webhook registered automatically">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          Appalix registered the webhook with Telegram automatically when you created this integration.
+          No manual setup needed.
         </p>
-        <div className="space-y-3">
-          <div>
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Webhook URL</p>
-            <CopyField value={webhookUrl} />
-          </div>
-          <div>
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Secret token</p>
-            <CopyField value={secretToken} secret />
-          </div>
-          <div>
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Register command</p>
-            <CopyField value={registerCmd} multiline />
-          </div>
+        <div>
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Webhook URL</p>
+          <CopyField value={webhookUrl} />
         </div>
       </SetupSection>
 

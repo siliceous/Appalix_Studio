@@ -91,7 +91,26 @@ export async function createIntegration(formData: FormData) {
 
   if (error) throw new Error(error.message)
 
-  redirect(`/integrations/${(inserted as { id: string }).id}`)
+  const integrationId = (inserted as { id: string }).id
+
+  // Auto-register Telegram webhook so the user never needs to run a curl command
+  if (platform === 'telegram') {
+    const botToken      = config.bot_token as string
+    const webhookSecret = config.webhook_secret_token as string
+    const apiBase       = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.appalix.ai'
+    const webhookUrl    = `${apiBase}/webhooks/telegram/${integrationId}`
+    try {
+      await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ url: webhookUrl, secret_token: webhookSecret }),
+      })
+    } catch {
+      // Non-fatal — webhook can be re-registered from the setup page if needed
+    }
+  }
+
+  redirect(`/integrations/${integrationId}`)
 }
 
 export async function setIntegrationStatus(
@@ -264,6 +283,22 @@ export async function updateIntegration(integrationId: string, formData: FormDat
     .eq('id', integrationId)
 
   if (error) throw new Error(error.message)
+
+  // Re-register Telegram webhook if the bot token was updated
+  if (telegramBotTokenUpdate) {
+    const webhookSecret = (newConfig.webhook_secret_token as string | undefined) ?? ''
+    const apiBase       = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.appalix.ai'
+    const webhookUrl    = `${apiBase}/webhooks/telegram/${integrationId}`
+    try {
+      await fetch(`https://api.telegram.org/bot${telegramBotTokenUpdate}/setWebhook`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ url: webhookUrl, secret_token: webhookSecret }),
+      })
+    } catch {
+      // Non-fatal
+    }
+  }
 
   redirect('/integrations')
 }
