@@ -25,7 +25,7 @@ const COUNTRY_CODES = [
   { code: '+64',  flag: '🇳🇿', label: 'NZ' },
 ]
 
-const EMPLOYEE_OPTIONS = ['1–10', '11–50', '51–200', '201–500', '500+']
+const EMPLOYEE_OPTIONS = ['Sole entrepreneur', '2–5', '5–10', '11–50', '50–200', '201–500', '500+']
 
 const INPUT = 'w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-[#15A4AE]/60 focus:bg-white/8 transition-colors'
 const LABEL = 'block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5'
