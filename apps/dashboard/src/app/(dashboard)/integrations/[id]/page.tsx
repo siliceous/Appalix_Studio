@@ -423,39 +423,59 @@ function TelegramSetup({
 
   return (
     <div className="space-y-5">
-      <SetupSection title="Step 1 — Get your bot token from BotFather">
+      {/* Step 1 — done */}
+      <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-green-200 dark:border-green-500/30 p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Step 1 — Bot token saved</p>
+        </div>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-          Open Telegram and message{' '}
+          Your bot token from{' '}
           <a href="https://t.me/BotFather" target="_blank" rel="noreferrer" className="text-brand-600 hover:underline font-medium">
             @BotFather
           </a>
-          . Send <code className="text-xs bg-gray-100 dark:bg-white/10 px-1 py-0.5 rounded">/newbot</code>, follow the prompts,
-          and paste the token into the integration form. Your token is stored and ready.
+          {' '}is stored and ready.
         </p>
         <div>
           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Bot token (stored)</p>
           <CopyField value={botToken} secret />
         </div>
-      </SetupSection>
+      </div>
 
-      <SetupSection title="Step 2 — Webhook registered automatically">
+      {/* Step 2 — done */}
+      <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-green-200 dark:border-green-500/30 p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Step 2 — Webhook registered</p>
+        </div>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-          Appalix registered the webhook with Telegram automatically when you created this integration.
-          No manual setup needed.
+          Appalix registered the webhook with Telegram automatically. No manual setup needed.
         </p>
         <div>
           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Webhook URL</p>
           <CopyField value={webhookUrl} />
         </div>
-      </SetupSection>
+      </div>
 
-      <SetupSection title="Step 3 — Test it">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Open Telegram, search for your bot by its username, and send any message.
-          Your bot will reply within seconds. Group chats also work — add the bot to any group
-          and it will respond to every message in the conversation.
+      {/* Step 3 — action required */}
+      <div className="bg-[#15A4AE]/5 dark:bg-[#15A4AE]/10 rounded-xl border border-[#15A4AE]/30 p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-4 h-4 rounded-full border-2 border-[#15A4AE] shrink-0" />
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Step 3 — Send your bot a message</p>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Everything is set up. Open Telegram, search for your bot by username, and send it a message — it will reply within seconds.
+          Group chats work too: add the bot to any group and it responds to every message.
         </p>
-      </SetupSection>
+        <a
+          href="https://t.me"
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#15A4AE] hover:bg-[#0e8f98] text-white text-sm font-medium rounded-lg transition-colors"
+        >
+          Open Telegram →
+        </a>
+      </div>
     </div>
   )
 }
