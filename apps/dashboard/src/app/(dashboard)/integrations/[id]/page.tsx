@@ -9,6 +9,7 @@ import { CopyField } from './copy-field'
 import { ConnectedBanner } from './connected-banner'
 import { SlackChannelPicker } from './slack-channel-picker'
 import { FacebookPageSwitcher } from './facebook-page-switcher'
+import { DeleteIntegrationButton } from './delete-integration-button'
 
 export const metadata: Metadata = { title: 'Integration setup' }
 
@@ -51,13 +52,16 @@ export default async function IntegrationSetupPage({
         title={integration.name}
         description="Setup guide and credentials for this integration"
         action={
-          <a
-            href={`/integrations/${id}/edit`}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 dark:bg-white/5 dark:border-white/10 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-colors"
-          >
-            <Pencil className="w-4 h-4" />
-            Edit
-          </a>
+          <div className="flex items-center gap-2">
+            <a
+              href={`/integrations/${id}/edit`}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 dark:bg-white/5 dark:border-white/10 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-colors"
+            >
+              <Pencil className="w-4 h-4" />
+              Edit
+            </a>
+            <DeleteIntegrationButton id={id} />
+          </div>
         }
       />
 
