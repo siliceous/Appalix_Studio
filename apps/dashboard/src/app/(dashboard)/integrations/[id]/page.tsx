@@ -102,6 +102,9 @@ export default async function IntegrationSetupPage({
       {integration.platform === 'google_chat' && (
         <GoogleChatSetup integrationId={id} cfg={cfg} apiUrl={API_URL} />
       )}
+      {integration.platform === 'telegram' && (
+        <TelegramSetup integrationId={id} cfg={cfg} apiUrl={API_URL} />
+      )}
     </div>
   )
 }
@@ -394,6 +397,78 @@ function GoogleChatSetup({
         <CopyField value={endpointUrl} />
         <p className="text-xs text-gray-400 mt-3">
           Set the app&apos;s Connection settings to <strong>HTTP endpoint URL</strong> and paste the URL above.
+        </p>
+      </SetupSection>
+    </div>
+  )
+}
+
+// ─── Telegram ────────────────────────────────────────────────────────────────
+
+function TelegramSetup({
+  integrationId,
+  cfg,
+  apiUrl,
+}: {
+  integrationId: string
+  cfg: Record<string, unknown>
+  apiUrl: string
+}) {
+  const webhookUrl    = `${apiUrl}/webhooks/telegram/${integrationId}`
+  const secretToken   = (cfg.webhook_secret_token as string) || '(not set)'
+  const botToken      = (cfg.bot_token as string) || '(not set)'
+
+  const registerCmd = `curl -X POST "https://api.telegram.org/bot${botToken}/setWebhook" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "url": "${webhookUrl}",
+    "secret_token": "${secretToken}"
+  }'`
+
+  return (
+    <div className="space-y-5">
+      <SetupSection title="Step 1 — Get your bot token from BotFather">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          Open Telegram and message{' '}
+          <a href="https://t.me/BotFather" target="_blank" rel="noreferrer" className="text-brand-600 hover:underline font-medium">
+            @BotFather
+          </a>
+          . Send <code className="text-xs bg-gray-100 dark:bg-white/10 px-1 py-0.5 rounded">/newbot</code>, follow the prompts,
+          and paste the token into the integration form. Your token is stored and ready.
+        </p>
+        <div>
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Bot token (stored)</p>
+          <CopyField value={botToken} secret />
+        </div>
+      </SetupSection>
+
+      <SetupSection title="Step 2 — Register your webhook">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Run this command once from your terminal to tell Telegram where to send messages.
+          The <code className="text-xs bg-gray-100 dark:bg-white/10 px-1 py-0.5 rounded">secret_token</code> is
+          auto-generated and verified on every incoming request.
+        </p>
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Webhook URL</p>
+            <CopyField value={webhookUrl} />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Secret token</p>
+            <CopyField value={secretToken} secret />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Register command</p>
+            <CopyField value={registerCmd} multiline />
+          </div>
+        </div>
+      </SetupSection>
+
+      <SetupSection title="Step 3 — Test it">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Open Telegram, search for your bot by its username, and send any message.
+          Your bot will reply within seconds. Group chats also work — add the bot to any group
+          and it will respond to every message in the conversation.
         </p>
       </SetupSection>
     </div>
