@@ -583,7 +583,7 @@ export default function TestLandingPage() {
           </ScrollReveal>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
             {[
-              { icon: '🌐', tag: 'Multi-Channel',  title: 'One bot, every channel',           desc: 'Deploy the same bot to your website, WhatsApp, Telegram, Instagram DMs, and Facebook Messenger from a single dashboard.' },
+              { icon: '🌐', tag: 'Multi-Channel',  title: 'One bot, every channel',           desc: 'Deploy the same bot to your website, WhatsApp, Slack, Telegram, and Facebook Messenger from a single dashboard.' },
               { icon: '📚', tag: 'Knowledge Base', title: 'Train on your content in minutes', desc: 'Upload URLs, PDFs, and documents. Sage learns your product, FAQs, and pricing — and stays up to date automatically.' },
               { icon: '🎯', tag: 'Lead Capture',   title: 'Every visitor becomes a lead',     desc: 'Sage asks for email and phone mid-conversation, then creates a contact and deal in your CRM automatically.' },
               { icon: '📊', tag: 'Analytics',      title: "Know exactly what's working",      desc: 'Conversation volume, lead capture rate, resolution rate, and CSAT — all tracked per bot, per channel.' },
