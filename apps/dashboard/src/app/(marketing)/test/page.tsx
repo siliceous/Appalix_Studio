@@ -560,7 +560,7 @@ export default function TestLandingPage() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#61c2ad] to-[#15A4AE]">every channel in minutes</span>
             </h2>
             <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed mb-8">
-              Build, train, and deploy AI chatbots that capture leads, answer questions, and resolve support queries — 24/7 across web, WhatsApp, Telegram, and more.
+              Build, train, and deploy AI chatbots that capture leads, answer questions, and resolve support queries — 24/7 across web, WhatsApp, FB messenger, Slack and more.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <a href="/login" className="px-7 py-3.5 bg-[#15A4AE] hover:bg-[#0e8f99] text-white font-medium rounded-xl transition-colors text-sm">Start a 7 Day Free Trial</a>
