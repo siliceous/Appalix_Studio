@@ -100,9 +100,8 @@ export async function sendTelegramReply(
   replyToMessageId?: number,
 ): Promise<void> {
   const body: Record<string, unknown> = {
-    chat_id:    chatId,
-    text:       reply.text,
-    parse_mode: 'HTML',
+    chat_id: chatId,
+    text:    reply.text,
   }
 
   if (replyToMessageId) {
