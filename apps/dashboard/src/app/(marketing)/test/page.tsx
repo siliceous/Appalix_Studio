@@ -134,7 +134,19 @@ export default function TestLandingPage() {
 
         {/* Floating icons */}
         <style>{`
-          @keyframes float {
+          @keyframes floatA {
+            0%, 100% { transform: translateY(0px); }
+            50%       { transform: translateY(-18px); }
+          }
+          @keyframes floatB {
+            0%, 100% { transform: translateY(0px); }
+            50%       { transform: translateY(-10px); }
+          }
+          @keyframes floatC {
+            0%, 100% { transform: translateY(0px); }
+            50%       { transform: translateY(-22px); }
+          }
+          @keyframes floatD {
             0%, 100% { transform: translateY(0px); }
             50%       { transform: translateY(-14px); }
           }
@@ -147,20 +159,23 @@ export default function TestLandingPage() {
                 <line x1="32" y1="2" x2="32" y2="10" stroke="#A855F7" strokeWidth="3" strokeLinecap="round"/>
                 <circle cx="32" cy="2" r="3" fill="#A855F7"/>
                 {/* Head */}
-                <rect x="10" y="10" width="44" height="36" rx="8" fill="#E9D5FF"/>
+                <rect x="10" y="10" width="44" height="36" rx="4" fill="#E9D5FF"/>
                 {/* Arms — same level as eyes */}
-                <rect x="0" y="20" width="12" height="10" rx="5" fill="#D8B4FE"/>
-                <rect x="52" y="20" width="12" height="10" rx="5" fill="#D8B4FE"/>
-                {/* Eyes */}
-                <circle cx="24" cy="25" r="5" fill="white"/>
-                <circle cx="40" cy="25" r="5" fill="white"/>
-                <circle cx="25" cy="26" r="2.5" fill="#7E22CE"/>
-                <circle cx="41" cy="26" r="2.5" fill="#7E22CE"/>
-                {/* Mouth */}
-                <rect x="22" y="36" width="20" height="4" rx="2" fill="#7E22CE" opacity="0.5"/>
+                <rect x="0" y="20" width="12" height="10" rx="2" fill="#D8B4FE"/>
+                <rect x="52" y="20" width="12" height="10" rx="2" fill="#D8B4FE"/>
+                {/* LED Eyes — square robotic */}
+                <rect x="16" y="20" width="12" height="10" rx="2" fill="#581C87"/>
+                <rect x="36" y="20" width="12" height="10" rx="2" fill="#581C87"/>
+                {/* Eye glow centres */}
+                <rect x="19" y="23" width="6" height="4" rx="1" fill="#E879F9"/>
+                <rect x="39" y="23" width="6" height="4" rx="1" fill="#E879F9"/>
+                {/* Mouth — segmented dashes, centred on head (head x=10–54, centre=32) */}
+                <rect x="22" y="36" width="5" height="3" rx="1" fill="#7E22CE" opacity="0.7"/>
+                <rect x="29" y="36" width="5" height="3" rx="1" fill="#7E22CE" opacity="0.7"/>
+                <rect x="36" y="36" width="5" height="3" rx="1" fill="#7E22CE" opacity="0.7"/>
               </svg>
             ),
-            top: '8%', left: '4%', delay: '0s', size: '195px', tilt: -15,
+            top: '8%', left: '4%', delay: '0s', size: '195px', tilt: -15, anim: 'floatA 3.5s',
           },
           {
             content: (s: string) => (
@@ -169,7 +184,7 @@ export default function TestLandingPage() {
                 <path d="M2 6L32 30L62 6" stroke="#EA4335" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
               </svg>
             ),
-            top: '12%', right: '5%', delay: '0.6s', size: '180px', tilt: 15,
+            top: '12%', right: '5%', delay: '1.2s', size: '180px', tilt: 15, anim: 'floatB 5.5s',
           },
           {
             content: (s: string) => (
@@ -194,7 +209,7 @@ export default function TestLandingPage() {
                 <rect x="17" y="57.5" width="22" height="3" rx="1.5" fill="white" opacity="0.9"/>
               </svg>
             ),
-            top: '32%', right: '16%', delay: '1.2s', size: '165px', tilt: 15,
+            top: '32%', right: '16%', delay: '0.4s', size: '165px', tilt: 15, anim: 'floatC 4.2s',
           },
           {
             content: (s: string) => (
@@ -208,9 +223,9 @@ export default function TestLandingPage() {
                 <text x="40" y="22" textAnchor="middle" fill="#92400E" fontSize="7" fontWeight="700" fontFamily="sans-serif">Tickets</text>
               </svg>
             ),
-            top: '32%', left: '16%', delay: '0.3s', size: '165px', tilt: -15,
+            top: '32%', left: '16%', delay: '2.0s', size: '165px', tilt: -15, anim: 'floatD 6s',
           },
-        ] as Array<{ content: string | ((s: string) => React.ReactNode); top: string; left?: string; right?: string; delay: string; size: string; tilt: number }>).map(({ content, top, left, right, delay, size, tilt }, i) => (
+        ] as Array<{ content: string | ((s: string) => React.ReactNode); top: string; left?: string; right?: string; delay: string; size: string; tilt: number; anim: string }>).map(({ content, top, left, right, delay, size, tilt, anim }, i) => (
           <div
             key={i}
             className="absolute pointer-events-none select-none hidden lg:block"
@@ -221,7 +236,7 @@ export default function TestLandingPage() {
               style={{
                 width: size, height: size,
                 fontSize: `calc(${size} * 0.5)`,
-                animation: `float 4s ease-in-out ${delay} infinite`,
+                animation: `${anim} ease-in-out ${delay} infinite`,
               }}
             >
               {typeof content === 'function' ? content(size) : content}
@@ -240,7 +255,7 @@ export default function TestLandingPage() {
 
           <FadeUp delay={0.1}>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.25] mb-4 text-white max-w-4xl mx-auto">
-              Chatbots, AI email analyzer, lead forms, support tickets &amp; <span style={{ color: 'white', textShadow: '0 0 20px #15A4AE, 0 0 50px #15A4AE80', WebkitTextStroke: '0.5px #15A4AE' }}>CRM</span>.<br className="hidden sm:block" /> One platform. All built in.
+              Chatbots · AI email analyzer · lead forms · support tickets · CRM.<br className="hidden sm:block" /> One platform. All built in.
             </h1>
             <h2
               className="text-2xl sm:text-3xl font-semibold text-white mb-8 inline-flex items-center gap-2 justify-center flex-wrap"
@@ -303,11 +318,13 @@ export default function TestLandingPage() {
         <div className="max-w-7xl mx-auto">
           <ScrollReveal className="text-center mb-14">
             <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">Why leads go cold</p>
-            <h2 className="text-4xl sm:text-5xl font-bold">
-              Your leads are scattered. Your pipeline is manual.<br className="hidden sm:block" />
+            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto">
+              Your leads are scattered,<br />
+              pipeline manual.<br />
               Things fall through the gaps.
             </h2>
           </ScrollReveal>
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-14">
             {PROBLEMS.map((p, i) => (
               <ScrollReveal key={p.title} delay={i * 0.1}>
@@ -319,6 +336,68 @@ export default function TestLandingPage() {
               </ScrollReveal>
             ))}
           </div>
+
+          {/* Pain points card */}
+          <ScrollReveal className="text-center mt-24 mb-6">
+            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">The hidden tax</p>
+            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">The real cost of stitching tools together</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed">
+              A bot that can't answer real questions. An inbox nobody checks. A CRM your team stopped updating. Sound familiar?
+            </p>
+          </ScrollReveal>
+          <ScrollReveal>
+            <div className="rounded-2xl border border-[#15A4AE]/20 bg-white/[0.03] p-8 mb-14 shadow-2xl shadow-[#15A4AE]/10 ring-1 ring-[#15A4AE]/10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[
+                  { icon: '💸', title: 'You\'re paying for 6–8 apps', desc: 'A chatbot tool. A CRM. An email platform. A ticketing system. A form builder. An analytics tool. Each with its own monthly bill — and none of them talk to each other properly.' },
+                  { icon: '🔌', title: 'Integrations break silently', desc: 'That Zapier zap that syncs your form submissions to your CRM? It failed 3 days ago. You won\'t know until a lead chases you — or doesn\'t.' },
+                  { icon: '🕳️', title: 'Data falls through the cracks', desc: 'A lead fills your form. Your chatbot talks to someone else. Your inbox gets a third enquiry. Three sources, zero single view. Your team is guessing.' },
+                  { icon: '⏱️', title: 'Setup takes weeks, not minutes', desc: 'Every new tool means onboarding, configuration, training, and a new login. Your team spends more time managing tools than talking to customers.' },
+                  { icon: '😤', title: 'Context is always missing', desc: 'Your support team can\'t see the sales conversation. Your sales team can\'t see the support tickets. Every handoff means someone starts from scratch.' },
+                  { icon: '📉', title: 'Slow response kills deals', desc: 'Studies show responding within 5 minutes increases conversion by 9×. With scattered tools and manual processes, most businesses respond in hours — or not at all.' },
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-4 items-start">
+                    <span className="text-2xl shrink-0 mt-0.5">{item.icon}</span>
+                    <div>
+                      <h4 className="text-sm font-semibold text-white mb-1">{item.title}</h4>
+                      <p className="text-sm text-gray-400 leading-relaxed">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </ScrollReveal>
+
+          {/* Every source, one Dashboard */}
+          <ScrollReveal className="text-center mb-10 mt-24">
+            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">Every source, one Dashboard</p>
+            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">Stop checking everywhere for leads</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed">
+              Whether a lead came from a paid ad, a chatbot conversation, or a cold email reply — Appalix sees it, scores it, and acts on it.
+            </p>
+          </ScrollReveal>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {SOURCES.map((s, i) => (
+              <ScrollReveal key={s.title} delay={i * 0.07}>
+                <div className="p-8 rounded-2xl bg-white/5 border border-white/10 hover:border-[#15A4AE]/30 hover:bg-white/[0.07] transition-all h-full flex flex-col group">
+                  <div className="w-14 h-14 rounded-xl bg-[#15A4AE]/10 border border-[#15A4AE]/20 flex items-center justify-center text-3xl mb-5 group-hover:bg-[#15A4AE]/15 transition-colors shrink-0">
+                    {s.icon}
+                  </div>
+                  <span className="text-sm text-[#15A4AE] font-semibold uppercase tracking-widest mb-2">{s.tag}</span>
+                  <h3 className="text-xl font-semibold text-white mb-3 leading-snug">{s.title}</h3>
+                  <p className="text-lg text-gray-400 leading-relaxed flex-1">{s.desc}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+
+          {/* Comparison heading */}
+          <ScrollReveal className="text-center mt-24 mb-10">
+            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">Side by side</p>
+            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">
+              Compare the Power Of Appalix Sage<br className="hidden sm:block" /> with Traditional tools.
+            </h2>
+          </ScrollReveal>
 
           {/* Comparison table */}
           <ScrollReveal className="mb-14 overflow-x-auto rounded-2xl border border-white/10">
@@ -344,7 +423,7 @@ export default function TestLandingPage() {
               </thead>
               <tbody>
                 {[
-                  ['Chatbot',             'Dumb rule-based bot, no CRM sync',          'AI chatbot trained on your content — captures leads, answers questions & syncs to CRM instantly'],
+                  ['Chatbot',             'Rule-based bot with scripted replies — can\'t handle real questions, never updates your CRM', 'AI chatbot trained on your content — captures leads, answers questions & syncs to CRM instantly'],
                   ['Lead capture',        'Manual forms + separate chatbot tools',     'AI captures from email, forms & bots automatically'],
                   ['CRM entry',           'Copy-paste by your team',                   'Every enquiry auto-logged as an opportunity in seconds'],
                   ['Email management',    'Separate inbox tool or plugin',             'Built-in AI email analysis & response suggestions'],
@@ -366,40 +445,13 @@ export default function TestLandingPage() {
         </div>
       </section>
 
-      {/* ── Sources grid ─────────────────────────────────────────────── */}
-      <section className="py-24 px-8 border-t border-white/5">
-        <div className="max-w-7xl mx-auto">
-          <ScrollReveal className="text-center mb-14">
-            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">Every source, one Dashboard</p>
-            <h2 className="text-4xl sm:text-5xl font-bold mb-5">Stop checking everywhere for leads</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed">
-              Whether a lead came from a paid ad, a chatbot conversation, or a cold email reply — Appalix sees it, scores it, and acts on it.
-            </p>
-          </ScrollReveal>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {SOURCES.map((s, i) => (
-              <ScrollReveal key={s.title} delay={i * 0.07}>
-                <div className="p-8 rounded-2xl bg-white/5 border border-white/10 hover:border-[#15A4AE]/30 hover:bg-white/[0.07] transition-all h-full flex flex-col group">
-                  <div className="w-14 h-14 rounded-xl bg-[#15A4AE]/10 border border-[#15A4AE]/20 flex items-center justify-center text-3xl mb-5 group-hover:bg-[#15A4AE]/15 transition-colors shrink-0">
-                    {s.icon}
-                  </div>
-                  <span className="text-sm text-[#15A4AE] font-semibold uppercase tracking-widest mb-2">{s.tag}</span>
-                  <h3 className="text-xl font-semibold text-white mb-3 leading-snug">{s.title}</h3>
-                  <p className="text-lg text-gray-400 leading-relaxed flex-1">{s.desc}</p>
-                </div>
-              </ScrollReveal>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ── Flow diagram ─────────────────────────────────────────────── */}
       <section className="py-24 px-8 border-t border-white/5">
         <div className="max-w-7xl mx-auto">
           <ScrollReveal className="text-center mb-14">
             <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">How it works</p>
-            <h2 className="text-4xl sm:text-5xl font-bold mb-6">
+            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">
               One platform captures, qualifies, and routes every lead
             </h2>
             <p className="text-xl sm:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed mb-4">
@@ -438,7 +490,7 @@ export default function TestLandingPage() {
         <div className="max-w-7xl mx-auto">
           <ScrollReveal className="text-center mb-14">
             <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">AI qualification process</p>
-            <h2 className="text-4xl sm:text-5xl font-bold mb-5">How every lead gets scored and acted on</h2>
+            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">How every lead gets scored and acted on</h2>
             <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed">
               The moment a lead arrives from any channel, Appalix AI runs it through a continuous qualification loop — so your team only deals with leads that are ready.
             </p>
@@ -506,7 +558,7 @@ export default function TestLandingPage() {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#15A4AE]/30 bg-[#15A4AE]/[0.08] text-[#15A4AE] text-[11px] font-semibold uppercase tracking-widest">
               <span className="text-[10px]">✦</span> Meet Sage
             </div>
-            <h2 className="text-4xl sm:text-5xl font-bold leading-snug">
+            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mb-5">
               Your AI that never misses a lead — and always knows what to do next
             </h2>
             <p className="text-gray-400 leading-relaxed">
@@ -562,7 +614,7 @@ export default function TestLandingPage() {
         <div className="max-w-4xl mx-auto text-center">
           <ScrollReveal>
             <p className="text-xs text-[#15A4AE] uppercase tracking-widest font-semibold mb-3">Integrations</p>
-            <h2 className="text-4xl sm:text-5xl font-bold mb-4">Connects with the tools your leads already come from</h2>
+            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">Connects with the tools your leads already come from</h2>
             <p className="text-gray-400 mb-10 text-sm max-w-lg mx-auto">
               Native connections to every major ad platform, email provider, CRM, and automation tool.
             </p>
@@ -589,7 +641,7 @@ export default function TestLandingPage() {
         <div className="max-w-7xl mx-auto">
           <ScrollReveal className="text-center mb-4">
             <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-3">Pricing</p>
-            <h2 className="text-4xl sm:text-5xl font-bold mb-4">Simple pricing that scales with your lead volume</h2>
+            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">Simple pricing that scales with your lead volume</h2>
             <p className="text-gray-400 mb-2 text-base">7-day free trial on all plans. No credit card required.</p>
           </ScrollReveal>
           <PricingCards />
@@ -600,7 +652,7 @@ export default function TestLandingPage() {
       <section className="py-24 px-6 border-t border-white/5">
         <div className="max-w-3xl mx-auto">
           <ScrollReveal className="text-center mb-12">
-            <h2 className="text-4xl sm:text-5xl font-bold">Frequently asked questions</h2>
+            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">Frequently asked questions</h2>
           </ScrollReveal>
           <div className="space-y-5">
             {FAQS.map((faq, i) => (
@@ -621,7 +673,7 @@ export default function TestLandingPage() {
           <div className="relative max-w-4xl mx-auto text-center">
             <div className="absolute inset-0 bg-[#15A4AE]/[0.05] rounded-3xl blur-3xl pointer-events-none" />
             <div className="relative p-12 rounded-3xl border border-[#15A4AE]/20 bg-white/[0.02]">
-              <h2 className="text-4xl sm:text-5xl font-bold mb-4">
+              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">
                 Every lead deserves a fast follow-up.<br className="hidden sm:block" />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#15A4AE] to-[#3d9585]">
                   Let AI handle it.
