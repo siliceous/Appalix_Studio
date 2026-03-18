@@ -49,3 +49,28 @@ export async function updateBot(botId: string, formData: FormData) {
   if (error) throw new Error(error.message)
   redirect(`/bots/${botId}`)
 }
+
+export async function deleteBot(botId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { data: membershipRaw } = await supabase
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single()
+  const membership = membershipRaw as { workspace_id: string } | null
+  if (!membership) throw new Error('Unauthorized')
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('bots')
+    .delete()
+    .eq('id', botId)
+    .eq('workspace_id', membership.workspace_id)
+
+  if (error) throw new Error(error.message)
+}

@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/header'
 import { PLATFORM_META, formatDate } from '@/lib/utils'
 import type { Metadata } from 'next'
 import type { Bot, Integration, AgentRun } from '@/lib/types'
+import { DeleteBotButton } from './delete-bot-button'
 
 export const metadata: Metadata = { title: 'Bot settings' }
 
@@ -49,12 +50,15 @@ export default async function BotDetailPage({ params }: { params: Promise<{ id: 
         title={bot.name}
         description={bot.description ?? undefined}
         action={
-          <a
-            href={`/bots/${id}/edit`}
-            className="px-3 py-1.5 border text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            Edit
-          </a>
+          <div className="flex items-center gap-2">
+            <a
+              href={`/bots/${id}/edit`}
+              className="px-3 py-1.5 border text-sm text-gray-700 dark:text-gray-300 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+            >
+              Edit
+            </a>
+            <DeleteBotButton id={id} />
+          </div>
         }
       />
 
