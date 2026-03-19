@@ -47,11 +47,15 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
   const router   = useRouter()
   const pathname = usePathname()
   const [, startTransition] = useTransition()
-  const [localAuto, setLocalAuto] = useState(autoEnabled)
-  const [fromDate, setFromDate]   = useState(customFrom ?? '')
-  const [toDate,   setToDate]     = useState(customTo   ?? '')
-  const [showCal,  setShowCal]    = useState(false)
+  const [localAuto,   setLocalAuto]   = useState(autoEnabled)
+  const [fromDate,    setFromDate]    = useState(customFrom ?? '')
+  const [toDate,      setToDate]      = useState(customTo   ?? '')
+  const [showCal,     setShowCal]     = useState(false)
+  const [loadingKey,  setLoadingKey]  = useState<SubpageSource | null>(null)
   const calRef = useRef<HTMLDivElement>(null)
+
+  // Clear loading state once navigation settles
+  useEffect(() => { setLoadingKey(null) }, [pathname])
 
   // Sync when server re-renders with updated prop
   useEffect(() => { setLocalAuto(autoEnabled) }, [autoEnabled])
@@ -123,21 +127,31 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
         </Link>
         <div className="w-px h-5 bg-gray-200 dark:bg-white/10 self-center" />
         {/* Sibling page pill buttons — carry viewAs when set */}
-        {PAGES.map(p => (
-          <Link
-            key={p.key}
-            href={viewAsUserId ? `${BASE_HREFS[p.key]}?viewAs=${viewAsUserId}` : BASE_HREFS[p.key]}
-            className={[
-              'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl border transition-colors whitespace-nowrap',
-              sourceKey === p.key
-                ? p.activeCls
-                : `border-transparent ${p.hoverCls}`,
-            ].join(' ')}
-          >
-            <p.Icon className="w-3.5 h-3.5 shrink-0" />
-            {p.label}
-          </Link>
-        ))}
+        {PAGES.map(p => {
+          const isActive  = sourceKey === p.key
+          const isLoading = loadingKey === p.key
+          return (
+            <button
+              key={p.key}
+              onClick={() => {
+                if (isActive || isLoading) return
+                setLoadingKey(p.key)
+                router.push(viewAsUserId ? `${BASE_HREFS[p.key]}?viewAs=${viewAsUserId}` : BASE_HREFS[p.key])
+              }}
+              className={[
+                'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl border transition-colors whitespace-nowrap',
+                isActive
+                  ? p.activeCls
+                  : `border-transparent ${p.hoverCls}`,
+              ].join(' ')}
+            >
+              {isLoading
+                ? <Loader2 className="w-3.5 h-3.5 shrink-0 animate-spin" />
+                : <p.Icon className="w-3.5 h-3.5 shrink-0" />}
+              {p.label}
+            </button>
+          )
+        })}
       </div>
 
       {/* Controls */}
