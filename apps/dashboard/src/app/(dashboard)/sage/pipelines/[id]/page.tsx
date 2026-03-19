@@ -145,7 +145,7 @@ export default async function PipelineBoardPage({
       </div>
 
       {/* Board */}
-      <div className="flex-1 overflow-hidden bg-gray-50 dark:bg-[#1c1c1c] flex flex-col min-h-0">
+      <div className="flex-1 overflow-hidden bg-[#f5f4f1] dark:bg-[#1c1c1c] flex flex-col min-h-0">
         {stages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-sm text-gray-400">This pipeline has no stages.</p>
