@@ -119,30 +119,37 @@ export default async function FormsPage({
 
   subsQuery = subsQuery.order('created_at', { ascending: false }).limit(200)
 
-  // Mailchimp connection status (admin client bypasses RLS on sage_integrations)
-  const { data: mailchimpRaw } = await createAdminClient()
+  // All connected email marketing integrations (admin client bypasses RLS)
+  const { data: emailIntegRaw } = await createAdminClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .from('sage_integrations' as any)
-    .select('status, config')
+    .select('provider, status, config')
     .eq('workspace_id', workspaceId)
-    .eq('provider', 'mailchimp')
-    .maybeSingle()
-  const mailchimpCfg       = (mailchimpRaw as { status: string; config: { list_id?: string; access_token?: string; server?: string } } | null)
-  const mailchimpConnected = mailchimpCfg?.status === 'connected'
-  const mailchimpListId    = mailchimpCfg?.config?.list_id ?? ''
+    .eq('status', 'connected')
+    .in('provider', ['mailchimp', 'activecampaign', 'convertkit', 'klaviyo', 'constantcontact'])
+
+  type EmailIntegRow = { provider: string; status: string; config: Record<string, string> }
+  const emailIntegrations = (emailIntegRaw ?? []) as EmailIntegRow[]
+
+  const mailchimpCfg       = emailIntegrations.find(r => r.provider === 'mailchimp')?.config ?? null
+  const mailchimpConnected = !!mailchimpCfg
+  const mailchimpListId    = mailchimpCfg?.list_id ?? ''
 
   // Fetch all Mailchimp audiences so users can pick per-form
   let mailchimpLists: Array<{ id: string; name: string }> = []
-  if (mailchimpConnected && mailchimpCfg?.config?.access_token) {
+  if (mailchimpConnected && mailchimpCfg?.access_token) {
     try {
-      const mcServer = mailchimpCfg.config.server ?? 'us1'
+      const mcServer = mailchimpCfg.server ?? 'us1'
       const mcRes = await fetch(`https://${mcServer}.api.mailchimp.com/3.0/lists?count=50&fields=lists.id,lists.name`, {
-        headers: { Authorization: `Bearer ${mailchimpCfg.config.access_token}` },
+        headers: { Authorization: `Bearer ${mailchimpCfg.access_token}` },
       })
       const mcData = await mcRes.json() as { lists?: Array<{ id: string; name: string }> }
       mailchimpLists = mcData.lists ?? []
     } catch { /* non-fatal */ }
   }
+
+  // Connected platform names for the banner
+  const connectedEmailProviders = emailIntegrations.map(r => r.provider)
 
   const [formsRes, submissionsRes] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -214,6 +221,7 @@ export default async function FormsPage({
             mailchimpConnected={mailchimpConnected}
             mailchimpListId={mailchimpListId}
             mailchimpLists={mailchimpLists}
+            connectedEmailProviders={connectedEmailProviders}
           />
         </div>
         <ActivitySidebar
