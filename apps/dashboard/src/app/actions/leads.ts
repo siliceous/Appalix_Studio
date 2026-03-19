@@ -282,12 +282,18 @@ export async function moveLeadToPipeline(leadId: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 interface NormalizedContact {
-  name:      string
-  email:     string | null
-  phone:     string | null
-  company:   string | null
-  job_title: string | null
-  raw:       Record<string, unknown>
+  name:        string
+  email:       string | null
+  phone:       string | null
+  company:     string | null
+  job_title:   string | null
+  website_url: string | null
+  street:      string | null
+  city:        string | null
+  state:       string | null
+  zip:         string | null
+  country:     string | null
+  raw:         Record<string, unknown>
 }
 
 
@@ -306,17 +312,24 @@ async function fetchMailchimpContacts(config: Record<string, string>): Promise<N
     const data = await res.json() as { members?: Record<string, unknown>[]; total_items?: number }
     const members = data.members ?? []
     for (const m of members) {
-      const mf = (m.merge_fields ?? {}) as Record<string, string>
+      const mf   = (m.merge_fields ?? {}) as Record<string, unknown>
+      const addr = (mf.ADDRESS ?? {}) as Record<string, string>
       const name = (m.full_name as string | undefined) ||
         `${mf.FNAME ?? ''} ${mf.LNAME ?? ''}`.trim() ||
         (m.email_address as string)
       results.push({
         name,
-        email:     (m.email_address as string | null) ?? null,
-        phone:     mf.PHONE   ?? null,
-        company:   mf.COMPANY ?? null,
-        job_title: null,
-        raw:       m,
+        email:       (m.email_address as string | null) ?? null,
+        phone:       (mf.PHONE   as string | null) ?? null,
+        company:     (mf.COMPANY as string | null) ?? null,
+        job_title:   (typeof mf.JOBTITLE === 'string' ? mf.JOBTITLE : typeof mf.MMERGE6 === 'string' ? mf.MMERGE6 : null),
+        website_url: (typeof mf.WEBSITE  === 'string' ? mf.WEBSITE  : typeof mf.MMERGE5 === 'string' ? mf.MMERGE5 : null),
+        street:      addr.addr1  ?? null,
+        city:        addr.city   ?? null,
+        state:       addr.state  ?? null,
+        zip:         addr.zip    ?? null,
+        country:     addr.country ?? null,
+        raw:         m,
       })
     }
     if (members.length < count) break
@@ -343,11 +356,17 @@ async function fetchActiveCampaignContacts(config: Record<string, string>): Prom
       const name = `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() || (c.email as string)
       results.push({
         name,
-        email:     (c.email     as string | null) ?? null,
-        phone:     (c.phone     as string | null) ?? null,
-        company:   (c.orgname   as string | null) ?? null,
-        job_title: null,
-        raw:       c,
+        email:       (c.email   as string | null) ?? null,
+        phone:       (c.phone   as string | null) ?? null,
+        company:     (c.orgname as string | null) ?? null,
+        job_title:   null,
+        website_url: null,
+        street:      null,
+        city:        null,
+        state:       null,
+        zip:         null,
+        country:     null,
+        raw:         c,
       })
     }
     if (contacts.length < limit) break
@@ -408,6 +427,12 @@ export async function syncFromEmailPlatform(
       phone:        contact.phone,
       company_name: contact.company,
       title:        contact.job_title,
+      website_url:  contact.website_url,
+      street:       contact.street,
+      city:         contact.city,
+      state:        contact.state,
+      zip:          contact.zip,
+      country:      contact.country,
       source:       provider,
       contact_type: 'potential_customer',
       tags:         [],
