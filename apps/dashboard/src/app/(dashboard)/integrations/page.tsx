@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { Header } from '@/components/layout/header'
@@ -65,11 +65,14 @@ export default async function IntegrationsPage({
   const EMAIL_PROVIDERS = ['mailchimp', 'activecampaign', 'convertkit', 'klaviyo', 'constantcontact'] as const
   const SYNC_PROVIDERS  = ['mailchimp', 'activecampaign'] as const
 
+  const admin = createAdminClient()
   const [{ data: rawIntegrations }, { data: sageIntegrationsRaw }, { data: sourcesRaw }, { data: emailIntegrationsRaw }, { data: leadCountsRaw }] = await Promise.all([
     supabase.from('integrations').select('*, bots(name)').eq('workspace_id', membership.workspace_id).order('created_at', { ascending: false }),
-    supabase.from('sage_integrations').select('provider, status').eq('workspace_id', membership.workspace_id).eq('user_id', user.id),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any).from('sage_integrations').select('provider, status').eq('workspace_id', membership.workspace_id),
     supabase.from('lead_ad_sources').select('*').eq('workspace_id', membership.workspace_id),
-    supabase.from('sage_integrations').select('id, provider, status, updated_at').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', EMAIL_PROVIDERS),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any).from('sage_integrations').select('id, provider, status, updated_at').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', EMAIL_PROVIDERS),
     supabase.from('leads').select('source_platform').eq('workspace_id', membership.workspace_id).in('source_platform', SYNC_PROVIDERS),
   ])
   const integrations      = (rawIntegrations ?? []) as IntegrationRow[]
