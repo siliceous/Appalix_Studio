@@ -15,7 +15,6 @@ const DASHBOARD_LINKS = [
 
 const TOP_LINKS = [
   { label: 'Sage',          href: '/ai-assistant', badge: true },
-  { label: 'eCommerce',     href: '/ecommerce'   },
   { label: 'Integrations',  href: '/platforms'   },
   { label: 'Pricing',       href: '/pricing'     },
 ]
