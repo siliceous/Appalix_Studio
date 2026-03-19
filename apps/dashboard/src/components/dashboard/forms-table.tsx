@@ -59,6 +59,17 @@ const EMAIL_PLATFORM_META: Record<string, { name: string; logo: string }> = {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+function openOAuthPopup(path: string, onClose: () => void) {
+  const w = 600, h = 700
+  const left = Math.round(window.screenX + (window.outerWidth - w) / 2)
+  const top  = Math.round(window.screenY + (window.outerHeight - h) / 2)
+  const popup = window.open(path, 'oauth-popup', `width=${w},height=${h},left=${left},top=${top},toolbar=0,menubar=0,location=0`)
+  if (!popup) return
+  const timer = setInterval(() => {
+    if (popup.closed) { clearInterval(timer); onClose() }
+  }, 500)
+}
+
 function buildUrl(base: string, filters: FormFilters): string {
   const p = new URLSearchParams()
   Object.entries(filters).forEach(([k, v]) => { if (v) p.set(k, v) })
@@ -205,10 +216,13 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
         {connectedEmailProviders.length === 0 && !mailchimpConnected && (
           <div className="flex items-center gap-3 px-4 py-3">
             <span className="text-xs text-gray-500 dark:text-gray-400">Connect an email platform to auto-sync form submissions</span>
-            <Link href="/api/oauth/mailchimp" className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors shrink-0 whitespace-nowrap">
+            <button
+              onClick={() => openOAuthPopup('/api/oauth/mailchimp', () => router.refresh())}
+              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors shrink-0 whitespace-nowrap"
+            >
               <img src="/integrations/mailchimp.png" alt="" className="w-3.5 h-3.5 object-contain" />
               Connect Mailchimp
-            </Link>
+            </button>
           </div>
         )}
       </div>

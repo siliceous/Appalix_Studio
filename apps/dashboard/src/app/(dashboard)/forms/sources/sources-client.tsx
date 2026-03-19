@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Check, Copy, ChevronDown, ChevronUp, ExternalLink, BookOpen, Loader2, Unplug, AlertCircle, RefreshCw } from 'lucide-react'
 import { saveLeadSource, deleteLeadSource, syncFromEmailPlatform } from '@/app/actions/leads'
 import type { LeadAdSource, LeadAdPlatform, SageIntegration } from '@/lib/types'
@@ -161,6 +162,17 @@ const EMAIL_PLATFORMS: EmailPlatformDef[] = [
   { provider: 'constantcontact', name: 'Constant Contact',  emoji: '/integrations/constantcontact.png', canSync: false, tutorialUrl: '/resources/connect-constantcontact' },
 ]
 
+function openOAuthPopup(path: string, onClose: () => void) {
+  const w = 600, h = 700
+  const left = Math.round(window.screenX + (window.outerWidth - w) / 2)
+  const top  = Math.round(window.screenY + (window.outerHeight - h) / 2)
+  const popup = window.open(path, 'oauth-popup', `width=${w},height=${h},left=${left},top=${top},toolbar=0,menubar=0,location=0`)
+  if (!popup) return
+  const timer = setInterval(() => {
+    if (popup.closed) { clearInterval(timer); onClose() }
+  }, 500)
+}
+
 function EmailPlatformCard({
   def,
   integration,
@@ -170,6 +182,7 @@ function EmailPlatformCard({
   integration: EmailIntegration | undefined
   leadCount:   number
 }) {
+  const router      = useRouter()
   const isConnected = !!integration
   const [syncing, setSyncing] = useState(false)
   const [result,  setResult]  = useState<{ synced: number; skipped: number } | null>(null)
@@ -248,9 +261,16 @@ function EmailPlatformCard({
                 Manage
               </Link>
             )
+          ) : def.provider === 'mailchimp' ? (
+            <button
+              onClick={() => openOAuthPopup('/api/oauth/mailchimp', () => router.refresh())}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
+            >
+              Connect
+            </button>
           ) : (
             <Link
-              href={def.provider === 'mailchimp' ? '/api/oauth/mailchimp' : '/sage/integrations'}
+              href="/sage/integrations"
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
             >
               Connect
