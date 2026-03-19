@@ -316,7 +316,9 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
                   {canAllocate && (
                     <td className="px-5 py-3.5">
                       {assigning === lead.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
+                        <div className="flex items-center justify-center h-[26px] w-[130px]">
+                          <Loader2 className="w-4 h-4 animate-spin text-[#15A4AE]" />
+                        </div>
                       ) : teamMembers.length > 0 ? (
                         <div className="relative">
                           <select
