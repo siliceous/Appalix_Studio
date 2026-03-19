@@ -90,7 +90,6 @@ export async function GET(req: NextRequest) {
     .from('sage_integrations')
     .upsert({
       workspace_id: wid,
-      user_id:      uid,
       provider:     'mailchimp',
       status:       'connected',
       config: {
@@ -100,7 +99,7 @@ export async function GET(req: NextRequest) {
       },
       updated_at: new Date().toISOString(),
     }, {
-      onConflict: 'workspace_id,user_id,provider',
+      onConflict: 'workspace_id,provider',
     })
 
   if (error) {

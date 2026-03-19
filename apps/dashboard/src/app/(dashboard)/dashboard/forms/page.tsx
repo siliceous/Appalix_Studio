@@ -119,6 +119,17 @@ export default async function FormsPage({
 
   subsQuery = subsQuery.order('created_at', { ascending: false }).limit(200)
 
+  // Mailchimp connection status
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: mailchimpRaw } = await (supabase as any)
+    .from('sage_integrations')
+    .select('status, config')
+    .eq('workspace_id', workspaceId)
+    .eq('provider', 'mailchimp')
+    .maybeSingle()
+  const mailchimpConnected = (mailchimpRaw as { status: string; config: { list_id?: string } } | null)?.status === 'connected'
+  const mailchimpListId    = (mailchimpRaw as { config: { list_id?: string } } | null)?.config?.list_id ?? ''
+
   const [formsRes, submissionsRes] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     isRestricted && visibleFormIds.length > 0
@@ -186,6 +197,8 @@ export default async function FormsPage({
             forms={forms}
             filters={params}
             readonly={!!viewAsUserId}
+            mailchimpConnected={mailchimpConnected}
+            mailchimpListId={mailchimpListId}
           />
         </div>
         <ActivitySidebar
