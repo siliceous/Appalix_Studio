@@ -293,6 +293,7 @@ interface NormalizedContact {
   state:       string | null
   zip:         string | null
   country:     string | null
+  tags:        string[]
   raw:         Record<string, unknown>
 }
 
@@ -329,6 +330,7 @@ async function fetchMailchimpContacts(config: Record<string, string>): Promise<N
         state:       addr.state  ?? null,
         zip:         addr.zip    ?? null,
         country:     addr.country ?? null,
+        tags:        ((m.tags as { name: string }[] | undefined) ?? []).map(t => t.name),
         raw:         m,
       })
     }
@@ -366,6 +368,7 @@ async function fetchActiveCampaignContacts(config: Record<string, string>): Prom
         state:       null,
         zip:         null,
         country:     null,
+        tags:        [],
         raw:         c,
       })
     }
@@ -435,7 +438,7 @@ export async function syncFromEmailPlatform(
       country:      contact.country,
       source:       provider,
       contact_type: 'potential_customer',
-      tags:         [],
+      tags:         contact.tags,
     })
     synced++
   }
