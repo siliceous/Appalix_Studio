@@ -424,7 +424,7 @@ export async function syncFromEmailPlatform(
       .maybeSingle()
 
     if (!existingLead) {
-      await admin.from('leads').insert({
+      const { error: insertErr } = await admin.from('leads').insert({
         workspace_id:    workspaceId,
         source_platform: provider,
         name:            contact.name,
@@ -436,6 +436,7 @@ export async function syncFromEmailPlatform(
         pipeline_stage:  'new_lead',
         raw_payload:     contact.raw,
       })
+      if (insertErr) throw new Error(`Lead insert failed: ${insertErr.message}`)
       synced++
     } else {
       skipped++
