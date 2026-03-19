@@ -442,7 +442,7 @@ export function PipelineBoard({
               <div className={`flex-1 min-h-0 space-y-2 overflow-y-auto rounded-xl p-2 border transition-colors ${
                 isDragOver
                   ? 'border-[#15A4AE]/40 bg-[#15A4AE]/5'
-                  : 'border-[#15A4AE]/12 dark:border-white/5 bg-gray-50/60 dark:bg-white/[0.02]'
+                  : 'border-[#15A4AE]/12 dark:border-white/5 bg-[#f5f4f1] dark:bg-white/[0.02]'
               }`}>
                 {stageDeals.map(deal => (
                   <div

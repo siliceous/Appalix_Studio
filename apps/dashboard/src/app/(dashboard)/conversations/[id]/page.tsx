@@ -41,7 +41,7 @@ export default async function ConversationDetailPage({
   return (
     <div className="max-w-3xl mx-auto">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-10 bg-[#f5f4f1] dark:bg-[#1c1c1c] -mx-8 px-8 -mt-8 pt-8 pb-4 mb-4 border-b border-gray-100 dark:border-white/8">
+      <div className="sticky top-0 z-10 bg-[#f5f4f1] dark:bg-[#1c1c1c] -mx-8 px-8 -mt-8 pt-8 pb-5 mb-8 border-b border-gray-100 dark:border-white/8">
         <div className="flex items-start justify-between">
           <div>
             <a href="/dashboard/bots" className="text-xs text-gray-400 hover:text-brand-600 mb-1 block">
