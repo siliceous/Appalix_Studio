@@ -153,7 +153,7 @@ export function ActivitySidebar({ activity, date, currentPath, viewingAs }: Prop
   if (collapsed) {
     return (
       <div
-        className="w-8 flex-shrink-0 bg-gray-50 dark:bg-[#1c1c1c] flex flex-col items-center py-4 gap-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/4 transition-colors"
+        className="w-8 flex-shrink-0 bg-[#f5f4f1] dark:bg-[#1c1c1c] flex flex-col items-center py-4 gap-3 cursor-pointer hover:bg-[#ede9e2] dark:hover:bg-white/4 transition-colors"
         onClick={toggleCollapsed}
         title="Show activity"
       >
@@ -170,7 +170,7 @@ export function ActivitySidebar({ activity, date, currentPath, viewingAs }: Prop
 
   // ── Expanded ───────────────────────────────────────────────────────────────
   return (
-    <div className="w-64 flex-shrink-0 bg-gray-50 dark:bg-[#1c1c1c] flex flex-col overflow-hidden p-3 pr-4">
+    <div className="w-64 flex-shrink-0 bg-[#f5f4f1] dark:bg-[#1c1c1c] flex flex-col overflow-hidden p-3 pr-4">
       <div className="flex flex-col flex-1 overflow-hidden bg-white dark:bg-[#242424] rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_16px_rgba(0,0,0,0.4)] border border-gray-200/70 dark:border-white/8">
 
       {/* Header */}
