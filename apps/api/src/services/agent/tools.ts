@@ -441,6 +441,43 @@ export const BUILT_IN_TOOLS: Anthropic.Tool[] = [
       required: ['feature'],
     },
   },
+  // ── Shopify tools ──────────────────────────────────────────────
+  {
+    name: 'shopify_get_order',
+    description: 'Look up a Shopify order by order number and/or customer email. Returns order status, items, total, and fulfillment info. Use when a customer asks about a specific order.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        order_number:   { type: 'string', description: 'Order number e.g. "1001" or "#1001"' },
+        customer_email: { type: 'string', description: 'Customer email address to narrow the search' },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'shopify_get_orders_by_email',
+    description: 'List all recent Shopify orders for a customer email address. Use when a customer asks "what are my orders?" or wants an overview of their purchase history.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        customer_email: { type: 'string', description: 'Customer email address' },
+      },
+      required: ['customer_email'],
+    },
+  },
+  {
+    name: 'shopify_track_shipment',
+    description: 'Get shipping and fulfillment details for a Shopify order. Returns carrier, tracking number, tracking URL, and current status. Use when a customer asks "where is my package?" or "has my order shipped?".',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        order_id:       { type: 'string', description: 'Shopify order ID (numeric)' },
+        order_number:   { type: 'string', description: 'Order number e.g. "1001" — used to look up the order ID first' },
+        customer_email: { type: 'string', description: 'Customer email to verify ownership' },
+      },
+      required: [],
+    },
+  },
 ]
 
 // ---------------------------------------------------------------
@@ -501,6 +538,10 @@ export interface ToolInput {
   company?:         string
   notes?:           string
   source?:          string
+  // shopify tools
+  order_number?:    string
+  order_id?:        string
+  customer_email?:  string
 }
 
 export async function executeTool(
@@ -677,6 +718,84 @@ export async function executeTool(
     case 'sage_check_feature_status': {
       if (!input.feature) return 'Error: feature is required.'
       return sageCheckFeatureStatus(ctx.workspaceId, input.feature)
+    }
+
+    // ── Shopify tools ───────────────────────────────────────────────
+
+    case 'shopify_get_order':
+    case 'shopify_get_orders_by_email':
+    case 'shopify_track_shipment': {
+      // Load Shopify credentials for this workspace
+      const { data: shopifyInt } = await supabase
+        .from('integrations')
+        .select('config')
+        .eq('workspace_id', ctx.workspaceId)
+        .eq('platform', 'shopify')
+        .eq('status', 'active')
+        .limit(1)
+        .single()
+
+      if (!shopifyInt) return 'No Shopify store connected to this workspace. Ask the workspace owner to add a Shopify integration.'
+
+      const cfg = shopifyInt.config as Record<string, string>
+      const shopDomain  = cfg.shop_domain
+      const accessToken = cfg.access_token
+
+      if (!shopDomain || !accessToken) return 'Shopify integration is incomplete. Please check the store domain and access token.'
+
+      const shopifyFetch = async (path: string) => {
+        const res = await fetch(`https://${shopDomain}/admin/api/2024-01/${path}`, {
+          headers: { 'X-Shopify-Access-Token': accessToken, 'Content-Type': 'application/json' },
+          signal: AbortSignal.timeout(10_000),
+        })
+        if (!res.ok) throw new Error(`Shopify API ${res.status}: ${await res.text()}`)
+        return res.json() as Promise<Record<string, unknown>>
+      }
+
+      if (toolName === 'shopify_get_orders_by_email') {
+        if (!input.customer_email) return 'Error: customer_email is required.'
+        const data = await shopifyFetch(`orders.json?email=${encodeURIComponent(input.customer_email)}&status=any&limit=5`)
+        const orders = data.orders as Array<Record<string, unknown>>
+        if (!orders?.length) return `No orders found for ${input.customer_email}.`
+        return orders.map((o) => {
+          const fulfillment = (o.fulfillment_status as string) ?? 'unfulfilled'
+          return `Order #${o.order_number} — ${o.financial_status} / ${fulfillment} — Total: ${o.currency} ${o.total_price} — Placed: ${String(o.created_at).slice(0, 10)}`
+        }).join('\n')
+      }
+
+      if (toolName === 'shopify_get_order') {
+        let path = `orders.json?status=any&limit=1`
+        if (input.order_number) path += `&name=%23${input.order_number.replace('#', '')}`
+        if (input.customer_email) path += `&email=${encodeURIComponent(input.customer_email)}`
+        const data = await shopifyFetch(path)
+        const orders = data.orders as Array<Record<string, unknown>>
+        const o = orders?.[0]
+        if (!o) return `Order ${input.order_number ? `#${input.order_number}` : ''} not found.`
+        const items = (o.line_items as Array<Record<string, unknown>>)?.map((i) => `${i.quantity}× ${i.name}`).join(', ') ?? ''
+        return `Order #${o.order_number}\nStatus: ${o.financial_status} / ${(o.fulfillment_status as string) ?? 'unfulfilled'}\nItems: ${items}\nTotal: ${o.currency} ${o.total_price}\nPlaced: ${String(o.created_at).slice(0, 10)}\nShipping to: ${(o.shipping_address as Record<string, unknown>)?.city ?? 'N/A'}`
+      }
+
+      if (toolName === 'shopify_track_shipment') {
+        // Resolve order ID from order number if needed
+        let orderId = input.order_id
+        if (!orderId && input.order_number) {
+          let path = `orders.json?status=any&limit=1&name=%23${input.order_number.replace('#', '')}`
+          if (input.customer_email) path += `&email=${encodeURIComponent(input.customer_email)}`
+          const data = await shopifyFetch(path)
+          const orders = data.orders as Array<Record<string, unknown>>
+          orderId = String(orders?.[0]?.id ?? '')
+        }
+        if (!orderId) return 'Could not find the order. Please provide a valid order number.'
+        const data = await shopifyFetch(`orders/${orderId}/fulfillments.json`)
+        const fulfillments = data.fulfillments as Array<Record<string, unknown>>
+        if (!fulfillments?.length) return 'This order has not been shipped yet.'
+        const f = fulfillments[fulfillments.length - 1]
+        const tracking = (f.tracking_numbers as string[])?.join(', ') ?? 'N/A'
+        const trackingUrl = (f.tracking_urls as string[])?.[0] ?? ''
+        return `Shipment status: ${f.status}\nCarrier: ${f.tracking_company ?? 'N/A'}\nTracking number: ${tracking}${trackingUrl ? `\nTracking URL: ${trackingUrl}` : ''}\nShipped: ${String(f.created_at).slice(0, 10)}`
+      }
+
+      return 'Unknown Shopify tool.'
     }
 
     default:

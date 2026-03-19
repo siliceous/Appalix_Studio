@@ -43,6 +43,7 @@ const AVAILABLE_PLATFORMS: { platform: Platform; desc: string; guide: string }[]
   { platform: 'wordpress',          desc: 'Embed a widget on any WordPress site',                  guide: '/resources/add-wordpress-chatbot' },
   { platform: 'web_widget',         desc: 'Add a chat widget to any website via script tag',       guide: '/resources/embed-web-widget' },
   { platform: 'telegram',           desc: 'Deploy your bot on Telegram — DMs and group chats',     guide: '/resources/connect-telegram' },
+  { platform: 'shopify',            desc: 'Connect a Shopify store — let your bot answer order, shipping, and customer queries', guide: '/resources/connect-shopify' },
   { platform: 'custom_api',         desc: 'Connect via REST API — build any custom integration',   guide: '/resources/custom-api-integration' },
 ]
 

@@ -1,17 +1,67 @@
+'use client'
+
 import Link from 'next/link'
 import Image from 'next/image'
+import { useState, useRef, useEffect } from 'react'
+import { ChevronDown } from 'lucide-react'
 
-const NAV_LINKS = [
-  { label: 'AI Agent',      href: '/ai-agent'      },
-  { label: 'Dashboard',     href: '/product'       },
-  { label: 'Email',         href: '/email'         },
-  { label: 'Bot',           href: '/bot'           },
-  { label: 'Forms',         href: '/smart-forms'   },
-  { label: 'Tickets',       href: '/tickets'       },
-  { label: 'Sage',          href: '/ai-assistant',   badge: true },
-  { label: 'Integrations',  href: '/platforms'     },
-  { label: 'Pricing',       href: '/pricing'       },
+const DASHBOARD_LINKS = [
+  { label: 'AI Agent',  href: '/ai-agent',      desc: 'Deploy AI chatbots trained on your content' },
+  { label: 'Email',     href: '/email',          desc: 'AI triage and reply for your inbox' },
+  { label: 'Bot',       href: '/bot',            desc: 'Build and configure your AI bots' },
+  { label: 'Forms',     href: '/smart-forms',    desc: 'Capture leads from every source' },
+  { label: 'Tickets',   href: '/tickets',        desc: 'Support ticket management' },
 ]
+
+const TOP_LINKS = [
+  { label: 'Sage',          href: '/ai-assistant', badge: true },
+  { label: 'eCommerce',     href: '/ecommerce'   },
+  { label: 'Integrations',  href: '/platforms'   },
+  { label: 'Pricing',       href: '/pricing'     },
+]
+
+function DashboardDropdown() {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1 text-sm text-gray-400 hover:text-white transition-colors"
+      >
+        Dashboard
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 rounded-xl border border-white/10 bg-[#1c1c1c] shadow-2xl shadow-black/40 overflow-hidden z-50">
+          <div className="p-1.5">
+            {DASHBOARD_LINKS.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                onClick={() => setOpen(false)}
+                className="flex flex-col px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors group"
+              >
+                <span className="text-sm font-medium text-gray-200 group-hover:text-white">{l.label}</span>
+                <span className="text-xs text-gray-500 group-hover:text-gray-400 mt-0.5">{l.desc}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export function MarketingNavbar() {
   return (
@@ -31,7 +81,8 @@ export function MarketingNavbar() {
 
         {/* Nav links */}
         <nav className="hidden md:flex items-center gap-8">
-          {NAV_LINKS.map((l) => (
+          <DashboardDropdown />
+          {TOP_LINKS.map((l) => (
             <Link
               key={l.href}
               href={l.href}

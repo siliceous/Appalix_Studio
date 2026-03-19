@@ -109,6 +109,9 @@ export default async function IntegrationSetupPage({
       {integration.platform === 'telegram' && (
         <TelegramSetup integrationId={id} cfg={cfg} apiUrl={API_URL} />
       )}
+      {integration.platform === 'shopify' && (
+        <ShopifySetup cfg={cfg} />
+      )}
     </div>
   )
 }
@@ -494,6 +497,75 @@ function SetupSection({
     <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5">
       <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">{title}</p>
       {children}
+    </div>
+  )
+}
+
+// ─── Shopify ──────────────────────────────────────────────────────────────────
+
+function ShopifySetup({ cfg }: { cfg: Record<string, unknown> }) {
+  const shopDomain = cfg.shop_domain as string | undefined
+
+  return (
+    <div className="space-y-4 mt-6">
+      <SetupStep
+        number={1}
+        title="Store connected"
+        done
+        desc={shopDomain ? `Connected to ${shopDomain}` : 'Your Shopify store credentials are saved.'}
+      />
+
+      <SetupStep
+        number={2}
+        title="Enable tools on your bot"
+        done={false}
+        desc='Go to your bot settings and turn on "Enable tools". This allows the bot to call the Shopify API mid-conversation to look up orders and shipping status.'
+      />
+
+      <SetupStep
+        number={3}
+        title="Add to your bot's system prompt"
+        done={false}
+        desc='Tell the bot it has access to Shopify. Add this to the system prompt:'
+      >
+        <div className="mt-3 bg-gray-50 dark:bg-white/5 rounded-lg p-3 font-mono text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+          {`You have access to this store's Shopify data. When a customer asks about their order status, shipping, or order history, use your Shopify tools to look it up. Always ask for their email address or order number if not provided.`}
+        </div>
+      </SetupStep>
+
+      <SetupStep
+        number={4}
+        title="Test it"
+        done={false}
+        desc={'Deploy your bot as a web widget on your Shopify store. Ask: "Where is my order #1001?" — the bot will look it up live.'}
+      />
+    </div>
+  )
+}
+
+function SetupStep({
+  number,
+  title,
+  desc,
+  done,
+  children,
+}: {
+  number: number
+  title: string
+  desc: string
+  done: boolean
+  children?: React.ReactNode
+}) {
+  return (
+    <div className="flex gap-4 p-4 rounded-xl border dark:border-white/10 bg-white dark:bg-[#2a2a2a]">
+      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 ${done ? 'bg-green-100 text-green-700' : 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400'}`}>
+        {done ? '✓' : number}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">{title}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{desc}</p>
+        {children}
+      </div>
     </div>
   )
 }

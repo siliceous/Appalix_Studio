@@ -69,6 +69,11 @@ export async function createIntegration(formData: FormData) {
       service_account_json: formData.get('service_account_json') as string || '',
       space_name:           formData.get('space_name') as string || '',
     }
+  } else if (platform === 'shopify') {
+    config = {
+      shop_domain:   (formData.get('shop_domain') as string || '').replace(/^https?:\/\//, '').trim(),
+      access_token:  formData.get('access_token') as string || '',
+    }
   } else if (platform === 'telegram') {
     const submittedSecret = (formData.get('telegram_webhook_secret') as string | null)?.trim()
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'

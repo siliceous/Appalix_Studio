@@ -17,6 +17,7 @@ const PLATFORMS: { platform: Platform; desc: string; guide: string }[] = [
   { platform: 'whatsapp',           desc: 'Chat on WhatsApp Business',                 guide: '/resources/connect-whatsapp' },
   { platform: 'google_chat',        desc: 'Answer questions in Google Chat spaces',    guide: '/resources/connect-google-chat' },
   { platform: 'telegram',           desc: 'Chat with users on Telegram',               guide: '/resources/connect-telegram' },
+  { platform: 'shopify',            desc: 'Connect a Shopify store for order & shipping support', guide: '/resources/connect-shopify' },
   { platform: 'custom_api',         desc: 'Connect via REST API with an API key',      guide: '/resources/custom-api-integration' },
 ]
 
@@ -58,6 +59,10 @@ const PLATFORM_FIELDS: Partial<Record<Platform, FieldConfig[]>> = {
   telegram: [
     { name: 'telegram_bot_token',       label: 'Bot token',      placeholder: '7412345678:AAF...', hint: 'Get from @BotFather on Telegram.' },
     { name: 'telegram_webhook_secret',  label: 'Webhook secret', placeholder: 'Auto-generated if left blank', optional: true, hint: 'Leave blank to auto-generate.' },
+  ],
+  shopify: [
+    { name: 'shop_domain',   label: 'Shop domain',   placeholder: 'yourstore.myshopify.com', hint: 'Your Shopify store domain (no https://).' },
+    { name: 'access_token',  label: 'Admin API access token', placeholder: 'shpat_...', hint: 'Shopify Admin → Apps → Develop apps → your app → Admin API access token.' },
   ],
   custom_api: [],
 }

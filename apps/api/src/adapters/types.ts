@@ -13,6 +13,7 @@ export type Platform =
   | 'web_widget'
   | 'custom_api'
   | 'telegram'
+  | 'shopify'
 
 /** Normalised inbound message from any platform */
 export interface IncomingMessage {
