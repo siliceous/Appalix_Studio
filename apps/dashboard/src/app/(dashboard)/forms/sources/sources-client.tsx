@@ -173,25 +173,12 @@ function openOAuthPopup(path: string, onClose: () => void) {
   }, 500)
 }
 
-function formatRelativeTime(dateStr: string | null | undefined): string {
-  if (!dateStr) return 'never'
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60_000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
-}
-
 function EmailPlatformCard({
   def,
   integration,
-  leadCount,
 }: {
   def:         EmailPlatformDef
   integration: EmailIntegration | undefined
-  leadCount:   number
 }) {
   const router      = useRouter()
   const isConnected = !!integration
@@ -237,105 +224,91 @@ function EmailPlatformCard({
 
   return (
     <div className="bg-white dark:bg-[#232323] rounded-xl border border-gray-200 dark:border-white/8 overflow-hidden">
-      <div className="flex items-center gap-4 p-5">
-        <div className="w-10 h-10 rounded-lg bg-white dark:bg-white/8 border border-gray-100 dark:border-white/8 flex items-center justify-center shrink-0 overflow-hidden p-1">
+      {/* Top bar */}
+      <div className="flex items-center gap-3 px-5 py-4">
+        <div className="w-8 h-8 rounded-lg bg-white dark:bg-white/8 border border-gray-100 dark:border-white/8 flex items-center justify-center shrink-0 overflow-hidden p-1">
           <img src={def.emoji} alt={def.name} className="w-full h-full object-contain" />
         </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{def.name}</p>
-            {isConnected && (
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
-                Connected
-              </span>
-            )}
-            {isConnected && isMailchimp && syncEnabled && (
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400">
-                Auto-sync ON
-              </span>
-            )}
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            {isConnected
-              ? def.canSync
-                ? isMailchimp && integration?.last_synced_at
-                  ? `Last synced ${formatRelativeTime(integration.last_synced_at)}${integration.last_sync_count ? ` · ${integration.last_sync_count} contact${integration.last_sync_count !== 1 ? 's' : ''}` : ''}`
-                  : `${leadCount} contact${leadCount !== 1 ? 's' : ''} synced`
-                : 'Contacts sync to Sage CRM automatically'
-              : def.canSync
-                ? 'Connect to import contacts into Sage Contacts'
-                : 'Connect to sync contacts with Sage CRM'
-            }
-          </p>
-        </div>
+        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex-1">{def.name}</p>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <Link
-            href={def.tutorialUrl}
-            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
-            title="Setup guide"
+        {isConnected && (
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+            Connected
+          </span>
+        )}
+
+        {/* Two-way sync toggle — Mailchimp only, shown inline in top bar */}
+        {isConnected && isMailchimp && (
+          <button
+            onClick={handleToggleSync}
+            disabled={toggling}
+            title={syncEnabled ? 'Turn off auto-sync' : 'Turn on auto-sync'}
+            className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none ${
+              syncEnabled ? 'bg-brand-600' : 'bg-gray-200 dark:bg-white/15'
+            } ${toggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
-            <BookOpen className="w-3.5 h-3.5 text-gray-400" />
-          </Link>
+            <span
+              className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+                syncEnabled ? 'translate-x-[18px]' : 'translate-x-[3px]'
+              }`}
+            />
+          </button>
+        )}
 
-          {isConnected ? (
-            def.canSync ? (
-              <div className="flex items-center gap-2">
-                {/* Two-way sync toggle — Mailchimp only */}
-                {isMailchimp && (
-                  <button
-                    onClick={handleToggleSync}
-                    disabled={toggling}
-                    title={syncEnabled ? 'Turn off auto-sync' : 'Turn on auto-sync'}
-                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
-                      syncEnabled
-                        ? 'bg-brand-600'
-                        : 'bg-gray-200 dark:bg-white/15'
-                    } ${toggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                  >
-                    <span
-                      className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
-                        syncEnabled ? 'translate-x-[18px]' : 'translate-x-[3px]'
-                      }`}
-                    />
-                  </button>
-                )}
-                <button
-                  onClick={handleSync}
-                  disabled={syncing}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 disabled:bg-gray-300 dark:disabled:bg-white/10 text-white disabled:text-gray-400 rounded-lg transition-colors"
-                >
-                  {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                  {syncing ? 'Syncing…' : 'Sync Now'}
-                </button>
-              </div>
-            ) : (
-              <Link
-                href="/sage/integrations"
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg transition-colors"
-              >
-                <ExternalLink className="w-3 h-3" />
-                Manage
-              </Link>
-            )
-          ) : def.provider === 'mailchimp' ? (
+        <Link
+          href={def.tutorialUrl}
+          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+          title="Setup guide"
+        >
+          <BookOpen className="w-3.5 h-3.5 text-gray-400" />
+        </Link>
+
+        {isConnected ? (
+          def.canSync ? (
             <button
-              onClick={() => openOAuthPopup('/api/oauth/mailchimp', () => router.refresh())}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
+              onClick={handleSync}
+              disabled={syncing}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 disabled:bg-gray-300 dark:disabled:bg-white/10 text-white disabled:text-gray-400 rounded-lg transition-colors"
             >
-              Connect
+              {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+              {syncing ? 'Syncing…' : 'Sync Now'}
             </button>
           ) : (
             <Link
               href="/sage/integrations"
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg transition-colors"
             >
-              Connect
+              <ExternalLink className="w-3 h-3" />
+              Manage
             </Link>
-          )}
-        </div>
+          )
+        ) : def.provider === 'mailchimp' ? (
+          <button
+            onClick={() => openOAuthPopup('/api/oauth/mailchimp', () => router.refresh())}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
+          >
+            Connect
+          </button>
+        ) : (
+          <Link
+            href="/sage/integrations"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
+          >
+            Connect
+          </Link>
+        )}
       </div>
+
+      {/* Sync status line — Mailchimp only */}
+      {isConnected && isMailchimp && (
+        <div className="border-t border-gray-100 dark:border-white/6 px-5 py-2.5 text-xs text-gray-500 dark:text-gray-400">
+          {syncEnabled
+            ? 'Auto sync ON · Mailchimp and Appalix update every 5 mins'
+            : 'Sync OFF · Changes made on Appalix will not affect Mailchimp'
+          }
+        </div>
+      )}
 
       {(result || syncErr) && (
         <div className={`border-t px-5 py-3 text-xs ${syncErr ? 'border-red-100 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400' : 'border-gray-100 dark:border-white/6 bg-gray-50 dark:bg-white/2 text-gray-500 dark:text-gray-400'}`}>
@@ -349,7 +322,7 @@ function EmailPlatformCard({
   )
 }
 
-export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, emailIntegrations, leadCounts }: SourcesClientProps) {
+export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, emailIntegrations }: SourcesClientProps) {
   const [sources, setSources]   = useState<LeadAdSource[]>(initialSources)
   const [expanded, setExpanded] = useState<LeadAdPlatform | null>(null)
   const [formValues, setFormValues] = useState<Record<string, Record<string, string>>>({})
@@ -583,7 +556,6 @@ export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, e
               key={def.provider}
               def={def}
               integration={emailIntegrations.find(i => i.provider === def.provider)}
-              leadCount={leadCounts[def.provider] ?? 0}
             />
           ))}
         </div>
