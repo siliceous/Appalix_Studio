@@ -154,11 +154,11 @@ interface EmailPlatformDef {
 }
 
 const EMAIL_PLATFORMS: EmailPlatformDef[] = [
-  { provider: 'mailchimp',       name: 'Mailchimp',       emoji: '🐒', canSync: true,  tutorialUrl: '/resources/connect-mailchimp' },
-  { provider: 'activecampaign',  name: 'ActiveCampaign',  emoji: '⚡', canSync: true,  tutorialUrl: '/resources/connect-activecampaign' },
-  { provider: 'convertkit',      name: 'Kit (ConvertKit)', emoji: '✉️', canSync: false, tutorialUrl: '/resources/connect-convertkit' },
-  { provider: 'klaviyo',         name: 'Klaviyo',          emoji: '📊', canSync: false, tutorialUrl: '/resources/connect-klaviyo' },
-  { provider: 'constantcontact', name: 'Constant Contact', emoji: '📬', canSync: false, tutorialUrl: '/resources/connect-constantcontact' },
+  { provider: 'mailchimp',       name: 'Mailchimp',        emoji: '/integrations/mailchimp.png',       canSync: true,  tutorialUrl: '/resources/connect-mailchimp' },
+  { provider: 'activecampaign',  name: 'ActiveCampaign',   emoji: '/integrations/activecampaign.png',  canSync: true,  tutorialUrl: '/resources/connect-activecampaign' },
+  { provider: 'convertkit',      name: 'Kit (ConvertKit)',  emoji: '/integrations/kit.png',             canSync: false, tutorialUrl: '/resources/connect-convertkit' },
+  { provider: 'klaviyo',         name: 'Klaviyo',           emoji: '/integrations/Klaviyo.png',         canSync: false, tutorialUrl: '/resources/connect-klaviyo' },
+  { provider: 'constantcontact', name: 'Constant Contact',  emoji: '/integrations/constantcontact.png', canSync: false, tutorialUrl: '/resources/connect-constantcontact' },
 ]
 
 function EmailPlatformCard({
@@ -195,8 +195,8 @@ function EmailPlatformCard({
   return (
     <div className="bg-white dark:bg-[#232323] rounded-xl border border-gray-200 dark:border-white/8 overflow-hidden">
       <div className="flex items-center gap-4 p-5">
-        <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-white/8 flex items-center justify-center text-xl shrink-0">
-          {def.emoji}
+        <div className="w-10 h-10 rounded-lg bg-white dark:bg-white/8 border border-gray-100 dark:border-white/8 flex items-center justify-center shrink-0 overflow-hidden p-1">
+          <img src={def.emoji} alt={def.name} className="w-full h-full object-contain" />
         </div>
 
         <div className="flex-1 min-w-0">
