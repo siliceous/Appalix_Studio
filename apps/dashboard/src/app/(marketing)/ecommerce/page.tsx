@@ -11,10 +11,10 @@ export const metadata: Metadata = {
 }
 
 const PLATFORMS = [
-  { name: 'Shopify',     emoji: '🛍️', desc: 'Connect via Admin API access token. No app store required.' },
-  { name: 'WooCommerce', emoji: '🟣', desc: 'Plug in your WooCommerce REST API key and secret.' },
-  { name: 'Magento',     emoji: '🟠', desc: 'Connect via Magento REST API for full order access.' },
-  { name: 'Any store',   emoji: '⚡', desc: 'Custom API integration for any eCommerce platform.' },
+  { name: 'WooCommerce', emoji: '🟣', desc: 'Plug in your WooCommerce REST API key and secret.', plan: 'Starter', planColor: 'bg-gray-500/20 text-gray-300 border-gray-500/30' },
+  { name: 'Shopify',     emoji: '🛍️', desc: 'Connect via Admin API access token. No app store required.', plan: 'Pro', planColor: 'bg-[#15A4AE]/15 text-[#15A4AE] border-[#15A4AE]/30' },
+  { name: 'Magento',     emoji: '🟠', desc: 'Connect via Magento REST API for full order access.', plan: 'Team', planColor: 'bg-amber-400/10 text-amber-400 border-amber-400/25' },
+  { name: 'Any store',   emoji: '⚡', desc: 'Custom API integration for any eCommerce platform.', plan: 'Enterprise', planColor: 'bg-purple-500/10 text-purple-400 border-purple-500/25' },
 ]
 
 const WHAT_IT_ANSWERS = [
@@ -127,14 +127,59 @@ export default function EcommercePage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {PLATFORMS.map((p) => (
               <ScrollReveal key={p.name}>
-                <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/8 text-center hover:border-[#15A4AE]/30 transition-colors">
+                <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/8 text-center hover:border-[#15A4AE]/30 transition-colors flex flex-col items-center">
                   <span className="text-3xl block mb-3">{p.emoji}</span>
                   <p className="text-sm font-semibold text-white mb-1">{p.name}</p>
-                  <p className="text-xs text-gray-500 leading-relaxed">{p.desc}</p>
+                  <p className="text-xs text-gray-500 leading-relaxed mb-3">{p.desc}</p>
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${p.planColor}`}>{p.plan}</span>
                 </div>
               </ScrollReveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── Plan comparison ── */}
+      <section className="py-12 px-6 border-t border-white/5">
+        <div className="max-w-3xl mx-auto">
+          <ScrollReveal className="text-center mb-8">
+            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-3">Plan availability</p>
+            <h2 className="text-2xl font-bold">Which platforms are included in your plan</h2>
+          </ScrollReveal>
+          <ScrollReveal>
+            <div className="rounded-2xl border border-white/10 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/8 bg-white/[0.03]">
+                    <th className="text-left px-5 py-3 text-gray-400 font-medium">Platform</th>
+                    <th className="text-center px-4 py-3 text-gray-400 font-medium">Starter</th>
+                    <th className="text-center px-4 py-3 text-[#15A4AE] font-semibold">Pro</th>
+                    <th className="text-center px-4 py-3 text-amber-400 font-medium">Team</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { name: 'WooCommerce', emoji: '🟣', starter: true,  pro: true,  team: true  },
+                    { name: 'Shopify',     emoji: '🛍️', starter: false, pro: true,  team: true  },
+                    { name: 'Magento',     emoji: '🟠', starter: false, pro: false, team: true  },
+                  ].map((row, i) => (
+                    <tr key={row.name} className={`border-b border-white/5 ${i % 2 === 0 ? '' : 'bg-white/[0.02]'}`}>
+                      <td className="px-5 py-3.5 text-white font-medium flex items-center gap-2">
+                        <span>{row.emoji}</span> {row.name}
+                      </td>
+                      {(['starter', 'pro', 'team'] as const).map(plan => (
+                        <td key={plan} className="text-center px-4 py-3.5">
+                          {row[plan]
+                            ? <span className="text-[#15A4AE] font-bold text-base">✓</span>
+                            : <span className="text-white/15 text-base">—</span>}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
