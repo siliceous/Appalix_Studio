@@ -250,7 +250,7 @@ function EmailPlatformCard({
             )
           ) : (
             <Link
-              href="/sage/integrations"
+              href={def.provider === 'mailchimp' ? '/api/oauth/mailchimp' : '/sage/integrations'}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
             >
               Connect

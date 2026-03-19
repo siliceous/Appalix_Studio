@@ -179,7 +179,7 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
         <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-white/8 text-sm">
           <img src="/integrations/mailchimp.png" alt="Mailchimp" className="w-5 h-5 object-contain shrink-0" />
           <span className="text-gray-600 dark:text-gray-400">Connect Mailchimp to auto-sync form submissions to your audience</span>
-          <Link href="/sage/integrations" className="ml-auto text-xs font-semibold text-brand-600 hover:text-brand-700 shrink-0 whitespace-nowrap">Connect Mailchimp →</Link>
+          <Link href="/api/oauth/mailchimp" className="ml-auto text-xs font-semibold text-brand-600 hover:text-brand-700 shrink-0 whitespace-nowrap">Connect Mailchimp →</Link>
         </div>
       )}
 
