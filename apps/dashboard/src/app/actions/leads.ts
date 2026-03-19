@@ -3,7 +3,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { LeadAdSource, Lead, LeadScore } from '@/lib/types'
+import type { LeadAdSource, Lead } from '@/lib/types'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -290,21 +290,17 @@ interface NormalizedContact {
   raw:       Record<string, unknown>
 }
 
-function scoreContact(c: NormalizedContact): LeadScore {
-  const n = [c.email, c.phone, c.company, c.job_title].filter(Boolean).length
-  return n >= 3 ? 'high' : n >= 2 ? 'medium' : 'low'
-}
 
 async function fetchMailchimpContacts(config: Record<string, string>): Promise<NormalizedContact[]> {
-  const { api_key, server, list_id } = config
+  const { access_token, server, list_id } = config
   const results: NormalizedContact[] = []
   let offset = 0
   const count = 1000
 
   while (true) {
     const res = await fetch(
-      `https://${server}.api.mailchimp.com/3.0/lists/${list_id}/members?count=${count}&offset=${offset}&status=subscribed`,
-      { headers: { Authorization: `Basic ${Buffer.from(`any:${api_key}`).toString('base64')}` } }
+      `https://${server ?? 'us1'}.api.mailchimp.com/3.0/lists/${list_id}/members?count=${count}&offset=${offset}&status=subscribed`,
+      { headers: { Authorization: `Bearer ${access_token}` } }
     )
     if (!res.ok) break
     const data = await res.json() as { members?: Record<string, unknown>[]; total_items?: number }
@@ -396,7 +392,7 @@ export async function syncFromEmailPlatform(
     ].filter(Boolean).join(',')
 
     const { data: existing } = await admin
-      .from('leads')
+      .from('sage_contacts')
       .select('id')
       .eq('workspace_id', workspaceId)
       .or(orFilter)
@@ -405,23 +401,20 @@ export async function syncFromEmailPlatform(
 
     if (existing) { skipped++; continue }
 
-    await admin.from('leads').insert({
-      workspace_id:    workspaceId,
-      source_id:       null,
-      source_platform: provider,
-      name:            contact.name,
-      email:           contact.email,
-      phone:           contact.phone,
-      company:         contact.company,
-      job_title:       contact.job_title,
-      lead_score:      scoreContact(contact),
-      pipeline_stage:  'new_lead',
-      raw_payload:     contact.raw,
+    await admin.from('sage_contacts').insert({
+      workspace_id: workspaceId,
+      name:         contact.name,
+      email:        contact.email,
+      phone:        contact.phone,
+      company_name: contact.company,
+      title:        contact.job_title,
+      source:       provider,
+      contact_type: 'potential_customer',
+      tags:         [],
     })
     synced++
   }
 
-  revalidatePath('/forms/leads')
-  revalidatePath('/forms/analytics')
+  revalidatePath('/sage/contacts')
   return { synced, skipped }
 }

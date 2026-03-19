@@ -65,7 +65,7 @@ type ColKey =
   | 'last_contacted_at' | 'interactions' | 'inactive_days'
   | 'tags' | 'city' | 'country' | 'created_at' | 'notes'
   | 'updated_at' | 'phone' | 'state' | 'street' | 'website_url'
-  | 'deal_value' | 'assigned_to'
+  | 'deal_value' | 'assigned_to' | 'source'
 
 const ALL_COLUMNS: { key: ColKey; label: string; required?: true }[] = [
   { key: 'name',              label: 'Person',         required: true },
@@ -88,9 +88,10 @@ const ALL_COLUMNS: { key: ColKey; label: string; required?: true }[] = [
   { key: 'website_url',       label: 'Website' },
   { key: 'deal_value',        label: 'Value' },
   { key: 'assigned_to',       label: 'Assigned To' },
+  { key: 'source',            label: 'Source' },
 ]
 
-const DEFAULT_VISIBLE = new Set<ColKey>(['name', 'company_name', 'email', 'contact_type', 'deal_value', 'tags', 'created_at', 'assigned_to'])
+const DEFAULT_VISIBLE = new Set<ColKey>(['name', 'company_name', 'email', 'contact_type', 'deal_value', 'tags', 'source', 'created_at', 'assigned_to'])
 
 const SORT_FIELDS: { key: string; label: string }[] = [
   { key: '',             label: 'None' },
@@ -282,6 +283,17 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
             {m ? (m.name || m.email) : c.assigned_to.slice(0, 8)}
           </span>
         )
+      }
+      case 'source': {
+        const SOURCE_LABELS: Record<string, { label: string; color: string }> = {
+          manual:         { label: 'Manual',          color: 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-400' },
+          import:         { label: 'CSV Import',      color: 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-400' },
+          chat:           { label: 'Chat',            color: 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400' },
+          mailchimp:      { label: 'Mailchimp',       color: 'bg-yellow-50 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400' },
+          activecampaign: { label: 'ActiveCampaign',  color: 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400' },
+        }
+        const s = SOURCE_LABELS[c.source ?? 'manual'] ?? { label: c.source ?? 'Manual', color: 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-400' }
+        return <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${s.color}`}>{s.label}</span>
       }
       default: return null
     }

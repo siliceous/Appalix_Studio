@@ -224,10 +224,10 @@ function EmailPlatformCard({
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             {isConnected
               ? def.canSync
-                ? `${leadCount} lead${leadCount !== 1 ? 's' : ''} synced${integration?.updated_at ? ` · ${new Date(integration.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : ''}`
+                ? `${leadCount} contact${leadCount !== 1 ? 's' : ''} synced${integration?.updated_at ? ` · ${new Date(integration.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : ''}`
                 : 'Contacts sync to Sage CRM automatically'
               : def.canSync
-                ? 'Connect to import contacts into All Leads'
+                ? 'Connect to import contacts into Sage Contacts'
                 : 'Connect to sync contacts with Sage CRM'
             }
           </p>
@@ -283,7 +283,7 @@ function EmailPlatformCard({
         <div className={`border-t px-5 py-3 text-xs ${syncErr ? 'border-red-100 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400' : 'border-gray-100 dark:border-white/6 bg-gray-50 dark:bg-white/2 text-gray-500 dark:text-gray-400'}`}>
           {syncErr
             ? syncErr
-            : `✓ ${result!.synced} new lead${result!.synced !== 1 ? 's' : ''} imported · ${result!.skipped} duplicate${result!.skipped !== 1 ? 's' : ''} skipped`
+            : `✓ ${result!.synced} new contact${result!.synced !== 1 ? 's' : ''} imported · ${result!.skipped} duplicate${result!.skipped !== 1 ? 's' : ''} skipped`
           }
         </div>
       )}

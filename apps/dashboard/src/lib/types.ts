@@ -253,7 +253,7 @@ export interface UsageEvent {
 export type SageTicketStatus        = 'open' | 'in_progress' | 'pending' | 'resolved' | 'closed'
 export type SageTicketPriority      = 'low' | 'medium' | 'high' | 'urgent'
 export type SageDealStatus          = 'open' | 'won' | 'lost'
-export type SageContactSource       = 'chat' | 'manual' | 'import'
+export type SageContactSource       = 'chat' | 'manual' | 'import' | 'mailchimp' | 'activecampaign'
 export type SageContactType         = 'potential_customer' | 'active_customer' | 'other'
 export type SageContactVisibility   = 'everyone' | 'team' | 'only_me'
 export type SageIntegrationProvider =
