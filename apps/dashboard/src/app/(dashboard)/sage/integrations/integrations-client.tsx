@@ -175,9 +175,11 @@ interface IntegrationsClientProps {
   initialExpanded?: string   // auto-open this provider card (e.g. from onboarding)
   onboarding?:      boolean  // redirect to /dashboard after first connection
   loginHint?:       string   // pre-fill the email hint in the OAuth URL
+  providers?:       SageIntegrationProvider[]  // if set, only render these providers (no category headings)
+  columns?:         1 | 2                       // 2 = side-by-side grid layout
 }
 
-export function IntegrationsClient({ connected: initialConnected, standalone = true, initialExpanded, onboarding, loginHint }: IntegrationsClientProps) {
+export function IntegrationsClient({ connected: initialConnected, standalone = true, initialExpanded, onboarding, loginHint, providers, columns }: IntegrationsClientProps) {
   const [connected,         setConnected]        = useState<Set<string>>(initialConnected)
   const [expanded,          setExpanded]         = useState<string | null>(initialExpanded ?? null)
   const [pending,           startTransition]     = useTransition()
@@ -273,14 +275,18 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
       )}
 
       {categories.map(category => {
-        const cards = INTEGRATIONS.filter(i => i.category === category)
+        let cards = INTEGRATIONS.filter(i => i.category === category)
+        if (providers?.length) cards = cards.filter(i => providers.includes(i.provider))
+        if (cards.length === 0) return null
         return (
-          <div key={category} className="mb-8">
-            <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3 px-1">
-              {CATEGORY_LABELS[category]}
-            </h2>
+          <div key={category} className={providers ? '' : 'mb-8'}>
+            {!providers && (
+              <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3 px-1">
+                {CATEGORY_LABELS[category]}
+              </h2>
+            )}
 
-            <div className="space-y-3">
+            <div className={columns === 2 ? 'grid grid-cols-1 md:grid-cols-2 gap-3' : 'space-y-3'}>
               {cards.map(integration => {
                 const isConnected    = connected.has(integration.provider)
                 const isExpanded     = expanded === integration.provider
@@ -502,12 +508,14 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
         )
       })}
 
-      <div className="mt-2 p-4 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20">
-        <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
-          <strong>Security note:</strong> API keys are stored encrypted in your workspace database.
-          Use restricted keys with minimum required permissions wherever possible.
-        </p>
-      </div>
+      {!providers && (
+        <div className="mt-2 p-4 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20">
+          <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+            <strong>Security note:</strong> API keys are stored encrypted in your workspace database.
+            Use restricted keys with minimum required permissions wherever possible.
+          </p>
+        </div>
+      )}
     </div>
   )
 }

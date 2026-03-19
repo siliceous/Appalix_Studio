@@ -135,11 +135,14 @@ function CopyButton({ text }: { text: string }) {
 type EmailIntegration = Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at' | 'sync_enabled' | 'last_synced_at' | 'last_sync_count'>
 
 interface SourcesClientProps {
-  sources:            LeadAdSource[]
-  workspaceId:        string
-  baseUrl:            string
-  emailIntegrations:  EmailIntegration[]
-  leadCounts:         Record<string, number>
+  sources:              LeadAdSource[]
+  workspaceId:          string
+  baseUrl:              string
+  emailIntegrations:    EmailIntegration[]
+  leadCounts?:          Record<string, number>
+  platformLayout?:      'stack' | 'grid-2'   // default: stack
+  showEmailProviders?:  string[]              // if set, only show these email providers
+  hideEmailHeading?:    boolean               // hide the "Email Marketing Platforms" heading
 }
 
 // ---------------------------------------------------------------------------
@@ -322,7 +325,7 @@ function EmailPlatformCard({
   )
 }
 
-export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, emailIntegrations }: SourcesClientProps) {
+export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, emailIntegrations, platformLayout = 'stack', showEmailProviders, hideEmailHeading = false }: SourcesClientProps) {
   const [sources, setSources]   = useState<LeadAdSource[]>(initialSources)
   const [expanded, setExpanded] = useState<LeadAdPlatform | null>(null)
   const [formValues, setFormValues] = useState<Record<string, Record<string, string>>>({})
@@ -382,6 +385,10 @@ export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, e
   const inputCls   = 'w-full px-3 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE]'
   const labelCls   = 'block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1'
 
+  const visibleEmailPlatforms = showEmailProviders
+    ? EMAIL_PLATFORMS.filter(p => showEmailProviders.includes(p.provider))
+    : EMAIL_PLATFORMS
+
   return (
     <div className="flex flex-col gap-4">
       {error && (
@@ -391,7 +398,8 @@ export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, e
         </div>
       )}
 
-      {PLATFORMS.map(def => {
+      <div className={platformLayout === 'grid-2' ? 'grid grid-cols-1 md:grid-cols-2 gap-4' : 'flex flex-col gap-4'}>
+      {PLATFORMS.map((def) => {
         const connected  = getConnected(def.platform)
         const isExpanded = expanded === def.platform
         const fields     = formValues[def.platform] ?? {}
@@ -545,13 +553,17 @@ export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, e
         )
       })}
 
-      {/* Email marketing platforms — always shown, all 5 */}
+      </div>
+
+      {/* Email marketing platforms */}
       <div className="col-span-full mt-2">
-        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-3">
-          Email Marketing Platforms
-        </p>
+        {!hideEmailHeading && (
+          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-3">
+            Email Marketing Platforms
+          </p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {EMAIL_PLATFORMS.map(def => (
+          {visibleEmailPlatforms.map(def => (
             <EmailPlatformCard
               key={def.provider}
               def={def}
@@ -559,10 +571,12 @@ export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, e
             />
           ))}
         </div>
-        <p className="text-[10px] text-gray-400 mt-3">
-          Connect via <Link href="/sage/integrations" className="text-brand-400 hover:text-brand-300 transition-colors">Sage → Integrations</Link>.
-          Mailchimp and ActiveCampaign support on-demand contact import into Sage Contacts.
-        </p>
+        {!hideEmailHeading && (
+          <p className="text-[10px] text-gray-400 mt-3">
+            Connect via <Link href="/sage/integrations" className="text-brand-400 hover:text-brand-300 transition-colors">Sage → Integrations</Link>.
+            Mailchimp and ActiveCampaign support on-demand contact import into Sage Contacts.
+          </p>
+        )}
       </div>
     </div>
   )

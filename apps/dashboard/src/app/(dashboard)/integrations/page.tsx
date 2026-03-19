@@ -63,26 +63,19 @@ export default async function IntegrationsPage({
   if (!membership) redirect('/login')
 
   const EMAIL_PROVIDERS = ['mailchimp', 'activecampaign', 'convertkit', 'klaviyo', 'constantcontact'] as const
-  const SYNC_PROVIDERS  = ['mailchimp', 'activecampaign'] as const
 
   const admin = createAdminClient()
-  const [{ data: rawIntegrations }, { data: sageIntegrationsRaw }, { data: sourcesRaw }, { data: emailIntegrationsRaw }, { data: leadCountsRaw }] = await Promise.all([
+  const [{ data: rawIntegrations }, { data: sageIntegrationsRaw }, { data: sourcesRaw }, { data: emailIntegrationsRaw }] = await Promise.all([
     supabase.from('integrations').select('*, bots(name)').eq('workspace_id', membership.workspace_id).order('created_at', { ascending: false }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('sage_integrations').select('provider, status').eq('workspace_id', membership.workspace_id),
     supabase.from('lead_ad_sources').select('*').eq('workspace_id', membership.workspace_id),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('sage_integrations').select('id, provider, status, updated_at, sync_enabled, last_synced_at, last_sync_count').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', EMAIL_PROVIDERS),
-    supabase.from('leads').select('source_platform').eq('workspace_id', membership.workspace_id).in('source_platform', SYNC_PROVIDERS),
   ])
   const integrations      = (rawIntegrations ?? []) as IntegrationRow[]
   const adSources         = (sourcesRaw ?? []) as LeadAdSource[]
   const emailIntegrations = (emailIntegrationsRaw ?? []) as Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at' | 'sync_enabled' | 'last_synced_at' | 'last_sync_count'>[]
-  const leadCounts: Record<string, number> = {}
-  for (const row of leadCountsRaw ?? []) {
-    const p = (row as { source_platform: string }).source_platform
-    leadCounts[p] = (leadCounts[p] ?? 0) + 1
-  }
 
   const headersList = await headers()
   const host        = headersList.get('host') ?? 'appalix.ai'
@@ -193,9 +186,82 @@ export default async function IntegrationsPage({
         </div>
       </section>
 
-      {/* CRM & lead capture */}
-      <section>
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">CRM &amp; lead capture</h2>
+      {/* OAuth connection feedback */}
+      {connected === '1' && initialProvider && (
+        <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#15A4AE]/10 border border-[#15A4AE]/30 text-sm text-[#2a7d6e] dark:text-[#15A4AE]">
+          <span className="text-lg">✅</span>
+          <span><strong className="capitalize">{initialProvider}</strong> connected successfully. You can now use it from Sage.</span>
+        </div>
+      )}
+      {error && (
+        <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-sm text-red-700 dark:text-red-400">
+          <span className="text-lg">⚠️</span>
+          <span>Connection failed: {decodeURIComponent(error)}. Please try again.</span>
+        </div>
+      )}
+
+      {/* Email — Gmail + Microsoft, full width */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Email</h2>
+        <IntegrationsClient
+          connected={sageConnected}
+          standalone={false}
+          providers={['gmail', 'microsoft']}
+          initialExpanded={initialProvider}
+          onboarding={onboarding === '1'}
+          loginHint={hint}
+        />
+      </section>
+
+      {/* Payments — Stripe, full width */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Payments</h2>
+        <IntegrationsClient
+          connected={sageConnected}
+          standalone={false}
+          providers={['stripe']}
+        />
+      </section>
+
+      {/* Form Lead Sources — Google Ads + Meta, then Mailchimp + Klaviyo */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Form Lead Sources</h2>
+        <SourcesClient
+          sources={adSources}
+          workspaceId={membership.workspace_id}
+          baseUrl={baseUrl}
+          emailIntegrations={emailIntegrations}
+          platformLayout="grid-2"
+          showEmailProviders={['mailchimp', 'klaviyo']}
+          hideEmailHeading
+        />
+      </section>
+
+      {/* Tickets — Freshdesk + Zendesk side by side */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Tickets</h2>
+        <IntegrationsClient
+          connected={sageConnected}
+          standalone={false}
+          providers={['freshdesk', 'zendesk']}
+          columns={2}
+        />
+      </section>
+
+      {/* Automation — Zapier + Make side by side */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Automation</h2>
+        <IntegrationsClient
+          connected={sageConnected}
+          standalone={false}
+          providers={['zapier', 'make']}
+          columns={2}
+        />
+      </section>
+
+      {/* CRM & Lead Capture */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">CRM &amp; Lead Capture</h2>
         <p className="text-xs text-gray-400 mb-3">Configure lead routing on any integration's settings page. Select a provider below to view the setup guide.</p>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {CRM_PROVIDERS.map((crm) => (
@@ -216,49 +282,6 @@ export default async function IntegrationsPage({
             </div>
           ))}
         </div>
-      </section>
-
-      {/* Lead ad sources — Google Ads & Meta */}
-      <section className="mb-8">
-        <div className="mb-3">
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Lead Ad Sources</h2>
-          <p className="text-xs text-gray-400 mt-0.5">Receive leads from Google Ads and Meta Lead Ad forms in real time.</p>
-        </div>
-        <SourcesClient
-          sources={adSources}
-          workspaceId={membership.workspace_id}
-          baseUrl={baseUrl}
-          emailIntegrations={emailIntegrations}
-          leadCounts={leadCounts}
-        />
-      </section>
-
-      {/* Divider */}
-      <div className="my-10 border-t dark:border-white/8" />
-
-      {/* OAuth connection feedback */}
-      {connected === '1' && initialProvider && (
-        <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#15A4AE]/10 border border-[#15A4AE]/30 text-sm text-[#2a7d6e] dark:text-[#15A4AE]">
-          <span className="text-lg">✅</span>
-          <span><strong className="capitalize">{initialProvider}</strong> connected successfully. You can now use it from Sage.</span>
-        </div>
-      )}
-      {error && (
-        <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-sm text-red-700 dark:text-red-400">
-          <span className="text-lg">⚠️</span>
-          <span>Connection failed: {decodeURIComponent(error)}. Please try again.</span>
-        </div>
-      )}
-
-      {/* Sage integrations — payments, email, automation, ticketing, marketing */}
-      <section>
-        <div className="mb-6">
-          <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Sage Integrations</h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Connect external services to power payments, email, automation, and ticketing from Sage.
-          </p>
-        </div>
-        <IntegrationsClient connected={sageConnected} standalone={false} initialExpanded={initialProvider} onboarding={onboarding === '1'} loginHint={hint} />
       </section>
     </div>
   )
