@@ -214,6 +214,12 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
             </button>
           )}
           <CsvExportButton action={exportLeads} />
+          <Link
+            href="/forms/sources"
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            + Forms
+          </Link>
           <p className="text-xs text-gray-400">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</p>
         </div>
       </div>
