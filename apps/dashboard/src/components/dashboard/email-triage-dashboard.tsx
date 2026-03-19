@@ -536,13 +536,13 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
             </button>
           </div>
         ) : (
-          <div className="rounded-xl bg-blue-50/40 dark:bg-blue-500/[0.07] border border-blue-100 dark:border-blue-500/20 overflow-hidden">
+          <div className="rounded-xl bg-[#15A4AE]/[0.05] dark:bg-[#15A4AE]/[0.07] border border-[#15A4AE]/20 dark:border-[#15A4AE]/20 overflow-hidden">
             {/* Summary header — always visible */}
             <div className="px-4 pt-3.5 pb-3">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2">
-                  <Brain className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                  <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">AI Summary</span>
+                  <Brain className="w-3.5 h-3.5 text-[#15A4AE] shrink-0" />
+                  <span className="text-[11px] font-bold text-[#1f6157] dark:text-[#15A4AE] uppercase tracking-wide">AI Summary</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   {t.matchedDeal && (
@@ -554,7 +554,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
                   <button
                     onClick={() => setSummaryCollapsed(v => !v)}
                     title={summaryCollapsed ? 'Expand summary' : 'Collapse summary'}
-                    className="p-1 rounded-md hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-400 transition-colors"
+                    className="p-1 rounded-md hover:bg-[#15A4AE]/10 dark:hover:bg-[#15A4AE]/20 text-[#15A4AE] transition-colors"
                   >
                     <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', summaryCollapsed && 'rotate-180')} />
                   </button>
@@ -580,7 +580,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
                     <ul className="mt-3 space-y-1">
                       {(email.ai_insights as string[]).map((insight, i) => (
                         <li key={i} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-300">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0 mt-1.5" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] shrink-0 mt-1.5" />
                           {insight}
                         </li>
                       ))}
@@ -618,7 +618,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
                   </a>
                 )}
                 {entities?.product_interest && (
-                  <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/15 text-blue-700 dark:text-blue-400">
+                  <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-[#15A4AE]/10 dark:bg-[#15A4AE]/10 border border-[#15A4AE]/20 dark:border-[#15A4AE]/20 text-[#1f6157] dark:text-[#15A4AE]">
                     <Tag className="w-2.5 h-2.5 shrink-0" /> {entities.product_interest}
                   </span>
                 )}
