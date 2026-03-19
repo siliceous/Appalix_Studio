@@ -72,12 +72,12 @@ export default async function IntegrationsPage({
     (admin as any).from('sage_integrations').select('provider, status').eq('workspace_id', membership.workspace_id),
     supabase.from('lead_ad_sources').select('*').eq('workspace_id', membership.workspace_id),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (admin as any).from('sage_integrations').select('id, provider, status, updated_at').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', EMAIL_PROVIDERS),
+    (admin as any).from('sage_integrations').select('id, provider, status, updated_at, sync_enabled, last_synced_at, last_sync_count').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', EMAIL_PROVIDERS),
     supabase.from('leads').select('source_platform').eq('workspace_id', membership.workspace_id).in('source_platform', SYNC_PROVIDERS),
   ])
   const integrations      = (rawIntegrations ?? []) as IntegrationRow[]
   const adSources         = (sourcesRaw ?? []) as LeadAdSource[]
-  const emailIntegrations = (emailIntegrationsRaw ?? []) as Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at'>[]
+  const emailIntegrations = (emailIntegrationsRaw ?? []) as Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at' | 'sync_enabled' | 'last_synced_at' | 'last_sync_count'>[]
   const leadCounts: Record<string, number> = {}
   for (const row of leadCountsRaw ?? []) {
     const p = (row as { source_platform: string }).source_platform
