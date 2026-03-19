@@ -107,11 +107,14 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
     })
   }
 
-  const PAGES: { key: SubpageSource; label: string; Icon: React.ElementType; activeCls: string; hoverCls: string }[] = [
-    { key: 'email',   label: 'Email',   Icon: Mail,          activeCls: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/20 dark:text-blue-200 dark:border-blue-500/40',    hoverCls: 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/6 hover:text-blue-600 dark:hover:text-blue-400' },
-    { key: 'bots',    label: 'Bots',    Icon: MessageSquare, activeCls: 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-500/20 dark:text-purple-200 dark:border-purple-500/40', hoverCls: 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/6 hover:text-purple-600 dark:hover:text-purple-400' },
-    { key: 'forms',   label: 'Forms',   Icon: FileText,      activeCls: 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/20 dark:text-green-200 dark:border-green-500/40',   hoverCls: 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/6 hover:text-green-600 dark:hover:text-green-400' },
-    { key: 'tickets', label: 'Tickets', Icon: TicketIcon,    activeCls: 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-500/20 dark:text-orange-200 dark:border-orange-500/40', hoverCls: 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/6 hover:text-orange-600 dark:hover:text-orange-400' },
+  const ACTIVE_CLS = 'bg-[#15A4AE]/15 text-[#1f6157] border-[#15A4AE]/30 dark:bg-[#15A4AE]/20 dark:text-[#15A4AE] dark:border-[#15A4AE]/40'
+  const HOVER_CLS  = 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/6 hover:text-[#15A4AE] dark:hover:text-[#15A4AE]'
+
+  const PAGES: { key: SubpageSource; label: string; Icon: React.ElementType }[] = [
+    { key: 'email',   label: 'Email',   Icon: Mail          },
+    { key: 'bots',    label: 'Bots',    Icon: MessageSquare },
+    { key: 'forms',   label: 'Forms',   Icon: FileText      },
+    { key: 'tickets', label: 'Tickets', Icon: TicketIcon    },
   ]
 
   return (
@@ -141,8 +144,8 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
               className={[
                 'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl border transition-colors whitespace-nowrap',
                 isActive
-                  ? p.activeCls
-                  : `border-transparent ${p.hoverCls}`,
+                  ? ACTIVE_CLS
+                  : `border-transparent ${HOVER_CLS}`,
               ].join(' ')}
             >
               {isLoading
