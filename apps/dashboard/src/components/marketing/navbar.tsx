@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 
 const NAV_LINKS = [
-  { label: 'AI Agent',      href: '/'              },
+  { label: 'AI Agent',      href: '/ai-agent'      },
   { label: 'Dashboard',     href: '/product'       },
   { label: 'Email',         href: '/email'         },
   { label: 'Bot',           href: '/bot'           },

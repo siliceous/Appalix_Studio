@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     'Meta lead ads integration',
     'AI sales pipeline tool',
   ],
-  alternates: { canonical: 'https://appalix.ai/test' },
+  alternates: { canonical: 'https://appalix.ai' },
 }
 
 const SOURCES = [
@@ -91,17 +91,17 @@ const PROBLEMS = [
   {
     icon: '📋',
     title: 'Forms submitted, nobody follows up',
-    desc: 'Lead comes in at 11pm, sits unread until Monday. By then they have moved on.',
+    desc: 'A lead comes in at 11pm and sits unread until Monday. By then they have already moved on — or signed up with a competitor who responded first.',
   },
   {
     icon: '📧',
     title: 'Enquiries buried in a shared inbox',
-    desc: 'Everyone assumes someone else picked it up. Nobody did.',
+    desc: 'Three people have access. Everyone assumes someone else picked it up. Nobody did. The lead goes cold and the opportunity disappears quietly.',
   },
   {
     icon: '💬',
     title: 'Chatbot leads never reach your CRM',
-    desc: 'Your bot captures a hot lead. It lives in a chat log no one checks.',
+    desc: 'Your bot captures a hot lead at 2am. It lives in a chat log no one checks until morning — by which point the conversation is dead and the lead is gone.',
   },
 ]
 
@@ -261,7 +261,7 @@ export default function TestLandingPage() {
 
           <FadeUp delay={0.1}>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.25] mb-4 text-white max-w-4xl mx-auto">
-              Chatbots · AI email analyzer · lead forms · support tickets · CRM.<br className="hidden sm:block" /> One platform. All built in.
+              Imagine a CRM that connects all lead sources & creates opportunities on your pipeline automatically.
             </h1>
             <h2
               className="text-2xl sm:text-3xl font-semibold text-white mb-8 inline-flex items-center gap-2 justify-center flex-wrap"
@@ -329,59 +329,38 @@ export default function TestLandingPage() {
             </p>
           </ScrollReveal>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-14">
-            {PROBLEMS.map((p, i) => (
-              <ScrollReveal key={p.title} delay={i * 0.1}>
-                <div className="p-8 rounded-2xl bg-white/[0.03] border border-white/10">
-                  <span className="text-4xl block mb-5">{p.icon}</span>
-                  <h3 className="text-xl font-semibold text-white mb-3 leading-snug whitespace-nowrap">{p.title}</h3>
-                  <p className="text-lg text-gray-400 leading-relaxed">{p.desc}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-14">
+            {[
+              { icon: '💸', title: 'You\'re paying for 6–8 apps', desc: 'A chatbot tool. A CRM. An email platform. A ticketing system. A form builder. An analytics tool. Each with its own monthly bill — and none of them talk to each other properly.' },
+              { icon: '🔌', title: 'Integrations break silently', desc: 'That zap that syncs your form submissions to your CRM? It failed 3 days ago. You won\'t know until a lead chases you — or doesn\'t.' },
+              { icon: '🕳️', title: 'Data falls through the cracks', desc: 'A lead fills your form. Your chatbot talks to someone else. Your inbox gets a third enquiry. Three sources, zero single view. Your team is guessing.' },
+              ...PROBLEMS.map(p => ({ icon: p.icon, title: p.title, desc: p.desc })),
+              { icon: '⏱️', title: 'Setup takes weeks, not minutes', desc: 'Every new tool means onboarding, configuration, training, and a new login. Your team spends more time managing tools than talking to customers.' },
+              { icon: '😤', title: 'Context is always missing', desc: 'Your support team can\'t see the sales conversation. Your sales team can\'t see the support tickets. Every handoff means someone starts from scratch.' },
+              { icon: '📉', title: 'Slow response kills deals', desc: 'Studies show responding within 5 minutes increases conversion by 9×. With scattered tools and manual processes, most businesses respond in hours — or not at all.' },
+            ].map((item, i) => (
+              <ScrollReveal key={i} delay={i * 0.05}>
+                <div className="h-full p-6 rounded-2xl bg-white/[0.03] border border-white/8 hover:border-[#15A4AE]/30 hover:bg-white/[0.05] transition-all duration-300">
+                  <span className="text-3xl block mb-4">{item.icon}</span>
+                  <h4 className="text-base font-semibold text-white mb-2 leading-snug">{item.title}</h4>
+                  <p className="text-sm text-gray-400 leading-relaxed">{item.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
           </div>
 
-          {/* Pain points card */}
-          <ScrollReveal className="text-center mt-24 mb-6">
-            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">The hidden tax</p>
-            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">The real cost of stitching tools together</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed">
-              You&apos;re paying heavily — once for the stack of apps, and again every time a sync breaks and a lead falls through the gap.
+          <ScrollReveal className="text-center mt-10 mb-4">
+            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">The Answer is Appalix Sage</p>
+            <p className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.25] text-white max-w-4xl mx-auto">
+              Chatbots · AI email analyzer · lead forms · support tickets · CRM.<br className="hidden sm:block" />
+              <span className="text-white">One platform. All built in.</span>
             </p>
-          </ScrollReveal>
-          <ScrollReveal>
-            <div className="rounded-2xl border border-[#15A4AE]/20 bg-white/[0.03] p-8 mb-14 shadow-2xl shadow-[#15A4AE]/10 ring-1 ring-[#15A4AE]/10">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[
-                  { icon: '💸', title: 'You\'re paying for 6–8 apps', desc: 'A chatbot tool. A CRM. An email platform. A ticketing system. A form builder. An analytics tool. Each with its own monthly bill — and none of them talk to each other properly.' },
-                  { icon: '🔌', title: 'Integrations break silently', desc: 'That zap that syncs your form submissions to your CRM? It failed 3 days ago. You won\'t know until a lead chases you — or doesn\'t.' },
-                  { icon: '🕳️', title: 'Data falls through the cracks', desc: 'A lead fills your form. Your chatbot talks to someone else. Your inbox gets a third enquiry. Three sources, zero single view. Your team is guessing.' },
-                  { icon: '⏱️', title: 'Setup takes weeks, not minutes', desc: 'Every new tool means onboarding, configuration, training, and a new login. Your team spends more time managing tools than talking to customers.' },
-                  { icon: '😤', title: 'Context is always missing', desc: 'Your support team can\'t see the sales conversation. Your sales team can\'t see the support tickets. Every handoff means someone starts from scratch.' },
-                  { icon: '📉', title: 'Slow response kills deals', desc: 'Studies show responding within 5 minutes increases conversion by 9×. With scattered tools and manual processes, most businesses respond in hours — or not at all.' },
-                ].map((item, i) => (
-                  <div key={i} className="flex gap-4 items-start">
-                    <span className="text-2xl shrink-0 mt-0.5">{item.icon}</span>
-                    <div>
-                      <h4 className="text-xl font-semibold text-white mb-3 leading-snug">{item.title}</h4>
-                      <p className="text-lg text-gray-400 leading-relaxed">{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed mt-6">
+              One dashboard. Manage every mail, bots, forms and tickets seamlessly.
+            </p>
           </ScrollReveal>
 
           {/* Comparison heading */}
-          <ScrollReveal className="text-center mt-24 mb-10">
-            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">Side by side</p>
-            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">
-              Compare the Power Of Appalix Sage<br className="hidden sm:block" /> with Traditional tools.
-            </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed">
-              One platform. Every tool you need. No stitching, no gaps.
-            </p>
-          </ScrollReveal>
 
           {/* Comparison table — features-page style */}
           <ScrollReveal className="mb-14 overflow-x-auto">
@@ -496,7 +475,7 @@ export default function TestLandingPage() {
             <ScrollReveal delay={0.15} className="space-y-6">
               <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold">Your control panel</p>
               <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mb-5">
-                One dashboard.<br />All mails, bots, forms and tickets in control.
+                One dashboard.<br />Manage emails, bots, forms and tickets seamlessly.
               </h2>
               <p className="text-gray-400 text-xl leading-relaxed">
                 Whether you&apos;re running one bot or twenty, the Appalix dashboard gives you a single source of truth. Real-time metrics, AI priority scoring, and one-click access to every conversation.
@@ -672,7 +651,7 @@ export default function TestLandingPage() {
             <FormsPreview />
           </ScrollReveal>
           <ScrollReveal delay={0.1}>
-            <p className="text-center text-xs text-gray-600 mt-4">Click any lead to expand details — filter by ad platform or search by name</p>
+            <p className="text-center text-xs text-white mt-4">Click any lead to expand details — filter by ad platform or search by name</p>
           </ScrollReveal>
           <ScrollReveal className="mt-20 mb-12 text-center">
             <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">Lead Intelligence</p>

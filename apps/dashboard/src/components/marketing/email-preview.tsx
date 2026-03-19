@@ -47,6 +47,7 @@ type DemoEmail = {
   ai_summary: string
   ai_insights: string[]
   body_text: string
+  ai_reply: string
   entities: {
     name?: string; company?: string; phone?: string; website?: string
     product_interest?: string; intent_signals?: string[]; urgency_signals?: string[]
@@ -69,7 +70,8 @@ const EMAILS: DemoEmail[] = [
       'Budget approved for Q1 purchase',
       'Wants a 30-min demo call ASAP',
     ],
-    body_text: "Hi, I came across Appalix and I'm very interested in the AI agent for our sales team. We have about 120 reps. Is it possible to schedule a demo this week? Budget is approved.",
+    body_text: "Hi, I came across your platform and I'm very interested in the AI agent for our sales team. We have about 120 reps. Is it possible to schedule a demo this week? Budget is approved.",
+    ai_reply: "Hi Marcus,\n\nThanks for reaching out — a 120-rep team is exactly the kind of use case we love.\n\nI'd be happy to run a personalised demo this week. I have slots available Thursday afternoon or Friday morning. Would either of those work for you?\n\nLooking forward to connecting.\n\nBest,\n[Your name]",
     entities: {
       name: 'Marcus Webb', company: 'GrowthCo', phone: '+1 415 555 0198',
       website: 'growthco.io', product_interest: 'AI Agent',
@@ -92,6 +94,7 @@ const EMAILS: DemoEmail[] = [
       'Launch is tomorrow — urgent to resolve',
     ],
     body_text: "Hi, I've been trying to use the API key from my dashboard but I keep getting 401 Unauthorized. I've double-checked the header format. We're launching tomorrow so this is urgent!",
+    ai_reply: "Hi Priya,\n\nSorry to hear you're blocked — let's get this sorted before your launch.\n\nA 401 usually means the key in your request doesn't match what's on record. Please check Settings → API Keys and confirm you're using the most recently generated key. If you regenerated it recently, the old one is immediately invalidated.\n\nIf it still fails after that, reply here and I'll escalate this right away.\n\nBest,\nSupport Team",
     entities: {
       name: 'Priya Nair', company: 'TechFlow',
       urgency_signals: ['Launching tomorrow', 'Urgent'],
@@ -112,6 +115,7 @@ const EMAILS: DemoEmail[] = [
       'Looking for a rev-share or OEM licensing deal',
     ],
     body_text: "Hello, we run a CRM product with 400 SMB clients and we'd love to embed your AI chat. Would you be open to a white-label arrangement or API licensing? Happy to jump on a call.",
+    ai_reply: "Hi Daniel,\n\nThanks for reaching out — 400 SMB clients is a compelling base and we'd love to explore what an integration could look like.\n\nWe do offer API access and have worked on white-label arrangements before. Happy to jump on a 30-min call this week to walk through the options.\n\nWhat works for you?\n\nBest,\n[Your name]",
     entities: {
       name: 'Daniel Okoro', company: 'Nexio CRM', website: 'nexiocrm.com',
       product_interest: 'White-label / API',
@@ -130,6 +134,7 @@ const EMAILS: DemoEmail[] = [
     ai_summary: 'Customer is confirming payment for INV-0831 ($299). No action required.',
     ai_insights: ['Payment confirmed via bank transfer', 'No further action needed'],
     body_text: "Hi, just wanted to confirm that payment for INV-0831 was sent via bank transfer yesterday. Please let me know when you receive it. Thanks!",
+    ai_reply: "Hi Sophie,\n\nThanks for confirming — we'll keep an eye out for the transfer and update the invoice as soon as it clears.\n\nFeel free to reach out if you need a receipt once it's processed.\n\nThanks again!\n\nBest,\n[Your name]",
     entities: { name: 'Sophie Chen', company: 'BlueWave' },
     recommendation: 'ignore',
   },
@@ -146,7 +151,8 @@ const EMAILS: DemoEmail[] = [
       'Strong buying signal — wants to upgrade',
       'Currently on trial, 5 days remaining',
     ],
-    body_text: "Hi, we've been trialing Appalix for 2 weeks now and the team loves it. Can you tell me more about the Pro plan pricing? I think we're ready to upgrade.",
+    body_text: "Hi, we've been trialing your platform for 2 weeks now and the team loves it. Can you tell me more about the Pro plan pricing? I think we're ready to upgrade.",
+    ai_reply: "Hi Ravi,\n\nThat's fantastic to hear — so glad the team is getting value from the trial!\n\nThe Pro plan includes unlimited bots, full CRM pipeline access, email triage, priority support, and advanced analytics. Happy to send over a full breakdown or jump on a quick 15-min call to walk you through it.\n\nWhat works best for you?\n\nBest,\n[Your name]",
     entities: {
       name: 'Ravi Sharma', company: 'ScaleX',
       product_interest: 'Pro Plan upgrade',
@@ -266,7 +272,7 @@ function TriagePreview({ onOpenDemo }: { onOpenDemo?: () => void }) {
             return (
               <Tip key={email.id} label={`${email.priority} priority · ${email.category}`} dir="right">
                 <div
-                  onClick={() => { setSelected(email.id); setShowReply(false) }}
+                  onClick={() => { setSelected(email.id); setShowReply(false); setReplyText('') }}
                   className={`flex items-stretch border-l-[3px] transition-colors cursor-pointer ${borderCls}`}
                 >
                   <div className="flex-1 min-w-0 px-2.5 py-2">
@@ -438,7 +444,7 @@ function TriagePreview({ onOpenDemo }: { onOpenDemo?: () => void }) {
                       value={replyText}
                       onChange={e => setReplyText(e.target.value)}
                       placeholder="Write your reply…"
-                      className="w-full px-4 py-3 text-xs text-gray-800 resize-none focus:outline-none h-[80px] placeholder-gray-400"
+                      className="w-full px-4 py-3 text-xs text-gray-800 resize-none focus:outline-none h-[220px] placeholder-gray-400"
                     />
                   </Tip>
                   <div className="flex items-center gap-1 px-3 py-1.5 border-t border-gray-100 bg-gray-50">
@@ -500,7 +506,7 @@ function TriagePreview({ onOpenDemo }: { onOpenDemo?: () => void }) {
                 <div className="flex-1" />
                 <Tip label="Open reply composer to respond to this email" dir="top" clickable>
                   <button
-                    onClick={() => setShowReply(true)}
+                    onClick={() => { setShowReply(true); setReplyText(selectedEmail.ai_reply) }}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#15A4AE] hover:bg-[#0f8a94] text-white transition-colors shadow-sm"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>

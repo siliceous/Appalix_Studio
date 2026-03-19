@@ -253,7 +253,7 @@ export default function FormsPage() {
       <section className="pb-24 px-6">
         <div className="max-w-7xl mx-auto">
           <ScrollReveal><FormsPreview onClick={() => setModalOpen(true)} /></ScrollReveal>
-          <ScrollReveal delay={0.1}><p className="text-center text-xs text-gray-600 mt-4">Click any lead to expand details — filter by ad platform or search by name</p></ScrollReveal>
+          <ScrollReveal delay={0.1}><p className="text-center text-xs text-white mt-4">Click any lead to expand details — filter by ad platform or search by name</p></ScrollReveal>
         </div>
       </section>
       <section className="py-20 px-6 border-t border-white/5">
