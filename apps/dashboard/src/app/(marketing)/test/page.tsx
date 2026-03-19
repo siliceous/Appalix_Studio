@@ -2,7 +2,7 @@ import React from 'react'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { FadeUp, ScrollReveal } from '@/components/marketing/animate'
-import { LeadFlowDiagram, QualificationLoop } from '@/components/marketing/lead-flow-diagram'
+import { LeadFlowDiagram } from '@/components/marketing/lead-flow-diagram'
 import { PricingCards } from '@/components/marketing/pricing-cards'
 import { DashboardPreview } from '@/components/marketing/dashboard-preview'
 import { BotPreview } from '@/components/marketing/bot-preview'
@@ -787,21 +787,6 @@ export default function TestLandingPage() {
         </div>
       </section>
 
-      {/* ── Qualification loop ───────────────────────────────────────── */}
-      <section className="py-24 px-8 border-t border-white/5">
-        <div className="max-w-7xl mx-auto">
-          <ScrollReveal className="text-center mb-14">
-            <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">AI qualification process</p>
-            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">How every lead gets scored and acted on</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed">
-              The moment a lead arrives from any channel, Appalix AI runs it through a continuous qualification loop — so your team only deals with leads that are ready.
-            </p>
-          </ScrollReveal>
-          <ScrollReveal delay={0.1}>
-            <QualificationLoop />
-          </ScrollReveal>
-        </div>
-      </section>
 
       {/* ── Sage callout ─────────────────────────────────────────────── */}
       <section className="py-24 px-6 border-t border-white/5">
