@@ -2,6 +2,7 @@
 
 import React, { useCallback, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import {
   ClipboardList, Search, ChevronDown, X,
   UserPlus, Ticket, CheckCircle2, Clock, Download,
@@ -129,14 +130,22 @@ export function FormsTable({ submissions, forms, filters, readonly = false }: Pr
             All submissions across your forms — {submissions.length} shown
           </p>
         </div>
-        <button
-          onClick={exportCSV}
-          disabled={submissions.length === 0}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-white/5 border dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <Download className="w-3.5 h-3.5" />
-          Export CSV
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={exportCSV}
+            disabled={submissions.length === 0}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-white/5 border dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export CSV
+          </button>
+          <Link
+            href="/forms/sources"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
+          >
+            + Forms
+          </Link>
+        </div>
       </div>
 
       {/* ── Filter bar ── */}
