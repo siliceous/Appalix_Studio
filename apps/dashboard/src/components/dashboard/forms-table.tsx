@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import { formSubmissionCreateLead, formSubmissionCreateTicket, markSubmissionActioned, updateFormMailchimpList } from '@/app/actions/sage-forms'
+import { toggleMailchimpSync } from '@/app/actions/leads'
 import type { SageForm, SageFormSubmission } from '@/app/actions/sage-forms'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -47,7 +48,8 @@ interface Props {
   mailchimpConnected?:      boolean
   mailchimpListId?:         string
   mailchimpLists?:          Array<{ id: string; name: string }>
-  connectedEmailProviders?: string[]
+  connectedEmailProviders?:  string[]
+  mailchimpSyncEnabled?:     boolean
 }
 
 const EMAIL_PLATFORM_META: Record<string, { name: string; logo: string }> = {
@@ -78,12 +80,27 @@ function buildUrl(base: string, filters: FormFilters): string {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export function FormsTable({ submissions, forms, filters, readonly = false, mailchimpConnected = false, mailchimpListId = '', mailchimpLists = [], connectedEmailProviders = [] }: Props) {
+export function FormsTable({ submissions, forms, filters, readonly = false, mailchimpConnected = false, mailchimpListId = '', mailchimpLists = [], connectedEmailProviders = [], mailchimpSyncEnabled = false }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
-  const [actioning, setActioning] = useState<Record<string, string>>({})
+  const [actioning, setActioning]   = useState<Record<string, string>>({})
   const [mcExpanded, setMcExpanded] = useState(false)
   const [mcSaving, setMcSaving]     = useState<Record<string, boolean>>({})
+  const [syncEnabled, setSyncEnabled] = useState(mailchimpSyncEnabled)
+  const [syncToggling, setSyncToggling] = useState(false)
+
+  async function handleToggleSync() {
+    if (syncToggling) return
+    const next = !syncEnabled
+    setSyncEnabled(next)
+    setSyncToggling(true)
+    try {
+      await toggleMailchimpSync(next)
+      router.refresh()
+    } finally {
+      setSyncToggling(false)
+    }
+  }
 
   const pushFilter = useCallback((patch: Partial<FormFilters>) => {
     const next = { ...filters, ...patch }
@@ -164,6 +181,30 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
                 </div>
               )
             })}
+            {/* Auto Sync toggle — shown when Mailchimp is connected */}
+            {connectedEmailProviders.includes('mailchimp') && (
+              <button
+                onClick={handleToggleSync}
+                disabled={syncToggling}
+                title={syncEnabled ? 'Turn off auto-sync' : 'Turn on auto-sync'}
+                className={`flex items-center gap-2 px-2.5 py-1 rounded-lg border transition-colors ${
+                  syncEnabled
+                    ? 'border-brand-200 dark:border-[#15A4AE]/30 bg-brand-50 dark:bg-[#15A4AE]/10'
+                    : 'border-gray-200 dark:border-white/10 bg-white dark:bg-white/5'
+                } ${syncToggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-brand-300 dark:hover:border-[#15A4AE]/40'}`}
+              >
+                <span className={`text-[11px] font-medium ${syncEnabled ? 'text-brand-600 dark:text-[#15A4AE]' : 'text-gray-400 dark:text-gray-500'}`}>
+                  Auto Sync
+                </span>
+                <span className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${
+                  syncEnabled ? 'bg-brand-600' : 'bg-gray-200 dark:bg-white/15'
+                }`}>
+                  <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${
+                    syncEnabled ? 'translate-x-[14px]' : 'translate-x-[2px]'
+                  }`} />
+                </span>
+              </button>
+            )}
             <Link href="/sage/integrations" className="ml-auto text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 shrink-0">Manage →</Link>
           </div>
         )}

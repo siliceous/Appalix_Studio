@@ -123,16 +123,18 @@ export default async function FormsPage({
   const { data: emailIntegRaw } = await createAdminClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .from('sage_integrations' as any)
-    .select('provider, status, config')
+    .select('provider, status, config, sync_enabled')
     .eq('workspace_id', workspaceId)
     .eq('status', 'connected')
     .in('provider', ['mailchimp', 'activecampaign', 'convertkit', 'klaviyo', 'constantcontact'])
 
-  type EmailIntegRow = { provider: string; status: string; config: Record<string, string> }
+  type EmailIntegRow = { provider: string; status: string; config: Record<string, string>; sync_enabled: boolean }
   const emailIntegrations = (emailIntegRaw ?? []) as EmailIntegRow[]
 
-  const mailchimpCfg       = emailIntegrations.find(r => r.provider === 'mailchimp')?.config ?? null
+  const mailchimpInteg     = emailIntegrations.find(r => r.provider === 'mailchimp') ?? null
+  const mailchimpCfg       = mailchimpInteg?.config ?? null
   const mailchimpConnected = !!mailchimpCfg
+  const mailchimpSyncEnabled = mailchimpInteg?.sync_enabled ?? false
   const mailchimpListId    = mailchimpCfg?.list_id ?? ''
 
   // Fetch all Mailchimp audiences so users can pick per-form
@@ -222,6 +224,7 @@ export default async function FormsPage({
             mailchimpListId={mailchimpListId}
             mailchimpLists={mailchimpLists}
             connectedEmailProviders={connectedEmailProviders}
+            mailchimpSyncEnabled={mailchimpSyncEnabled}
           />
         </div>
         <ActivitySidebar

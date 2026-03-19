@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useTransition, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
-import { LayoutDashboard, ChevronDown, Zap, Mail, MessageSquare, FileText, Ticket as TicketIcon, Calendar } from 'lucide-react'
+import { LayoutDashboard, ChevronDown, Zap, Mail, MessageSquare, FileText, Ticket as TicketIcon, Calendar, Loader2 } from 'lucide-react'
 import { updateAutoSetting, type AutoSettings } from '@/app/actions/sage-auto-settings'
 
 export type SubpagePreset = 'all' | 'today' | 'yesterday' | '7d' | '30d' | 'custom'
