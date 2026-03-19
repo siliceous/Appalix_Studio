@@ -73,7 +73,7 @@ const PLANS = [
       'Sage AI CRM assistant',
       'Lead capture & pipeline',
       'Email & form integration',
-      'eCommerce: WooCommerce',
+      'WooCommerce',
       'Basic analytics',
       'Email support',
     ],
@@ -100,7 +100,7 @@ const PLANS = [
       'Sage AI CRM assistant',
       'Lead capture & pipeline',
       'All platform integrations',
-      'eCommerce: WooCommerce + Shopify',
+      'WooCommerce + Shopify',
       'Human handoff',
       'AI task automation',
       'Advanced analytics',
@@ -129,7 +129,7 @@ const PLANS = [
       '30 GB storage',
       'Sage AI CRM assistant',
       'All platform integrations',
-      'eCommerce: WooCommerce + Shopify + Magento',
+      'WooCommerce + Shopify + Magento',
       'Human handoff',
       'AI task automation',
       'Advanced analytics',
@@ -276,7 +276,7 @@ export function PricingCards() {
                         + Sage AI CRM assistant
                       </span>
                     </li>
-                  ) : f.startsWith('eCommerce:') ? (
+                  ) : (f === 'WooCommerce' || f === 'WooCommerce + Shopify' || f === 'WooCommerce + Shopify + Magento') ? (
                     <li key={f}>
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/25 text-green-400 text-xs font-semibold">
                         🛍️ {f}
