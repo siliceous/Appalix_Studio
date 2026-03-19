@@ -8,7 +8,7 @@ import {
   UserPlus, Ticket, CheckCircle2, Clock, Download,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
-import { formSubmissionCreateLead, formSubmissionCreateTicket, markSubmissionActioned } from '@/app/actions/sage-forms'
+import { formSubmissionCreateLead, formSubmissionCreateTicket, markSubmissionActioned, updateFormMailchimpList } from '@/app/actions/sage-forms'
 import type { SageForm, SageFormSubmission } from '@/app/actions/sage-forms'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -40,12 +40,13 @@ export type FormFilters = {
 }
 
 interface Props {
-  submissions:        SageFormSubmission[]
-  forms:              SageForm[]
-  filters:            FormFilters
-  readonly?:          boolean
+  submissions:         SageFormSubmission[]
+  forms:               SageForm[]
+  filters:             FormFilters
+  readonly?:           boolean
   mailchimpConnected?: boolean
   mailchimpListId?:    string
+  mailchimpLists?:     Array<{ id: string; name: string }>
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -57,10 +58,12 @@ function buildUrl(base: string, filters: FormFilters): string {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export function FormsTable({ submissions, forms, filters, readonly = false, mailchimpConnected = false, mailchimpListId = '' }: Props) {
+export function FormsTable({ submissions, forms, filters, readonly = false, mailchimpConnected = false, mailchimpListId = '', mailchimpLists = [] }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [actioning, setActioning] = useState<Record<string, string>>({})
+  const [mcExpanded, setMcExpanded] = useState(false)
+  const [mcSaving, setMcSaving]     = useState<Record<string, boolean>>({})
 
   const pushFilter = useCallback((patch: Partial<FormFilters>) => {
     const next = { ...filters, ...patch }
@@ -126,12 +129,51 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
 
       {/* ── Mailchimp status banner ── */}
       {mailchimpConnected ? (
-        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-yellow-400/10 border border-yellow-400/25 text-yellow-700 dark:text-yellow-300 text-sm">
-          <span className="text-base">🐒</span>
-          <span className="font-medium">Mailchimp connected</span>
-          <span className="text-yellow-600 dark:text-yellow-400/70">—</span>
-          <span className="text-yellow-600 dark:text-yellow-400/70">contacts from every form submission are auto-synced to your audience{mailchimpListId ? ` (list: ${mailchimpListId})` : ''}</span>
-          <Link href="/sage/integrations" className="ml-auto text-xs font-semibold underline underline-offset-2 shrink-0">Manage →</Link>
+        <div className="rounded-xl bg-yellow-400/10 border border-yellow-400/25 overflow-hidden">
+          <div className="flex items-center gap-2.5 px-4 py-2.5 text-sm">
+            <span className="text-base">🐒</span>
+            <span className="font-medium text-yellow-700 dark:text-yellow-300">Mailchimp connected</span>
+            <span className="text-yellow-600 dark:text-yellow-400/70">— contacts auto-synced{mailchimpListId ? ` (default list: ${mailchimpListId})` : ''}</span>
+            {mailchimpLists.length > 1 && forms.length > 0 && (
+              <button
+                onClick={() => setMcExpanded(v => !v)}
+                className="ml-auto text-xs font-semibold text-yellow-700 dark:text-yellow-300 underline underline-offset-2 shrink-0"
+              >
+                {mcExpanded ? 'Hide per-form settings ↑' : 'Set audience per form ↓'}
+              </button>
+            )}
+            {!(mailchimpLists.length > 1 && forms.length > 0) && (
+              <Link href="/sage/integrations" className="ml-auto text-xs font-semibold underline underline-offset-2 shrink-0 text-yellow-700 dark:text-yellow-300">Manage →</Link>
+            )}
+          </div>
+          {mcExpanded && forms.length > 0 && mailchimpLists.length > 0 && (
+            <div className="border-t border-yellow-400/20 px-4 py-3 space-y-2 bg-yellow-400/5">
+              <p className="text-xs text-yellow-700 dark:text-yellow-400/80 font-medium mb-2">Choose a Mailchimp audience for each form (overrides workspace default)</p>
+              {forms.map(form => (
+                <div key={form.id} className="flex items-center gap-3">
+                  <span className="text-xs text-gray-700 dark:text-gray-300 min-w-[140px] truncate">{form.name}</span>
+                  <select
+                    value={form.mailchimp_list_id ?? ''}
+                    disabled={mcSaving[form.id]}
+                    onChange={async e => {
+                      const listId = e.target.value || null
+                      setMcSaving(p => ({ ...p, [form.id]: true }))
+                      await updateFormMailchimpList(form.id, listId)
+                      setMcSaving(p => ({ ...p, [form.id]: false }))
+                      router.refresh()
+                    }}
+                    className="text-xs border border-yellow-400/30 rounded-lg px-2 py-1 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-yellow-400/50 disabled:opacity-50"
+                  >
+                    <option value="">— Workspace default —</option>
+                    {mailchimpLists.map(l => (
+                      <option key={l.id} value={l.id}>{l.name}</option>
+                    ))}
+                  </select>
+                  {mcSaving[form.id] && <span className="text-[10px] text-yellow-600 dark:text-yellow-400 animate-pulse">Saving…</span>}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-white/8 text-sm">
@@ -306,9 +348,14 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
                       )}
                     </td>
 
-                    {/* Submitted */}
-                    <td className="px-4 py-3.5 text-right text-xs text-gray-400 whitespace-nowrap">
-                      {timeAgo(sub.created_at)}
+                    {/* Submitted + Mailchimp sync badge */}
+                    <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                      <span className="text-xs text-gray-400">{timeAgo(sub.created_at)}</span>
+                      {sub.mailchimp_synced_at && (
+                        <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-yellow-400/10 text-yellow-700 dark:text-yellow-400 border border-yellow-400/25" title={`Synced to Mailchimp ${timeAgo(sub.mailchimp_synced_at)}`}>
+                          🐒 Synced
+                        </span>
+                      )}
                     </td>
 
                     {/* Actions — only show for pending and not in readonly mode */}

@@ -96,7 +96,7 @@ export default async function FormsPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let subsQuery = (supabase as any)
     .from('sage_form_submissions')
-    .select('id, form_id, fields, ai_priority, ai_summary, ai_insights, ai_action, ai_entities, ai_analyzed_at, actioned_at, action_type, created_at')
+    .select('id, form_id, fields, ai_priority, ai_summary, ai_insights, ai_action, ai_entities, ai_analyzed_at, actioned_at, action_type, created_at, mailchimp_synced_at')
     .eq('workspace_id', workspaceId)
 
   if (isRestricted) {
@@ -127,19 +127,33 @@ export default async function FormsPage({
     .eq('workspace_id', workspaceId)
     .eq('provider', 'mailchimp')
     .maybeSingle()
-  const mailchimpConnected = (mailchimpRaw as { status: string; config: { list_id?: string } } | null)?.status === 'connected'
-  const mailchimpListId    = (mailchimpRaw as { config: { list_id?: string } } | null)?.config?.list_id ?? ''
+  const mailchimpCfg       = (mailchimpRaw as { status: string; config: { list_id?: string; access_token?: string; server?: string } } | null)
+  const mailchimpConnected = mailchimpCfg?.status === 'connected'
+  const mailchimpListId    = mailchimpCfg?.config?.list_id ?? ''
+
+  // Fetch all Mailchimp audiences so users can pick per-form
+  let mailchimpLists: Array<{ id: string; name: string }> = []
+  if (mailchimpConnected && mailchimpCfg?.config?.access_token) {
+    try {
+      const mcServer = mailchimpCfg.config.server ?? 'us1'
+      const mcRes = await fetch(`https://${mcServer}.api.mailchimp.com/3.0/lists?count=50&fields=lists.id,lists.name`, {
+        headers: { Authorization: `Bearer ${mailchimpCfg.config.access_token}` },
+      })
+      const mcData = await mcRes.json() as { lists?: Array<{ id: string; name: string }> }
+      mailchimpLists = mcData.lists ?? []
+    } catch { /* non-fatal */ }
+  }
 
   const [formsRes, submissionsRes] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     isRestricted && visibleFormIds.length > 0
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ? (supabase as any).from('sage_forms').select('id, name, description, is_active, created_at').eq('workspace_id', workspaceId).in('id', visibleFormIds).order('name', { ascending: true })
+      ? (supabase as any).from('sage_forms').select('id, name, description, is_active, created_at, mailchimp_list_id').eq('workspace_id', workspaceId).in('id', visibleFormIds).order('name', { ascending: true })
       : isRestricted
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ? Promise.resolve({ data: [] })
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        : (supabase as any).from('sage_forms').select('id, name, description, is_active, created_at').eq('workspace_id', workspaceId).order('name', { ascending: true }),
+        : (supabase as any).from('sage_forms').select('id, name, description, is_active, created_at, mailchimp_list_id').eq('workspace_id', workspaceId).order('name', { ascending: true }),
     subsQuery,
   ])
 
@@ -199,6 +213,7 @@ export default async function FormsPage({
             readonly={!!viewAsUserId}
             mailchimpConnected={mailchimpConnected}
             mailchimpListId={mailchimpListId}
+            mailchimpLists={mailchimpLists}
           />
         </div>
         <ActivitySidebar

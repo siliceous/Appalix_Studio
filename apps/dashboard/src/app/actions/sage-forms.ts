@@ -19,26 +19,28 @@ async function getWorkspaceId(): Promise<string | null> {
 }
 
 export interface SageForm {
-  id:          string
-  name:        string
-  description: string | null
-  is_active:   boolean
-  created_at:  string
+  id:                string
+  name:              string
+  description:       string | null
+  is_active:         boolean
+  created_at:        string
+  mailchimp_list_id: string | null
 }
 
 export interface SageFormSubmission {
-  id:             string
-  form_id:        string
-  fields:         Record<string, string>
-  ai_priority:    'high' | 'medium' | 'low' | null
-  ai_summary:     string | null
-  ai_insights:    string[] | null
-  ai_action:      string | null
-  ai_entities:    { name?: string; email?: string; phone?: string; product_interest?: string } | null
-  ai_analyzed_at: string | null
-  actioned_at:    string | null
-  action_type:    string | null
-  created_at:     string
+  id:                  string
+  form_id:             string
+  fields:              Record<string, string>
+  ai_priority:         'high' | 'medium' | 'low' | null
+  ai_summary:          string | null
+  ai_insights:         string[] | null
+  ai_action:           string | null
+  ai_entities:         { name?: string; email?: string; phone?: string; product_interest?: string } | null
+  ai_analyzed_at:      string | null
+  actioned_at:         string | null
+  action_type:         string | null
+  created_at:          string
+  mailchimp_synced_at: string | null
 }
 
 /** Create a new form */
@@ -62,6 +64,23 @@ export async function createForm(data: { name: string; description?: string }): 
   if (error || !form) return { error: error?.message ?? 'Failed to create form' }
   revalidatePath('/dashboard')
   return { form: form as SageForm }
+}
+
+/** Set a per-form Mailchimp audience list */
+export async function updateFormMailchimpList(formId: string, listId: string | null): Promise<{ error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { error: 'Not authenticated' }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('sage_forms')
+    .update({ mailchimp_list_id: listId })
+    .eq('id', formId)
+    .eq('workspace_id', workspaceId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard/forms')
+  return {}
 }
 
 /** Delete a form */

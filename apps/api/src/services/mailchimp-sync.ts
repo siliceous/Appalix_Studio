@@ -15,16 +15,22 @@ interface ContactData {
 
 type Cfg = Record<string, string>
 
+interface SyncOptions {
+  formMailchimpListId?: string
+  submissionId?: string
+}
+
 function nameParts(name = '') {
   const parts = name.trim().split(/\s+/)
   return { first: parts[0] ?? '', last: parts.slice(1).join(' ') }
 }
 
-async function pushMailchimp(cfg: Cfg, c: ContactData) {
-  if (!c.email || !cfg.access_token || !cfg.list_id) return
+async function pushMailchimp(cfg: Cfg, c: ContactData, opts?: SyncOptions): Promise<boolean> {
+  const listId = opts?.formMailchimpListId ?? cfg.list_id
+  if (!c.email || !cfg.access_token || !listId) return false
   const hash = createHash('md5').update(c.email.toLowerCase()).digest('hex')
   const { first, last } = nameParts(c.name)
-  await fetch(`https://${cfg.server ?? 'us1'}.api.mailchimp.com/3.0/lists/${cfg.list_id}/members/${hash}`, {
+  const res = await fetch(`https://${cfg.server ?? 'us1'}.api.mailchimp.com/3.0/lists/${listId}/members/${hash}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg.access_token}` },
     body: JSON.stringify({
@@ -37,7 +43,8 @@ async function pushMailchimp(cfg: Cfg, c: ContactData) {
         ...(c.company && { COMPANY: c.company }),
       },
     }),
-  }).catch(e => console.error('[sync/mailchimp]', e))
+  }).catch(e => { console.error('[sync/mailchimp]', e); return null })
+  return !!res?.ok
 }
 
 async function pushKit(cfg: Cfg, c: ContactData) {
@@ -127,7 +134,7 @@ async function pushActiveCampaign(cfg: Cfg, c: ContactData) {
   }).catch(e => console.error('[sync/activecampaign]', e))
 }
 
-export async function syncContactToAllPlatforms(workspaceId: string, contact: ContactData): Promise<void> {
+export async function syncContactToAllPlatforms(workspaceId: string, contact: ContactData, opts?: SyncOptions): Promise<void> {
   if (!contact.email) return
 
   const { data: rows } = await supabase
@@ -139,18 +146,33 @@ export async function syncContactToAllPlatforms(workspaceId: string, contact: Co
 
   if (!rows?.length) return
 
-  await Promise.allSettled(
+  const results = await Promise.allSettled(
     (rows as Array<{ provider: string; config: Cfg }>).map(({ provider, config }) => {
       switch (provider) {
-        case 'mailchimp':       return pushMailchimp(config, contact)
+        case 'mailchimp':       return pushMailchimp(config, contact, opts)
         case 'convertkit':      return pushKit(config, contact)
         case 'klaviyo':         return pushKlaviyo(config, contact)
         case 'constantcontact': return pushConstantContact(config, contact)
         case 'activecampaign':  return pushActiveCampaign(config, contact)
-        default: return Promise.resolve()
+        default: return Promise.resolve(false)
       }
     })
   )
+
+  // Stamp mailchimp_synced_at if Mailchimp push succeeded
+  if (opts?.submissionId) {
+    const mailchimpIdx = (rows as Array<{ provider: string }>).findIndex(r => r.provider === 'mailchimp')
+    if (mailchimpIdx >= 0) {
+      const result = results[mailchimpIdx]
+      if (result.status === 'fulfilled' && result.value === true) {
+        const { error: stampErr } = await supabase
+          .from('sage_form_submissions')
+          .update({ mailchimp_synced_at: new Date().toISOString() })
+          .eq('id', opts.submissionId)
+        if (stampErr) console.error('[sync/mailchimp] stamp failed', stampErr)
+      }
+    }
+  }
 }
 
 // Keep old export alias for backwards compat

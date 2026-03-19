@@ -60,7 +60,7 @@ export async function formRoutes(fastify: FastifyInstance) {
       // Verify the form exists and is active
       const { data: form } = await supabase
         .from('sage_forms')
-        .select('id, workspace_id, is_active')
+        .select('id, workspace_id, is_active, mailchimp_list_id')
         .eq('id', formId)
         .single()
 
@@ -68,7 +68,7 @@ export async function formRoutes(fastify: FastifyInstance) {
         return reply.status(404).send({ error: 'Form not found or inactive' })
       }
 
-      const { workspace_id } = form as { workspace_id: string }
+      const { workspace_id, mailchimp_list_id } = form as { workspace_id: string; mailchimp_list_id: string | null }
 
       // Sanitise fields — only allow string values
       const fields: Record<string, string> = {}
@@ -98,7 +98,7 @@ export async function formRoutes(fastify: FastifyInstance) {
       // Trigger async tasks — don't block the response
       setImmediate(() => {
         void analyzeFormSubmission(submissionId)
-        void syncContactToAllPlatforms(workspace_id, fields)
+        void syncContactToAllPlatforms(workspace_id, fields, { formMailchimpListId: mailchimp_list_id ?? undefined, submissionId })
       })
 
       return reply.send({ ok: true, id: submissionId })
