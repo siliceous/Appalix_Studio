@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Check, Copy, ChevronDown, ChevronUp, ExternalLink, BookOpen, Loader2, Unplug, AlertCircle, RefreshCw } from 'lucide-react'
-import { saveLeadSource, deleteLeadSource, syncFromEmailPlatform } from '@/app/actions/leads'
+import { saveLeadSource, deleteLeadSource, syncFromEmailPlatform, toggleMailchimpSync } from '@/app/actions/leads'
 import type { LeadAdSource, LeadAdPlatform, SageIntegration } from '@/lib/types'
 
 // ---------------------------------------------------------------------------
@@ -132,7 +132,7 @@ function CopyButton({ text }: { text: string }) {
 // Main component
 // ---------------------------------------------------------------------------
 
-type EmailIntegration = Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at'>
+type EmailIntegration = Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at' | 'sync_enabled' | 'last_synced_at' | 'last_sync_count'>
 
 interface SourcesClientProps {
   sources:            LeadAdSource[]
@@ -173,6 +173,17 @@ function openOAuthPopup(path: string, onClose: () => void) {
   }, 500)
 }
 
+function formatRelativeTime(dateStr: string | null | undefined): string {
+  if (!dateStr) return 'never'
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60_000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.floor(hrs / 24)}d ago`
+}
+
 function EmailPlatformCard({
   def,
   integration,
@@ -184,10 +195,12 @@ function EmailPlatformCard({
 }) {
   const router      = useRouter()
   const isConnected = !!integration
-  const [syncing, setSyncing] = useState(false)
-  const [result,  setResult]  = useState<{ synced: number; skipped: number } | null>(null)
-  const [syncErr, setSyncErr] = useState<string | null>(null)
-  const [, startTransition]   = useTransition()
+  const [syncing,     setSyncing]     = useState(false)
+  const [toggling,    setToggling]    = useState(false)
+  const [syncEnabled, setSyncEnabled] = useState(integration?.sync_enabled ?? false)
+  const [result,      setResult]      = useState<{ synced: number; skipped: number } | null>(null)
+  const [syncErr,     setSyncErr]     = useState<string | null>(null)
+  const [, startTransition]           = useTransition()
 
   function handleSync() {
     setSyncing(true)
@@ -205,6 +218,23 @@ function EmailPlatformCard({
     })
   }
 
+  function handleToggleSync() {
+    const next = !syncEnabled
+    setSyncEnabled(next)
+    setToggling(true)
+    startTransition(async () => {
+      try {
+        await toggleMailchimpSync(next)
+      } catch {
+        setSyncEnabled(!next) // revert on error
+      } finally {
+        setToggling(false)
+      }
+    })
+  }
+
+  const isMailchimp = def.provider === 'mailchimp'
+
   return (
     <div className="bg-white dark:bg-[#232323] rounded-xl border border-gray-200 dark:border-white/8 overflow-hidden">
       <div className="flex items-center gap-4 p-5">
@@ -220,11 +250,18 @@ function EmailPlatformCard({
                 Connected
               </span>
             )}
+            {isConnected && isMailchimp && syncEnabled && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400">
+                Auto-sync ON
+              </span>
+            )}
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             {isConnected
               ? def.canSync
-                ? `${leadCount} contact${leadCount !== 1 ? 's' : ''} synced${integration?.updated_at ? ` · ${new Date(integration.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : ''}`
+                ? isMailchimp && integration?.last_synced_at
+                  ? `Last synced ${formatRelativeTime(integration.last_synced_at)}${integration.last_sync_count ? ` · ${integration.last_sync_count} contact${integration.last_sync_count !== 1 ? 's' : ''}` : ''}`
+                  : `${leadCount} contact${leadCount !== 1 ? 's' : ''} synced`
                 : 'Contacts sync to Sage CRM automatically'
               : def.canSync
                 ? 'Connect to import contacts into Sage Contacts'
@@ -244,14 +281,35 @@ function EmailPlatformCard({
 
           {isConnected ? (
             def.canSync ? (
-              <button
-                onClick={handleSync}
-                disabled={syncing}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 disabled:bg-gray-300 dark:disabled:bg-white/10 text-white disabled:text-gray-400 rounded-lg transition-colors"
-              >
-                {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                {syncing ? 'Syncing…' : 'Sync Now'}
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Two-way sync toggle — Mailchimp only */}
+                {isMailchimp && (
+                  <button
+                    onClick={handleToggleSync}
+                    disabled={toggling}
+                    title={syncEnabled ? 'Turn off auto-sync' : 'Turn on auto-sync'}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
+                      syncEnabled
+                        ? 'bg-brand-600'
+                        : 'bg-gray-200 dark:bg-white/15'
+                    } ${toggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  >
+                    <span
+                      className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+                        syncEnabled ? 'translate-x-[18px]' : 'translate-x-[3px]'
+                      }`}
+                    />
+                  </button>
+                )}
+                <button
+                  onClick={handleSync}
+                  disabled={syncing}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 disabled:bg-gray-300 dark:disabled:bg-white/10 text-white disabled:text-gray-400 rounded-lg transition-colors"
+                >
+                  {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                  {syncing ? 'Syncing…' : 'Sync Now'}
+                </button>
+              </div>
             ) : (
               <Link
                 href="/sage/integrations"
@@ -531,7 +589,7 @@ export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, e
         </div>
         <p className="text-[10px] text-gray-400 mt-3">
           Connect via <Link href="/sage/integrations" className="text-brand-400 hover:text-brand-300 transition-colors">Sage → Integrations</Link>.
-          Mailchimp and ActiveCampaign support on-demand contact import into All Leads.
+          Mailchimp and ActiveCampaign support on-demand contact import into Sage Contacts.
         </p>
       </div>
     </div>

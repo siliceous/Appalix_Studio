@@ -446,3 +446,17 @@ export async function syncFromEmailPlatform(
   revalidatePath('/sage/contacts')
   return { synced, skipped }
 }
+
+export async function toggleMailchimpSync(enabled: boolean): Promise<void> {
+  const workspaceId = await getWorkspaceId()
+  const admin       = createAdminClient()
+
+  const { error } = await admin
+    .from('sage_integrations')
+    .update({ sync_enabled: enabled })
+    .eq('workspace_id', workspaceId)
+    .eq('provider', 'mailchimp')
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/forms/sources')
+}

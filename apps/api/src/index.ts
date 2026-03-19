@@ -23,6 +23,7 @@ import { formRoutes }       from './routes/forms/index.js'
 import { startIdleManager, stopIdleManager }        from './services/sage-email-idle.js'
 import { reanalyzePendingEmails }                   from './services/sage-email-sync.js'
 import { analyzeConversationsForWorkspace }         from './services/conversation-analyze.js'
+import { runMailchimpTwoWaySync }                   from './services/mailchimp-two-way-sync.js'
 
 const server = Fastify({
   logger: {
@@ -245,6 +246,15 @@ try {
 
   void pollUnanalyzedConversations()
   setInterval(pollUnanalyzedConversations, 2 * 60 * 1000)
+
+  // ---------------------------------------------------------------
+  // Mailchimp two-way sync poller
+  // Runs every 5 minutes for workspaces with sync_enabled = true.
+  // Pulls Mailchimp changes → Appalix, pushes Appalix changes →
+  // Mailchimp, and processes pending soft-deletes after 5-min grace.
+  // ---------------------------------------------------------------
+  void runMailchimpTwoWaySync()
+  setInterval(() => void runMailchimpTwoWaySync(), 5 * 60 * 1000)
 
   // Graceful shutdown — release IMAP connections before process exits
   const shutdown = () => { stopIdleManager(); process.exit(0) }

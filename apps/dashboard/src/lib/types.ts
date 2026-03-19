@@ -299,6 +299,8 @@ export interface SageContact {
   assigned_to:            string | null
   ai_summary:             string | null
   ai_analyzed_at:         string | null
+  mailchimp_member_id:    string | null
+  sync_deleted_at:        string | null
   created_at:             string
   updated_at:             string
   // joined
@@ -419,13 +421,16 @@ export interface SageActivityLog {
 }
 
 export interface SageIntegration {
-  id:           string
-  workspace_id: string
-  provider:     SageIntegrationProvider
-  status:       SageIntegrationStatus
-  config:       Json
-  created_at:   string
-  updated_at:   string
+  id:              string
+  workspace_id:    string
+  provider:        SageIntegrationProvider
+  status:          SageIntegrationStatus
+  config:          Json
+  sync_enabled:    boolean
+  last_synced_at:  string | null
+  last_sync_count: number
+  created_at:      string
+  updated_at:      string
 }
 
 export interface SageEmail {

@@ -7,7 +7,7 @@ import {
   Zap, ArrowUpDown, SlidersHorizontal, Columns3, Check,
 } from 'lucide-react'
 import { ContactModal } from '@/components/sage/contact-modal'
-import { deleteContact, deleteContacts, assignContact } from '@/app/actions/sage'
+import { deleteContact, deleteContacts, undoDeleteContact, assignContact } from '@/app/actions/sage'
 import { exportContacts } from '@/app/actions/csv-export'
 import { importContacts } from '@/app/actions/csv-import'
 import { CsvExportButton } from '@/components/ui/csv-export-button'
@@ -141,6 +141,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
   const [deleting,       setDeleting]       = useState<string | null>(null)
   const [selectedIds,    setSelectedIds]    = useState<Set<string>>(new Set())
   const [bulkDeleting,   setBulkDeleting]   = useState(false)
+  const [undoToasts,     setUndoToasts]     = useState<{ id: string; name: string; timer: ReturnType<typeof setTimeout> }[]>([])
   const [search,      setSearch]      = useState('')
   const [openPanel,   setOpenPanel]   = useState<'sort' | 'filter' | 'columns' | null>(null)
   const [sortField,   setSortField]   = useState('')
@@ -229,12 +230,30 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this contact? This cannot be undone.')) return
+    if (!confirm('Delete this contact?')) return
     setDeleting(id)
     try {
-      await deleteContact(id)
-      setContacts(prev => prev.filter(c => c.id !== id))
+      const result = await deleteContact(id)
+      if (result?.softDeleted) {
+        // Keep in list as visually hidden, show undo toast for 30s
+        const contact = contacts.find(c => c.id === id)
+        setContacts(prev => prev.filter(c => c.id !== id))
+        const timer = setTimeout(() => {
+          setUndoToasts(prev => prev.filter(t => t.id !== id))
+        }, 30_000)
+        setUndoToasts(prev => [...prev, { id, name: contact?.name ?? 'Contact', timer }])
+      } else {
+        setContacts(prev => prev.filter(c => c.id !== id))
+      }
     } finally { setDeleting(null) }
+  }
+
+  async function handleUndo(id: string) {
+    const toast = undoToasts.find(t => t.id === id)
+    if (toast) clearTimeout(toast.timer)
+    setUndoToasts(prev => prev.filter(t => t.id !== id))
+    await undoDeleteContact(id)
+    router.refresh()
   }
 
   // ── Cell renderer ────────────────────────────────────────────────────────
@@ -336,6 +355,23 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
 
   return (
     <div className="p-8" onClick={() => setOpenPanel(null)}>
+
+      {/* Undo delete toasts */}
+      {undoToasts.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2">
+          {undoToasts.map(toast => (
+            <div key={toast.id} className="flex items-center gap-3 px-4 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm rounded-xl shadow-xl">
+              <span><strong>{toast.name}</strong> will be removed from Mailchimp in 5 minutes.</span>
+              <button
+                onClick={() => handleUndo(toast.id)}
+                className="px-3 py-1 text-xs font-semibold bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg hover:opacity-80 transition-opacity"
+              >
+                Undo
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-start justify-between mb-5">
         <div>

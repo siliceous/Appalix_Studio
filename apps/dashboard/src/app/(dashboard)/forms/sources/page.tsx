@@ -36,7 +36,7 @@ export default async function SourcesPage() {
       .eq('workspace_id', workspaceId),
     supabase
       .from('sage_integrations')
-      .select('id, provider, status, updated_at')
+      .select('id, provider, status, updated_at, sync_enabled, last_synced_at, last_sync_count')
       .eq('workspace_id', workspaceId)
       .eq('status', 'connected')
       .in('provider', EMAIL_PROVIDERS),
@@ -48,7 +48,7 @@ export default async function SourcesPage() {
   ])
 
   const sources           = (sourcesRaw ?? []) as LeadAdSource[]
-  const emailIntegrations = (emailIntegrationsRaw ?? []) as Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at'>[]
+  const emailIntegrations = (emailIntegrationsRaw ?? []) as Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at' | 'sync_enabled' | 'last_synced_at' | 'last_sync_count'>[]
 
   // Count leads per email platform
   const leadCounts: Record<string, number> = {}

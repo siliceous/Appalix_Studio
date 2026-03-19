@@ -162,12 +162,45 @@ export async function deleteContact(id: string) {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
 
-  const { error } = await admin
+  // Check if this contact is linked to a Mailchimp sync
+  const { data: contact } = await admin
     .from('sage_contacts')
-    .delete()
+    .select('mailchimp_member_id, source')
     .eq('id', id)
     .eq('workspace_id', workspaceId)
+    .maybeSingle()
 
+  const isMailchimpContact = contact?.mailchimp_member_id || contact?.source === 'mailchimp'
+
+  if (isMailchimpContact) {
+    // Soft delete — 5-min grace period before propagating to Mailchimp
+    const { error } = await admin
+      .from('sage_contacts')
+      .update({ sync_deleted_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('workspace_id', workspaceId)
+    if (error) throw new Error(error.message)
+  } else {
+    const { error } = await admin
+      .from('sage_contacts')
+      .delete()
+      .eq('id', id)
+      .eq('workspace_id', workspaceId)
+    if (error) throw new Error(error.message)
+  }
+
+  revalidatePath('/sage/contacts')
+  return { softDeleted: !!isMailchimpContact, id }
+}
+
+export async function undoDeleteContact(id: string) {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('sage_contacts')
+    .update({ sync_deleted_at: null })
+    .eq('id', id)
+    .eq('workspace_id', workspaceId)
   if (error) throw new Error(error.message)
   revalidatePath('/sage/contacts')
 }
@@ -177,14 +210,35 @@ export async function deleteContacts(ids: string[]) {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
 
-  const { error } = await admin
+  // Separate Mailchimp-linked contacts from plain ones
+  const { data: contacts } = await admin
     .from('sage_contacts')
-    .delete()
+    .select('id, mailchimp_member_id, source')
     .in('id', ids)
     .eq('workspace_id', workspaceId)
 
-  if (error) throw new Error(error.message)
+  const mailchimpIds = (contacts ?? [])
+    .filter((c: { mailchimp_member_id: string | null; source: string }) => c.mailchimp_member_id || c.source === 'mailchimp')
+    .map((c: { id: string }) => c.id)
+  const hardDeleteIds = ids.filter(id => !mailchimpIds.includes(id))
+
+  if (mailchimpIds.length) {
+    await admin
+      .from('sage_contacts')
+      .update({ sync_deleted_at: new Date().toISOString() })
+      .in('id', mailchimpIds)
+      .eq('workspace_id', workspaceId)
+  }
+  if (hardDeleteIds.length) {
+    await admin
+      .from('sage_contacts')
+      .delete()
+      .in('id', hardDeleteIds)
+      .eq('workspace_id', workspaceId)
+  }
+
   revalidatePath('/sage/contacts')
+  return { softDeleted: mailchimpIds, hardDeleted: hardDeleteIds }
 }
 
 export async function analyzeContact(id: string): Promise<{ summary: string } | { error: string }> {
