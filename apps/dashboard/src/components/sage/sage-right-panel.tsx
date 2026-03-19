@@ -282,20 +282,20 @@ export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt }: S
 
       {/* Header — drag handle */}
       <div
-        className="flex items-center gap-2 px-4 py-3 border-b border-[#15A4AE]/20 dark:border-[#15A4AE]/15 bg-[#15A4AE]/[0.08] dark:bg-[#15A4AE]/10 shrink-0 cursor-grab active:cursor-grabbing select-none"
+        className="flex items-center gap-2.5 px-4 py-3 bg-[#141c2b] dark:bg-[#141c2b] shrink-0 cursor-grab active:cursor-grabbing select-none"
         onMouseDown={startDrag}
       >
-        <div className="w-6 h-6 rounded-md bg-brand-50 dark:bg-[#15A4AE]/10 flex items-center justify-center">
-          <Sparkles className="w-3.5 h-3.5 text-brand-600 dark:text-[#15A4AE]" />
+        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#15A4AE] to-[#0d7a83] flex items-center justify-center shrink-0">
+          <Sparkles className="w-3.5 h-3.5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">Sage AI</p>
-          <p className="text-[10px] text-gray-400 truncate">{getContextLabel(pathname)}</p>
+          <p className="text-xs font-semibold text-white leading-tight">Sage AI</p>
+          <p className="text-[10px] text-gray-400 truncate mt-0.5">{getContextLabel(pathname)}</p>
         </div>
         <button
           onClick={toggleExpand}
           title={panelState === 'expanded' ? 'Restore' : 'Expand'}
-          className="p-1 rounded hover:bg-white/20 dark:hover:bg-white/10 transition-colors"
+          className="p-1 rounded hover:bg-white/10 transition-colors"
         >
           {panelState === 'expanded'
             ? <Minimize2 className="w-3.5 h-3.5 text-gray-400" />
@@ -304,14 +304,14 @@ export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt }: S
         <button
           onClick={() => { setPanelState('closed') }}
           title="Minimise"
-          className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+          className="p-1 rounded hover:bg-red-500/20 transition-colors"
         >
-          <X className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
+          <X className="w-3.5 h-3.5 text-gray-400 hover:text-red-400" />
         </button>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-[#f8f7f4] dark:bg-[#232323]">
         {messages.length === 0 && (
           <div className="space-y-2 pt-2">
             <p className="text-[11px] text-gray-400 dark:text-gray-500 px-1">Quick questions</p>
@@ -335,8 +335,8 @@ export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt }: S
             <div
               className={`max-w-[90%] rounded-xl px-3 py-2 text-xs leading-relaxed ${
                 m.role === 'user'
-                  ? 'bg-brand-600 text-white'
-                  : 'bg-gray-100 dark:bg-white/8 text-gray-800 dark:text-gray-200'
+                  ? 'bg-[#141c2b] dark:bg-white/10 text-white'
+                  : 'bg-white dark:bg-white/8 border border-gray-200 dark:border-white/10 text-gray-800 dark:text-gray-200'
               }`}
             >
               {m.content}
@@ -346,11 +346,11 @@ export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt }: S
 
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 dark:bg-white/8 rounded-xl px-3 py-2">
+            <div className="bg-white dark:bg-white/8 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2">
               <div className="flex gap-1 items-center h-4">
-                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:0ms]" />
-                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
-                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                <span className="w-1.5 h-1.5 bg-[#15A4AE] rounded-full animate-bounce [animation-delay:0ms]" />
+                <span className="w-1.5 h-1.5 bg-[#15A4AE] rounded-full animate-bounce [animation-delay:150ms]" />
+                <span className="w-1.5 h-1.5 bg-[#15A4AE] rounded-full animate-bounce [animation-delay:300ms]" />
               </div>
             </div>
           </div>
@@ -360,8 +360,8 @@ export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt }: S
       </div>
 
       {/* Input */}
-      <div className="p-3 border-t border-[#15A4AE]/20 dark:border-[#15A4AE]/15 bg-[#15A4AE]/[0.08] dark:bg-[#15A4AE]/10 shrink-0">
-        <div className="flex items-end gap-2 bg-gray-50 dark:bg-white/5 rounded-xl border dark:border-white/8 px-3 py-2">
+      <div className="p-3 border-t border-gray-100 dark:border-white/10 bg-white dark:bg-[#1c1c1c] shrink-0">
+        <div className="flex items-end gap-2 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/8 px-3 py-2 focus-within:border-[#15A4AE]/50 focus-within:ring-2 focus-within:ring-[#15A4AE]/10 transition-all">
           <button
             onClick={() => fileInputRef.current?.click()}
             title="Attach file"
@@ -394,7 +394,7 @@ export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt }: S
           <button
             onClick={() => send(input)}
             disabled={!input.trim() || loading}
-            className="shrink-0 w-6 h-6 rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+            className="shrink-0 w-6 h-6 rounded-lg bg-[#141c2b] hover:bg-[#1e2d45] dark:bg-brand-600 dark:hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
           >
             <Send className="w-3 h-3 text-white" />
           </button>

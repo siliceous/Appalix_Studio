@@ -129,7 +129,7 @@ export function CopilotChat({ workspaceId, workspaceName, userName }: CopilotCha
               <div className={`group relative max-w-[75%] ${m.role === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
                 <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
                   m.role === 'user'
-                    ? 'bg-gray-900 dark:bg-white/10 text-white rounded-tr-sm'
+                    ? 'bg-[#141c2b] dark:bg-white/10 text-white rounded-tr-sm'
                     : 'bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/10 text-gray-800 dark:text-gray-200 rounded-tl-sm'
                 }`}>
                   {m.content}

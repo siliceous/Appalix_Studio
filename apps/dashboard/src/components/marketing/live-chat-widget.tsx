@@ -122,97 +122,123 @@ export function LiveChatWidget({ integrationId }: LiveChatWidgetProps) {
   }
 
   return (
-    <div className="rounded-2xl shadow-[0_0_55px_12px_rgba(255,255,255,0.09),0_0_110px_30px_rgba(255,255,255,0.045)]">
-    <div className="w-full bg-white/[0.04] border border-[#15A4AE]/60 rounded-2xl overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-white/5">
-        <div className="w-2.5 h-2.5 rounded-full bg-[#15A4AE] animate-pulse" />
-        <span className="text-xs text-gray-400 font-medium">Appalix AI Agent · Online</span>
-      </div>
+    <div className="rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.13),0_2px_8px_rgba(0,0,0,0.07)]">
+      <div className="w-full bg-white border border-gray-200 rounded-2xl overflow-hidden">
 
-      {/* Messages */}
-      <div ref={messagesRef} className="p-4 space-y-3 h-[480px] overflow-y-auto scrollbar-none">
-        {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div
-              className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                m.role === 'user'
-                  ? 'bg-[#2a2a2a] border border-white/10 text-gray-200 rounded-br-sm'
-                  : 'bg-[#2a2a2a] border border-white/10 text-[#15A4AE] rounded-bl-sm'
-              }`}
-            >
-              {m.text}
-              {m.link && (
-                <>
-                  {' '}
-                  <button
-                    onClick={() => openPopup(m.link!.href)}
-                    className="text-brand-400 hover:text-brand-300 underline underline-offset-2 transition-colors"
-                  >
-                    {m.link.text}
-                  </button>
-                </>
+        {/* Header — dark panel matching the Fin AI style */}
+        <div className="flex items-center gap-3 px-4 py-3.5 bg-[#141c2b]">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#15A4AE] to-[#0d7a83] flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2.2}>
+              <path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.37 5.07L2 22l4.93-1.37A9.93 9.93 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-white leading-tight">Appalix AI Agent</p>
+            <p className="text-xs text-gray-400 flex items-center gap-1.5 mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] animate-pulse inline-block" />
+              Online · typically replies instantly
+            </p>
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div ref={messagesRef} className="p-4 space-y-3 h-[480px] overflow-y-auto scrollbar-none bg-[#f8f7f4]">
+          {messages.map((m, i) => (
+            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} items-end gap-2`}>
+              {m.role === 'assistant' && (
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#15A4AE] to-[#0d7a83] shrink-0 flex items-center justify-center mb-0.5">
+                  <svg viewBox="0 0 24 24" className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                    <path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.37 5.07L2 22l4.93-1.37A9.93 9.93 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
               )}
-            </div>
-          </div>
-        ))}
-
-        {/* Suggestion chips — visible until user interacts */}
-        {showSuggestions && messages.length > 0 && (
-          <div className="space-y-1.5 pt-1">
-            {FAQS.map((faq, i) => !usedFaqs.has(i) && (
-              <button
-                key={i}
-                onClick={() => handleFaqClick(faq, i)}
-                className="w-full text-left px-3.5 py-2 rounded-xl border border-[#15A4AE]/50 bg-[#15A4AE]/10 text-sm text-[#15A4AE] hover:bg-[#15A4AE]/20 hover:border-[#15A4AE]/70 transition-colors"
+              <div
+                className={`max-w-[78%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                  m.role === 'user'
+                    ? 'bg-[#141c2b] text-white rounded-br-sm'
+                    : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm shadow-sm'
+                }`}
               >
-                {faq.q}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Typing indicator */}
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-white/10 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1.5 items-center">
-              <style>{`
-                @keyframes dot-flash {
-                  0%, 60%, 100% { opacity: 0.2; }
-                  30% { opacity: 1; }
-                }
-              `}</style>
-              <span className="w-2 h-2 rounded-full bg-[#15A4AE]" style={{ animation: 'dot-flash 1.4s infinite', animationDelay: '0ms' }} />
-              <span className="w-2 h-2 rounded-full bg-[#15A4AE]" style={{ animation: 'dot-flash 1.4s infinite', animationDelay: '280ms' }} />
-              <span className="w-2 h-2 rounded-full bg-[#15A4AE]" style={{ animation: 'dot-flash 1.4s infinite', animationDelay: '560ms' }} />
+                {m.text}
+                {m.link && (
+                  <>
+                    {' '}
+                    <button
+                      onClick={() => openPopup(m.link!.href)}
+                      className="text-[#15A4AE] hover:text-[#0d8a94] underline underline-offset-2 transition-colors"
+                    >
+                      {m.link.text}
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          ))}
 
-      {/* Input */}
-      <div className="px-4 pb-4 flex items-center gap-2">
-        <input
-          ref={inputRef}
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask anything…"
-          disabled={loading}
-          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300 placeholder-white outline-none focus:border-brand-600/50 disabled:opacity-50 transition-colors"
-        />
-        <button
-          onClick={sendMessage}
-          disabled={loading || !input.trim()}
-          className="p-2 bg-[#1a8c76] hover:bg-[#14705d] disabled:opacity-40 rounded-lg transition-colors"
-        >
-          <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+          {/* Suggestion chips */}
+          {showSuggestions && messages.length > 0 && (
+            <div className="space-y-1.5 pt-1 pl-8">
+              {FAQS.map((faq, i) => !usedFaqs.has(i) && (
+                <button
+                  key={i}
+                  onClick={() => handleFaqClick(faq, i)}
+                  className="w-full text-left px-3.5 py-2 rounded-xl border border-[#15A4AE]/25 bg-white text-sm text-gray-700 hover:border-[#15A4AE]/60 hover:bg-[#15A4AE]/5 transition-colors shadow-sm"
+                >
+                  {faq.q}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Typing indicator */}
+          {loading && (
+            <div className="flex justify-start items-end gap-2">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#15A4AE] to-[#0d7a83] shrink-0 flex items-center justify-center mb-0.5">
+                <svg viewBox="0 0 24 24" className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                  <path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.37 5.07L2 22l4.93-1.37A9.93 9.93 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1.5 items-center shadow-sm">
+                <style>{`
+                  @keyframes dot-flash {
+                    0%, 60%, 100% { opacity: 0.25; }
+                    30% { opacity: 1; }
+                  }
+                `}</style>
+                <span className="w-2 h-2 rounded-full bg-[#15A4AE]" style={{ animation: 'dot-flash 1.4s infinite', animationDelay: '0ms' }} />
+                <span className="w-2 h-2 rounded-full bg-[#15A4AE]" style={{ animation: 'dot-flash 1.4s infinite', animationDelay: '280ms' }} />
+                <span className="w-2 h-2 rounded-full bg-[#15A4AE]" style={{ animation: 'dot-flash 1.4s infinite', animationDelay: '560ms' }} />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Input */}
+        <div className="px-3 pb-3 pt-2 border-t border-gray-100 bg-white">
+          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-[#15A4AE]/50 focus-within:ring-2 focus-within:ring-[#15A4AE]/10 transition-all">
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Message…"
+              disabled={loading}
+              className="flex-1 bg-transparent text-sm text-gray-800 placeholder-gray-400 outline-none disabled:opacity-50"
+            />
+            <button
+              onClick={sendMessage}
+              disabled={loading || !input.trim()}
+              className="p-1.5 bg-[#141c2b] hover:bg-[#1e2d45] disabled:opacity-30 rounded-lg transition-colors"
+            >
+              <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={2.2}>
+                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
+          <p className="text-[10px] text-gray-400 text-center mt-1.5">Powered by Appalix AI</p>
+        </div>
       </div>
-    </div>
     </div>
   )
 }
