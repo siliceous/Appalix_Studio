@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 /* ─── Tooltip ───────────────────────────────────────────────────────────── */
 function Tip({ label, children, dir = 'top', clickable = false }: {
@@ -59,6 +59,13 @@ export function FormsPreview({ onClick }: { onClick?: () => void }) {
   const [selected,     setSelected]     = useState<number | null>(null)
   const [search,       setSearch]       = useState('')
   const [filterSource, setFilterSource] = useState<string | null>(null)
+  const detailRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (selected !== null && detailRef.current) {
+      detailRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
+  }, [selected])
 
   function stop(e: React.MouseEvent) { e.stopPropagation() }
 
@@ -69,7 +76,6 @@ export function FormsPreview({ onClick }: { onClick?: () => void }) {
   })
 
   const SOURCES = ['Meta Leads', 'Google Ads']
-  const lead = selected !== null ? LEADS[selected] : null
 
   return (
     <div className="group relative" role="button" aria-label="Open demo">
@@ -142,60 +148,54 @@ export function FormsPreview({ onClick }: { onClick?: () => void }) {
 
               <div className="divide-y divide-gray-50">
                 {displayed.map((l, i) => (
-                  <Tip key={i} label="Click to view lead details, assign to team member, or create a deal" dir="top" clickable>
-                    <div
-                      onClick={(e) => { stop(e); setSelected(prev => prev === i ? null : i) }}
-                      className={`grid grid-cols-12 gap-2 px-4 py-2.5 items-center cursor-pointer transition-colors border-l-2 ${selected === i ? 'bg-[#15A4AE]/5 border-[#15A4AE]' : 'hover:bg-gray-50 border-transparent'}`}
-                    >
-                      <div className="col-span-3 flex items-center gap-2 min-w-0">
-                        <div className="w-6 h-6 rounded-full bg-[#15A4AE]/20 flex items-center justify-center text-[9px] font-bold text-[#15A4AE] shrink-0">{l.name[0]}</div>
-                        <div className="min-w-0">
-                          <p className="text-[10px] font-semibold text-gray-900 truncate">{l.name}</p>
-                          <p className="text-[9px] text-gray-500 truncate">{l.company}</p>
+                  <div key={i}>
+                    <Tip label="Click to view lead details, assign to team member, or create a deal" dir="top" clickable>
+                      <div
+                        onClick={(e) => { stop(e); setSelected(prev => prev === i ? null : i) }}
+                        className={`grid grid-cols-12 gap-2 px-4 py-2.5 items-center cursor-pointer transition-colors border-l-2 ${selected === i ? 'bg-[#15A4AE]/5 border-[#15A4AE]' : 'hover:bg-gray-50 border-transparent'}`}
+                      >
+                        <div className="col-span-3 flex items-center gap-2 min-w-0">
+                          <div className="w-6 h-6 rounded-full bg-[#15A4AE]/20 flex items-center justify-center text-[9px] font-bold text-[#15A4AE] shrink-0">{l.name[0]}</div>
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-semibold text-gray-900 truncate">{l.name}</p>
+                            <p className="text-[9px] text-gray-500 truncate">{l.company}</p>
+                          </div>
+                        </div>
+                        <p className="col-span-3 text-[9px] text-gray-600 truncate">{l.email}</p>
+                        <p className="col-span-2 text-[9px] text-gray-600 truncate">{l.phone}</p>
+                        <div className="col-span-1">
+                          <span className={`text-[8px] font-semibold px-1.5 py-0.5 rounded-full ${SOURCE_MAP[l.source]}`}>{l.source === 'Meta Leads' ? '📘' : '🔴'}</span>
+                        </div>
+                        <div className="col-span-1">
+                          <span className={`text-[8px] font-medium px-1.5 py-0.5 rounded-full ${STATUS_MAP[l.status as keyof typeof STATUS_MAP].cls}`}>{STATUS_MAP[l.status as keyof typeof STATUS_MAP].label}</span>
+                        </div>
+                        <p className="col-span-1 text-[9px] text-gray-400">{l.time}</p>
+                      </div>
+                    </Tip>
+                    {selected === i && (
+                      <div ref={detailRef} className="mx-3 mb-2 bg-[#15A4AE]/5 rounded-xl border border-[#15A4AE]/20 px-4 py-3" onClick={stop}>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-[11px] font-bold text-gray-900">{l.name} · {l.company}</p>
+                            <p className="text-[9px] text-gray-500 mt-0.5">{l.email} · {l.phone}</p>
+                            <p className="text-[9px] text-gray-500 mt-0.5">Source: <span className="font-medium">{l.source}</span> · Captured {l.time} ago</p>
+                          </div>
+                          <div className="flex items-center gap-2 ml-4 shrink-0">
+                            <Tip label="Assign this lead to a team member for follow-up" dir="top" clickable>
+                              <button className="px-2.5 py-1 rounded-lg border border-gray-200 bg-white text-[9px] text-gray-600 hover:border-gray-300 transition-colors">Assign</button>
+                            </Tip>
+                            <Tip label="Create a deal in your CRM for this lead" dir="top" clickable>
+                              <button className="px-2.5 py-1 rounded-lg bg-[#15A4AE] text-white text-[9px] font-medium hover:bg-[#0e8f99] transition-colors">+ Deal</button>
+                            </Tip>
+                          </div>
                         </div>
                       </div>
-                      <p className="col-span-3 text-[9px] text-gray-600 truncate">{l.email}</p>
-                      <p className="col-span-2 text-[9px] text-gray-600 truncate">{l.phone}</p>
-                      <div className="col-span-1">
-                        <span className={`text-[8px] font-semibold px-1.5 py-0.5 rounded-full ${SOURCE_MAP[l.source]}`}>{l.source === 'Meta Leads' ? '📘' : '🔴'}</span>
-                      </div>
-                      <div className="col-span-1">
-                        <span className={`text-[8px] font-medium px-1.5 py-0.5 rounded-full ${STATUS_MAP[l.status as keyof typeof STATUS_MAP].cls}`}>{STATUS_MAP[l.status as keyof typeof STATUS_MAP].label}</span>
-                      </div>
-                      <p className="col-span-1 text-[9px] text-gray-400">{l.time}</p>
-                    </div>
-                  </Tip>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Expanded lead detail — outside scroll container so it's always visible */}
-        <div className="border-t border-gray-200 bg-white px-5 min-h-[72px] transition-all duration-200" onClick={stop}>
-          {lead ? (
-            <div className="max-w-5xl mx-auto py-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[11px] font-bold text-gray-900">{lead.name} · {lead.company}</p>
-                  <p className="text-[9px] text-gray-500 mt-0.5">{lead.email} · {lead.phone}</p>
-                  <p className="text-[9px] text-gray-500 mt-0.5">Source: <span className="font-medium">{lead.source}</span> · Captured {lead.time} ago</p>
-                </div>
-                <div className="flex items-center gap-2 ml-4 shrink-0">
-                  <Tip label="Assign this lead to a team member for follow-up" dir="top" clickable>
-                    <button className="px-2.5 py-1 rounded-lg border border-gray-200 text-[9px] text-gray-600 hover:border-gray-300 transition-colors">Assign</button>
-                  </Tip>
-                  <Tip label="Create a deal in your CRM for this lead" dir="top" clickable>
-                    <button className="px-2.5 py-1 rounded-lg bg-[#15A4AE] text-white text-[9px] font-medium hover:bg-[#0e8f99] transition-colors">+ Deal</button>
-                  </Tip>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="max-w-5xl mx-auto py-3 flex items-center justify-center">
-              <p className="text-[10px] text-gray-400">← Click any lead to view details</p>
-            </div>
-          )}
         </div>
       </div>
 
