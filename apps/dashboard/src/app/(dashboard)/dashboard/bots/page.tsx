@@ -176,6 +176,7 @@ export default async function BotsPage({
             teamMembers={teamMembers}
             canAssign={callerRank >= ROLE_RANK.manager && !viewAsUserId}
             readonly={!!viewAsUserId}
+            showNewBotButton
           />
         </div>
         <ActivitySidebar

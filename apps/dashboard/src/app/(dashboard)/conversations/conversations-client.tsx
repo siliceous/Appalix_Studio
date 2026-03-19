@@ -39,15 +39,16 @@ function buildUrl(base: string, filters: ConvFilters): string {
 
 // ── Main component ────────────────────────────────────────────────────────────
 interface Props {
-  conversations: ConvRow[]
-  bots:          BotOption[]
-  filters:       ConvFilters
+  conversations:    ConvRow[]
+  bots:             BotOption[]
+  filters:          ConvFilters
+  showNewBotButton?: boolean
   teamMembers?:  TeamMember[]
   canAssign?:    boolean
   readonly?:     boolean
 }
 
-export function ConversationsClient({ conversations, bots, filters, teamMembers = [], canAssign = false, readonly = false }: Props) {
+export function ConversationsClient({ conversations, bots, filters, teamMembers = [], canAssign = false, readonly = false, showNewBotButton = false }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [localAssign,    setLocalAssign]    = React.useState<Record<string, string | null>>({})
@@ -134,6 +135,14 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
             </button>
           )}
           <CsvExportButton action={exportConversations} />
+          {showNewBotButton && (
+            <Link
+              href="/bots/new"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
+            >
+              + Bot
+            </Link>
+          )}
         </div>
       </div>
 
