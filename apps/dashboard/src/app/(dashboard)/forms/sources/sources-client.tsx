@@ -241,21 +241,28 @@ function EmailPlatformCard({
           </span>
         )}
 
-        {/* Two-way sync toggle — Mailchimp only, shown inline in top bar */}
+        {/* Two-way sync toggle — Mailchimp only */}
         {isConnected && isMailchimp && (
           <button
             onClick={handleToggleSync}
             disabled={toggling}
             title={syncEnabled ? 'Turn off auto-sync' : 'Turn on auto-sync'}
-            className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none ${
-              syncEnabled ? 'bg-brand-600' : 'bg-gray-200 dark:bg-white/15'
-            } ${toggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            className={`flex items-center gap-2 px-2.5 py-1 rounded-lg border transition-colors ${
+              syncEnabled
+                ? 'border-brand-200 dark:border-[#15A4AE]/30 bg-brand-50 dark:bg-[#15A4AE]/10'
+                : 'border-gray-200 dark:border-white/10 bg-white dark:bg-white/5'
+            } ${toggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-brand-300 dark:hover:border-[#15A4AE]/40'}`}
           >
-            <span
-              className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
-                syncEnabled ? 'translate-x-[18px]' : 'translate-x-[3px]'
-              }`}
-            />
+            <span className={`text-[11px] font-medium ${syncEnabled ? 'text-brand-600 dark:text-[#15A4AE]' : 'text-gray-400 dark:text-gray-500'}`}>
+              Auto Sync
+            </span>
+            <span className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${
+              syncEnabled ? 'bg-brand-600' : 'bg-gray-200 dark:bg-white/15'
+            }`}>
+              <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${
+                syncEnabled ? 'translate-x-[14px]' : 'translate-x-[2px]'
+              }`} />
+            </span>
           </button>
         )}
 
