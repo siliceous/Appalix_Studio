@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ClipboardList, Search, ChevronDown, X,
-  UserPlus, Ticket, CheckCircle2, Clock, Download,
+  UserPlus, Ticket, CheckCircle2, Clock, Download, ChevronUp,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import { formSubmissionCreateLead, formSubmissionCreateTicket, markSubmissionActioned, updateFormMailchimpList } from '@/app/actions/sage-forms'
@@ -89,6 +89,8 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
   const [syncEnabled, setSyncEnabled]   = useState(mailchimpSyncEnabled)
   const [syncToggling, setSyncToggling] = useState(false)
   const [syncing, setSyncing]           = useState(false)
+  const [syncResult, setSyncResult]     = useState<{ synced: number; skipped: number; error?: string } | null>(null)
+  const [bannerCollapsed, setBannerCollapsed] = useState(false)
 
   async function handleToggleSync() {
     if (syncToggling) return
@@ -106,8 +108,10 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
   async function handleSyncNow() {
     if (syncing) return
     setSyncing(true)
+    setSyncResult(null)
     try {
-      await syncFromEmailPlatform('mailchimp')
+      const result = await syncFromEmailPlatform('mailchimp')
+      setSyncResult(result)
       router.refresh()
     } finally {
       setSyncing(false)
@@ -180,22 +184,37 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
       <div className="rounded-xl border border-gray-200 dark:border-white/8 bg-white dark:bg-white/[0.03] overflow-hidden">
         {/* Connected platforms row */}
         {connectedEmailProviders.length > 0 && (
-          <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-white/6">
-            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium shrink-0">Syncing to:</span>
-            {connectedEmailProviders.map(provider => {
-              const meta = EMAIL_PLATFORM_META[provider]
-              if (!meta) return null
-              return (
-                <div key={provider} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
-                  <img src={meta.logo} alt={meta.name} className="w-3.5 h-3.5 object-contain" />
-                  <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">{meta.name}</span>
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-500">✓ Connected</span>
-                </div>
-              )
-            })}
-            {/* Mailchimp Auto Sync toggle + Sync Now */}
-            {connectedEmailProviders.includes('mailchimp') && (
-              <>
+          <div className="border-b border-gray-100 dark:border-white/6">
+            {/* Top row — always visible */}
+            <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium shrink-0">Syncing to:</span>
+              {connectedEmailProviders.map(provider => {
+                const meta = EMAIL_PLATFORM_META[provider]
+                if (!meta) return null
+                return (
+                  <div key={provider} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
+                    <img src={meta.logo} alt={meta.name} className="w-3.5 h-3.5 object-contain" />
+                    <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">{meta.name}</span>
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-500">✓ Connected</span>
+                  </div>
+                )
+              })}
+              <div className="ml-auto flex items-center gap-2 shrink-0">
+                <Link href="/sage/integrations" className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">Manage →</Link>
+                <button
+                  onClick={() => setBannerCollapsed(v => !v)}
+                  title={bannerCollapsed ? 'Show sync controls' : 'Hide sync controls'}
+                  className="p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+                >
+                  {bannerCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Collapsible sync controls */}
+            {!bannerCollapsed && connectedEmailProviders.includes('mailchimp') && (
+              <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 border-t border-gray-100 dark:border-white/6 bg-gray-50/60 dark:bg-white/[0.02]">
+                {/* Auto Sync toggle */}
                 <button
                   onClick={handleToggleSync}
                   disabled={syncToggling}
@@ -217,6 +236,8 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
                     }`} />
                   </span>
                 </button>
+
+                {/* Sync Now button */}
                 <button
                   onClick={handleSyncNow}
                   disabled={syncing}
@@ -224,9 +245,20 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
                 >
                   {syncing ? 'Syncing…' : 'Sync Now'}
                 </button>
-              </>
+
+                {/* Sync result */}
+                {syncResult && (
+                  <span className={`text-[11px] font-medium ${syncResult.error ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                    {syncResult.error
+                      ? `⚠ ${syncResult.error}`
+                      : syncResult.synced === 0 && syncResult.skipped === 0
+                        ? '✓ No contacts found in Mailchimp'
+                        : `✓ ${syncResult.synced} new · ${syncResult.skipped} duplicate${syncResult.skipped !== 1 ? 's' : ''} skipped`
+                    }
+                  </span>
+                )}
+              </div>
             )}
-            <Link href="/sage/integrations" className="ml-auto text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 shrink-0">Manage →</Link>
           </div>
         )}
 

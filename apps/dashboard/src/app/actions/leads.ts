@@ -309,7 +309,10 @@ async function fetchMailchimpContacts(config: Record<string, string>): Promise<N
       `https://${server ?? 'us1'}.api.mailchimp.com/3.0/lists/${list_id}/members?count=${count}&offset=${offset}&status=subscribed`,
       { headers: { Authorization: `Bearer ${access_token}` } }
     )
-    if (!res.ok) break
+    if (!res.ok) {
+      const errText = await res.text().catch(() => res.statusText)
+      throw new Error(`Mailchimp API error ${res.status}: ${errText}`)
+    }
     const data = await res.json() as { members?: Record<string, unknown>[]; total_items?: number }
     const members = data.members ?? []
     for (const m of members) {
@@ -380,7 +383,7 @@ async function fetchActiveCampaignContacts(config: Record<string, string>): Prom
 
 export async function syncFromEmailPlatform(
   provider: 'mailchimp' | 'activecampaign',
-): Promise<{ synced: number; skipped: number }> {
+): Promise<{ synced: number; skipped: number; error?: string }> {
   const workspaceId = await getWorkspaceId()
   const admin       = createAdminClient()
 
@@ -393,14 +396,19 @@ export async function syncFromEmailPlatform(
     .eq('status', 'connected')
     .maybeSingle()
 
-  if (!integrationRaw) throw new Error(`${provider} is not connected. Connect it in Sage → Automations first.`)
+  if (!integrationRaw) return { synced: 0, skipped: 0, error: `${provider} is not connected.` }
   const config      = integrationRaw.config as Record<string, string>
   const syncEnabled = (integrationRaw as { sync_enabled: boolean }).sync_enabled
 
   // Fetch contacts from the platform
-  const contacts = provider === 'mailchimp'
-    ? await fetchMailchimpContacts(config)
-    : await fetchActiveCampaignContacts(config)
+  let contacts: NormalizedContact[]
+  try {
+    contacts = provider === 'mailchimp'
+      ? await fetchMailchimpContacts(config)
+      : await fetchActiveCampaignContacts(config)
+  } catch (err) {
+    return { synced: 0, skipped: 0, error: err instanceof Error ? err.message : 'Fetch failed' }
+  }
 
   let synced  = 0
   let skipped = 0
@@ -436,7 +444,7 @@ export async function syncFromEmailPlatform(
         pipeline_stage:  'new_lead',
         raw_payload:     contact.raw,
       })
-      if (insertErr) throw new Error(`Lead insert failed: ${insertErr.message}`)
+      if (insertErr) return { synced, skipped, error: `Lead insert failed: ${insertErr.message}` }
       synced++
     } else {
       skipped++
