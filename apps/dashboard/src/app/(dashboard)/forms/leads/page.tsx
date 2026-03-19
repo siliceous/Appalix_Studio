@@ -48,8 +48,10 @@ export default async function AllLeadsPage() {
     }
   }
 
+  // Use admin client so unassigned leads (e.g. Mailchimp imports) are never filtered by RLS
+  const adminForLeads = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let leadsQuery: any = supabase
+  let leadsQuery: any = adminForLeads
     .from('leads')
     .select('*, source:lead_ad_sources(id, platform, name)')
     .eq('workspace_id', workspaceId)
