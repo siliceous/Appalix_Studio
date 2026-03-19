@@ -169,6 +169,21 @@ export async function deleteContact(id: string) {
   revalidatePath('/sage/contacts')
 }
 
+export async function deleteContacts(ids: string[]) {
+  if (!ids.length) return
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+
+  const { error } = await admin
+    .from('sage_contacts')
+    .delete()
+    .in('id', ids)
+    .eq('workspace_id', workspaceId)
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/sage/contacts')
+}
+
 export async function assignContact(
   contactId: string,
   userId: string | null,

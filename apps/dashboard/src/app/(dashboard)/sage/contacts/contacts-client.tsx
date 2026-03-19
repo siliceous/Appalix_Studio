@@ -7,7 +7,7 @@ import {
   Zap, ArrowUpDown, SlidersHorizontal, Columns3, Check,
 } from 'lucide-react'
 import { ContactModal } from '@/components/sage/contact-modal'
-import { deleteContact, assignContact } from '@/app/actions/sage'
+import { deleteContact, deleteContacts, assignContact } from '@/app/actions/sage'
 import { exportContacts } from '@/app/actions/csv-export'
 import { importContacts } from '@/app/actions/csv-import'
 import { CsvExportButton } from '@/components/ui/csv-export-button'
@@ -139,6 +139,8 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
   const [showModal,      setShowModal]      = useState(false)
   const [editingContact, setEditingContact] = useState<SageContact | null>(null)
   const [deleting,       setDeleting]       = useState<string | null>(null)
+  const [selectedIds,    setSelectedIds]    = useState<Set<string>>(new Set())
+  const [bulkDeleting,   setBulkDeleting]   = useState(false)
   const [search,      setSearch]      = useState('')
   const [openPanel,   setOpenPanel]   = useState<'sort' | 'filter' | 'columns' | null>(null)
   const [sortField,   setSortField]   = useState('')
@@ -202,6 +204,29 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
     }
     return result
   }, [contacts, search, filters, sortField, sortDir])
+
+  const allSelected = filtered.length > 0 && filtered.every(c => selectedIds.has(c.id))
+
+  function toggleSelectAll() {
+    setSelectedIds(allSelected ? new Set() : new Set(filtered.map(c => c.id)))
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+
+  async function handleBulkDelete() {
+    if (!confirm(`Delete ${selectedIds.size} contact(s)? This cannot be undone.`)) return
+    setBulkDeleting(true)
+    const ids = [...selectedIds]
+    try {
+      await deleteContacts(ids)
+      setContacts(prev => prev.filter(c => !ids.includes(c.id)))
+      setSelectedIds(new Set())
+    } finally {
+      setBulkDeleting(false)
+    }
+  }
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this contact? This cannot be undone.')) return
@@ -318,6 +343,16 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{contacts.length} total</p>
         </div>
         <div className="flex items-center gap-2">
+          {canWrite && selectedIds.size > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              disabled={bulkDeleting}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-medium rounded-xl transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              {bulkDeleting ? 'Deleting…' : `Delete ${selectedIds.size}`}
+            </button>
+          )}
           <CsvExportButton action={exportContacts} />
           {canWrite && (
             <CsvImportButton action={importContacts} onSuccess={() => router.refresh()} />
@@ -552,6 +587,16 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
           <table className="w-full">
             <thead>
               <tr className="border-b dark:border-white/8 bg-gray-50 dark:bg-white/3">
+                {canWrite && (
+                  <th className="pl-4 pr-2 py-3 w-8">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-brand-600 cursor-pointer"
+                    />
+                  </th>
+                )}
                 {visibleColDefs.map(col => (
                   <th key={col.key} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
                     {col.label}
@@ -564,9 +609,19 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
               {filtered.map(contact => (
                 <tr
                   key={contact.id}
-                  className="hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer"
+                  className={`transition-colors cursor-pointer ${selectedIds.has(contact.id) ? 'bg-brand-50 dark:bg-[#15A4AE]/8' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}
                   onClick={() => router.push(`/sage/contacts/${contact.id}`)}
                 >
+                  {canWrite && (
+                    <td className="pl-4 pr-2 py-3" onClick={e => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(contact.id)}
+                        onChange={() => toggleSelect(contact.id)}
+                        className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-brand-600 cursor-pointer"
+                      />
+                    </td>
+                  )}
                   {visibleColDefs.map(col => (
                     <td key={col.key} className="px-4 py-3">
                       {renderCell(col.key, contact)}
