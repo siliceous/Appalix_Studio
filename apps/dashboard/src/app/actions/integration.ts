@@ -24,6 +24,19 @@ export async function createIntegration(formData: FormData) {
   const name     = (formData.get('name') as string | null)?.trim() || `${platform} integration`
   const botId    = formData.get('bot_id') as string | null
 
+  // eCommerce platform plan enforcement
+  const { data: wsRaw } = await supabase.from('workspaces').select('plan').eq('id', membership.workspace_id).single()
+  const workspacePlan = (wsRaw as { plan: string } | null)?.plan ?? 'individual'
+
+  const ECOMMERCE_PLAN_REQUIRED: Partial<Record<Platform, string[]>> = {
+    shopify: ['pro', 'team', 'enterprise'],
+    // magento: ['team', 'enterprise'],
+  }
+  const required = ECOMMERCE_PLAN_REQUIRED[platform]
+  if (required && !required.includes(workspacePlan)) {
+    throw new Error(`Your current plan does not include ${platform} integration. Please upgrade to access this feature.`)
+  }
+
   // Build platform-specific config
   let config: Record<string, unknown> = {}
 

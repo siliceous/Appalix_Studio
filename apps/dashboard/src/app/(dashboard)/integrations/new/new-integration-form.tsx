@@ -101,14 +101,28 @@ const OAUTH_PLATFORMS: Partial<Record<Platform, { label: string; logo: React.Rea
   },
 }
 
+// Which plans can access each eCommerce platform
+const ECOMMERCE_PLAN_REQUIRED: Partial<Record<Platform, { plans: string[]; label: string }>> = {
+  shopify: { plans: ['pro', 'team', 'enterprise'], label: 'Pro' },
+  // magento: { plans: ['team', 'enterprise'], label: 'Team' },  // when magento is added
+}
+
+function canUsePlatform(plan: string, platform: Platform): boolean {
+  const req = ECOMMERCE_PLAN_REQUIRED[platform]
+  if (!req) return true
+  return req.plans.includes(plan)
+}
+
 export function NewIntegrationForm({
   bots,
   defaultPlatform,
   metaAppId,
+  plan = 'individual',
 }: {
   bots: { id: string; name: string }[]
   defaultPlatform: Platform
   metaAppId?: string
+  plan?: 'individual' | 'pro' | 'team' | 'enterprise'
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -158,31 +172,51 @@ export function NewIntegrationForm({
         <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5">
           <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Choose platform</label>
           <div className="grid grid-cols-2 gap-2">
-            {PLATFORMS.map(({ platform: p, desc }) => (
-              <label
-                key={p}
-                className={cn(
-                  'flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors',
-                  platform === p
-                    ? 'bg-brand-50 border-brand-400 dark:bg-brand-900/40 dark:border-brand-400/60'
-                    : 'border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5',
-                )}
-              >
-                <input
-                  type="radio"
-                  checked={platform === p}
-                  onChange={() => { setPlatform(p); setFieldValues({}) }}
-                  className="mt-0.5 accent-brand-600"
-                />
-                <div>
-                  <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full mb-1 ${PLATFORM_META[p]?.color}`}>
-                    {PLATFORM_META[p]?.label}
-                  </span>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{desc}</p>
-                </div>
-              </label>
-            ))}
+            {PLATFORMS.map(({ platform: p, desc }) => {
+              const allowed = canUsePlatform(plan, p)
+              const req = ECOMMERCE_PLAN_REQUIRED[p]
+              return (
+                <label
+                  key={p}
+                  className={cn(
+                    'flex items-start gap-3 p-3 rounded-lg border transition-colors',
+                    !allowed
+                      ? 'opacity-60 cursor-not-allowed border-gray-200 dark:border-white/8 bg-gray-50 dark:bg-white/[0.02]'
+                      : platform === p
+                        ? 'cursor-pointer bg-brand-50 border-brand-400 dark:bg-brand-900/40 dark:border-brand-400/60'
+                        : 'cursor-pointer border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5',
+                  )}
+                >
+                  <input
+                    type="radio"
+                    checked={platform === p}
+                    disabled={!allowed}
+                    onChange={() => { if (allowed) { setPlatform(p); setFieldValues({}) } }}
+                    className="mt-0.5 accent-brand-600"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                      <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${PLATFORM_META[p]?.color}`}>
+                        {PLATFORM_META[p]?.label}
+                      </span>
+                      {!allowed && req && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/25 text-amber-500">
+                          {req.label}+
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{desc}</p>
+                  </div>
+                </label>
+              )
+            })}
           </div>
+          {!canUsePlatform(plan, platform) && ECOMMERCE_PLAN_REQUIRED[platform] && (
+            <p className="mt-3 text-xs text-amber-500">
+              {ECOMMERCE_PLAN_REQUIRED[platform]!.label}+ plan required for this integration.{' '}
+              <a href="/settings/billing" className="underline font-medium">Upgrade your plan →</a>
+            </p>
+          )}
         </div>
 
         {/* Name + bot */}
@@ -317,7 +351,7 @@ export function NewIntegrationForm({
             <div className="flex items-center gap-3">
               <button
                 type="submit"
-                disabled={isPending || bots.length === 0}
+                disabled={isPending || bots.length === 0 || !canUsePlatform(plan, platform)}
                 className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
               >
                 {isPending ? 'Creating…' : 'Create integration'}
