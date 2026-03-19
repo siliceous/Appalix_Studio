@@ -29,7 +29,8 @@ export interface SageForm {
 
 export interface SageFormSubmission {
   id:                  string
-  form_id:             string
+  form_id:             string | null   // null = platform import (Mailchimp, etc.)
+  source_platform:     string | null   // 'mailchimp' | 'activecampaign' | null (regular form)
   fields:              Record<string, string>
   ai_priority:         'high' | 'medium' | 'low' | null
   ai_summary:          string | null

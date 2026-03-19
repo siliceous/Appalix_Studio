@@ -58,30 +58,43 @@ async function pullFromMailchimp(workspaceId: string, cfg: Cfg, since: string | 
     const jobTitle   = typeof mf.JOBTITLE === 'string' ? mf.JOBTITLE : null
     const websiteUrl = typeof mf.WEBSITE  === 'string' ? mf.WEBSITE  : null
 
-    const orFilter = `email.eq.${m.email_address}${phone ? `,phone.eq.${phone}` : ''}`
-
-    // Always upsert into leads (Forms page)
-    const { data: existingLead } = await supabase
-      .from('leads')
+    // Deduplicate against sage_form_submissions by email or phone + same platform
+    let existingSub: { id: string } | null = null
+    const { data: byEmail } = await supabase
+      .from('sage_form_submissions')
       .select('id')
       .eq('workspace_id', workspaceId)
       .eq('source_platform', 'mailchimp')
-      .or(orFilter)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .filter('fields->>email' as any, 'eq', m.email_address)
       .limit(1)
       .maybeSingle()
+    existingSub = byEmail as { id: string } | null
+    if (!existingSub && phone) {
+      const { data: byPhone } = await supabase
+        .from('sage_form_submissions')
+        .select('id')
+        .eq('workspace_id', workspaceId)
+        .eq('source_platform', 'mailchimp')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .filter('fields->>phone' as any, 'eq', phone)
+        .limit(1)
+        .maybeSingle()
+      existingSub = byPhone as { id: string } | null
+    }
 
-    if (!existingLead) {
-      await supabase.from('leads').insert({
+    if (!existingSub) {
+      const fields: Record<string, string> = { name, email: m.email_address }
+      if (phone)      fields.phone     = phone
+      if (company)    fields.company   = company
+      if (jobTitle)   fields.job_title = jobTitle
+      if (websiteUrl) fields.website   = websiteUrl
+
+      await supabase.from('sage_form_submissions').insert({
         workspace_id:    workspaceId,
+        form_id:         null,
         source_platform: 'mailchimp',
-        name,
-        email:           m.email_address,
-        phone,
-        company:         company,
-        job_title:       jobTitle,
-        website:         websiteUrl,
-        pipeline_stage:  'new_lead',
-        raw_payload:     m as unknown as Record<string, unknown>,
+        fields,
       })
     }
 

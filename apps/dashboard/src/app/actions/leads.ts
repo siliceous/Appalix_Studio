@@ -416,43 +416,61 @@ export async function syncFromEmailPlatform(
   for (const contact of contacts) {
     if (!contact.email && !contact.phone) { skipped++; continue }
 
-    const orFilter = [
-      contact.email ? `email.eq.${contact.email}` : null,
-      contact.phone ? `phone.eq.${contact.phone}` : null,
-    ].filter(Boolean).join(',')
-
-    // Always land in leads (Forms page) first — deduplicate by email/phone + platform
-    const { data: existingLead } = await admin
-      .from('leads')
-      .select('id')
-      .eq('workspace_id', workspaceId)
-      .eq('source_platform', provider)
-      .or(orFilter)
-      .limit(1)
-      .maybeSingle()
-
-    if (!existingLead) {
-      const { error: insertErr } = await admin.from('leads').insert({
-        workspace_id:    workspaceId,
-        source_platform: provider,
-        name:            contact.name,
-        email:           contact.email,
-        phone:           contact.phone,
-        company:         contact.company,
-        job_title:       contact.job_title,
-        website:         contact.website_url,
-        pipeline_stage:  'new_lead',
-        raw_payload:     contact.raw,
-      })
-      if (insertErr) return { synced, skipped, error: `Lead insert failed: ${insertErr.message}` }
-      synced++
-    } else {
-      skipped++
-      continue
+    // Deduplicate against sage_form_submissions by email or phone + same platform
+    let existingSub: { id: string } | null = null
+    if (contact.email) {
+      const { data } = await admin
+        .from('sage_form_submissions')
+        .select('id')
+        .eq('workspace_id', workspaceId)
+        .eq('source_platform', provider)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .filter('fields->>email' as any, 'eq', contact.email)
+        .limit(1)
+        .maybeSingle()
+      existingSub = data as { id: string } | null
     }
+    if (!existingSub && contact.phone) {
+      const { data } = await admin
+        .from('sage_form_submissions')
+        .select('id')
+        .eq('workspace_id', workspaceId)
+        .eq('source_platform', provider)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .filter('fields->>phone' as any, 'eq', contact.phone)
+        .limit(1)
+        .maybeSingle()
+      existingSub = data as { id: string } | null
+    }
+
+    if (existingSub) { skipped++; continue }
+
+    // Insert as a form submission so it appears on Dashboard → Forms with AI triage
+    const fields: Record<string, string> = {}
+    if (contact.name)        fields.name      = contact.name
+    if (contact.email)       fields.email     = contact.email
+    if (contact.phone)       fields.phone     = contact.phone
+    if (contact.company)     fields.company   = contact.company
+    if (contact.job_title)   fields.job_title = contact.job_title
+    if (contact.website_url) fields.website   = contact.website_url
+
+    const { error: insertErr } = await admin
+      .from('sage_form_submissions')
+      .insert({
+        workspace_id:    workspaceId,
+        form_id:         null,
+        source_platform: provider,
+        fields,
+      })
+    if (insertErr) return { synced, skipped, error: `Submission insert failed: ${insertErr.message}` }
+    synced++
 
     // If Sage auto-sync is ON, also upsert into sage_contacts
     if (syncEnabled) {
+      const orFilter = [
+        contact.email ? `email.eq.${contact.email}` : null,
+        contact.phone ? `phone.eq.${contact.phone}` : null,
+      ].filter(Boolean).join(',')
       const { data: existingContact } = await admin
         .from('sage_contacts')
         .select('id')
@@ -460,7 +478,6 @@ export async function syncFromEmailPlatform(
         .or(orFilter)
         .limit(1)
         .maybeSingle()
-
       if (!existingContact) {
         await admin.from('sage_contacts').insert({
           workspace_id: workspaceId,
@@ -483,7 +500,20 @@ export async function syncFromEmailPlatform(
     }
   }
 
-  revalidatePath('/forms/leads')
+  // Trigger AI analysis for the newly inserted submissions
+  if (synced > 0) {
+    const apiBase    = process.env.API_BASE_URL
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (apiBase && serviceKey) {
+      await fetch(`${apiBase}/forms/analyze`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'x-service-key': serviceKey },
+        body:    JSON.stringify({ workspace_id: workspaceId }),
+      }).catch(() => null)
+    }
+  }
+
+  revalidatePath('/dashboard/forms')
   revalidatePath('/sage/contacts')
   return { synced, skipped }
 }

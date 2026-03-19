@@ -162,7 +162,7 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
       const name   = sub.ai_entities?.name  ?? sub.fields.name  ?? 'Anonymous'
       const email  = sub.ai_entities?.email ?? sub.fields.email ?? ''
       const form   = forms.find(f => f.id === sub.form_id)?.name ?? ''
-      const status = sub.action_type === 'lead' ? 'Lead created'
+      const status = sub.action_type === 'lead' ? 'Deal created'
         : sub.action_type === 'ticket' ? 'Ticket created'
         : sub.action_type === 'ignored' ? 'Ignored'
         : 'Pending'
@@ -394,7 +394,7 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
             {([
               { value: '',        label: 'All' },
               { value: 'pending', label: 'Pending' },
-              { value: 'lead',    label: 'Lead created' },
+              { value: 'lead',    label: 'Deal created' },
               { value: 'ticket',  label: 'Ticket created' },
               { value: 'ignored', label: 'Ignored' },
             ]).map(s => (
@@ -447,9 +447,18 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
                       {email && <p className="text-xs text-gray-400 mt-0.5 truncate">{email}</p>}
                     </td>
 
-                    {/* Form name */}
-                    <td className="px-4 py-3.5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                      {form?.name ?? '—'}
+                    {/* Form name / source platform */}
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      {sub.source_platform ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-500/20">
+                          {EMAIL_PLATFORM_META[sub.source_platform] && (
+                            <img src={EMAIL_PLATFORM_META[sub.source_platform].logo} alt="" className="w-3 h-3 object-contain" />
+                          )}
+                          {EMAIL_PLATFORM_META[sub.source_platform]?.name ?? sub.source_platform}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-500 dark:text-gray-400">{form?.name ?? '—'}</span>
+                      )}
                     </td>
 
                     {/* Priority */}
@@ -479,7 +488,7 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
                       {effectiveActionType ? (
                         <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[effectiveActionType] ?? STATUS_BADGE.ignored}`}>
                           <CheckCircle2 className="w-3 h-3" />
-                          {effectiveActionType === 'lead' ? 'Lead created' : effectiveActionType === 'ticket' ? 'Ticket created' : 'Ignored'}
+                          {effectiveActionType === 'lead' ? 'Deal created' : effectiveActionType === 'ticket' ? 'Ticket created' : 'Ignored'}
                         </span>
                       ) : (
                         <span className="text-[10px] text-gray-400">Pending</span>
@@ -502,9 +511,9 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
                         <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => handleCreateLead(sub)}
-                            title="Create lead"
-                            className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors">
-                            <UserPlus className="w-3 h-3" />Lead
+                            title="Create deal"
+                            className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-brand-600 dark:text-[#15A4AE] hover:bg-brand-50 dark:hover:bg-[#15A4AE]/10 rounded-lg transition-colors">
+                            <UserPlus className="w-3 h-3" />Deal
                           </button>
                           <button
                             onClick={() => handleCreateTicket(sub)}
