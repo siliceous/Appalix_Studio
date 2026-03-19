@@ -59,7 +59,7 @@ export default async function SageLayout({ children }: { children: React.ReactNo
   return (
     <div className="flex h-[calc(100vh-0px)] -m-8 overflow-hidden">
       {/* Center content */}
-      <div className="flex-1 h-full overflow-auto bg-gray-50 dark:bg-[#1c1c1c]">
+      <div className="flex-1 h-full overflow-auto bg-[#f5f4f1] dark:bg-[#1c1c1c]">
         {children}
       </div>
 
