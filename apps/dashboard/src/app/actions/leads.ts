@@ -433,7 +433,7 @@ export async function syncFromEmailPlatform(
         company:         contact.company,
         job_title:       contact.job_title,
         website:         contact.website_url,
-        pipeline_stage:  'new',
+        pipeline_stage:  'new_lead',
         raw_payload:     contact.raw,
       })
       synced++

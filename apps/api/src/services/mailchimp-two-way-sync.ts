@@ -80,7 +80,7 @@ async function pullFromMailchimp(workspaceId: string, cfg: Cfg, since: string | 
         company:         company,
         job_title:       jobTitle,
         website:         websiteUrl,
-        pipeline_stage:  'new',
+        pipeline_stage:  'new_lead',
         raw_payload:     m as unknown as Record<string, unknown>,
       })
     }
