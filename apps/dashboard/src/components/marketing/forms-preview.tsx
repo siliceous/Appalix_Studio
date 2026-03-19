@@ -89,7 +89,7 @@ export function FormsPreview({ onClick }: { onClick?: () => void }) {
           <div className="w-16" />
         </div>
 
-        <div style={{ height: 580 }} className="overflow-y-auto bg-gray-50" onClick={stop}>
+        <div style={{ height: 420 }} className="overflow-y-auto bg-gray-50" onClick={stop}>
           <div className="max-w-5xl mx-auto px-5 py-5">
 
             {/* Header */}
@@ -168,28 +168,34 @@ export function FormsPreview({ onClick }: { onClick?: () => void }) {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Expanded lead detail */}
-            {lead && (
-              <div className="mt-3 bg-white rounded-xl border border-[#15A4AE]/30 shadow-sm px-4 py-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-[11px] font-bold text-gray-900">{lead.name} · {lead.company}</p>
-                    <p className="text-[9px] text-gray-500 mt-0.5">{lead.email} · {lead.phone}</p>
-                    <p className="text-[9px] text-gray-500 mt-0.5">Source: <span className="font-medium">{lead.source}</span> · Captured {lead.time} ago</p>
-                  </div>
-                  <div className="flex items-center gap-2 ml-4 shrink-0">
-                    <Tip label="Assign this lead to a team member for follow-up" dir="top" clickable>
-                      <button className="px-2.5 py-1 rounded-lg border border-gray-200 text-[9px] text-gray-600 hover:border-gray-300 transition-colors">Assign</button>
-                    </Tip>
-                    <Tip label="Create a deal in your CRM for this lead" dir="top" clickable>
-                      <button className="px-2.5 py-1 rounded-lg bg-[#15A4AE] text-white text-[9px] font-medium hover:bg-[#0e8f99] transition-colors">+ Deal</button>
-                    </Tip>
-                  </div>
+        {/* Expanded lead detail — outside scroll container so it's always visible */}
+        <div className="border-t border-gray-200 bg-white px-5 min-h-[72px] transition-all duration-200" onClick={stop}>
+          {lead ? (
+            <div className="max-w-5xl mx-auto py-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[11px] font-bold text-gray-900">{lead.name} · {lead.company}</p>
+                  <p className="text-[9px] text-gray-500 mt-0.5">{lead.email} · {lead.phone}</p>
+                  <p className="text-[9px] text-gray-500 mt-0.5">Source: <span className="font-medium">{lead.source}</span> · Captured {lead.time} ago</p>
+                </div>
+                <div className="flex items-center gap-2 ml-4 shrink-0">
+                  <Tip label="Assign this lead to a team member for follow-up" dir="top" clickable>
+                    <button className="px-2.5 py-1 rounded-lg border border-gray-200 text-[9px] text-gray-600 hover:border-gray-300 transition-colors">Assign</button>
+                  </Tip>
+                  <Tip label="Create a deal in your CRM for this lead" dir="top" clickable>
+                    <button className="px-2.5 py-1 rounded-lg bg-[#15A4AE] text-white text-[9px] font-medium hover:bg-[#0e8f99] transition-colors">+ Deal</button>
+                  </Tip>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="max-w-5xl mx-auto py-3 flex items-center justify-center">
+              <p className="text-[10px] text-gray-400">← Click any lead to view details</p>
+            </div>
+          )}
         </div>
       </div>
 
