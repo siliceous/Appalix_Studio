@@ -9,9 +9,7 @@ import { createClient }              from '@/lib/supabase/server'
 export async function GET(req: NextRequest) {
   const clientId = process.env.MAILCHIMP_CLIENT_ID
   if (!clientId) {
-    const keys = Object.keys(process.env).filter(k => k.toLowerCase().includes('mailchimp'))
-    console.error('[oauth/mailchimp] MAILCHIMP_CLIENT_ID missing. Related keys found:', keys)
-    return NextResponse.json({ error: 'Mailchimp OAuth not configured', debug: keys }, { status: 500 })
+    return NextResponse.json({ error: 'Mailchimp OAuth not configured' }, { status: 500 })
   }
 
   const appUrl      = process.env.NEXT_PUBLIC_APP_URL ?? ''
