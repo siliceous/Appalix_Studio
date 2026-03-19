@@ -119,10 +119,10 @@ export default async function FormsPage({
 
   subsQuery = subsQuery.order('created_at', { ascending: false }).limit(200)
 
-  // Mailchimp connection status
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: mailchimpRaw } = await (supabase as any)
-    .from('sage_integrations')
+  // Mailchimp connection status (admin client bypasses RLS on sage_integrations)
+  const { data: mailchimpRaw } = await createAdminClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('sage_integrations' as any)
     .select('status, config')
     .eq('workspace_id', workspaceId)
     .eq('provider', 'mailchimp')
