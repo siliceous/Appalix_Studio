@@ -5,6 +5,9 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import type { SageContact, SageTicketStatus, SageTicketPriority, SageDealStatus, SageContactType, SageContactVisibility, SageDealActivity } from '@/lib/types'
 import { syncContactOutbound } from '@/lib/server/marketing-sync'
+import Anthropic from '@anthropic-ai/sdk'
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 // ---------------------------------------------------------------
 // Helpers
@@ -182,6 +185,67 @@ export async function deleteContacts(ids: string[]) {
 
   if (error) throw new Error(error.message)
   revalidatePath('/sage/contacts')
+}
+
+export async function analyzeContact(id: string): Promise<{ summary: string } | { error: string }> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+
+  const { data: raw } = await admin
+    .from('sage_contacts')
+    .select('*')
+    .eq('id', id)
+    .eq('workspace_id', workspaceId)
+    .single()
+
+  if (!raw) return { error: 'Contact not found' }
+  const c = raw as SageContact
+
+  const lines = [
+    `Name: ${c.name}`,
+    c.email        ? `Email: ${c.email}`               : null,
+    c.phone        ? `Phone: ${c.phone}`               : null,
+    c.company_name ? `Company: ${c.company_name}`      : null,
+    c.title        ? `Job Title: ${c.title}`           : null,
+    c.website_url  ? `Website: ${c.website_url}`       : null,
+    c.contact_type ? `Type: ${c.contact_type}`         : null,
+    c.source       ? `Source: ${c.source}`             : null,
+    c.city || c.country ? `Location: ${[c.city, c.country].filter(Boolean).join(', ')}` : null,
+    c.tags.length  ? `Tags: ${c.tags.join(', ')}`      : null,
+    c.notes        ? `Notes: ${c.notes}`               : null,
+    c.business_goal ? `Business Goal: ${c.business_goal}` : null,
+  ].filter(Boolean).join('\n')
+
+  try {
+    const response = await anthropic.messages.create({
+      model:      'claude-haiku-4-5-20251001',
+      max_tokens: 400,
+      messages:   [{
+        role:    'user',
+        content: `You are a CRM analyst. Based on the contact details below, write a brief 3–5 sentence AI analysis covering:
+1. Who this person is and what they likely want
+2. How they were acquired (source)
+3. Recommended next action for the sales team
+
+Contact details:
+${lines}
+
+Be concise and actionable. No headings, no bullet points — just a short paragraph.`,
+      }],
+    })
+
+    const summary = (response.content[0] as { type: string; text: string }).text?.trim() ?? ''
+
+    await admin.from('sage_contacts').update({
+      ai_summary:     summary,
+      ai_analyzed_at: new Date().toISOString(),
+    }).eq('id', id).eq('workspace_id', workspaceId)
+
+    revalidatePath(`/sage/contacts/${id}`)
+    return { summary }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'AI analysis failed' }
+  }
 }
 
 export async function assignContact(

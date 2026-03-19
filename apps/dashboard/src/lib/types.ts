@@ -297,6 +297,8 @@ export interface SageContact {
   notes:                  string | null
   value:                  number | null
   assigned_to:            string | null
+  ai_summary:             string | null
+  ai_analyzed_at:         string | null
   created_at:             string
   updated_at:             string
   // joined

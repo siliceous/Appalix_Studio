@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ChevronLeft, Mail, Phone, Tag, Activity, Clock } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import { ContactActionsClient } from '@/components/sage/contact-actions-client'
+import { ContactAiAnalysis } from '@/components/sage/contact-ai-analysis'
 import type { WorkspaceMember, WorkspaceMemberSummary, SageContact, SageActivityLog, SageDeal, SagePipelineStage, SagePipeline } from '@/lib/types'
 
 export default async function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -142,8 +143,16 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
           </div>
           <div className="flex flex-col items-end gap-2 shrink-0">
             <span className="text-xs text-gray-400">Added {timeAgo(contact.created_at)}</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400 capitalize">
-              {contact.source}
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${
+              contact.source === 'mailchimp'      ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400' :
+              contact.source === 'activecampaign' ? 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400' :
+              contact.source === 'chat'           ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400' :
+              'bg-gray-100 text-gray-600 dark:bg-white/8 dark:text-gray-400'
+            }`}>
+              {contact.source === 'mailchimp' ? 'Mailchimp' :
+               contact.source === 'activecampaign' ? 'ActiveCampaign' :
+               contact.source === 'chat' ? 'Chat / Bot' :
+               contact.source === 'import' ? 'CSV Import' : 'Manual'}
             </span>
             <ContactActionsClient
               contact={contact}
@@ -162,6 +171,73 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
           </div>
         )}
       </div>
+
+      {/* Source details card */}
+      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-5 mb-6">
+        <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Contact Details</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {contact.email && (
+            <div>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Email</p>
+              <a href={`mailto:${contact.email}`} className="text-sm text-gray-700 dark:text-gray-300 hover:text-brand-600 dark:hover:text-[#15A4AE] break-all">{contact.email}</a>
+            </div>
+          )}
+          {contact.phone && (
+            <div>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Phone</p>
+              <a href={`tel:${contact.phone}`} className="text-sm text-gray-700 dark:text-gray-300 hover:text-brand-600">{contact.phone}</a>
+            </div>
+          )}
+          {contact.company_name && (
+            <div>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Company</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">{contact.company_name}</p>
+            </div>
+          )}
+          {contact.title && (
+            <div>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Job Title</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">{contact.title}</p>
+            </div>
+          )}
+          {contact.website_url && (
+            <div>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Website</p>
+              <a href={contact.website_url} target="_blank" rel="noopener noreferrer" className="text-sm text-brand-600 dark:text-[#15A4AE] hover:underline truncate block">{contact.website_url.replace(/^https?:\/\//, '')}</a>
+            </div>
+          )}
+          {(contact.city || contact.country) && (
+            <div>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Location</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">{[contact.city, contact.state, contact.country].filter(Boolean).join(', ')}</p>
+            </div>
+          )}
+          <div>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Source</p>
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              {contact.source === 'mailchimp'      ? '📧 Mailchimp audience sync' :
+               contact.source === 'activecampaign' ? '📧 ActiveCampaign sync' :
+               contact.source === 'chat'           ? '💬 Chat / Bot conversation' :
+               contact.source === 'import'         ? '📁 CSV Import' :
+               '✏️ Added manually'}
+            </p>
+            {contact.source_conversation_id && (
+              <a href={`/conversations/${contact.source_conversation_id}`} className="text-xs text-brand-600 dark:text-[#15A4AE] hover:underline mt-0.5 block">View conversation →</a>
+            )}
+          </div>
+          <div>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Contact Type</p>
+            <p className="text-sm text-gray-700 dark:text-gray-300 capitalize">{(contact.contact_type ?? 'potential_customer').replace('_', ' ')}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* AI Analysis */}
+      <ContactAiAnalysis
+        contactId={contact.id}
+        initialSummary={contact.ai_summary ?? null}
+        analyzedAt={contact.ai_analyzed_at ?? null}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Deals */}
