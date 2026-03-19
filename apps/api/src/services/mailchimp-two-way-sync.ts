@@ -53,13 +53,46 @@ async function pullFromMailchimp(workspaceId: string, cfg: Cfg, since: string | 
       `${mf.FNAME ?? ''} ${mf.LNAME ?? ''}`.toString().trim() ||
       m.email_address
 
-    const fields = {
+    const phone      = typeof mf.PHONE    === 'string' ? mf.PHONE    : null
+    const company    = typeof mf.COMPANY  === 'string' ? mf.COMPANY  : null
+    const jobTitle   = typeof mf.JOBTITLE === 'string' ? mf.JOBTITLE : null
+    const websiteUrl = typeof mf.WEBSITE  === 'string' ? mf.WEBSITE  : null
+
+    const orFilter = `email.eq.${m.email_address}${phone ? `,phone.eq.${phone}` : ''}`
+
+    // Always upsert into leads (Forms page)
+    const { data: existingLead } = await supabase
+      .from('leads')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .eq('source_platform', 'mailchimp')
+      .or(orFilter)
+      .limit(1)
+      .maybeSingle()
+
+    if (!existingLead) {
+      await supabase.from('leads').insert({
+        workspace_id:    workspaceId,
+        source_platform: 'mailchimp',
+        name,
+        email:           m.email_address,
+        phone,
+        company:         company,
+        job_title:       jobTitle,
+        website:         websiteUrl,
+        pipeline_stage:  'new',
+        raw_payload:     m as unknown as Record<string, unknown>,
+      })
+    }
+
+    // Also upsert into sage_contacts (sync is always enabled when this runs)
+    const contactFields = {
       name,
       email:               m.email_address,
-      phone:               typeof mf.PHONE    === 'string' ? mf.PHONE    : null,
-      company_name:        typeof mf.COMPANY  === 'string' ? mf.COMPANY  : null,
-      title:               typeof mf.JOBTITLE === 'string' ? mf.JOBTITLE : null,
-      website_url:         typeof mf.WEBSITE  === 'string' ? mf.WEBSITE  : null,
+      phone,
+      company_name:        company,
+      title:               jobTitle,
+      website_url:         websiteUrl,
       street:              addr.addr1   ?? null,
       city:                addr.city    ?? null,
       state:               addr.state   ?? null,
@@ -70,7 +103,6 @@ async function pullFromMailchimp(workspaceId: string, cfg: Cfg, since: string | 
       updated_at:          new Date().toISOString(),
     }
 
-    // Check if contact already exists by mailchimp_member_id or email
     const { data: existing } = await supabase
       .from('sage_contacts')
       .select('id')
@@ -81,14 +113,14 @@ async function pullFromMailchimp(workspaceId: string, cfg: Cfg, since: string | 
     if (existing) {
       await supabase
         .from('sage_contacts')
-        .update(fields)
+        .update(contactFields)
         .eq('id', existing.id)
         .eq('workspace_id', workspaceId)
     } else {
       await supabase
         .from('sage_contacts')
         .insert({
-          ...fields,
+          ...contactFields,
           workspace_id: workspaceId,
           source:       'mailchimp',
           contact_type: 'potential_customer',
@@ -126,12 +158,12 @@ async function pushToMailchimp(workspaceId: string, cfg: Cfg, since: string | nu
       email_address: c.email,
       status_if_new: 'subscribed',
       merge_fields: {
-        ...(first                     && { FNAME:    first }),
-        ...(last                      && { LNAME:    last }),
-        ...(c.phone                   && { PHONE:    c.phone }),
-        ...(c.company_name            && { COMPANY:  c.company_name }),
-        ...(c.title                   && { JOBTITLE: c.title }),
-        ...(c.website_url             && { WEBSITE:  c.website_url }),
+        ...(first                                  ? { FNAME:    first }           : {}),
+        ...(last                                   ? { LNAME:    last }            : {}),
+        ...(typeof c.phone       === 'string'      ? { PHONE:    c.phone }         : {}),
+        ...(typeof c.company_name === 'string'     ? { COMPANY:  c.company_name }  : {}),
+        ...(typeof c.title       === 'string'      ? { JOBTITLE: c.title }         : {}),
+        ...(typeof c.website_url === 'string'      ? { WEBSITE:  c.website_url }   : {}),
       },
     }
 

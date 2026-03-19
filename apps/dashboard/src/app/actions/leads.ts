@@ -384,17 +384,18 @@ export async function syncFromEmailPlatform(
   const workspaceId = await getWorkspaceId()
   const admin       = createAdminClient()
 
-  // Read stored credentials from sage_integrations
+  // Read stored credentials + sync_enabled flag
   const { data: integrationRaw } = await admin
     .from('sage_integrations')
-    .select('config')
+    .select('config, sync_enabled')
     .eq('workspace_id', workspaceId)
     .eq('provider', provider)
     .eq('status', 'connected')
     .maybeSingle()
 
   if (!integrationRaw) throw new Error(`${provider} is not connected. Connect it in Sage → Automations first.`)
-  const config = integrationRaw.config as Record<string, string>
+  const config      = integrationRaw.config as Record<string, string>
+  const syncEnabled = (integrationRaw as { sync_enabled: boolean }).sync_enabled
 
   // Fetch contacts from the platform
   const contacts = provider === 'mailchimp'
@@ -407,42 +408,73 @@ export async function syncFromEmailPlatform(
   for (const contact of contacts) {
     if (!contact.email && !contact.phone) { skipped++; continue }
 
-    // Deduplicate by email or phone within workspace
     const orFilter = [
       contact.email ? `email.eq.${contact.email}` : null,
       contact.phone ? `phone.eq.${contact.phone}` : null,
     ].filter(Boolean).join(',')
 
-    const { data: existing } = await admin
-      .from('sage_contacts')
+    // Always land in leads (Forms page) first — deduplicate by email/phone + platform
+    const { data: existingLead } = await admin
+      .from('leads')
       .select('id')
       .eq('workspace_id', workspaceId)
+      .eq('source_platform', provider)
       .or(orFilter)
       .limit(1)
       .maybeSingle()
 
-    if (existing) { skipped++; continue }
+    if (!existingLead) {
+      await admin.from('leads').insert({
+        workspace_id:    workspaceId,
+        source_platform: provider,
+        name:            contact.name,
+        email:           contact.email,
+        phone:           contact.phone,
+        company:         contact.company,
+        job_title:       contact.job_title,
+        website:         contact.website_url,
+        pipeline_stage:  'new',
+        raw_payload:     contact.raw,
+      })
+      synced++
+    } else {
+      skipped++
+      continue
+    }
 
-    await admin.from('sage_contacts').insert({
-      workspace_id: workspaceId,
-      name:         contact.name,
-      email:        contact.email,
-      phone:        contact.phone,
-      company_name: contact.company,
-      title:        contact.job_title,
-      website_url:  contact.website_url,
-      street:       contact.street,
-      city:         contact.city,
-      state:        contact.state,
-      zip:          contact.zip,
-      country:      contact.country,
-      source:       provider,
-      contact_type: 'potential_customer',
-      tags:         contact.tags,
-    })
-    synced++
+    // If Sage auto-sync is ON, also upsert into sage_contacts
+    if (syncEnabled) {
+      const { data: existingContact } = await admin
+        .from('sage_contacts')
+        .select('id')
+        .eq('workspace_id', workspaceId)
+        .or(orFilter)
+        .limit(1)
+        .maybeSingle()
+
+      if (!existingContact) {
+        await admin.from('sage_contacts').insert({
+          workspace_id: workspaceId,
+          name:         contact.name,
+          email:        contact.email,
+          phone:        contact.phone,
+          company_name: contact.company,
+          title:        contact.job_title,
+          website_url:  contact.website_url,
+          street:       contact.street,
+          city:         contact.city,
+          state:        contact.state,
+          zip:          contact.zip,
+          country:      contact.country,
+          source:       provider,
+          contact_type: 'potential_customer',
+          tags:         contact.tags,
+        })
+      }
+    }
   }
 
+  revalidatePath('/forms/leads')
   revalidatePath('/sage/contacts')
   return { synced, skipped }
 }
