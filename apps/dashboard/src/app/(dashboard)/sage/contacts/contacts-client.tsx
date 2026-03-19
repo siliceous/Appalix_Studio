@@ -52,7 +52,9 @@ function AssignCell({ contactId, value, members, onAssigned }: {
         ))}
       </select>
       {pending
-        ? <Loader2 className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 animate-spin text-gray-400 pointer-events-none" />
+        ? <span className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none flex items-center">
+            <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE]" />
+          </span>
         : <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
       }
     </div>
