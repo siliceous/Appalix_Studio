@@ -340,9 +340,10 @@ export function ConversationPanelClient({
 
             {/* Action icons */}
             <div className="flex items-center gap-1 shrink-0">
-              <Link href="/dashboard/bots" title="Back to Bots"
-                className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors">
+              <Link href="/dashboard/bots"
+                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg border border-gray-200 dark:border-white/10 transition-colors">
                 <ArrowLeft className="w-3.5 h-3.5" />
+                Back
               </Link>
               <a
                 href={`/api/conversations/${current.id}/export`}

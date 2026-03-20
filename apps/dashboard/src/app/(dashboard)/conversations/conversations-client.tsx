@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   MessageSquare, Search, ChevronDown, Download,
-  Pencil, ExternalLink, X, Trash2,
+  Pencil, ExternalLink, X, Trash2, Loader2,
 } from 'lucide-react'
 import { PLATFORM_META, timeAgo } from '@/lib/utils'
 import { renameConversation, assignConversation, deleteConversation, updateConversationPriority, updateConversationStatus } from '@/app/actions/conversation'
@@ -53,10 +53,10 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [localAssign,    setLocalAssign]    = React.useState<Record<string, string | null>>({})
-  const [assigning,      setAssigning]      = React.useState<string | null>(null)
   const [selectedIds,    setSelectedIds]    = React.useState<Set<string>>(new Set())
   const [localPriority,  setLocalPriority]  = React.useState<Record<string, string>>({})
   const [localStatus,    setLocalStatus]    = React.useState<Record<string, string>>({})
+  const [saving,         setSaving]         = React.useState<{ id: string; field: string } | null>(null)
 
   const allSelected = conversations.length > 0 && selectedIds.size === conversations.length
   function toggleSelectAll() {
@@ -77,22 +77,30 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
 
   function handlePriorityChange(convId: string, priority: string) {
     setLocalPriority(prev => ({ ...prev, [convId]: priority }))
-    void updateConversationPriority(convId, priority)
+    setSaving({ id: convId, field: 'priority' })
+    startTransition(async () => {
+      await updateConversationPriority(convId, priority)
+      router.refresh()
+      setSaving(null)
+    })
   }
 
   function handleStatusChange(convId: string, status: string) {
     setLocalStatus(prev => ({ ...prev, [convId]: status }))
+    setSaving({ id: convId, field: 'status' })
     startTransition(async () => {
       await updateConversationStatus(convId, status)
       router.refresh()
+      setSaving(null)
     })
   }
 
   async function handleAssign(convId: string, userId: string | null) {
-    setAssigning(convId)
+    setSaving({ id: convId, field: 'assign' })
     const result = await assignConversation(convId, userId)
     if (!result.error) setLocalAssign(prev => ({ ...prev, [convId]: userId }))
-    setAssigning(null)
+    setSaving(null)
+    router.refresh()
   }
 
   const pushFilter = useCallback((patch: Partial<ConvFilters>) => {
@@ -289,23 +297,29 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
 
                     {/* AI Priority */}
                     <td className="px-4 py-3.5">
-                      {!readonly ? (
-                        <select
-                          value={localPriority[c.id] ?? c.ai_priority ?? ''}
-                          onChange={e => handlePriorityChange(c.id, e.target.value)}
-                          onClick={e => e.stopPropagation()}
-                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 ${PRIORITY_BADGE[(localPriority[c.id] ?? c.ai_priority) || 'low'] ?? PRIORITY_BADGE.low}`}
-                        >
-                          <option value="">—</option>
-                          <option value="low">low</option>
-                          <option value="medium">medium</option>
-                          <option value="high">high</option>
-                        </select>
-                      ) : c.ai_priority ? (
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${PRIORITY_BADGE[c.ai_priority] ?? PRIORITY_BADGE.low}`}>
-                          {c.ai_priority}
-                        </span>
-                      ) : <span className="text-gray-300 dark:text-gray-600">—</span>}
+                      <div className="flex items-center gap-1">
+                        {saving?.id === c.id && saving?.field === 'priority' && (
+                          <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />
+                        )}
+                        {!readonly ? (
+                          <select
+                            value={localPriority[c.id] ?? c.ai_priority ?? ''}
+                            onChange={e => handlePriorityChange(c.id, e.target.value)}
+                            onClick={e => e.stopPropagation()}
+                            disabled={saving?.id === c.id && saving?.field === 'priority'}
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60 ${PRIORITY_BADGE[(localPriority[c.id] ?? c.ai_priority) || 'low'] ?? PRIORITY_BADGE.low}`}
+                          >
+                            <option value="">—</option>
+                            <option value="low">low</option>
+                            <option value="medium">medium</option>
+                            <option value="high">high</option>
+                          </select>
+                        ) : c.ai_priority ? (
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${PRIORITY_BADGE[c.ai_priority] ?? PRIORITY_BADGE.low}`}>
+                            {c.ai_priority}
+                          </span>
+                        ) : <span className="text-gray-300 dark:text-gray-600">—</span>}
+                      </div>
                     </td>
 
                     {/* Conversation title + contact name */}
@@ -337,20 +351,26 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
 
                     {/* Status */}
                     <td className="px-4 py-3.5">
-                      {!readonly ? (
-                        <select
-                          value={localStatus[c.id] ?? c.status ?? 'active'}
-                          onChange={e => handleStatusChange(c.id, e.target.value)}
-                          onClick={e => e.stopPropagation()}
-                          className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer"
-                        >
-                          <option value="active">Active</option>
-                          <option value="completed">Completed</option>
-                          <option value="archived">Archived</option>
-                        </select>
-                      ) : (
-                        <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{c.status ?? 'active'}</span>
-                      )}
+                      <div className="flex items-center gap-1">
+                        {saving?.id === c.id && saving?.field === 'status' && (
+                          <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />
+                        )}
+                        {!readonly ? (
+                          <select
+                            value={localStatus[c.id] ?? c.status ?? 'active'}
+                            onChange={e => handleStatusChange(c.id, e.target.value)}
+                            onClick={e => e.stopPropagation()}
+                            disabled={saving?.id === c.id && saving?.field === 'status'}
+                            className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer disabled:opacity-60"
+                          >
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                            <option value="archived">Archived</option>
+                          </select>
+                        ) : (
+                          <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{c.status ?? 'active'}</span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Message count */}
@@ -366,17 +386,22 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                     {/* Assign to */}
                     {canAssign && (
                       <td className="px-4 py-3.5">
-                        <select
-                          value={localAssign[c.id] !== undefined ? (localAssign[c.id] ?? '') : (c.assigned_to ?? '')}
-                          disabled={assigning === c.id}
-                          onChange={e => handleAssign(c.id, e.target.value || null)}
-                          className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-50 max-w-[130px]"
-                        >
-                          <option value="">Unassigned</option>
-                          {teamMembers.map(m => (
-                            <option key={m.user_id} value={m.user_id}>{m.name}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-1">
+                          {saving?.id === c.id && saving?.field === 'assign' && (
+                            <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />
+                          )}
+                          <select
+                            value={localAssign[c.id] !== undefined ? (localAssign[c.id] ?? '') : (c.assigned_to ?? '')}
+                            disabled={saving?.id === c.id && saving?.field === 'assign'}
+                            onChange={e => handleAssign(c.id, e.target.value || null)}
+                            className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-50 max-w-[130px]"
+                          >
+                            <option value="">Unassigned</option>
+                            {teamMembers.map(m => (
+                              <option key={m.user_id} value={m.user_id}>{m.name}</option>
+                            ))}
+                          </select>
+                        </div>
                       </td>
                     )}
 

@@ -60,7 +60,7 @@ export function formatCost(usd: number): string {
 export const PLATFORM_META: Record<Platform, { label: string; color: string }> = {
   slack:               { label: 'Slack',             color: 'bg-purple-100 text-purple-700' },
   google_chat:         { label: 'Google Chat',        color: 'bg-blue-100 text-blue-700' },
-  facebook_messenger:  { label: 'FB Messenger',       color: 'bg-indigo-100 text-indigo-700' },
+  facebook_messenger:  { label: 'Messenger',           color: 'bg-indigo-100 text-indigo-700' },
   whatsapp:            { label: 'WhatsApp',           color: 'bg-green-100 text-green-700' },
   wordpress:           { label: 'WordPress',          color: 'bg-sky-100 text-sky-700' },
   web_widget:          { label: 'Web Widget',         color: 'bg-orange-100 text-orange-700' },
