@@ -132,6 +132,30 @@ export async function deleteLeads(ids: string[]): Promise<void> {
   revalidatePath('/forms/leads')
 }
 
+/** Update a lead's priority (lead_score) */
+export async function updateLeadScore(id: string, score: string | null): Promise<void> {
+  const workspaceId = await getWorkspaceId()
+  const admin       = createAdminClient()
+  const { error } = await admin
+    .from('leads')
+    .update({ lead_score: score || null, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('workspace_id', workspaceId)
+  if (error) throw new Error(error.message)
+}
+
+/** Update a lead's pipeline status */
+export async function updateLeadStatus(id: string, stage: string): Promise<void> {
+  const workspaceId = await getWorkspaceId()
+  const admin       = createAdminClient()
+  const { error } = await admin
+    .from('leads')
+    .update({ pipeline_stage: stage, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('workspace_id', workspaceId)
+  if (error) throw new Error(error.message)
+}
+
 /**
  * Move a lead into the Sage CRM pipeline.
  * Creates a SageContact + SageDeal in the first stage of the first pipeline.

@@ -57,6 +57,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
   const [localPriority,  setLocalPriority]  = React.useState<Record<string, string>>({})
   const [localStatus,    setLocalStatus]    = React.useState<Record<string, string>>({})
   const [saving,         setSaving]         = React.useState<{ id: string; field: string } | null>(null)
+  const [bulkSaving,     setBulkSaving]     = React.useState(false)
 
   const allSelected = conversations.length > 0 && selectedIds.size === conversations.length
   function toggleSelectAll() {
@@ -106,6 +107,33 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
     router.push(buildUrl('/dashboard/bots', next))
   }, [filters, router])
 
+  async function handleBulkPriorityChange(priority: string) {
+    if (!priority || selectedIds.size === 0) return
+    setBulkSaving(true)
+    await Promise.all([...selectedIds].map(id => updateConversationPriority(id, priority)))
+    setBulkSaving(false)
+    setSelectedIds(new Set())
+    router.refresh()
+  }
+
+  async function handleBulkStatusChange(status: string) {
+    if (!status || selectedIds.size === 0) return
+    setBulkSaving(true)
+    await Promise.all([...selectedIds].map(id => updateConversationStatus(id, status)))
+    setBulkSaving(false)
+    setSelectedIds(new Set())
+    router.refresh()
+  }
+
+  async function handleBulkAssignChange(userId: string) {
+    if (selectedIds.size === 0) return
+    setBulkSaving(true)
+    await Promise.all([...selectedIds].map(id => assignConversation(id, userId || null)))
+    setBulkSaving(false)
+    setSelectedIds(new Set())
+    router.refresh()
+  }
+
   function handleDelete(id: string) {
     if (!window.confirm('Delete this conversation? This cannot be undone.')) return
     startTransition(async () => {
@@ -138,15 +166,70 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
             Permanent record of every bot conversation — {conversations.length} shown
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {!readonly && selectedIds.size > 0 && (
-            <button
-              onClick={handleBulkDelete}
-              className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Delete {selectedIds.size}
-            </button>
+            <>
+              <button
+                onClick={handleBulkDelete}
+                className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Delete {selectedIds.size}
+              </button>
+
+              {/* Bulk priority */}
+              <div className="relative">
+                <select
+                  defaultValue=""
+                  disabled={bulkSaving}
+                  onChange={e => { handleBulkPriorityChange(e.target.value); e.target.value = '' }}
+                  className="appearance-none pl-3 pr-7 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer disabled:opacity-50"
+                >
+                  <option value="" disabled>Priority</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+              </div>
+
+              {/* Bulk status */}
+              <div className="relative">
+                <select
+                  defaultValue=""
+                  disabled={bulkSaving}
+                  onChange={e => { handleBulkStatusChange(e.target.value); e.target.value = '' }}
+                  className="appearance-none pl-3 pr-7 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer disabled:opacity-50"
+                >
+                  <option value="" disabled>Status</option>
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                  <option value="archived">Archived</option>
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+              </div>
+
+              {/* Bulk assign */}
+              {canAssign && teamMembers.length > 0 && (
+                <div className="relative">
+                  <select
+                    defaultValue=""
+                    disabled={bulkSaving}
+                    onChange={e => { handleBulkAssignChange(e.target.value); e.target.value = '' }}
+                    className="appearance-none pl-3 pr-7 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer disabled:opacity-50"
+                  >
+                    <option value="" disabled>Assign to</option>
+                    <option value="">Unassign</option>
+                    {teamMembers.map(m => (
+                      <option key={m.user_id} value={m.user_id}>{m.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                </div>
+              )}
+
+              {bulkSaving && <Loader2 className="w-4 h-4 animate-spin text-[#15A4AE]" />}
+            </>
           )}
           <CsvExportButton action={exportConversations} />
           {showNewBotButton && (
@@ -271,9 +354,9 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Conversation</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Bot</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Platform</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Msgs</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide w-[160px]">Last active</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</th>
                 {canAssign && <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Assigned to</th>}
                 <th className="text-right px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide w-px whitespace-nowrap">Actions</th>
               </tr>
@@ -345,6 +428,16 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                       ) : <span className="text-gray-300 dark:text-gray-600">—</span>}
                     </td>
 
+                    {/* Message count */}
+                    <td className="px-4 py-3.5 text-right text-sm text-gray-500 dark:text-gray-400">
+                      {c.message_count}
+                    </td>
+
+                    {/* Last active */}
+                    <td className="px-4 py-3.5 text-right text-xs text-gray-400 whitespace-nowrap w-[160px]">
+                      {timeAgo(c.last_activity_at)}
+                    </td>
+
                     {/* Status */}
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-1">
@@ -367,16 +460,6 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                           <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />
                         )}
                       </div>
-                    </td>
-
-                    {/* Message count */}
-                    <td className="px-4 py-3.5 text-right text-sm text-gray-500 dark:text-gray-400">
-                      {c.message_count}
-                    </td>
-
-                    {/* Last active */}
-                    <td className="px-4 py-3.5 text-right text-xs text-gray-400 whitespace-nowrap w-[160px]">
-                      {timeAgo(c.last_activity_at)}
                     </td>
 
                     {/* Assign to */}

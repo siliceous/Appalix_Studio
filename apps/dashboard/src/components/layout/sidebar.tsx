@@ -137,13 +137,13 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
   const settingsActive = pathname.startsWith('/settings')
 
   return (
-    <div className="w-14 hover:w-[204px] shrink-0 relative z-20 transition-[width] duration-200 ease-in-out">
+    <div className="w-[68px] group hover:w-[216px] shrink-0 relative z-20 transition-[width] duration-200 ease-in-out">
       <aside className={cn(
-        'group absolute inset-y-0 left-0 flex flex-col',
-        'w-14 hover:w-[204px]',
-        'bg-white dark:bg-[#232323] border-r dark:border-white/8',
+        'absolute inset-y-3 left-3 flex flex-col',
+        'w-[56px] group-hover:w-[204px]',
+        'bg-white dark:bg-[#232323] border border-gray-100 dark:border-white/8 rounded-2xl shadow-md dark:shadow-black/30',
         'transition-[width] duration-200 ease-in-out overflow-hidden',
-        'hover:shadow-xl dark:hover:shadow-black/40',
+        'group-hover:shadow-xl dark:group-hover:shadow-black/50',
       )}>
 
         {/* ── Logo + workspace ─────────────────────────────────── */}
