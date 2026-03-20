@@ -16,6 +16,7 @@ import { googleChatRoutes }  from './routes/webhooks/google-chat.js'
 import { wordpressRoutes }   from './routes/webhooks/wordpress.js'
 import { telegramRoutes }    from './routes/webhooks/telegram.js'
 import { shopifyRoutes }     from './routes/webhooks/shopify.js'
+import { shopifyOAuthRoutes } from './routes/shopify-oauth.js'
 import { chatRoutes }        from './routes/chat/index.js'
 import { copilotRoutes }     from './routes/copilot/index.js'
 import { sageEmailRoutes }  from './routes/sage/emails.js'
@@ -97,6 +98,7 @@ await server.register(googleChatRoutes, { prefix: '/webhooks' })
 await server.register(wordpressRoutes,  { prefix: '/webhooks' })
 await server.register(telegramRoutes,   { prefix: '/webhooks' })
 await server.register(shopifyRoutes,    { prefix: '/webhooks' })
+await server.register(shopifyOAuthRoutes)
 
 // Chat + ingestion endpoints
 await server.register(chatRoutes, { prefix: '/chat' })

@@ -256,8 +256,43 @@ export function NewIntegrationForm({
           </div>
         </div>
 
+        {/* Shopify OAuth — enter shop domain then redirect */}
+        {platform === 'shopify' && canUsePlatform(plan, platform) ? (
+          <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5 space-y-4">
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Connect your Shopify store</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Enter your store domain and click Connect — you&apos;ll be taken to Shopify to approve access. No tokens to copy.
+            </p>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Store domain</label>
+              <input
+                type="text"
+                value={fieldValues['shop'] ?? ''}
+                onChange={e => setField('shop', e.target.value)}
+                placeholder="yourstore.myshopify.com"
+                className="w-full px-3 py-2 border dark:border-white/10 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-transparent"
+              />
+              <p className="text-xs text-gray-400 mt-1">Find this in your Shopify Admin URL bar.</p>
+            </div>
+            {integrationName && bots.length > 0 && fieldValues['shop'] ? (
+              <a
+                href={`/api/oauth/shopify?shop=${encodeURIComponent(fieldValues['shop'])}&name=${encodeURIComponent(integrationName)}&bot_id=${encodeURIComponent(selectedBotId)}`}
+                className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ backgroundColor: '#96bf48' }}
+              >
+                <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor"><path d="M15.337 23.979l7.216-1.561s-2.604-17.613-2.625-17.73a.336.336 0 00-.33-.282c-.143 0-2.705-.055-2.705-.055s-1.797-1.742-1.99-1.934v21.562zM11.376 6.502s-.83-.253-1.851-.253c-1.88 0-1.975 1.178-1.975 1.476 0 1.621 4.228 2.241 4.228 6.039 0 2.986-1.893 4.913-4.447 4.913-3.06 0-4.624-1.906-4.624-1.906l.82-2.706s1.609 1.384 2.965 1.384c.886 0 1.247-.697 1.247-1.207 0-2.109-3.468-2.203-3.468-5.672 0-2.913 2.09-5.736 6.308-5.736 1.625 0 2.43.469 2.43.469L11.376 6.502z"/></svg>
+                Connect with Shopify
+              </a>
+            ) : (
+              <p className="text-xs text-amber-500">
+                {bots.length === 0 ? 'Create a bot first.' : !integrationName ? 'Enter an integration name above.' : 'Enter your store domain above.'}
+              </p>
+            )}
+          </div>
+        ) : null}
+
         {/* OAuth platforms: show one-click connect instead of credential form */}
-        {(platform === 'facebook_messenger' || platform === 'whatsapp') && metaAppId ? (
+        {platform !== 'shopify' && (platform === 'facebook_messenger' || platform === 'whatsapp') && metaAppId ? (
           <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5">
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Authorise access</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
