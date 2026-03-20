@@ -854,6 +854,23 @@ export async function updateTicketPriority(id: string, priority: SageTicketPrior
   revalidatePath('/dashboard/tickets')
 }
 
+export async function updateTicketDetails(
+  id: string,
+  fields: { title?: string; description?: string | null },
+): Promise<{ error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('sage_tickets')
+    .update({ ...fields, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('workspace_id', workspaceId)
+  if (error) return { error: error.message }
+  revalidatePath('/sage/tickets')
+  revalidatePath('/dashboard/tickets')
+  return {}
+}
+
 export async function mergeTickets(primaryId: string, duplicateIds: string[]): Promise<{ error?: string }> {
   if (duplicateIds.length === 0) return {}
   const workspaceId = await getWorkspaceId()
