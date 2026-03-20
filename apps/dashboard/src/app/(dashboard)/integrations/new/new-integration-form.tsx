@@ -341,7 +341,7 @@ export function NewIntegrationForm({
               </p>
             )}
           </div>
-        ) : (
+        ) : platform === 'shopify' ? null : (
           <>
             {/* Manual credential fields */}
             {platformFields.length > 0 && (
