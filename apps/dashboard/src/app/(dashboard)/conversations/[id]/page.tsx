@@ -1,11 +1,13 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import type { Conversation } from '@/lib/types'
 import type { ConvRow } from '@/app/(dashboard)/conversations/page'
-import { ConversationPanelClient, type PanelMessage } from './conversation-panel-client'
+import { ConversationPanelClient, type PanelMessage, type TeamMember } from './conversation-panel-client'
 import { SubpageToolbar } from '@/components/dashboard/subpage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
+import { ROLE_RANK } from '@/lib/types'
+import type { WorkspaceMemberRole } from '@/lib/types'
 
 export const metadata: Metadata = { title: 'Conversation' }
 
@@ -19,19 +21,24 @@ export default async function ConversationDetailPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Workspace
+  // Workspace + role
   const { data: membershipRaw } = await supabase
     .from('workspace_members')
-    .select('workspace_id')
+    .select('workspace_id, role')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true })
     .limit(1)
     .single()
-  const workspaceId = (membershipRaw as { workspace_id: string } | null)?.workspace_id
+  const membership = membershipRaw as { workspace_id: string; role: WorkspaceMemberRole } | null
+  const workspaceId = membership?.workspace_id
   if (!workspaceId) redirect('/login')
+  const callerRank = ROLE_RANK[membership!.role] ?? 1
 
-  // Selected conversation + messages in parallel with conversation list
-  const [convRes, msgsRes, listRes, autoSettings] = await Promise.all([
+  const admin = createAdminClient()
+  const canAssign = callerRank >= ROLE_RANK.manager
+
+  // All data in parallel
+  const [convRes, msgsRes, listRes, autoSettings, membersRes, profilesRes] = await Promise.all([
     supabase
       .from('conversations')
       .select('id, title, platform, status, sentiment, message_count, last_activity_at, created_at, ai_priority, ai_summary, ai_entities, bot_id, assigned_to, bots(id, name)')
@@ -49,13 +56,26 @@ export default async function ConversationDetailPage({
       .order('last_activity_at', { ascending: false })
       .limit(100),
     getAutoSettings(),
+    canAssign ? admin.from('workspace_members').select('user_id, role').eq('workspace_id', workspaceId) : Promise.resolve({ data: [] }),
+    canAssign ? admin.from('user_profiles').select('user_id, first_name, last_name') : Promise.resolve({ data: [] }),
   ])
 
   const conversation = convRes.data as (Conversation & { bots?: { id: string; name: string } | null }) | null
   if (!conversation) notFound()
 
-  const messages  = (msgsRes.data ?? []) as PanelMessage[]
-  const convList  = (listRes.data ?? []) as ConvRow[]
+  const messages = (msgsRes.data ?? []) as PanelMessage[]
+  const convList = (listRes.data ?? []) as ConvRow[]
+
+  // Build team members list for assign dropdown
+  type PRow = { user_id: string; first_name: string; last_name: string | null }
+  type MRow = { user_id: string; role: WorkspaceMemberRole }
+  const pMap = new Map(((profilesRes.data ?? []) as PRow[]).map(p => [p.user_id, p]))
+  const teamMembers: TeamMember[] = ((membersRes.data ?? []) as MRow[])
+    .filter(m => (ROLE_RANK[m.role] ?? 0) <= callerRank && m.user_id !== user.id)
+    .map(m => {
+      const p = pMap.get(m.user_id)
+      return { user_id: m.user_id, name: p ? [p.first_name, p.last_name].filter(Boolean).join(' ') : m.user_id }
+    })
 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
@@ -70,6 +90,8 @@ export default async function ConversationDetailPage({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           current={conversation as any}
           messages={messages}
+          teamMembers={teamMembers}
+          canAssign={canAssign}
         />
       </div>
     </div>

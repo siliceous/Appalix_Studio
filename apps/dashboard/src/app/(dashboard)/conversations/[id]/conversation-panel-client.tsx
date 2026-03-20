@@ -1,12 +1,19 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useTransition } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
-  MessageSquare, Download, Tag, Search, X,
+  MessageSquare, Download, Tag, Search, X, Pencil, Trash2,
 } from 'lucide-react'
 import { PLATFORM_META, timeAgo, formatDate } from '@/lib/utils'
+import {
+  updateConversationPriority, updateConversationStatus,
+  assignConversation, renameConversation, deleteConversation,
+} from '@/app/actions/conversation'
 import type { ConvRow } from '@/app/(dashboard)/conversations/page'
+
+export type TeamMember = { user_id: string; name: string }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export type PanelMessage = {
@@ -54,14 +61,56 @@ const PRIORITY_BADGE: Record<string, string> = {
 // ── Props ─────────────────────────────────────────────────────────────────────
 interface Props {
   conversations: ConvRow[]
-  current:       ConvRow & { bots?: { name: string } | null }
+  current:       ConvRow & { bots?: { id: string; name: string } | null }
   messages:      PanelMessage[]
+  teamMembers?:  TeamMember[]
+  canAssign?:    boolean
+  readonly?:     boolean
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function ConversationPanelClient({ conversations, current, messages }: Props) {
-  const [search,  setSearch]  = React.useState('')
-  const [botFilter, setBotFilter] = React.useState('')
+export function ConversationPanelClient({
+  conversations, current, messages,
+  teamMembers = [], canAssign = false, readonly = false,
+}: Props) {
+  const router = useRouter()
+  const [, startTransition] = useTransition()
+  const [search,      setSearch]      = React.useState('')
+  const [botFilter,   setBotFilter]   = React.useState('')
+  const [localPriority, setLocalPriority] = React.useState(current.ai_priority ?? '')
+  const [localStatus,   setLocalStatus]   = React.useState(current.status ?? 'active')
+  const [localAssign,   setLocalAssign]   = React.useState<string | null>(current.assigned_to ?? null)
+  const [assigning,     setAssigning]     = React.useState(false)
+
+  function handlePriorityChange(val: string) {
+    setLocalPriority(val)
+    void updateConversationPriority(current.id, val)
+  }
+  function handleStatusChange(val: string) {
+    setLocalStatus(val)
+    void updateConversationStatus(current.id, val)
+  }
+  async function handleAssign(userId: string | null) {
+    setAssigning(true)
+    const result = await assignConversation(current.id, userId)
+    if (!result.error) setLocalAssign(userId)
+    setAssigning(false)
+  }
+  function handleRename() {
+    const newTitle = window.prompt('Rename conversation:', current.title ?? '')
+    if (newTitle === null) return
+    startTransition(async () => {
+      await renameConversation(current.id, newTitle)
+      router.refresh()
+    })
+  }
+  function handleDelete() {
+    if (!window.confirm('Delete this conversation? This cannot be undone.')) return
+    startTransition(async () => {
+      await deleteConversation(current.id)
+      router.push('/dashboard/bots')
+    })
+  }
 
   // Derive unique bots from the conversations list
   const bots = React.useMemo(() => {
@@ -284,7 +333,7 @@ export function ConversationPanelClient({ conversations, current, messages }: Pr
       <div className="w-[260px] shrink-0 border-l dark:border-white/8 overflow-y-auto bg-white dark:bg-[#1e1e1e]">
         <div className="p-4 space-y-5">
 
-          {/* Tags */}
+          {/* Tags / Platform */}
           <div>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <Tag className="w-3 h-3" /> Tags
@@ -301,7 +350,7 @@ export function ConversationPanelClient({ conversations, current, messages }: Pr
           </div>
 
           {/* AI Summary */}
-          {(current.ai_summary) && (
+          {current.ai_summary && (
             <div>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 <span className="text-[#15A4AE]">✦</span> AI Generated
@@ -316,35 +365,123 @@ export function ConversationPanelClient({ conversations, current, messages }: Pr
           <div>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Conversation Details</p>
             <div className="space-y-2.5">
-              <DetailRow label="Tone"           value={current.sentiment ?? '—'} />
-              <DetailRow label="Total Messages"  value={String(current.message_count)} />
-              {current.ai_priority && (
-                <DetailRow label="Priority" value={
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${PRIORITY_BADGE[current.ai_priority] ?? PRIORITY_BADGE.low}`}>
-                    {current.ai_priority}
-                  </span>
-                } />
-              )}
-              <DetailRow label="Status"     value={current.status ?? '—'} />
-              <DetailRow label="Started On"  value={formatDate(current.created_at)} />
-              <DetailRow label="ID"          value={`#${current.id.slice(0, 6).toUpperCase()}`} />
+              {current.bots?.name && <DetailRow label="Bot"      value={current.bots.name} />}
+              <DetailRow label="Platform"     value={
+                current.platform
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  ? ((PLATFORM_META as any)[current.platform]?.label ?? current.platform)
+                  : '—'
+              } />
+              <DetailRow label="Tone"          value={current.sentiment ?? '—'} />
+              <DetailRow label="Total Messages" value={String(current.message_count)} />
+              <DetailRow label="Started On"    value={formatDate(current.created_at)} />
+              <DetailRow label="ID"            value={`#${current.id.slice(0, 6).toUpperCase()}`} />
             </div>
           </div>
 
+          <hr className="border-gray-100 dark:border-white/8" />
+
+          {/* Priority */}
+          <div>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Priority</p>
+            {!readonly ? (
+              <select
+                value={localPriority}
+                onChange={e => handlePriorityChange(e.target.value)}
+                className={`w-full text-xs border dark:border-white/10 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer ${
+                  PRIORITY_BADGE[localPriority] ?? 'bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                <option value="">— None —</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            ) : (
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${PRIORITY_BADGE[localPriority] ?? PRIORITY_BADGE.low}`}>
+                {localPriority || '—'}
+              </span>
+            )}
+          </div>
+
+          {/* Status */}
+          <div>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Status</p>
+            {!readonly ? (
+              <select
+                value={localStatus}
+                onChange={e => handleStatusChange(e.target.value)}
+                className="w-full text-xs border dark:border-white/10 rounded-lg px-2.5 py-1.5 bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
+              >
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+                <option value="archived">Archived</option>
+              </select>
+            ) : (
+              <span className="text-xs text-gray-600 dark:text-gray-300 capitalize">{localStatus}</span>
+            )}
+          </div>
+
+          {/* Assigned to */}
+          {canAssign && (
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Assigned To</p>
+              <select
+                value={localAssign ?? ''}
+                disabled={assigning}
+                onChange={e => handleAssign(e.target.value || null)}
+                className="w-full text-xs border dark:border-white/10 rounded-lg px-2.5 py-1.5 bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-50"
+              >
+                <option value="">Unassigned</option>
+                {teamMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
+              </select>
+            </div>
+          )}
+
+          <hr className="border-gray-100 dark:border-white/8" />
+
           {/* User details */}
           {(current.ai_entities?.email || current.ai_entities?.phone || current.ai_entities?.name) && (
-            <>
-              <hr className="border-gray-100 dark:border-white/8" />
-              <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">User Details</p>
-                <div className="space-y-2.5">
-                  {current.ai_entities?.name  && <DetailRow label="Name"  value={current.ai_entities.name} />}
-                  {current.ai_entities?.email && <DetailRow label="Email" value={current.ai_entities.email} />}
-                  {current.ai_entities?.phone && <DetailRow label="Phone" value={current.ai_entities.phone} />}
-                </div>
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">User Details</p>
+              <div className="space-y-2.5">
+                {current.ai_entities?.name  && <DetailRow label="Name"  value={current.ai_entities.name} />}
+                {current.ai_entities?.email && <DetailRow label="Email" value={current.ai_entities.email} />}
+                {current.ai_entities?.phone && <DetailRow label="Phone" value={current.ai_entities.phone} />}
               </div>
-            </>
+            </div>
           )}
+
+          <hr className="border-gray-100 dark:border-white/8" />
+
+          {/* Actions */}
+          {!readonly && (
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Actions</p>
+              <div className="flex flex-col gap-1.5">
+                <a
+                  href={`/api/conversations/${current.id}/export`}
+                  download
+                  className="flex items-center gap-2 px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 border dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" /> Download transcript
+                </a>
+                <button
+                  onClick={handleRename}
+                  className="flex items-center gap-2 px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 border dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                >
+                  <Pencil className="w-3.5 h-3.5" /> Rename
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex items-center gap-2 px-3 py-1.5 text-xs text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Delete conversation
+                </button>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
 
