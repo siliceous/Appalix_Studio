@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import Link from 'next/link'
 import { Ticket, Plus, Trash2, Mail, Pencil, Merge, X, Loader2, Search, ChevronDown } from 'lucide-react'
 import { TicketModal } from '@/components/sage/ticket-modal'
 import { TicketSlideOver } from '@/components/dashboard/ticket-slide-over'
@@ -373,7 +374,13 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{ticket.title}</p>
+                    <Link
+                      href={`/dashboard/sage/tickets/${ticket.id}`}
+                      onClick={e => e.stopPropagation()}
+                      className="text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-[#15A4AE] dark:hover:text-[#15A4AE] transition-colors truncate block"
+                    >
+                      {ticket.title}
+                    </Link>
                     {ticket.description && (
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 leading-relaxed">{ticket.description}</p>
                     )}

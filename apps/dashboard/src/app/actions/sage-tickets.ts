@@ -3,7 +3,10 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { SageTicketActivity } from '@/lib/types'
+import Anthropic from '@anthropic-ai/sdk'
+import type { SageTicket, SageContact, SageTicketActivity } from '@/lib/types'
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 async function getWorkspaceId(): Promise<string> {
   const supabase = await createClient()
@@ -90,4 +93,68 @@ export async function completeTicketTask(activityId: string): Promise<void> {
     .eq('workspace_id', workspaceId)
 
   revalidatePath('/dashboard/tickets')
+}
+
+export async function analyzeTicket(ticketId: string): Promise<{ summary: string } | { error: string }> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+
+  const { data: raw } = await admin
+    .from('sage_tickets')
+    .select('*, contact:sage_contacts(id, name, email)')
+    .eq('id', ticketId)
+    .eq('workspace_id', workspaceId)
+    .single()
+
+  if (!raw) return { error: 'Ticket not found' }
+  const t = raw as SageTicket & { contact: Pick<SageContact, 'id' | 'name' | 'email'> | null }
+
+  const { data: activitiesRaw } = await admin
+    .from('sage_ticket_activities')
+    .select('type, title, body, due_at, completed_at, created_at')
+    .eq('ticket_id', ticketId)
+    .eq('workspace_id', workspaceId)
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  const activities = (activitiesRaw ?? []) as Pick<SageTicketActivity, 'type' | 'title' | 'body' | 'due_at' | 'completed_at' | 'created_at'>[]
+
+  const lines = [
+    `Title: ${t.title}`,
+    t.description     ? `Description: ${t.description}`            : null,
+    `Status: ${t.status}`,
+    `Priority: ${t.priority}`,
+    (t.name ?? t.contact?.name) ? `Customer: ${t.name ?? t.contact?.name}` : null,
+    (t.email ?? t.contact?.email) ? `Email: ${t.email ?? t.contact?.email}` : null,
+    t.phone           ? `Phone: ${t.phone}`                        : null,
+    t.contact_method  ? `Contact method: ${t.contact_method}`      : null,
+    t.occurred_at     ? `Issue occurred: ${new Date(t.occurred_at).toLocaleString()}` : null,
+    activities.length ? `\nActivity log (${activities.length} entries):\n` +
+      activities.map(a => `- [${a.type}] ${a.title ?? ''} ${a.body ?? ''} ${a.completed_at ? '(done)' : a.due_at ? `(due ${new Date(a.due_at).toLocaleDateString()})` : ''}`.trim()).join('\n')
+      : null,
+  ].filter(Boolean).join('\n')
+
+  try {
+    const response = await anthropic.messages.create({
+      model:      'claude-haiku-4-5-20251001',
+      max_tokens: 400,
+      messages: [{
+        role:    'user',
+        content: `You are a support team analyst. Based on the ticket details below, write a brief 3–5 sentence AI summary covering:
+1. What the customer's issue is and its urgency
+2. Current progress based on the activity log
+3. Recommended next action for the support agent
+
+Ticket details:
+${lines}
+
+Be concise and actionable. No headings, no bullet points — just a short paragraph.`,
+      }],
+    })
+
+    const summary = (response.content[0] as { type: string; text: string }).text?.trim() ?? ''
+    return { summary }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'AI analysis failed' }
+  }
 }
