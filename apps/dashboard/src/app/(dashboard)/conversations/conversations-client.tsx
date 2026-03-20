@@ -501,7 +501,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
 
                     {/* Actions */}
                     <td className="px-5 py-3.5 w-px whitespace-nowrap">
-                      <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 justify-end">
                         {/* Create deal */}
                         {!readonly && (
                           quickAction[c.id] === 'loading-deal' ? (
