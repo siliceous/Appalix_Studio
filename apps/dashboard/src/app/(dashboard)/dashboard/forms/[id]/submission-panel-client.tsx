@@ -308,18 +308,7 @@ export function SubmissionPanelClient({
           {Object.keys(current.fields).length === 0 ? (
             <p className="text-sm text-gray-400">No fields collected.</p>
           ) : (
-            <div className="space-y-3">
-              {Object.entries(current.fields).map(([key, value]) => (
-                <div key={key} className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-gray-100 dark:border-white/8 px-4 py-3">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                    {key.replace(/_/g, ' ')}
-                  </p>
-                  <p className="text-sm text-gray-800 dark:text-gray-100 leading-relaxed whitespace-pre-wrap break-words">
-                    {value || <span className="italic text-gray-300">empty</span>}
-                  </p>
-                </div>
-              ))}
-            </div>
+            <FieldGroups fields={current.fields} />
           )}
         </div>
       </div>
@@ -397,6 +386,96 @@ export function SubmissionPanelClient({
         </div>
       </div>
 
+    </div>
+  )
+}
+
+// ── Smart field grouping ───────────────────────────────────────────────────────
+const ADDRESS_KEYS  = ['street', 'city', 'state', 'zip', 'postcode', 'postal_code', 'country']
+const NAME_KEYS     = ['first_name', 'last_name', 'firstname', 'lastname']
+const FIRST_KEYS    = ['first_name', 'firstname']
+const LAST_KEYS     = ['last_name', 'lastname']
+
+function fieldLabel(key: string) {
+  return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
+
+function FieldGroups({ fields }: { fields: Record<string, string> }) {
+  const keys        = Object.keys(fields)
+  const rendered    = new Set<string>()
+  const blocks: React.ReactNode[] = []
+
+  // 1. Name — first_name + last_name on one line
+  const firstKey = keys.find(k => FIRST_KEYS.includes(k.toLowerCase()))
+  const lastKey  = keys.find(k => LAST_KEYS.includes(k.toLowerCase()))
+  if (firstKey || lastKey) {
+    const combined = [firstKey && fields[firstKey], lastKey && fields[lastKey]].filter(Boolean).join(' ')
+    if (combined) {
+      blocks.push(
+        <FieldCard key="__name__" label="Name" value={combined} />
+      )
+    }
+    if (firstKey) rendered.add(firstKey)
+    if (lastKey)  rendered.add(lastKey)
+  }
+
+  // 2. Address — group street / city / state / zip / country into one card
+  const addrKeys = keys.filter(k => ADDRESS_KEYS.includes(k.toLowerCase()))
+  if (addrKeys.length > 0) {
+    const parts = addrKeys.map(k => fields[k]).filter(Boolean)
+    if (parts.length > 0) {
+      blocks.push(
+        <div key="__address__" className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-gray-100 dark:border-white/8 px-4 py-3">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Address</p>
+          <div className="space-y-0.5">
+            {addrKeys.map(k => fields[k] ? (
+              <p key={k} className="text-sm text-gray-800 dark:text-gray-100 leading-snug">{fields[k]}</p>
+            ) : null)}
+          </div>
+        </div>
+      )
+    }
+    addrKeys.forEach(k => rendered.add(k))
+  }
+
+  // 3. Remaining — skip already-rendered + full name keys, 2-per-row for short values
+  const remaining = keys.filter(k => !rendered.has(k) && !NAME_KEYS.includes(k.toLowerCase()))
+
+  // Split remaining into short (≤40 chars) and long
+  const short = remaining.filter(k => (fields[k] ?? '').length <= 40)
+  const long  = remaining.filter(k => (fields[k] ?? '').length > 40)
+
+  // Pair short fields side-by-side
+  for (let i = 0; i < short.length; i += 2) {
+    const a = short[i]
+    const b = short[i + 1]
+    if (b) {
+      blocks.push(
+        <div key={`pair-${i}`} className="grid grid-cols-2 gap-3">
+          <FieldCard label={fieldLabel(a)} value={fields[a]} />
+          <FieldCard label={fieldLabel(b)} value={fields[b]} />
+        </div>
+      )
+    } else {
+      blocks.push(<FieldCard key={a} label={fieldLabel(a)} value={fields[a]} />)
+    }
+  }
+
+  // Long fields each get their own full-width card
+  for (const k of long) {
+    blocks.push(<FieldCard key={k} label={fieldLabel(k)} value={fields[k]} />)
+  }
+
+  return <div className="space-y-3">{blocks}</div>
+}
+
+function FieldCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-gray-100 dark:border-white/8 px-4 py-3">
+      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{label}</p>
+      <p className="text-sm text-gray-800 dark:text-gray-100 leading-relaxed whitespace-pre-wrap break-words">
+        {value || <span className="italic text-gray-300">—</span>}
+      </p>
     </div>
   )
 }
