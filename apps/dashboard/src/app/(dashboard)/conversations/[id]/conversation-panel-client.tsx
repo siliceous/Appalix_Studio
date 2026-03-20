@@ -254,12 +254,12 @@ export function ConversationPanelClient({
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1">
-                    <span className={`text-xs font-semibold truncate ${isActive ? 'text-[#1f6157] dark:text-[#15A4AE]' : 'text-gray-900 dark:text-gray-100'}`}>
+                    <span className={`text-sm font-semibold truncate ${isActive ? 'text-[#1f6157] dark:text-[#15A4AE]' : 'text-gray-900 dark:text-gray-100'}`}>
                       {name}
                     </span>
-                    <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(c.last_activity_at)}</span>
+                    <span className="text-xs text-gray-400 shrink-0">{timeAgo(c.last_activity_at)}</span>
                   </div>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2 leading-snug">{preview}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2 leading-snug">{preview}</p>
                   <div className="flex items-center gap-1.5 mt-1">
                     {c.status === 'active' && (
                       <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
