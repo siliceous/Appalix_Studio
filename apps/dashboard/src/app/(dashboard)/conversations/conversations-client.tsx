@@ -75,24 +75,20 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
     })
   }
 
-  function handlePriorityChange(convId: string, priority: string) {
+  async function handlePriorityChange(convId: string, priority: string) {
     setLocalPriority(prev => ({ ...prev, [convId]: priority }))
     setSaving({ id: convId, field: 'priority' })
-    startTransition(async () => {
-      await updateConversationPriority(convId, priority)
-      router.refresh()
-      setSaving(null)
-    })
+    await updateConversationPriority(convId, priority)
+    setSaving(null)
+    router.refresh()
   }
 
-  function handleStatusChange(convId: string, status: string) {
+  async function handleStatusChange(convId: string, status: string) {
     setLocalStatus(prev => ({ ...prev, [convId]: status }))
     setSaving({ id: convId, field: 'status' })
-    startTransition(async () => {
-      await updateConversationStatus(convId, status)
-      router.refresh()
-      setSaving(null)
-    })
+    await updateConversationStatus(convId, status)
+    setSaving(null)
+    router.refresh()
   }
 
   async function handleAssign(convId: string, userId: string | null) {
@@ -132,7 +128,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
   const activeStatus = filters.status ?? ''
 
   return (
-    <div className="max-w-6xl mx-auto space-y-5 p-8">
+    <div className="space-y-5 p-8">
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between">
@@ -298,9 +294,6 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                     {/* AI Priority */}
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-1">
-                        {saving?.id === c.id && saving?.field === 'priority' && (
-                          <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />
-                        )}
                         {!readonly ? (
                           <select
                             value={localPriority[c.id] ?? c.ai_priority ?? ''}
@@ -319,6 +312,9 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                             {c.ai_priority}
                           </span>
                         ) : <span className="text-gray-300 dark:text-gray-600">—</span>}
+                        {saving?.id === c.id && saving?.field === 'priority' && (
+                          <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />
+                        )}
                       </div>
                     </td>
 
@@ -352,9 +348,6 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                     {/* Status */}
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-1">
-                        {saving?.id === c.id && saving?.field === 'status' && (
-                          <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />
-                        )}
                         {!readonly ? (
                           <select
                             value={localStatus[c.id] ?? c.status ?? 'active'}
@@ -369,6 +362,9 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                           </select>
                         ) : (
                           <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{c.status ?? 'active'}</span>
+                        )}
+                        {saving?.id === c.id && saving?.field === 'status' && (
+                          <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />
                         )}
                       </div>
                     </td>
@@ -387,9 +383,6 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                     {canAssign && (
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-1">
-                          {saving?.id === c.id && saving?.field === 'assign' && (
-                            <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />
-                          )}
                           <select
                             value={localAssign[c.id] !== undefined ? (localAssign[c.id] ?? '') : (c.assigned_to ?? '')}
                             disabled={saving?.id === c.id && saving?.field === 'assign'}
@@ -401,6 +394,9 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                               <option key={m.user_id} value={m.user_id}>{m.name}</option>
                             ))}
                           </select>
+                          {saving?.id === c.id && saving?.field === 'assign' && (
+                            <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />
+                          )}
                         </div>
                       </td>
                     )}

@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
-  MessageSquare, Download, Tag, Search, X, Pencil, Trash2, ArrowLeft,
+  MessageSquare, Download, Tag, Search, X, Pencil, Trash2, ArrowLeft, Loader2,
 } from 'lucide-react'
 import { PLATFORM_META, timeAgo, formatDate } from '@/lib/utils'
 import {
@@ -75,30 +75,28 @@ export function ConversationPanelClient({
   const [localPriority, setLocalPriority] = React.useState(current.ai_priority ?? '')
   const [localStatus,   setLocalStatus]   = React.useState(current.status ?? 'active')
   const [localAssign,   setLocalAssign]   = React.useState<string | null>(current.assigned_to ?? null)
-  const [assigning,     setAssigning]     = React.useState(false)
+  const [saving,        setSaving]        = React.useState<'priority' | 'status' | 'assign' | null>(null)
 
-  function handlePriorityChange(val: string) {
+  async function handlePriorityChange(val: string) {
     setLocalPriority(val)
-    startTransition(async () => {
-      await updateConversationPriority(current.id, val)
-      router.refresh()
-    })
+    setSaving('priority')
+    await updateConversationPriority(current.id, val)
+    setSaving(null)
+    router.refresh()
   }
-  function handleStatusChange(val: string) {
+  async function handleStatusChange(val: string) {
     setLocalStatus(val)
-    startTransition(async () => {
-      await updateConversationStatus(current.id, val)
-      router.refresh()
-    })
+    setSaving('status')
+    await updateConversationStatus(current.id, val)
+    setSaving(null)
+    router.refresh()
   }
   async function handleAssign(userId: string | null) {
-    setAssigning(true)
+    setSaving('assign')
     const result = await assignConversation(current.id, userId)
-    if (!result.error) {
-      setLocalAssign(userId)
-      router.refresh()
-    }
-    setAssigning(false)
+    if (!result.error) setLocalAssign(userId)
+    setSaving(null)
+    router.refresh()
   }
   function handleRename() {
     const newTitle = window.prompt('Rename conversation:', current.title ?? '')
@@ -301,7 +299,7 @@ export function ConversationPanelClient({
             <select
               value={localPriority}
               onChange={e => handlePriorityChange(e.target.value)}
-              disabled={readonly}
+              disabled={readonly || saving === 'priority'}
               className="text-[11px] border dark:border-white/10 rounded-full px-2.5 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60 cursor-pointer"
             >
               <option value="">Priority</option>
@@ -309,30 +307,35 @@ export function ConversationPanelClient({
               <option value="medium">🟡 Medium</option>
               <option value="high">🟢 High</option>
             </select>
+            {saving === 'priority' && <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />}
 
             {/* Status dropdown */}
             <select
               value={localStatus}
               onChange={e => handleStatusChange(e.target.value)}
-              disabled={readonly}
+              disabled={readonly || saving === 'status'}
               className="text-[11px] border dark:border-white/10 rounded-full px-2.5 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60 cursor-pointer"
             >
               <option value="active">Active</option>
               <option value="completed">Completed</option>
               <option value="archived">Archived</option>
             </select>
+            {saving === 'status' && <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />}
 
             {/* Assign dropdown */}
             {canAssign && (
-              <select
-                value={localAssign ?? ''}
-                disabled={assigning || readonly}
-                onChange={e => handleAssign(e.target.value || null)}
-                className="text-[11px] border dark:border-white/10 rounded-full px-2.5 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60 cursor-pointer"
-              >
-                <option value="">Assign to…</option>
-                {teamMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
-              </select>
+              <>
+                <select
+                  value={localAssign ?? ''}
+                  disabled={saving === 'assign' || readonly}
+                  onChange={e => handleAssign(e.target.value || null)}
+                  className="text-[11px] border dark:border-white/10 rounded-full px-2.5 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60 cursor-pointer"
+                >
+                  <option value="">Assign to…</option>
+                  {teamMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
+                </select>
+                {saving === 'assign' && <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />}
+              </>
             )}
 
             {/* Spacer */}
