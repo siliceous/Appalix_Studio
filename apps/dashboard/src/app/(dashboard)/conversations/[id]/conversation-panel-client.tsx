@@ -251,9 +251,14 @@ export function ConversationPanelClient({
                     <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(c.last_activity_at)}</span>
                   </div>
                   <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2 leading-snug">{preview}</p>
-                  {c.status === 'active' && (
-                    <span className="inline-block mt-1 w-1.5 h-1.5 rounded-full bg-green-400" />
-                  )}
+                  <div className="flex items-center gap-1.5 mt-1">
+                    {c.status === 'active' && (
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
+                    )}
+                    {c.ai_priority === 'high'   && <span className="text-[10px] font-semibold text-green-600 dark:text-green-400">High</span>}
+                    {c.ai_priority === 'medium' && <span className="text-[10px] font-semibold text-yellow-600 dark:text-yellow-400">Medium</span>}
+                    {c.ai_priority === 'low'    && <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500">Low</span>}
+                  </div>
                 </div>
               </Link>
             )
