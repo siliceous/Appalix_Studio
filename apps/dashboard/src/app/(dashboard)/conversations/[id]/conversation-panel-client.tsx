@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
-  MessageSquare, Download, Tag, Search, X, Pencil, Trash2,
+  MessageSquare, Download, Tag, Search, X, Pencil, Trash2, ArrowLeft,
 } from 'lucide-react'
 import { PLATFORM_META, timeAgo, formatDate } from '@/lib/utils'
 import {
@@ -340,6 +340,10 @@ export function ConversationPanelClient({
 
             {/* Action icons */}
             <div className="flex items-center gap-1 shrink-0">
+              <Link href="/dashboard/bots" title="Back to Bots"
+                className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors">
+                <ArrowLeft className="w-3.5 h-3.5" />
+              </Link>
               <a
                 href={`/api/conversations/${current.id}/export`}
                 download title="Download transcript"
