@@ -1,7 +1,9 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import { getTicketActivities } from '@/app/actions/sage-tickets'
+import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 import { TicketDetailClient } from './ticket-detail-client'
+import { SubpageToolbar } from '@/components/dashboard/subpage-toolbar'
 import type { WorkspaceMember, WorkspaceMemberRole, WorkspaceMemberSummary, SageTicket, SageContact } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
 import type { Metadata } from 'next'
@@ -48,8 +50,11 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
     .eq('workspace_id', workspaceId)
     .order('created_at', { ascending: false })
 
-  // Fetch activities for this ticket
-  const activities = await getTicketActivities(id)
+  // Fetch activities and auto settings
+  const [activities, autoSettings] = await Promise.all([
+    getTicketActivities(id),
+    getAutoSettings(),
+  ])
 
   // Resolve assignable members
   let assignableMembers: WorkspaceMemberSummary[] = []
@@ -83,12 +88,17 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   type TicketWithContact = SageTicket & { contact: Pick<SageContact, 'id' | 'name' | 'email'> | null }
 
   return (
-    <TicketDetailClient
-      ticket={ticketRaw as unknown as TicketWithContact}
-      allTickets={(allTicketsRaw ?? []) as unknown as TicketWithContact[]}
-      activities={activities}
-      callerRole={membership.role as WorkspaceMember['role']}
-      members={assignableMembers}
-    />
+    <div className="-m-8 flex flex-col h-screen overflow-hidden">
+      <SubpageToolbar sourceKey="tickets" preset="all" autoEnabled={autoSettings.tickets_auto_enabled} />
+      <div className="flex-1 overflow-hidden">
+        <TicketDetailClient
+          ticket={ticketRaw as unknown as TicketWithContact}
+          allTickets={(allTicketsRaw ?? []) as unknown as TicketWithContact[]}
+          activities={activities}
+          callerRole={membership.role as WorkspaceMember['role']}
+          members={assignableMembers}
+        />
+      </div>
+    </div>
   )
 }

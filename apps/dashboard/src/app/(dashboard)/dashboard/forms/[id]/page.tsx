@@ -5,6 +5,8 @@ import type { WorkspaceMemberRole } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
 import type { SageFormSubmission, SageForm } from '@/app/actions/sage-forms'
 import { SubmissionPanelClient, type TeamMember } from './submission-panel-client'
+import { SubpageToolbar } from '@/components/dashboard/subpage-toolbar'
+import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 
 export const metadata: Metadata = { title: 'Form Submission' }
 
@@ -81,15 +83,20 @@ export default async function SubmissionDetailPage({
       })
   }
 
+  const autoSettings = await getAutoSettings()
+
   return (
-    <div className="-m-8 flex h-screen overflow-hidden">
-      <SubmissionPanelClient
-        submissions={submissions}
-        current={submission}
-        forms={forms}
-        teamMembers={teamMembers}
-        canAssign={canAssign}
-      />
+    <div className="-m-8 flex flex-col h-screen overflow-hidden">
+      <SubpageToolbar sourceKey="forms" preset="all" autoEnabled={autoSettings.forms_auto_enabled} />
+      <div className="flex-1 overflow-hidden flex">
+        <SubmissionPanelClient
+          submissions={submissions}
+          current={submission}
+          forms={forms}
+          teamMembers={teamMembers}
+          canAssign={canAssign}
+        />
+      </div>
     </div>
   )
 }
