@@ -1,11 +1,11 @@
 'use client'
 
-import React, { useCallback, useState, useTransition } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ClipboardList, Search, ChevronDown, X,
-  UserPlus, Ticket, CheckCircle2, Clock, Download, ChevronUp, Loader2, Trash2,
+  UserPlus, Ticket, Download, ChevronUp, Loader2, Trash2,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import {
@@ -30,12 +30,6 @@ const PRIORITY_CLS: Record<string, string> = {
   low:    'bg-gray-100 dark:bg-white/5 text-gray-500 border border-gray-200 dark:border-white/10',
 }
 
-const STATUS_CLS: Record<string, string> = {
-  pending: 'bg-gray-100 dark:bg-white/5 text-gray-500 border border-gray-200 dark:border-white/10',
-  lead:    'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20',
-  ticket:  'bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-500/20',
-  ignored: 'bg-gray-100 dark:bg-white/5 text-gray-400 border border-gray-200 dark:border-white/10',
-}
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Pending',
@@ -120,14 +114,16 @@ export function FormsTable({
   teamMembers = [], canAllocate = false,
 }: Props) {
   const router = useRouter()
-  const [, startTransition] = useTransition()
 
   // Selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
+  // Local optimistic state for inline edits
+  const [localPriority, setLocalPriority] = useState<Record<string, string>>({})
+  const [localAssign,   setLocalAssign]   = useState<Record<string, string>>({})
+
   // Inline saving per row
   const [prioritySaving, setPrioritySaving] = useState<Record<string, boolean>>({})
-  const [statusSaving,   setStatusSaving]   = useState<Record<string, boolean>>({})
   const [assignSaving,   setAssignSaving]   = useState<Record<string, boolean>>({})
 
   // Bulk saving
@@ -194,20 +190,15 @@ export function FormsTable({
 
   // ── Inline row handlers ───────────────────────────────────────────────────
   async function handlePriorityChange(id: string, val: string) {
+    setLocalPriority(p => ({ ...p, [id]: val }))
     setPrioritySaving(p => ({ ...p, [id]: true }))
     await updateSubmissionPriority(id, val as 'high' | 'medium' | 'low' | null)
     setPrioritySaving(p => ({ ...p, [id]: false }))
     router.refresh()
   }
 
-  async function handleStatusChange(id: string, val: string) {
-    setStatusSaving(p => ({ ...p, [id]: true }))
-    await updateSubmissionStatus(id, val)
-    setStatusSaving(p => ({ ...p, [id]: false }))
-    router.refresh()
-  }
-
   async function handleAssignChange(id: string, val: string) {
+    setLocalAssign(p => ({ ...p, [id]: val }))
     setAssignSaving(p => ({ ...p, [id]: true }))
     await updateSubmissionAssignedTo(id, val || null)
     setAssignSaving(p => ({ ...p, [id]: false }))
@@ -261,13 +252,6 @@ export function FormsTable({
     const res = await formSubmissionCreateTicket(sub)
     setActioning(p => ({ ...p, [sub.id]: res.error ? 'error' : 'ticket' }))
     if (!res.error) router.refresh()
-  }
-
-  async function handleIgnore(sub: SageFormSubmission) {
-    startTransition(async () => {
-      await markSubmissionActioned(sub.id, 'ignored')
-      router.refresh()
-    })
   }
 
   // ── Misc ──────────────────────────────────────────────────────────────────
@@ -571,7 +555,6 @@ export function FormsTable({
                   <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">City</th>
                   <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Form</th>
                   <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Submitted</th>
-                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</th>
                   <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Assigned to</th>
                   <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Actions</th>
                 </tr>
@@ -584,9 +567,9 @@ export function FormsTable({
                   const company  = getCompany(sub)
                   const city     = getCity(sub)
                   const form     = forms.find(f => f.id === sub.form_id)
-                  const priority = sub.ai_priority ?? null
-                  const status   = sub.action_type ?? 'pending'
-                  const assignee = teamMembers.find(m => m.user_id === sub.assigned_to)
+                  const priority = localPriority[sub.id] ?? sub.ai_priority ?? null
+                  const assigneeId = localAssign[sub.id] !== undefined ? localAssign[sub.id] : (sub.assigned_to ?? '')
+                  const assignee = teamMembers.find(m => m.user_id === assigneeId)
                   const actionState = actioning[sub.id]
                   const selected = selectedIds.has(sub.id)
 
@@ -613,7 +596,7 @@ export function FormsTable({
                           <div className="relative inline-flex items-center">
                             <select
                               value={priority ?? ''}
-                              disabled={readonly}
+                              disabled={readonly || prioritySaving[sub.id]}
                               onChange={e => handlePriorityChange(sub.id, e.target.value)}
                               className={`appearance-none pl-2 pr-5 py-0.5 rounded-full text-[10px] font-semibold cursor-pointer border-0 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 disabled:cursor-default ${
                                 priority ? PRIORITY_CLS[priority] : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500'
@@ -692,35 +675,14 @@ export function FormsTable({
                         )}
                       </td>
 
-                      {/* Status — inline editable pill */}
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        {statusSaving[sub.id] ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
-                        ) : (
-                          <div className="relative inline-flex items-center">
-                            <select
-                              value={status}
-                              disabled={readonly}
-                              onChange={e => handleStatusChange(sub.id, e.target.value)}
-                              className={`appearance-none pl-2 pr-5 py-0.5 rounded-full text-[10px] font-semibold cursor-pointer border-0 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 disabled:cursor-default ${STATUS_CLS[status] ?? STATUS_CLS.pending}`}
-                            >
-                              {STATUS_OPTIONS.map(s => (
-                                <option key={s} value={s}>{STATUS_LABEL[s]}</option>
-                              ))}
-                            </select>
-                            {!readonly && <ChevronDown className="absolute right-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-current opacity-60 pointer-events-none" />}
-                          </div>
-                        )}
-                      </td>
-
                       {/* Assigned to */}
                       <td className="px-3 py-3 whitespace-nowrap">
                         {assignSaving[sub.id] ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
                         ) : canAllocate && teamMembers.length > 0 ? (
                           <select
-                            value={sub.assigned_to ?? ''}
-                            disabled={readonly}
+                            value={assigneeId}
+                            disabled={readonly || assignSaving[sub.id]}
                             onChange={e => handleAssignChange(sub.id, e.target.value)}
                             className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-transparent text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 disabled:opacity-60 max-w-[120px]"
                           >
@@ -736,40 +698,26 @@ export function FormsTable({
 
                       {/* Actions */}
                       <td className="px-4 py-3">
-                        {!readonly && !sub.action_type && actionState !== 'loading' ? (
-                          <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                        {actionState === 'loading' ? (
+                          <div className="flex justify-end pr-2">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
+                          </div>
+                        ) : !readonly ? (
+                          <div className="flex items-center gap-1 justify-end">
                             <button
                               onClick={() => handleCreateLead(sub)}
                               title="Create deal"
-                              className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-brand-600 dark:text-[#15A4AE] hover:bg-brand-50 dark:hover:bg-[#15A4AE]/10 rounded-lg transition-colors"
+                              className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
                             >
                               <UserPlus className="w-3 h-3" />Deal
                             </button>
                             <button
                               onClick={() => handleCreateTicket(sub)}
                               title="Create ticket"
-                              className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg transition-colors"
+                              className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 rounded-lg transition-colors"
                             >
                               <Ticket className="w-3 h-3" />Ticket
                             </button>
-                            <button
-                              onClick={() => handleIgnore(sub)}
-                              title="Ignore"
-                              className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ) : actionState === 'loading' ? (
-                          <div className="flex justify-end pr-2">
-                            <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
-                          </div>
-                        ) : sub.action_type ? (
-                          <div className="flex justify-end">
-                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-400">
-                              <CheckCircle2 className="w-3 h-3" />
-                              {STATUS_LABEL[sub.action_type] ?? sub.action_type}
-                            </span>
                           </div>
                         ) : null}
                       </td>

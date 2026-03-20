@@ -137,10 +137,9 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
   const settingsActive = pathname.startsWith('/settings')
 
   return (
-    <div className="w-[68px] group hover:w-[216px] shrink-0 relative z-20 transition-[width] duration-200 ease-in-out">
+    <div className="w-[80px] group hover:w-[228px] shrink-0 relative z-20 transition-[width] duration-200 ease-in-out">
       <aside className={cn(
-        'absolute inset-y-3 left-3 flex flex-col',
-        'w-[56px] group-hover:w-[204px]',
+        'absolute top-3 bottom-3 left-3 right-3 flex flex-col',
         'bg-white dark:bg-[#232323] border border-gray-100 dark:border-white/8 rounded-2xl shadow-md dark:shadow-black/30',
         'transition-[width] duration-200 ease-in-out overflow-hidden',
         'group-hover:shadow-xl dark:group-hover:shadow-black/50',
