@@ -110,7 +110,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         userEmail={userEmail}
         branding={branding}
       />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden pl-20">
         {isOnTrial && workspace.trial_ends_at && (
           <TrialBanner trialEndsAt={workspace.trial_ends_at} />
         )}
