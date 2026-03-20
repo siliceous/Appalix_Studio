@@ -291,9 +291,9 @@ export function ConversationPanelClient({
               className="text-[11px] border dark:border-white/10 rounded-full px-2.5 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60 cursor-pointer"
             >
               <option value="">Priority</option>
-              <option value="low">🟢 Low</option>
+              <option value="low">⚪ Low</option>
               <option value="medium">🟡 Medium</option>
-              <option value="high">🔴 High</option>
+              <option value="high">🟢 High</option>
             </select>
 
             {/* Status dropdown */}
