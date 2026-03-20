@@ -228,19 +228,21 @@ export function ConversationsClient({
           </div>
         </div>
 
-        {/* Status filter pills */}
-        <div className="flex gap-1 px-3 py-2 border-b dark:border-white/8 overflow-x-auto">
-          {(['', 'active', 'completed', 'archived'] as const).map(s => (
-            <button key={s}
-              onClick={() => pushFilter({ status: s || undefined })}
-              className={`shrink-0 px-2.5 py-1 text-[10px] font-semibold rounded-full transition-colors ${
-                activeStatus === s
-                  ? 'bg-[#15A4AE]/15 text-[#1f6157] dark:text-[#15A4AE] border border-[#15A4AE]/30'
-                  : 'bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
-              }`}>
-              {s === '' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
-            </button>
-          ))}
+        {/* Status filter */}
+        <div className="px-3 py-2 border-b dark:border-white/8">
+          <div className="relative">
+            <select
+              value={activeStatus}
+              onChange={e => pushFilter({ status: e.target.value || undefined })}
+              className="w-full appearance-none pl-3 pr-7 py-1.5 text-xs border dark:border-white/10 rounded-lg bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
+            >
+              <option value="">All statuses</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+              <option value="archived">Archived</option>
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+          </div>
         </div>
 
         {/* Bot filter (if multiple bots) */}
