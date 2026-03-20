@@ -3,7 +3,7 @@ import { redirect }     from 'next/navigation'
 import type { Metadata } from 'next'
 import type { WorkspaceMember, SageTicket, SageContact, WorkspaceMemberRole } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
-import { TicketsClient } from '@/app/(dashboard)/sage/tickets/tickets-client'
+import { TicketsTable } from '@/components/dashboard/tickets-table'
 import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
@@ -130,7 +130,13 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
       <SubpageToolbar sourceKey="tickets" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.tickets_auto_enabled} viewAsUserId={viewAsUserId} teamMembers={teamMembers} />
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 overflow-y-auto">
-          <TicketsClient tickets={tickets} contacts={contacts} readonly={!!viewAsUserId} />
+          <TicketsTable
+            tickets={tickets}
+            contacts={contacts}
+            readonly={!!viewAsUserId}
+            teamMembers={teamMembers}
+            canAllocate={callerRank >= ROLE_RANK.manager}
+          />
         </div>
         <ActivitySidebar
           activity={activity}

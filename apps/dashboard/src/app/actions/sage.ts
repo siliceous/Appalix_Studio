@@ -924,6 +924,64 @@ export async function deleteTickets(ids: string[]) {
   revalidatePath('/sage/tickets')
 }
 
+export async function renameTicket(id: string, title: string): Promise<{ error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('sage_tickets')
+    .update({ title: title.trim(), updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('workspace_id', workspaceId)
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard/tickets')
+  revalidatePath('/sage/tickets')
+  return {}
+}
+
+export async function addContactFromTicket(
+  ticketId: string,
+  contact: { name: string | null; email: string | null; phone: string | null },
+): Promise<{ error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+  if (!contact.name && !contact.email && !contact.phone) return { error: 'No contact info on this ticket' }
+
+  // Check for existing contact by email or phone
+  let existing: { id: string } | null = null
+  if (contact.email) {
+    const { data } = await admin.from('sage_contacts').select('id').eq('workspace_id', workspaceId).ilike('email', contact.email).limit(1).maybeSingle()
+    existing = data as { id: string } | null
+  }
+  if (!existing && contact.phone) {
+    const { data } = await admin.from('sage_contacts').select('id').eq('workspace_id', workspaceId).ilike('phone', contact.phone).limit(1).maybeSingle()
+    existing = data as { id: string } | null
+  }
+
+  if (existing) {
+    // Link ticket to existing contact
+    await admin.from('sage_tickets').update({ contact_id: existing.id }).eq('id', ticketId).eq('workspace_id', workspaceId)
+    revalidatePath('/dashboard/tickets')
+    return {}
+  }
+
+  // Create new contact
+  const { data: newContact, error } = await admin.from('sage_contacts').insert({
+    workspace_id:  workspaceId,
+    name:          contact.name ?? contact.email ?? 'Unknown',
+    email:         contact.email,
+    phone:         contact.phone,
+    source:        'ticket',
+    contact_type:  'potential_customer',
+  }).select('id').single()
+  if (error) return { error: error.message }
+
+  // Link ticket to new contact
+  await admin.from('sage_tickets').update({ contact_id: (newContact as { id: string }).id }).eq('id', ticketId).eq('workspace_id', workspaceId)
+  revalidatePath('/dashboard/tickets')
+  revalidatePath('/sage/contacts')
+  return {}
+}
+
 // ---------------------------------------------------------------
 // Sage Integrations
 // ---------------------------------------------------------------
