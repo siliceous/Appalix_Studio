@@ -15,7 +15,7 @@ import { CsvExportButton } from '@/components/ui/csv-export-button'
 import type { ConvRow, BotOption, ConvFilters, TeamMember } from './page'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const PLATFORMS = ['slack', 'google_chat', 'facebook_messenger', 'whatsapp', 'wordpress', 'web_widget'] as const
+const PLATFORMS = ['slack', 'google_chat', 'facebook_messenger', 'whatsapp', 'wordpress', 'web_widget', 'shopify'] as const
 
 const PRIORITY_BADGE: Record<string, string> = {
   high:   'bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/25',
