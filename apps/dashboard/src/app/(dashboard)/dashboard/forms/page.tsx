@@ -96,7 +96,7 @@ export default async function FormsPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let subsQuery = (supabase as any)
     .from('sage_form_submissions')
-    .select('id, form_id, source_platform, fields, ai_priority, ai_summary, ai_insights, ai_action, ai_entities, ai_analyzed_at, actioned_at, action_type, created_at, mailchimp_synced_at')
+    .select('id, form_id, source_platform, fields, ai_priority, ai_summary, ai_insights, ai_action, ai_entities, ai_analyzed_at, actioned_at, action_type, assigned_to, created_at, mailchimp_synced_at')
     .eq('workspace_id', workspaceId)
 
   if (isRestricted) {
@@ -225,6 +225,8 @@ export default async function FormsPage({
             mailchimpLists={mailchimpLists}
             connectedEmailProviders={connectedEmailProviders}
             mailchimpSyncEnabled={mailchimpSyncEnabled}
+            teamMembers={teamMembersForPicker}
+            canAllocate={callerRank >= ROLE_RANK.manager}
           />
         </div>
         <ActivitySidebar

@@ -5,24 +5,43 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ClipboardList, Search, ChevronDown, X,
-  UserPlus, Ticket, CheckCircle2, Clock, Download, ChevronUp,
+  UserPlus, Ticket, CheckCircle2, Clock, Download, ChevronUp, Loader2, Trash2,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
-import { formSubmissionCreateLead, formSubmissionCreateTicket, markSubmissionActioned, updateFormMailchimpList } from '@/app/actions/sage-forms'
+import {
+  formSubmissionCreateLead,
+  formSubmissionCreateTicket,
+  markSubmissionActioned,
+  updateFormMailchimpList,
+  updateSubmissionPriority,
+  updateSubmissionStatus,
+  updateSubmissionAssignedTo,
+} from '@/app/actions/sage-forms'
 import { toggleMailchimpSync, syncFromEmailPlatform } from '@/app/actions/leads'
 import type { SageForm, SageFormSubmission } from '@/app/actions/sage-forms'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const PRIORITY_BADGE: Record<string, string> = {
+const PRIORITY_OPTIONS = ['high', 'medium', 'low'] as const
+const STATUS_OPTIONS   = ['pending', 'lead', 'ticket', 'ignored'] as const
+
+const PRIORITY_CLS: Record<string, string> = {
   high:   'bg-[#15A4AE]/10 dark:bg-[#15A4AE]/15 text-[#1f6157] dark:text-[#15A4AE] border border-[#15A4AE]/30',
   medium: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200/70 dark:border-amber-500/18',
   low:    'bg-gray-100 dark:bg-white/5 text-gray-500 border border-gray-200 dark:border-white/10',
 }
 
-const STATUS_BADGE: Record<string, string> = {
+const STATUS_CLS: Record<string, string> = {
+  pending: 'bg-gray-100 dark:bg-white/5 text-gray-500 border border-gray-200 dark:border-white/10',
   lead:    'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20',
   ticket:  'bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-500/20',
   ignored: 'bg-gray-100 dark:bg-white/5 text-gray-400 border border-gray-200 dark:border-white/10',
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  pending: 'Pending',
+  lead:    'Deal created',
+  ticket:  'Ticket created',
+  ignored: 'Ignored',
 }
 
 // ── Active pill style (consistent with conversations page) ────────────────────
@@ -50,6 +69,8 @@ interface Props {
   mailchimpLists?:          Array<{ id: string; name: string }>
   connectedEmailProviders?:  string[]
   mailchimpSyncEnabled?:     boolean
+  teamMembers?:             Array<{ user_id: string; name: string }>
+  canAllocate?:             boolean
 }
 
 const EMAIL_PLATFORM_META: Record<string, { name: string; logo: string }> = {
@@ -79,11 +100,43 @@ function buildUrl(base: string, filters: FormFilters): string {
   return qs ? `${base}?${qs}` : base
 }
 
+function getCity(sub: SageFormSubmission): string {
+  return sub.fields.city ?? sub.fields.location ?? ''
+}
+
+function getPhone(sub: SageFormSubmission): string {
+  return sub.ai_entities?.phone ?? sub.fields.phone ?? sub.fields.phone_number ?? sub.fields.mobile ?? ''
+}
+
+function getCompany(sub: SageFormSubmission): string {
+  return sub.fields.company ?? sub.fields.company_name ?? sub.fields.organisation ?? sub.fields.organization ?? ''
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
-export function FormsTable({ submissions, forms, filters, readonly = false, mailchimpConnected = false, mailchimpListId = '', mailchimpLists = [], connectedEmailProviders = [], mailchimpSyncEnabled = false }: Props) {
+export function FormsTable({
+  submissions, forms, filters, readonly = false,
+  mailchimpConnected = false, mailchimpListId = '', mailchimpLists = [],
+  connectedEmailProviders = [], mailchimpSyncEnabled = false,
+  teamMembers = [], canAllocate = false,
+}: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
+
+  // Selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  // Inline saving per row
+  const [prioritySaving, setPrioritySaving] = useState<Record<string, boolean>>({})
+  const [statusSaving,   setStatusSaving]   = useState<Record<string, boolean>>({})
+  const [assignSaving,   setAssignSaving]   = useState<Record<string, boolean>>({})
+
+  // Bulk saving
+  const [bulkSaving, setBulkSaving] = useState(false)
+
+  // Old action state (Deal/Ticket quick actions)
   const [actioning, setActioning]   = useState<Record<string, string>>({})
+
+  // Email integration state
   const [mcExpanded, setMcExpanded] = useState(false)
   const [mcSaving, setMcSaving]     = useState<Record<string, boolean>>({})
   const [syncEnabled, setSyncEnabled]   = useState(mailchimpSyncEnabled)
@@ -92,6 +145,7 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
   const [syncResult, setSyncResult]     = useState<{ synced: number; skipped: number; error?: string } | null>(null)
   const [bannerCollapsed, setBannerCollapsed] = useState(false)
 
+  // ── Email integration handlers ───────────────────────────────────────────
   async function handleToggleSync() {
     if (syncToggling) return
     const next = !syncEnabled
@@ -118,32 +172,95 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
     }
   }
 
+  // ── Filter navigation ────────────────────────────────────────────────────
   const pushFilter = useCallback((patch: Partial<FormFilters>) => {
     const next = { ...filters, ...patch }
     Object.keys(next).forEach(k => { if (!next[k as keyof FormFilters]) delete next[k as keyof FormFilters] })
     router.push(buildUrl('/dashboard/forms', next))
   }, [filters, router])
 
+  // ── Selection helpers ────────────────────────────────────────────────────
+  const allSelected = submissions.length > 0 && selectedIds.size === submissions.length
+  function toggleAll() {
+    setSelectedIds(allSelected ? new Set() : new Set(submissions.map(s => s.id)))
+  }
+  function toggleOne(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  // ── Inline row handlers ───────────────────────────────────────────────────
+  async function handlePriorityChange(id: string, val: string) {
+    setPrioritySaving(p => ({ ...p, [id]: true }))
+    await updateSubmissionPriority(id, val as 'high' | 'medium' | 'low' | null)
+    setPrioritySaving(p => ({ ...p, [id]: false }))
+    router.refresh()
+  }
+
+  async function handleStatusChange(id: string, val: string) {
+    setStatusSaving(p => ({ ...p, [id]: true }))
+    await updateSubmissionStatus(id, val)
+    setStatusSaving(p => ({ ...p, [id]: false }))
+    router.refresh()
+  }
+
+  async function handleAssignChange(id: string, val: string) {
+    setAssignSaving(p => ({ ...p, [id]: true }))
+    await updateSubmissionAssignedTo(id, val || null)
+    setAssignSaving(p => ({ ...p, [id]: false }))
+    router.refresh()
+  }
+
+  // ── Bulk handlers ─────────────────────────────────────────────────────────
+  async function handleBulkPriority(val: string) {
+    if (!val || bulkSaving) return
+    setBulkSaving(true)
+    await Promise.all([...selectedIds].map(id => updateSubmissionPriority(id, val as 'high' | 'medium' | 'low')))
+    setBulkSaving(false)
+    router.refresh()
+  }
+
+  async function handleBulkStatus(val: string) {
+    if (!val || bulkSaving) return
+    setBulkSaving(true)
+    await Promise.all([...selectedIds].map(id => updateSubmissionStatus(id, val)))
+    setBulkSaving(false)
+    router.refresh()
+  }
+
+  async function handleBulkAssign(val: string) {
+    if (bulkSaving) return
+    setBulkSaving(true)
+    await Promise.all([...selectedIds].map(id => updateSubmissionAssignedTo(id, val || null)))
+    setBulkSaving(false)
+    router.refresh()
+  }
+
+  async function handleBulkDelete() {
+    if (!window.confirm(`Delete ${selectedIds.size} submission(s)?`)) return
+    setBulkSaving(true)
+    await Promise.all([...selectedIds].map(id => markSubmissionActioned(id, 'ignored')))
+    setBulkSaving(false)
+    setSelectedIds(new Set())
+    router.refresh()
+  }
+
+  // ── Quick-action handlers ─────────────────────────────────────────────────
   async function handleCreateLead(sub: SageFormSubmission) {
     setActioning(p => ({ ...p, [sub.id]: 'loading' }))
     const res = await formSubmissionCreateLead(sub)
-    if (res.error) {
-      setActioning(p => ({ ...p, [sub.id]: 'error' }))
-    } else {
-      setActioning(p => ({ ...p, [sub.id]: 'lead' }))
-      router.refresh()
-    }
+    setActioning(p => ({ ...p, [sub.id]: res.error ? 'error' : 'lead' }))
+    if (!res.error) router.refresh()
   }
 
   async function handleCreateTicket(sub: SageFormSubmission) {
     setActioning(p => ({ ...p, [sub.id]: 'loading' }))
     const res = await formSubmissionCreateTicket(sub)
-    if (res.error) {
-      setActioning(p => ({ ...p, [sub.id]: 'error' }))
-    } else {
-      setActioning(p => ({ ...p, [sub.id]: 'ticket' }))
-      router.refresh()
-    }
+    setActioning(p => ({ ...p, [sub.id]: res.error ? 'error' : 'ticket' }))
+    if (!res.error) router.refresh()
   }
 
   async function handleIgnore(sub: SageFormSubmission) {
@@ -153,20 +270,22 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
     })
   }
 
+  // ── Misc ──────────────────────────────────────────────────────────────────
   const activeForm   = filters.form   ?? ''
   const activeStatus = filters.status ?? ''
 
   const exportCSV = () => {
-    const headers = ['Name', 'Email', 'Form', 'Priority', 'Summary', 'Status', 'Submitted']
+    const headers = ['Name', 'Email', 'Phone', 'Company', 'City', 'Form', 'Priority', 'Status', 'Submitted', 'Assigned to']
     const rows = submissions.map(sub => {
-      const name   = sub.ai_entities?.name  ?? sub.fields.name  ?? 'Anonymous'
-      const email  = sub.ai_entities?.email ?? sub.fields.email ?? ''
-      const form   = forms.find(f => f.id === sub.form_id)?.name ?? ''
-      const status = sub.action_type === 'lead' ? 'Deal created'
-        : sub.action_type === 'ticket' ? 'Ticket created'
-        : sub.action_type === 'ignored' ? 'Ignored'
-        : 'Pending'
-      return [name, email, form, sub.ai_priority ?? '', sub.ai_summary ?? '', status, new Date(sub.created_at).toLocaleString()]
+      const name     = sub.ai_entities?.name  ?? sub.fields.name  ?? 'Anonymous'
+      const email    = sub.ai_entities?.email ?? sub.fields.email ?? ''
+      const phone    = getPhone(sub)
+      const company  = getCompany(sub)
+      const city     = getCity(sub)
+      const form     = forms.find(f => f.id === sub.form_id)?.name ?? ''
+      const status   = STATUS_LABEL[sub.action_type ?? 'pending'] ?? 'Pending'
+      const assignee = teamMembers.find(m => m.user_id === sub.assigned_to)?.name ?? ''
+      return [name, email, phone, company, city, form, sub.ai_priority ?? '', status, new Date(sub.created_at).toLocaleString(), assignee]
     })
     const csv = [headers, ...rows]
       .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
@@ -178,14 +297,12 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-5 p-8">
+    <div className="max-w-full mx-auto space-y-5 p-8">
 
       {/* ── Email integrations banner ── */}
       <div className="rounded-xl border border-gray-200 dark:border-white/8 bg-white dark:bg-white/[0.03] overflow-hidden">
-        {/* Connected platforms row */}
         {connectedEmailProviders.length > 0 && (
           <div className="border-b border-gray-100 dark:border-white/6">
-            {/* Top row — always visible */}
             <div className="flex flex-wrap items-center gap-3 px-4 py-3">
               <span className="text-xs text-gray-500 dark:text-gray-400 font-medium shrink-0">Syncing to:</span>
               {connectedEmailProviders.map(provider => {
@@ -203,7 +320,6 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
                 <Link href="/sage/integrations" className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">Manage →</Link>
                 <button
                   onClick={() => setBannerCollapsed(v => !v)}
-                  title={bannerCollapsed ? 'Show sync controls' : 'Hide sync controls'}
                   className="p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
                 >
                   {bannerCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
@@ -211,14 +327,11 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
               </div>
             </div>
 
-            {/* Collapsible sync controls */}
             {!bannerCollapsed && connectedEmailProviders.includes('mailchimp') && (
               <div className="flex items-center gap-3 px-4 py-2.5 border-t border-gray-100 dark:border-white/6 bg-gray-50/60 dark:bg-white/[0.02] overflow-x-auto">
-                {/* Auto Sync toggle */}
                 <button
                   onClick={handleToggleSync}
                   disabled={syncToggling}
-                  title={syncEnabled ? 'Turn off auto-sync' : 'Turn on auto-sync'}
                   className={`flex items-center gap-2 px-2.5 py-1 rounded-lg border transition-colors ${
                     syncEnabled
                       ? 'border-brand-200 dark:border-[#15A4AE]/30 bg-brand-50 dark:bg-[#15A4AE]/10'
@@ -228,16 +341,10 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
                   <span className={`text-[11px] font-medium ${syncEnabled ? 'text-brand-600 dark:text-[#15A4AE]' : 'text-gray-400 dark:text-gray-500'}`}>
                     Mailchimp Auto Sync
                   </span>
-                  <span className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${
-                    syncEnabled ? 'bg-brand-600' : 'bg-gray-200 dark:bg-white/15'
-                  }`}>
-                    <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${
-                      syncEnabled ? 'translate-x-[14px]' : 'translate-x-[2px]'
-                    }`} />
+                  <span className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${syncEnabled ? 'bg-brand-600' : 'bg-gray-200 dark:bg-white/15'}`}>
+                    <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${syncEnabled ? 'translate-x-[14px]' : 'translate-x-[2px]'}`} />
                   </span>
                 </button>
-
-                {/* Sync Now button */}
                 <button
                   onClick={handleSyncNow}
                   disabled={syncing}
@@ -245,8 +352,6 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
                 >
                   {syncing ? 'Syncing…' : 'Sync Now'}
                 </button>
-
-                {/* Sync result */}
                 {syncResult && (
                   <span className={`text-[11px] font-medium whitespace-nowrap shrink-0 ${syncResult.error ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
                     {syncResult.error
@@ -262,16 +367,12 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
           </div>
         )}
 
-        {/* Mailchimp per-form audience picker */}
         {mailchimpConnected && (
           <div className="flex items-center gap-2.5 px-4 py-2.5 text-sm">
             <img src="/integrations/mailchimp.png" alt="Mailchimp" className="w-4 h-4 object-contain shrink-0" />
             <span className="text-xs text-gray-500 dark:text-gray-400">Mailchimp default list{mailchimpListId ? `: ${mailchimpListId}` : ''}</span>
             {mailchimpLists.length > 1 && forms.length > 0 && (
-              <button
-                onClick={() => setMcExpanded(v => !v)}
-                className="ml-auto text-xs font-medium text-[#15A4AE] hover:underline shrink-0"
-              >
+              <button onClick={() => setMcExpanded(v => !v)} className="ml-auto text-xs font-medium text-[#15A4AE] hover:underline shrink-0">
                 {mcExpanded ? 'Hide per-form settings ↑' : 'Set audience per form ↓'}
               </button>
             )}
@@ -306,7 +407,6 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
           </div>
         )}
 
-        {/* No connections prompt */}
         {connectedEmailProviders.length === 0 && !mailchimpConnected && (
           <div className="flex items-center gap-3 px-4 py-3">
             <span className="text-xs text-gray-500 dark:text-gray-400">Connect an email platform to auto-sync form submissions</span>
@@ -330,6 +430,50 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {/* Bulk actions */}
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-2">
+              {bulkSaving && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
+              <select
+                disabled={bulkSaving}
+                defaultValue=""
+                onChange={e => { handleBulkPriority(e.target.value); e.target.value = '' }}
+                className="text-xs border dark:border-white/10 rounded-lg px-2 py-1.5 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-200 focus:outline-none disabled:opacity-50"
+              >
+                <option value="" disabled>Priority…</option>
+                {PRIORITY_OPTIONS.map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
+              </select>
+              <select
+                disabled={bulkSaving}
+                defaultValue=""
+                onChange={e => { handleBulkStatus(e.target.value); e.target.value = '' }}
+                className="text-xs border dark:border-white/10 rounded-lg px-2 py-1.5 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-200 focus:outline-none disabled:opacity-50"
+              >
+                <option value="" disabled>Status…</option>
+                {STATUS_OPTIONS.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+              </select>
+              {canAllocate && teamMembers.length > 0 && (
+                <select
+                  disabled={bulkSaving}
+                  defaultValue=""
+                  onChange={e => { handleBulkAssign(e.target.value); e.target.value = '' }}
+                  className="text-xs border dark:border-white/10 rounded-lg px-2 py-1.5 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-200 focus:outline-none disabled:opacity-50"
+                >
+                  <option value="" disabled>Assign to…</option>
+                  <option value="">Unassign</option>
+                  {teamMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
+                </select>
+              )}
+              <button
+                onClick={handleBulkDelete}
+                disabled={bulkSaving}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Delete ({selectedIds.size})
+              </button>
+            </div>
+          )}
           <button
             onClick={exportCSV}
             disabled={submissions.length === 0}
@@ -349,11 +493,7 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
 
       {/* ── Filter bar ── */}
       <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-4 space-y-3">
-
-        {/* Row 1: Search + Form dropdown + Status pills */}
         <div className="flex flex-wrap gap-3 items-center">
-
-          {/* Search */}
           <div className="relative flex-1 min-w-[180px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
             <input
@@ -365,14 +505,12 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
               className="w-full pl-8 pr-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
             />
             {filters.q && (
-              <button onClick={() => pushFilter({ q: undefined })}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+              <button onClick={() => pushFilter({ q: undefined })} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
 
-          {/* Form filter */}
           {forms.length > 1 && (
             <div className="relative">
               <select
@@ -381,15 +519,12 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
                 className="appearance-none pl-3 pr-8 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer"
               >
                 <option value="">All forms</option>
-                {forms.map(f => (
-                  <option key={f.id} value={f.id}>{f.name}</option>
-                ))}
+                {forms.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
               </select>
               <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
             </div>
           )}
 
-          {/* Status pills */}
           <div className="flex items-center gap-1">
             {([
               { value: '',        label: 'All' },
@@ -416,130 +551,234 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
             <p className="text-sm text-gray-400">No submissions match your filters.</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b dark:border-white/8 bg-gray-50 dark:bg-white/[0.03]">
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Submitter</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Form</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Priority</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Summary</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Submitted</th>
-                <th className="text-right px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y dark:divide-white/5">
-              {submissions.map(sub => {
-                const name  = sub.ai_entities?.name  ?? sub.fields.name  ?? 'Anonymous'
-                const email = sub.ai_entities?.email ?? sub.fields.email ?? null
-                const form  = forms.find(f => f.id === sub.form_id)
-                const actionState = actioning[sub.id]
-                const effectiveActionType = actionState === 'lead' ? 'lead'
-                  : actionState === 'ticket' ? 'ticket'
-                  : sub.action_type
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[900px]">
+              <thead>
+                <tr className="border-b dark:border-white/8 bg-gray-50 dark:bg-white/[0.03]">
+                  <th className="px-4 py-3 w-10">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={toggleAll}
+                      className="rounded border-gray-300 dark:border-white/20 text-brand-600 focus:ring-[#15A4AE]/40"
+                    />
+                  </th>
+                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Priority</th>
+                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Name</th>
+                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Email</th>
+                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Phone</th>
+                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Company</th>
+                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">City</th>
+                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Form</th>
+                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Submitted</th>
+                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</th>
+                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Assigned to</th>
+                  <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y dark:divide-white/5">
+                {submissions.map(sub => {
+                  const name     = sub.ai_entities?.name  ?? sub.fields.name  ?? 'Anonymous'
+                  const email    = sub.ai_entities?.email ?? sub.fields.email ?? null
+                  const phone    = getPhone(sub)
+                  const company  = getCompany(sub)
+                  const city     = getCity(sub)
+                  const form     = forms.find(f => f.id === sub.form_id)
+                  const priority = sub.ai_priority ?? null
+                  const status   = sub.action_type ?? 'pending'
+                  const assignee = teamMembers.find(m => m.user_id === sub.assigned_to)
+                  const actionState = actioning[sub.id]
+                  const selected = selectedIds.has(sub.id)
 
-                return (
-                  <tr key={sub.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors group">
+                  return (
+                    <tr
+                      key={sub.id}
+                      className={`hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors group ${selected ? 'bg-brand-50/40 dark:bg-[#15A4AE]/5' : ''}`}
+                    >
+                      {/* Checkbox */}
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => toggleOne(sub.id)}
+                          className="rounded border-gray-300 dark:border-white/20 text-brand-600 focus:ring-[#15A4AE]/40"
+                        />
+                      </td>
 
-                    {/* Submitter name + email */}
-                    <td className="px-5 py-3.5 max-w-[200px]">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{name}</p>
-                      {email && <p className="text-xs text-gray-400 mt-0.5 truncate">{email}</p>}
-                    </td>
+                      {/* Priority — inline editable pill */}
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        {prioritySaving[sub.id] ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
+                        ) : (
+                          <div className="relative inline-flex items-center">
+                            <select
+                              value={priority ?? ''}
+                              disabled={readonly}
+                              onChange={e => handlePriorityChange(sub.id, e.target.value)}
+                              className={`appearance-none pl-2 pr-5 py-0.5 rounded-full text-[10px] font-semibold cursor-pointer border-0 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 disabled:cursor-default ${
+                                priority ? PRIORITY_CLS[priority] : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500'
+                              }`}
+                            >
+                              <option value="">— none —</option>
+                              {PRIORITY_OPTIONS.map(p => (
+                                <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
+                              ))}
+                            </select>
+                            {!readonly && <ChevronDown className="absolute right-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-current opacity-60 pointer-events-none" />}
+                          </div>
+                        )}
+                      </td>
 
-                    {/* Form name / source platform */}
-                    <td className="px-4 py-3.5 whitespace-nowrap">
-                      {sub.source_platform ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-500/20">
-                          {EMAIL_PLATFORM_META[sub.source_platform] && (
-                            <img src={EMAIL_PLATFORM_META[sub.source_platform].logo} alt="" className="w-3 h-3 object-contain" />
-                          )}
-                          {EMAIL_PLATFORM_META[sub.source_platform]?.name ?? sub.source_platform}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-gray-500 dark:text-gray-400">{form?.name ?? '—'}</span>
-                      )}
-                    </td>
+                      {/* Name */}
+                      <td className="px-3 py-3 max-w-[140px]">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{name}</p>
+                      </td>
 
-                    {/* Priority */}
-                    <td className="px-4 py-3.5">
-                      {sub.ai_priority ? (
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${PRIORITY_BADGE[sub.ai_priority]}`}>
-                          {sub.ai_priority}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[10px] text-gray-400 italic">
-                          <Clock className="w-3 h-3" />pending
-                        </span>
-                      )}
-                    </td>
+                      {/* Email */}
+                      <td className="px-3 py-3 max-w-[160px]">
+                        {email
+                          ? <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{email}</p>
+                          : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
+                        }
+                      </td>
 
-                    {/* AI Summary */}
-                    <td className="px-4 py-3.5 max-w-[280px]">
-                      {sub.ai_summary ? (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={sub.ai_summary}>
-                          {sub.ai_summary.length > 90 ? sub.ai_summary.slice(0, 90) + '…' : sub.ai_summary}
-                        </p>
-                      ) : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>}
-                    </td>
+                      {/* Phone */}
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        {phone
+                          ? <span className="text-xs text-gray-500 dark:text-gray-400">{phone}</span>
+                          : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
+                        }
+                      </td>
 
-                    {/* Status */}
-                    <td className="px-4 py-3.5">
-                      {effectiveActionType ? (
-                        <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[effectiveActionType] ?? STATUS_BADGE.ignored}`}>
-                          <CheckCircle2 className="w-3 h-3" />
-                          {effectiveActionType === 'lead' ? 'Deal created' : effectiveActionType === 'ticket' ? 'Ticket created' : 'Ignored'}
-                        </span>
-                      ) : (
-                        <span className="text-[10px] text-gray-400">Pending</span>
-                      )}
-                    </td>
+                      {/* Company */}
+                      <td className="px-3 py-3 max-w-[120px]">
+                        {company
+                          ? <span className="text-xs text-gray-700 dark:text-gray-300 truncate block">{company}</span>
+                          : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
+                        }
+                      </td>
 
-                    {/* Submitted + Mailchimp sync badge */}
-                    <td className="px-4 py-3.5 text-right whitespace-nowrap">
-                      <span className="text-xs text-gray-400">{timeAgo(sub.created_at)}</span>
-                      {sub.mailchimp_synced_at && (
-                        <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-yellow-400/10 text-yellow-700 dark:text-yellow-400 border border-yellow-400/25" title={`Synced to Mailchimp ${timeAgo(sub.mailchimp_synced_at)}`}>
-                          <img src="/integrations/mailchimp.png" alt="" className="w-3 h-3 object-contain" />Synced
-                        </span>
-                      )}
-                    </td>
+                      {/* City */}
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        {city
+                          ? <span className="text-xs text-gray-500 dark:text-gray-400">{city}</span>
+                          : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
+                        }
+                      </td>
 
-                    {/* Actions — only show for pending and not in readonly mode */}
-                    <td className="px-5 py-3.5">
-                      {!readonly && !effectiveActionType && actionState !== 'loading' ? (
-                        <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => handleCreateLead(sub)}
-                            title="Create deal"
-                            className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-brand-600 dark:text-[#15A4AE] hover:bg-brand-50 dark:hover:bg-[#15A4AE]/10 rounded-lg transition-colors">
-                            <UserPlus className="w-3 h-3" />Deal
-                          </button>
-                          <button
-                            onClick={() => handleCreateTicket(sub)}
-                            title="Create ticket"
-                            className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg transition-colors">
-                            <Ticket className="w-3 h-3" />Ticket
-                          </button>
-                          <button
-                            onClick={() => handleIgnore(sub)}
-                            title="Ignore"
-                            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors">
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ) : actionState === 'loading' ? (
-                        <div className="flex justify-end pr-2">
-                          <span className="text-[10px] text-gray-400 animate-pulse">Saving…</span>
-                        </div>
-                      ) : null}
-                    </td>
+                      {/* Form / platform */}
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        {sub.source_platform ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-500/20">
+                            {EMAIL_PLATFORM_META[sub.source_platform] && (
+                              <img src={EMAIL_PLATFORM_META[sub.source_platform].logo} alt="" className="w-3 h-3 object-contain" />
+                            )}
+                            {EMAIL_PLATFORM_META[sub.source_platform]?.name ?? sub.source_platform}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[100px] block">
+                            {form?.name ?? '—'}
+                          </span>
+                        )}
+                      </td>
 
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                      {/* Submitted */}
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        <span className="text-xs text-gray-400">{timeAgo(sub.created_at)}</span>
+                        {sub.mailchimp_synced_at && (
+                          <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-yellow-400/10 text-yellow-700 dark:text-yellow-400 border border-yellow-400/25" title={`Synced ${timeAgo(sub.mailchimp_synced_at)}`}>
+                            <img src="/integrations/mailchimp.png" alt="" className="w-3 h-3 object-contain" />Synced
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Status — inline editable pill */}
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        {statusSaving[sub.id] ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
+                        ) : (
+                          <div className="relative inline-flex items-center">
+                            <select
+                              value={status}
+                              disabled={readonly}
+                              onChange={e => handleStatusChange(sub.id, e.target.value)}
+                              className={`appearance-none pl-2 pr-5 py-0.5 rounded-full text-[10px] font-semibold cursor-pointer border-0 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 disabled:cursor-default ${STATUS_CLS[status] ?? STATUS_CLS.pending}`}
+                            >
+                              {STATUS_OPTIONS.map(s => (
+                                <option key={s} value={s}>{STATUS_LABEL[s]}</option>
+                              ))}
+                            </select>
+                            {!readonly && <ChevronDown className="absolute right-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-current opacity-60 pointer-events-none" />}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Assigned to */}
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        {assignSaving[sub.id] ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
+                        ) : canAllocate && teamMembers.length > 0 ? (
+                          <select
+                            value={sub.assigned_to ?? ''}
+                            disabled={readonly}
+                            onChange={e => handleAssignChange(sub.id, e.target.value)}
+                            className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-transparent text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 disabled:opacity-60 max-w-[120px]"
+                          >
+                            <option value="">Unassigned</option>
+                            {teamMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
+                          </select>
+                        ) : assignee ? (
+                          <span className="text-xs text-gray-600 dark:text-gray-300">{assignee.name}</span>
+                        ) : (
+                          <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-4 py-3">
+                        {!readonly && !sub.action_type && actionState !== 'loading' ? (
+                          <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => handleCreateLead(sub)}
+                              title="Create deal"
+                              className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-brand-600 dark:text-[#15A4AE] hover:bg-brand-50 dark:hover:bg-[#15A4AE]/10 rounded-lg transition-colors"
+                            >
+                              <UserPlus className="w-3 h-3" />Deal
+                            </button>
+                            <button
+                              onClick={() => handleCreateTicket(sub)}
+                              title="Create ticket"
+                              className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg transition-colors"
+                            >
+                              <Ticket className="w-3 h-3" />Ticket
+                            </button>
+                            <button
+                              onClick={() => handleIgnore(sub)}
+                              title="Ignore"
+                              className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : actionState === 'loading' ? (
+                          <div className="flex justify-end pr-2">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
+                          </div>
+                        ) : sub.action_type ? (
+                          <div className="flex justify-end">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-400">
+                              <CheckCircle2 className="w-3 h-3" />
+                              {STATUS_LABEL[sub.action_type] ?? sub.action_type}
+                            </span>
+                          </div>
+                        ) : null}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

@@ -40,6 +40,7 @@ export interface SageFormSubmission {
   ai_analyzed_at:      string | null
   actioned_at:         string | null
   action_type:         string | null
+  assigned_to:         string | null
   created_at:          string
   mailchimp_synced_at: string | null
 }
@@ -154,6 +155,36 @@ export async function formSubmissionCreateLead(submission: SageFormSubmission): 
   if (result.error) return { error: result.error }
 
   return markSubmissionActioned(submission.id, 'lead')
+}
+
+/** Update ai_priority on a form submission */
+export async function updateSubmissionPriority(id: string, priority: 'high' | 'medium' | 'low' | null): Promise<void> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return
+  const admin = createAdminClient()
+  await admin.from('sage_form_submissions').update({ ai_priority: priority }).eq('id', id).eq('workspace_id', workspaceId)
+  revalidatePath('/dashboard/forms')
+}
+
+/** Update action_type (status) on a form submission */
+export async function updateSubmissionStatus(id: string, status: string): Promise<void> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return
+  const admin = createAdminClient()
+  const update: Record<string, string | null> = { action_type: status || null }
+  if (status) update.actioned_at = new Date().toISOString()
+  else update.actioned_at = null
+  await admin.from('sage_form_submissions').update(update).eq('id', id).eq('workspace_id', workspaceId)
+  revalidatePath('/dashboard/forms')
+}
+
+/** Assign a form submission to a team member */
+export async function updateSubmissionAssignedTo(id: string, userId: string | null): Promise<void> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return
+  const admin = createAdminClient()
+  await admin.from('sage_form_submissions').update({ assigned_to: userId }).eq('id', id).eq('workspace_id', workspaceId)
+  revalidatePath('/dashboard/forms')
 }
 
 /** Create a ticket from a form submission */
