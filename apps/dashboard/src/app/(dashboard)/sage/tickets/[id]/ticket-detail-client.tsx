@@ -192,7 +192,7 @@ export function TicketDetailClient({ ticket, allTickets, activities: initialActi
             <div className="px-3 pt-3 pb-2 border-b border-gray-100 dark:border-white/8 shrink-0">
               <div className="flex items-center justify-between mb-2">
                 <Link
-                  href="/dashboard/sage/tickets"
+                  href="/sage/tickets"
                   className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                 >
                   <ArrowLeft className="w-3 h-3" />
@@ -247,7 +247,7 @@ export function TicketDetailClient({ ticket, allTickets, activities: initialActi
                   return (
                     <button
                       key={t.id}
-                      onClick={() => router.push(`/dashboard/sage/tickets/${t.id}`)}
+                      onClick={() => router.push(`/sage/tickets/${t.id}`)}
                       className={cn(
                         'w-full text-left px-3 py-2.5 border-b border-gray-50 dark:border-white/5 transition-colors',
                         isActive

@@ -375,7 +375,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <Link
-                      href={`/dashboard/sage/tickets/${ticket.id}`}
+                      href={`/sage/tickets/${ticket.id}`}
                       onClick={e => e.stopPropagation()}
                       className="text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-[#15A4AE] dark:hover:text-[#15A4AE] transition-colors truncate block"
                     >
