@@ -1,6 +1,8 @@
 'use server'
 
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { triageCreateLead, triageCreateTicket } from './sage-triage'
+import type { ConvRow } from '@/app/(dashboard)/conversations/page'
 
 async function logConversationActivity(
   workspaceId: string, userId: string, conversationId: string,
@@ -176,4 +178,37 @@ export async function renameConversation(conversationId: string, title: string) 
 
   if (error) throw new Error(error.message)
   void logConversationActivity(membership.workspace_id, user.id, conversationId, 'conversation_renamed', { title: title.trim() || null })
+}
+
+
+export async function conversationCreateDeal(conv: ConvRow): Promise<{ error?: string }> {
+  const name    = conv.ai_entities?.name  ?? conv.title ?? 'Unknown'
+  const email   = conv.ai_entities?.email ?? ''
+  const phone   = conv.ai_entities?.phone ?? undefined
+  const company = conv.ai_entities?.company ?? undefined
+  const result  = await triageCreateLead({
+    name,
+    email,
+    phone,
+    company,
+    dealTitle: conv.title ? `${conv.title} — Chat` : 'Chat Inquiry',
+    notes: conv.ai_summary ?? undefined,
+    conversationId: conv.id,
+    source: 'chat',
+    productInterest: conv.ai_entities?.product_interest ?? undefined,
+  })
+  return result.error ? { error: result.error } : {}
+}
+
+export async function conversationCreateTicket(conv: ConvRow): Promise<{ error?: string }> {
+  const name  = conv.ai_entities?.name  ?? conv.title ?? 'Unknown'
+  const email = conv.ai_entities?.email ?? ''
+  const result = await triageCreateTicket({
+    title:        conv.title ? `Support: ${conv.title}` : 'Support Request',
+    description:  conv.ai_summary ?? 'No details provided',
+    contactEmail: email,
+    contactName:  name,
+    priority:     (conv.ai_priority as 'low' | 'medium' | 'high') ?? 'medium',
+  })
+  return result.error ? { error: result.error } : {}
 }

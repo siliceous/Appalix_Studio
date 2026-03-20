@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   MessageSquare, Search, ChevronDown, Download,
-  Pencil, ExternalLink, X, Trash2, Loader2,
+  Pencil, X, Trash2, Loader2, UserPlus, Ticket,
 } from 'lucide-react'
 import { PLATFORM_META, timeAgo } from '@/lib/utils'
-import { renameConversation, assignConversation, deleteConversation, updateConversationPriority, updateConversationStatus } from '@/app/actions/conversation'
+import { renameConversation, assignConversation, deleteConversation, updateConversationPriority, updateConversationStatus, conversationCreateDeal, conversationCreateTicket } from '@/app/actions/conversation'
 import { deleteConversations } from '@/app/actions/bot-conversations'
 import { exportConversations } from '@/app/actions/csv-export'
 import { CsvExportButton } from '@/components/ui/csv-export-button'
@@ -58,6 +58,21 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
   const [localStatus,    setLocalStatus]    = React.useState<Record<string, string>>({})
   const [saving,         setSaving]         = React.useState<{ id: string; field: string } | null>(null)
   const [bulkSaving,     setBulkSaving]     = React.useState(false)
+  const [quickAction,    setQuickAction]    = React.useState<Record<string, 'deal' | 'ticket' | 'loading-deal' | 'loading-ticket'>>({})
+
+  async function handleCreateDeal(c: ConvRow) {
+    setQuickAction(p => ({ ...p, [c.id]: 'loading-deal' }))
+    const res = await conversationCreateDeal(c)
+    setQuickAction(p => ({ ...p, [c.id]: res.error ? 'deal' : 'deal' }))
+    if (!res.error) router.refresh()
+  }
+
+  async function handleCreateTicket(c: ConvRow) {
+    setQuickAction(p => ({ ...p, [c.id]: 'loading-ticket' }))
+    const res = await conversationCreateTicket(c)
+    setQuickAction(p => ({ ...p, [c.id]: res.error ? 'ticket' : 'ticket' }))
+    if (!res.error) router.refresh()
+  }
 
   const allSelected = conversations.length > 0 && selectedIds.size === conversations.length
   function toggleSelectAll() {
@@ -484,14 +499,35 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                       </td>
                     )}
 
-                    {/* Actions: view, rename, download, delete */}
+                    {/* Actions */}
                     <td className="px-5 py-3.5 w-px whitespace-nowrap">
-                      <div className="flex items-center gap-1 justify-end">
-                        <Link href={`/conversations/${c.id}`}
-                          title="View full transcript"
-                          className="p-1.5 text-gray-400 hover:text-[#15A4AE] hover:bg-[#15A4AE]/10 rounded-lg transition-colors">
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </Link>
+                      <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* Create deal */}
+                        {!readonly && (
+                          quickAction[c.id] === 'loading-deal' ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
+                          ) : (
+                            <button
+                              onClick={() => handleCreateDeal(c)}
+                              title="Create deal"
+                              className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors">
+                              <UserPlus className="w-3.5 h-3.5" />
+                            </button>
+                          )
+                        )}
+                        {/* Create ticket */}
+                        {!readonly && (
+                          quickAction[c.id] === 'loading-ticket' ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-yellow-400" />
+                          ) : (
+                            <button
+                              onClick={() => handleCreateTicket(c)}
+                              title="Create ticket"
+                              className="p-1.5 text-yellow-500 hover:text-yellow-700 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 rounded-lg transition-colors">
+                              <Ticket className="w-3.5 h-3.5" />
+                            </button>
+                          )
+                        )}
                         {!readonly && (
                           <button
                             onClick={() => handleRename(c.id, c.title)}
