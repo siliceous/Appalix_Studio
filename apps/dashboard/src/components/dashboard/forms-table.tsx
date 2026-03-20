@@ -213,7 +213,7 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
 
             {/* Collapsible sync controls */}
             {!bannerCollapsed && connectedEmailProviders.includes('mailchimp') && (
-              <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 border-t border-gray-100 dark:border-white/6 bg-gray-50/60 dark:bg-white/[0.02]">
+              <div className="flex items-center gap-3 px-4 py-2.5 border-t border-gray-100 dark:border-white/6 bg-gray-50/60 dark:bg-white/[0.02] overflow-x-auto">
                 {/* Auto Sync toggle */}
                 <button
                   onClick={handleToggleSync}
@@ -248,7 +248,7 @@ export function FormsTable({ submissions, forms, filters, readonly = false, mail
 
                 {/* Sync result */}
                 {syncResult && (
-                  <span className={`text-[11px] font-medium ${syncResult.error ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                  <span className={`text-[11px] font-medium whitespace-nowrap shrink-0 ${syncResult.error ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
                     {syncResult.error
                       ? `⚠ ${syncResult.error}`
                       : syncResult.synced === 0 && syncResult.skipped === 0

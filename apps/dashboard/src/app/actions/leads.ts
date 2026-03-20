@@ -306,7 +306,7 @@ async function fetchMailchimpContacts(config: Record<string, string>): Promise<N
 
   while (true) {
     const res = await fetch(
-      `https://${server ?? 'us1'}.api.mailchimp.com/3.0/lists/${list_id}/members?count=${count}&offset=${offset}&status=subscribed`,
+      `https://${server ?? 'us1'}.api.mailchimp.com/3.0/lists/${list_id}/members?count=${count}&offset=${offset}`,
       { headers: { Authorization: `Bearer ${access_token}` } }
     )
     if (!res.ok) {

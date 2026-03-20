@@ -34,7 +34,7 @@ async function pullFromMailchimp(workspaceId: string, cfg: Cfg, since: string | 
   if (!access_token || !list_id) return 0
 
   const sinceParam = since ? `&since_last_changed=${encodeURIComponent(since)}` : ''
-  const url = `https://${server ?? 'us1'}.api.mailchimp.com/3.0/lists/${list_id}/members?count=500&status=subscribed${sinceParam}`
+  const url = `https://${server ?? 'us1'}.api.mailchimp.com/3.0/lists/${list_id}/members?count=500${sinceParam}`
 
   const res = await fetch(url, { headers: { Authorization: `Bearer ${access_token}` } })
   if (!res.ok) {
