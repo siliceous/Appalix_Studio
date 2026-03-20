@@ -8,8 +8,6 @@ import type { ConvRow, BotOption, ConvFilters, TeamMember } from '@/app/(dashboa
 import { ROLE_RANK } from '@/lib/types'
 import type { WorkspaceMemberRole } from '@/lib/types'
 import { createAdminClient } from '@/lib/supabase/server'
-import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
-import { ActivitySidebar } from '@/components/team/activity-sidebar'
 
 export const metadata: Metadata = { title: 'Bot Conversations' }
 
@@ -120,7 +118,7 @@ export default async function BotsPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query: any = supabase
     .from('conversations')
-    .select('id, title, platform, status, sentiment, message_count, last_activity_at, ai_priority, ai_summary, ai_entities, bot_id, assigned_to, bots(id, name)')
+    .select('id, title, platform, status, sentiment, message_count, last_activity_at, created_at, ai_priority, ai_summary, ai_entities, bot_id, assigned_to, bots(id, name)')
     .eq('workspace_id', workspaceId)
     .order('last_activity_at', { ascending: false })
     .limit(150)
@@ -149,13 +147,6 @@ export default async function BotsPage({
   const { data: rawConversations } = await query
   const conversations = (rawConversations ?? []) as ConvRow[]
 
-  const activityDate = params.activityDate ?? new Date().toISOString().slice(0, 10)
-  const activityUserId = viewAsUserId ?? user.id
-  const [activity, viewingAs] = await Promise.all([
-    getActivityFeed(activityUserId, workspaceId, activityDate),
-    resolveViewingAs(params.viewAs, workspaceId),
-  ])
-
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
       <SubpageToolbar
@@ -168,22 +159,14 @@ export default async function BotsPage({
         teamMembers={teamMembers}
       />
       <div className="flex flex-1 overflow-hidden">
-        <div className="flex-1 overflow-y-auto">
-          <ConversationsClient
-            conversations={conversations}
-            bots={bots}
-            filters={params}
-            teamMembers={teamMembers}
-            canAssign={callerRank >= ROLE_RANK.manager && !viewAsUserId}
-            readonly={!!viewAsUserId}
-            showNewBotButton
-          />
-        </div>
-        <ActivitySidebar
-          activity={activity}
-          date={activityDate}
-          currentPath="/dashboard/bots"
-          viewingAs={viewingAs}
+        <ConversationsClient
+          conversations={conversations}
+          bots={bots}
+          filters={params}
+          teamMembers={teamMembers}
+          canAssign={callerRank >= ROLE_RANK.manager && !viewAsUserId}
+          readonly={!!viewAsUserId}
+          showNewBotButton
         />
       </div>
     </div>

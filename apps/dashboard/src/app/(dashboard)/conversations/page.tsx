@@ -18,6 +18,7 @@ export type ConvRow = {
   bot_id: string | null
   bots: { id: string; name: string } | null
   assigned_to: string | null
+  created_at: string
 }
 
 export type BotOption = { id: string; name: string }

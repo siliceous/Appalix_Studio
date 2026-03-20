@@ -111,6 +111,20 @@ export async function updateConversationPriority(conversationId: string, priorit
   return {}
 }
 
+export async function getConversationMessages(conversationId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data } = await supabase
+    .from('messages')
+    .select('id, role, content, created_at')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true })
+
+  return data as { id: string; role: string; content: string; created_at: string }[] | null
+}
+
 export async function renameConversation(conversationId: string, title: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
