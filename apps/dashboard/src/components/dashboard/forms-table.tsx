@@ -639,7 +639,12 @@ export function FormsTable({
 
                       {/* Name */}
                       <td className="px-3 py-3 max-w-[140px]">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{name}</p>
+                        <Link
+                          href={`/dashboard/forms/${sub.id}`}
+                          className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-[#15A4AE] truncate block"
+                        >
+                          {name}
+                        </Link>
                       </td>
 
                       {/* Email */}
@@ -683,15 +688,10 @@ export function FormsTable({
                             )}
                             {EMAIL_PLATFORM_META[sub.source_platform]?.name ?? sub.source_platform}
                           </span>
-                        ) : form ? (
-                          <Link
-                            href={`/dashboard/forms?form=${form.id}`}
-                            className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[100px] block hover:text-[#15A4AE] hover:underline transition-colors"
-                          >
-                            {form.name}
-                          </Link>
                         ) : (
-                          <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[100px] block">
+                            {form?.name ?? '—'}
+                          </span>
                         )}
                       </td>
 
