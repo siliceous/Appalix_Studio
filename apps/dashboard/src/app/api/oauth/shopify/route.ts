@@ -19,19 +19,33 @@ export async function GET(req: NextRequest) {
   const apiUrl     = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.appalix.ai'
   const redirectUri = `${apiUrl}/shopify/callback`
 
-  const shop  = req.nextUrl.searchParams.get('shop')   ?? ''
-  const name  = req.nextUrl.searchParams.get('name')   ?? 'Shopify integration'
-  const botId = req.nextUrl.searchParams.get('bot_id') ?? ''
+  const shopRaw = req.nextUrl.searchParams.get('shop')   ?? ''
+  const name    = req.nextUrl.searchParams.get('name')   ?? 'Shopify integration'
+  const botId   = req.nextUrl.searchParams.get('bot_id') ?? ''
 
-  if (!shop) {
+  if (!shopRaw) {
     return NextResponse.redirect(`${appUrl}/integrations/new?platform=shopify&error=missing_shop`)
   }
 
-  // Normalise shop domain
-  const shopDomain = shop.replace(/^https?:\/\//, '').replace(/\/$/, '')
-  if (!shopDomain.includes('.myshopify.com')) {
-    return NextResponse.redirect(`${appUrl}/integrations/new?platform=shopify&error=invalid_shop`)
+  // Extract store name from any input format:
+  //   https://admin.shopify.com/store/mystore  → mystore
+  //   https://mystore.myshopify.com/...        → mystore
+  //   mystore.myshopify.com                   → mystore
+  //   mystore.com                             → mystore (best guess)
+  //   mystore                                 → mystore
+  let storeName = shopRaw.trim().replace(/^https?:\/\//, '').replace(/\/$/, '')
+
+  const adminMatch = storeName.match(/admin\.shopify\.com\/store\/([^/?#]+)/)
+  if (adminMatch) {
+    storeName = adminMatch[1]
+  } else if (storeName.includes('.myshopify.com')) {
+    storeName = storeName.split('.myshopify.com')[0]
+  } else if (storeName.includes('.')) {
+    // e.g. mystore.com → take the first segment
+    storeName = storeName.split('.')[0]
   }
+
+  const shopDomain = `${storeName}.myshopify.com`
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

@@ -264,15 +264,15 @@ export function NewIntegrationForm({
               Enter your store domain and click Connect — you&apos;ll be taken to Shopify to approve access. No tokens to copy.
             </p>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Store domain</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Store URL or domain</label>
               <input
                 type="text"
                 value={fieldValues['shop'] ?? ''}
                 onChange={e => setField('shop', e.target.value)}
-                placeholder="yourstore.myshopify.com"
-                className="w-full px-3 py-2 border dark:border-white/10 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-transparent"
+                placeholder="e.g. mystore.com or admin.shopify.com/store/mystore"
+                className="w-full px-3 py-2 border dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-transparent"
               />
-              <p className="text-xs text-gray-400 mt-1">Find this in your Shopify Admin URL bar.</p>
+              <p className="text-xs text-gray-400 mt-1">Your store URL, Shopify admin URL, or just your store name — we'll figure it out.</p>
             </div>
             {integrationName && bots.length > 0 && fieldValues['shop'] ? (
               <a
