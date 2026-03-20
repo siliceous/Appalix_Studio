@@ -477,6 +477,12 @@ export async function syncFromEmailPlatform(
     if (contact.company)     fields.company   = contact.company
     if (contact.job_title)   fields.job_title = contact.job_title
     if (contact.website_url) fields.website   = contact.website_url
+    if (contact.street)      fields.street    = contact.street
+    if (contact.city)        fields.city      = contact.city
+    if (contact.state)       fields.state     = contact.state
+    if (contact.zip)         fields.zip       = contact.zip
+    if (contact.country)     fields.country   = contact.country
+    if (contact.tags.length) fields.tags      = contact.tags.join(', ')
 
     const { error: insertErr } = await admin
       .from('sage_form_submissions')
