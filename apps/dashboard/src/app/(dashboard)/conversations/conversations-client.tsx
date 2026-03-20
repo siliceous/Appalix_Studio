@@ -263,10 +263,10 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                       className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-[#15A4AE] cursor-pointer" />
                   </th>
                 )}
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Priority</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Conversation</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Bot</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Platform</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Priority</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Msgs</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide w-[160px]">Last active</th>
@@ -286,35 +286,6 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                           className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-[#15A4AE] cursor-pointer" />
                       </td>
                     )}
-                    {/* Conversation title + contact name */}
-                    <td className="px-5 py-3.5 max-w-[220px]">
-                      <Link href={`/conversations/${c.id}`}
-                        className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-[#15A4AE] transition-colors truncate block">
-                        {c.sentiment && (
-                          <span className={`mr-1.5 text-xs ${SENTIMENT_COLOR[c.sentiment] ?? ''}`}>●</span>
-                        )}
-                        {title}
-                      </Link>
-                      {contactName && (
-                        <p className="text-xs text-gray-400 mt-0.5 truncate">{contactName}</p>
-                      )}
-                    </td>
-
-                    {/* Bot name */}
-                    <td className="px-4 py-3.5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                      {c.bots?.name ?? '—'}
-                    </td>
-
-                    {/* Platform */}
-                    <td className="px-4 py-3.5">
-                      {c.platform ? (
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${(PLATFORM_META as any)[c.platform]?.color ?? 'bg-gray-100 text-gray-500'}`}>
-                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                          {(PLATFORM_META as any)[c.platform]?.label ?? c.platform}
-                        </span>
-                      ) : <span className="text-gray-300 dark:text-gray-600">—</span>}
-                    </td>
 
                     {/* AI Priority */}
                     <td className="px-4 py-3.5">
@@ -337,6 +308,32 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                       ) : <span className="text-gray-300 dark:text-gray-600">—</span>}
                     </td>
 
+                    {/* Conversation title + contact name */}
+                    <td className="px-5 py-3.5 max-w-[220px]">
+                      <Link href={`/conversations/${c.id}`}
+                        className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-[#15A4AE] transition-colors truncate block">
+                        {title}
+                      </Link>
+                      {contactName && (
+                        <p className="text-xs text-gray-400 mt-0.5 truncate">{contactName}</p>
+                      )}
+                    </td>
+
+                    {/* Bot name */}
+                    <td className="px-4 py-3.5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      {c.bots?.name ?? '—'}
+                    </td>
+
+                    {/* Platform */}
+                    <td className="px-4 py-3.5">
+                      {c.platform ? (
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${(PLATFORM_META as any)[c.platform]?.color ?? 'bg-gray-100 text-gray-500'}`}>
+                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                          {(PLATFORM_META as any)[c.platform]?.label ?? c.platform}
+                        </span>
+                      ) : <span className="text-gray-300 dark:text-gray-600">—</span>}
+                    </td>
 
                     {/* Status */}
                     <td className="px-4 py-3.5">
