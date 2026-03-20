@@ -137,7 +137,7 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
   const settingsActive = pathname.startsWith('/settings')
 
   return (
-    <div className="w-14 shrink-0 relative z-20">
+    <div className="w-14 hover:w-[204px] shrink-0 relative z-20 transition-[width] duration-200 ease-in-out">
       <aside className={cn(
         'group absolute inset-y-0 left-0 flex flex-col',
         'w-14 hover:w-[204px]',
