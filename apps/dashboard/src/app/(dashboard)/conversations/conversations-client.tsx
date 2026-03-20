@@ -46,9 +46,10 @@ interface Props {
   teamMembers?:  TeamMember[]
   canAssign?:    boolean
   readonly?:     boolean
+  statusCounts?: { active: number; completed: number; archived: number }
 }
 
-export function ConversationsClient({ conversations, bots, filters, teamMembers = [], canAssign = false, readonly = false, showNewBotButton = false }: Props) {
+export function ConversationsClient({ conversations, bots, filters, teamMembers = [], canAssign = false, readonly = false, showNewBotButton = false, statusCounts }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [localAssign,    setLocalAssign]    = React.useState<Record<string, string | null>>({})
@@ -81,7 +82,10 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
 
   function handleStatusChange(convId: string, status: string) {
     setLocalStatus(prev => ({ ...prev, [convId]: status }))
-    void updateConversationStatus(convId, status)
+    startTransition(async () => {
+      await updateConversationStatus(convId, status)
+      router.refresh()
+    })
   }
 
   async function handleAssign(convId: string, userId: string | null) {
@@ -196,17 +200,24 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
 
           {/* Status filter */}
           <div className="flex items-center gap-1">
-            {(['', 'active', 'completed', 'archived'] as const).map(s => (
-              <button key={s}
-                onClick={() => pushFilter({ status: s || undefined })}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                  activeStatus === s
-                    ? 'bg-[#15A4AE]/15 dark:bg-[#15A4AE]/20 text-[#1f6157] dark:text-[#15A4AE] border border-[#15A4AE]/30'
-                    : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
-                }`}>
-                {s === '' ? 'All status' : s.charAt(0).toUpperCase() + s.slice(1)}
-              </button>
-            ))}
+            {(['', 'active', 'completed', 'archived'] as const).map(s => {
+              const count = statusCounts
+                ? s === '' ? statusCounts.active + statusCounts.completed + statusCounts.archived
+                : statusCounts[s]
+                : null
+              return (
+                <button key={s}
+                  onClick={() => pushFilter({ status: s || undefined })}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                    activeStatus === s
+                      ? 'bg-[#15A4AE]/15 dark:bg-[#15A4AE]/20 text-[#1f6157] dark:text-[#15A4AE] border border-[#15A4AE]/30'
+                      : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
+                  }`}>
+                  {s === '' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+                  {count !== null && <span className="ml-1 opacity-60">({count})</span>}
+                </button>
+              )
+            })}
           </div>
         </div>
 

@@ -149,6 +149,18 @@ export default async function BotsPage({
   const { data: rawConversations } = await query
   const conversations = (rawConversations ?? []) as ConvRow[]
 
+  // Status counts (workspace-level, for the filter tab badges)
+  const [activeCountRes, completedCountRes, archivedCountRes] = await Promise.all([
+    supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('status', 'active'),
+    supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('status', 'completed'),
+    supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('status', 'archived'),
+  ])
+  const statusCounts = {
+    active:    activeCountRes.count    ?? 0,
+    completed: completedCountRes.count ?? 0,
+    archived:  archivedCountRes.count  ?? 0,
+  }
+
   const activityDate = params.activityDate ?? new Date().toISOString().slice(0, 10)
   const activityUserId = viewAsUserId ?? user.id
   const [activity, viewingAs] = await Promise.all([
@@ -177,6 +189,7 @@ export default async function BotsPage({
             canAssign={callerRank >= ROLE_RANK.manager && !viewAsUserId}
             readonly={!!viewAsUserId}
             showNewBotButton
+            statusCounts={statusCounts}
           />
         </div>
         <ActivitySidebar
