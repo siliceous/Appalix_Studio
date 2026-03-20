@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  /* ── Light mode: make grey text dark enough to read ── */
+  /* Dark mode has its own overrides via .dark .text-gray-* above */
+  .text-gray-300 { color: #4b5563; }
+  .text-gray-400 { color: #374151; }
+  .text-gray-500 { color: #1f2937; }
+  .text-gray-600 { color: #111827; }
+}
+
 @layer base {
   html {
     font-family: Inter, system-ui, sans-serif;
