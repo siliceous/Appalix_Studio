@@ -79,16 +79,25 @@ export function ConversationPanelClient({
 
   function handlePriorityChange(val: string) {
     setLocalPriority(val)
-    void updateConversationPriority(current.id, val)
+    startTransition(async () => {
+      await updateConversationPriority(current.id, val)
+      router.refresh()
+    })
   }
   function handleStatusChange(val: string) {
     setLocalStatus(val)
-    void updateConversationStatus(current.id, val)
+    startTransition(async () => {
+      await updateConversationStatus(current.id, val)
+      router.refresh()
+    })
   }
   async function handleAssign(userId: string | null) {
     setAssigning(true)
     const result = await assignConversation(current.id, userId)
-    if (!result.error) setLocalAssign(userId)
+    if (!result.error) {
+      setLocalAssign(userId)
+      router.refresh()
+    }
     setAssigning(false)
   }
   function handleRename() {
