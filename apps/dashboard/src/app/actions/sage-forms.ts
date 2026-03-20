@@ -157,6 +157,27 @@ export async function formSubmissionCreateLead(submission: SageFormSubmission): 
   return markSubmissionActioned(submission.id, 'lead')
 }
 
+/** Update the contact name on a form submission (patches fields.name) */
+export async function updateSubmissionName(id: string, name: string): Promise<void> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return
+  const admin = createAdminClient()
+  const { data: row } = await admin
+    .from('sage_form_submissions')
+    .select('fields')
+    .eq('id', id)
+    .eq('workspace_id', workspaceId)
+    .single()
+  if (!row) return
+  const fields = { ...(row as { fields: Record<string, string> }).fields, name }
+  await admin
+    .from('sage_form_submissions')
+    .update({ fields } as never)
+    .eq('id', id)
+    .eq('workspace_id', workspaceId)
+  revalidatePath('/dashboard/forms')
+}
+
 /** Update ai_priority on a form submission */
 export async function updateSubmissionPriority(id: string, priority: 'high' | 'medium' | 'low' | null): Promise<void> {
   const workspaceId = await getWorkspaceId()

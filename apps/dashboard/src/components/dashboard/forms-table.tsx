@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ClipboardList, Search, ChevronDown, X,
-  UserPlus, Ticket, Download, ChevronUp, Loader2, Trash2,
+  UserPlus, Ticket, Download, ChevronUp, Loader2, Trash2, Pencil,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import {
@@ -16,6 +16,7 @@ import {
   updateSubmissionPriority,
   updateSubmissionStatus,
   updateSubmissionAssignedTo,
+  updateSubmissionName,
 } from '@/app/actions/sage-forms'
 import { toggleMailchimpSync, syncFromEmailPlatform } from '@/app/actions/leads'
 import type { SageForm, SageFormSubmission } from '@/app/actions/sage-forms'
@@ -252,6 +253,23 @@ export function FormsTable({
     const res = await formSubmissionCreateTicket(sub)
     setQuickAction(p => { const n = { ...p }; delete n[sub.id]; return n })
     if (!res.error) router.refresh()
+  }
+
+  function handleRename(sub: SageFormSubmission) {
+    const current = sub.ai_entities?.name ?? sub.fields.name ?? ''
+    const newName = window.prompt('Rename contact:', current)
+    if (newName === null || newName === current) return
+    updateSubmissionName(sub.id, newName.trim()).then(() => router.refresh())
+  }
+
+  function handleDownload(sub: SageFormSubmission) {
+    const name = sub.ai_entities?.name ?? sub.fields.name ?? 'submission'
+    const data = JSON.stringify({ ...sub.fields, ...sub.ai_entities, submitted: sub.created_at }, null, 2)
+    const blob = new Blob([data], { type: 'application/json' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href = url; a.download = `${name.replace(/\s+/g, '_')}.json`; a.click()
+    URL.revokeObjectURL(url)
   }
 
   async function handleDeleteSubmission(id: string) {
@@ -732,6 +750,22 @@ export function FormsTable({
                               </button>
                             )
                           )}
+                          {!readonly && (
+                            <button
+                              onClick={() => handleRename(sub)}
+                              title="Rename contact"
+                              className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDownload(sub)}
+                            title="Download submission"
+                            className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
                           {!readonly && (
                             qa === 'loading-delete' ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin text-red-400" />
