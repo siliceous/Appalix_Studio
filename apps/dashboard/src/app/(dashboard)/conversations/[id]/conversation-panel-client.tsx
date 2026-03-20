@@ -271,7 +271,8 @@ export function ConversationPanelClient({
       </div>
 
       {/* ── Middle panel: chat ─────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-[#f5f4f1] dark:bg-[#1c1c1c] min-w-0 max-w-[600px]">
+      <div className="flex-1 flex justify-center overflow-hidden bg-[#f5f4f1] dark:bg-[#1c1c1c]">
+      <div className="w-full max-w-[600px] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="shrink-0 bg-white dark:bg-[#232323] border-b dark:border-white/8 px-4 py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
@@ -344,6 +345,7 @@ export function ConversationPanelClient({
           ) : renderMessages()}
           <div ref={messagesEndRef} />
         </div>
+      </div>
       </div>
 
       {/* ── Right panel: details ───────────────────────────────────────────── */}
