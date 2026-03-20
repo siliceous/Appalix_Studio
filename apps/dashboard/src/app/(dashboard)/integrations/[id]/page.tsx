@@ -10,6 +10,7 @@ import { ConnectedBanner } from './connected-banner'
 import { SlackChannelPicker } from './slack-channel-picker'
 import { FacebookPageSwitcher } from './facebook-page-switcher'
 import { DeleteIntegrationButton } from './delete-integration-button'
+import { ShopifyInjectButton } from './shopify-inject-button'
 
 export const metadata: Metadata = { title: 'Integration setup' }
 
@@ -110,7 +111,7 @@ export default async function IntegrationSetupPage({
         <TelegramSetup integrationId={id} cfg={cfg} apiUrl={API_URL} />
       )}
       {integration.platform === 'shopify' && (
-        <ShopifySetup cfg={cfg} />
+        <ShopifySetup integrationId={id} cfg={cfg} apiUrl={API_URL} />
       )}
     </div>
   )
@@ -503,8 +504,18 @@ function SetupSection({
 
 // ─── Shopify ──────────────────────────────────────────────────────────────────
 
-function ShopifySetup({ cfg }: { cfg: Record<string, unknown> }) {
-  const shopDomain = cfg.shop_domain as string | undefined
+function ShopifySetup({ integrationId, cfg, apiUrl }: { integrationId: string; cfg: Record<string, unknown>; apiUrl: string }) {
+  const shopDomain      = cfg.shop_domain    as string | undefined
+  const shopName        = cfg.shop_name      as string | undefined
+  const scriptTagSrc    = cfg.script_tag_src as string | undefined
+  const scriptTagDone   = !!scriptTagSrc
+
+  const systemPromptSuggestion = `You have access to this store's Shopify data. When a customer asks about their order status, shipping, or order history, use your Shopify tools to look it up. Always ask for their email address or order number if not provided.`
+
+  const embedSnippet = `<script>
+  window.AppalixConfig = { integrationId: '${integrationId}' };
+</script>
+<script src="${apiUrl}/widget.js" async></script>`
 
   return (
     <div className="space-y-4 mt-6">
@@ -512,32 +523,53 @@ function ShopifySetup({ cfg }: { cfg: Record<string, unknown> }) {
         number={1}
         title="Store connected"
         done
-        desc={shopDomain ? `Connected to ${shopDomain}` : 'Your Shopify store credentials are saved.'}
+        desc={shopDomain
+          ? `Connected to ${shopName ? `${shopName} (${shopDomain})` : shopDomain}. Order webhooks registered automatically.`
+          : 'Your Shopify store credentials are saved.'}
       />
 
       <SetupStep
         number={2}
-        title="Enable tools on your bot"
-        done={false}
-        desc='Go to your bot settings and turn on "Enable tools". This allows the bot to call the Shopify API mid-conversation to look up orders and shipping status.'
-      />
+        title="Chat widget injected"
+        done={scriptTagDone}
+        desc={scriptTagDone
+          ? `The chat widget has been automatically added to every page on your store via Shopify ScriptTag — no theme editing needed.`
+          : 'The widget could not be auto-injected (your Admin API token may be missing the write_script_tags scope). Use the manual snippet below or reconnect with the correct token.'}
+      >
+        {!scriptTagDone && (
+          <div className="mt-3 space-y-4">
+            <ShopifyInjectButton integrationId={integrationId} />
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Or paste manually before <code className="text-xs bg-gray-100 dark:bg-white/10 px-1 rounded">&lt;/body&gt;</code> in <strong>theme.liquid</strong>:</p>
+              <CopyField value={embedSnippet} multiline />
+            </div>
+          </div>
+        )}
+      </SetupStep>
 
       <SetupStep
         number={3}
-        title="Add to your bot's system prompt"
+        title="Enable tools on your bot"
         done={false}
-        desc='Tell the bot it has access to Shopify. Add this to the system prompt:'
+        desc='Go to your bot settings and turn on "Enable tools". This lets the bot call the Shopify API mid-conversation to look up orders, shipping status, and customer details.'
+      />
+
+      <SetupStep
+        number={4}
+        title="Add Shopify context to your bot's system prompt"
+        done={false}
+        desc="Tell the bot it has Shopify access. Add this to the system prompt:"
       >
-        <div className="mt-3 bg-gray-50 dark:bg-white/5 rounded-lg p-3 font-mono text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
-          {`You have access to this store's Shopify data. When a customer asks about their order status, shipping, or order history, use your Shopify tools to look it up. Always ask for their email address or order number if not provided.`}
+        <div className="mt-3">
+          <CopyField value={systemPromptSuggestion} multiline />
         </div>
       </SetupStep>
 
       <SetupStep
-        number={4}
+        number={5}
         title="Test it"
         done={false}
-        desc={'Deploy your bot as a web widget on your Shopify store. Ask: "Where is my order #1001?" — the bot will look it up live.'}
+        desc='Open your store and start a chat. Try asking: "Where is my order #1001?" — the bot will look it up live using your Shopify data.'
       />
     </div>
   )

@@ -83,9 +83,12 @@ export async function createIntegration(formData: FormData) {
       space_name:           formData.get('space_name') as string || '',
     }
   } else if (platform === 'shopify') {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    const webhookSecret = Array.from({ length: 48 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
     config = {
-      shop_domain:   (formData.get('shop_domain') as string || '').replace(/^https?:\/\//, '').trim(),
-      access_token:  formData.get('access_token') as string || '',
+      shop_domain:    (formData.get('shop_domain') as string || '').replace(/^https?:\/\//, '').trim(),
+      access_token:   formData.get('access_token') as string || '',
+      webhook_secret: webhookSecret,
     }
   } else if (platform === 'telegram') {
     const submittedSecret = (formData.get('telegram_webhook_secret') as string | null)?.trim()
@@ -110,6 +113,53 @@ export async function createIntegration(formData: FormData) {
   if (error) throw new Error(error.message)
 
   const integrationId = (inserted as { id: string }).id
+
+  // Auto-register Shopify webhooks for order events
+  if (platform === 'shopify') {
+    const shopDomain    = config.shop_domain as string
+    const accessToken   = config.access_token as string
+    const apiBase       = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.appalix.ai'
+    const webhookAddr   = `${apiBase}/webhooks/shopify/${integrationId}`
+
+    const topics = ['orders/create', 'orders/updated', 'fulfillments/create', 'orders/cancelled']
+    try {
+      const shopRes = await fetch(`https://${shopDomain}/admin/api/2024-01/shop.json`, {
+        headers: { 'X-Shopify-Access-Token': accessToken },
+      })
+      const shopData = shopRes.ok ? (await shopRes.json() as { shop?: { name?: string; email?: string } }) : null
+
+      const scriptSrc = `${apiBase}/widget.js?id=${integrationId}`
+
+      await Promise.all([
+        // Order/fulfillment webhooks
+        ...topics.map(topic =>
+          fetch(`https://${shopDomain}/admin/api/2024-01/webhooks.json`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
+            body:    JSON.stringify({ webhook: { topic, address: webhookAddr, format: 'json' } }),
+          })
+        ),
+        // Auto-inject chat widget via ScriptTag (no theme.liquid edit needed)
+        fetch(`https://${shopDomain}/admin/api/2024-01/script_tags.json`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
+          body:    JSON.stringify({ script_tag: { event: 'onload', src: scriptSrc } }),
+        }),
+      ])
+
+      await admin.from('integrations').update({
+        config: {
+          ...config,
+          shop_name:           shopData?.shop?.name ?? null,
+          shop_email:          shopData?.shop?.email ?? null,
+          webhooks_registered: true,
+          script_tag_src:      scriptSrc,
+        },
+      }).eq('id', integrationId)
+    } catch {
+      // Non-fatal — user can register manually
+    }
+  }
 
   // Auto-register Telegram webhook and fetch bot username
   if (platform === 'telegram') {
@@ -138,6 +188,44 @@ export async function createIntegration(formData: FormData) {
   }
 
   redirect(`/integrations/${integrationId}`)
+}
+
+export async function registerShopifyScriptTag(integrationId: string): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { data: membershipRaw } = await supabase
+    .from('workspace_members').select('workspace_id').eq('user_id', user.id).order('created_at', { ascending: true }).limit(1).single()
+  const membership = membershipRaw as { workspace_id: string } | null
+  if (!membership) throw new Error('Unauthorized')
+
+  const admin = createAdminClient()
+  const { data: intRaw } = await admin.from('integrations').select('config').eq('id', integrationId).eq('workspace_id', membership.workspace_id).single()
+  if (!intRaw) throw new Error('Integration not found')
+
+  const cfg         = (intRaw as { config: Record<string, string> }).config
+  const shopDomain  = cfg.shop_domain
+  const accessToken = cfg.access_token
+  const apiBase     = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.appalix.ai'
+  const scriptSrc   = `${apiBase}/widget.js?id=${integrationId}`
+
+  const res = await fetch(`https://${shopDomain}/admin/api/2024-01/script_tags.json`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
+    body:    JSON.stringify({ script_tag: { event: 'onload', src: scriptSrc } }),
+  })
+
+  if (!res.ok) {
+    const err = await res.text()
+    return { ok: false, error: err }
+  }
+
+  await admin.from('integrations').update({
+    config: { ...cfg, script_tag_src: scriptSrc },
+  }).eq('id', integrationId)
+
+  return { ok: true }
 }
 
 export async function setIntegrationStatus(

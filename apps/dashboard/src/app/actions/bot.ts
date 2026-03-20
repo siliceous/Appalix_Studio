@@ -3,6 +3,44 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
+export async function createBot(payload: {
+  name: string
+  description: string
+  bot_type: 'widget' | 'internal'
+  model: string
+  system_prompt: string
+  max_tokens: number
+  temperature: number
+  enable_rag: boolean
+  enable_memory: boolean
+  enable_tools: boolean
+  language_preference: string
+}): Promise<string> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: membershipRaw } = await supabase
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single()
+  const membership = membershipRaw as { workspace_id: string } | null
+  if (!membership) redirect('/login')
+
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('bots')
+    .insert({ ...payload, workspace_id: membership.workspace_id, created_by: user.id })
+    .select('id')
+    .single()
+
+  if (error) throw new Error(error.message)
+  return (data as { id: string }).id
+}
+
 export async function updateBot(botId: string, formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

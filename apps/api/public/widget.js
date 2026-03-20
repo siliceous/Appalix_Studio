@@ -1,21 +1,23 @@
 (function () {
   'use strict';
 
-  // Config
+  // Config — read from window.AppalixConfig or from this script's own URL query params
+  // (the query-param path is used by the Shopify ScriptTag auto-injection: widget.js?id=...)
   var cfg = window.AppalixConfig || {};
   var integrationId = cfg.integrationId;
-  if (!integrationId) return;
-
-  // API base: prefer explicit value from AppalixConfig (set by the embedding script),
-  // then fall back to this script's own origin (works for non-async loads),
-  // then fall back to the default production URL.
   var apiBase = cfg.apiBase || '';
-  if (!apiBase) {
-    try {
-      var s = document.currentScript && document.currentScript.src;
-      if (s) { var u = new URL(s); apiBase = u.origin; }
-    } catch (_) {}
-  }
+
+  // Try reading from this script's src URL
+  try {
+    var s = document.currentScript && document.currentScript.src;
+    if (s) {
+      var u = new URL(s);
+      if (!integrationId) integrationId = u.searchParams.get('id') || '';
+      if (!apiBase) apiBase = u.origin;
+    }
+  } catch (_) {}
+
+  if (!integrationId) return;
   if (!apiBase) apiBase = 'https://api.appalix.ai';
 
   // Skin catalogue

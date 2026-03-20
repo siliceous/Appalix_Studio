@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Globe, Sparkles, Bot, MessageSquare, BookOpen, Sliders, Check, ChevronLeft } from 'lucide-react'
+import { createBot } from '@/app/actions/bot'
 import { cn } from '@/lib/utils'
 import { LANGUAGE_GROUPS } from '@/lib/languages'
 
@@ -232,23 +233,13 @@ export default function NewBotPage() {
   async function handleCreate() {
     setSaving(true)
     setError(null)
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
-
-    const { data: membershipRaw } = await supabase
-      .from('workspace_members').select('workspace_id').eq('user_id', user.id).order('created_at', { ascending: true }).limit(1).single()
-    const membership = membershipRaw as { workspace_id: string } | null
-    if (!membership) { setError('No workspace found'); setSaving(false); return }
-
-    const { data, error: insertError } = await supabase
-      .from('bots')
-      .insert({ ...form, workspace_id: membership.workspace_id, created_by: user.id } as never)
-      .select('id')
-      .single()
-
-    if (insertError) { setError(insertError.message); setSaving(false); return }
-    router.push(`/bots/${(data as unknown as { id: string }).id}`)
+    try {
+      const id = await createBot(form)
+      router.push(`/bots/${id}`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create bot')
+      setSaving(false)
+    }
   }
 
   const isLast = step === STEPS.length - 1
