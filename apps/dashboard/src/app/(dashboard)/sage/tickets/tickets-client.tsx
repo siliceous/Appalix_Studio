@@ -222,7 +222,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Imagine a CRM that connects with all of your leading platforms, does an AI analyses &amp; creates actionable opportunities for you 24x7.</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Tickets</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
             {tickets.filter(t => t.status === 'open').length} open · {tickets.length} total
           </p>
