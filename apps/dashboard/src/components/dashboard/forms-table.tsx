@@ -684,9 +684,12 @@ export function FormsTable({
                             {EMAIL_PLATFORM_META[sub.source_platform]?.name ?? sub.source_platform}
                           </span>
                         ) : (
-                          <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[100px] block">
+                          <Link
+                            href={`/dashboard/forms/${sub.id}`}
+                            className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[100px] block hover:text-[#15A4AE] hover:underline transition-colors"
+                          >
                             {form?.name ?? '—'}
-                          </span>
+                          </Link>
                         )}
                       </td>
 

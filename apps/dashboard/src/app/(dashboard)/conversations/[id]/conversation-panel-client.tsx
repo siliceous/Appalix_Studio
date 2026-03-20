@@ -5,11 +5,13 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   MessageSquare, Download, Tag, Search, X, Pencil, Trash2, ArrowLeft, Loader2,
+  UserPlus, Ticket, Sparkles,
 } from 'lucide-react'
 import { PLATFORM_META, timeAgo, formatDate } from '@/lib/utils'
 import {
   updateConversationPriority, updateConversationStatus,
   assignConversation, renameConversation, deleteConversation,
+  conversationCreateDeal, conversationCreateTicket,
 } from '@/app/actions/conversation'
 import type { ConvRow } from '@/app/(dashboard)/conversations/page'
 
@@ -76,6 +78,7 @@ export function ConversationPanelClient({
   const [localStatus,   setLocalStatus]   = React.useState(current.status ?? 'active')
   const [localAssign,   setLocalAssign]   = React.useState<string | null>(current.assigned_to ?? null)
   const [saving,        setSaving]        = React.useState<'priority' | 'status' | 'assign' | null>(null)
+  const [actionLoading, setActionLoading] = React.useState<'deal' | 'ticket' | null>(null)
 
   async function handlePriorityChange(val: string) {
     setLocalPriority(val)
@@ -112,6 +115,20 @@ export function ConversationPanelClient({
       await deleteConversation(current.id)
       router.push('/dashboard/bots')
     })
+  }
+  async function handleCreateDeal() {
+    setActionLoading('deal')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await conversationCreateDeal(current as any)
+    setActionLoading(null)
+    router.refresh()
+  }
+  async function handleCreateTicket() {
+    setActionLoading('ticket')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await conversationCreateTicket(current as any)
+    setActionLoading(null)
+    router.refresh()
   }
 
   // Derive unique bots from the conversations list
@@ -340,6 +357,26 @@ export function ConversationPanelClient({
 
             {/* Spacer */}
             <div className="flex-1" />
+
+            {/* Tab action buttons */}
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                onClick={handleCreateTicket}
+                disabled={actionLoading === 'ticket'}
+                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 rounded-lg border border-yellow-200 dark:border-yellow-500/20 transition-colors disabled:opacity-60"
+              >
+                {actionLoading === 'ticket' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Ticket className="w-3.5 h-3.5" />}
+                Add Ticket
+              </button>
+              <button
+                onClick={handleCreateDeal}
+                disabled={actionLoading === 'deal'}
+                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg border border-blue-200 dark:border-blue-500/20 transition-colors disabled:opacity-60"
+              >
+                {actionLoading === 'deal' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
+                Add a Deal
+              </button>
+            </div>
 
             {/* Action icons */}
             <div className="flex items-center gap-1 shrink-0">

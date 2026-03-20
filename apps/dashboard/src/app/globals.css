@@ -4,11 +4,17 @@
 
 @layer utilities {
   /* ── Light mode: make grey text dark enough to read ── */
-  /* Dark mode has its own overrides via .dark .text-gray-* above */
-  .text-gray-300 { color: #4b5563; }
-  .text-gray-400 { color: #374151; }
-  .text-gray-500 { color: #1f2937; }
-  .text-gray-600 { color: #111827; }
+  /* Scoped to dashboard pages only — marketing-site resets these below */
+  :not(.marketing-site) .text-gray-300 { color: #4b5563; }
+  :not(.marketing-site) .text-gray-400 { color: #374151; }
+  :not(.marketing-site) .text-gray-500 { color: #1f2937; }
+  :not(.marketing-site) .text-gray-600 { color: #111827; }
+
+  /* ── Marketing pages — restore original Tailwind gray values ── */
+  .marketing-site .text-gray-300 { color: rgb(209 213 219); }
+  .marketing-site .text-gray-400 { color: rgb(156 163 175); }
+  .marketing-site .text-gray-500 { color: rgb(107 114 128); }
+  .marketing-site .text-gray-600 { color: rgb(75 85 99); }
 }
 
 @layer base {

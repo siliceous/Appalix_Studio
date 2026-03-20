@@ -4,7 +4,7 @@ import { NewsletterSignup } from '@/components/marketing/newsletter-signup'
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-[#1c1c1c] min-h-screen text-white">
+    <div className="marketing-site bg-[#1c1c1c] min-h-screen text-white">
       <MarketingNavbar />
       <main>{children}</main>
       <NewsletterSignup />
