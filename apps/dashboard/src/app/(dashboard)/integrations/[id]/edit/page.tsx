@@ -65,9 +65,12 @@ export default async function EditIntegrationPage({
   const isWebWidget  = integration.platform === 'web_widget' || integration.platform === 'wordpress'
   const isWordPress  = integration.platform === 'wordpress'
   const isTelegram   = integration.platform === 'telegram'
-  const wpApiKey     = (cfg.api_key as string | undefined) ?? ''
-  const tgBotToken   = (cfg.bot_token             as string | undefined) ?? ''
+  const isShopify    = integration.platform === 'shopify'
+  const wpApiKey        = (cfg.api_key              as string | undefined) ?? ''
+  const tgBotToken      = (cfg.bot_token            as string | undefined) ?? ''
   const tgWebhookSecret = (cfg.webhook_secret_token as string | undefined) ?? ''
+  const shopDomain      = (cfg.shop_domain          as string | undefined) ?? ''
+  const shopAccessToken = (cfg.access_token         as string | undefined) ?? ''
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -156,6 +159,35 @@ export default async function EditIntegrationPage({
                 Comma-separated list of allowed origins, or{' '}
                 <code className="font-mono bg-gray-100 px-1 rounded">*</code> for all.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* Shopify config */}
+        {isShopify && (
+          <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5 space-y-4">
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Shopify store</p>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Shop domain</label>
+              <input
+                type="text"
+                name="shopify_shop_domain"
+                defaultValue={shopDomain}
+                placeholder="yourstore.myshopify.com"
+                className="w-full px-3 py-2 border dark:border-white/10 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-transparent"
+              />
+              <p className="text-xs text-gray-400 mt-1">No https:// prefix.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Admin API access token</label>
+              <input
+                type="password"
+                name="shopify_access_token"
+                defaultValue={shopAccessToken}
+                placeholder="shpat_..."
+                className="w-full px-3 py-2 border dark:border-white/10 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-transparent"
+              />
+              <p className="text-xs text-gray-400 mt-1">Shopify Admin → Settings → Apps → Develop apps → your app → API credentials.</p>
             </div>
           </div>
         )}

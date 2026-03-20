@@ -329,6 +329,8 @@ export async function updateIntegration(integrationId: string, formData: FormDat
   const handoffTwilioTo        = (formData.get('handoff_twilio_to')         as string | null)?.trim()
   const handoffWhatsappNumber  = (formData.get('handoff_whatsapp_number')   as string | null)?.trim()?.replace(/\D/g, '') || null
   const telegramBotTokenUpdate = (formData.get('telegram_bot_token_update') as string | null)?.trim()
+  const shopifyShopDomain      = (formData.get('shopify_shop_domain')   as string | null)?.trim()?.replace(/^https?:\/\//, '')
+  const shopifyAccessToken     = (formData.get('shopify_access_token')  as string | null)?.trim()
 
   // Merge all config fields into existing JSONB config
   const existingConfig = (intRaw as { config: Record<string, unknown> }).config ?? {}
@@ -386,6 +388,10 @@ export async function updateIntegration(integrationId: string, formData: FormDat
   if (telegramBotTokenUpdate !== null && telegramBotTokenUpdate !== undefined) {
     if (telegramBotTokenUpdate) newConfig.bot_token = telegramBotTokenUpdate
   }
+
+  // Shopify credentials update
+  if (shopifyShopDomain)  newConfig.shop_domain  = shopifyShopDomain
+  if (shopifyAccessToken) newConfig.access_token = shopifyAccessToken
 
   const admin = createAdminClient()
   const { error } = await admin
