@@ -445,9 +445,9 @@ export function ConversationPanelClient({
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-2">
-      <span className="text-[11px] text-gray-400 shrink-0">{label}</span>
+      <span className="text-sm font-bold text-gray-900 dark:text-gray-100 shrink-0">{label}</span>
       {typeof value === 'string'
-        ? <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300 text-right break-all">{value}</span>
+        ? <span className="text-sm text-gray-700 dark:text-gray-300 text-right break-all">{value}</span>
         : value}
     </div>
   )
