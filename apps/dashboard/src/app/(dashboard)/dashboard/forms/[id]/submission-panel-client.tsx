@@ -391,91 +391,59 @@ export function SubmissionPanelClient({
 }
 
 // ── Smart field grouping ───────────────────────────────────────────────────────
-const ADDRESS_KEYS  = ['street', 'city', 'state', 'zip', 'postcode', 'postal_code', 'country']
-const NAME_KEYS     = ['first_name', 'last_name', 'firstname', 'lastname']
-const FIRST_KEYS    = ['first_name', 'firstname']
-const LAST_KEYS     = ['last_name', 'lastname']
+const ADDRESS_KEYS = ['street', 'city', 'state', 'zip', 'postcode', 'postal_code', 'country']
+const FIRST_KEYS   = ['first_name', 'firstname']
+const LAST_KEYS    = ['last_name', 'lastname']
+const NAME_KEYS    = [...FIRST_KEYS, ...LAST_KEYS]
 
 function fieldLabel(key: string) {
   return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
 function FieldGroups({ fields }: { fields: Record<string, string> }) {
-  const keys        = Object.keys(fields)
-  const rendered    = new Set<string>()
-  const blocks: React.ReactNode[] = []
+  const keys     = Object.keys(fields)
+  const rendered = new Set<string>()
+  const rows: { label: string; value: string; long?: boolean }[] = []
 
-  // 1. Name — first_name + last_name on one line
+  // 1. Name — combine first + last into one row
   const firstKey = keys.find(k => FIRST_KEYS.includes(k.toLowerCase()))
   const lastKey  = keys.find(k => LAST_KEYS.includes(k.toLowerCase()))
   if (firstKey || lastKey) {
     const combined = [firstKey && fields[firstKey], lastKey && fields[lastKey]].filter(Boolean).join(' ')
-    if (combined) {
-      blocks.push(
-        <FieldCard key="__name__" label="Name" value={combined} />
-      )
-    }
+    if (combined) rows.push({ label: 'Name', value: combined })
     if (firstKey) rendered.add(firstKey)
     if (lastKey)  rendered.add(lastKey)
   }
 
-  // 2. Address — group street / city / state / zip / country into one card
-  const addrKeys = keys.filter(k => ADDRESS_KEYS.includes(k.toLowerCase()))
+  // 2. Address — single "Address" row with stacked lines
+  const addrKeys = keys.filter(k => ADDRESS_KEYS.includes(k.toLowerCase()) && fields[k])
   if (addrKeys.length > 0) {
-    const parts = addrKeys.map(k => fields[k]).filter(Boolean)
-    if (parts.length > 0) {
-      blocks.push(
-        <div key="__address__" className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-gray-100 dark:border-white/8 px-4 py-3">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Address</p>
-          <div className="space-y-0.5">
-            {addrKeys.map(k => fields[k] ? (
-              <p key={k} className="text-sm text-gray-800 dark:text-gray-100 leading-snug">{fields[k]}</p>
-            ) : null)}
-          </div>
-        </div>
-      )
-    }
+    rows.push({ label: 'Address', value: addrKeys.map(k => fields[k]).filter(Boolean).join('\n') })
     addrKeys.forEach(k => rendered.add(k))
   }
 
-  // 3. Remaining — skip already-rendered + full name keys, 2-per-row for short values
-  const remaining = keys.filter(k => !rendered.has(k) && !NAME_KEYS.includes(k.toLowerCase()))
-
-  // Split remaining into short (≤40 chars) and long
-  const short = remaining.filter(k => (fields[k] ?? '').length <= 40)
-  const long  = remaining.filter(k => (fields[k] ?? '').length > 40)
-
-  // Pair short fields side-by-side
-  for (let i = 0; i < short.length; i += 2) {
-    const a = short[i]
-    const b = short[i + 1]
-    if (b) {
-      blocks.push(
-        <div key={`pair-${i}`} className="grid grid-cols-2 gap-3">
-          <FieldCard label={fieldLabel(a)} value={fields[a]} />
-          <FieldCard label={fieldLabel(b)} value={fields[b]} />
-        </div>
-      )
-    } else {
-      blocks.push(<FieldCard key={a} label={fieldLabel(a)} value={fields[a]} />)
-    }
+  // 3. Remaining fields
+  for (const k of keys) {
+    if (rendered.has(k) || NAME_KEYS.includes(k.toLowerCase())) continue
+    const v = fields[k] ?? ''
+    rows.push({ label: fieldLabel(k), value: v, long: v.length > 80 })
   }
 
-  // Long fields each get their own full-width card
-  for (const k of long) {
-    blocks.push(<FieldCard key={k} label={fieldLabel(k)} value={fields[k]} />)
-  }
-
-  return <div className="space-y-3">{blocks}</div>
-}
-
-function FieldCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-gray-100 dark:border-white/8 px-4 py-3">
-      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{label}</p>
-      <p className="text-sm text-gray-800 dark:text-gray-100 leading-relaxed whitespace-pre-wrap break-words">
-        {value || <span className="italic text-gray-300">—</span>}
-      </p>
+    <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-gray-100 dark:border-white/8 overflow-hidden">
+      {rows.map((row, i) => (
+        <div
+          key={i}
+          className={`flex gap-4 px-4 py-2.5 ${i > 0 ? 'border-t border-gray-50 dark:border-white/5' : ''} ${row.long ? 'flex-col gap-1' : 'items-baseline'}`}
+        >
+          <span className={`text-[11px] font-semibold text-gray-400 uppercase tracking-wide shrink-0 ${row.long ? '' : 'w-28'}`}>
+            {row.label}
+          </span>
+          <span className="text-sm text-gray-800 dark:text-gray-100 whitespace-pre-wrap break-words leading-snug">
+            {row.value || <span className="italic text-gray-300">—</span>}
+          </span>
+        </div>
+      ))}
     </div>
   )
 }
