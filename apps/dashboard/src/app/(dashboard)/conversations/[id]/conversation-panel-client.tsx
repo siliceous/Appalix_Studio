@@ -447,7 +447,7 @@ export function ConversationPanelClient({
           {/* User details */}
           {(current.ai_entities?.email || current.ai_entities?.phone || current.ai_entities?.name) && (
             <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">User Details</p>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-3">User Details</p>
               <div className="space-y-2.5">
                 {current.ai_entities?.name  && <DetailRow label="Name"  value={current.ai_entities.name} />}
                 {current.ai_entities?.email && <DetailRow label="Email" value={current.ai_entities.email} />}
@@ -467,7 +467,7 @@ export function ConversationPanelClient({
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-2">
-      <span className="text-sm font-bold text-gray-900 dark:text-gray-100 shrink-0">{label}</span>
+      <span className="text-sm text-gray-400 dark:text-gray-500 shrink-0">{label}</span>
       {typeof value === 'string'
         ? <span className="text-sm text-gray-700 dark:text-gray-300 text-right break-all">{value}</span>
         : value}
