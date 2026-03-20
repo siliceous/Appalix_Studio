@@ -8,7 +8,7 @@ import {
   Pencil, ExternalLink, X, Trash2,
 } from 'lucide-react'
 import { PLATFORM_META, timeAgo } from '@/lib/utils'
-import { renameConversation, assignConversation, deleteConversation, updateConversationPriority } from '@/app/actions/conversation'
+import { renameConversation, assignConversation, deleteConversation, updateConversationPriority, updateConversationStatus } from '@/app/actions/conversation'
 import { deleteConversations } from '@/app/actions/bot-conversations'
 import { exportConversations } from '@/app/actions/csv-export'
 import { CsvExportButton } from '@/components/ui/csv-export-button'
@@ -55,6 +55,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
   const [assigning,      setAssigning]      = React.useState<string | null>(null)
   const [selectedIds,    setSelectedIds]    = React.useState<Set<string>>(new Set())
   const [localPriority,  setLocalPriority]  = React.useState<Record<string, string>>({})
+  const [localStatus,    setLocalStatus]    = React.useState<Record<string, string>>({})
 
   const allSelected = conversations.length > 0 && selectedIds.size === conversations.length
   function toggleSelectAll() {
@@ -76,6 +77,11 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
   function handlePriorityChange(convId: string, priority: string) {
     setLocalPriority(prev => ({ ...prev, [convId]: priority }))
     void updateConversationPriority(convId, priority)
+  }
+
+  function handleStatusChange(convId: string, status: string) {
+    setLocalStatus(prev => ({ ...prev, [convId]: status }))
+    void updateConversationStatus(convId, status)
   }
 
   async function handleAssign(convId: string, userId: string | null) {
@@ -250,6 +256,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Bot</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Platform</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Priority</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Msgs</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide w-[160px]">Last active</th>
                 {canAssign && <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Assigned to</th>}
@@ -319,6 +326,24 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                       ) : <span className="text-gray-300 dark:text-gray-600">—</span>}
                     </td>
 
+
+                    {/* Status */}
+                    <td className="px-4 py-3.5">
+                      {!readonly ? (
+                        <select
+                          value={localStatus[c.id] ?? c.status ?? 'active'}
+                          onChange={e => handleStatusChange(c.id, e.target.value)}
+                          onClick={e => e.stopPropagation()}
+                          className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer"
+                        >
+                          <option value="active">Active</option>
+                          <option value="completed">Completed</option>
+                          <option value="archived">Archived</option>
+                        </select>
+                      ) : (
+                        <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{c.status ?? 'active'}</span>
+                      )}
+                    </td>
 
                     {/* Message count */}
                     <td className="px-4 py-3.5 text-right text-sm text-gray-500 dark:text-gray-400">

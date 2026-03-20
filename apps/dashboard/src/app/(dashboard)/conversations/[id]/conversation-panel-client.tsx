@@ -3,8 +3,7 @@
 import React, { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
-  MessageSquare, Download, Pencil, Trash2, Tag,
-  ChevronDown, Search, X, ExternalLink,
+  MessageSquare, Download, Tag, Search, X,
 } from 'lucide-react'
 import { PLATFORM_META, timeAgo, formatDate } from '@/lib/utils'
 import type { ConvRow } from '@/app/(dashboard)/conversations/page'
@@ -61,22 +60,34 @@ interface Props {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function ConversationPanelClient({ conversations, current, messages }: Props) {
-  const [search, setSearch] = React.useState('')
+  const [search,  setSearch]  = React.useState('')
+  const [botFilter, setBotFilter] = React.useState('')
+
+  // Derive unique bots from the conversations list
+  const bots = React.useMemo(() => {
+    const map = new Map<string, string>()
+    for (const c of conversations) {
+      if (c.bots?.id && c.bots?.name) map.set(c.bots.id, c.bots.name)
+    }
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }))
+  }, [conversations])
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'instant' })
   }, [current.id])
 
-  const filtered = search
-    ? conversations.filter(c => {
-        const q = search.toLowerCase()
-        return (
-          (c.ai_entities?.name ?? c.title ?? '').toLowerCase().includes(q) ||
-          (c.ai_entities?.email ?? '').toLowerCase().includes(q)
-        )
-      })
-    : conversations
+  const filtered = conversations.filter(c => {
+    if (botFilter && c.bots?.id !== botFilter) return false
+    if (search) {
+      const q = search.toLowerCase()
+      return (
+        (c.ai_entities?.name ?? c.title ?? '').toLowerCase().includes(q) ||
+        (c.ai_entities?.email ?? '').toLowerCase().includes(q)
+      )
+    }
+    return true
+  })
 
   // Group messages with date separators
   function renderMessages() {
@@ -95,7 +106,6 @@ export function ConversationPanelClient({ conversations, current, messages }: Pr
         )
       }
       const isBot  = msg.role === 'assistant'
-      const isUser = msg.role === 'user'
       const isTool = msg.role === 'tool'
       nodes.push(
         <div key={msg.id} className={`flex flex-col gap-0.5 ${isBot ? 'items-end' : 'items-start'}`}>
@@ -133,7 +143,7 @@ export function ConversationPanelClient({ conversations, current, messages }: Pr
       {/* ── Left panel: conversation list ─────────────────────────────────── */}
       <div className="w-[280px] shrink-0 border-r dark:border-white/8 flex flex-col bg-white dark:bg-[#1e1e1e]">
 
-        {/* Back link + Search */}
+        {/* Back link + Search + Bot filter */}
         <div className="p-3 border-b dark:border-white/8 space-y-2">
           <Link href="/dashboard/bots" className="flex items-center gap-1 text-xs text-gray-400 hover:text-[#15A4AE] transition-colors">
             ← All conversations
@@ -153,6 +163,16 @@ export function ConversationPanelClient({ conversations, current, messages }: Pr
               </button>
             )}
           </div>
+          {bots.length > 1 && (
+            <select
+              value={botFilter}
+              onChange={e => setBotFilter(e.target.value)}
+              className="w-full text-xs border dark:border-white/10 rounded-lg px-2.5 py-1.5 bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
+            >
+              <option value="">All bots</option>
+              {bots.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+          )}
         </div>
 
         {/* List */}

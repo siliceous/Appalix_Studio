@@ -74,6 +74,32 @@ export async function assignConversation(conversationId: string, assignedTo: str
   return {}
 }
 
+export async function updateConversationStatus(conversationId: string, status: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const { data: membershipRaw } = await supabase
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single()
+  const membership = membershipRaw as { workspace_id: string } | null
+  if (!membership) return { error: 'Unauthorized' }
+
+  const { error } = await supabase
+    .from('conversations')
+    .update({ status } as never)
+    .eq('id', conversationId)
+    .eq('workspace_id', membership.workspace_id)
+
+  if (error) return { error: error.message }
+  void logConversationActivity(membership.workspace_id, user.id, conversationId, 'status_changed', { to: status })
+  return {}
+}
+
 export async function updateConversationPriority(conversationId: string, priority: string): Promise<{ error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

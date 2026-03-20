@@ -4,6 +4,8 @@ import type { Metadata } from 'next'
 import type { Conversation } from '@/lib/types'
 import type { ConvRow } from '@/app/(dashboard)/conversations/page'
 import { ConversationPanelClient, type PanelMessage } from './conversation-panel-client'
+import { SubpageToolbar } from '@/components/dashboard/subpage-toolbar'
+import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 
 export const metadata: Metadata = { title: 'Conversation' }
 
@@ -29,7 +31,7 @@ export default async function ConversationDetailPage({
   if (!workspaceId) redirect('/login')
 
   // Selected conversation + messages in parallel with conversation list
-  const [convRes, msgsRes, listRes] = await Promise.all([
+  const [convRes, msgsRes, listRes, autoSettings] = await Promise.all([
     supabase
       .from('conversations')
       .select('id, title, platform, status, sentiment, message_count, last_activity_at, created_at, ai_priority, ai_summary, ai_entities, bot_id, assigned_to, bots(id, name)')
@@ -46,6 +48,7 @@ export default async function ConversationDetailPage({
       .eq('workspace_id', workspaceId)
       .order('last_activity_at', { ascending: false })
       .limit(100),
+    getAutoSettings(),
   ])
 
   const conversation = convRes.data as (Conversation & { bots?: { id: string; name: string } | null }) | null
@@ -55,14 +58,20 @@ export default async function ConversationDetailPage({
   const convList  = (listRes.data ?? []) as ConvRow[]
 
   return (
-    // Break out of the page's default padding/max-width to fill the full viewport height
-    <div className="-m-8 h-[calc(100vh-var(--topbar-height,56px))] flex overflow-hidden">
-      <ConversationPanelClient
-        conversations={convList}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        current={conversation as any}
-        messages={messages}
+    <div className="-m-8 flex flex-col h-screen overflow-hidden">
+      <SubpageToolbar
+        sourceKey="bots"
+        preset="all"
+        autoEnabled={autoSettings.bots_auto_enabled}
       />
+      <div className="flex flex-1 overflow-hidden">
+        <ConversationPanelClient
+          conversations={convList}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          current={conversation as any}
+          messages={messages}
+        />
+      </div>
     </div>
   )
 }
