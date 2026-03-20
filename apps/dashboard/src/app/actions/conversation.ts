@@ -89,7 +89,8 @@ export async function updateConversationStatus(conversationId: string, status: s
   const membership = membershipRaw as { workspace_id: string } | null
   if (!membership) return { error: 'Unauthorized' }
 
-  const { error } = await supabase
+  const admin = createAdminClient()
+  const { error } = await admin
     .from('conversations')
     .update({ status } as never)
     .eq('id', conversationId)
@@ -125,7 +126,7 @@ export async function updateConversationPriority(conversationId: string, priorit
   const convName    = (convRow as { title?: string | null; ai_priority?: string | null } | null)?.title ?? null
   const oldPriority = (convRow as { title?: string | null; ai_priority?: string | null } | null)?.ai_priority ?? null
 
-  const { error } = await supabase
+  const { error } = await admin
     .from('conversations')
     .update({ ai_priority: priority } as never)
     .eq('id', conversationId)
@@ -166,7 +167,8 @@ export async function renameConversation(conversationId: string, title: string) 
   const membership = membershipRaw as { workspace_id: string } | null
   if (!membership) throw new Error('Unauthorized')
 
-  const { error } = await supabase
+  const admin = createAdminClient()
+  const { error } = await admin
     .from('conversations')
     .update({ title: title.trim() || null } as never)
     .eq('id', conversationId)

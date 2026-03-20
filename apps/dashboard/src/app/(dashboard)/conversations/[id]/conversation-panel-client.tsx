@@ -266,25 +266,65 @@ export function ConversationPanelClient({
       </div>
 
       {/* ── Middle panel: chat ─────────────────────────────────────────────── */}
-      <div className="flex-1 flex justify-center overflow-hidden bg-[#f5f4f1] dark:bg-[#1c1c1c]">
-      <div className="w-full max-w-[600px] flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="shrink-0 bg-white dark:bg-[#232323] border-b dark:border-white/8 px-4 py-3 space-y-2">
-          {/* Row 1: avatar + name + action icons */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${getAvatarColor(current.id)}`}>
-                {getInitials(current.ai_entities?.name ?? current.title)}
-              </div>
-              <div className="min-w-0">
-                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate block">
-                  {current.ai_entities?.name ?? current.title ?? '(no title)'}
-                </span>
-                {current.bots?.name && (
-                  <p className="text-[10px] text-gray-400">via {current.bots.name}</p>
-                )}
-              </div>
+      <div className="flex-1 flex flex-col overflow-hidden bg-[#f5f4f1] dark:bg-[#1c1c1c]">
+        {/* Header: single row — avatar + name + dropdowns + action icons */}
+        <div className="shrink-0 bg-white dark:bg-[#232323] border-b dark:border-white/8 px-4 py-2.5">
+          <div className="flex items-center gap-2">
+            {/* Avatar + name */}
+            <div className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${getAvatarColor(current.id)}`}>
+              {getInitials(current.ai_entities?.name ?? current.title)}
             </div>
+            <div className="min-w-0 mr-2">
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate block leading-tight">
+                {current.ai_entities?.name ?? current.title ?? '(no title)'}
+              </span>
+              {current.bots?.name && (
+                <p className="text-[10px] text-gray-400 leading-tight">via {current.bots.name}</p>
+              )}
+            </div>
+
+            {/* Priority badge / dropdown */}
+            <select
+              value={localPriority}
+              onChange={e => handlePriorityChange(e.target.value)}
+              disabled={readonly}
+              className="text-[11px] border dark:border-white/10 rounded-full px-2.5 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60 cursor-pointer"
+            >
+              <option value="">Priority</option>
+              <option value="low">🟢 Low</option>
+              <option value="medium">🟡 Medium</option>
+              <option value="high">🔴 High</option>
+            </select>
+
+            {/* Status dropdown */}
+            <select
+              value={localStatus}
+              onChange={e => handleStatusChange(e.target.value)}
+              disabled={readonly}
+              className="text-[11px] border dark:border-white/10 rounded-full px-2.5 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60 cursor-pointer"
+            >
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+              <option value="archived">Archived</option>
+            </select>
+
+            {/* Assign dropdown */}
+            {canAssign && (
+              <select
+                value={localAssign ?? ''}
+                disabled={assigning || readonly}
+                onChange={e => handleAssign(e.target.value || null)}
+                className="text-[11px] border dark:border-white/10 rounded-full px-2.5 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60 cursor-pointer"
+              >
+                <option value="">Assign to…</option>
+                {teamMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
+              </select>
+            )}
+
+            {/* Spacer */}
+            <div className="flex-1" />
+
+            {/* Action icons */}
             <div className="flex items-center gap-1 shrink-0">
               <a
                 href={`/api/conversations/${current.id}/export`}
@@ -306,41 +346,6 @@ export function ConversationPanelClient({
                 </>
               )}
             </div>
-          </div>
-          {/* Row 2: Priority · Status · Assigned To */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <select
-              value={localPriority}
-              onChange={e => handlePriorityChange(e.target.value)}
-              disabled={readonly}
-              className="text-[11px] border dark:border-white/10 rounded-lg px-2 py-1 bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60"
-            >
-              <option value="">Priority…</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-            <select
-              value={localStatus}
-              onChange={e => handleStatusChange(e.target.value)}
-              disabled={readonly}
-              className="text-[11px] border dark:border-white/10 rounded-lg px-2 py-1 bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60"
-            >
-              <option value="active">Active</option>
-              <option value="completed">Completed</option>
-              <option value="archived">Archived</option>
-            </select>
-            {canAssign && (
-              <select
-                value={localAssign ?? ''}
-                disabled={assigning || readonly}
-                onChange={e => handleAssign(e.target.value || null)}
-                className="text-[11px] border dark:border-white/10 rounded-lg px-2 py-1 bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60"
-              >
-                <option value="">Assign to…</option>
-                {teamMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
-              </select>
-            )}
           </div>
         </div>
 
@@ -364,10 +369,9 @@ export function ConversationPanelClient({
           <div ref={messagesEndRef} />
         </div>
       </div>
-      </div>
 
       {/* ── Right panel: details ───────────────────────────────────────────── */}
-      <div className="w-[320px] shrink-0 border-l dark:border-white/8 overflow-y-auto bg-gray-50 dark:bg-[#181818]">
+      <div className="w-[320px] shrink-0 overflow-y-auto bg-white dark:bg-[#232323]">
         <div className="p-4 space-y-5">
 
           {/* Tags / Platform */}
@@ -392,7 +396,7 @@ export function ConversationPanelClient({
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 <span className="text-[#15A4AE]">✦</span> AI Generated
               </p>
-              <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">{current.ai_summary}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{current.ai_summary}</p>
             </div>
           )}
 
