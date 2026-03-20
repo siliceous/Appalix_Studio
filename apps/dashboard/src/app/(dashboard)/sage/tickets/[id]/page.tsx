@@ -84,8 +84,8 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
   return (
     <TicketDetailClient
-      ticket={ticketRaw as TicketWithContact}
-      allTickets={(allTicketsRaw ?? []) as TicketWithContact[]}
+      ticket={ticketRaw as unknown as TicketWithContact}
+      allTickets={(allTicketsRaw ?? []) as unknown as TicketWithContact[]}
       activities={activities}
       callerRole={membership.role as WorkspaceMember['role']}
       members={assignableMembers}
