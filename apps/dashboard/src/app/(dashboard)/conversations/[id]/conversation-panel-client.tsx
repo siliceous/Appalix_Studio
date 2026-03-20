@@ -52,11 +52,6 @@ function msgTime(iso: string) {
   return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
 
-const PRIORITY_BADGE: Record<string, string> = {
-  high:   'bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400',
-  medium: 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400',
-  low:    'bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400',
-}
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 interface Props {
@@ -274,56 +269,79 @@ export function ConversationPanelClient({
       <div className="flex-1 flex justify-center overflow-hidden bg-[#f5f4f1] dark:bg-[#1c1c1c]">
       <div className="w-full max-w-[600px] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="shrink-0 bg-white dark:bg-[#232323] border-b dark:border-white/8 px-4 py-3 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${getAvatarColor(current.id)}`}>
-              {getInitials(current.ai_entities?.name ?? current.title)}
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+        <div className="shrink-0 bg-white dark:bg-[#232323] border-b dark:border-white/8 px-4 py-3 space-y-2">
+          {/* Row 1: avatar + name + action icons */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${getAvatarColor(current.id)}`}>
+                {getInitials(current.ai_entities?.name ?? current.title)}
+              </div>
+              <div className="min-w-0">
+                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate block">
                   {current.ai_entities?.name ?? current.title ?? '(no title)'}
                 </span>
-                <span className={`shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                  current.status === 'active'
-                    ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400'
-                    : 'bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400'
-                }`}>
-                  {current.status ?? 'active'}
-                </span>
+                {current.bots?.name && (
+                  <p className="text-[10px] text-gray-400">via {current.bots.name}</p>
+                )}
               </div>
-              {current.bots?.name && (
-                <p className="text-[10px] text-gray-400 mt-0.5">via {current.bots.name}</p>
-              )}
             </div>
-          </div>
-          {/* Actions in header */}
-          {!readonly && (
             <div className="flex items-center gap-1 shrink-0">
               <a
                 href={`/api/conversations/${current.id}/export`}
-                download
-                title="Download transcript"
+                download title="Download transcript"
                 className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />
               </a>
-              <button
-                onClick={handleRename}
-                title="Rename"
-                className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={handleDelete}
-                title="Delete conversation"
-                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              {!readonly && (
+                <>
+                  <button onClick={handleRename} title="Rename"
+                    className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors">
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={handleDelete} title="Delete conversation"
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
             </div>
-          )}
+          </div>
+          {/* Row 2: Priority · Status · Assigned To */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={localPriority}
+              onChange={e => handlePriorityChange(e.target.value)}
+              disabled={readonly}
+              className="text-[11px] border dark:border-white/10 rounded-lg px-2 py-1 bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60"
+            >
+              <option value="">Priority…</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+            <select
+              value={localStatus}
+              onChange={e => handleStatusChange(e.target.value)}
+              disabled={readonly}
+              className="text-[11px] border dark:border-white/10 rounded-lg px-2 py-1 bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60"
+            >
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+              <option value="archived">Archived</option>
+            </select>
+            {canAssign && (
+              <select
+                value={localAssign ?? ''}
+                disabled={assigning || readonly}
+                onChange={e => handleAssign(e.target.value || null)}
+                className="text-[11px] border dark:border-white/10 rounded-lg px-2 py-1 bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60"
+              >
+                <option value="">Assign to…</option>
+                {teamMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
+              </select>
+            )}
+          </div>
         </div>
 
         {/* Tone indicator */}
@@ -397,65 +415,6 @@ export function ConversationPanelClient({
               <DetailRow label="ID"            value={`#${current.id.slice(0, 6).toUpperCase()}`} />
             </div>
           </div>
-
-          <hr className="border-gray-100 dark:border-white/8" />
-
-          {/* Priority */}
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Priority</p>
-            {!readonly ? (
-              <select
-                value={localPriority}
-                onChange={e => handlePriorityChange(e.target.value)}
-                className={`w-full text-xs border dark:border-white/10 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer ${
-                  PRIORITY_BADGE[localPriority] ?? 'bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300'
-                }`}
-              >
-                <option value="">— None —</option>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            ) : (
-              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${PRIORITY_BADGE[localPriority] ?? PRIORITY_BADGE.low}`}>
-                {localPriority || '—'}
-              </span>
-            )}
-          </div>
-
-          {/* Status */}
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Status</p>
-            {!readonly ? (
-              <select
-                value={localStatus}
-                onChange={e => handleStatusChange(e.target.value)}
-                className="w-full text-xs border dark:border-white/10 rounded-lg px-2.5 py-1.5 bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
-              >
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-                <option value="archived">Archived</option>
-              </select>
-            ) : (
-              <span className="text-xs text-gray-600 dark:text-gray-300 capitalize">{localStatus}</span>
-            )}
-          </div>
-
-          {/* Assigned to */}
-          {canAssign && (
-            <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Assigned To</p>
-              <select
-                value={localAssign ?? ''}
-                disabled={assigning}
-                onChange={e => handleAssign(e.target.value || null)}
-                className="w-full text-xs border dark:border-white/10 rounded-lg px-2.5 py-1.5 bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-50"
-              >
-                <option value="">Unassigned</option>
-                {teamMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
-              </select>
-            </div>
-          )}
 
           <hr className="border-gray-100 dark:border-white/8" />
 
