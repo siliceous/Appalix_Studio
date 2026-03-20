@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Ticket, Search, ChevronDown, X, UserPlus, Pencil, Download,
@@ -350,7 +351,12 @@ export function TicketsTable({
 
                       {/* Name + title */}
                       <td className="px-3 py-3 max-w-[180px]">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{name}</p>
+                        <Link
+                          href={`/sage/tickets/${t.id}`}
+                          className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-[#15A4AE] dark:hover:text-[#15A4AE] transition-colors truncate block"
+                        >
+                          {name}
+                        </Link>
                         <p className="text-xs text-gray-400 truncate mt-0.5">{t.title}</p>
                       </td>
 
