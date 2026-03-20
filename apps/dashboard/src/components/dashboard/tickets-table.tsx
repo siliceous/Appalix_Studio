@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Ticket, Search, ChevronDown, X, UserPlus, Pencil, Download,
-  Trash2, Loader2, Mail, Bot, FileText, MessageSquare,
+  Trash2, Loader2, Mail, Bot, MessageSquare,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import type { SageTicket, SageContact, SageTicketStatus, SageTicketPriority } from '@/lib/types'
@@ -63,23 +63,18 @@ function SourceBadge({ ticket }: { ticket: SageTicket }) {
       </span>
     )
   }
-  if (method === 'chat' || method === null || method === undefined) {
+  // phone or unrecognised → Bot / unknown
+  if (method === 'phone') {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20 whitespace-nowrap">
-        <Bot className="w-2.5 h-2.5" /> Bot
+      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold bg-gray-100 dark:bg-white/8 text-gray-500 border border-gray-200 dark:border-white/10 whitespace-nowrap">
+        <MessageSquare className="w-2.5 h-2.5" /> Phone
       </span>
     )
   }
-  if (method === 'form') {
-    return (
-      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 whitespace-nowrap">
-        <FileText className="w-2.5 h-2.5" /> Form
-      </span>
-    )
-  }
+  // null / anything else → Bot
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold bg-gray-100 dark:bg-white/8 text-gray-500 border border-gray-200 dark:border-white/10 whitespace-nowrap">
-      <MessageSquare className="w-2.5 h-2.5" /> {method}
+    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20 whitespace-nowrap">
+      <Bot className="w-2.5 h-2.5" /> Bot
     </span>
   )
 }
