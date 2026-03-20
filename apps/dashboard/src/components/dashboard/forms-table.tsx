@@ -129,8 +129,8 @@ export function FormsTable({
   // Bulk saving
   const [bulkSaving, setBulkSaving] = useState(false)
 
-  // Old action state (Deal/Ticket quick actions)
-  const [actioning, setActioning]   = useState<Record<string, string>>({})
+  // Per-row quick action loading state
+  const [quickAction, setQuickAction] = useState<Record<string, 'loading-deal' | 'loading-ticket' | 'loading-delete'>>({})
 
   // Email integration state
   const [mcExpanded, setMcExpanded] = useState(false)
@@ -241,17 +241,24 @@ export function FormsTable({
 
   // ── Quick-action handlers ─────────────────────────────────────────────────
   async function handleCreateLead(sub: SageFormSubmission) {
-    setActioning(p => ({ ...p, [sub.id]: 'loading' }))
+    setQuickAction(p => ({ ...p, [sub.id]: 'loading-deal' }))
     const res = await formSubmissionCreateLead(sub)
-    setActioning(p => ({ ...p, [sub.id]: res.error ? 'error' : 'lead' }))
+    setQuickAction(p => { const n = { ...p }; delete n[sub.id]; return n })
     if (!res.error) router.refresh()
   }
 
   async function handleCreateTicket(sub: SageFormSubmission) {
-    setActioning(p => ({ ...p, [sub.id]: 'loading' }))
+    setQuickAction(p => ({ ...p, [sub.id]: 'loading-ticket' }))
     const res = await formSubmissionCreateTicket(sub)
-    setActioning(p => ({ ...p, [sub.id]: res.error ? 'error' : 'ticket' }))
+    setQuickAction(p => { const n = { ...p }; delete n[sub.id]; return n })
     if (!res.error) router.refresh()
+  }
+
+  async function handleDeleteSubmission(id: string) {
+    setQuickAction(p => ({ ...p, [id]: 'loading-delete' }))
+    await markSubmissionActioned(id, 'ignored')
+    setQuickAction(p => { const n = { ...p }; delete n[id]; return n })
+    router.refresh()
   }
 
   // ── Misc ──────────────────────────────────────────────────────────────────
@@ -570,7 +577,7 @@ export function FormsTable({
                   const priority = localPriority[sub.id] ?? sub.ai_priority ?? null
                   const assigneeId = localAssign[sub.id] !== undefined ? localAssign[sub.id] : (sub.assigned_to ?? '')
                   const assignee = teamMembers.find(m => m.user_id === assigneeId)
-                  const actionState = actioning[sub.id]
+                  const qa = quickAction[sub.id]
                   const selected = selectedIds.has(sub.id)
 
                   return (
@@ -697,29 +704,48 @@ export function FormsTable({
                       </td>
 
                       {/* Actions */}
-                      <td className="px-4 py-3">
-                        {actionState === 'loading' ? (
-                          <div className="flex justify-end pr-2">
-                            <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
-                          </div>
-                        ) : !readonly ? (
-                          <div className="flex items-center gap-1 justify-end">
-                            <button
-                              onClick={() => handleCreateLead(sub)}
-                              title="Create deal"
-                              className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
-                            >
-                              <UserPlus className="w-3 h-3" />Deal
-                            </button>
-                            <button
-                              onClick={() => handleCreateTicket(sub)}
-                              title="Create ticket"
-                              className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 rounded-lg transition-colors"
-                            >
-                              <Ticket className="w-3 h-3" />Ticket
-                            </button>
-                          </div>
-                        ) : null}
+                      <td className="px-4 py-3.5 w-px whitespace-nowrap">
+                        <div className="flex items-center gap-1 justify-end">
+                          {!readonly && (
+                            qa === 'loading-deal' ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
+                            ) : (
+                              <button
+                                onClick={() => handleCreateLead(sub)}
+                                title="Create deal"
+                                className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+                              >
+                                <UserPlus className="w-3.5 h-3.5" />
+                              </button>
+                            )
+                          )}
+                          {!readonly && (
+                            qa === 'loading-ticket' ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-yellow-400" />
+                            ) : (
+                              <button
+                                onClick={() => handleCreateTicket(sub)}
+                                title="Create ticket"
+                                className="p-1.5 text-yellow-500 hover:text-yellow-700 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 rounded-lg transition-colors"
+                              >
+                                <Ticket className="w-3.5 h-3.5" />
+                              </button>
+                            )
+                          )}
+                          {!readonly && (
+                            qa === 'loading-delete' ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-red-400" />
+                            ) : (
+                              <button
+                                onClick={() => handleDeleteSubmission(sub.id)}
+                                title="Delete submission"
+                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )
