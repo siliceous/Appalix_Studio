@@ -1094,33 +1094,40 @@ export function EmailInbox({
             </div>
 
             {/* ── AI insights sidebar (latest message) ── */}
-            {(selected.ai_insights?.length || selected.ai_summary) && (
-              <div className="w-56 shrink-0 border-l dark:border-white/8 bg-gray-50 dark:bg-white/2 overflow-y-auto p-4 space-y-4">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5 text-brand-500 dark:text-[#15A4AE]" />
-                  <p className="text-xs font-bold text-gray-700 dark:text-gray-300">AI Insights</p>
-                </div>
-                {selected.ai_summary && (
+            <div className="w-56 shrink-0 border-l dark:border-white/8 bg-gray-50 dark:bg-white/2 overflow-y-auto p-4 space-y-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-brand-500 dark:text-[#15A4AE]" />
+                <p className="text-xs font-bold text-gray-700 dark:text-gray-300">AI Insights</p>
+              </div>
+              {selected.ai_summary ? (
+                <>
                   <div className="bg-white dark:bg-white/5 rounded-xl p-3 border dark:border-white/8">
                     <p className="text-[10px] text-gray-400 uppercase tracking-wide font-bold mb-1.5">Summary</p>
                     <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{selected.ai_summary}</p>
                   </div>
-                )}
-                {selected.ai_insights && selected.ai_insights.length > 0 && (
-                  <div>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-wide font-bold mb-2">Key Points</p>
-                    <ul className="space-y-2.5">
-                      {selected.ai_insights.map((insight, i) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-500 dark:bg-[#15A4AE] shrink-0" />
-                          <span className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">{insight}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
+                  {selected.ai_insights && selected.ai_insights.length > 0 && (
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide font-bold mb-2">Key Points</p>
+                      <ul className="space-y-2.5">
+                        {selected.ai_insights.map((insight, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-500 dark:bg-[#15A4AE] shrink-0" />
+                            <span className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">{insight}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
+                    No analysis yet for this email.
+                  </p>
+                  <AnalyseButton emailId={selected.id} />
+                </div>
+              )}
+            </div>
           </div>
 
         ) : (
@@ -1149,5 +1156,38 @@ export function EmailInbox({
         )}
       </div>
     </div>
+  )
+}
+
+function AnalyseButton({ emailId }: { emailId: string }) {
+  const [isPending, startTransition] = useTransition()
+  const [done, setDone] = useState(false)
+  const router = useRouter()
+
+  function handleAnalyse() {
+    startTransition(async () => {
+      await reanalyzeEmails(1, [emailId])
+      setDone(true)
+      router.refresh()
+    })
+  }
+
+  if (done) {
+    return (
+      <p className="text-xs text-green-500 flex items-center gap-1.5">
+        <Sparkles className="w-3 h-3" /> Analysis complete
+      </p>
+    )
+  }
+
+  return (
+    <button
+      onClick={handleAnalyse}
+      disabled={isPending}
+      className="flex items-center gap-2 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50 rounded-lg px-3 py-2 transition-colors w-full justify-center"
+    >
+      {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+      {isPending ? 'Analysing…' : 'Analyse with Sage AI'}
+    </button>
   )
 }

@@ -174,6 +174,7 @@ function EmailDetailView({
 }) {
   const [priority, setPriority] = useState<SageTicketPriority>(email.ai_priority ?? 'low');
   const [summaryCollapsed, setSummaryCollapsed] = useState(false);
+  const [analysing, setAnalysing] = useState(false);
   const queryClient = useQueryClient();
 
   const priorityMutation = useMutation({
@@ -253,7 +254,38 @@ function EmailDetailView({
               <Text style={styles.summaryText}>{email.ai_summary}</Text>
             )}
           </View>
-        ) : null}
+        ) : (
+          <View style={styles.section}>
+            <View style={styles.summaryHeaderLeft}>
+              <Ionicons name="sparkles-outline" size={15} color={Colors.text.muted} />
+              <Text style={[styles.sectionLabel, { color: Colors.text.muted }]}>No AI Summary</Text>
+            </View>
+            <Pressable
+              style={[styles.analyseBtn, analysing && styles.btnDisabled]}
+              disabled={analysing}
+              onPress={async () => {
+                setAnalysing(true);
+                try {
+                  await supabase.functions.invoke('analyse-email', { body: { email_id: email.id } });
+                  queryClient.invalidateQueries({ queryKey: ['email-detail', email.id] });
+                } catch {
+                  Alert.alert('Error', 'Analysis failed. Please try again.');
+                } finally {
+                  setAnalysing(false);
+                }
+              }}
+            >
+              {analysing ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Ionicons name="sparkles" size={14} color="#fff" />
+              )}
+              <Text style={styles.analyseBtnText}>
+                {analysing ? 'Analysing…' : 'Analyse with Sage AI'}
+              </Text>
+            </Pressable>
+          </View>
+        )}
 
         {/* Contact Info */}
         <View style={styles.section}>
@@ -812,6 +844,18 @@ const styles = StyleSheet.create({
   },
   sendBtnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
   btnDisabled: { opacity: 0.5 },
+  analyseBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+    backgroundColor: Colors.brand[500],
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 10,
+    alignSelf: 'flex-start',
+  },
+  analyseBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
 
   // Generic detail
   summaryCard: {
