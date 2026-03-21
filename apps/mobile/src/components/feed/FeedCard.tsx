@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   View,
   Text,
   Pressable,
   StyleSheet,
 } from 'react-native';
+import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { PriorityBadge } from '@/components/ui/PriorityBadge';
 import { Colors } from '@/constants/colors';
 import type { FeedItem } from '@/types';
@@ -46,92 +48,145 @@ interface Props {
 }
 
 export function FeedCard({ item, onPress, onReply, onAssign, onIgnore }: Props) {
+  const swipeableRef = useRef<SwipeableMethods>(null);
   const iconName = SOURCE_ICONS[item.type];
   const iconColor = SOURCE_COLORS[item.type];
 
+  function renderRightActions() {
+    return (
+      <Pressable
+        style={styles.ignoreAction}
+        onPress={() => {
+          swipeableRef.current?.close();
+          onIgnore?.();
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }}
+      >
+        <View style={styles.ignoreInner}>
+          <Ionicons name="close-circle" size={22} color="#fff" />
+          <Text style={styles.ignoreText}>Ignore</Text>
+        </View>
+      </Pressable>
+    );
+  }
+
+  function handleSwipeOpen() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Auto-fire ignore after full swipe open
+    setTimeout(() => {
+      swipeableRef.current?.close();
+      onIgnore?.();
+    }, 300);
+  }
+
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+    <ReanimatedSwipeable
+      ref={swipeableRef}
+      renderRightActions={renderRightActions}
+      rightThreshold={80}
+      onSwipeableOpen={handleSwipeOpen}
+      friction={2}
+      overshootRight={false}
     >
-      {/* Header row: icon + name + time */}
-      <View style={styles.headerRow}>
-        <View style={[styles.iconCircle, { backgroundColor: `${iconColor}18` }]}>
-          <Ionicons name={iconName} size={16} color={iconColor} />
-        </View>
-        <View style={styles.headerCenter}>
-          <Text style={styles.name} numberOfLines={1}>
-            {item.contactName ?? 'Unknown'}
-          </Text>
-          {item.company ? (
-            <Text style={styles.company} numberOfLines={1}>
-              {item.company}
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      >
+        {/* Header row: icon + name + time */}
+        <View style={styles.headerRow}>
+          <View style={[styles.iconCircle, { backgroundColor: `${iconColor}18` }]}>
+            <Ionicons name={iconName} size={16} color={iconColor} />
+          </View>
+          <View style={styles.headerCenter}>
+            <Text style={styles.name} numberOfLines={1}>
+              {item.contactName ?? 'Unknown'}
             </Text>
-          ) : null}
-        </View>
-        <Text style={styles.time}>{timeAgo(item.createdAt)}</Text>
-      </View>
-
-      {/* Summary */}
-      {item.summary ? (
-        <Text style={styles.summary} numberOfLines={2}>
-          {item.summary}
-        </Text>
-      ) : null}
-
-      {/* Footer: pills + priority */}
-      <View style={styles.footer}>
-        <View style={styles.pills}>
-          {item.contactEmail ? (
-            <View style={styles.pill}>
-              <Ionicons name="mail-outline" size={11} color={Colors.text.muted} />
-              <Text style={styles.pillText} numberOfLines={1}>
-                {item.contactEmail}
+            {item.company ? (
+              <Text style={styles.company} numberOfLines={1}>
+                {item.company}
               </Text>
+            ) : null}
+          </View>
+          <Text style={styles.time}>{timeAgo(item.createdAt)}</Text>
+        </View>
+
+        {/* Summary */}
+        {item.summary ? (
+          <Text style={styles.summary} numberOfLines={2}>
+            {item.summary}
+          </Text>
+        ) : null}
+
+        {/* Footer: pills + priority */}
+        <View style={styles.footer}>
+          <View style={styles.pills}>
+            {item.contactEmail ? (
+              <View style={styles.pill}>
+                <Ionicons name="mail-outline" size={11} color={Colors.text.muted} />
+                <Text style={styles.pillText} numberOfLines={1}>
+                  {item.contactEmail}
+                </Text>
+              </View>
+            ) : null}
+            {item.contactPhone ? (
+              <View style={styles.pill}>
+                <Ionicons name="call-outline" size={11} color={Colors.text.muted} />
+                <Text style={styles.pillText}>{item.contactPhone}</Text>
+              </View>
+            ) : null}
+          </View>
+          <PriorityBadge priority={item.priority} size="sm" />
+        </View>
+
+        {/* Quick actions — Reply + Assign only (Ignore moved to swipe) */}
+        {(onReply || onAssign) && (
+          <View style={styles.actions}>
+            {onReply && (
+              <Pressable style={styles.actionBtn} onPress={onReply}>
+                <Ionicons name="arrow-undo-outline" size={14} color={Colors.brand[500]} />
+                <Text style={[styles.actionText, { color: Colors.brand[500] }]}>
+                  Reply
+                </Text>
+              </Pressable>
+            )}
+            {onAssign && (
+              <Pressable style={styles.actionBtn} onPress={onAssign}>
+                <Ionicons name="person-add-outline" size={14} color={Colors.text.secondary} />
+                <Text style={styles.actionText}>Assign</Text>
+              </Pressable>
+            )}
+            <View style={styles.swipeHint}>
+              <Ionicons name="chevron-back" size={11} color={Colors.text.muted} />
+              <Text style={styles.swipeHintText}>Swipe to ignore</Text>
             </View>
-          ) : null}
-          {item.contactPhone ? (
-            <View style={styles.pill}>
-              <Ionicons name="call-outline" size={11} color={Colors.text.muted} />
-              <Text style={styles.pillText}>{item.contactPhone}</Text>
-            </View>
-          ) : null}
-        </View>
-        <PriorityBadge priority={item.priority} size="sm" />
-      </View>
-
-      {/* Quick actions */}
-      {(onReply || onAssign || onIgnore) && (
-        <View style={styles.actions}>
-          {onReply && (
-            <Pressable style={styles.actionBtn} onPress={onReply}>
-              <Ionicons name="arrow-undo-outline" size={14} color={Colors.brand[500]} />
-              <Text style={[styles.actionText, { color: Colors.brand[500] }]}>
-                Reply
-              </Text>
-            </Pressable>
-          )}
-          {onAssign && (
-            <Pressable style={styles.actionBtn} onPress={onAssign}>
-              <Ionicons name="person-add-outline" size={14} color={Colors.text.secondary} />
-              <Text style={styles.actionText}>Assign</Text>
-            </Pressable>
-          )}
-          {onIgnore && (
-            <Pressable style={styles.actionBtn} onPress={onIgnore}>
-              <Ionicons name="close-outline" size={14} color={Colors.text.muted} />
-              <Text style={[styles.actionText, { color: Colors.text.muted }]}>
-                Ignore
-              </Text>
-            </Pressable>
-          )}
-        </View>
-      )}
-    </Pressable>
+          </View>
+        )}
+      </Pressable>
+    </ReanimatedSwipeable>
   );
 }
 
 const styles = StyleSheet.create({
+  // Swipe action
+  ignoreAction: {
+    backgroundColor: '#ef4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    marginVertical: 5,
+    marginRight: 16,
+    borderRadius: 14,
+  },
+  ignoreInner: {
+    alignItems: 'center',
+    gap: 3,
+  },
+  ignoreText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  // Card
   card: {
     backgroundColor: Colors.bg.card,
     borderRadius: 14,
@@ -209,6 +264,7 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 10,
     paddingTop: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -224,5 +280,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     color: Colors.text.secondary,
+  },
+  swipeHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    marginLeft: 'auto',
+  },
+  swipeHintText: {
+    fontSize: 11,
+    color: Colors.text.muted,
   },
 });
