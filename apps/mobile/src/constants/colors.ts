@@ -5,13 +5,13 @@ export const Colors = {
   },
   priority: {
     urgent: '#ef4444',
-    high: '#f97316',
+    high: '#15A4AE',
     medium: '#f59e0b',
     low: '#6b7280',
   },
   priorityBg: {
     urgent: '#fef2f2',
-    high: '#fff7ed',
+    high: '#e6f7f8',
     medium: '#fffbeb',
     low: '#f9fafb',
   },
@@ -48,13 +48,13 @@ export const Colors = {
     },
     priority: {
       urgent: '#f87171',
-      high: '#fb923c',
+      high: '#15A4AE',
       medium: '#fbbf24',
       low: '#9ca3af',
     },
     priorityBg: {
       urgent: '#450a0a',
-      high: '#431407',
+      high: '#0c3b3f',
       medium: '#422006',
       low: '#1f2937',
     },

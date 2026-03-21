@@ -261,7 +261,7 @@ export default function TestLandingPage() {
 
           <FadeUp delay={0.1}>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.25] mb-4 text-white max-w-4xl mx-auto">
-              Imagine a CRM that connects with all your lead platforms, AI analyses the content & creates actionable opportunities 24x7.
+              The CRM era is over. Welcome to ACM — Agentic Customer Management. Welcome to Appalix.
             </h1>
             <h2
               className="text-2xl sm:text-3xl font-semibold text-white mb-8 inline-flex items-center gap-2 justify-center flex-wrap"
@@ -293,10 +293,7 @@ export default function TestLandingPage() {
               ))}
             </div>
             <h2 className="text-xl sm:text-2xl text-gray-300 leading-relaxed max-w-3xl mx-auto mb-4">
-              Each enquiry is instantly transformed into an opportunity. Prioritised as{' '}
-              <span className="text-[#15A4AE] font-semibold">High</span>,{' '}
-              <span className="text-yellow-400 font-semibold">Medium</span>, &amp;{' '}
-              <span className="text-blue-300 font-semibold">Low</span>. Organised seamlessly in a built-in CRM suite. <span className="whitespace-nowrap">All within seconds — 24/7.</span>
+              Agentic Customer Management goes beyond traditional CRM by using AI agents to analyse conversations, create opportunities, trigger follow-ups, and move customer relationships forward automatically.
             </h2>
           </FadeUp>
 
