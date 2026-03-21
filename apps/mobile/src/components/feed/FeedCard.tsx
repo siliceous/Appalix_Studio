@@ -5,7 +5,8 @@ import {
   Pressable,
   StyleSheet,
 } from 'react-native';
-import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
+// eslint-disable-next-line deprecation/deprecation
+import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { PriorityBadge } from '@/components/ui/PriorityBadge';
@@ -48,7 +49,7 @@ interface Props {
 }
 
 export function FeedCard({ item, onPress, onReply, onAssign, onIgnore }: Props) {
-  const swipeableRef = useRef<SwipeableMethods>(null);
+  const swipeableRef = useRef<Swipeable>(null);
   const iconName = SOURCE_ICONS[item.type];
   const iconColor = SOURCE_COLORS[item.type];
 
@@ -80,7 +81,7 @@ export function FeedCard({ item, onPress, onReply, onAssign, onIgnore }: Props) 
   }
 
   return (
-    <ReanimatedSwipeable
+    <Swipeable
       ref={swipeableRef}
       renderRightActions={renderRightActions}
       rightThreshold={80}
@@ -162,7 +163,7 @@ export function FeedCard({ item, onPress, onReply, onAssign, onIgnore }: Props) 
           </View>
         )}
       </Pressable>
-    </ReanimatedSwipeable>
+    </Swipeable>
   );
 }
 
