@@ -505,6 +505,7 @@ function InfoPill({ icon, text }: { icon: React.ComponentProps<typeof Ionicons>[
 export default function FeedItemDetailScreen() {
   const { id, type = 'ticket' } = useLocalSearchParams<{ id: string; type: string }>();
   const router = useRouter();
+  console.log('[FeedDetail] id:', id, 'type:', type);
   const [view, setView] = useState<'detail' | 'reply'>('detail');
 
   // Email path
