@@ -192,17 +192,17 @@ const ROLE_COLORS: Record<string, string> = {
 }
 
 interface IntegrationsClientProps {
-  connected:           Set<string>
-  standalone?:         boolean
-  initialExpanded?:    string
-  onboarding?:         boolean
-  loginHint?:          string
-  providers?:          SageIntegrationProvider[]
-  columns?:            1 | 2
-  connectedEmailInfo?: ConnectedEmailInfo | null
+  connected:                    Set<string>
+  standalone?:                  boolean
+  initialExpanded?:             string
+  onboarding?:                  boolean
+  loginHint?:                   string
+  providers?:                   SageIntegrationProvider[]
+  columns?:                     1 | 2
+  connectedEmailInfoByProvider?: Record<string, ConnectedEmailInfo> | null
 }
 
-export function IntegrationsClient({ connected: initialConnected, standalone = true, initialExpanded, onboarding, loginHint, providers, columns, connectedEmailInfo }: IntegrationsClientProps) {
+export function IntegrationsClient({ connected: initialConnected, standalone = true, initialExpanded, onboarding, loginHint, providers, columns, connectedEmailInfoByProvider }: IntegrationsClientProps) {
   const [connected,         setConnected]        = useState<Set<string>>(initialConnected)
   const [expanded,          setExpanded]         = useState<string | null>(initialExpanded ?? null)
   const [pending,           startTransition]     = useTransition()
@@ -350,21 +350,26 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                             </span>
                           )}
                         </div>
-                        {isConnected && connectedEmailInfo && (integration.provider === 'gmail' || integration.provider === 'microsoft') ? (
-                          <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <span className="text-xs text-gray-700 dark:text-gray-200 font-medium">{connectedEmailInfo.email}</span>
-                            {connectedEmailInfo.userName && (
-                              <span className="text-[11px] text-gray-400">· {connectedEmailInfo.userName}</span>
-                            )}
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${ROLE_COLORS[connectedEmailInfo.role] ?? ROLE_COLORS.viewer}`}>
-                              {ROLE_LABELS[connectedEmailInfo.role] ?? connectedEmailInfo.role}
-                            </span>
-                          </div>
-                        ) : (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed line-clamp-2">
-                            {integration.description}
-                          </p>
-                        )}
+                        {(() => {
+                          const info = (integration.provider === 'gmail' || integration.provider === 'microsoft')
+                            ? connectedEmailInfoByProvider?.[integration.provider]
+                            : undefined
+                          return info ? (
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              <span className="text-xs text-gray-700 dark:text-gray-200 font-medium">{info.email}</span>
+                              {info.userName && (
+                                <span className="text-[11px] text-gray-400">· {info.userName}</span>
+                              )}
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${ROLE_COLORS[info.role] ?? ROLE_COLORS.viewer}`}>
+                                {ROLE_LABELS[info.role] ?? info.role}
+                              </span>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed line-clamp-2">
+                              {integration.description}
+                            </p>
+                          )
+                        })()}
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">

@@ -65,17 +65,20 @@ export default async function IntegrationsPage({
   const EMAIL_PROVIDERS = ['mailchimp', 'activecampaign', 'convertkit', 'klaviyo', 'constantcontact'] as const
 
   const admin = createAdminClient()
-  const [{ data: rawIntegrations }, { data: sageIntegrationsRaw }, { data: sourcesRaw }, { data: emailIntegrationsRaw }, { data: profileRaw }, { data: connectedEmailRaw }] = await Promise.all([
+  const [{ data: rawIntegrations }, { data: sageIntegrationsRaw }, { data: sourcesRaw }, { data: emailIntegrationsRaw }, { data: allConnectedEmailsRaw }, { data: profilesRaw }, { data: membersRaw }] = await Promise.all([
     supabase.from('integrations').select('*, bots(name)').eq('workspace_id', membership.workspace_id).order('created_at', { ascending: false }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('sage_integrations').select('provider, status').eq('workspace_id', membership.workspace_id).eq('user_id', user.id),
     supabase.from('lead_ad_sources').select('*').eq('workspace_id', membership.workspace_id),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('sage_integrations').select('id, provider, status, updated_at, sync_enabled, last_synced_at, last_sync_count').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', EMAIL_PROVIDERS),
+    // All connected email integrations for this workspace (gmail + microsoft) — to show per-provider info
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (admin as any).from('user_profiles').select('first_name, last_name').eq('user_id', user.id).maybeSingle(),
+    (admin as any).from('sage_integrations').select('provider, user_id, config').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', ['gmail', 'microsoft']),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (admin as any).from('sage_integrations').select('provider, config').eq('workspace_id', membership.workspace_id).eq('user_id', user.id).eq('status', 'connected').in('provider', ['gmail', 'microsoft']).maybeSingle(),
+    (admin as any).from('user_profiles').select('user_id, first_name, last_name'),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any).from('workspace_members').select('user_id, role').eq('workspace_id', membership.workspace_id),
   ])
   const integrations      = (rawIntegrations ?? []) as IntegrationRow[]
   const adSources         = (sourcesRaw ?? []) as LeadAdSource[]
@@ -94,14 +97,23 @@ export default async function IntegrationsPage({
       .map((r: { provider: string; status: string }) => r.provider)
   )
 
-  const profile = profileRaw as { first_name: string; last_name: string | null } | null
-  const userName = profile ? [profile.first_name, profile.last_name].filter(Boolean).join(' ') : ''
-  const connectedEmail = (connectedEmailRaw as { provider: string; config: Record<string, string> } | null)
-  const connectedEmailInfo = connectedEmail ? {
-    email:    connectedEmail.config.from_email ?? '',
-    userName,
-    role:     membership.role,
-  } : null
+  // Build per-provider email info map (provider → { email, userName, role })
+  type ProfileRow = { user_id: string; first_name: string; last_name: string | null }
+  type MemberRow  = { user_id: string; role: string }
+  type EmailRow   = { provider: string; user_id: string; config: Record<string, string> }
+  const profileMap = new Map(((profilesRaw ?? []) as ProfileRow[]).map(p => [p.user_id, p]))
+  const memberMap  = new Map(((membersRaw  ?? []) as MemberRow[]).map(m => [m.user_id, m]))
+  const connectedEmailInfoByProvider: Record<string, { email: string; userName: string; role: string }> = {}
+  for (const row of (allConnectedEmailsRaw ?? []) as EmailRow[]) {
+    const p    = profileMap.get(row.user_id)
+    const m    = memberMap.get(row.user_id)
+    const name = p ? [p.first_name, p.last_name].filter(Boolean).join(' ') : ''
+    connectedEmailInfoByProvider[row.provider] = {
+      email:    row.config.from_email ?? '',
+      userName: name,
+      role:     m?.role ?? '',
+    }
+  }
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -223,7 +235,7 @@ export default async function IntegrationsPage({
           initialExpanded={initialProvider}
           onboarding={onboarding === '1'}
           loginHint={hint}
-          connectedEmailInfo={connectedEmailInfo}
+          connectedEmailInfoByProvider={connectedEmailInfoByProvider}
         />
       </section>
 
