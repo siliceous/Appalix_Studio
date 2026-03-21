@@ -14,7 +14,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '@/stores/auth';
-import { fetchFeed, actionFeedItem } from '@/lib/api';
+import { fetchFeedItems, actionFeedItem } from '@/lib/api';
 import { FeedCard } from '@/components/feed/FeedCard';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { Colors } from '@/constants/colors';
@@ -39,11 +39,17 @@ export default function FeedScreen() {
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['feed', filter, user?.workspaceId],
-    queryFn: () => fetchFeed(user!.workspaceId, user!.role, user!.id),
+    queryFn: () => fetchFeedItems(
+      user!.workspaceId,
+      user!.id,
+      user!.role,
+      filter === 'all' ? null : filter,
+      new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    ),
     enabled: !!user,
   });
 
-  const filteredData = (data ?? []).filter((item) => {
+  const filteredData = (data ?? []).filter((item: FeedItem) => {
     if (filter !== 'all' && item.type !== filter) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -71,8 +77,8 @@ export default function FeedScreen() {
     ({ item }: { item: FeedItem }) => (
       <FeedCard
         item={item}
-        onPress={() => router.push(`/(app)/feed/${item.id}`)}
-        onReply={() => router.push(`/(app)/feed/${item.id}`)}
+        onPress={() => router.push(`/(app)/feed/${item.id}?type=${item.type}`)}
+        onReply={() => router.push(`/(app)/feed/${item.id}?type=${item.type}`)}
         onAssign={() => handleAction(item.id, 'assign')}
         onIgnore={() => handleAction(item.id, 'ignore')}
       />
