@@ -1028,14 +1028,28 @@ export async function disconnectSageIntegration(provider: string) {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
 
-  const { error } = await admin
+  // Try matching by user_id first; fall back to workspace-wide disconnect
+  // in case the stored user_id differs from the current session (e.g. OAuth popup edge case)
+  const { error, count } = await admin
     .from('sage_integrations')
     .update({ status: 'disconnected', config: {}, updated_at: new Date().toISOString() })
     .eq('workspace_id', workspaceId)
     .eq('user_id', user.id)
     .eq('provider', provider)
+    .select()
 
   if (error) throw new Error(error.message)
+
+  if (!count || count === 0) {
+    // Fallback: disconnect any row for this provider in the workspace
+    const { error: fallbackError } = await admin
+      .from('sage_integrations')
+      .update({ status: 'disconnected', config: {}, updated_at: new Date().toISOString() })
+      .eq('workspace_id', workspaceId)
+      .eq('provider', provider)
+    if (fallbackError) throw new Error(fallbackError.message)
+  }
+
   revalidatePath('/sage/integrations')
 }
 
