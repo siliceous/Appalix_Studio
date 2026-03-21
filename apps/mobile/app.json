@@ -1,0 +1,67 @@
+{
+  "expo": {
+    "name": "Appalix",
+    "slug": "appalix-mobile",
+    "version": "1.0.0",
+    "scheme": "appalix",
+    "platforms": ["ios", "android"],
+    "orientation": "portrait",
+    "backgroundColor": "#ffffff",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.appalix.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Used for profile photos.",
+        "NSPhotoLibraryUsageDescription": "Used for selecting profile photos."
+      }
+    },
+    "android": {
+      "package": "com.appalix.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#15A4AE"
+      },
+      "permissions": [
+        "NOTIFICATIONS",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#15A4AE",
+          "sounds": []
+        }
+      ],
+      [
+        "expo-font",
+        {
+          "fonts": []
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "YOUR_EAS_PROJECT_ID"
+      },
+      "supabaseUrl": "$EXPO_PUBLIC_SUPABASE_URL",
+      "supabaseAnonKey": "$EXPO_PUBLIC_SUPABASE_ANON_KEY",
+      "apiUrl": "$EXPO_PUBLIC_API_URL"
+    }
+  }
+}
