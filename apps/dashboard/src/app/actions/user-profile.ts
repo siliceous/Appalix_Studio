@@ -66,7 +66,7 @@ export async function uploadUserAvatar(
 
   if (dbError) return { ok: false, error: dbError.message }
 
-  revalidatePath('/settings/profile')
+  revalidatePath('/settings')
   revalidatePath('/', 'layout')
 
   return { ok: true, url: publicUrl }
@@ -82,7 +82,7 @@ export async function removeUserAvatar(): Promise<{ ok: boolean; error?: string 
     .update({ avatar_url: null, updated_at: new Date().toISOString() })
     .eq('user_id', user.id)
 
-  revalidatePath('/settings/profile')
+  revalidatePath('/settings')
   revalidatePath('/', 'layout')
 
   return { ok: true }

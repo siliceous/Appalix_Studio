@@ -66,6 +66,13 @@ export function ProfileForm({ firstName, lastName, email, avatarUrl: initialAvat
       setAvatarUrl(initialAvatarUrl)
       setSidebarAvatar(initialAvatarUrl)
       setError(result.error ?? 'Upload failed')
+    } else {
+      // Switch from canvas data URL to the persisted public URL
+      if (result.url) {
+        setAvatarUrl(result.url)
+        setSidebarAvatar(result.url)
+      }
+      router.refresh()
     }
   }
 
