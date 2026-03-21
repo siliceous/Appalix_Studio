@@ -261,7 +261,7 @@ export default function TestLandingPage() {
 
           <FadeUp delay={0.1}>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.25] mb-4 text-white max-w-4xl mx-auto">
-              Imagine a CRM that connects with all your lead platforms, AI analyses the content & creates actionable opportunities 24x7.
+              The CRM era is over. Welcome to agentic business solution.
             </h1>
             <h2
               className="text-2xl sm:text-3xl font-semibold text-white mb-8 inline-flex items-center gap-2 justify-center flex-wrap"
