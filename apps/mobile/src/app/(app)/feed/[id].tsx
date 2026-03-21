@@ -18,7 +18,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { supabase } from '@/lib/supabase';
-import { useAuthStore } from '@/stores/auth';
+
 import { PriorityBadge } from '@/components/ui/PriorityBadge';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { Colors } from '@/constants/colors';
@@ -36,7 +36,7 @@ interface EmailDetail {
   body_text: string | null;
   ai_summary: string | null;
   ai_priority: SageTicketPriority;
-  ai_reply: string | null;
+  ai_reply_drafts: { tone: string; body: string }[] | null;
   received_at: string;
 }
 
@@ -47,7 +47,7 @@ interface EmailDetail {
 async function fetchEmailDetail(id: string): Promise<EmailDetail> {
   const { data, error } = await supabase
     .from('sage_emails')
-    .select('id, from_name, from_address, subject, body_text, ai_summary, ai_priority, ai_reply, received_at')
+    .select('id, from_name, from_address, subject, body_text, ai_summary, ai_priority, ai_reply_drafts, received_at')
     .eq('id', id)
     .single();
   if (error || !data) throw new Error(error?.message ?? 'Not found');
@@ -312,7 +312,7 @@ function EmailReplyView({
   email: EmailDetail;
   onBack: () => void;
 }) {
-  const [body, setBody] = useState(email.ai_reply ?? '');
+  const [body, setBody] = useState(email.ai_reply_drafts?.[0]?.body ?? '');
   const [enhancing, setEnhancing] = useState(false);
   const [sending, setSending] = useState(false);
   const queryClient = useQueryClient();
@@ -324,10 +324,11 @@ function EmailReplyView({
       // Update ai_reply in DB, then re-fetch
       const { data } = await supabase
         .from('sage_emails')
-        .select('ai_reply')
+        .select('ai_reply_drafts')
         .eq('id', email.id)
         .single();
-      if (data?.ai_reply) setBody(data.ai_reply);
+      const draft = (data?.ai_reply_drafts as { tone: string; body: string }[] | null)?.[0]?.body;
+      if (draft) setBody(draft);
     } catch {
       Alert.alert('Error', 'Failed to enhance reply');
     } finally {
@@ -511,6 +512,7 @@ export default function FeedItemDetailScreen() {
     queryKey: ['email-detail', id],
     queryFn: () => fetchEmailDetail(id),
     enabled: !!id && type === 'email',
+    retry: 0,
   });
 
   // Non-email path
@@ -518,6 +520,7 @@ export default function FeedItemDetailScreen() {
     queryKey: ['feed-item', id, type],
     queryFn: () => fetchFeedItemDirect(id, type),
     enabled: !!id && type !== 'email',
+    retry: 0,
   });
 
   const isLoading = type === 'email' ? emailQuery.isLoading : genericQuery.isLoading;
@@ -542,7 +545,7 @@ export default function FeedItemDetailScreen() {
 
   if (type === 'email') {
     if (emailQuery.error || !emailQuery.data) {
-      return <ErrorView onBack={() => router.back()} />;
+      return <ErrorView onBack={() => router.back()} message={(emailQuery.error as Error)?.message} />;
     }
     if (view === 'reply') {
       return <EmailReplyView email={emailQuery.data} onBack={() => setView('detail')} />;
@@ -563,7 +566,7 @@ export default function FeedItemDetailScreen() {
   return <GenericDetailView item={genericQuery.data} onBack={() => router.back()} />;
 }
 
-function ErrorView({ onBack }: { onBack: () => void }) {
+function ErrorView({ onBack, message }: { onBack: () => void; message?: string }) {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
@@ -574,6 +577,7 @@ function ErrorView({ onBack }: { onBack: () => void }) {
       <View style={styles.errorState}>
         <Ionicons name="alert-circle-outline" size={40} color="#ef4444" />
         <Text style={styles.errorText}>Failed to load item.</Text>
+        {message ? <Text style={styles.errorDetail}>{message}</Text> : null}
       </View>
     </SafeAreaView>
   );
@@ -590,6 +594,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   errorState: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
   errorText: { fontSize: 14, color: '#ef4444' },
+  errorDetail: { fontSize: 12, color: Colors.text.muted, marginTop: 4, textAlign: 'center', paddingHorizontal: 24 },
 
   // Header
   header: {
