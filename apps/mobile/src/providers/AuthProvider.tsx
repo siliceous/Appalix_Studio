@@ -25,25 +25,35 @@ export function AuthProvider({ children }: Props) {
   const isLoading = useAuthStore((s) => s.isLoading);
 
   async function resolveUserFromSession(userId: string, email: string) {
-    // Fetch the workspace membership to get role + workspaceId
-    const { data, error } = await supabase
-      .from('workspace_members')
-      .select('workspace_id, role, name')
-      .eq('user_id', userId)
-      .maybeSingle();
+    const [{ data: membership, error }, { data: profile }] = await Promise.all([
+      supabase
+        .from('workspace_members')
+        .select('workspace_id, role')
+        .eq('user_id', userId)
+        .maybeSingle(),
+      supabase
+        .from('user_profiles')
+        .select('first_name, last_name')
+        .eq('user_id', userId)
+        .maybeSingle(),
+    ]);
 
-    if (error || !data) {
-      // User exists in auth but has no workspace membership yet
+    if (error || !membership) {
       setUser(null);
+      setLoading(false);
       return;
     }
+
+    const name = profile
+      ? [profile.first_name, profile.last_name].filter(Boolean).join(' ')
+      : undefined;
 
     const user: User = {
       id: userId,
       email,
-      role: data.role as WorkspaceRole,
-      workspaceId: data.workspace_id,
-      name: data.name ?? undefined,
+      role: membership.role as WorkspaceRole,
+      workspaceId: membership.workspace_id,
+      name: name || undefined,
     };
     setUser(user);
   }
@@ -52,15 +62,22 @@ export function AuthProvider({ children }: Props) {
     let mounted = true;
 
     // 1. Check existing session on mount
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!mounted) return;
-      if (session?.user) {
-        await resolveUserFromSession(session.user.id, session.user.email ?? '');
-      } else {
+    supabase.auth.getSession()
+      .then(async ({ data: { session } }) => {
+        if (!mounted) return;
+        if (session?.user) {
+          await resolveUserFromSession(session.user.id, session.user.email ?? '');
+        } else {
+          setUser(null);
+        }
+      })
+      .catch(() => {
+        if (!mounted) return;
         setUser(null);
-      }
-      setLoading(false);
-    });
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
 
     // 2. Subscribe to auth state changes (sign in, sign out, token refresh)
     const { data: subscription } = supabase.auth.onAuthStateChange(
