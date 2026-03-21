@@ -45,13 +45,11 @@ interface EmailDetail {
 // ---------------------------------------------------------------------------
 
 async function fetchEmailDetail(id: string): Promise<EmailDetail> {
-  console.log('[fetchEmailDetail] fetching id:', id);
   const { data, error, status } = await supabase
     .from('sage_emails')
     .select('id, from_name, from_address, subject, body_text, ai_summary, ai_priority, ai_reply_drafts, received_at')
     .eq('id', id)
     .single();
-  console.log('[fetchEmailDetail] status:', status, 'error:', error?.message, 'data:', !!data);
   if (error || !data) throw new Error(error?.message ?? 'Not found');
   return data as EmailDetail;
 }
@@ -539,7 +537,6 @@ function InfoPill({ icon, text }: { icon: React.ComponentProps<typeof Ionicons>[
 export default function FeedItemDetailScreen() {
   const { id, type = 'ticket' } = useLocalSearchParams<{ id: string; type: string }>();
   const router = useRouter();
-  console.log('[FeedDetail] id:', id, 'type:', type);
   const [view, setView] = useState<'detail' | 'reply'>('detail');
 
   // Email path
