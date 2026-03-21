@@ -58,20 +58,24 @@ export default async function IntegrationsPage({
   if (!user) redirect('/login')
 
   const { data: membershipRaw } = await supabase
-    .from('workspace_members').select('workspace_id').eq('user_id', user.id).order('created_at', { ascending: true }).limit(1).single()
-  const membership = membershipRaw as { workspace_id: string } | null
+    .from('workspace_members').select('workspace_id, role').eq('user_id', user.id).order('created_at', { ascending: true }).limit(1).single()
+  const membership = membershipRaw as { workspace_id: string; role: string } | null
   if (!membership) redirect('/login')
 
   const EMAIL_PROVIDERS = ['mailchimp', 'activecampaign', 'convertkit', 'klaviyo', 'constantcontact'] as const
 
   const admin = createAdminClient()
-  const [{ data: rawIntegrations }, { data: sageIntegrationsRaw }, { data: sourcesRaw }, { data: emailIntegrationsRaw }] = await Promise.all([
+  const [{ data: rawIntegrations }, { data: sageIntegrationsRaw }, { data: sourcesRaw }, { data: emailIntegrationsRaw }, { data: profileRaw }, { data: connectedEmailRaw }] = await Promise.all([
     supabase.from('integrations').select('*, bots(name)').eq('workspace_id', membership.workspace_id).order('created_at', { ascending: false }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('sage_integrations').select('provider, status').eq('workspace_id', membership.workspace_id).eq('user_id', user.id),
     supabase.from('lead_ad_sources').select('*').eq('workspace_id', membership.workspace_id),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('sage_integrations').select('id, provider, status, updated_at, sync_enabled, last_synced_at, last_sync_count').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', EMAIL_PROVIDERS),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any).from('user_profiles').select('first_name, last_name').eq('user_id', user.id).maybeSingle(),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any).from('sage_integrations').select('provider, config').eq('workspace_id', membership.workspace_id).eq('user_id', user.id).eq('status', 'connected').in('provider', ['gmail', 'microsoft']).maybeSingle(),
   ])
   const integrations      = (rawIntegrations ?? []) as IntegrationRow[]
   const adSources         = (sourcesRaw ?? []) as LeadAdSource[]
@@ -89,6 +93,15 @@ export default async function IntegrationsPage({
       .filter((r: { provider: string; status: string }) => r.status === 'connected')
       .map((r: { provider: string; status: string }) => r.provider)
   )
+
+  const profile = profileRaw as { first_name: string; last_name: string | null } | null
+  const userName = profile ? [profile.first_name, profile.last_name].filter(Boolean).join(' ') : ''
+  const connectedEmail = (connectedEmailRaw as { provider: string; config: Record<string, string> } | null)
+  const connectedEmailInfo = connectedEmail ? {
+    email:    connectedEmail.config.from_email ?? '',
+    userName,
+    role:     membership.role,
+  } : null
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -210,6 +223,7 @@ export default async function IntegrationsPage({
           initialExpanded={initialProvider}
           onboarding={onboarding === '1'}
           loginHint={hint}
+          connectedEmailInfo={connectedEmailInfo}
         />
       </section>
 

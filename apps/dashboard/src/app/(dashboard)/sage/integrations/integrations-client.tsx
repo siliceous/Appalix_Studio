@@ -169,17 +169,40 @@ const CATEGORY_LABELS: Record<string, string> = {
   email_marketing: 'Email Marketing',
 }
 
-interface IntegrationsClientProps {
-  connected:        Set<string>
-  standalone?:      boolean  // false when embedded inside another page
-  initialExpanded?: string   // auto-open this provider card (e.g. from onboarding)
-  onboarding?:      boolean  // redirect to /dashboard after first connection
-  loginHint?:       string   // pre-fill the email hint in the OAuth URL
-  providers?:       SageIntegrationProvider[]  // if set, only render these providers (no category headings)
-  columns?:         1 | 2                       // 2 = side-by-side grid layout
+interface ConnectedEmailInfo {
+  email:    string
+  userName: string
+  role:     string
 }
 
-export function IntegrationsClient({ connected: initialConnected, standalone = true, initialExpanded, onboarding, loginHint, providers, columns }: IntegrationsClientProps) {
+const ROLE_LABELS: Record<string, string> = {
+  owner:    'Owner',
+  admin:    'Admin',
+  manager:  'Manager',
+  employee: 'Employee',
+  viewer:   'Viewer',
+}
+
+const ROLE_COLORS: Record<string, string> = {
+  owner:    'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border-purple-200 dark:border-purple-500/25',
+  admin:    'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400 border-red-200 dark:border-red-500/25',
+  manager:  'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border-blue-200 dark:border-blue-500/25',
+  employee: 'bg-gray-100 text-gray-600 dark:bg-white/8 dark:text-gray-400 border-gray-200 dark:border-white/10',
+  viewer:   'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-500 border-gray-200 dark:border-white/10',
+}
+
+interface IntegrationsClientProps {
+  connected:           Set<string>
+  standalone?:         boolean
+  initialExpanded?:    string
+  onboarding?:         boolean
+  loginHint?:          string
+  providers?:          SageIntegrationProvider[]
+  columns?:            1 | 2
+  connectedEmailInfo?: ConnectedEmailInfo | null
+}
+
+export function IntegrationsClient({ connected: initialConnected, standalone = true, initialExpanded, onboarding, loginHint, providers, columns, connectedEmailInfo }: IntegrationsClientProps) {
   const [connected,         setConnected]        = useState<Set<string>>(initialConnected)
   const [expanded,          setExpanded]         = useState<string | null>(initialExpanded ?? null)
   const [pending,           startTransition]     = useTransition()
@@ -327,9 +350,21 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed line-clamp-2">
-                          {integration.description}
-                        </p>
+                        {isConnected && connectedEmailInfo && (integration.provider === 'gmail' || integration.provider === 'microsoft') ? (
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <span className="text-xs text-gray-700 dark:text-gray-200 font-medium">{connectedEmailInfo.email}</span>
+                            {connectedEmailInfo.userName && (
+                              <span className="text-[11px] text-gray-400">· {connectedEmailInfo.userName}</span>
+                            )}
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${ROLE_COLORS[connectedEmailInfo.role] ?? ROLE_COLORS.viewer}`}>
+                              {ROLE_LABELS[connectedEmailInfo.role] ?? connectedEmailInfo.role}
+                            </span>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed line-clamp-2">
+                            {integration.description}
+                          </p>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
