@@ -151,37 +151,93 @@ export async function sendEmailSMTP(opts: SendEmailOptions): Promise<void> {
     return
   }
 
+  // Gmail OAuth2 → use Gmail API messages.send (replaces SMTP which requires mail.google.com scope)
+  if (provider === 'gmail' && accessToken) {
+    const lines: string[] = []
+    lines.push(`From: ${config.from_email}`)
+    lines.push(`To: ${to}`)
+    if (cc)  lines.push(`Cc: ${cc}`)
+    if (bcc) lines.push(`Bcc: ${bcc}`)
+    lines.push(`Subject: ${subject}`)
+    if (replyToMessageId) {
+      lines.push(`In-Reply-To: ${replyToMessageId}`)
+      lines.push(`References: ${replyToMessageId}`)
+    }
+    lines.push('MIME-Version: 1.0')
+
+    if (attachments?.length) {
+      const boundary = `==Boundary_${Date.now()}`
+      lines.push(`Content-Type: multipart/mixed; boundary="${boundary}"`)
+      lines.push('')
+      lines.push(`--${boundary}`)
+      lines.push('Content-Type: text/plain; charset=utf-8')
+      lines.push('')
+      lines.push(body)
+      for (const att of attachments) {
+        lines.push(`--${boundary}`)
+        lines.push(`Content-Type: ${att.contentType}; name="${att.filename}"`)
+        lines.push('Content-Transfer-Encoding: base64')
+        lines.push(`Content-Disposition: attachment; filename="${att.filename}"`)
+        lines.push('')
+        lines.push(att.dataBase64)
+      }
+      lines.push(`--${boundary}--`)
+    } else {
+      lines.push('Content-Type: text/plain; charset=utf-8')
+      lines.push('')
+      lines.push(body)
+    }
+
+    const rawMime = lines.join('\r\n')
+    const raw     = Buffer.from(rawMime).toString('base64url')
+
+    const sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method:  'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ raw }),
+    })
+
+    if (!sendRes.ok) {
+      const errText = await sendRes.text()
+      throw new Error(`Gmail API send error: ${sendRes.status} ${errText}`)
+    }
+
+    const sentMsg    = await sendRes.json() as { id?: string }
+    const messageId  = sentMsg.id ? `gmail-sent-${sentMsg.id}` : `sent-${Date.now()}`
+    await supabase.from('sage_emails').insert({
+      workspace_id: workspaceId,
+      user_id:      userId,
+      message_id:   messageId,
+      thread_id:    replyToMessageId,
+      from_address: config.from_email,
+      from_name:    'You',
+      to_address:   to,
+      subject,
+      body_text:    body,
+      received_at:  new Date().toISOString(),
+      direction:    'outbound',
+      is_read:      true,
+      ai_priority:  null,
+    })
+    return
+  }
+
   const creds = getSmtpCreds(provider, config, accessToken)
 
   if (!creds) {
     throw new Error(`Missing SMTP credentials for ${provider} integration.`)
   }
 
-  // Create nodemailer transporter
-  const transporter = nodemailer.createTransport(
-    creds.accessToken
-      ? {
-          // OAuth2 SMTP
-          host:   creds.host,
-          port:   creds.port,
-          secure: false,
-          auth: {
-            type:        'OAuth2',
-            user:        creds.user,
-            accessToken: creds.accessToken,
-          },
-        }
-      : {
-          // App-password SMTP
-          host:   creds.host,
-          port:   creds.port,
-          secure: false,          // STARTTLS on port 587
-          auth: {
-            user: creds.user,
-            pass: creds.password,
-          },
-        },
-  )
+  // Create nodemailer transporter (app-password path only — OAuth2 Gmail uses Gmail API above)
+  const transporter = nodemailer.createTransport({
+    host:   creds.host,
+    port:   creds.port,
+    secure: false,  // STARTTLS on port 587
+    auth: {
+      user: creds.user,
+      pass: creds.password,
+    },
+  })
 
   // Send the email
   const info = await transporter.sendMail({
@@ -213,6 +269,6 @@ export async function sendEmailSMTP(opts: SendEmailOptions): Promise<void> {
     received_at:  new Date().toISOString(),
     direction:    'outbound',
     is_read:      true,
-    ai_priority:  null,    // outbound emails don't need AI analysis
+    ai_priority:  null,
   })
 }

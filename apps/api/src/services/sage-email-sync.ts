@@ -561,6 +561,340 @@ Task: Identify any NEW products, services, or customer segments described in the
 }
 
 // ---------------------------------------------------------------------------
+// Gmail API email sync (replaces IMAP for OAuth2 accounts)
+// ---------------------------------------------------------------------------
+
+interface GmailMessageStub { id: string }
+interface GmailRawMessage  { id: string; threadId?: string; raw?: string }
+
+async function syncGmailEmailsViaAPI(opts: {
+  workspaceId:         string
+  userId:              string
+  accessToken:         string
+  fromEmail:           string
+  limit:               number
+  businessDescription: string | null
+  contactPairs:        { email: string; contactId: string }[]
+}): Promise<number> {
+  const { workspaceId, userId, accessToken, fromEmail, limit, businessDescription, contactPairs } = opts
+  const headers = { Authorization: `Bearer ${accessToken}` }
+  const top = Math.min(limit, 100)
+
+  console.log(`[email-sync] Fetching Gmail API messages for ${fromEmail}`)
+
+  // 1. List message IDs from INBOX (exclude spam + drafts)
+  const listUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=${top}&labelIds=INBOX&q=-is:spam+-is:draft`
+  const listRes = await fetch(listUrl, { headers })
+  if (!listRes.ok) {
+    const errText = await listRes.text()
+    throw new Error(`Gmail API list error: ${listRes.status} ${errText}`)
+  }
+
+  const listData = await listRes.json() as { messages?: GmailMessageStub[] }
+  const stubs    = listData.messages ?? []
+  console.log(`[email-sync] Gmail API returned ${stubs.length} message stubs`)
+
+  let synced = 0
+
+  // 2. Fetch each message as raw MIME and parse with simpleParser (same as IMAP path)
+  for (const stub of stubs) {
+    try {
+      const rawRes = await fetch(
+        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${stub.id}?format=raw`,
+        { headers },
+      )
+      if (!rawRes.ok) continue
+
+      const gmailMsg = await rawRes.json() as GmailRawMessage
+      if (!gmailMsg.raw) continue
+
+      const rawBuffer = Buffer.from(gmailMsg.raw, 'base64url')
+      const parsed    = await simpleParser(rawBuffer)
+
+      const messageId   = parsed.messageId ?? `gmail-${stub.id}`
+      const fromAddress = (parsed.from?.value?.[0]?.address ?? '').toLowerCase()
+      const fromName    = parsed.from?.value?.[0]?.name ?? fromAddress
+      const toAddress   = parsed.to && !Array.isArray(parsed.to)
+        ? (parsed.to.value?.[0]?.address ?? fromEmail)
+        : fromEmail
+      const subject     = parsed.subject ?? '(no subject)'
+      const bodyText    = parsed.text ?? ''
+      const bodyHtml    = parsed.html ?? null
+      const receivedAt  = parsed.date?.toISOString() ?? new Date().toISOString()
+      const threadId    = gmailMsg.threadId ?? parsed.references?.[0] ?? null
+
+      // Calendar notification filter
+      const attachments0 = parsed.attachments ?? []
+      const hasIcsPart   = attachments0.some(
+        a => a.contentType === 'text/calendar' ||
+             a.contentType === 'application/ics' ||
+             (a.filename ?? '').toLowerCase().endsWith('.ics'),
+      )
+      const calendarEmail = isCalendarNotification(subject, fromAddress, hasIcsPart)
+
+      // Dedup check
+      const { data: existing } = await supabase
+        .from('sage_emails')
+        .select('id')
+        .eq('workspace_id', workspaceId)
+        .eq('user_id', userId)
+        .eq('message_id', messageId)
+        .single()
+
+      if (existing) continue
+
+      const contactId = fromAddress ? await findContactByEmail(workspaceId, fromAddress) : null
+
+      const { data: inserted } = await supabase
+        .from('sage_emails')
+        .insert({
+          workspace_id: workspaceId,
+          user_id:      userId,
+          contact_id:   contactId,
+          message_id:   messageId,
+          thread_id:    threadId,
+          from_address: fromAddress,
+          from_name:    fromName,
+          to_address:   toAddress,
+          subject,
+          body_text:    bodyText,
+          body_html:    bodyHtml,
+          received_at:  receivedAt,
+          direction:    'inbound',
+          is_read:      calendarEmail,
+        })
+        .select('id')
+        .single()
+
+      if (!inserted) continue
+      synced++
+      if (calendarEmail) continue
+
+      // Parse .ics calendar attachment → store as meeting
+      try {
+        const icsAtt = attachments0.find(
+          a => a.contentType === 'text/calendar' ||
+               a.contentType === 'application/ics' ||
+               (a.filename ?? '').toLowerCase().endsWith('.ics'),
+        )
+        if (icsAtt) {
+          const icsText = icsAtt.content.toString('utf8')
+          const meeting = parseIcs(icsText)
+          if (meeting && (meeting.title || meeting.startAt)) {
+            await supabase.from('sage_meetings').upsert({
+              workspace_id:   workspaceId,
+              email_id:       inserted.id,
+              ics_uid:        meeting.icsUid,
+              title:          meeting.title ?? '(untitled)',
+              start_at:       meeting.startAt,
+              end_at:         meeting.endAt,
+              location:       meeting.location,
+              description:    meeting.description,
+              organizer:      meeting.organizer,
+              organizer_name: meeting.organizerName,
+              attendees:      meeting.attendees,
+            }, { onConflict: 'workspace_id,ics_uid', ignoreDuplicates: true })
+          }
+        }
+      } catch { /* calendar parsing failure doesn't block email sync */ }
+
+      // AI analysis
+      try {
+        const priorSummaries: string[] = []
+        try {
+          let priorQuery = supabase
+            .from('sage_emails')
+            .select('subject, body_text, received_at')
+            .eq('workspace_id', workspaceId)
+            .eq('direction', 'inbound')
+            .neq('message_id', messageId)
+            .order('received_at', { ascending: false })
+            .limit(4)
+          if (contactId) priorQuery = priorQuery.eq('contact_id', contactId)
+          else           priorQuery = priorQuery.ilike('from_address', fromAddress)
+          const { data: priorEmails } = await priorQuery
+          if (priorEmails) {
+            for (const pe of priorEmails) {
+              if (pe.body_text) {
+                priorSummaries.push(`Subject: ${pe.subject}\n${pe.body_text.slice(0, 600).replace(/\s+/g, ' ').trim()}`)
+              }
+            }
+          }
+        } catch { /* best-effort */ }
+
+        let crmContext: { contactName?: string; dealTitle?: string; dealStage?: string } | undefined
+        if (contactId) {
+          try {
+            const { data: openDeal } = await supabase
+              .from('sage_deals')
+              .select('title, stage:sage_pipeline_stages(name)')
+              .eq('workspace_id', workspaceId)
+              .eq('contact_id', contactId)
+              .eq('status', 'open')
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .single()
+            if (openDeal) {
+              const stageName = Array.isArray(openDeal.stage)
+                ? (openDeal.stage[0] as { name: string } | undefined)?.name
+                : (openDeal.stage as { name: string } | null)?.name
+              crmContext = { contactName: fromName ?? undefined, dealTitle: openDeal.title, dealStage: stageName ?? undefined }
+            }
+          } catch { /* best-effort */ }
+        }
+
+        const analysis = await analyzeEmail(
+          `${fromName} <${fromAddress}>`,
+          subject,
+          bodyText,
+          priorSummaries,
+          crmContext,
+          businessDescription,
+        )
+
+        if (analysis) {
+          const extracted = analysis.extracted ?? {}
+          const entities  = { ...extracted }
+          await supabase
+            .from('sage_emails')
+            .update({
+              ai_priority:     analysis.priority,
+              ai_category:     analysis.category ?? null,
+              ai_summary:      analysis.summary ?? null,
+              ai_reason:       analysis.reason,
+              ai_user_prompt:  analysis.user_prompt ?? null,
+              ai_action:       analysis.action,
+              ai_entities:     Object.keys(entities).length > 0 ? entities : null,
+              ai_insights:     analysis.insights,
+              ai_reply_drafts: analysis.reply_drafts,
+              ai_analyzed_at:  new Date().toISOString(),
+            })
+            .eq('id', inserted.id)
+
+          const mappedAction: 'create_lead' | 'create_ticket' | 'ignore' =
+            analysis.action === 'create_lead'   ? 'create_lead'   :
+            analysis.action === 'create_ticket' ? 'create_ticket' : 'ignore'
+          if (mappedAction !== 'ignore') {
+            try {
+              const autoSettings = await getWorkspaceAutoSettings(workspaceId)
+              if (isFullAutomation(autoSettings, 'email')) {
+                await executeAutoAction({
+                  workspaceId,
+                  channel:           'email',
+                  action:            mappedAction,
+                  sourceId:          inserted.id,
+                  entities:          analysis.extracted ?? {},
+                  senderName:        fromName ?? null,
+                  senderEmail:       fromAddress ?? null,
+                  summary:           analysis.summary ?? null,
+                  priority:          analysis.priority ?? null,
+                  defaultPipelineId: autoSettings.default_pipeline_id,
+                })
+              }
+            } catch (autoErr) {
+              console.error('[email-sync] Gmail auto-execute error:', autoErr)
+            }
+          }
+
+          if (contactId && analysis.summary && (analysis.priority === 'high' || analysis.priority === 'medium')) {
+            try {
+              const deal = await findOpenDealByContact(workspaceId, contactId)
+              if (deal) {
+                await supabase.from('sage_deal_activities').insert({
+                  workspace_id: workspaceId,
+                  deal_id:      deal.id,
+                  type:         'note',
+                  title:        `Email: ${subject}`,
+                  body:         analysis.summary,
+                  created_by:   null,
+                })
+              }
+            } catch { /* best-effort */ }
+          }
+        }
+      } catch { /* AI analysis failure doesn't block email sync */ }
+
+    } catch (err) {
+      console.error('[email-sync] Gmail message processing error:', (err as Error).message)
+    }
+  }
+
+  // 3. CRM targeted search — fetch emails from CRM contacts with open deals
+  if (contactPairs.length > 0) {
+    const since180 = new Date()
+    since180.setDate(since180.getDate() - 180)
+    const afterTs = Math.floor(since180.getTime() / 1000)  // Gmail uses Unix seconds for after:
+
+    for (const { email: contactEmail, contactId } of contactPairs) {
+      try {
+        const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&q=from:${encodeURIComponent(contactEmail)}+after:${afterTs}`
+        const searchRes = await fetch(searchUrl, { headers })
+        if (!searchRes.ok) continue
+
+        const searchData = await searchRes.json() as { messages?: GmailMessageStub[] }
+        for (const s of searchData.messages ?? []) {
+          try {
+            const rRes = await fetch(
+              `https://gmail.googleapis.com/gmail/v1/users/me/messages/${s.id}?format=raw`,
+              { headers },
+            )
+            if (!rRes.ok) continue
+
+            const gm      = await rRes.json() as GmailRawMessage
+            if (!gm.raw) continue
+            const parsed  = await simpleParser(Buffer.from(gm.raw, 'base64url'))
+            const msgId   = parsed.messageId ?? `gmail-${s.id}`
+
+            const { data: alreadyExists } = await supabase
+              .from('sage_emails')
+              .select('id')
+              .eq('workspace_id', workspaceId)
+              .eq('message_id', msgId)
+              .single()
+            if (alreadyExists) continue
+
+            const ca      = (parsed.from?.value?.[0]?.address ?? '').toLowerCase()
+            const cn      = parsed.from?.value?.[0]?.name ?? ca
+            const toAddr  = parsed.to && !Array.isArray(parsed.to)
+              ? (parsed.to.value?.[0]?.address ?? fromEmail)
+              : fromEmail
+
+            const { data: ins } = await supabase
+              .from('sage_emails')
+              .insert({
+                workspace_id: workspaceId,
+                contact_id:   contactId,
+                message_id:   msgId,
+                thread_id:    gm.threadId ?? null,
+                from_address: ca,
+                from_name:    cn,
+                to_address:   toAddr,
+                subject:      parsed.subject ?? '(no subject)',
+                body_text:    parsed.text ?? '',
+                body_html:    parsed.html ?? null,
+                received_at:  parsed.date?.toISOString() ?? new Date().toISOString(),
+                direction:    'inbound',
+                is_read:      false,
+              })
+              .select('id')
+              .single()
+
+            if (ins) {
+              synced++
+              console.log(`[email-sync] CRM targeted (Gmail API): synced "${parsed.subject ?? ''}" from ${contactEmail}`)
+            }
+          } catch { /* skip malformed message */ }
+        }
+      } catch (err) {
+        console.error(`[email-sync] Gmail CRM search failed for ${contactEmail}:`, (err as Error).message)
+      }
+    }
+  }
+
+  return synced
+}
+
+// ---------------------------------------------------------------------------
 // Microsoft Graph API email sync
 // ---------------------------------------------------------------------------
 
@@ -1037,6 +1371,34 @@ export async function syncEmailsForWorkspace(workspaceId: string, userId: string
     const token = await getValidAccessToken(workspaceId, userId, provider as 'gmail' | 'microsoft', config)
     if (!token) throw new Error(`OAuth2 token unavailable for ${provider} integration.`)
     accessToken = token
+  }
+
+  // Gmail OAuth2 → use Gmail API (replaces IMAP; uses gmail.modify scope)
+  if (provider === 'gmail' && config.auth_method === 'oauth2' && accessToken) {
+    type DealRowGm = { contact_id: string; sage_contacts: { email: string | null }[] }
+    const { data: openDealsGm } = await supabase
+      .from('sage_deals')
+      .select('contact_id, sage_contacts!inner(email)')
+      .eq('workspace_id', workspaceId)
+      .eq('status', 'open')
+    const contactPairsGm = [...new Map(
+      ((openDealsGm ?? []) as unknown as DealRowGm[])
+        .filter(d => d.sage_contacts?.[0]?.email)
+        .map(d => [d.contact_id, {
+          email:     d.sage_contacts[0].email!.toLowerCase(),
+          contactId: d.contact_id,
+        }]),
+    ).values()]
+
+    return await syncGmailEmailsViaAPI({
+      workspaceId,
+      userId,
+      accessToken,
+      fromEmail:           config.from_email,
+      limit,
+      businessDescription,
+      contactPairs:        contactPairsGm,
+    })
   }
 
   // Microsoft OAuth2 → use Graph API (IMAP is unreliable for personal accounts)

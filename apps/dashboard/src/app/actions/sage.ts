@@ -1018,7 +1018,7 @@ export async function saveSageIntegration(provider: string, config: Record<strin
     )
 
   if (error) throw new Error(error.message)
-  revalidatePath('/integrations')
+  revalidatePath('/sage/integrations')
 }
 
 export async function disconnectSageIntegration(provider: string) {
@@ -1036,7 +1036,7 @@ export async function disconnectSageIntegration(provider: string) {
     .eq('provider', provider)
 
   if (error) throw new Error(error.message)
-  revalidatePath('/integrations')
+  revalidatePath('/sage/integrations')
 }
 
 // ---------------------------------------------------------------

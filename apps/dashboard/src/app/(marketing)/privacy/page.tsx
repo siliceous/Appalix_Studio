@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Appalix Privacy Policy. Learn how we collect, use, and protect your personal data including Gmail and Microsoft email access.',
 }
 
-const LAST_UPDATED = 'March 2025'
+const LAST_UPDATED = 'March 2026'
 
 export default function PrivacyPage() {
   return (
@@ -57,8 +57,8 @@ export default function PrivacyPage() {
                 your email account, we request access to the following scopes:
               </p>
               <ul className="mt-3 space-y-2 list-disc list-inside text-gray-400">
-                <li><strong className="text-gray-200">Gmail:</strong> <code className="text-brand-400 text-xs">https://mail.google.com/</code> — read and send email on your behalf</li>
-                <li><strong className="text-gray-200">Microsoft:</strong> <code className="text-brand-400 text-xs">IMAP.AccessAsUser.All</code> and <code className="text-brand-400 text-xs">SMTP.Send</code> — read and send email via IMAP/SMTP</li>
+                <li><strong className="text-gray-200">Gmail:</strong> <code className="text-brand-400 text-xs">https://www.googleapis.com/auth/gmail.modify</code> — read, compose, and send emails (does not include permanent deletion)</li>
+                <li><strong className="text-gray-200">Microsoft:</strong> <code className="text-brand-400 text-xs">IMAP.AccessAsUser.All</code> and <code className="text-brand-400 text-xs">SMTP.Send</code> — read and send email via Microsoft Graph API</li>
               </ul>
               <p className="mt-4 p-4 rounded-xl bg-brand-600/10 border border-brand-600/20 text-sm">
                 <strong className="text-white">How we use your email data:</strong> Appalix reads
@@ -81,6 +81,30 @@ export default function PrivacyPage() {
                 , and to your Microsoft account via{' '}
                 <a href="https://account.microsoft.com/privacy/app-access" target="_blank" rel="noopener noreferrer" className="text-brand-400 hover:text-brand-300">
                   Microsoft Account App Access
+                </a>
+                . Revoking access removes all stored tokens immediately.
+              </p>
+            </SubSection>
+
+            <SubSection title="Google Drive access">
+              <p>
+                Appalix offers an optional Google Drive integration that allows you to import
+                documents into your AI knowledge base. When you connect Google Drive, we request:
+              </p>
+              <ul className="mt-3 space-y-2 list-disc list-inside text-gray-400">
+                <li><strong className="text-gray-200">Google Drive:</strong> <code className="text-brand-400 text-xs">https://www.googleapis.com/auth/drive.readonly</code> — read and download files you select</li>
+              </ul>
+              <p className="mt-4 p-4 rounded-xl bg-brand-600/10 border border-brand-600/20 text-sm">
+                <strong className="text-white">How we use your Drive data:</strong> Appalix reads
+                only the files you explicitly select to import. Document content is stored in your
+                private workspace knowledge base and used solely to power AI responses within your
+                account. We never write to, modify, or delete your Drive files, and we do not share
+                document content with third parties or use it for advertising.
+              </p>
+              <p className="mt-3">
+                You can revoke Appalix&apos;s access to your Google Drive at any time via{' '}
+                <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" className="text-brand-400 hover:text-brand-300">
+                  Google Account Permissions
                 </a>
                 . Revoking access removes all stored tokens immediately.
               </p>

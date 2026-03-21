@@ -135,6 +135,69 @@ export function startIdleForWorkspace(
 }
 
 // ---------------------------------------------------------------------------
+// Gmail API poll loop (replaces IMAP IDLE — gmail.readonly scope)
+// ---------------------------------------------------------------------------
+
+/**
+ * Polls Gmail API every 60 s for new Inbox messages.
+ * Calls syncEmailsForWorkspace when new mail is detected.
+ * Returns a stop() function identical to the IMAP IDLE interface.
+ */
+export function startGmailPollForWorkspace(
+  workspaceId: string,
+  userId:      string,
+  config:      Record<string, string>,
+): () => void {
+  let running = true
+  const label = `workspace=${workspaceId} user=${userId}`
+
+  async function loop() {
+    // Initial catch-up sync
+    try {
+      await syncEmailsForWorkspace(workspaceId, userId, 50)
+    } catch (err) {
+      console.error(`[Gmail poll] catch-up sync failed for ${label}:`, (err as Error).message)
+    }
+
+    // Track the newest message id we have seen to detect new arrivals
+    let lastMessageId: string | null = null
+
+    while (running) {
+      await sleep(60_000)
+      if (!running) break
+
+      try {
+        const token = await getValidAccessToken(workspaceId, userId, 'gmail', config)
+        if (!token) continue
+
+        // Check if there is any message newer than what we last saw
+        const checkUrl = 'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=1&labelIds=INBOX&q=-is:spam+-is:draft'
+        const res = await fetch(checkUrl, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) continue
+
+        const data = await res.json() as { messages?: { id: string }[] }
+        const newestId = data.messages?.[0]?.id ?? null
+
+        if (newestId && newestId !== lastMessageId) {
+          lastMessageId = newestId
+          console.log(`[Gmail poll] ${label} new mail detected — syncing`)
+          await syncEmailsForWorkspace(workspaceId, userId, 20)
+        }
+      } catch (err) {
+        console.error(`[Gmail poll] error for ${label}:`, (err as Error).message)
+      }
+    }
+
+    console.log(`[Gmail poll] ${label} loop stopped`)
+  }
+
+  void loop()
+  return () => { running = false }
+}
+
+// ---------------------------------------------------------------------------
 // Microsoft Graph API poll loop (replaces IMAP IDLE for personal accounts)
 // ---------------------------------------------------------------------------
 
@@ -232,6 +295,14 @@ async function syncActiveIntegrations() {
       const provider = row.provider as string
       const cfg      = row.config as Record<string, string>
       if (activeLoops.has(userId)) continue  // already running
+
+      // Gmail OAuth2 → Gmail API polling (replaces IMAP IDLE, requires only gmail.readonly scope)
+      if (provider === 'gmail' && cfg.auth_method === 'oauth2') {
+        const stop = startGmailPollForWorkspace(wsId, userId, cfg)
+        activeLoops.set(userId, stop)
+        console.log(`[Gmail poll] started for workspace=${wsId} user=${userId}`)
+        continue
+      }
 
       // Microsoft OAuth2 → Graph API polling (IMAP IDLE unreliable for personal accounts)
       if (provider === 'microsoft' && cfg.auth_method === 'oauth2') {
