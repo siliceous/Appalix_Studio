@@ -68,7 +68,7 @@ export default async function IntegrationsPage({
   const [{ data: rawIntegrations }, { data: sageIntegrationsRaw }, { data: sourcesRaw }, { data: emailIntegrationsRaw }] = await Promise.all([
     supabase.from('integrations').select('*, bots(name)').eq('workspace_id', membership.workspace_id).order('created_at', { ascending: false }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (admin as any).from('sage_integrations').select('provider, status').eq('workspace_id', membership.workspace_id),
+    (admin as any).from('sage_integrations').select('provider, status').eq('workspace_id', membership.workspace_id).eq('user_id', user.id),
     supabase.from('lead_ad_sources').select('*').eq('workspace_id', membership.workspace_id),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('sage_integrations').select('id, provider, status, updated_at, sync_enabled, last_synced_at, last_sync_count').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', EMAIL_PROVIDERS),
