@@ -469,7 +469,7 @@ export function TicketDetailClient({ ticket, allTickets, activities: initialActi
         </div>
 
         {/* ── CENTER PANEL ─────────────────────────────────────────────────── */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto p-5 space-y-4">
+        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto overflow-x-hidden p-5 space-y-4">
 
           {/* AI Summary card */}
           <div className="bg-white dark:bg-[#232323] rounded-xl border border-gray-200 dark:border-white/8">
@@ -540,7 +540,7 @@ export function TicketDetailClient({ ticket, allTickets, activities: initialActi
         </div>
 
         {/* ── RIGHT PANEL — deal slide-over style ──────────────────────── */}
-        <div className="w-[300px] shrink-0 flex flex-col border-l border-gray-200 dark:border-white/8 bg-white dark:bg-[#1e1e1e]">
+        <div className="w-[300px] shrink-0 flex flex-col border-l border-gray-200 dark:border-white/8 bg-white dark:bg-[#1e1e1e] overflow-hidden">
 
           {/* Header */}
           <div className="px-4 pt-4 pb-0 border-b dark:border-white/8 shrink-0">
