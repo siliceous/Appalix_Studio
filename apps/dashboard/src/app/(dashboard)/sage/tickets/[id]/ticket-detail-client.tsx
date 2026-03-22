@@ -401,7 +401,7 @@ export function TicketDetailClient({ ticket, allTickets, activities: initialActi
 
         {/* ── LEFT PANEL — ticket list ──────────────────────────────────────── */}
         <div className={cn(
-          'flex flex-col bg-white dark:bg-[#1c1c1c] border-r border-gray-200 dark:border-white/8 shrink-0 transition-all duration-200',
+          'flex flex-col bg-white dark:bg-[#1c1c1c] border-r border-gray-200 dark:border-white/8 shrink-0 transition-all duration-200 overflow-hidden',
           leftCollapsed ? 'w-10' : 'w-64',
         )}>
           {leftCollapsed ? (
@@ -540,7 +540,7 @@ export function TicketDetailClient({ ticket, allTickets, activities: initialActi
         </div>
 
         {/* ── RIGHT PANEL — deal slide-over style ──────────────────────── */}
-        <div className="w-[300px] shrink-0 flex flex-col border-l border-gray-200 dark:border-white/8 bg-white dark:bg-[#1e1e1e] overflow-hidden">
+        <div className="w-[520px] shrink-0 flex flex-col border-l border-gray-200 dark:border-white/8 bg-white dark:bg-[#1e1e1e] overflow-hidden">
 
           {/* Header */}
           <div className="px-4 pt-4 pb-0 border-b dark:border-white/8 shrink-0">
