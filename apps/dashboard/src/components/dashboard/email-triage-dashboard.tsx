@@ -1274,21 +1274,6 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
                 )}
               </div>
             </div>
-            {/* Search */}
-            <div className="flex-1 flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-white/6 rounded-lg min-w-0">
-              <Search className="w-3 h-3 text-gray-400 shrink-0" />
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search…"
-                className="flex-1 bg-transparent text-[11px] text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 outline-none min-w-0"
-              />
-              {search && (
-                <button onClick={() => setSearch('')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 shrink-0">
-                  <X className="w-2.5 h-2.5" />
-                </button>
-              )}
-            </div>
             <div className="flex items-center gap-1 shrink-0">
               {selectedIds.size > 0 && (
                 <button
@@ -1323,7 +1308,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
             </div>
           </div>
 
-          {/* Status badges */}
+          {/* Status badges + search */}
           <div className="flex items-center gap-2 flex-wrap">
             {highCount > 0 && (
               <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#15A4AE]/10 text-[#3a9e8a] dark:text-[#15A4AE] font-semibold border border-[#15A4AE]/30">
@@ -1351,6 +1336,21 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
                       : `Analyse ${visible.length}`}
               </button>
             )}
+            {/* Search */}
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-gray-300 dark:border-white/20 bg-transparent min-w-0">
+              <Search className="w-2.5 h-2.5 text-gray-400 shrink-0" />
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search…"
+                className="w-20 bg-transparent text-[11px] text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 outline-none min-w-0"
+              />
+              {search && (
+                <button onClick={() => setSearch('')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 shrink-0">
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              )}
+            </div>
           </div>
           {(syncMsg || (analyzeMsg && !isReanalyzing)) && (
             <p className={cn('text-[11px] mt-1 font-medium', (syncMsg ?? analyzeMsg ?? '').startsWith('Error') ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
