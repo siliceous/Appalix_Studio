@@ -397,7 +397,7 @@ export function TicketDetailClient({ ticket, allTickets, activities: initialActi
       </div>
 
       {/* ══ BODY ═════════════════════════════════════════════════════════════ */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden min-w-0">
 
         {/* ── LEFT PANEL — ticket list ──────────────────────────────────────── */}
         <div className={cn(
