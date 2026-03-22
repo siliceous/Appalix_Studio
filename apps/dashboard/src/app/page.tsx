@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -73,7 +74,10 @@ export default async function HomePage() {
   // Redirect logged-in users straight to the dashboard
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (user) redirect('https://app.appalix.ai/dashboard')
+  if (user) {
+    const host = (await headers()).get('host') ?? ''
+    redirect(host === 'www.appalix.ai' ? 'https://app.appalix.ai/dashboard' : '/dashboard')
+  }
 
   const admin = createAdminClient()
   const { data: integrationRow } = await admin
