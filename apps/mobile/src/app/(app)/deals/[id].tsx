@@ -23,6 +23,24 @@ import { fetchWorkspaceMembers } from '@/lib/api';
 import type { SageTicketPriority, SageDealActivity } from '@/types';
 
 // ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const LOST_REASONS = ['Price', 'Competitor', 'Timing', 'No Budget', 'No Decision', 'Other'];
+
+const PRIORITY_OPTIONS: { value: SageTicketPriority; label: string; color: string; bg: string }[] = [
+  { value: 'high',   label: 'High',   color: Colors.priority.high,   bg: Colors.priorityBg.high },
+  { value: 'medium', label: 'Medium', color: Colors.priority.medium, bg: Colors.priorityBg.medium },
+  { value: 'low',    label: 'Low',    color: Colors.priority.low,    bg: Colors.priorityBg.low },
+];
+
+const STATUS_STYLES = {
+  open: { color: '#3b82f6', bg: '#eff6ff', label: 'Open' },
+  won:  { color: '#22c55e', bg: '#f0fdf4', label: 'Won'  },
+  lost: { color: '#ef4444', bg: '#fef2f2', label: 'Lost' },
+} as const;
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
@@ -45,7 +63,7 @@ interface DealDetail {
   created_at: string;
   updated_at: string | null;
   stage: { id: string; name: string; color: string } | null;
-  contact: { id: string; name: string; email: string | null } | null;
+  contact: { id: string; name: string; email: string | null; phone: string | null } | null;
 }
 
 interface DealStage {
@@ -54,6 +72,8 @@ interface DealStage {
   color: string;
   position: number;
 }
+
+type DealReminder = { id: string; title: string; note: string | null; due_at: string };
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -68,18 +88,6 @@ function formatValue(value?: number | null, currency?: string | null): string {
   }).format(value);
 }
 
-const PRIORITY_OPTIONS: { value: SageTicketPriority; label: string; color: string; bg: string }[] = [
-  { value: 'high',   label: 'High',   color: Colors.priority.high,   bg: Colors.priorityBg.high },
-  { value: 'medium', label: 'Medium', color: Colors.priority.medium, bg: Colors.priorityBg.medium },
-  { value: 'low',    label: 'Low',    color: Colors.priority.low,    bg: Colors.priorityBg.low },
-];
-
-const STATUS_STYLES = {
-  open: { color: '#3b82f6', bg: '#eff6ff', label: 'Open' },
-  won:  { color: '#22c55e', bg: '#f0fdf4', label: 'Won'  },
-  lost: { color: '#ef4444', bg: '#fef2f2', label: 'Lost' },
-} as const;
-
 // ---------------------------------------------------------------------------
 // Fetch helpers
 // ---------------------------------------------------------------------------
@@ -93,7 +101,7 @@ async function fetchDealDetail(id: string): Promise<DealDetail> {
       company_name, close_date, description, win_percentage,
       lost_reason, created_at, updated_at,
       stage:sage_pipeline_stages(id, name, color),
-      contact:sage_contacts(id, name, email)
+      contact:sage_contacts(id, name, email, phone)
     `)
     .eq('id', id)
     .single();
@@ -121,16 +129,10 @@ async function fetchDealStages(pipelineId: string): Promise<DealStage[]> {
 }
 
 // ---------------------------------------------------------------------------
-// Priority dropdown (same pattern as ticket detail)
+// Priority dropdown
 // ---------------------------------------------------------------------------
 
-function PriorityDropdown({
-  current,
-  onChange,
-}: {
-  current: SageTicketPriority;
-  onChange: (p: SageTicketPriority) => void;
-}) {
+function PriorityDropdown({ current, onChange }: { current: SageTicketPriority; onChange: (p: SageTicketPriority) => void }) {
   const [open, setOpen] = useState(false);
   const opt = PRIORITY_OPTIONS.find((o) => o.value === current) ?? PRIORITY_OPTIONS[2];
 
@@ -177,17 +179,44 @@ export default function DealDetailScreen() {
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
 
-  // UI state
+  // Collapse state
   const [infoCollapsed, setInfoCollapsed] = useState(false);
   const [activityCollapsed, setActivityCollapsed] = useState(true);
+  const [remindersOpen, setRemindersOpen] = useState(false);
+
+  // Pickers
   const [stagePickerOpen, setStagePickerOpen] = useState(false);
   const [statusPickerOpen, setStatusPickerOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
 
+  // Won modal
+  const [wonModalOpen, setWonModalOpen] = useState(false);
+  const [wonCloseDate, setWonCloseDate] = useState('');
+  const [savingWon, setSavingWon] = useState(false);
+
+  // Lost modal
+  const [lostModalOpen, setLostModalOpen] = useState(false);
+  const [lostReason, setLostReason] = useState(LOST_REASONS[0]);
+  const [lostNote, setLostNote] = useState('');
+  const [savingLost, setSavingLost] = useState(false);
+
+  // Edit modal
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editValue, setEditValue] = useState('');
+  const [editCurrency, setEditCurrency] = useState('USD');
+  const [editCloseDate, setEditCloseDate] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  // Reminders
+  const [reminderTitle, setReminderTitle] = useState('');
+  const [reminderDate, setReminderDate] = useState('');
+  const [savingReminder, setSavingReminder] = useState(false);
+
   // Activity forms
   const [setActType, setSetActType] = useState<'call' | 'meeting' | 'task'>('call');
   const [setActSubject, setSetActSubject] = useState('');
-  const [setActScheduled, setSetActScheduled] = useState('');
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [calMonth, setCalMonth] = useState(() => new Date().getMonth());
   const [calYear, setCalYear] = useState(() => new Date().getFullYear());
@@ -205,7 +234,10 @@ export default function DealDetailScreen() {
   const [assignedTo, setAssignedTo] = useState('');
   const [priorityInitialised, setPriorityInitialised] = useState(false);
 
+  // ---------------------------------------------------------------------------
   // Queries
+  // ---------------------------------------------------------------------------
+
   const { data: deal, isLoading, error } = useQuery({
     queryKey: ['deal-detail', id],
     queryFn: () => fetchDealDetail(id),
@@ -254,6 +286,20 @@ export default function DealDetailScreen() {
     enabled: !!user?.workspaceId,
   });
 
+  const { data: reminders, refetch: refetchReminders } = useQuery({
+    queryKey: ['deal-reminders', id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('sage_reminders')
+        .select('id, title, note, due_at')
+        .eq('deal_id', id)
+        .eq('is_sent', false)
+        .order('due_at', { ascending: true });
+      return (data ?? []) as DealReminder[];
+    },
+    enabled: !!id,
+  });
+
   // ---------------------------------------------------------------------------
   // Handlers
   // ---------------------------------------------------------------------------
@@ -264,14 +310,104 @@ export default function DealDetailScreen() {
     queryClient.invalidateQueries({ queryKey: ['deals-enriched'] });
   }
 
-  async function handleStatusChange(s: 'open' | 'won' | 'lost') {
+  async function handleStatusChange(s: 'open') {
     setStatus(s);
     setStatusPickerOpen(false);
-    const patch: Record<string, unknown> = { status: s };
-    if (s === 'won') patch.won_at = new Date().toISOString();
-    if (s === 'lost') patch.lost_at = new Date().toISOString();
-    await supabase.from('sage_deals').update(patch).eq('id', id);
+    await supabase.from('sage_deals').update({ status: s }).eq('id', id);
     queryClient.invalidateQueries({ queryKey: ['deals-enriched'] });
+  }
+
+  async function handleMarkWon() {
+    setSavingWon(true);
+    try {
+      const patch: Record<string, unknown> = { status: 'won', won_at: new Date().toISOString() };
+      if (wonCloseDate.trim()) patch.close_date = wonCloseDate.trim();
+      await supabase.from('sage_deals').update(patch).eq('id', id);
+      setStatus('won');
+      setWonModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['deals-enriched'] });
+      queryClient.invalidateQueries({ queryKey: ['deal-detail', id] });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {
+      Alert.alert('Error', 'Failed to mark deal as won.');
+    } finally {
+      setSavingWon(false);
+    }
+  }
+
+  async function handleMarkLost() {
+    setSavingLost(true);
+    try {
+      await supabase.from('sage_deals').update({
+        status: 'lost',
+        lost_at: new Date().toISOString(),
+        lost_reason: lostReason,
+      }).eq('id', id);
+      setStatus('lost');
+      setLostModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['deals-enriched'] });
+      queryClient.invalidateQueries({ queryKey: ['deal-detail', id] });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {
+      Alert.alert('Error', 'Failed to mark deal as lost.');
+    } finally {
+      setSavingLost(false);
+    }
+  }
+
+  function handleDeleteDeal() {
+    Alert.alert(
+      'Delete Deal',
+      'This will permanently delete this deal and all its activities. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await supabase.from('sage_deals').delete().eq('id', id);
+              queryClient.invalidateQueries({ queryKey: ['deals-enriched'] });
+              router.back();
+            } catch {
+              Alert.alert('Error', 'Failed to delete deal.');
+            }
+          },
+        },
+      ],
+    );
+  }
+
+  function openEditModal() {
+    if (!deal) return;
+    setEditTitle(deal.title);
+    setEditValue(deal.value?.toString() ?? '');
+    setEditCurrency(deal.currency ?? 'USD');
+    setEditCloseDate(deal.close_date ?? '');
+    setEditDescription(deal.description ?? '');
+    setEditModalOpen(true);
+  }
+
+  async function handleEditSave() {
+    if (!editTitle.trim()) return;
+    setSavingEdit(true);
+    try {
+      await supabase.from('sage_deals').update({
+        title: editTitle.trim(),
+        value: editValue ? parseFloat(editValue) : null,
+        currency: editCurrency || 'USD',
+        close_date: editCloseDate.trim() || null,
+        description: editDescription.trim() || null,
+      }).eq('id', id);
+      setEditModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['deal-detail', id] });
+      queryClient.invalidateQueries({ queryKey: ['deals-enriched'] });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {
+      Alert.alert('Error', 'Failed to save changes.');
+    } finally {
+      setSavingEdit(false);
+    }
   }
 
   async function handleMoveStage(stageId: string) {
@@ -294,7 +430,7 @@ export default function DealDetailScreen() {
       const due = calSelectedDay !== null
         ? new Date(calYear, calMonth, calSelectedDay).toISOString()
         : new Date(Date.now() + 86_400_000).toISOString();
-      const { error: err } = await supabase.from('sage_deal_activities').insert({
+      await supabase.from('sage_deal_activities').insert({
         workspace_id: user!.workspaceId,
         deal_id: id,
         type: setActType,
@@ -302,9 +438,7 @@ export default function DealDetailScreen() {
         due_at: due,
         created_by: user!.id,
       });
-      if (err) throw err;
       setSetActSubject('');
-      setSetActScheduled('');
       setCalSelectedDay(null);
       queryClient.invalidateQueries({ queryKey: ['deal-tasks', id] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -319,14 +453,13 @@ export default function DealDetailScreen() {
     if (!logActNote.trim()) return;
     setSavingLogAct(true);
     try {
-      const { error: err } = await supabase.from('sage_deal_activities').insert({
+      await supabase.from('sage_deal_activities').insert({
         workspace_id: user!.workspaceId,
         deal_id: id,
         type: logActType,
         body: logActNote.trim(),
         created_by: user!.id,
       });
-      if (err) throw err;
       setLogActNote('');
       queryClient.invalidateQueries({ queryKey: ['deal-act-feed', id] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -341,14 +474,13 @@ export default function DealDetailScreen() {
     if (!noteText.trim()) return;
     setSavingNote(true);
     try {
-      const { error: err } = await supabase.from('sage_deal_activities').insert({
+      await supabase.from('sage_deal_activities').insert({
         workspace_id: user!.workspaceId,
         deal_id: id,
         type: 'note',
         body: noteText.trim(),
         created_by: user!.id,
       });
-      if (err) throw err;
       setNoteText('');
       queryClient.invalidateQueries({ queryKey: ['deal-act-feed', id] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -360,11 +492,29 @@ export default function DealDetailScreen() {
   }
 
   async function handleCompleteTask(taskId: string) {
-    await supabase
-      .from('sage_deal_activities')
-      .update({ completed_at: new Date().toISOString() })
-      .eq('id', taskId);
+    await supabase.from('sage_deal_activities').update({ completed_at: new Date().toISOString() }).eq('id', taskId);
     queryClient.invalidateQueries({ queryKey: ['deal-tasks', id] });
+  }
+
+  async function handleAddReminder() {
+    if (!reminderTitle.trim() || !reminderDate.trim()) return;
+    setSavingReminder(true);
+    try {
+      await supabase.from('sage_reminders').insert({
+        workspace_id: user!.workspaceId,
+        deal_id: id,
+        title: reminderTitle.trim(),
+        due_at: new Date(reminderDate.trim()).toISOString(),
+      });
+      setReminderTitle('');
+      setReminderDate('');
+      refetchReminders();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {
+      Alert.alert('Error', 'Failed to add reminder.');
+    } finally {
+      setSavingReminder(false);
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -425,15 +575,12 @@ export default function DealDetailScreen() {
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={22} color={Colors.text.primary} />
         </Pressable>
-        <Text style={styles.headerName} numberOfLines={1}>{deal.title}</Text>
+        <Text style={styles.headerName} numberOfLines={1}>{deal.contact?.name ?? deal.title}</Text>
         <View style={styles.headerActions}>
-          <Pressable style={styles.iconBtn} onPress={() => Alert.alert('Edit', 'Coming soon')}>
+          <Pressable style={styles.iconBtn} onPress={openEditModal}>
             <Ionicons name="pencil-outline" size={18} color={Colors.text.secondary} />
           </Pressable>
-          <Pressable style={styles.iconBtn} onPress={() => Alert.alert('Share', 'Coming soon')}>
-            <Ionicons name="share-outline" size={18} color={Colors.text.secondary} />
-          </Pressable>
-          <Pressable style={styles.iconBtn} onPress={() => Alert.alert('Delete', 'Coming soon')}>
+          <Pressable style={styles.iconBtn} onPress={handleDeleteDeal}>
             <Ionicons name="trash-outline" size={18} color="#ef4444" />
           </Pressable>
           <PriorityDropdown current={priority} onChange={handlePriorityChange} />
@@ -442,13 +589,13 @@ export default function DealDetailScreen() {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
-        {/* Deal Info + Contact — collapsible */}
+        {/* Deal Info + Contact */}
         <View style={styles.section}>
           <View style={styles.summaryHeader}>
             <View style={styles.summaryHeaderLeft}>
               <Ionicons name="briefcase-outline" size={15} color={Colors.brand[500]} />
               <Text style={styles.sectionLabel}>
-                {formatValue(deal.value, deal.currency)} {deal.company_name ? `· ${deal.company_name}` : ''}
+                {formatValue(deal.value, deal.currency)}{deal.company_name ? ` · ${deal.company_name}` : ''}
               </Text>
             </View>
             <Pressable onPress={() => setInfoCollapsed((v) => !v)} style={styles.collapseBtn}>
@@ -456,7 +603,6 @@ export default function DealDetailScreen() {
             </Pressable>
           </View>
 
-          {/* Stage + status badges */}
           <View style={styles.badgeRow}>
             {currentStage ? (
               <View style={[styles.stageBadge, { backgroundColor: currentStage.color + '22', borderColor: currentStage.color + '55' }]}>
@@ -472,6 +618,11 @@ export default function DealDetailScreen() {
                 <Text style={styles.winBadgeText}>{deal.win_percentage}% win</Text>
               </View>
             )}
+            {deal.lost_reason ? (
+              <View style={[styles.statusBadge, { backgroundColor: '#fef2f2' }]}>
+                <Text style={[styles.statusText, { color: '#ef4444' }]}>{deal.lost_reason}</Text>
+              </View>
+            ) : null}
           </View>
 
           {!infoCollapsed && (
@@ -488,6 +639,12 @@ export default function DealDetailScreen() {
                 <View style={styles.contactRow}>
                   <Ionicons name="mail-outline" size={14} color={Colors.text.muted} />
                   <Text style={styles.contactText}>{deal.contact.email}</Text>
+                </View>
+              ) : null}
+              {deal.contact?.phone ? (
+                <View style={styles.contactRow}>
+                  <Ionicons name="call-outline" size={14} color={Colors.text.muted} />
+                  <Text style={styles.contactText}>{deal.contact.phone}</Text>
                 </View>
               ) : null}
               {deal.company_name ? (
@@ -508,7 +665,7 @@ export default function DealDetailScreen() {
           )}
         </View>
 
-        {/* Tasks */}
+        {/* Tasks + Lodge Activity */}
         <View style={styles.section}>
           <View style={[styles.summaryHeaderLeft, { marginBottom: 10 }]}>
             <Ionicons name="checkmark-circle-outline" size={15} color={Colors.brand[500]} />
@@ -553,24 +710,14 @@ export default function DealDetailScreen() {
             </>
           )}
 
-          {/* Lodge an Activity — collapsed chevron */}
-          <Pressable
-            style={styles.lodgeChevron}
-            onPress={() => setActivityCollapsed((v) => !v)}
-          >
+          <Pressable style={styles.lodgeChevron} onPress={() => setActivityCollapsed((v) => !v)}>
             <Ionicons name="add-circle-outline" size={16} color={Colors.brand[500]} />
             <Text style={styles.lodgeChevronText}>Lodge an Activity</Text>
-            <Ionicons
-              name={activityCollapsed ? 'chevron-down' : 'chevron-up'}
-              size={15}
-              color={Colors.text.muted}
-              style={{ marginLeft: 'auto' }}
-            />
+            <Ionicons name={activityCollapsed ? 'chevron-down' : 'chevron-up'} size={15} color={Colors.text.muted} style={{ marginLeft: 'auto' }} />
           </Pressable>
 
           {!activityCollapsed && (
             <View style={{ marginTop: 12, gap: 16 }}>
-
               {/* Set Activity */}
               <View style={styles.activityFormCard}>
                 <View style={styles.activityFormHeader}>
@@ -579,11 +726,7 @@ export default function DealDetailScreen() {
                 </View>
                 <View style={styles.activityTypePills}>
                   {(['call', 'meeting', 'task'] as const).map((t) => (
-                    <Pressable
-                      key={t}
-                      style={[styles.activityTypePill, setActType === t && styles.activityTypePillActive]}
-                      onPress={() => setSetActType(t)}
-                    >
+                    <Pressable key={t} style={[styles.activityTypePill, setActType === t && styles.activityTypePillActive]} onPress={() => setSetActType(t)}>
                       <Text style={[styles.activityTypePillText, setActType === t && styles.activityTypePillTextActive]}>
                         {t.charAt(0).toUpperCase() + t.slice(1)}
                       </Text>
@@ -600,18 +743,8 @@ export default function DealDetailScreen() {
                   style={styles.activityInput}
                   value={setActSubject}
                   onChangeText={setSetActSubject}
-                  placeholder="e.g. Call tomorrow and book a product demo"
+                  placeholder="e.g. Call tomorrow and book a demo"
                   placeholderTextColor={Colors.text.muted}
-                />
-                <TextInput
-                  style={[styles.activityInput, styles.activityScheduleInput]}
-                  value={setActScheduled}
-                  onChangeText={setSetActScheduled}
-                  multiline
-                  numberOfLines={2}
-                  placeholder={'Scheduled for\ne.g. 25 Mar 2026, 10:00'}
-                  placeholderTextColor={Colors.text.muted}
-                  textAlignVertical="top"
                 />
                 <Pressable
                   style={[styles.activitySaveBtn, (!setActSubject.trim() || savingSetAct) && styles.btnDisabled]}
@@ -632,11 +765,7 @@ export default function DealDetailScreen() {
                 </View>
                 <View style={styles.activityTypePills}>
                   {(['call', 'meeting', 'task'] as const).map((t) => (
-                    <Pressable
-                      key={t}
-                      style={[styles.activityTypePill, logActType === t && styles.activityTypePillActive]}
-                      onPress={() => setLogActType(t)}
-                    >
+                    <Pressable key={t} style={[styles.activityTypePill, logActType === t && styles.activityTypePillActive]} onPress={() => setLogActType(t)}>
                       <Text style={[styles.activityTypePillText, logActType === t && styles.activityTypePillTextActive]}>
                         {t.charAt(0).toUpperCase() + t.slice(1)}
                       </Text>
@@ -692,11 +821,73 @@ export default function DealDetailScreen() {
           )}
         </View>
 
+        {/* Reminders */}
+        <View style={styles.section}>
+          <Pressable style={styles.summaryHeader} onPress={() => setRemindersOpen((v) => !v)}>
+            <View style={styles.summaryHeaderLeft}>
+              <Ionicons name="notifications-outline" size={15} color={Colors.brand[500]} />
+              <Text style={styles.sectionLabel}>Reminders</Text>
+              {(reminders ?? []).length > 0 && (
+                <View style={styles.taskCountBadge}>
+                  <Text style={styles.taskCountText}>{reminders!.length}</Text>
+                </View>
+              )}
+            </View>
+            <Ionicons name={remindersOpen ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.text.muted} />
+          </Pressable>
+
+          {remindersOpen && (
+            <>
+              {(reminders ?? []).length === 0 ? (
+                <Text style={styles.emptyTaskText}>No upcoming reminders.</Text>
+              ) : (
+                (reminders ?? []).map((r) => (
+                  <View key={r.id} style={styles.taskRow}>
+                    <Ionicons name="notifications-outline" size={16} color={Colors.brand[500]} style={{ marginRight: 10 }} />
+                    <View style={styles.taskContent}>
+                      <Text style={styles.taskTitle}>{r.title}</Text>
+                      <Text style={styles.taskMeta}>
+                        {new Date(r.due_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {r.note ? `  ·  ${r.note}` : ''}
+                      </Text>
+                    </View>
+                  </View>
+                ))
+              )}
+              <View style={{ marginTop: 12, gap: 8 }}>
+                <TextInput
+                  style={styles.activityInput}
+                  value={reminderTitle}
+                  onChangeText={setReminderTitle}
+                  placeholder="Reminder title…"
+                  placeholderTextColor={Colors.text.muted}
+                />
+                <TextInput
+                  style={styles.activityInput}
+                  value={reminderDate}
+                  onChangeText={setReminderDate}
+                  placeholder="Date (YYYY-MM-DD)"
+                  placeholderTextColor={Colors.text.muted}
+                />
+                <Pressable
+                  style={[styles.activitySaveBtn, (!reminderTitle.trim() || !reminderDate.trim() || savingReminder) && styles.btnDisabled]}
+                  onPress={handleAddReminder}
+                  disabled={!reminderTitle.trim() || !reminderDate.trim() || savingReminder}
+                >
+                  {savingReminder
+                    ? <ActivityIndicator size="small" color="#fff" />
+                    : <><Ionicons name="notifications-outline" size={14} color="#fff" /><Text style={styles.activitySaveBtnText}>Set Reminder</Text></>}
+                </Pressable>
+              </View>
+            </>
+          )}
+        </View>
+
         {/* Overview & Activity */}
         <View style={styles.section}>
           <View style={[styles.summaryHeaderLeft, { marginBottom: 10 }]}>
             <Ionicons name="information-circle-outline" size={15} color={Colors.brand[500]} />
-            <Text style={styles.sectionLabel}>Overview & Activity</Text>
+            <Text style={styles.sectionLabel}>Overview</Text>
           </View>
           <View style={styles.detailGrid}>
             <View style={styles.detailRow}>
@@ -717,6 +908,12 @@ export default function DealDetailScreen() {
               <View style={styles.detailRow}>
                 <Text style={styles.detailKey}>Win %</Text>
                 <Text style={styles.detailVal}>{deal.win_percentage}%</Text>
+              </View>
+            ) : null}
+            {deal.lost_reason ? (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailKey}>Lost Reason</Text>
+                <Text style={[styles.detailVal, { color: '#ef4444' }]}>{deal.lost_reason}</Text>
               </View>
             ) : null}
             <View style={styles.detailRow}>
@@ -749,9 +946,7 @@ export default function DealDetailScreen() {
               <View key={a.id} style={styles.actFeedItem}>
                 <View style={styles.actFeedDot} />
                 <View style={styles.actFeedContent}>
-                  <Text style={styles.actFeedType}>
-                    {a.type.charAt(0).toUpperCase() + a.type.slice(1)}
-                  </Text>
+                  <Text style={styles.actFeedType}>{a.type.charAt(0).toUpperCase() + a.type.slice(1)}</Text>
                   {a.body ? <Text style={styles.actFeedBody}>{a.body}</Text> : null}
                   <Text style={styles.actFeedTime}>
                     {new Date(a.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -782,14 +977,12 @@ export default function DealDetailScreen() {
         </Pressable>
         <Pressable style={styles.bottomBarBtn} onPress={() => setAssignOpen(true)}>
           <Ionicons name="person-outline" size={14} color={Colors.text.secondary} />
-          <Text style={styles.bottomBarText} numberOfLines={1}>
-            {assignedMember?.name ?? 'Assign'}
-          </Text>
+          <Text style={styles.bottomBarText} numberOfLines={1}>{assignedMember?.name ?? 'Assign'}</Text>
           <Ionicons name="chevron-up" size={11} color={Colors.text.muted} />
         </Pressable>
       </View>
 
-      {/* Stage Picker Modal */}
+      {/* Stage Picker */}
       <Modal visible={stagePickerOpen} transparent animationType="slide" onRequestClose={() => setStagePickerOpen(false)}>
         <Pressable style={styles.modalOverlayBottom} onPress={() => setStagePickerOpen(false)}>
           <View style={styles.bottomSheet}>
@@ -812,25 +1005,148 @@ export default function DealDetailScreen() {
         </Pressable>
       </Modal>
 
-      {/* Status Picker Modal */}
+      {/* Status Picker — won/lost open dedicated modals */}
       <Modal visible={statusPickerOpen} transparent animationType="slide" onRequestClose={() => setStatusPickerOpen(false)}>
         <Pressable style={styles.modalOverlayBottom} onPress={() => setStatusPickerOpen(false)}>
           <View style={styles.bottomSheet}>
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetTitle}>Set Status</Text>
-            {(['open', 'won', 'lost'] as const).map((s) => {
-              const ss = STATUS_STYLES[s];
-              return (
-                <Pressable
-                  key={s}
-                  style={[styles.sheetItem, status === s && styles.sheetItemActive]}
-                  onPress={() => handleStatusChange(s)}
-                >
-                  <Text style={[styles.sheetItemText, { color: ss.color }]}>{ss.label}</Text>
-                  {status === s && <Ionicons name="checkmark" size={16} color={ss.color} style={{ marginLeft: 'auto' }} />}
+            <Pressable
+              style={[styles.sheetItem, status === 'open' && styles.sheetItemActive]}
+              onPress={() => handleStatusChange('open')}
+            >
+              <Text style={[styles.sheetItemText, { color: STATUS_STYLES.open.color }]}>Open</Text>
+              {status === 'open' && <Ionicons name="checkmark" size={16} color={STATUS_STYLES.open.color} style={{ marginLeft: 'auto' }} />}
+            </Pressable>
+            <Pressable
+              style={[styles.sheetItem, status === 'won' && styles.sheetItemActive]}
+              onPress={() => { setStatusPickerOpen(false); setWonModalOpen(true); }}
+            >
+              <Ionicons name="trophy-outline" size={16} color={STATUS_STYLES.won.color} />
+              <Text style={[styles.sheetItemText, { color: STATUS_STYLES.won.color }]}>Mark as Won</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.sheetItem, status === 'lost' && styles.sheetItemActive]}
+              onPress={() => { setStatusPickerOpen(false); setLostModalOpen(true); }}
+            >
+              <Ionicons name="close-circle-outline" size={16} color={STATUS_STYLES.lost.color} />
+              <Text style={[styles.sheetItemText, { color: STATUS_STYLES.lost.color }]}>Mark as Lost</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* Won Modal */}
+      <Modal visible={wonModalOpen} transparent animationType="slide" onRequestClose={() => setWonModalOpen(false)}>
+        <Pressable style={styles.modalOverlayBottom} onPress={() => setWonModalOpen(false)}>
+          <View style={styles.bottomSheet}>
+            <View style={styles.sheetHandle} />
+            <View style={{ padding: 20 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                <Ionicons name="trophy-outline" size={20} color="#22c55e" />
+                <Text style={{ fontSize: 16, fontWeight: '700', color: '#22c55e' }}>Mark as Won</Text>
+              </View>
+              <View style={{ padding: 12, backgroundColor: '#f0fdf4', borderRadius: 10, marginBottom: 16 }}>
+                <Text style={{ fontSize: 13, color: '#15803d' }}>Congratulations! This deal will be moved to Projects.</Text>
+              </View>
+              <Text style={styles.fieldLabel}>Close Date (optional)</Text>
+              <TextInput
+                style={styles.activityInput}
+                value={wonCloseDate}
+                onChangeText={setWonCloseDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={Colors.text.muted}
+              />
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
+                <Pressable style={[styles.activitySaveBtn, { flex: 1, backgroundColor: Colors.bg.secondary, borderWidth: 1, borderColor: Colors.border }]} onPress={() => setWonModalOpen(false)}>
+                  <Text style={[styles.activitySaveBtnText, { color: Colors.text.secondary }]}>Cancel</Text>
                 </Pressable>
-              );
-            })}
+                <Pressable style={[styles.activitySaveBtn, { flex: 1, backgroundColor: '#22c55e' }, savingWon && styles.btnDisabled]} onPress={handleMarkWon} disabled={savingWon}>
+                  {savingWon ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.activitySaveBtnText}>Mark Won ✓</Text>}
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* Lost Modal */}
+      <Modal visible={lostModalOpen} transparent animationType="slide" onRequestClose={() => setLostModalOpen(false)}>
+        <Pressable style={styles.modalOverlayBottom} onPress={() => setLostModalOpen(false)}>
+          <View style={[styles.bottomSheet, { minHeight: 380 }]}>
+            <View style={styles.sheetHandle} />
+            <ScrollView style={{ padding: 20 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                <Ionicons name="close-circle-outline" size={20} color="#ef4444" />
+                <Text style={{ fontSize: 16, fontWeight: '700', color: '#ef4444' }}>Mark as Lost</Text>
+              </View>
+              <Text style={styles.fieldLabel}>Reason for Loss</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                {LOST_REASONS.map((r) => (
+                  <Pressable
+                    key={r}
+                    onPress={() => setLostReason(r)}
+                    style={[styles.activityTypePill, lostReason === r && { backgroundColor: '#fef2f2', borderColor: '#ef444460' }]}
+                  >
+                    <Text style={[styles.activityTypePillText, lostReason === r && { color: '#ef4444', fontWeight: '600' }]}>{r}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <Text style={styles.fieldLabel}>Notes (optional)</Text>
+              <TextInput
+                style={[styles.activityInput, styles.activityNoteInput]}
+                value={lostNote}
+                onChangeText={setLostNote}
+                multiline
+                placeholder="Any additional context…"
+                placeholderTextColor={Colors.text.muted}
+                textAlignVertical="top"
+              />
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 8, marginBottom: 20 }}>
+                <Pressable style={[styles.activitySaveBtn, { flex: 1, backgroundColor: Colors.bg.secondary, borderWidth: 1, borderColor: Colors.border }]} onPress={() => setLostModalOpen(false)}>
+                  <Text style={[styles.activitySaveBtnText, { color: Colors.text.secondary }]}>Cancel</Text>
+                </Pressable>
+                <Pressable style={[styles.activitySaveBtn, { flex: 1, backgroundColor: '#ef4444' }, savingLost && styles.btnDisabled]} onPress={handleMarkLost} disabled={savingLost}>
+                  {savingLost ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.activitySaveBtnText}>Mark Lost</Text>}
+                </Pressable>
+              </View>
+            </ScrollView>
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* Edit Deal Modal */}
+      <Modal visible={editModalOpen} transparent animationType="slide" onRequestClose={() => setEditModalOpen(false)}>
+        <Pressable style={styles.modalOverlayBottom} onPress={() => setEditModalOpen(false)}>
+          <View style={[styles.bottomSheet, { minHeight: 460 }]}>
+            <View style={styles.sheetHandle} />
+            <ScrollView style={{ padding: 20 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <Text style={{ fontSize: 15, fontWeight: '700', color: Colors.text.primary, marginBottom: 16 }}>Edit Deal</Text>
+              <Text style={styles.fieldLabel}>Title *</Text>
+              <TextInput style={styles.activityInput} value={editTitle} onChangeText={setEditTitle} placeholder="Deal title" placeholderTextColor={Colors.text.muted} />
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={{ flex: 2 }}>
+                  <Text style={styles.fieldLabel}>Value</Text>
+                  <TextInput style={styles.activityInput} value={editValue} onChangeText={setEditValue} placeholder="0" placeholderTextColor={Colors.text.muted} keyboardType="numeric" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.fieldLabel}>Currency</Text>
+                  <TextInput style={styles.activityInput} value={editCurrency} onChangeText={setEditCurrency} placeholder="USD" placeholderTextColor={Colors.text.muted} autoCapitalize="characters" maxLength={3} />
+                </View>
+              </View>
+              <Text style={styles.fieldLabel}>Close Date (YYYY-MM-DD)</Text>
+              <TextInput style={styles.activityInput} value={editCloseDate} onChangeText={setEditCloseDate} placeholder="e.g. 2026-06-30" placeholderTextColor={Colors.text.muted} />
+              <Text style={styles.fieldLabel}>Description</Text>
+              <TextInput style={[styles.activityInput, styles.activityNoteInput]} value={editDescription} onChangeText={setEditDescription} multiline placeholder="Add a description…" placeholderTextColor={Colors.text.muted} textAlignVertical="top" />
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 4, marginBottom: 20 }}>
+                <Pressable style={[styles.activitySaveBtn, { flex: 1, backgroundColor: Colors.bg.secondary, borderWidth: 1, borderColor: Colors.border }]} onPress={() => setEditModalOpen(false)}>
+                  <Text style={[styles.activitySaveBtnText, { color: Colors.text.secondary }]}>Cancel</Text>
+                </Pressable>
+                <Pressable style={[styles.activitySaveBtn, { flex: 2 }, (!editTitle.trim() || savingEdit) && styles.btnDisabled]} onPress={handleEditSave} disabled={!editTitle.trim() || savingEdit}>
+                  {savingEdit ? <ActivityIndicator size="small" color="#fff" /> : <><Ionicons name="checkmark-circle-outline" size={14} color="#fff" /><Text style={styles.activitySaveBtnText}>Save Changes</Text></>}
+                </Pressable>
+              </View>
+            </ScrollView>
           </View>
         </Pressable>
       </Modal>
@@ -841,19 +1157,12 @@ export default function DealDetailScreen() {
           <View style={styles.bottomSheet}>
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetTitle}>Assign To</Text>
-            <Pressable
-              style={[styles.sheetItem, !assignedTo && styles.sheetItemActive]}
-              onPress={() => handleAssign('')}
-            >
+            <Pressable style={[styles.sheetItem, !assignedTo && styles.sheetItemActive]} onPress={() => handleAssign('')}>
               <Text style={[styles.sheetItemText, { color: Colors.text.secondary }]}>Unassigned</Text>
               {!assignedTo && <Ionicons name="checkmark" size={16} color={Colors.brand[500]} style={{ marginLeft: 'auto' }} />}
             </Pressable>
             {(members ?? []).map((m) => (
-              <Pressable
-                key={m.userId}
-                style={[styles.sheetItem, assignedTo === m.userId && styles.sheetItemActive]}
-                onPress={() => handleAssign(m.userId)}
-              >
+              <Pressable key={m.userId} style={[styles.sheetItem, assignedTo === m.userId && styles.sheetItemActive]} onPress={() => handleAssign(m.userId)}>
                 <Text style={[styles.sheetItemText, { color: Colors.text.primary }]}>{m.name || m.email}</Text>
                 {assignedTo === m.userId && <Ionicons name="checkmark" size={16} color={Colors.brand[500]} style={{ marginLeft: 'auto' }} />}
               </Pressable>
@@ -866,7 +1175,6 @@ export default function DealDetailScreen() {
       <Modal visible={datePickerOpen} transparent animationType="fade" onRequestClose={() => setDatePickerOpen(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setDatePickerOpen(false)}>
           <View style={styles.calCard}>
-            {/* Month nav */}
             <View style={styles.calHeader}>
               <Pressable onPress={() => { if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); } else setCalMonth(m => m - 1); }}>
                 <Ionicons name="chevron-back" size={20} color={Colors.text.primary} />
@@ -876,11 +1184,9 @@ export default function DealDetailScreen() {
                 <Ionicons name="chevron-forward" size={20} color={Colors.text.primary} />
               </Pressable>
             </View>
-            {/* Day headers */}
             <View style={styles.calRow}>
               {DAYS.map((d) => <Text key={d} style={styles.calDayLabel}>{d}</Text>)}
             </View>
-            {/* Day grid */}
             {Array.from({ length: Math.ceil((calFirstDow + calDaysInMonth) / 7) }).map((_, week) => (
               <View key={week} style={styles.calRow}>
                 {Array.from({ length: 7 }).map((_, dow) => {
@@ -896,13 +1202,7 @@ export default function DealDetailScreen() {
                       onPress={() => { setCalSelectedDay(dayNum); setDatePickerOpen(false); }}
                       style={[styles.calDayCell, isSel && styles.calDayCellSelected, isToday && !isSel && styles.calDayCellToday]}
                     >
-                      <Text style={[
-                        styles.calDayText,
-                        !isValid && { color: 'transparent' },
-                        isPast && { color: Colors.text.muted },
-                        isToday && !isSel && { color: Colors.brand[500], fontWeight: '700' },
-                        isSel && { color: '#fff' },
-                      ]}>
+                      <Text style={[styles.calDayText, !isValid && { color: 'transparent' }, isPast && { color: Colors.text.muted }, isToday && !isSel && { color: Colors.brand[500], fontWeight: '700' }, isSel && { color: '#fff' }]}>
                         {isValid ? dayNum : ''}
                       </Text>
                     </Pressable>
@@ -922,50 +1222,27 @@ const styles = StyleSheet.create({
   errorState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   errorText: { fontSize: 14, color: '#ef4444' },
 
-  // Header
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 12, paddingVertical: 10,
     backgroundColor: Colors.bg.card,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.border,
-    gap: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.border, gap: 8,
   },
   backBtn: { padding: 4 },
   headerName: { flex: 1, fontSize: 16, fontWeight: '600', color: Colors.text.primary },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   iconBtn: { padding: 6 },
 
-  // Priority pill
-  priorityPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginLeft: 4,
-  },
+  priorityPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 20, borderWidth: 1, marginLeft: 4 },
   priorityDot: { width: 6, height: 6, borderRadius: 3 },
   priorityPillText: { fontSize: 11, fontWeight: '600' },
 
   scroll: { flex: 1 },
 
-  // Section
   section: {
-    backgroundColor: Colors.bg.card,
-    borderRadius: 14,
-    marginHorizontal: 16,
-    marginTop: 12,
-    padding: 14,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: Colors.bg.card, borderRadius: 14,
+    marginHorizontal: 16, marginTop: 12, padding: 14,
+    shadowColor: '#000', shadowOpacity: 0.04, shadowOffset: { width: 0, height: 1 }, shadowRadius: 4, elevation: 2,
   },
   summaryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   summaryHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -973,12 +1250,8 @@ const styles = StyleSheet.create({
   collapseBtn: { padding: 4 },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.border },
 
-  // Deal info badges
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
-  stageBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20, borderWidth: 1,
-  },
+  stageBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20, borderWidth: 1 },
   stageDot: { width: 6, height: 6, borderRadius: 3 },
   stageBadgeText: { fontSize: 11, fontWeight: '600' },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20 },
@@ -986,11 +1259,9 @@ const styles = StyleSheet.create({
   winBadge: { backgroundColor: '#f0fdf4', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20 },
   winBadgeText: { fontSize: 11, fontWeight: '600', color: '#22c55e' },
 
-  // Contact rows
   contactRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   contactText: { fontSize: 13, color: Colors.text.primary, flex: 1 },
 
-  // Tasks
   taskCountBadge: { backgroundColor: Colors.brand[500], borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 },
   taskCountText: { fontSize: 10, color: '#fff', fontWeight: '700' },
   emptyTaskText: { fontSize: 12, color: Colors.text.muted, marginBottom: 8 },
@@ -1001,80 +1272,32 @@ const styles = StyleSheet.create({
   taskMeta: { fontSize: 11, color: Colors.text.muted, marginTop: 2 },
   completedLabel: { fontSize: 11, fontWeight: '600', color: Colors.text.muted, marginTop: 10, marginBottom: 4 },
 
-  // Lodge an Activity
-  lodgeChevron: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.border,
-  },
+  lodgeChevron: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: Colors.border },
   lodgeChevronText: { fontSize: 13, fontWeight: '600', color: Colors.brand[500] },
 
-  // Activity forms
-  activityFormCard: {
-    backgroundColor: Colors.bg.secondary,
-    borderRadius: 10,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
+  activityFormCard: { backgroundColor: Colors.bg.secondary, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: Colors.border },
   activityFormHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
   activityFormTitle: { fontSize: 12, fontWeight: '600', color: Colors.brand[500] },
   activityTypePills: { flexDirection: 'row', gap: 6, marginBottom: 10 },
-  activityTypePill: {
-    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
-    backgroundColor: Colors.bg.card, borderWidth: 1, borderColor: Colors.border,
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-  },
+  activityTypePill: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: Colors.bg.card, borderWidth: 1, borderColor: Colors.border, flexDirection: 'row', alignItems: 'center', gap: 4 },
   activityTypePillActive: { backgroundColor: Colors.brand[500] + '15', borderColor: Colors.brand[500] + '60' },
   activityTypePillText: { fontSize: 12, fontWeight: '500', color: Colors.text.secondary },
   activityTypePillTextActive: { color: Colors.brand[500], fontWeight: '600' },
-  activityInput: {
-    backgroundColor: Colors.bg.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    fontSize: 13,
-    color: Colors.text.primary,
-    marginBottom: 8,
-  },
-  activityScheduleInput: { minHeight: 52 },
+  activityInput: { backgroundColor: Colors.bg.card, borderWidth: 1, borderColor: Colors.border, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, fontSize: 13, color: Colors.text.primary, marginBottom: 8 },
   activityNoteInput: { minHeight: 72 },
-  activitySaveBtn: {
-    backgroundColor: Colors.brand[500],
-    borderRadius: 8,
-    paddingVertical: 9,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 4,
-  },
+  activitySaveBtn: { backgroundColor: Colors.brand[500], borderRadius: 8, paddingVertical: 9, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 4 },
   activitySaveBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
   btnDisabled: { opacity: 0.4 },
 
-  // Overview grid
+  fieldLabel: { fontSize: 12, fontWeight: '600', color: Colors.text.muted, marginBottom: 4, marginTop: 4 },
+
   detailGrid: { borderWidth: 1, borderColor: Colors.border, borderRadius: 10, overflow: 'hidden' },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.border,
-  },
+  detailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.border },
   detailKey: { fontSize: 12, color: Colors.text.muted, width: 90 },
   detailVal: { fontSize: 12, color: Colors.text.primary, flex: 1, textAlign: 'right' },
 
-  // Description
   descriptionText: { fontSize: 13, color: Colors.text.primary, lineHeight: 20, marginTop: 6 },
 
-  // Activity feed
   actFeedItem: { flexDirection: 'row', gap: 10, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.border },
   actFeedDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.brand[500], marginTop: 4 },
   actFeedContent: { flex: 1 },
@@ -1083,71 +1306,25 @@ const styles = StyleSheet.create({
   actFeedTime: { fontSize: 11, color: Colors.text.muted, marginTop: 3 },
   noActivityText: { fontSize: 12, color: Colors.text.muted, lineHeight: 18 },
 
-  // Bottom bar
-  bottomBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    backgroundColor: Colors.bg.card,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.border,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-  },
-  bottomBarBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: Colors.bg.secondary,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
+  bottomBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: Colors.bg.card, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: Colors.border, paddingVertical: 10, paddingHorizontal: 16, paddingBottom: 24 },
+  bottomBarBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: Colors.bg.secondary, borderWidth: 1, borderColor: Colors.border },
   bottomBarText: { fontSize: 12, fontWeight: '600', color: Colors.text.secondary },
 
-  // Modals
-  modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center', alignItems: 'center',
-  },
-  modalOverlayBottom: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
-  dropdownCard: {
-    backgroundColor: Colors.bg.card, borderRadius: 14,
-    width: 280, paddingVertical: 8,
-    shadowColor: '#000', shadowOpacity: 0.15, shadowOffset: { width: 0, height: 4 }, shadowRadius: 12,
-  },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
+  modalOverlayBottom: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  dropdownCard: { backgroundColor: Colors.bg.card, borderRadius: 14, width: 280, paddingVertical: 8, shadowColor: '#000', shadowOpacity: 0.15, shadowOffset: { width: 0, height: 4 }, shadowRadius: 12 },
   dropdownTitle: { fontSize: 12, fontWeight: '600', color: Colors.text.muted, paddingHorizontal: 16, paddingVertical: 8 },
   dropdownItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12 },
   dropdownItemActive: { backgroundColor: Colors.brand[500] + '10' },
   dropdownItemText: { fontSize: 14, color: Colors.text.primary, flex: 1 },
-  bottomSheet: {
-    backgroundColor: Colors.bg.card,
-    borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    paddingBottom: 34, paddingTop: 12,
-    minHeight: 240,
-  },
+  bottomSheet: { backgroundColor: Colors.bg.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 34, paddingTop: 12, minHeight: 240 },
   sheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.border, alignSelf: 'center', marginBottom: 12 },
   sheetTitle: { fontSize: 14, fontWeight: '600', color: Colors.text.muted, paddingHorizontal: 20, paddingBottom: 8 },
-  sheetItem: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingHorizontal: 20, paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.border,
-  },
+  sheetItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.border },
   sheetItemActive: { backgroundColor: Colors.brand[500] + '10' },
   sheetItemText: { fontSize: 15, color: Colors.text.primary, flex: 1 },
 
-  // Calendar
-  calCard: {
-    backgroundColor: Colors.bg.card, borderRadius: 16, padding: 16, width: 320,
-    shadowColor: '#000', shadowOpacity: 0.15, shadowOffset: { width: 0, height: 4 }, shadowRadius: 12,
-  },
+  calCard: { backgroundColor: Colors.bg.card, borderRadius: 16, padding: 16, width: 320, shadowColor: '#000', shadowOpacity: 0.15, shadowOffset: { width: 0, height: 4 }, shadowRadius: 12 },
   calHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   calMonthLabel: { fontSize: 15, fontWeight: '700', color: Colors.text.primary },
   calRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 4 },

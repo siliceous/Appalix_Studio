@@ -8,6 +8,7 @@ import {
   RefreshControl,
   ScrollView,
   Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -18,7 +19,8 @@ import { useAuthStore } from '@/stores/auth';
 import { PriorityBadge } from '@/components/ui/PriorityBadge';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { Colors } from '@/constants/colors';
-import type { SageDeal, SagePipeline, SageDealStage } from '@/types';
+import { ROLE_RANK } from '@/types';
+import type { SageDeal, SagePipeline, SageDealStage, WorkspaceRole } from '@/types';
 
 function formatValue(value?: number, currency?: string): string {
   if (!value) return '—';
@@ -29,9 +31,9 @@ function formatValue(value?: number, currency?: string): string {
   }).format(value);
 }
 
-function activityDot(updatedAt?: string): string {
-  if (!updatedAt) return '#6b7280';
-  const hours = (Date.now() - new Date(updatedAt).getTime()) / 3_600_000;
+function activityDot(dealId: string, createdAt: string, lastActivity: Record<string, string>): string {
+  const lastAt = lastActivity[dealId] ?? createdAt;
+  const hours = (Date.now() - new Date(lastAt).getTime()) / 3_600_000;
   if (hours < 12) return '#22c55e';
   if (hours < 24) return '#84cc16';
   if (hours < 48) return '#f59e0b';
@@ -40,15 +42,8 @@ function activityDot(updatedAt?: string): string {
 
 async function fetchPipelinesAndStages(workspaceId: string) {
   const [pipelines, stages] = await Promise.all([
-    supabase
-      .from('sage_pipelines')
-      .select('id, name')
-      .eq('workspace_id', workspaceId)
-      .order('created_at', { ascending: true }),
-    supabase
-      .from('sage_pipeline_stages')
-      .select('id, name, color, position, pipeline_id')
-      .order('position', { ascending: true }),
+    supabase.from('sage_pipelines').select('id, name').eq('workspace_id', workspaceId).order('created_at', { ascending: true }),
+    supabase.from('sage_pipeline_stages').select('id, name, color, position, pipeline_id').order('position', { ascending: true }),
   ]);
   return {
     pipelines: (pipelines.data ?? []) as SagePipeline[],
@@ -64,9 +59,11 @@ async function fetchPipelinesAndStages(workspaceId: string) {
 
 async function fetchDealsEnriched(
   workspaceId: string,
+  userId: string,
+  isManager: boolean,
   pipelineId?: string,
   stageId?: string | null,
-): Promise<SageDeal[]> {
+): Promise<{ deals: SageDeal[]; lastActivity: Record<string, string> }> {
   let query = supabase
     .from('sage_deals')
     .select(`
@@ -81,11 +78,14 @@ async function fetchDealsEnriched(
     .eq('status', 'open')
     .order('updated_at', { ascending: false });
 
+  if (!isManager) {
+    query = (query as any).or(`owner_id.eq.${userId},owner_id.is.null`);
+  }
   if (pipelineId) query = query.eq('pipeline_id', pipelineId);
   if (stageId) query = query.eq('stage_id', stageId);
 
   const { data } = await query;
-  return ((data ?? []) as any[]).map((d) => ({
+  const deals = ((data ?? []) as any[]).map((d) => ({
     id: d.id,
     title: d.title,
     value: d.value,
@@ -111,27 +111,41 @@ async function fetchDealsEnriched(
     contactName: d.contact?.name,
     contactEmail: d.contact?.email,
     contactPhone: d.contact?.phone,
-  }));
+  })) as SageDeal[];
+
+  // Accurate activity dot: use last sage_deal_activities entry per deal
+  const dealIds = deals.map((d) => d.id);
+  const lastActivity: Record<string, string> = {};
+  if (dealIds.length > 0) {
+    const { data: actRows } = await supabase
+      .from('sage_deal_activities')
+      .select('deal_id, created_at')
+      .in('deal_id', dealIds)
+      .order('created_at', { ascending: false });
+    for (const a of (actRows ?? []) as { deal_id: string; created_at: string }[]) {
+      if (!lastActivity[a.deal_id]) lastActivity[a.deal_id] = a.created_at;
+    }
+  }
+
+  return { deals, lastActivity };
 }
 
 export default function DealsScreen() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const [selectedPipelineId, setSelectedPipelineId] = useState<string | null>(null);
-  const [selectedStageId, setSelectedStageId] = useState<string | null>(null); // null = All
+  const [selectedStageId, setSelectedStageId] = useState<string | null>(null);
   const [pipelineDropdownOpen, setPipelineDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const {
-    data: meta,
-    isLoading: metaLoading,
-  } = useQuery({
+  const isManager = ROLE_RANK[(user?.role ?? 'employee') as WorkspaceRole] >= ROLE_RANK.manager;
+
+  const { data: meta, isLoading: metaLoading } = useQuery({
     queryKey: ['deals-meta', user?.workspaceId],
     queryFn: () => fetchPipelinesAndStages(user!.workspaceId),
     enabled: !!user,
     select: (d) => {
-      if (!selectedPipelineId && d.pipelines.length > 0) {
-        setSelectedPipelineId(d.pipelines[0].id);
-      }
+      if (!selectedPipelineId && d.pipelines.length > 0) setSelectedPipelineId(d.pipelines[0].id);
       return d;
     },
   });
@@ -140,40 +154,47 @@ export default function DealsScreen() {
   const pipelineStages = useMemo(
     () =>
       (meta?.stages ?? []).filter(
-        (s) =>
-          s.pipelineId === activePipelineId &&
-          !['won', 'lost'].includes(s.name.toLowerCase()),
+        (s) => s.pipelineId === activePipelineId && !['won', 'lost'].includes(s.name.toLowerCase()),
       ),
     [meta?.stages, activePipelineId],
   );
 
-  const {
-    data: deals,
-    isLoading: dealsLoading,
-    refetch,
-    isFetching,
-  } = useQuery({
-    queryKey: ['deals-enriched', user?.workspaceId, activePipelineId, selectedStageId],
-    queryFn: () => fetchDealsEnriched(user!.workspaceId, activePipelineId, selectedStageId),
+  const { data: dealsData, isLoading: dealsLoading, refetch, isFetching } = useQuery({
+    queryKey: ['deals-enriched', user?.workspaceId, user?.id, isManager, activePipelineId, selectedStageId],
+    queryFn: () => fetchDealsEnriched(user!.workspaceId, user!.id, isManager, activePipelineId, selectedStageId),
     enabled: !!user && !!activePipelineId,
   });
 
-  // Pipeline value summary per stage
+  const deals = dealsData?.deals ?? [];
+  const lastActivity = dealsData?.lastActivity ?? {};
+
+  const visibleDeals = useMemo(() => {
+    if (!searchQuery.trim()) return deals;
+    const q = searchQuery.toLowerCase();
+    return deals.filter(
+      (d) =>
+        d.title.toLowerCase().includes(q) ||
+        d.contactName?.toLowerCase().includes(q) ||
+        d.companyName?.toLowerCase().includes(q) ||
+        d.contactEmail?.toLowerCase().includes(q),
+    );
+  }, [deals, searchQuery]);
+
   const stageSummary = useMemo(() => {
     const map: Record<string, { count: number; value: number }> = {};
     for (const s of pipelineStages) map[s.id] = { count: 0, value: 0 };
-    for (const d of deals ?? []) {
+    for (const d of visibleDeals) {
       if (d.stageId && map[d.stageId]) {
         map[d.stageId].count += 1;
         map[d.stageId].value += d.value ?? 0;
       }
     }
     return map;
-  }, [deals, pipelineStages]);
+  }, [visibleDeals, pipelineStages]);
 
   const totalValue = useMemo(
-    () => (deals ?? []).reduce((sum, d) => sum + (d.value ?? 0), 0),
-    [deals],
+    () => visibleDeals.reduce((sum, d) => sum + (d.value ?? 0), 0),
+    [visibleDeals],
   );
 
   const renderDeal = ({ item }: { item: SageDeal }) => {
@@ -188,7 +209,6 @@ export default function DealsScreen() {
         style={({ pressed }) => [styles.dealCard, pressed && styles.pressed]}
         onPress={() => router.push(`/(app)/deals/${item.id}`)}
       >
-        {/* Top row: contact name + value */}
         <View style={styles.dealTop}>
           <Text style={styles.dealTitle} numberOfLines={1}>
             {item.contactName ?? item.companyName ?? item.title}
@@ -196,19 +216,16 @@ export default function DealsScreen() {
           <Text style={styles.dealValue}>{formatValue(item.value, item.currency)}</Text>
         </View>
 
-        {/* Service / deal title — only when a contact name is shown above */}
         {(item.contactName || item.companyName) ? (
           <Text style={styles.dealService} numberOfLines={1}>{item.title}</Text>
         ) : null}
 
-        {/* Email + phone */}
         {(item.contactEmail || item.contactPhone) ? (
           <Text style={styles.dealContact} numberOfLines={1}>
             {[item.contactEmail, item.contactPhone].filter(Boolean).join('  ·  ')}
           </Text>
         ) : null}
 
-        {/* Meta row */}
         <View style={styles.dealMeta}>
           <View style={styles.dealMetaLeft}>
             {item.priority && <PriorityBadge priority={item.priority} size="sm" />}
@@ -229,31 +246,24 @@ export default function DealsScreen() {
               </View>
             ) : null}
           </View>
-          <View style={[styles.actDot, { backgroundColor: activityDot(item.updatedAt) }]} />
+          <View style={[styles.actDot, { backgroundColor: activityDot(item.id, item.createdAt, lastActivity) }]} />
         </View>
       </Pressable>
     );
   };
 
-  const isLoading = metaLoading || (dealsLoading && !deals);
+  const isLoading = metaLoading || (dealsLoading && !dealsData);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Header */}
-      {/* Header with pipeline dropdown */}
       <View style={styles.header}>
         <Text style={styles.title}>Deals</Text>
         <View style={styles.headerRight}>
-          {totalValue > 0 && (
-            <Text style={styles.totalValue}>{formatValue(totalValue)}</Text>
-          )}
+          {totalValue > 0 && <Text style={styles.totalValue}>{formatValue(totalValue)}</Text>}
           {metaLoading ? (
             <SkeletonLoader width={120} height={32} borderRadius={20} />
           ) : (
-            <Pressable
-              style={styles.pipelineDropdown}
-              onPress={() => setPipelineDropdownOpen(true)}
-            >
+            <Pressable style={styles.pipelineDropdown} onPress={() => setPipelineDropdownOpen(true)}>
               <Ionicons name="git-network-outline" size={14} color={Colors.brand[500]} />
               <Text style={styles.pipelineDropdownText} numberOfLines={1}>
                 {meta?.pipelines.find((p) => p.id === activePipelineId)?.name ?? 'Pipeline'}
@@ -264,10 +274,23 @@ export default function DealsScreen() {
         </View>
       </View>
 
+      {/* Search */}
+      <View style={styles.searchWrap}>
+        <Ionicons name="search-outline" size={15} color={Colors.text.muted} style={{ marginRight: 6 }} />
+        <TextInput
+          style={styles.searchInput}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search deals, contacts…"
+          placeholderTextColor={Colors.text.muted}
+          returnKeyType="search"
+          clearButtonMode="while-editing"
+        />
+      </View>
+
       {/* Stage funnel strip + tabs */}
       {!metaLoading && pipelineStages.length > 0 && (
         <>
-          {/* Funnel strip */}
           <View style={styles.funnelStrip}>
             {pipelineStages.map((stage) => {
               const summary = stageSummary[stage.id] ?? { count: 0, value: 0 };
@@ -278,47 +301,27 @@ export default function DealsScreen() {
                   style={[styles.funnelSegment, { flex: 1 }]}
                   onPress={() => setSelectedStageId(isActive ? null : stage.id)}
                 >
-                  <View
-                    style={[
-                      styles.funnelBar,
-                      { backgroundColor: isActive ? stage.color : stage.color + '55' },
-                    ]}
-                  />
+                  <View style={[styles.funnelBar, { backgroundColor: isActive ? stage.color : stage.color + '55' }]} />
                   <Text style={styles.funnelCount}>{summary.count}</Text>
                 </Pressable>
               );
             })}
           </View>
 
-          {/* Stage tabs */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.stageTabs}
-          >
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stageTabs}>
             <Pressable
               onPress={() => setSelectedStageId(null)}
               style={[styles.stageTab, !selectedStageId && styles.stageTabActive]}
             >
-              <Text style={[styles.stageTabText, !selectedStageId && styles.stageTabTextActive]}>
-                All
-              </Text>
+              <Text style={[styles.stageTabText, !selectedStageId && styles.stageTabTextActive]}>All</Text>
             </Pressable>
             {pipelineStages.map((stage: SageDealStage) => (
               <Pressable
                 key={stage.id}
                 onPress={() => setSelectedStageId(stage.id)}
-                style={[
-                  styles.stageTab,
-                  selectedStageId === stage.id && { backgroundColor: stage.color, borderColor: stage.color },
-                ]}
+                style={[styles.stageTab, selectedStageId === stage.id && { backgroundColor: stage.color, borderColor: stage.color }]}
               >
-                <Text
-                  style={[
-                    styles.stageTabText,
-                    selectedStageId === stage.id && styles.stageTabTextActive,
-                  ]}
-                >
+                <Text style={[styles.stageTabText, selectedStageId === stage.id && styles.stageTabTextActive]}>
                   {stage.name}
                 </Text>
               </Pressable>
@@ -327,7 +330,6 @@ export default function DealsScreen() {
         </>
       )}
 
-      {/* Deals list */}
       {isLoading ? (
         <View style={styles.skelWrap}>
           {Array.from({ length: 5 }).map((_, i) => (
@@ -336,35 +338,25 @@ export default function DealsScreen() {
         </View>
       ) : (
         <FlatList
-          data={deals ?? []}
+          data={visibleDeals}
           keyExtractor={(item) => item.id}
           renderItem={renderDeal}
           refreshControl={
-            <RefreshControl
-              refreshing={isFetching && !dealsLoading}
-              onRefresh={refetch}
-              tintColor={Colors.brand[500]}
-            />
+            <RefreshControl refreshing={isFetching && !dealsLoading} onRefresh={refetch} tintColor={Colors.brand[500]} />
           }
-          contentContainerStyle={
-            !deals?.length ? styles.emptyContainer : styles.listContent
-          }
+          contentContainerStyle={!visibleDeals.length ? styles.emptyContainer : styles.listContent}
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="briefcase-outline" size={48} color={Colors.text.muted} />
-              <Text style={styles.emptyTitle}>No deals in this stage</Text>
+              <Text style={styles.emptyTitle}>
+                {searchQuery ? 'No deals match your search' : 'No deals in this stage'}
+              </Text>
             </View>
           }
         />
       )}
 
-      {/* Pipeline picker modal */}
-      <Modal
-        visible={pipelineDropdownOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setPipelineDropdownOpen(false)}
-      >
+      <Modal visible={pipelineDropdownOpen} transparent animationType="fade" onRequestClose={() => setPipelineDropdownOpen(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setPipelineDropdownOpen(false)}>
           <View style={styles.dropdownCard}>
             <Text style={styles.dropdownTitle}>Select Pipeline</Text>
@@ -397,78 +389,45 @@ export default function DealsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg.secondary },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
   title: { fontSize: 22, fontWeight: '700', color: Colors.text.primary },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   totalValue: { fontSize: 14, fontWeight: '700', color: Colors.brand[500] },
   pipelineDropdown: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: Colors.brand[500] + '15',
-    borderWidth: 1,
-    borderColor: Colors.brand[500] + '40',
-    maxWidth: 160,
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
+    backgroundColor: Colors.brand[500] + '15', borderWidth: 1, borderColor: Colors.brand[500] + '40', maxWidth: 160,
   },
-  pipelineDropdownText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.brand[500],
-    flexShrink: 1,
+  pipelineDropdownText: { fontSize: 13, fontWeight: '600', color: Colors.brand[500], flexShrink: 1 },
+
+  // Search
+  searchWrap: {
+    flexDirection: 'row', alignItems: 'center',
+    marginHorizontal: 16, marginBottom: 8,
+    backgroundColor: Colors.bg.card, borderRadius: 10,
+    borderWidth: 1, borderColor: Colors.border, paddingHorizontal: 10,
   },
+  searchInput: { flex: 1, height: 36, fontSize: 13, color: Colors.text.primary },
+
   // Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center' },
   dropdownCard: {
-    backgroundColor: Colors.bg.card,
-    borderRadius: 14,
-    width: 280,
-    paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 12,
-    elevation: 8,
+    backgroundColor: Colors.bg.card, borderRadius: 14, width: 280, paddingVertical: 8,
+    shadowColor: '#000', shadowOpacity: 0.15, shadowOffset: { width: 0, height: 4 }, shadowRadius: 12, elevation: 8,
   },
-  dropdownTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.text.muted,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
+  dropdownTitle: { fontSize: 12, fontWeight: '600', color: Colors.text.muted, paddingHorizontal: 16, paddingVertical: 8 },
   dropdownItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.border,
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 16, paddingVertical: 13,
+    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: Colors.border,
   },
   dropdownItemActive: { backgroundColor: Colors.brand[500] + '10' },
   dropdownItemText: { fontSize: 14, color: Colors.text.primary, flex: 1 },
 
   // Funnel
-  funnelStrip: {
-    flexDirection: 'row',
-    marginHorizontal: 16,
-    marginBottom: 0,
-    gap: 2,
-  },
+  funnelStrip: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 0, gap: 2 },
   funnelSegment: { alignItems: 'center', gap: 1 },
   funnelBar: { height: 4, width: '100%', borderRadius: 2 },
   funnelCount: { fontSize: 9, color: Colors.text.muted, fontWeight: '700' },
@@ -476,13 +435,8 @@ const styles = StyleSheet.create({
   // Stage tabs
   stageTabs: { paddingHorizontal: 14, paddingBottom: 4, paddingTop: 3, gap: 5, alignItems: 'center' },
   stageTab: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    backgroundColor: Colors.bg.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignSelf: 'flex-start',
+    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
+    backgroundColor: Colors.bg.card, borderWidth: 1, borderColor: Colors.border, alignSelf: 'flex-start',
   },
   stageTabActive: { backgroundColor: Colors.brand[500], borderColor: Colors.brand[500] },
   stageTabText: { fontSize: 11, fontWeight: '600', color: Colors.text.secondary },
@@ -500,16 +454,9 @@ const styles = StyleSheet.create({
 
   // Deal card
   dealCard: {
-    backgroundColor: Colors.bg.card,
-    borderRadius: 14,
-    padding: 14,
-    marginHorizontal: 16,
-    marginVertical: 5,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: Colors.bg.card, borderRadius: 14, padding: 14,
+    marginHorizontal: 16, marginVertical: 5,
+    shadowColor: '#000', shadowOpacity: 0.05, shadowOffset: { width: 0, height: 1 }, shadowRadius: 4, elevation: 2,
   },
   pressed: { opacity: 0.85 },
   dealTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
@@ -517,32 +464,16 @@ const styles = StyleSheet.create({
   dealValue: { fontSize: 15, fontWeight: '700', color: Colors.brand[500] },
   dealService: { fontSize: 12, color: Colors.text.secondary, marginBottom: 2 },
   dealContact: { fontSize: 11, color: Colors.text.muted, marginBottom: 8 },
-  dealMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 4,
-  },
+  dealMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
   dealMetaLeft: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 },
   stageChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 20,
-    gap: 4,
-    maxWidth: 120,
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 20, gap: 4, maxWidth: 120,
   },
   stageDot: { width: 6, height: 6, borderRadius: 3 },
   stageChipText: { fontSize: 11, fontWeight: '600' },
   closeChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: '#fef3c7',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 20,
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    backgroundColor: '#fef3c7', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 20,
   },
   closeChipText: { fontSize: 11, color: '#f59e0b', fontWeight: '600' },
   actDot: { width: 8, height: 8, borderRadius: 4 },
