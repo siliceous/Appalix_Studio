@@ -692,9 +692,6 @@ const styles = StyleSheet.create({
   kpiPriorityText: { fontSize: 13, color: Colors.text.primary, textAlign: 'center' },
   feedSkeleton: { marginHorizontal: 16, marginVertical: 5 },
   feedToolbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     marginHorizontal: 16,
     marginTop: 12,
     marginBottom: 4,
@@ -715,15 +712,17 @@ const styles = StyleSheet.create({
   },
   feedFilterRow: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 8,
   },
   feedFilterBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    height: 32,
-    paddingHorizontal: 10,
-    borderRadius: 8,
+    justifyContent: 'center',
+    gap: 5,
+    height: 34,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    alignSelf: 'flex-start',
   },
   feedFilterBadge: {
     borderRadius: 6,

@@ -59,8 +59,23 @@ export interface SageDeal {
   stageId?: string;
   pipelineId?: string;
   contactId?: string;
+  companyId?: string;
   ownerId?: string;
+  companyName?: string;
+  closeDate?: string;
+  description?: string;
+  winPercentage?: number;
+  lostReason?: string;
+  wonAt?: string;
+  lostAt?: string;
+  // joined
+  stageName?: string;
+  stageColor?: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface SageContact {
@@ -81,8 +96,19 @@ export interface SagePipeline {
 export interface SageDealStage {
   id: string;
   name: string;
+  color: string;
   pipelineId: string;
   position: number;
+}
+
+export interface SageDealActivity {
+  id: string;
+  type: 'note' | 'call' | 'meeting' | 'task';
+  title: string | null;
+  body: string | null;
+  due_at: string | null;
+  completed_at: string | null;
+  created_at: string;
 }
 
 export interface WorkspaceMember {

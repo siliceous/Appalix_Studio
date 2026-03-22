@@ -14,7 +14,7 @@ import { DealSlideOver } from './deal-slide-over'
 import type { SageDeal, SagePipelineStage, SageContact, SagePipeline } from '@/lib/types'
 
 type DealWithContact = SageDeal & {
-  contact: Pick<SageContact, 'id' | 'name'> | null
+  contact: Pick<SageContact, 'id' | 'name' | 'email' | 'phone'> | null
 }
 
 interface PipelineBoardProps {
@@ -348,11 +348,21 @@ export function PipelineBoard({
                       <td className="py-3 pr-4">
                         <div className="flex items-center gap-2">
                           <span title={dot.tip} className={`w-2 h-2 rounded-full shrink-0 ${dot.cls}`} />
-                          <span className="font-medium text-gray-900 dark:text-gray-100 truncate max-w-[180px]">{deal.title}</span>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[180px]">
+                              {deal.contact?.name ?? deal.company_name ?? deal.title}
+                            </p>
+                            {(deal.contact?.name || deal.company_name) && (
+                              <p className="text-[11px] text-gray-400 truncate max-w-[180px]">{deal.title}</p>
+                            )}
+                          </div>
                         </div>
                       </td>
-                      <td className="py-3 pr-4 text-xs text-gray-500 dark:text-gray-400 truncate max-w-[140px]">
-                        {deal.contact?.name ?? deal.company_name ?? '—'}
+                      <td className="py-3 pr-4 max-w-[160px]">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{deal.contact?.email ?? '—'}</p>
+                        {deal.contact?.phone && (
+                          <p className="text-[11px] text-gray-400 truncate">{deal.contact.phone}</p>
+                        )}
                       </td>
                       <td className="py-3 pr-4" onClick={e => e.stopPropagation()}>
                         {canWrite ? (
@@ -458,34 +468,45 @@ export function PipelineBoard({
                     <div className="flex items-start gap-2">
                       <GripVertical className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 mt-0.5 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1 group/title">
+                        <div className="flex items-start gap-1 group/title">
                           {/* Activity status dot */}
                           {(() => {
                             const dot = activityDot(deal.id, deal.created_at, dealLastActivity)
                             return (
                               <span
                                 title={dot.tip}
-                                className={`w-2 h-2 rounded-full shrink-0 ${dot.cls}`}
+                                className={`w-2 h-2 rounded-full shrink-0 mt-1 ${dot.cls}`}
                               />
                             )
                           })()}
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-snug flex-1">{deal.title}</p>
-                          {canWrite && (
-                            <button
-                              onClick={e => { e.stopPropagation(); setOpenEditOnDealId(deal.id); setSelectedDealId(deal.id) }}
-                              className="opacity-0 group-hover/title:opacity-100 p-0.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#15A4AE] rounded transition-all shrink-0"
-                              title="Edit deal"
-                            >
-                              <Pencil className="w-3 h-3" />
-                            </button>
-                          )}
+                          <div className="flex-1 min-w-0">
+                            {/* Contact name as primary title */}
+                            <div className="flex items-center gap-1">
+                              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 leading-snug flex-1 truncate">
+                                {deal.contact?.name ?? deal.company_name ?? deal.title}
+                              </p>
+                              {canWrite && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); setOpenEditOnDealId(deal.id); setSelectedDealId(deal.id) }}
+                                  className="opacity-0 group-hover/title:opacity-100 p-0.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#15A4AE] rounded transition-all shrink-0"
+                                  title="Edit deal"
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                            {/* Deal title as "service / interest" — only if a contact/company is shown above */}
+                            {(deal.contact?.name || deal.company_name) && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{deal.title}</p>
+                            )}
+                            {/* Email · Phone */}
+                            {(deal.contact?.email || deal.contact?.phone) && (
+                              <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 truncate">
+                                {[deal.contact.email, deal.contact.phone].filter(Boolean).join('  ·  ')}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        {deal.contact && (
-                          <p className="text-xs text-gray-400 mt-0.5 truncate">{deal.contact.name}</p>
-                        )}
-                        {deal.company_name && !deal.contact && (
-                          <p className="text-xs text-gray-400 mt-0.5 truncate">{deal.company_name}</p>
-                        )}
                         <div className="flex items-center justify-between mt-2 gap-2 flex-wrap">
                           {deal.value ? (
                             <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">

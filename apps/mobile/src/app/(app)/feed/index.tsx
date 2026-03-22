@@ -22,12 +22,11 @@ import type { FeedItem } from '@/types';
 
 type FilterTab = 'all' | 'bot' | 'email' | 'form' | 'ticket';
 
-const TABS: { key: FilterTab; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'bot', label: 'Bots' },
-  { key: 'email', label: 'Email' },
-  { key: 'form', label: 'Forms' },
-  { key: 'ticket', label: 'Tickets' },
+const FILTER_ICONS: { key: Exclude<FilterTab, 'all'>; icon: React.ComponentProps<typeof Ionicons>['name']; color: string }[] = [
+  { key: 'bot',    icon: 'hardware-chip-outline', color: '#15A4AE' },
+  { key: 'email',  icon: 'mail-outline',          color: '#3b82f6' },
+  { key: 'form',   icon: 'document-text-outline', color: '#8b5cf6' },
+  { key: 'ticket', icon: 'ticket-outline',         color: '#f59e0b' },
 ];
 
 export default function FeedScreen() {
@@ -91,6 +90,23 @@ export default function FeedScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Activity Feed</Text>
+        <View style={styles.filterIcons}>
+          {FILTER_ICONS.map(({ key, icon, color }) => {
+            const active = filter === key;
+            return (
+              <Pressable
+                key={key}
+                onPress={() => {
+                  setFilter(active ? 'all' : key);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+                style={[styles.filterIconBtn, active && { backgroundColor: color + '22', borderColor: color + '55' }]}
+              >
+                <Ionicons name={icon} size={18} color={active ? color : Colors.text.muted} />
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
 
       {/* Search */}
@@ -105,30 +121,6 @@ export default function FeedScreen() {
           clearButtonMode="while-editing"
         />
       </View>
-
-      {/* Filter tabs */}
-      <FlatList
-        data={TABS}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(t) => t.key}
-        contentContainerStyle={styles.tabs}
-        renderItem={({ item: tab }) => (
-          <Pressable
-            onPress={() => setFilter(tab.key)}
-            style={[styles.tab, filter === tab.key && styles.tabActive]}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                filter === tab.key && styles.tabTextActive,
-              ]}
-            >
-              {tab.label}
-            </Text>
-          </Pressable>
-        )}
-      />
 
       {/* Feed list */}
       {isLoading ? (
@@ -167,8 +159,19 @@ export default function FeedScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg.secondary },
-  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  title: { fontSize: 22, fontWeight: '700', color: Colors.text.primary },
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8, flexDirection: 'row', alignItems: 'center' },
+  title: { fontSize: 22, fontWeight: '700', color: Colors.text.primary, flex: 1 },
+  filterIcons: { flexDirection: 'row', gap: 6 },
+  filterIconBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.bg.card,
+  },
   searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -183,18 +186,6 @@ const styles = StyleSheet.create({
   },
   searchIcon: { marginRight: 8 },
   searchInput: { flex: 1, fontSize: 14, color: Colors.text.primary },
-  tabs: { paddingHorizontal: 14, paddingBottom: 8, gap: 6 },
-  tab: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: Colors.bg.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  tabActive: { backgroundColor: Colors.brand[500], borderColor: Colors.brand[500] },
-  tabText: { fontSize: 13, fontWeight: '500', color: Colors.text.secondary },
-  tabTextActive: { color: '#ffffff' },
   listContent: { paddingBottom: 20 },
   emptyContainer: { flex: 1 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80 },

@@ -55,7 +55,7 @@ export default async function PipelineBoardPage({
   // Determine deal filter:
   //   viewAs        → that user's deals only
   //   default (any role) → own deals + unassigned; assigned-to-others deals are hidden
-  const dealSelect = 'id, title, value, currency, status, stage_id, close_date, priority, company_name, created_at, contact:sage_contacts(id, name)'
+  const dealSelect = 'id, title, value, currency, status, stage_id, close_date, priority, company_name, created_at, contact:sage_contacts(id, name, email, phone)'
   const baseDealsQ = supabase.from('sage_deals').select(dealSelect).eq('pipeline_id', id).eq('workspace_id', workspaceId).order('created_at')
   const filteredDealsQ = viewAsUserId
     ? baseDealsQ.eq('owner_id', viewAsUserId)
@@ -83,7 +83,7 @@ export default async function PipelineBoardPage({
 
   const pipeline     = pipelineRaw      as SagePipeline
   const stages       = (stagesRaw       ?? []) as SagePipelineStage[]
-  const deals        = (dealsRaw        ?? []) as (SageDeal & { contact: Pick<SageContact, 'id' | 'name'> | null })[]
+  const deals        = (dealsRaw        ?? []) as (SageDeal & { contact: Pick<SageContact, 'id' | 'name' | 'email' | 'phone'> | null })[]
   const contacts     = (contactsRaw     ?? []) as Pick<SageContact, 'id' | 'name' | 'company_name'>[]
   const allPipelines = (allPipelinesRaw ?? []) as Pick<SagePipeline, 'id' | 'name'>[]
   const ownerName    = user.email ?? 'You'
