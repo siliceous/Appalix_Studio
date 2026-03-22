@@ -112,12 +112,12 @@ export function UpcomingPanel({ workspaceId, userId }: { workspaceId: string; us
           .order('due_at', { ascending: true })
           .limit(50),
 
-        // Reminders — filtered by user (created_by)
+        // Reminders — workspace-scoped, filter by user or NULL created_by
         supabase
           .from('sage_reminders')
-          .select('id, deal_id, title, note, due_at, sage_deals(title)')
+          .select('id, deal_id, title, note, due_at, created_by, sage_deals(title)')
           .eq('workspace_id', workspaceId)
-          .eq('created_by', userId)
+          .or(`created_by.eq.${userId},created_by.is.null`)
           .eq('is_sent', false)
           .order('due_at', { ascending: true })
           .limit(50),
