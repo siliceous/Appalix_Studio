@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/auth';
@@ -139,6 +139,21 @@ export default function DealsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const isManager = ROLE_RANK[(user?.role ?? 'employee') as WorkspaceRole] >= ROLE_RANK.manager;
+  const queryClient = useQueryClient();
+
+  // Real-time sync — invalidate deals list on any change to sage_deals in this workspace
+  useEffect(() => {
+    if (!user?.workspaceId) return;
+    const channel = supabase
+      .channel(`deals-list-${user.workspaceId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'sage_deals', filter: `workspace_id=eq.${user.workspaceId}` },
+        () => queryClient.invalidateQueries({ queryKey: ['deals-enriched'] }),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.workspaceId, queryClient]);
 
   const { data: meta, isLoading: metaLoading } = useQuery({
     queryKey: ['deals-meta', user?.workspaceId],

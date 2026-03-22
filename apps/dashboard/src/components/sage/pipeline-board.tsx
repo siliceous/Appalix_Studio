@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { Plus, GripVertical, Search, SlidersHorizontal, ArrowUpDown, Settings2, Pencil, LayoutList, KanbanSquare } from 'lucide-react'
 import { moveDeal } from '@/app/actions/sage'
 import { exportDeals } from '@/app/actions/csv-export'
@@ -75,6 +76,20 @@ export function PipelineBoard({
   const [showFilterMenu,   setShowFilterMenu]   = useState(false)
   const [filterPriorities, setFilterPriorities] = useState<FilterPriority[]>([])
   const [viewMode,         setViewMode]         = useState<'kanban' | 'list'>('kanban')
+
+  // Real-time sync — refresh board when any deal in this pipeline changes
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`pipeline-board-${pipelineId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'sage_deals', filter: `pipeline_id=eq.${pipelineId}` },
+        () => router.refresh(),
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [pipelineId, router])
 
   function formatCurrency(value: number | null, currency: string) {
     if (!value) return null

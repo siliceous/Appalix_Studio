@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -285,6 +285,28 @@ export default function DealDetailScreen() {
     queryFn: () => fetchWorkspaceMembers(user!.workspaceId),
     enabled: !!user?.workspaceId,
   });
+
+  // Real-time sync — deal record + activities
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`deal-detail-${id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'sage_deals', filter: `id=eq.${id}` },
+        () => queryClient.invalidateQueries({ queryKey: ['deal-detail', id] }),
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'sage_deal_activities', filter: `deal_id=eq.${id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['deal-tasks', id] });
+          queryClient.invalidateQueries({ queryKey: ['deal-act-feed', id] });
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id, queryClient]);
 
   const { data: reminders, refetch: refetchReminders } = useQuery({
     queryKey: ['deal-reminders', id],
