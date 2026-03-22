@@ -73,7 +73,7 @@ export default async function HomePage() {
   // Redirect logged-in users straight to the dashboard
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (user) redirect('/dashboard')
+  if (user) redirect('https://app.appalix.ai/dashboard')
 
   const admin = createAdminClient()
   const { data: integrationRow } = await admin
@@ -140,7 +140,7 @@ export default async function HomePage() {
             <FadeUp delay={0.3}>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
-                  href="/login"
+                  href="https://app.appalix.ai/login"
                   className="px-6 py-3 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors text-sm"
                 >
                   Start a 7 Day Free Trial
@@ -190,7 +190,7 @@ export default async function HomePage() {
               ))}
             </ul>
             <div className="flex gap-3">
-              <Link href="/login" className="px-5 py-2.5 bg-[#1a8c76] hover:bg-[#14705d] text-white text-sm font-medium rounded-xl transition-colors">
+              <Link href="https://app.appalix.ai/login" className="px-5 py-2.5 bg-[#1a8c76] hover:bg-[#14705d] text-white text-sm font-medium rounded-xl transition-colors">
                 Start Your Free Trial →
               </Link>
             </div>
@@ -437,7 +437,7 @@ export default async function HomePage() {
                 Join 500+ teams using Appalix to convert more visitors, capture more leads, and support customers around the clock.
               </p>
               <Link
-                href="/login"
+                href="https://app.appalix.ai/login"
                 className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors"
               >
                 Start a 7 Day Free Trial

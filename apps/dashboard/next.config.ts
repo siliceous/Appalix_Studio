@@ -3,10 +3,31 @@ import type { NextConfig } from 'next'
 const nextConfig: NextConfig = {
   async redirects() {
     return [
+      // appalix.ai (naked domain) → www
       {
         source: '/:path*',
+        has: [{ type: 'host', value: 'appalix.ai' }],
+        destination: 'https://www.appalix.ai/:path*',
+        permanent: true,
+      },
+      // app.appalix.ai root → login (skip marketing page on the app subdomain)
+      {
+        source: '/',
+        has: [{ type: 'host', value: 'app.appalix.ai' }],
+        destination: '/login',
+        permanent: false,
+      },
+      // www.appalix.ai dashboard links → app subdomain
+      {
+        source: '/dashboard/:path*',
         has: [{ type: 'host', value: 'www.appalix.ai' }],
-        destination: 'https://app.appalix.ai/:path*',
+        destination: 'https://app.appalix.ai/dashboard/:path*',
+        permanent: true,
+      },
+      {
+        source: '/sage/:path*',
+        has: [{ type: 'host', value: 'www.appalix.ai' }],
+        destination: 'https://app.appalix.ai/sage/:path*',
         permanent: true,
       },
     ]
