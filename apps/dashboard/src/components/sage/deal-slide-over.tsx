@@ -111,6 +111,7 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
   const [activities,    setActivities]    = useState<SageDealActivity[]>([])
   const [loading,       setLoading]       = useState(false)
   const [activeTab,     setActiveTab]     = useState<'overview' | 'activity'>('overview')
+  const [taskFilter,    setTaskFilter]    = useState<'all' | 'pending' | 'upcoming' | 'reminders'>('all')
   const [addType,       setAddType]       = useState<ActivityType>('note')
   const [showTypeMenu,  setShowTypeMenu]  = useState(false)
   const [showAddForm,   setShowAddForm]   = useState(false)
@@ -717,67 +718,123 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                     </div>
                   )}
 
-                  {/* Pending Tasks — overdue Set Activities */}
+                  {/* Pending Tasks + Upcoming Reminders — unified with filter tabs */}
                   {(() => {
                     const now = Date.now()
-                    const overdue = activities.filter(a =>
-                      a.due_at && !a.completed_at && new Date(a.due_at).getTime() < now
-                    ).sort((a, b) => new Date(a.due_at!).getTime() - new Date(b.due_at!).getTime())
 
-                    function overdueUrgency(dueAt: string) {
-                      const msOverdue = now - new Date(dueAt).getTime()
-                      const days = msOverdue / 86400000
-                      if (days > 3)  return { bar: 'bg-red-500',    text: 'text-red-600 dark:text-red-400',    label: 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20' }
-                      if (days > 1)  return { bar: 'bg-amber-500',  text: 'text-amber-600 dark:text-amber-400', label: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/25' }
-                      return           { bar: 'bg-yellow-400',  text: 'text-yellow-600 dark:text-yellow-400', label: 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-500/25' }
+                    type PendingItem =
+                      | { kind: 'task';     id: string; label: string; type: string; due_at: string }
+                      | { kind: 'reminder'; id: string; label: string; note: string | null; due_at: string }
+
+                    const taskItems: PendingItem[] = activities
+                      .filter(a => a.due_at && !a.completed_at)
+                      .map(a => ({ kind: 'task' as const, id: a.id, label: a.title || ACTIVITY_LABELS[a.type as ActivityType] || a.type, type: a.type, due_at: a.due_at! }))
+
+                    const reminderItems: PendingItem[] = reminders
+                      .map(r => ({ kind: 'reminder' as const, id: r.id, label: r.title, note: r.note, due_at: r.due_at }))
+
+                    const allItems = [...taskItems, ...reminderItems]
+                      .sort((a, b) => new Date(a.due_at).getTime() - new Date(b.due_at).getTime())
+
+                    const pendingItems  = allItems.filter(i => i.kind === 'task' && new Date(i.due_at).getTime() < now)
+                    const upcomingItems = allItems.filter(i => i.kind === 'task' && new Date(i.due_at).getTime() >= now)
+                    const overdueCount  = pendingItems.length
+
+                    const visibleItems =
+                      taskFilter === 'pending'   ? pendingItems :
+                      taskFilter === 'upcoming'  ? upcomingItems :
+                      taskFilter === 'reminders' ? reminderItems :
+                      allItems
+
+                    const counts = { all: allItems.length, pending: pendingItems.length, upcoming: upcomingItems.length, reminders: reminderItems.length }
+
+                    function itemStyle(dueAt: string) {
+                      const isOverdue = new Date(dueAt).getTime() < now
+                      if (!isOverdue) return { bar: 'bg-[#15A4AE]', text: 'text-[#15A4AE]', label: 'bg-[#15A4AE]/10 text-[#15A4AE] border border-[#15A4AE]/20' }
+                      const days = (now - new Date(dueAt).getTime()) / 86400000
+                      if (days > 3) return { bar: 'bg-red-500',   text: 'text-red-600 dark:text-red-400',   label: 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20' }
+                      if (days > 1) return { bar: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-400', label: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/25' }
+                      return         { bar: 'bg-yellow-400', text: 'text-yellow-600 dark:text-yellow-400', label: 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-500/25' }
                     }
 
                     return (
                       <div>
+                        {/* Header */}
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
-                            <AlertCircle className="w-3 h-3" /> Pending Tasks
-                            {overdue.length > 0 && (
-                              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400 text-[10px] font-bold">{overdue.length}</span>
+                            <AlertCircle className="w-3 h-3" /> Tasks &amp; Reminders
+                            {overdueCount > 0 && (
+                              <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400">
+                                {overdueCount} overdue
+                              </span>
                             )}
                           </p>
-                          {overdue.length > 0 && (
-                            <button
-                              onClick={() => setActiveTab('activity')}
-                              className="text-[10px] text-brand-600 dark:text-[#15A4AE] hover:underline flex items-center gap-0.5"
-                            >
-                              View all <ChevronRight className="w-3 h-3" />
-                            </button>
-                          )}
                         </div>
-                        {overdue.length === 0 ? (
-                          <p className="text-xs text-gray-400 dark:text-gray-500 italic">No overdue tasks — you&apos;re all caught up.</p>
+
+                        {/* Filter tabs */}
+                        <div className="flex border-b dark:border-white/8 mb-3 -mx-0.5">
+                          {(['all', 'pending', 'upcoming', 'reminders'] as const).map(f => (
+                            <button
+                              key={f}
+                              onClick={() => setTaskFilter(f)}
+                              className={`flex-1 px-1 py-2 text-[11px] font-semibold transition-colors flex items-center justify-center gap-1 ${
+                                taskFilter === f
+                                  ? 'text-brand-700 dark:text-[#15A4AE] border-b-2 border-brand-600 dark:border-[#15A4AE]'
+                                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                              }`}
+                            >
+                              {f.charAt(0).toUpperCase() + f.slice(1)}
+                              {counts[f] > 0 && (
+                                <span className={`text-[9px] px-1 py-0.5 rounded-full leading-none font-bold ${
+                                  f === 'pending' && counts[f] > 0
+                                    ? 'bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400'
+                                    : 'bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400'
+                                }`}>
+                                  {counts[f]}
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Items */}
+                        {visibleItems.length === 0 ? (
+                          <p className="text-xs text-gray-400 dark:text-gray-500 italic">Nothing here yet.</p>
                         ) : (
                           <div className="space-y-2">
-                            {overdue.map(act => {
-                              const Icon = ACTIVITY_ICONS[act.type as ActivityType] ?? FileText
-                              const urgency = overdueUrgency(act.due_at!)
+                            {visibleItems.map(item => {
+                              const style   = itemStyle(item.due_at)
+                              const overdue = new Date(item.due_at).getTime() < now
+                              const Icon    = item.kind === 'reminder'
+                                ? Bell
+                                : (ACTIVITY_ICONS[item.type as ActivityType] ?? FileText)
                               return (
-                                <div key={act.id} className="flex items-start gap-2.5 rounded-lg border dark:border-white/8 p-2.5 bg-gray-50 dark:bg-white/[0.02]">
-                                  <div className={`w-1 self-stretch rounded-full shrink-0 ${urgency.bar}`} />
+                                <div key={`${item.kind}-${item.id}`} className="flex items-start gap-2.5 rounded-lg border dark:border-white/8 p-2.5 bg-gray-50 dark:bg-white/[0.02]">
+                                  <div className={`w-1 self-stretch rounded-full shrink-0 ${style.bar}`} />
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-1.5 mb-0.5">
-                                      <Icon className={`w-3 h-3 shrink-0 ${urgency.text}`} />
-                                      <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate flex-1">
-                                        {act.title || ACTIVITY_LABELS[act.type as ActivityType]}
-                                      </p>
+                                      <Icon className={`w-3 h-3 shrink-0 ${style.text}`} />
+                                      <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate flex-1">{item.label}</p>
+                                      {item.kind === 'reminder' && (
+                                        <span className="text-[9px] px-1 py-0.5 rounded bg-gray-100 dark:bg-white/8 text-gray-400 dark:text-gray-500 shrink-0">reminder</span>
+                                      )}
                                     </div>
+                                    {item.kind === 'reminder' && item.note && (
+                                      <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate mb-1">{item.note}</p>
+                                    )}
                                     <div className="flex items-center justify-between gap-2 mt-1">
-                                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${urgency.label}`}>
-                                        Due {formatDate(act.due_at)}
+                                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${style.label}`}>
+                                        {overdue ? 'Overdue · ' : 'Due '}{formatDate(item.due_at)}
                                       </span>
-                                      <button
-                                        onClick={() => handleCompleteTask(act.id)}
-                                        disabled={isPending}
-                                        className="flex items-center gap-1 text-[10px] text-gray-400 hover:text-brand-600 dark:hover:text-[#15A4AE] transition-colors disabled:opacity-50"
-                                      >
-                                        <Check className="w-3 h-3" /> Done
-                                      </button>
+                                      {item.kind === 'task' && (
+                                        <button
+                                          onClick={() => handleCompleteTask(item.id)}
+                                          disabled={isPending}
+                                          className="flex items-center gap-1 text-[10px] text-gray-400 hover:text-brand-600 dark:hover:text-[#15A4AE] transition-colors disabled:opacity-50"
+                                        >
+                                          <Check className="w-3 h-3" /> Done
+                                        </button>
+                                      )}
                                     </div>
                                   </div>
                                 </div>

@@ -17,12 +17,12 @@ import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/stores/auth';
-import { fetchHomeDashboard, fetchFeedItems, fetchTasks, fetchWorkspaceMembers } from '@/lib/api';
+import { fetchHomeDashboard, fetchFeedItems, fetchTasks, fetchReminders, fetchWorkspaceMembers } from '@/lib/api';
 import { FeedCard } from '@/components/feed/FeedCard';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { Colors } from '@/constants/colors';
 import type { FeedItem, WorkspaceMember } from '@/types';
-import type { Task } from '@/lib/api';
+import type { Task, Reminder } from '@/lib/api';
 
 const ROLE_LABELS: Record<string, string> = {
   owner: 'Owner',
@@ -151,20 +151,47 @@ function KpiCard({ label, value, high, medium, icon, color, width }: KpiCardProp
   );
 }
 
+const TYPE_LABELS: Record<string, string> = {
+  call: 'Call', meeting: 'Meeting', task: 'Task', note: 'Note',
+};
+
+function ReminderCard({ reminder }: { reminder: Reminder }) {
+  const now = new Date();
+  const isOverdue = new Date(reminder.due_at) < now;
+  const dueLabel = new Date(reminder.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+  return (
+    <View style={taskStyles.card}>
+      <View style={taskStyles.cardLeft}>
+        <View style={[taskStyles.kindBadge, { backgroundColor: '#f59e0b20' }]}>
+          <Text style={[taskStyles.kindText, { color: '#f59e0b' }]}>Reminder</Text>
+        </View>
+        <Text style={taskStyles.title} numberOfLines={2}>{reminder.title}</Text>
+        <Text style={taskStyles.parent} numberOfLines={1}>{reminder.parentTitle}</Text>
+      </View>
+      <View style={taskStyles.cardRight}>
+        <Ionicons name="calendar-outline" size={12} color={isOverdue ? '#ef4444' : Colors.text.secondary} />
+        <Text style={[taskStyles.due, isOverdue && taskStyles.overdue]}>{dueLabel}</Text>
+      </View>
+    </View>
+  );
+}
+
 function TaskCard({ task }: { task: Task }) {
   const now = new Date();
   const isOverdue = !!task.due_at && new Date(task.due_at) < now;
   const dueLabel = task.due_at
     ? new Date(task.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : 'No due date';
+  const typeLabel = TYPE_LABELS[task.type] ?? task.type;
 
   return (
     <View style={taskStyles.card}>
       <View style={taskStyles.cardLeft}>
         <View style={[taskStyles.kindBadge, task.kind === 'deal' ? taskStyles.dealBadge : taskStyles.ticketBadge]}>
-          <Text style={taskStyles.kindText}>{task.kind === 'deal' ? 'Deal' : 'Ticket'}</Text>
+          <Text style={taskStyles.kindText}>{typeLabel}</Text>
         </View>
-        <Text style={taskStyles.title} numberOfLines={2}>{task.title ?? 'Untitled task'}</Text>
+        <Text style={taskStyles.title} numberOfLines={2}>{task.title ?? task.body ?? 'Untitled'}</Text>
         <Text style={taskStyles.parent} numberOfLines={1}>{task.parentTitle}</Text>
       </View>
       <View style={taskStyles.cardRight}>
@@ -211,6 +238,7 @@ export default function HomeScreen() {
   const [overviewCollapsed, setOverviewCollapsed] = useState(false);
   const [datePreset, setDatePreset] = useState<DatePreset>('today');
   const [activeTab, setActiveTab] = useState<'feed' | 'tasks'>('feed');
+  const [taskFilter, setTaskFilter] = useState<'all' | 'pending' | 'upcoming' | 'reminders'>('all');
   const [feedFilter, setFeedFilter] = useState<FeedFilter>(null);
   const [viewingAs, setViewingAs] = useState<WorkspaceMember | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -245,11 +273,18 @@ export default function HomeScreen() {
     enabled: !!user,
   });
 
+  const remindersQuery = useQuery({
+    queryKey: ['reminders', user?.workspaceId, user?.id],
+    queryFn: () => fetchReminders(user!.workspaceId, user!.id),
+    enabled: !!user,
+  });
+
   const onRefresh = useCallback(() => {
     dashQuery.refetch();
     feedQuery.refetch();
     tasksQuery.refetch();
-  }, [dashQuery, feedQuery, tasksQuery]);
+    remindersQuery.refetch();
+  }, [dashQuery, feedQuery, tasksQuery, remindersQuery]);
 
   const isRefreshing = dashQuery.isFetching || feedQuery.isFetching || tasksQuery.isFetching;
   const dash = dashQuery.data;
@@ -455,9 +490,9 @@ export default function HomeScreen() {
             <Text style={[styles.tabBtnText, activeTab === 'tasks' && styles.tabBtnTextActive]}>
               Tasks
             </Text>
-            {(tasksQuery.data?.length ?? 0) > 0 && (
+            {((tasksQuery.data?.length ?? 0) + (remindersQuery.data?.length ?? 0)) > 0 && (
               <View style={styles.tabBadge}>
-                <Text style={styles.tabBadgeText}>{tasksQuery.data!.length}</Text>
+                <Text style={styles.tabBadgeText}>{(tasksQuery.data?.length ?? 0) + (remindersQuery.data?.length ?? 0)}</Text>
               </View>
             )}
           </Pressable>
@@ -514,39 +549,92 @@ export default function HomeScreen() {
             )}
           </>
         ) : (
-          <>
-            {tasksQuery.isLoading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <SkeletonLoader key={i} width="100%" height={72} borderRadius={12} style={styles.feedSkeleton} />
-              ))
-            ) : (tasksQuery.data?.length ?? 0) === 0 ? (
-              <View style={styles.emptyState}>
-                <Ionicons name="checkmark-done-outline" size={40} color={Colors.brand[500]} />
-                <Text style={styles.emptyText}>No pending tasks!</Text>
-              </View>
-            ) : (
+          (() => {
+            const now = new Date();
+            const tasks = tasksQuery.data ?? [];
+            const reminders = remindersQuery.data ?? [];
+            const pendingTasks   = tasks.filter(t => t.due_at && new Date(t.due_at) < now);
+            const upcomingTasks  = tasks.filter(t => t.due_at && new Date(t.due_at) >= now);
+            const counts = {
+              all:       tasks.length + reminders.length,
+              pending:   pendingTasks.length,
+              upcoming:  upcomingTasks.length,
+              reminders: reminders.length,
+            };
+            const isLoading = tasksQuery.isLoading || remindersQuery.isLoading;
+
+            return (
               <>
-                {/* Overdue / no due date */}
-                {tasksQuery.data!.filter(t => !t.due_at || new Date(t.due_at) < new Date()).length > 0 && (
+                {/* Filter tabs */}
+                <View style={styles.taskFilterRow}>
+                  {([
+                    { key: 'all',       label: 'All',       color: '#3b82f6' },
+                    { key: 'pending',   label: 'Pending',   color: '#eab308' },
+                    { key: 'upcoming',  label: 'Upcoming',  color: '#22c55e' },
+                    { key: 'reminders', label: 'Reminders', color: '#8b5cf6' },
+                  ] as const).map(f => {
+                    const isActive = taskFilter === f.key;
+                    return (
+                      <Pressable
+                        key={f.key}
+                        onPress={() => setTaskFilter(f.key)}
+                        style={[
+                          styles.taskFilterBtn,
+                          { backgroundColor: isActive ? f.color : `${f.color}18` },
+                        ]}
+                      >
+                        <Text style={[styles.taskFilterText, { color: isActive ? '#fff' : f.color }]}>
+                          {f.label}
+                        </Text>
+                        {counts[f.key] > 0 && (
+                          <View style={[styles.taskFilterBadge, { backgroundColor: isActive ? '#ffffff40' : f.color }]}>
+                            <Text style={[styles.taskFilterBadgeText, { color: '#fff' }]}>{counts[f.key]}</Text>
+                          </View>
+                        )}
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
+                {isLoading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <SkeletonLoader key={i} width="100%" height={72} borderRadius={12} style={styles.feedSkeleton} />
+                  ))
+                ) : counts[taskFilter] === 0 ? (
+                  <View style={styles.emptyState}>
+                    <Ionicons name="checkmark-done-outline" size={40} color={Colors.brand[500]} />
+                    <Text style={styles.emptyText}>
+                      {taskFilter === 'all' ? 'No tasks or reminders!' : `No ${taskFilter} items.`}
+                    </Text>
+                  </View>
+                ) : (
                   <>
-                    <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Pending</Text>
-                    {tasksQuery.data!
-                      .filter(t => !t.due_at || new Date(t.due_at) < new Date())
-                      .map(t => <TaskCard key={t.id} task={t} />)}
-                  </>
-                )}
-                {/* Upcoming */}
-                {tasksQuery.data!.filter(t => t.due_at && new Date(t.due_at) >= new Date()).length > 0 && (
-                  <>
-                    <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Upcoming</Text>
-                    {tasksQuery.data!
-                      .filter(t => t.due_at && new Date(t.due_at) >= new Date())
-                      .map(t => <TaskCard key={t.id} task={t} />)}
+                    {/* Pending tasks */}
+                    {(taskFilter === 'all' || taskFilter === 'pending') && pendingTasks.length > 0 && (
+                      <>
+                        {taskFilter === 'all' && <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Pending</Text>}
+                        {pendingTasks.map(t => <TaskCard key={t.id} task={t} />)}
+                      </>
+                    )}
+                    {/* Upcoming tasks */}
+                    {(taskFilter === 'all' || taskFilter === 'upcoming') && upcomingTasks.length > 0 && (
+                      <>
+                        {taskFilter === 'all' && <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Upcoming</Text>}
+                        {upcomingTasks.map(t => <TaskCard key={t.id} task={t} />)}
+                      </>
+                    )}
+                    {/* Reminders */}
+                    {(taskFilter === 'all' || taskFilter === 'reminders') && reminders.length > 0 && (
+                      <>
+                        {taskFilter === 'all' && <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Reminders</Text>}
+                        {reminders.map(r => <ReminderCard key={r.id} reminder={r} />)}
+                      </>
+                    )}
                   </>
                 )}
               </>
-            )}
-          </>
+            );
+          })()
         )}
 
         <View style={styles.bottomPad} />
@@ -790,6 +878,42 @@ const styles = StyleSheet.create({
   },
   emptyState: { alignItems: 'center', paddingVertical: 32 },
   emptyText: { fontSize: 14, color: Colors.text.secondary, marginTop: 8 },
+  taskFilterRow: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginTop: 12,
+    backgroundColor: Colors.bg.card,
+    borderRadius: 12,
+    padding: 3,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: 2,
+  },
+  taskFilterBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 7,
+    borderRadius: 9,
+    gap: 4,
+  },
+  taskFilterText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  taskFilterBadge: {
+    borderRadius: 6,
+    minWidth: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  taskFilterBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
   bottomPad: { height: 24 },
   overviewLeft: { flexDirection: 'column', gap: 6 },
   datePresetRow: { flexDirection: 'row', gap: 4 },

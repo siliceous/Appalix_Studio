@@ -41,7 +41,7 @@ export default function SettingsScreen() {
     if (value) {
       const token = await registerForPushNotificationsAsync();
       if (token && user) {
-        await registerPushToken(user.id, token).catch(console.error);
+        await registerPushToken(user.id, user.workspaceId, token).catch(console.error);
         setPushEnabled(true);
       } else {
         // Permission denied — prompt user to open Settings

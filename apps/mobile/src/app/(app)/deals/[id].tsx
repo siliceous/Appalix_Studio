@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -181,8 +181,11 @@ export default function DealDetailScreen() {
 
   // Collapse state
   const [infoCollapsed, setInfoCollapsed] = useState(false);
+  const [overviewCollapsed, setOverviewCollapsed] = useState(true);
   const [activityCollapsed, setActivityCollapsed] = useState(true);
+  const [activityListExpanded, setActivityListExpanded] = useState(false);
   const [remindersOpen, setRemindersOpen] = useState(false);
+  const [remindersListExpanded, setRemindersListExpanded] = useState(false);
 
   // Pickers
   const [stagePickerOpen, setStagePickerOpen] = useState(false);
@@ -211,7 +214,13 @@ export default function DealDetailScreen() {
 
   // Reminders
   const [reminderTitle, setReminderTitle] = useState('');
-  const [reminderDate, setReminderDate] = useState('');
+  const [remCalPickerOpen, setRemCalPickerOpen] = useState(false);
+  const [remCalMonth, setRemCalMonth] = useState(() => new Date().getMonth());
+  const [remCalYear, setRemCalYear] = useState(() => new Date().getFullYear());
+  const [remCalSelectedDay, setRemCalSelectedDay] = useState<number | null>(null);
+  const [remCalHour, setRemCalHour] = useState('09');
+  const [remCalMinute, setRemCalMinute] = useState('00');
+  const [remCalAmPm, setRemCalAmPm] = useState<'AM' | 'PM'>('AM');
   const [savingReminder, setSavingReminder] = useState(false);
 
   // Activity forms
@@ -321,6 +330,11 @@ export default function DealDetailScreen() {
     },
     enabled: !!id,
   });
+
+  // Auto-open reminders section when reminders exist
+  useEffect(() => {
+    if (reminders && reminders.length > 0) setRemindersOpen(true);
+  }, [reminders?.length]);
 
   // ---------------------------------------------------------------------------
   // Handlers
@@ -519,18 +533,30 @@ export default function DealDetailScreen() {
   }
 
   async function handleAddReminder() {
-    if (!reminderTitle.trim() || !reminderDate.trim()) return;
+    if (!reminderTitle.trim() || remCalSelectedDay === null) return;
     setSavingReminder(true);
     try {
+      const h12 = Math.min(12, Math.max(1, parseInt(remCalHour) || 9));
+      const m = Math.min(59, Math.max(0, parseInt(remCalMinute) || 0));
+      const h24 = remCalAmPm === 'AM'
+        ? (h12 === 12 ? 0 : h12)
+        : (h12 === 12 ? 12 : h12 + 12);
+      const due = new Date(remCalYear, remCalMonth, remCalSelectedDay, h24, m).toISOString();
       await supabase.from('sage_reminders').insert({
         workspace_id: user!.workspaceId,
         deal_id: id,
         title: reminderTitle.trim(),
-        due_at: new Date(reminderDate.trim()).toISOString(),
+        due_at: due,
+        created_by: user!.id,
       });
       setReminderTitle('');
-      setReminderDate('');
+      setRemCalSelectedDay(null);
+      setRemCalHour('09');
+      setRemCalMinute('00');
+      setRemCalAmPm('AM');
       refetchReminders();
+      // Also invalidate the home screen reminders query so Tasks tab updates
+      queryClient.invalidateQueries({ queryKey: ['reminders'] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {
       Alert.alert('Error', 'Failed to add reminder.');
@@ -545,9 +571,33 @@ export default function DealDetailScreen() {
 
   const calDaysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   const calFirstDow = new Date(calYear, calMonth, 1).getDay();
+  const remCalDaysInMonth = new Date(remCalYear, remCalMonth + 1, 0).getDate();
+  const remCalFirstDow = new Date(remCalYear, remCalMonth, 1).getDay();
   const today = new Date();
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+  // Combined chronological activity list — must be declared before any early returns
+  // (React rules of hooks: no hooks after conditional returns)
+  const combinedItems = useMemo(() => {
+    const now = new Date();
+    const allTasks = tasks ?? [];
+    const allFeed = actFeedItems ?? [];
+
+    const futureTasks = allTasks
+      .filter((t) => !t.completed_at && !!t.due_at && new Date(t.due_at) > now)
+      .sort((a, b) => new Date(a.due_at!).getTime() - new Date(b.due_at!).getTime())
+      .map((t) => ({ ...t, _kind: 'future' as const, _sortDate: t.due_at! }));
+
+    const pastItems: (SageDealActivity & { _kind: 'past'; _sortDate: string })[] = [
+      ...allTasks
+        .filter((t) => t.completed_at || (!!t.due_at && new Date(t.due_at) <= now))
+        .map((t) => ({ ...t, _kind: 'past' as const, _sortDate: t.completed_at ?? t.due_at ?? t.created_at })),
+      ...allFeed.map((a) => ({ ...a, _kind: 'past' as const, _sortDate: a.created_at })),
+    ].sort((a, b) => new Date(b._sortDate).getTime() - new Date(a._sortDate).getTime());
+
+    return [...futureTasks, ...pastItems];
+  }, [tasks, actFeedItems]);
 
   // ---------------------------------------------------------------------------
   // Render
@@ -585,8 +635,6 @@ export default function DealDetailScreen() {
 
   const statusStyle = STATUS_STYLES[status];
   const currentStage = stages?.find((s) => s.id === deal.stage_id) ?? deal.stage;
-  const pendingTasks = (tasks ?? []).filter((t) => !t.completed_at);
-  const completedTasks = (tasks ?? []).filter((t) => t.completed_at);
   const assignedMember = (members ?? []).find((m) => m.userId === assignedTo);
   const createdOn = new Date(deal.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -687,52 +735,92 @@ export default function DealDetailScreen() {
           )}
         </View>
 
-        {/* Tasks + Lodge Activity */}
+        {/* Activity (tasks + feed, combined chronological) */}
         <View style={styles.section}>
+          {/* Section header — always visible */}
           <View style={[styles.summaryHeaderLeft, { marginBottom: 10 }]}>
-            <Ionicons name="checkmark-circle-outline" size={15} color={Colors.brand[500]} />
-            <Text style={styles.sectionLabel}>Tasks</Text>
-            {pendingTasks.length > 0 && (
+            <Ionicons name="pulse-outline" size={15} color={Colors.brand[500]} />
+            <Text style={styles.sectionLabel}>Activity</Text>
+            {combinedItems.length > 0 && (
               <View style={styles.taskCountBadge}>
-                <Text style={styles.taskCountText}>{pendingTasks.length}</Text>
+                <Text style={styles.taskCountText}>{combinedItems.length}</Text>
               </View>
             )}
           </View>
 
-          {pendingTasks.length === 0 && completedTasks.length === 0 ? (
-            <Text style={styles.emptyTaskText}>No tasks yet. Set an activity below.</Text>
-          ) : null}
-
-          {pendingTasks.map((t) => (
-            <View key={t.id} style={styles.taskRow}>
-              <Pressable onPress={() => handleCompleteTask(t.id)} style={styles.taskCheckbox}>
-                <Ionicons name="ellipse-outline" size={18} color={Colors.brand[500]} />
-              </Pressable>
-              <View style={styles.taskContent}>
-                <Text style={styles.taskTitle}>{t.title ?? t.body ?? '—'}</Text>
-                <Text style={styles.taskMeta}>
-                  {t.type.charAt(0).toUpperCase() + t.type.slice(1)}
-                  {t.due_at ? ` · ${new Date(t.due_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : ''}
-                </Text>
-              </View>
-            </View>
-          ))}
-
-          {completedTasks.length > 0 && (
+          {/* Unified list — 2 always visible, rest behind chevron */}
+          {combinedItems.length === 0 ? (
+            <Text style={styles.emptyTaskText}>No activity yet. Log something below.</Text>
+          ) : (
             <>
-              <Text style={styles.completedLabel}>Completed</Text>
-              {completedTasks.map((t) => (
-                <View key={t.id} style={[styles.taskRow, { opacity: 0.5 }]}>
-                  <Ionicons name="checkmark-circle" size={18} color={Colors.brand[500]} style={{ marginRight: 10 }} />
-                  <Text style={[styles.taskTitle, { textDecorationLine: 'line-through' }]}>
-                    {t.title ?? t.body ?? '—'}
+              {(activityListExpanded ? combinedItems : combinedItems.slice(0, 2)).map((item) => {
+                const isFuture = item._kind === 'future';
+                const isCompleted = !!item.completed_at;
+                const label = item.title ?? item.body ?? '—';
+                const typeCap = item.type.charAt(0).toUpperCase() + item.type.slice(1);
+                const dateStr = isFuture
+                  ? new Date(item.due_at!).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+                  : isCompleted
+                    ? new Date(item.completed_at!).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+                    : new Date(item.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+
+                if (isFuture) {
+                  return (
+                    <View key={item.id} style={styles.taskRow}>
+                      <Pressable onPress={() => handleCompleteTask(item.id)} style={styles.taskCheckbox}>
+                        <Ionicons name="ellipse-outline" size={18} color={Colors.brand[500]} />
+                      </Pressable>
+                      <View style={styles.taskContent}>
+                        <Text style={styles.taskTitle}>{label}</Text>
+                        <Text style={styles.taskMeta}>{typeCap} · Due {dateStr}</Text>
+                      </View>
+                    </View>
+                  );
+                }
+                if (isCompleted) {
+                  return (
+                    <View key={item.id} style={[styles.taskRow, { opacity: 0.5 }]}>
+                      <Ionicons name="checkmark-circle" size={18} color={Colors.brand[500]} style={{ marginRight: 10 }} />
+                      <View style={styles.taskContent}>
+                        <Text style={[styles.taskTitle, { textDecorationLine: 'line-through' }]}>{label}</Text>
+                        <Text style={styles.taskMeta}>{typeCap} · {dateStr}</Text>
+                      </View>
+                    </View>
+                  );
+                }
+                // Logged activity / note
+                return (
+                  <View key={item.id} style={styles.actFeedItem}>
+                    <View style={styles.actFeedDot} />
+                    <View style={styles.actFeedContent}>
+                      <Text style={styles.actFeedType}>{typeCap}</Text>
+                      {item.body ? <Text style={styles.actFeedBody}>{item.body}</Text> : null}
+                      <Text style={styles.actFeedTime}>{dateStr}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+
+              {combinedItems.length > 2 && (
+                <Pressable
+                  style={[styles.lodgeChevron, { marginTop: 4 }]}
+                  onPress={() => setActivityListExpanded((v) => !v)}
+                >
+                  <Ionicons
+                    name={activityListExpanded ? 'chevron-up' : 'chevron-down'}
+                    size={15}
+                    color={Colors.text.muted}
+                  />
+                  <Text style={[styles.lodgeChevronText, { color: Colors.text.muted }]}>
+                    {activityListExpanded ? 'Show less' : `Show ${combinedItems.length - 2} more`}
                   </Text>
-                </View>
-              ))}
+                </Pressable>
+              )}
             </>
           )}
 
-          <Pressable style={styles.lodgeChevron} onPress={() => setActivityCollapsed((v) => !v)}>
+          {/* Lodge an Activity (collapsible form) */}
+          <Pressable style={[styles.lodgeChevron, { marginTop: 12 }]} onPress={() => setActivityCollapsed((v) => !v)}>
             <Ionicons name="add-circle-outline" size={16} color={Colors.brand[500]} />
             <Text style={styles.lodgeChevronText}>Lodge an Activity</Text>
             <Ionicons name={activityCollapsed ? 'chevron-down' : 'chevron-up'} size={15} color={Colors.text.muted} style={{ marginLeft: 'auto' }} />
@@ -861,22 +949,43 @@ export default function DealDetailScreen() {
           {remindersOpen && (
             <>
               {(reminders ?? []).length === 0 ? (
-                <Text style={styles.emptyTaskText}>No upcoming reminders.</Text>
+                <Text style={[styles.emptyTaskText, { marginTop: 8 }]}>No upcoming reminders.</Text>
               ) : (
-                (reminders ?? []).map((r) => (
-                  <View key={r.id} style={styles.taskRow}>
-                    <Ionicons name="notifications-outline" size={16} color={Colors.brand[500]} style={{ marginRight: 10 }} />
-                    <View style={styles.taskContent}>
-                      <Text style={styles.taskTitle}>{r.title}</Text>
-                      <Text style={styles.taskMeta}>
-                        {new Date(r.due_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        {r.note ? `  ·  ${r.note}` : ''}
-                      </Text>
+                <>
+                  {(remindersListExpanded ? (reminders ?? []) : (reminders ?? []).slice(0, 2)).map((r) => (
+                    <View key={r.id} style={styles.taskRow}>
+                      <Ionicons name="notifications-outline" size={16} color={Colors.brand[500]} style={{ marginRight: 10 }} />
+                      <View style={styles.taskContent}>
+                        <Text style={styles.taskTitle}>{r.title}</Text>
+                        <Text style={styles.taskMeta}>
+                          {new Date(r.due_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {r.note ? `  ·  ${r.note}` : ''}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-                ))
+                  ))}
+                  {(reminders ?? []).length > 2 && (
+                    <Pressable
+                      style={[styles.lodgeChevron, { marginTop: 4 }]}
+                      onPress={() => setRemindersListExpanded((v) => !v)}
+                    >
+                      <Ionicons
+                        name={remindersListExpanded ? 'chevron-up' : 'chevron-down'}
+                        size={15}
+                        color={Colors.text.muted}
+                      />
+                      <Text style={[styles.lodgeChevronText, { color: Colors.text.muted }]}>
+                        {remindersListExpanded ? 'Show less' : `Show ${(reminders ?? []).length - 2} more`}
+                      </Text>
+                    </Pressable>
+                  )}
+                </>
               )}
-              <View style={{ marginTop: 12, gap: 8 }}>
+              <View style={[styles.activityFormCard, { marginTop: 12 }]}>
+                <View style={styles.activityFormHeader}>
+                  <Ionicons name="notifications-outline" size={14} color={Colors.brand[500]} />
+                  <Text style={styles.activityFormTitle}>New Reminder</Text>
+                </View>
                 <TextInput
                   style={styles.activityInput}
                   value={reminderTitle}
@@ -884,17 +993,25 @@ export default function DealDetailScreen() {
                   placeholder="Reminder title…"
                   placeholderTextColor={Colors.text.muted}
                 />
-                <TextInput
-                  style={styles.activityInput}
-                  value={reminderDate}
-                  onChangeText={setReminderDate}
-                  placeholder="Date (YYYY-MM-DD)"
-                  placeholderTextColor={Colors.text.muted}
-                />
+                <View style={styles.activityTypePills}>
+                  <Pressable
+                    style={[styles.activityTypePill, remCalSelectedDay !== null && styles.activityTypePillActive]}
+                    onPress={() => setRemCalPickerOpen(true)}
+                  >
+                    <Ionicons name="calendar-outline" size={13} color={remCalSelectedDay !== null ? Colors.brand[500] : Colors.text.secondary} />
+                    {remCalSelectedDay !== null ? (
+                      <Text style={[styles.activityTypePillText, styles.activityTypePillTextActive]}>
+                        {MONTHS[remCalMonth]} {remCalSelectedDay} · {remCalHour.padStart(2,'0')}:{remCalMinute.padStart(2,'0')} {remCalAmPm}
+                      </Text>
+                    ) : (
+                      <Text style={styles.activityTypePillText}>Pick date & time</Text>
+                    )}
+                  </Pressable>
+                </View>
                 <Pressable
-                  style={[styles.activitySaveBtn, (!reminderTitle.trim() || !reminderDate.trim() || savingReminder) && styles.btnDisabled]}
+                  style={[styles.activitySaveBtn, (!reminderTitle.trim() || remCalSelectedDay === null || savingReminder) && styles.btnDisabled]}
                   onPress={handleAddReminder}
-                  disabled={!reminderTitle.trim() || !reminderDate.trim() || savingReminder}
+                  disabled={!reminderTitle.trim() || remCalSelectedDay === null || savingReminder}
                 >
                   {savingReminder
                     ? <ActivityIndicator size="small" color="#fff" />
@@ -905,48 +1022,53 @@ export default function DealDetailScreen() {
           )}
         </View>
 
-        {/* Overview & Activity */}
+        {/* Overview */}
         <View style={styles.section}>
-          <View style={[styles.summaryHeaderLeft, { marginBottom: 10 }]}>
-            <Ionicons name="information-circle-outline" size={15} color={Colors.brand[500]} />
-            <Text style={styles.sectionLabel}>Overview</Text>
-          </View>
-          <View style={styles.detailGrid}>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailKey}>Status</Text>
-              <Text style={[styles.detailVal, { color: statusStyle.color, fontWeight: '600' }]}>{statusStyle.label}</Text>
+          <Pressable style={styles.summaryHeader} onPress={() => setOverviewCollapsed((v) => !v)}>
+            <View style={styles.summaryHeaderLeft}>
+              <Ionicons name="information-circle-outline" size={15} color={Colors.brand[500]} />
+              <Text style={styles.sectionLabel}>Overview</Text>
             </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailKey}>Value</Text>
-              <Text style={[styles.detailVal, { color: Colors.brand[500], fontWeight: '700' }]}>{formatValue(deal.value, deal.currency)}</Text>
-            </View>
-            {deal.close_date ? (
+            <Ionicons name={overviewCollapsed ? 'chevron-down' : 'chevron-up'} size={16} color={Colors.text.muted} />
+          </Pressable>
+          {!overviewCollapsed && (
+            <View style={[styles.detailGrid, { marginTop: 10 }]}>
               <View style={styles.detailRow}>
-                <Text style={styles.detailKey}>Close Date</Text>
-                <Text style={styles.detailVal}>{new Date(deal.close_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</Text>
+                <Text style={styles.detailKey}>Status</Text>
+                <Text style={[styles.detailVal, { color: statusStyle.color, fontWeight: '600' }]}>{statusStyle.label}</Text>
               </View>
-            ) : null}
-            {deal.win_percentage != null ? (
               <View style={styles.detailRow}>
-                <Text style={styles.detailKey}>Win %</Text>
-                <Text style={styles.detailVal}>{deal.win_percentage}%</Text>
+                <Text style={styles.detailKey}>Value</Text>
+                <Text style={[styles.detailVal, { color: Colors.brand[500], fontWeight: '700' }]}>{formatValue(deal.value, deal.currency)}</Text>
               </View>
-            ) : null}
-            {deal.lost_reason ? (
+              {deal.close_date ? (
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailKey}>Close Date</Text>
+                  <Text style={styles.detailVal}>{new Date(deal.close_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</Text>
+                </View>
+              ) : null}
+              {deal.win_percentage != null ? (
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailKey}>Win %</Text>
+                  <Text style={styles.detailVal}>{deal.win_percentage}%</Text>
+                </View>
+              ) : null}
+              {deal.lost_reason ? (
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailKey}>Lost Reason</Text>
+                  <Text style={[styles.detailVal, { color: '#ef4444' }]}>{deal.lost_reason}</Text>
+                </View>
+              ) : null}
               <View style={styles.detailRow}>
-                <Text style={styles.detailKey}>Lost Reason</Text>
-                <Text style={[styles.detailVal, { color: '#ef4444' }]}>{deal.lost_reason}</Text>
+                <Text style={styles.detailKey}>Created</Text>
+                <Text style={styles.detailVal}>{createdOn}</Text>
               </View>
-            ) : null}
-            <View style={styles.detailRow}>
-              <Text style={styles.detailKey}>Created</Text>
-              <Text style={styles.detailVal}>{createdOn}</Text>
+              <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
+                <Text style={styles.detailKey}>Owner</Text>
+                <Text style={styles.detailVal}>{assignedMember?.name ?? 'Unassigned'}</Text>
+              </View>
             </View>
-            <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
-              <Text style={styles.detailKey}>Owner</Text>
-              <Text style={styles.detailVal}>{assignedMember?.name ?? 'Unassigned'}</Text>
-            </View>
-          </View>
+          )}
         </View>
 
         {/* Description */}
@@ -956,30 +1078,6 @@ export default function DealDetailScreen() {
             <Text style={styles.descriptionText}>{deal.description}</Text>
           </View>
         ) : null}
-
-        {/* Activity Feed */}
-        <View style={styles.section}>
-          <View style={[styles.summaryHeaderLeft, { marginBottom: 10 }]}>
-            <Ionicons name="time-outline" size={15} color={Colors.brand[500]} />
-            <Text style={styles.sectionLabel}>Activity</Text>
-          </View>
-          {actFeedItems && actFeedItems.length > 0 ? (
-            actFeedItems.map((a) => (
-              <View key={a.id} style={styles.actFeedItem}>
-                <View style={styles.actFeedDot} />
-                <View style={styles.actFeedContent}>
-                  <Text style={styles.actFeedType}>{a.type.charAt(0).toUpperCase() + a.type.slice(1)}</Text>
-                  {a.body ? <Text style={styles.actFeedBody}>{a.body}</Text> : null}
-                  <Text style={styles.actFeedTime}>
-                    {new Date(a.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </Text>
-                </View>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.noActivityText}>No activities yet. Log a note, call, meeting, or task above.</Text>
-          )}
-        </View>
 
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -1194,6 +1292,97 @@ export default function DealDetailScreen() {
       </Modal>
 
       {/* Calendar Modal */}
+      {/* Reminder date + time picker */}
+      <Modal visible={remCalPickerOpen} transparent animationType="fade" onRequestClose={() => setRemCalPickerOpen(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setRemCalPickerOpen(false)}>
+          <View style={[styles.calCard, { paddingBottom: 16 }]}>
+            <View style={styles.calHeader}>
+              <Pressable onPress={() => { if (remCalMonth === 0) { setRemCalMonth(11); setRemCalYear(y => y - 1); } else setRemCalMonth(m => m - 1); }}>
+                <Ionicons name="chevron-back" size={20} color={Colors.text.primary} />
+              </Pressable>
+              <Text style={styles.calMonthLabel}>{MONTHS[remCalMonth]} {remCalYear}</Text>
+              <Pressable onPress={() => { if (remCalMonth === 11) { setRemCalMonth(0); setRemCalYear(y => y + 1); } else setRemCalMonth(m => m + 1); }}>
+                <Ionicons name="chevron-forward" size={20} color={Colors.text.primary} />
+              </Pressable>
+            </View>
+            <View style={styles.calRow}>
+              {DAYS.map((d) => <Text key={d} style={styles.calDayLabel}>{d}</Text>)}
+            </View>
+            {Array.from({ length: Math.ceil((remCalFirstDow + remCalDaysInMonth) / 7) }).map((_, week) => (
+              <View key={week} style={styles.calRow}>
+                {Array.from({ length: 7 }).map((_, dow) => {
+                  const dayNum = week * 7 + dow - remCalFirstDow + 1;
+                  const isValid = dayNum >= 1 && dayNum <= remCalDaysInMonth;
+                  const isPast = isValid && new Date(remCalYear, remCalMonth, dayNum) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                  const isToday = isValid && dayNum === today.getDate() && remCalMonth === today.getMonth() && remCalYear === today.getFullYear();
+                  const isSel = remCalSelectedDay === dayNum;
+                  return (
+                    <Pressable
+                      key={dow}
+                      disabled={!isValid || isPast}
+                      onPress={() => setRemCalSelectedDay(dayNum)}
+                      style={[styles.calDayCell, isSel && styles.calDayCellSelected, isToday && !isSel && styles.calDayCellToday]}
+                    >
+                      <Text style={[styles.calDayText, !isValid && { color: 'transparent' }, isPast && { color: Colors.text.muted }, isToday && !isSel && { color: Colors.brand[500], fontWeight: '700' }, isSel && { color: '#fff' }]}>
+                        {isValid ? dayNum : ''}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ))}
+            {/* Time picker */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: Colors.border }}>
+              <Ionicons name="time-outline" size={15} color={Colors.text.secondary} />
+              <TextInput
+                style={[styles.activityInput, { width: 52, textAlign: 'center', marginBottom: 0, paddingVertical: 6 }]}
+                value={remCalHour}
+                onChangeText={(v) => setRemCalHour(v.replace(/[^0-9]/g, '').slice(0, 2))}
+                keyboardType="number-pad"
+                maxLength={2}
+                placeholder="09"
+                placeholderTextColor={Colors.text.muted}
+              />
+              <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.text.primary }}>:</Text>
+              <TextInput
+                style={[styles.activityInput, { width: 52, textAlign: 'center', marginBottom: 0, paddingVertical: 6 }]}
+                value={remCalMinute}
+                onChangeText={(v) => setRemCalMinute(v.replace(/[^0-9]/g, '').slice(0, 2))}
+                keyboardType="number-pad"
+                maxLength={2}
+                placeholder="00"
+                placeholderTextColor={Colors.text.muted}
+              />
+              {/* AM / PM toggle */}
+              <View style={{ flexDirection: 'row', borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: Colors.border }}>
+                {(['AM', 'PM'] as const).map((period) => (
+                  <Pressable
+                    key={period}
+                    onPress={() => setRemCalAmPm(period)}
+                    style={{
+                      paddingHorizontal: 10,
+                      paddingVertical: 6,
+                      backgroundColor: remCalAmPm === period ? Colors.brand[500] : Colors.bg.card,
+                    }}
+                  >
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: remCalAmPm === period ? '#fff' : Colors.text.secondary }}>
+                      {period}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+            <Pressable
+              style={[styles.activitySaveBtn, { marginHorizontal: 16, marginTop: 12 }, remCalSelectedDay === null && styles.btnDisabled]}
+              onPress={() => { if (remCalSelectedDay !== null) setRemCalPickerOpen(false); }}
+              disabled={remCalSelectedDay === null}
+            >
+              <Text style={styles.activitySaveBtnText}>Done</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+
       <Modal visible={datePickerOpen} transparent animationType="fade" onRequestClose={() => setDatePickerOpen(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setDatePickerOpen(false)}>
           <View style={styles.calCard}>

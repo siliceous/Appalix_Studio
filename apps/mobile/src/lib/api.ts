@@ -368,6 +368,7 @@ export async function fetchWorkspaceMembers(workspaceId: string): Promise<Worksp
 
 export interface Task {
   id: string;
+  type: string;
   title: string | null;
   body: string | null;
   due_at: string | null;
@@ -468,17 +469,17 @@ export async function fetchTasks(workspaceId: string): Promise<Task[]> {
   const [dealRes, ticketRes] = await Promise.all([
     supabase
       .from('sage_deal_activities')
-      .select('id, title, body, due_at, created_at, deal_id, deal:sage_deals(id, title)')
+      .select('id, type, title, body, due_at, created_at, deal_id, deal:sage_deals(id, title)')
       .eq('workspace_id', workspaceId)
-      .eq('type', 'task')
+      .not('due_at', 'is', null)
       .is('completed_at', null)
       .order('due_at', { ascending: true })
       .limit(40),
     supabase
       .from('sage_ticket_activities')
-      .select('id, title, body, due_at, created_at, ticket_id, ticket:sage_tickets(id, title)')
+      .select('id, type, title, body, due_at, created_at, ticket_id, ticket:sage_tickets(id, title)')
       .eq('workspace_id', workspaceId)
-      .eq('type', 'task')
+      .not('due_at', 'is', null)
       .is('completed_at', null)
       .order('due_at', { ascending: true })
       .limit(40),
@@ -486,6 +487,7 @@ export async function fetchTasks(workspaceId: string): Promise<Task[]> {
 
   const dealTasks: Task[] = (dealRes.data ?? []).map((t: any) => ({
     id: t.id,
+    type: t.type,
     title: t.title,
     body: t.body,
     due_at: t.due_at,
@@ -497,6 +499,7 @@ export async function fetchTasks(workspaceId: string): Promise<Task[]> {
 
   const ticketTasks: Task[] = (ticketRes.data ?? []).map((t: any) => ({
     id: t.id,
+    type: t.type,
     title: t.title,
     body: t.body,
     due_at: t.due_at,
@@ -515,11 +518,44 @@ export async function fetchTasks(workspaceId: string): Promise<Task[]> {
 }
 
 // ---------------------------------------------------------------------------
+// Reminders
+// ---------------------------------------------------------------------------
+
+export interface Reminder {
+  id: string;
+  title: string;
+  note: string | null;
+  due_at: string;
+  deal_id: string;
+  parentTitle: string;
+}
+
+export async function fetchReminders(workspaceId: string, userId: string): Promise<Reminder[]> {
+  const { data } = await supabase
+    .from('sage_reminders')
+    .select('id, title, note, due_at, deal_id, sage_deals(title)')
+    .eq('workspace_id', workspaceId)
+    .eq('created_by', userId)
+    .eq('is_sent', false)
+    .order('due_at', { ascending: true })
+    .limit(40);
+
+  return ((data ?? []) as any[]).map((r) => ({
+    id: r.id,
+    title: r.title,
+    note: r.note,
+    due_at: r.due_at,
+    deal_id: r.deal_id,
+    parentTitle: r.sage_deals?.title ?? 'Deal',
+  }));
+}
+
+// ---------------------------------------------------------------------------
 // Push Tokens
 // ---------------------------------------------------------------------------
 
-export function registerPushToken(userId: string, token: string): Promise<void> {
-  return post<void>(`/api/notifications/push-token`, { userId, token });
+export function registerPushToken(userId: string, workspaceId: string, token: string): Promise<void> {
+  return post<void>(`/api/notifications/push-token`, { userId, workspaceId, token });
 }
 
 // ---------------------------------------------------------------------------

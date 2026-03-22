@@ -26,6 +26,8 @@ import { startIdleManager, stopIdleManager }        from './services/sage-email-
 import { reanalyzePendingEmails }                   from './services/sage-email-sync.js'
 import { analyzeConversationsForWorkspace }         from './services/conversation-analyze.js'
 import { runMailchimpTwoWaySync }                   from './services/mailchimp-two-way-sync.js'
+import { notificationRoutes }                       from './routes/notifications/index.js'
+import { pollDueNotifications }                     from './services/sage-notifications.js'
 
 const server = Fastify({
   logger: {
@@ -112,6 +114,9 @@ await server.register(sageEmailRoutes, { prefix: '/sage/emails' })
 // Bot conversation routes (AI analysis — service-key auth)
 await server.register(botRoutes,  { prefix: '/bots' })
 await server.register(formRoutes, { prefix: '/forms' })
+
+// Notification push-token registration
+await server.register(notificationRoutes, { prefix: '/notifications' })
 
 // ---------------------------------------------------------------
 // Error handler
@@ -259,6 +264,14 @@ try {
   // ---------------------------------------------------------------
   void runMailchimpTwoWaySync()
   setInterval(() => void runMailchimpTwoWaySync(), 5 * 60 * 1000)
+
+  // ---------------------------------------------------------------
+  // Activity & reminder pre-notification poller
+  // Fires push + email 15 minutes before any scheduled activity or
+  // reminder. Runs every 5 minutes so nothing is missed.
+  // ---------------------------------------------------------------
+  void pollDueNotifications()
+  setInterval(() => void pollDueNotifications(), 5 * 60 * 1000)
 
   // Graceful shutdown — release IMAP connections before process exits
   const shutdown = () => { stopIdleManager(); process.exit(0) }

@@ -917,7 +917,23 @@ export function EmailInbox({
                     </p>
                   </div>
                   {/* Action bar */}
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* Search bar */}
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-100 dark:bg-white/6 rounded-lg w-52">
+                      <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                      <input
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        placeholder="Search emails…"
+                        className="flex-1 text-xs bg-transparent text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none min-w-0"
+                      />
+                      {search && (
+                        <button onClick={() => setSearch('')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  <div className="flex items-center gap-1">
                     {selected.ai_priority && (
                       <span className={cn('flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wide border', PRIORITY_STYLE[selected.ai_priority])}>
                         <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT[selected.ai_priority])} />
@@ -973,6 +989,7 @@ export function EmailInbox({
                       className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-gray-400 hover:text-red-500 transition-colors">
                       <Trash2 className="w-4 h-4" />
                     </button>
+                  </div>
                   </div>
                 </div>
               </div>
