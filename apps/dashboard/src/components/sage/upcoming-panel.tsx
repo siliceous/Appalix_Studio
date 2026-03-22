@@ -173,7 +173,7 @@ export function UpcomingPanel({ workspaceId, userId }: { workspaceId: string; us
   const totalCount = items.length
 
   return (
-    <div className="bg-white dark:bg-[#232323] rounded-2xl border dark:border-white/8 overflow-hidden">
+    <div className="bg-white dark:bg-[#232323] rounded-2xl border dark:border-white/8 overflow-hidden flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center gap-2 px-5 py-4 border-b dark:border-white/8">
         <Calendar className="w-4 h-4 text-[#15A4AE]" />
@@ -212,7 +212,7 @@ export function UpcomingPanel({ workspaceId, userId }: { workspaceId: string; us
           <p className="text-sm text-gray-400 dark:text-gray-500">No {tab === 'all' ? 'tasks or reminders' : tab}</p>
         </div>
       ) : (
-        <div className="divide-y dark:divide-white/6 overflow-y-auto max-h-[480px]">
+        <div className="divide-y dark:divide-white/6 overflow-y-auto flex-1">
           {filtered.map(item => {
             const label = item.kind === 'activity'
               ? (item.title ?? item.body ?? TYPE_LABELS[item.type] ?? item.type)

@@ -2265,7 +2265,7 @@ export function SageDashboardClient({
         </div>
 
         {/* Right: tasks & reminders */}
-        <div className="xl:col-span-1">
+        <div className="xl:col-span-1 flex flex-col">
           <UpcomingPanel workspaceId={workspaceId} userId={currentUserId ?? ''} />
         </div>
       </div>
