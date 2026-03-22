@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import {
   Mail, MessageSquare, FileText, Ticket as TicketIcon,
-  Plus, Kanban, CheckSquare, Zap, RefreshCw, Calendar,
+  Plus, Kanban, Zap, RefreshCw, Calendar,
   ChevronDown, X, ExternalLink, CheckCircle2, User,
   Phone, Building2, Sparkles, LayoutList, LayoutGrid,
   Send, Reply, Loader2, ArrowLeft, Maximize2, Minimize2,
@@ -18,6 +18,7 @@ import {
 import { timeAgo } from '@/lib/utils'
 import { sendEmail, scheduleMeetingFromEmail, getEmailSignature, updateEmailPriority, enhanceEmailReply } from '@/app/actions/sage-emails'
 import { EmailComposeModal } from '@/components/dashboard/email-compose-modal'
+import { UpcomingPanel } from '@/components/sage/upcoming-panel'
 import { updateAutoSetting, dismissFeedItem, runAutoBackfill, setDefaultPipeline } from '@/app/actions/sage-auto-settings'
 import type { BackfillResultItem } from '@/app/actions/sage-auto-settings'
 import { getWorkspacePipelines, dashboardAddLead, dashboardAddTicket, batchMatchContacts } from '@/app/actions/sage-triage'
@@ -62,8 +63,6 @@ interface RawEmail   { id: string; from_name: string | null; from_address: strin
 interface RawBot     { id: string; title: string | null; platform: string | null; message_count: number; last_activity_at: string; ai_priority: string | null; bot: { name: string } | null; ai_entities?: Record<string, string> | null }
 interface RawLead    { id: string; name: string; email: string | null; phone: string | null; company: string | null; lead_score: string | null; source_platform: string; created_at: string }
 interface RawTicket  { id: string; title: string; priority: string; status: string; created_at: string; contact: { name: string; email: string | null; phone: string | null } | null }
-interface RawTask       { id: string; title: string | null; body: string | null; due_at: string | null; deal_id: string; created_at: string; deal: { id: string; title: string; pipeline_id: string | null } | null }
-interface RawTicketTask { id: string; title: string | null; body: string | null; due_at: string | null; ticket_id: string; created_at: string; ticket: { id: string; title: string } | null }
 
 type TItem =
   | { kind: 'email';  data: RawEmail;  time: string }
@@ -1345,12 +1344,8 @@ export function SageDashboardClient({
   const [bots,       setBots]       = useState<RawBot[]>([])
   const [forms,      setForms]      = useState<RawLead[]>([])
   const [tickets,    setTickets]    = useState<RawTicket[]>([])
-  const [tasks,        setTasks]        = useState<RawTask[]>([])
-  const [ticketTasks,  setTicketTasks]  = useState<RawTicketTask[]>([])
   const [popup,      setPopup]      = useState<PopupState | null>(null)
-  const [doneBusy,   setDoneBusy]   = useState<string | null>(null)
   const [feedView,    setFeedView]   = useState<'list' | 'grid'>('list')
-  const [taskView,    setTaskView]   = useState<'list' | 'grid'>('list')
   const [showFeedCal, setShowFeedCal] = useState(false)
   const feedCalRef = useRef<HTMLDivElement>(null)
   const [topType,     setTopType]    = useState<'email' | 'bot' | 'form' | 'ticket' | null>(null)
@@ -1444,8 +1439,6 @@ export function SageDashboardClient({
     setLoading(true)
     const { from, to } = getRange(dateRange, customFrom, customTo)
     const supabase = createClient()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sbAny = supabase as any
 
     // Roles below admin see a scoped subset of data:
     //   manager  — own data + employees below them
@@ -1511,18 +1504,9 @@ export function SageDashboardClient({
         else if (visibleUserIds.length > 1)  q = (q as any).in('owner_id', visibleUserIds)
         return q
       })(),
-      sbAny.from('sage_deal_activities')
-        .select('id, title, body, due_at, deal_id, created_at, deal:sage_deals(id, title, pipeline_id)')
-        .eq('workspace_id', workspaceId).eq('type', 'task').is('completed_at', null)
-        .order('due_at', { ascending: true }).limit(40),
-      sbAny.from('sage_ticket_activities')
-        .select('id, title, body, due_at, ticket_id, created_at, ticket:sage_tickets(id, title)')
-        .eq('workspace_id', workspaceId).eq('type', 'task').is('completed_at', null)
-        .order('due_at', { ascending: true }).limit(40),
-    ]).then(([eR, bR, fR, tR, xR, xtR]) => {
+    ]).then(([eR, bR, fR, tR]) => {
       console.log('[dash:then]', 'cancelled=', cancelled, '| tickets=', tR.data?.length ?? 0, tR.error ? `ERR:${tR.error.message}` : 'ok')
       if (tR.error)  console.error('[dash:tickets-err]', tR.error)
-      if (xtR.error) console.error('[dash:ticket-tasks-err]', xtR.error)
       if (cancelled) return
       const newEmails  = (eR.data  ?? []) as RawEmail[]
       const newBots    = (bR.data  ?? []) as RawBot[]
@@ -1532,8 +1516,6 @@ export function SageDashboardClient({
       setBots(newBots)
       setForms(newForms)
       setTickets(newTickets)
-      setTasks((xR.data   ?? []) as RawTask[])
-      setTicketTasks((xtR.data ?? []) as RawTicketTask[])
       setLoading(false)
 
       // Batch contact match — runs once after feed loads, no loading spinner needed
@@ -1556,30 +1538,6 @@ export function SageDashboardClient({
 
     return () => { cancelled = true }
   }, [dateRange, customFrom, customTo, workspaceId, viewAsUserId])
-
-  // Mark task done
-  async function markTaskDone(taskId: string, e: React.MouseEvent) {
-    e.preventDefault(); e.stopPropagation()
-    setDoneBusy(taskId)
-    const supabase = createClient()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from('sage_deal_activities')
-      .update({ completed_at: new Date().toISOString() }).eq('id', taskId)
-    setTasks(prev => prev.filter(t => t.id !== taskId))
-    setDoneBusy(null)
-  }
-
-  // Mark ticket task done
-  async function markTicketTaskDone(taskId: string, e: React.MouseEvent) {
-    e.preventDefault(); e.stopPropagation()
-    setDoneBusy(taskId)
-    const supabase = createClient()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from('sage_ticket_activities')
-      .update({ completed_at: new Date().toISOString() }).eq('id', taskId)
-    setTicketTasks(prev => prev.filter(t => t.id !== taskId))
-    setDoneBusy(null)
-  }
 
   // ── Visible (non-dismissed) subsets — used by both donuts and timeline ───
   const visEmails  = useMemo(() => emails.filter(e  => !dismissedIds.has(`email-${e.id}`)),   [emails,   dismissedIds])
@@ -1618,8 +1576,6 @@ export function SageDashboardClient({
       return new Date(b.time).getTime() - new Date(a.time).getTime()
     })
   }, [visEmails, visBots, visForms, visTickets, feedView])
-
-  const overdue = (due: string | null) => !!due && new Date(due) < new Date()
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -2308,164 +2264,9 @@ export function SageDashboardClient({
           )}
         </div>
 
-        {/* Right: pending + upcoming tasks */}
-        <div className="xl:col-span-1 bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col">
-          <div className="px-5 py-4 border-b dark:border-white/8 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CheckSquare className="w-4 h-4 text-gray-400" />
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Tasks</h2>
-              {(tasks.length + ticketTasks.length) > 0 && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400">{tasks.length + ticketTasks.length}</span>
-              )}
-            </div>
-            <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/8 rounded-lg p-0.5">
-              <button
-                onClick={() => setTaskView('list')}
-                title="List view"
-                className={`p-1.5 rounded-md transition-colors ${taskView === 'list' ? 'bg-white dark:bg-white/15 text-gray-700 dark:text-gray-200 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
-              >
-                <LayoutList className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setTaskView('grid')}
-                title="Grid view"
-                className={`p-1.5 rounded-md transition-colors ${taskView === 'grid' ? 'bg-white dark:bg-white/15 text-gray-700 dark:text-gray-200 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
-              >
-                <LayoutGrid className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-24"><RefreshCw className="w-5 h-5 text-gray-300 animate-spin" /></div>
-          ) : tasks.length === 0 && ticketTasks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center px-5">
-              <CheckSquare className="w-8 h-8 text-gray-200 dark:text-gray-700 mx-auto mb-2" />
-              <p className="text-sm text-gray-400">All caught up!</p>
-            </div>
-          ) : (() => {
-            // Normalise into a single shape for rendering
-            type AnyTask = { id: string; title: string | null; body: string | null; due_at: string | null; kind: 'deal' | 'ticket'; href: string; subtitle: string | null }
-            const allTasks: AnyTask[] = [
-              ...tasks.map(t => ({
-                id: t.id, title: t.title, body: t.body, due_at: t.due_at, kind: 'deal' as const,
-                href: t.deal?.pipeline_id ? `/sage/pipelines/${t.deal.pipeline_id}?deal=${t.deal_id}` : '/sage/pipelines',
-                subtitle: t.deal?.title ?? null,
-              })),
-              ...ticketTasks.map(t => ({
-                id: t.id, title: t.title, body: t.body, due_at: t.due_at, kind: 'ticket' as const,
-                href: '/dashboard/tickets',
-                subtitle: t.ticket?.title ?? null,
-              })),
-            ]
-            // Pending = overdue OR no due date. Upcoming = future due date.
-            const isPending = (t: AnyTask) => !t.due_at || overdue(t.due_at)
-            const pendingTasks  = allTasks.filter(t => isPending(t)).sort((a, b) => {
-              if (!a.due_at && !b.due_at) return 0
-              if (!a.due_at) return 1   // no date goes after overdue
-              if (!b.due_at) return -1
-              return new Date(a.due_at).getTime() - new Date(b.due_at).getTime() // oldest first
-            })
-            const upcomingTasks = allTasks.filter(t => !isPending(t)).sort((a, b) =>
-              new Date(a.due_at!).getTime() - new Date(b.due_at!).getTime() // soonest first
-            )
-
-            const renderTask = (task: AnyTask, onDone: (e: React.MouseEvent) => void) => (
-              <div key={task.id} className="flex items-start gap-0 px-5 py-4 group hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
-                <Link href={task.href} className="flex-1 min-w-0 pr-2">
-                  {task.kind === 'ticket' && (
-                    <span className="inline-block text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 mb-0.5">Ticket</span>
-                  )}
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
-                    {task.title ?? 'Untitled task'}
-                  </p>
-                  {task.subtitle && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{task.subtitle}</p>
-                  )}
-                  {task.body && (
-                    <p className="text-[11px] text-gray-400 italic truncate mt-0.5">{task.body}</p>
-                  )}
-                  {task.due_at && (
-                    <span className={`flex items-center gap-1 text-xs font-medium mt-1 ${overdue(task.due_at) ? 'text-red-500' : 'text-gray-400'}`}>
-                      <Calendar className="w-3 h-3" />
-                      {new Date(task.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      {overdue(task.due_at) && ' · overdue'}
-                    </span>
-                  )}
-                </Link>
-                <button
-                  onClick={onDone}
-                  disabled={doneBusy === task.id}
-                  title="Mark as done"
-                  className="shrink-0 w-5 h-5 mt-0.5 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 hover:text-green-600 text-transparent transition-colors disabled:opacity-50"
-                >
-                  {doneBusy === task.id
-                    ? <RefreshCw className="w-3 h-3 text-gray-400 animate-spin" />
-                    : <CheckCircle2 className="w-3 h-3" />}
-                </button>
-              </div>
-            )
-
-            // Grid view: group by source kind
-            if (taskView === 'grid') {
-              const groups = ([
-                { kind: 'deal'   as const, label: 'Deal Tasks',   color: 'text-[#15A4AE]',   badgeClass: 'bg-[#15A4AE]/10 text-[#15A4AE]',         tasks: allTasks.filter(t => t.kind === 'deal') },
-                { kind: 'ticket' as const, label: 'Ticket Tasks', color: 'text-amber-600 dark:text-amber-400', badgeClass: 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400', tasks: allTasks.filter(t => t.kind === 'ticket') },
-              ] as { kind: AnyTask['kind']; label: string; color: string; badgeClass: string; tasks: AnyTask[] }[]).filter(g => g.tasks.length > 0)
-
-              return (
-                <div className="overflow-y-auto max-h-[680px] p-4 grid grid-cols-1 gap-3">
-                  {groups.map(group => (
-                    <div key={group.kind} className="bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-100 dark:border-white/8 overflow-hidden">
-                      <div className="px-4 py-2.5 flex items-center justify-between border-b border-gray-100 dark:border-white/8">
-                        <span className={`text-xs font-semibold ${group.color}`}>{group.label}</span>
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${group.badgeClass}`}>{group.tasks.length}</span>
-                      </div>
-                      <div className="divide-y divide-gray-100 dark:divide-white/6">
-                        {group.tasks.map(task => renderTask(task, e =>
-                          task.kind === 'deal' ? markTaskDone(task.id, e) : markTicketTaskDone(task.id, e)
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )
-            }
-
-            // List view (default): chronological with Pending / Upcoming sections
-            return (
-              <div className="overflow-y-auto max-h-[680px]">
-                {/* Pending */}
-                {pendingTasks.length > 0 && (
-                  <>
-                    <div className="px-5 py-2 bg-gray-50 dark:bg-white/[0.02] border-b dark:border-white/8 flex items-center justify-between">
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Pending</span>
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-500/10 text-red-500">{pendingTasks.length}</span>
-                    </div>
-                    <div className="divide-y dark:divide-white/8">
-                      {pendingTasks.map(task => renderTask(task, e =>
-                        task.kind === 'deal' ? markTaskDone(task.id, e) : markTicketTaskDone(task.id, e)
-                      ))}
-                    </div>
-                  </>
-                )}
-                {/* Upcoming */}
-                {upcomingTasks.length > 0 && (
-                  <>
-                    <div className="px-5 py-2 bg-gray-50 dark:bg-white/[0.02] border-b dark:border-white/8 border-t dark:border-t-white/8 flex items-center justify-between">
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Upcoming</span>
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400">{upcomingTasks.length}</span>
-                    </div>
-                    <div className="divide-y dark:divide-white/8">
-                      {upcomingTasks.map(task => renderTask(task, e =>
-                        task.kind === 'deal' ? markTaskDone(task.id, e) : markTicketTaskDone(task.id, e)
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            )
-          })()}
+        {/* Right: tasks & reminders */}
+        <div className="xl:col-span-1">
+          <UpcomingPanel workspaceId={workspaceId} userId={currentUserId ?? ''} />
         </div>
       </div>
     </>
