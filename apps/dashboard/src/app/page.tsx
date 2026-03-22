@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -68,6 +70,11 @@ const FEATURES = [
 
 
 export default async function HomePage() {
+  // Redirect logged-in users straight to the dashboard
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) redirect('/dashboard')
+
   const admin = createAdminClient()
   const { data: integrationRow } = await admin
     .from('integrations')

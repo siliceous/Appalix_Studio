@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import {
   Mail, AlertCircle, ArrowRight, Sparkles,
   Plus, RefreshCw, UserPlus,
-  Check, X, ChevronRight, ChevronDown, Loader2, Trash2,
+  Check, X, ChevronRight, ChevronDown, Loader2, Trash2, Search,
   Phone, Globe, Tag, Brain,
   Calendar, MapPin, Users, Clock,
   Maximize2, Minimize2, ArrowLeft, Reply,
@@ -927,6 +927,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
   const [analyzeMsg,      setAnalyzeMsg]      = useState<string | null>(null)
   const [selectedIds,       setSelectedIds]       = useState<Set<string>>(new Set())
   const [priorityOverrides, setPriorityOverrides] = useState<Map<string, string>>(new Map())
+  const [search,            setSearch]            = useState('')
 
   function handlePriorityOverride(emailId: string, priority: string) {
     setPriorityOverrides(prev => new Map(prev).set(emailId, priority))
@@ -1164,7 +1165,17 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
     })
   }
 
-  const visible         = triageEmails.filter(t => !dismissed.has(t.email.id))
+  const searchLower = search.trim().toLowerCase()
+  const visible         = triageEmails.filter(t => {
+    if (dismissed.has(t.email.id)) return false
+    if (!searchLower) return true
+    return (
+      (t.email.from_name ?? '').toLowerCase().includes(searchLower) ||
+      t.email.from_address.toLowerCase().includes(searchLower) ||
+      (t.email.subject ?? '').toLowerCase().includes(searchLower) ||
+      (t.email.ai_summary ?? '').toLowerCase().includes(searchLower)
+    )
+  })
   const highEmails      = visible.filter(t => effP(t) === 'high')
   const medEmails       = visible.filter(t => effP(t) === 'medium')
   const lowEmails       = visible.filter(t => effP(t) === 'low')
@@ -1253,8 +1264,8 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
 
         {/* Header */}
         <div className="px-4 py-3 border-b dark:border-white/8 shrink-0">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 shrink-0">
               <Mail className="w-4 h-4 text-blue-500 shrink-0" />
               <div className="min-w-0">
                 <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Triage</h2>
@@ -1263,7 +1274,22 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-1">
+            {/* Search */}
+            <div className="flex-1 flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-white/6 rounded-lg min-w-0">
+              <Search className="w-3 h-3 text-gray-400 shrink-0" />
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search…"
+                className="flex-1 bg-transparent text-[11px] text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 outline-none min-w-0"
+              />
+              {search && (
+                <button onClick={() => setSearch('')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 shrink-0">
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
               {selectedIds.size > 0 && (
                 <button
                   onClick={handleDeleteSelected}
@@ -1331,6 +1357,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
               {syncMsg ?? analyzeMsg}
             </p>
           )}
+
         </div>
 
         {/* Priority-sorted list */}
