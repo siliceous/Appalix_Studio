@@ -60,7 +60,9 @@ export function PipelinePickerModal({ prefill, onSuccess, onClose }: Props) {
         pipelineId,
         stageId,
       })
-      if (result.error) {
+      if (result.existingDeal) {
+        onSuccess('A deal already exists for this contact')
+      } else if (result.error) {
         onSuccess(`Error: ${result.error}`)
       } else {
         onSuccess(`Deal added to ${result.pipelineName}`)

@@ -736,7 +736,7 @@ export async function createDealFromContext(data: {
   stageId: string
   conversationId?: string
   submissionId?: string
-}): Promise<{ dealId?: string; pipelineName?: string; error?: string }> {
+}): Promise<{ dealId?: string; pipelineName?: string; existingDeal?: boolean; error?: string }> {
   const workspaceId = await getWorkspaceId()
   if (!workspaceId) return { error: 'Not authenticated' }
   const admin = createAdminClient()
@@ -756,6 +756,19 @@ export async function createDealFromContext(data: {
   }
   if (existing) {
     contactId = existing.id
+
+    // Check if a deal already exists for this contact — avoid duplicates
+    const { data: existingDeal } = await admin.from('sage_deals')
+      .select('id, title')
+      .eq('workspace_id', workspaceId)
+      .eq('contact_id', contactId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (existingDeal) {
+      const d = existingDeal as { id: string; title: string }
+      return { dealId: d.id, pipelineName: 'existing', existingDeal: true }
+    }
   } else {
     const { data: newContact, error: cErr } = await admin.from('sage_contacts').insert({
       workspace_id: workspaceId,
