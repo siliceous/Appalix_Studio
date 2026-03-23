@@ -319,7 +319,7 @@ export function TicketDetailClient({ ticket, allTickets, activities: initialActi
 
         {/* ── LEFT PANEL — ticket list ──────────────────────────────────────── */}
         <div className={cn(
-          'flex flex-col bg-white dark:bg-[#1c1c1c] border-r border-gray-200 dark:border-white/8 shrink-0 transition-all duration-200 overflow-hidden',
+          'flex flex-col bg-gray-50 dark:bg-[#181818] border-r border-gray-200 dark:border-white/8 shrink-0 transition-all duration-200 overflow-hidden',
           leftCollapsed ? 'w-10' : 'w-64',
         )}>
           {leftCollapsed ? (
