@@ -918,6 +918,15 @@ export async function deleteTicket(id: string) {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
 
+  // Fetch contact email before deleting so we can reset source records
+  const { data: ticketRow } = await admin
+    .from('sage_tickets')
+    .select('contact_id')
+    .eq('id', id)
+    .eq('workspace_id', workspaceId)
+    .single()
+  const contactId = (ticketRow as { contact_id: string | null } | null)?.contact_id
+
   const { error } = await admin
     .from('sage_tickets')
     .delete()
@@ -925,20 +934,71 @@ export async function deleteTicket(id: string) {
     .eq('workspace_id', workspaceId)
 
   if (error) throw new Error(error.message)
+
+  // Reset action_type on form submissions that were actioned as tickets
+  if (contactId) {
+    const { data: contact } = await admin
+      .from('sage_contacts')
+      .select('email')
+      .eq('id', contactId)
+      .single()
+    const email = (contact as { email: string | null } | null)?.email
+    if (email) {
+      try {
+        await admin.from('sage_form_submissions')
+          .update({ action_type: null, actioned_at: null })
+          .eq('workspace_id', workspaceId)
+          .eq('action_type', 'ticket')
+          .or(`fields->>email.ilike.${email},ai_entities->>email.ilike.${email}`)
+      } catch { /* non-critical */ }
+    }
+  }
+
   revalidatePath('/sage/tickets')
+  revalidatePath('/dashboard/forms')
+  revalidatePath('/dashboard/bots')
 }
 
 export async function deleteTickets(ids: string[]) {
   if (!ids.length) return
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
+
+  // Fetch contact emails before deleting to reset source form submissions
+  const { data: ticketRows } = await admin
+    .from('sage_tickets')
+    .select('contact_id')
+    .in('id', ids)
+    .eq('workspace_id', workspaceId)
+  const contactIds = [...new Set((ticketRows ?? []).map((r: { contact_id: string | null }) => r.contact_id).filter(Boolean))] as string[]
+
   const { error } = await admin
     .from('sage_tickets')
     .delete()
     .in('id', ids)
     .eq('workspace_id', workspaceId)
   if (error) throw new Error(error.message)
+
+  if (contactIds.length > 0) {
+    const { data: contacts } = await admin
+      .from('sage_contacts')
+      .select('email')
+      .in('id', contactIds)
+    const emails = (contacts ?? []).map((c: { email: string | null }) => c.email).filter(Boolean) as string[]
+    for (const email of emails) {
+      try {
+        await admin.from('sage_form_submissions')
+          .update({ action_type: null, actioned_at: null })
+          .eq('workspace_id', workspaceId)
+          .eq('action_type', 'ticket')
+          .or(`fields->>email.ilike.${email},ai_entities->>email.ilike.${email}`)
+      } catch { /* non-critical */ }
+    }
+  }
+
   revalidatePath('/sage/tickets')
+  revalidatePath('/dashboard/forms')
+  revalidatePath('/dashboard/bots')
 }
 
 export async function renameTicket(id: string, title: string): Promise<{ error?: string }> {

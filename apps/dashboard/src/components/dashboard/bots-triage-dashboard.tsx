@@ -8,7 +8,8 @@ import {
   Brain, Check, X, ChevronRight, Loader2,
   UserPlus, Ticket, Sparkles, Plus, Phone, Tag, Pencil, Trash2,
 } from 'lucide-react'
-import { triageCreateLead, triageCreateTicket } from '@/app/actions/sage-triage'
+import { triageCreateTicket } from '@/app/actions/sage-triage'
+import { PipelinePickerModal } from '@/components/sage/pipeline-picker-modal'
 import { analyzeConversations, renameConversation, deleteConversations } from '@/app/actions/bot-conversations'
 import type { Conversation } from '@/lib/types'
 import { timeAgo, PLATFORM_META, cn } from '@/lib/utils'
@@ -292,6 +293,7 @@ export function BotTriageDashboard({ triageConversations }: Props) {
   const [selectedId,       setSelectedId]       = useState<string>('')
   const [selectedBotName,  setSelectedBotName]  = useState<string | null>(null)
   const [checkedIds,       setCheckedIds]       = useState<Set<string>>(new Set())
+  const [showDealPicker,   setShowDealPicker]   = useState<TriageConversation | null>(null)
   const [isPending,          startTransition]          = useTransition()
   const [isAnalyzing,        startAnalyzeTransition]   = useTransition()
   const [isDeleting,         startDeleteTransition]    = useTransition()
@@ -402,33 +404,10 @@ const [mDealTitle, setMDealTitle] = useState('')
     setModalMode(mode)
   }
 
-  // Create lead directly from ai_entities — no modal
+  // Open pipeline picker for lead creation; open ticket modal for tickets
   function handleAction(tc: TriageConversation, mode: 'lead' | 'ticket') {
     if (mode === 'ticket') { openModal(tc, 'ticket'); return }
-    const c = tc.conversation
-    const entities = c.ai_entities as { name?: string; email?: string; phone?: string; product_interest?: string } | null
-    if (!entities?.name && !entities?.email && !entities?.phone) {
-      setModalError('No contact data found — analyse this conversation first.')
-      return
-    }
-    startTransition(async () => {
-      setModalError(null)
-      const result = await triageCreateLead({
-        name:           entities?.name ?? '',
-        email:          entities?.email ?? '',
-        phone:          entities?.phone,
-        dealTitle:      entities?.product_interest ?? c.title ?? `Chat via ${tc.botName}`,
-        notes:          c.ai_summary ?? undefined,
-        conversationId: c.id,
-        source:         'chat',
-      })
-      if (!result.error) {
-        setActioned(prev => new Map(prev).set(c.id, 'Lead created'))
-        setTimeout(() => dismiss(c.id), 1500)
-      } else {
-        setModalError(result.error ?? 'Failed to create lead')
-      }
-    })
+    setShowDealPicker(tc)
   }
 
   function handleModalSubmit() {
@@ -734,6 +713,27 @@ const [mDealTitle, setMDealTitle] = useState('')
           </>
         )}
       </div>
+
+      {showDealPicker && (
+        <PipelinePickerModal
+          prefill={{
+            title:          showDealPicker.conversation.ai_entities?.product_interest
+                              ?? showDealPicker.conversation.title
+                              ?? `Chat via ${showDealPicker.botName}`,
+            contactName:    showDealPicker.conversation.ai_entities?.name  ?? '',
+            contactEmail:   showDealPicker.conversation.ai_entities?.email ?? '',
+            contactPhone:   showDealPicker.conversation.ai_entities?.phone ?? undefined,
+            notes:          showDealPicker.conversation.ai_summary ?? undefined,
+            source:         'chat',
+            conversationId: showDealPicker.conversation.id,
+          }}
+          onSuccess={(msg) => {
+            setActioned(prev => new Map(prev).set(showDealPicker.conversation.id, msg))
+            setTimeout(() => dismiss(showDealPicker.conversation.id), 2000)
+          }}
+          onClose={() => setShowDealPicker(null)}
+        />
+      )}
     </div>
   )
 }

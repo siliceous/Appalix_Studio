@@ -9,10 +9,11 @@ import {
 } from 'lucide-react'
 import {
   deleteForm, analyzeFormSubmissions,
-  formSubmissionCreateLead, formSubmissionCreateTicket, markSubmissionActioned,
+  formSubmissionCreateTicket, markSubmissionActioned,
   type SageForm, type SageFormSubmission,
 } from '@/app/actions/sage-forms'
 import { EmailComposeModal } from '@/components/dashboard/email-compose-modal'
+import { PipelinePickerModal } from '@/components/sage/pipeline-picker-modal'
 import { timeAgo, cn } from '@/lib/utils'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -57,6 +58,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
   const [isAnalyzing,    setIsAnalyzing]     = useState(false)
   const [actionResult,   setActionResult]    = useState<Map<string, string>>(new Map())
   const [showEmailModal, setShowEmailModal]  = useState(false)
+  const [showDealPicker, setShowDealPicker]  = useState(false)
   const detailRef = useRef<HTMLDivElement>(null)
 
   const formSubmissions = submissions
@@ -103,18 +105,9 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
     if (selectedFormId === formId) setSelectedFormId(forms.find(f => f.id !== formId)?.id ?? null)
   }
 
-  async function handleCreateLead() {
+  function handleCreateLead() {
     if (!selected) return
-    startTransition(async () => {
-      const res = await formSubmissionCreateLead(selected)
-      if (res.error) {
-        setActionResult(prev => new Map(prev).set(selected.id, `Error: ${res.error}`))
-      } else {
-        setDone(prev => new Set(prev).add(selected.id))
-        setActionResult(prev => new Map(prev).set(selected.id, 'Lead created'))
-        setSelectedId(formSubmissions.find(s => s.id !== selected.id)?.id ?? null)
-      }
-    })
+    setShowDealPicker(true)
   }
 
   async function handleCreateTicket() {
@@ -522,6 +515,32 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
           </div>
         </div>
       )}
+
+      {showDealPicker && selected && (() => {
+        const contactName  = selected.ai_entities?.name  ?? selected.fields.name  ?? 'Anonymous'
+        const contactEmail = selected.ai_entities?.email ?? selected.fields.email ?? ''
+        const contactPhone = selected.ai_entities?.phone ?? selected.fields.phone ?? selected.fields.phone_number
+        const form = forms.find(f => f.id === selected.form_id)
+        return (
+          <PipelinePickerModal
+            prefill={{
+              title:        `${contactName} — ${form?.name ?? 'Form submission'}`,
+              contactName,
+              contactEmail,
+              contactPhone: contactPhone ?? undefined,
+              notes:        selected.ai_summary ?? undefined,
+              source:       'form',
+              submissionId: selected.id,
+            }}
+            onSuccess={(msg) => {
+              setActionResult(prev => new Map(prev).set(selected.id, msg))
+              setDone(prev => new Set(prev).add(selected.id))
+              setSelectedId(formSubmissions.find(s => s.id !== selected.id)?.id ?? null)
+            }}
+            onClose={() => setShowDealPicker(false)}
+          />
+        )
+      })()}
     </div>
   )
 }

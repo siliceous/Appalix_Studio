@@ -692,3 +692,116 @@ export async function batchMatchContacts(
     return nullResult
   }
 }
+
+export async function getPipelinesForPicker(): Promise<{
+  id: string
+  name: string
+  stages: { id: string; name: string }[]
+}[]> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return []
+  const admin = createAdminClient()
+  const { data: pipelines } = await admin
+    .from('sage_pipelines')
+    .select('id, name')
+    .eq('workspace_id', workspaceId)
+    .order('created_at', { ascending: true })
+  if (!pipelines?.length) return []
+  const ids = (pipelines as { id: string; name: string }[]).map(p => p.id)
+  const { data: stages } = await admin
+    .from('sage_pipeline_stages')
+    .select('id, name, pipeline_id')
+    .in('pipeline_id', ids)
+    .order('position', { ascending: true })
+  const stageMap = new Map<string, { id: string; name: string }[]>()
+  for (const s of (stages ?? []) as { id: string; name: string; pipeline_id: string }[]) {
+    if (!stageMap.has(s.pipeline_id)) stageMap.set(s.pipeline_id, [])
+    stageMap.get(s.pipeline_id)!.push({ id: s.id, name: s.name })
+  }
+  return (pipelines as { id: string; name: string }[]).map(p => ({
+    id: p.id,
+    name: p.name,
+    stages: stageMap.get(p.id) ?? [],
+  }))
+}
+
+export async function createDealFromContext(data: {
+  title: string
+  contactName: string
+  contactEmail: string
+  contactPhone?: string
+  notes?: string
+  source: 'chat' | 'email' | 'form'
+  pipelineId: string
+  stageId: string
+  conversationId?: string
+  submissionId?: string
+}): Promise<{ dealId?: string; pipelineName?: string; error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { error: 'Not authenticated' }
+  const admin = createAdminClient()
+
+  type CR = { id: string }
+  let contactId: string
+  let existing: CR | null = null
+  if (data.contactEmail) {
+    const { data: byEmail } = await admin.from('sage_contacts').select('id')
+      .eq('workspace_id', workspaceId).ilike('email', data.contactEmail).limit(1).maybeSingle()
+    if (byEmail) existing = byEmail as CR
+  }
+  if (!existing && data.contactName) {
+    const { data: byName } = await admin.from('sage_contacts').select('id')
+      .eq('workspace_id', workspaceId).ilike('name', data.contactName.trim()).limit(1).maybeSingle()
+    if (byName) existing = byName as CR
+  }
+  if (existing) {
+    contactId = existing.id
+  } else {
+    const { data: newContact, error: cErr } = await admin.from('sage_contacts').insert({
+      workspace_id: workspaceId,
+      name: data.contactName || data.contactEmail,
+      email: data.contactEmail || null,
+      phone: data.contactPhone || null,
+    }).select('id').single()
+    if (cErr || !newContact) return { error: cErr?.message ?? 'Failed to create contact' }
+    contactId = (newContact as CR).id
+  }
+
+  const { data: pipelineRow } = await admin.from('sage_pipelines').select('name').eq('id', data.pipelineId).single()
+  const pipelineName = (pipelineRow as { name: string } | null)?.name ?? 'Pipeline'
+
+  const { data: deal, error: dealErr } = await admin.from('sage_deals').insert({
+    workspace_id: workspaceId,
+    pipeline_id: data.pipelineId,
+    stage_id: data.stageId,
+    contact_id: contactId,
+    title: data.title,
+    source: data.source,
+    source_conversation_id: data.conversationId ?? null,
+    status: 'open',
+    currency: 'USD',
+    tags: [],
+    visibility: 'everyone',
+    description: data.notes ?? null,
+  }).select('id').single()
+  if (dealErr || !deal) return { error: dealErr?.message ?? 'Failed to create deal' }
+  const dealId = (deal as { id: string }).id
+
+  await logActivity(workspaceId, 'deal', dealId, 'deal_created', { source: `${data.source}_triage` })
+
+  // Mark source record so the "Deal created" pill appears
+  if (data.submissionId) {
+    try {
+      await admin.from('sage_form_submissions')
+        .update({ action_type: 'lead', actioned_at: new Date().toISOString() })
+        .eq('id', data.submissionId)
+    } catch { /* non-critical */ }
+  }
+
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/bots')
+  revalidatePath('/dashboard/forms')
+  revalidatePath('/sage/pipelines')
+
+  return { dealId, pipelineName }
+}

@@ -5,14 +5,15 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   MessageSquare, Download, Search, X, Pencil, Trash2, ArrowLeft, Loader2,
-  UserPlus, Ticket, Send,
+  UserPlus, Ticket, Send, CheckCircle,
 } from 'lucide-react'
 import { EmailComposeModal } from '@/components/dashboard/email-compose-modal'
+import { PipelinePickerModal } from '@/components/sage/pipeline-picker-modal'
 import { PLATFORM_META, timeAgo, formatDate } from '@/lib/utils'
 import {
   updateConversationPriority, updateConversationStatus,
   assignConversation, renameConversation, deleteConversation,
-  conversationCreateDeal, conversationCreateTicket,
+  conversationCreateTicket,
 } from '@/app/actions/conversation'
 import type { ConvRow } from '@/app/(dashboard)/conversations/page'
 
@@ -91,8 +92,10 @@ export function ConversationPanelClient({
   const [localStatus,   setLocalStatus]   = React.useState(current.status ?? 'active')
   const [localAssign,   setLocalAssign]   = React.useState<string | null>(current.assigned_to ?? null)
   const [saving,        setSaving]        = React.useState<'priority' | 'status' | 'assign' | null>(null)
-  const [actionLoading, setActionLoading] = React.useState<'deal' | 'ticket' | null>(null)
+  const [actionLoading, setActionLoading] = React.useState<'ticket' | null>(null)
   const [showEmailModal, setShowEmailModal] = React.useState(false)
+  const [showDealPicker, setShowDealPicker] = React.useState(false)
+  const [notification, setNotification] = React.useState<string | null>(null)
   const customerEmail = current.ai_entities?.email ?? null
   const customerName  = current.ai_entities?.name  ?? null
 
@@ -132,12 +135,9 @@ export function ConversationPanelClient({
       router.push('/dashboard/bots')
     })
   }
-  async function handleCreateDeal() {
-    setActionLoading('deal')
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await conversationCreateDeal(current as any)
-    setActionLoading(null)
-    router.refresh()
+  function showNotification(msg: string) {
+    setNotification(msg)
+    setTimeout(() => setNotification(null), 5000)
   }
   async function handleCreateTicket() {
     setActionLoading('ticket')
@@ -385,11 +385,10 @@ export function ConversationPanelClient({
                 Add Ticket
               </button>
               <button
-                onClick={handleCreateDeal}
-                disabled={actionLoading === 'deal'}
-                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg border border-blue-200 dark:border-blue-500/20 transition-colors disabled:opacity-60"
+                onClick={() => setShowDealPicker(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg border border-blue-200 dark:border-blue-500/20 transition-colors"
               >
-                {actionLoading === 'deal' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
+                <UserPlus className="w-3.5 h-3.5" />
                 Add a Deal
               </button>
             </div>

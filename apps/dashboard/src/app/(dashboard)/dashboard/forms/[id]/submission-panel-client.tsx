@@ -5,14 +5,15 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Search, X, ArrowLeft, Download, Pencil, Trash2, Loader2,
-  UserPlus, Ticket, ClipboardList, Send,
+  UserPlus, Ticket, ClipboardList, Send, CheckCircle,
 } from 'lucide-react'
 import { EmailComposeModal } from '@/components/dashboard/email-compose-modal'
+import { PipelinePickerModal } from '@/components/sage/pipeline-picker-modal'
 import { timeAgo, formatDate } from '@/lib/utils'
 import {
   updateSubmissionPriority, updateSubmissionAssignedTo,
   updateSubmissionName, markSubmissionActioned,
-  formSubmissionCreateLead, formSubmissionCreateTicket,
+  formSubmissionCreateTicket,
   analyzeFormSubmissions,
 } from '@/app/actions/sage-forms'
 import type { SageFormSubmission, SageForm } from '@/app/actions/sage-forms'
@@ -60,9 +61,16 @@ export function SubmissionPanelClient({
   const [localPriority, setLocalPriority] = React.useState(current.ai_priority ?? '')
   const [localAssign,   setLocalAssign]   = React.useState(current.assigned_to ?? '')
   const [saving,        setSaving]        = React.useState<'priority' | 'assign' | null>(null)
-  const [actionLoading, setActionLoading] = React.useState<'deal' | 'ticket' | 'analyse' | null>(null)
+  const [actionLoading, setActionLoading] = React.useState<'ticket' | 'analyse' | null>(null)
   const [analyseMsg,    setAnalyseMsg]    = React.useState<string | null>(null)
   const [showEmailModal, setShowEmailModal] = React.useState(false)
+  const [showDealPicker, setShowDealPicker] = React.useState(false)
+  const [notification,   setNotification]  = React.useState<string | null>(null)
+
+  function showNotification(msg: string) {
+    setNotification(msg)
+    setTimeout(() => setNotification(null), 5000)
+  }
 
   const currentForm = forms.find(f => f.id === current.form_id) ?? null
   const contactName  = current.ai_entities?.name  ?? current.fields.name  ?? 'Anonymous'
@@ -111,18 +119,16 @@ export function SubmissionPanelClient({
     })
   }
 
-  async function handleCreateDeal() {
-    setActionLoading('deal')
-    await formSubmissionCreateLead(current)
-    setActionLoading(null)
-    router.refresh()
-  }
-
   async function handleCreateTicket() {
     setActionLoading('ticket')
-    await formSubmissionCreateTicket(current)
+    const res = await formSubmissionCreateTicket(current)
     setActionLoading(null)
-    router.refresh()
+    if (res?.error) {
+      showNotification(`Error: ${res.error}`)
+    } else {
+      showNotification('Ticket created')
+      router.refresh()
+    }
   }
 
   async function handleAnalyse() {
@@ -273,9 +279,9 @@ export function SubmissionPanelClient({
                 {actionLoading === 'ticket' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Ticket className="w-3.5 h-3.5" />}
                 Add Ticket
               </button>
-              <button onClick={handleCreateDeal} disabled={actionLoading === 'deal'}
-                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg border border-blue-200 dark:border-blue-500/20 transition-colors disabled:opacity-60">
-                {actionLoading === 'deal' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
+              <button onClick={() => setShowDealPicker(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg border border-blue-200 dark:border-blue-500/20 transition-colors">
+                <UserPlus className="w-3.5 h-3.5" />
                 Add a Deal
               </button>
             </div>
@@ -320,7 +326,7 @@ export function SubmissionPanelClient({
         <div className="p-4 space-y-5">
 
           {/* Status pills */}
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5 items-center">
             {current.source_platform && (
               <span className="inline-flex items-center text-xs px-2.5 py-1 rounded-full font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">
                 {current.source_platform}
@@ -339,6 +345,13 @@ export function SubmissionPanelClient({
               <span className="inline-flex items-center text-xs px-2.5 py-1 rounded-full font-medium bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400 border border-green-200 dark:border-green-500/20">New</span>
             )}
           </div>
+
+          {notification && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#15A4AE]/10 border border-[#15A4AE]/20 text-[#15A4AE] text-xs font-medium">
+              <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+              {notification}
+            </div>
+          )}
 
           {current.ai_summary && (
             <div>
@@ -420,6 +433,22 @@ export function SubmissionPanelClient({
           subject={`Re: ${currentForm?.name ?? 'Your enquiry'}`}
           context={current.ai_summary ?? undefined}
           onClose={() => setShowEmailModal(false)}
+        />
+      )}
+
+      {showDealPicker && (
+        <PipelinePickerModal
+          prefill={{
+            title:        `${contactName} — ${currentForm?.name ?? 'Form submission'}`,
+            contactName:  contactName ?? '',
+            contactEmail: contactEmail ?? '',
+            contactPhone: contactPhone ?? undefined,
+            notes:        current.ai_summary ?? undefined,
+            source:       'form',
+            submissionId: current.id,
+          }}
+          onSuccess={(msg) => { showNotification(msg); router.refresh() }}
+          onClose={() => setShowDealPicker(false)}
         />
       )}
     </div>

@@ -7,6 +7,7 @@ import {
   Mail, RefreshCw, Send, Sparkles, Star, Inbox,
   Loader2, AlertCircle, Paperclip, Receipt, FileText, X, ArrowRight,
   Pencil, Search, Trash2, Reply, Forward, FolderInput, Calendar,
+  UserPlus, Ticket, CheckCircle,
 } from 'lucide-react'
 import {
   syncEmails, quickCheckEmails, sendEmail, rewriteEmail,
@@ -14,6 +15,8 @@ import {
   fetchStripeInvoices, fetchStripeInvoicePDF, generateProposalPDF,
   reanalyzeEmails,
 } from '@/app/actions/sage-emails'
+import { triageCreateTicket } from '@/app/actions/sage-triage'
+import { PipelinePickerModal } from '@/components/sage/pipeline-picker-modal'
 import type { SageEmail } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -174,6 +177,14 @@ export function EmailInbox({
   const [proposalError,    setProposalError]    = useState<string | null>(null)
   const [showQuotedIds,     setShowQuotedIds]     = useState<Set<string>>(new Set())
   const [selectedThreadKey, setSelectedThreadKey] = useState<string | null>(null)
+  const [showDealPicker,    setShowDealPicker]    = useState(false)
+  const [notification,      setNotification]      = useState<string | null>(null)
+  const [isCreatingTicket,  startTicketTransition] = useTransition()
+
+  function showNotification(msg: string) {
+    setNotification(msg)
+    setTimeout(() => setNotification(null), 5000)
+  }
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -1116,6 +1127,46 @@ export function EmailInbox({
                 <Sparkles className="w-3.5 h-3.5 text-brand-500 dark:text-[#15A4AE]" />
                 <p className="text-xs font-bold text-gray-700 dark:text-gray-300">AI Insights</p>
               </div>
+
+              {notification && (
+                <div className="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-[#15A4AE]/10 border border-[#15A4AE]/20 text-[#15A4AE] text-[11px] font-medium">
+                  <CheckCircle className="w-3 h-3 shrink-0" />
+                  {notification}
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div className="space-y-2">
+                <button
+                  onClick={() => setShowDealPicker(true)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg border border-blue-200 dark:border-blue-500/20 transition-colors"
+                >
+                  <UserPlus className="w-3.5 h-3.5" /> Add a Deal
+                </button>
+                <button
+                  disabled={isCreatingTicket}
+                  onClick={() => {
+                    const senderName  = selected.from_name  ?? selected.from_address ?? ''
+                    const senderEmail = selected.from_address ?? ''
+                    startTicketTransition(async () => {
+                      const res = await triageCreateTicket({
+                        title:        selected.subject ?? `Email from ${senderName}`,
+                        description:  selected.ai_summary ?? selected.body_text ?? '',
+                        contactEmail: senderEmail,
+                        contactName:  senderName,
+                        priority:     (selected.ai_priority as 'low' | 'medium' | 'high' | 'urgent') ?? 'medium',
+                      })
+                      if (res.error) showNotification(`Error: ${res.error}`)
+                      else { showNotification('Ticket created'); router.refresh() }
+                    })
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 rounded-lg border border-yellow-200 dark:border-yellow-500/20 transition-colors disabled:opacity-60"
+                >
+                  {isCreatingTicket ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Ticket className="w-3.5 h-3.5" />}
+                  Add Ticket
+                </button>
+              </div>
+
               {selected.ai_summary ? (
                 <>
                   <div className="bg-white dark:bg-white/5 rounded-xl p-3 border dark:border-white/8">
@@ -1172,6 +1223,20 @@ export function EmailInbox({
           </div>
         )}
       </div>
+
+      {showDealPicker && selected && (
+        <PipelinePickerModal
+          prefill={{
+            title:        selected.subject ?? `Email from ${selected.from_name ?? selected.from_address}`,
+            contactName:  selected.from_name  ?? selected.from_address ?? '',
+            contactEmail: selected.from_address ?? '',
+            notes:        selected.ai_summary ?? undefined,
+            source:       'email',
+          }}
+          onSuccess={(msg) => { showNotification(msg); router.refresh() }}
+          onClose={() => setShowDealPicker(false)}
+        />
+      )}
     </div>
   )
 }
