@@ -40,7 +40,7 @@ const BASE_HREFS: Record<SubpageSource, string> = {
   email:   '/dashboard/email',
   bots:    '/dashboard/bots',
   forms:   '/dashboard/forms',
-  tickets: '/dashboard/tickets',
+  tickets: '/sage/tickets',
 }
 
 export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, customTo, viewAsUserId, teamMembers }: Props) {
