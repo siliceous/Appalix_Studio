@@ -58,7 +58,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
   const [isAnalyzing,    setIsAnalyzing]     = useState(false)
   const [actionResult,   setActionResult]    = useState<Map<string, string>>(new Map())
   const [showEmailModal, setShowEmailModal]  = useState(false)
-  const [showDealPicker, setShowDealPicker]  = useState(false)
+  const [dealPickerSub,  setDealPickerSub]   = useState<SageFormSubmission | null>(null)
   const detailRef = useRef<HTMLDivElement>(null)
 
   const formSubmissions = submissions
@@ -107,7 +107,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
 
   function handleCreateLead() {
     if (!selected) return
-    setShowDealPicker(true)
+    setDealPickerSub(selected)
   }
 
   async function handleCreateTicket() {
@@ -516,11 +516,12 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
         </div>
       )}
 
-      {showDealPicker && selected && (() => {
-        const contactName  = selected.ai_entities?.name  ?? selected.fields.name  ?? 'Anonymous'
-        const contactEmail = selected.ai_entities?.email ?? selected.fields.email ?? ''
-        const contactPhone = selected.ai_entities?.phone ?? selected.fields.phone ?? selected.fields.phone_number
-        const form = forms.find(f => f.id === selected.form_id)
+      {dealPickerSub && (() => {
+        const sub = dealPickerSub
+        const contactName  = sub.ai_entities?.name  ?? sub.fields.name  ?? 'Anonymous'
+        const contactEmail = sub.ai_entities?.email ?? sub.fields.email ?? ''
+        const contactPhone = sub.ai_entities?.phone ?? sub.fields.phone ?? sub.fields.phone_number
+        const form = forms.find(f => f.id === sub.form_id)
         return (
           <PipelinePickerModal
             prefill={{
@@ -528,16 +529,16 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
               contactName,
               contactEmail,
               contactPhone: contactPhone ?? undefined,
-              notes:        selected.ai_summary ?? undefined,
+              notes:        sub.ai_summary ?? undefined,
               source:       'form',
-              submissionId: selected.id,
+              submissionId: sub.id,
             }}
             onSuccess={(msg) => {
-              setActionResult(prev => new Map(prev).set(selected.id, msg))
-              setDone(prev => new Set(prev).add(selected.id))
-              setSelectedId(formSubmissions.find(s => s.id !== selected.id)?.id ?? null)
+              setActionResult(prev => new Map(prev).set(sub.id, msg))
+              setDone(prev => new Set(prev).add(sub.id))
+              setSelectedId(formSubmissions.find(s => s.id !== sub.id)?.id ?? null)
             }}
-            onClose={() => setShowDealPicker(false)}
+            onClose={() => setDealPickerSub(null)}
           />
         )
       })()}
