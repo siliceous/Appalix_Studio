@@ -8,7 +8,7 @@ import {
   Brain, Check, X, ChevronRight, Loader2,
   UserPlus, Ticket, Sparkles, Plus, Phone, Tag, Pencil, Trash2,
 } from 'lucide-react'
-import { triageCreateTicket } from '@/app/actions/sage-triage'
+import { triageCreateTicket, checkContactHasDeal } from '@/app/actions/sage-triage'
 import { PipelinePickerModal } from '@/components/sage/pipeline-picker-modal'
 import { analyzeConversations, renameConversation, deleteConversations } from '@/app/actions/bot-conversations'
 import type { Conversation } from '@/lib/types'
@@ -407,7 +407,17 @@ const [mDealTitle, setMDealTitle] = useState('')
   // Open pipeline picker for lead creation; open ticket modal for tickets
   function handleAction(tc: TriageConversation, mode: 'lead' | 'ticket') {
     if (mode === 'ticket') { openModal(tc, 'ticket'); return }
-    setShowDealPicker(tc)
+    const c = tc.conversation
+    const email = c.ai_entities?.email ?? ''
+    const name  = c.ai_entities?.name  ?? ''
+    startTransition(async () => {
+      const hasDeal = await checkContactHasDeal(email, name)
+      if (hasDeal) {
+        setActioned(prev => new Map(prev).set(c.id, 'A deal already exists for this contact'))
+        return
+      }
+      setShowDealPicker(tc)
+    })
   }
 
   function handleModalSubmit() {

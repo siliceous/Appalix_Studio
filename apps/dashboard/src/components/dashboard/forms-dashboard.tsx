@@ -14,6 +14,7 @@ import {
 } from '@/app/actions/sage-forms'
 import { EmailComposeModal } from '@/components/dashboard/email-compose-modal'
 import { PipelinePickerModal } from '@/components/sage/pipeline-picker-modal'
+import { checkContactHasDeal } from '@/app/actions/sage-triage'
 import { timeAgo, cn } from '@/lib/utils'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -55,6 +56,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
   const [done,           setDone]           = useState<Set<string>>(new Set())
   const [showEmbed,      setShowEmbed]       = useState<string | null>(null)
   const [isPending,      startTransition]    = useTransition()
+  const [isCheckingDeal, setIsCheckingDeal]  = useState(false)
   const [isAnalyzing,    setIsAnalyzing]     = useState(false)
   const [actionResult,   setActionResult]    = useState<Map<string, string>>(new Map())
   const [showEmailModal, setShowEmailModal]  = useState(false)
@@ -105,9 +107,19 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
     if (selectedFormId === formId) setSelectedFormId(forms.find(f => f.id !== formId)?.id ?? null)
   }
 
-  function handleCreateLead() {
-    if (!selected) return
-    setDealPickerSub(selected)
+  async function handleCreateLead() {
+    const sub = selected   // capture synchronously before any re-render
+    if (!sub) return
+    const email = sub.ai_entities?.email ?? sub.fields.email ?? ''
+    const name  = sub.ai_entities?.name  ?? sub.fields.name  ?? ''
+    setIsCheckingDeal(true)
+    const hasDeal = await checkContactHasDeal(email, name)
+    setIsCheckingDeal(false)
+    if (hasDeal) {
+      setActionResult(prev => new Map(prev).set(sub.id, 'A deal already exists for this contact'))
+      return
+    }
+    setDealPickerSub(sub)
   }
 
   async function handleCreateTicket() {
@@ -430,11 +442,11 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
                   <div className="flex gap-2 flex-wrap">
                     <button
                       onClick={() => void handleCreateLead()}
-                      disabled={isPending}
+                      disabled={isPending || isCheckingDeal}
                       className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-brand-600 hover:bg-brand-700 text-white transition-colors disabled:opacity-60"
                     >
-                      {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
-                      Create Lead
+                      {(isPending || isCheckingDeal) ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
+                      {isCheckingDeal ? 'Checking…' : 'Create Lead'}
                     </button>
                     <button
                       onClick={() => void handleCreateTicket()}

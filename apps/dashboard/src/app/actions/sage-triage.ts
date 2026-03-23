@@ -725,6 +725,29 @@ export async function getPipelinesForPicker(): Promise<{
   }))
 }
 
+/** Quick pre-check: does a deal already exist for this contact (by email or name)? */
+export async function checkContactHasDeal(email: string, name: string): Promise<boolean> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return false
+  const admin = createAdminClient()
+  type CR = { id: string }
+  let contactId: string | null = null
+  if (email) {
+    const { data: byEmail } = await admin.from('sage_contacts').select('id')
+      .eq('workspace_id', workspaceId).ilike('email', email).limit(1).maybeSingle()
+    if (byEmail) contactId = (byEmail as CR).id
+  }
+  if (!contactId && name) {
+    const { data: byName } = await admin.from('sage_contacts').select('id')
+      .eq('workspace_id', workspaceId).ilike('name', name.trim()).limit(1).maybeSingle()
+    if (byName) contactId = (byName as CR).id
+  }
+  if (!contactId) return false
+  const { data: deal } = await admin.from('sage_deals').select('id')
+    .eq('workspace_id', workspaceId).eq('contact_id', contactId).limit(1).maybeSingle()
+  return !!deal
+}
+
 export async function createDealFromContext(data: {
   title: string
   contactName: string
