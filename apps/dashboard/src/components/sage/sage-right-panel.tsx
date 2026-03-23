@@ -23,7 +23,7 @@ function getContextLabel(pathname: string): string {
   if (pathname.includes('/sage/contacts/')) return 'Contact context'
   if (pathname.includes('/sage/pipelines/')) return 'Pipeline context'
   if (pathname.includes('/sage/tickets/'))  return 'Ticket context'
-  if (pathname === '/sage/dashboard')        return 'Sage overview'
+  if (pathname === '/dashboard')             return 'Sage overview'
   if (pathname === '/sage/contacts')         return 'Contacts list'
   if (pathname === '/sage/pipelines')        return 'Pipelines list'
   if (pathname === '/sage/tickets')          return 'Tickets list'

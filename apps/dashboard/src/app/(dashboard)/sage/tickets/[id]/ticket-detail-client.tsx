@@ -33,10 +33,10 @@ const STATUS_STYLES: Record<SageTicketStatus, { badge: string; dot: string; labe
 }
 
 const PRIORITY_STYLES: Record<string, { badge: string; label: string }> = {
-  urgent: { badge: 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400',            label: 'Urgent' },
-  high:   { badge: 'bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400', label: 'High' },
-  medium: { badge: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',    label: 'Medium' },
-  low:    { badge: 'bg-gray-100 text-gray-600 dark:bg-white/8 dark:text-gray-400',            label: 'Low' },
+  urgent: { badge: 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400',                         label: 'Urgent' },
+  high:   { badge: 'bg-[#15A4AE]/10 text-[#15A4AE] dark:bg-[#15A4AE]/10 dark:text-[#15A4AE] border border-[#15A4AE]/30', label: 'High' },
+  medium: { badge: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',                label: 'Medium' },
+  low:    { badge: 'bg-gray-100 text-gray-600 dark:bg-white/8 dark:text-gray-400',                       label: 'Low' },
 }
 
 const ACTIVITY_META: Record<TicketActivityType, { Icon: React.ElementType; color: string; label: string }> = {
@@ -518,6 +518,14 @@ export function TicketDetailClient({ ticket, allTickets, activities: initialActi
 
           {/* Header */}
           <div className="px-4 pt-4 pb-0 border-b dark:border-white/8 shrink-0">
+            {/* Pills row — top */}
+            <div className="flex items-center gap-1.5 flex-wrap mb-3">
+              {source && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">{source}</span>
+              )}
+              <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-medium', priorityStyle.badge)}>{PRIORITY_STYLES[localPriority]?.label ?? localPriority}</span>
+              <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-medium', statusStyle.badge)}>{statusStyle.label}</span>
+            </div>
             <div className="flex items-start gap-2.5 mb-3">
               <div className="w-9 h-9 rounded-xl bg-[#15A4AE]/15 flex items-center justify-center shrink-0">
                 <span className="text-sm font-bold text-[#15A4AE]">{ticket.title.charAt(0).toUpperCase()}</span>
@@ -525,10 +533,6 @@ export function TicketDetailClient({ ticket, allTickets, activities: initialActi
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 leading-snug line-clamp-2">{ticket.title}</p>
                 {customerName && <p className="text-[10px] text-gray-400 mt-0.5 truncate">{customerName}</p>}
-                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                  <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-medium', statusStyle.badge)}>{statusStyle.label}</span>
-                  <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-medium', priorityStyle.badge)}>{PRIORITY_STYLES[localPriority]?.label ?? localPriority}</span>
-                </div>
               </div>
               {!readonly && (
                 <button
@@ -739,7 +743,7 @@ export function TicketDetailClient({ ticket, allTickets, activities: initialActi
                           </div>
                         )}
                         {customerEmail && (
-                          <div className="px-3.5 py-2.5">
+                          <div className="px-3.5 py-2.5 flex justify-end">
                             <button onClick={() => setShowEmailModal(true)}
                               className="flex items-center gap-1.5 text-xs text-[#15A4AE] hover:underline">
                               <Send className="w-3 h-3" /> Reply via Email

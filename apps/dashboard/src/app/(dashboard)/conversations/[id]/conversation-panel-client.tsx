@@ -4,9 +4,10 @@ import React, { useEffect, useRef, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
-  MessageSquare, Download, Tag, Search, X, Pencil, Trash2, ArrowLeft, Loader2,
-  UserPlus, Ticket, Sparkles,
+  MessageSquare, Download, Search, X, Pencil, Trash2, ArrowLeft, Loader2,
+  UserPlus, Ticket, Send,
 } from 'lucide-react'
+import { EmailComposeModal } from '@/components/dashboard/email-compose-modal'
 import { PLATFORM_META, timeAgo, formatDate } from '@/lib/utils'
 import {
   updateConversationPriority, updateConversationStatus,
@@ -26,6 +27,18 @@ export type PanelMessage = {
   response_time_ms?: number | null
   is_error?: boolean | null
   created_at: string
+}
+
+// ── Pill styles ───────────────────────────────────────────────────────────────
+const PRIORITY_PILL: Record<string, string> = {
+  high:   'bg-[#15A4AE]/10 text-[#15A4AE] border border-[#15A4AE]/30',
+  medium: 'bg-amber-50 text-amber-700 dark:text-amber-400 border border-amber-200/70',
+  low:    'bg-gray-100 text-gray-500 border border-gray-200 dark:border-white/10',
+}
+const STATUS_PILL: Record<string, string> = {
+  active:    'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400 border border-green-200 dark:border-green-500/20',
+  completed: 'bg-gray-100 text-gray-500 border border-gray-200 dark:border-white/10',
+  archived:  'bg-amber-50 text-amber-700 dark:text-amber-400 border border-amber-200/70',
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -79,6 +92,9 @@ export function ConversationPanelClient({
   const [localAssign,   setLocalAssign]   = React.useState<string | null>(current.assigned_to ?? null)
   const [saving,        setSaving]        = React.useState<'priority' | 'status' | 'assign' | null>(null)
   const [actionLoading, setActionLoading] = React.useState<'deal' | 'ticket' | null>(null)
+  const [showEmailModal, setShowEmailModal] = React.useState(false)
+  const customerEmail = current.ai_entities?.email ?? null
+  const customerName  = current.ai_entities?.name  ?? null
 
   async function handlePriorityChange(val: string) {
     setLocalPriority(val)
@@ -433,19 +449,24 @@ export function ConversationPanelClient({
       <div className="w-[320px] shrink-0 overflow-y-auto bg-white dark:bg-[#232323]">
         <div className="p-4 space-y-5">
 
-          {/* Tags / Platform */}
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Tag className="w-3 h-3" /> Tags
-            </p>
-            {current.platform ? (
+          {/* Status pills */}
+          <div className="flex flex-wrap gap-1.5">
+            {current.platform && (
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              <span className={`inline-flex text-xs px-2.5 py-0.5 rounded-full font-medium ${(PLATFORM_META as any)[current.platform]?.color ?? 'bg-gray-100 text-gray-500'}`}>
+              <span className="inline-flex items-center text-xs px-2.5 py-1 rounded-full font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {(PLATFORM_META as any)[current.platform]?.label ?? current.platform}
               </span>
-            ) : (
-              <p className="text-xs text-gray-400">No tags</p>
+            )}
+            {localPriority && (
+              <span className={`inline-flex items-center text-xs px-2.5 py-1 rounded-full font-medium ${PRIORITY_PILL[localPriority] ?? 'bg-gray-100 text-gray-500'}`}>
+                {localPriority.charAt(0).toUpperCase() + localPriority.slice(1)}
+              </span>
+            )}
+            {localStatus && (
+              <span className={`inline-flex items-center text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_PILL[localStatus] ?? 'bg-gray-100 text-gray-500'}`}>
+                {localStatus.charAt(0).toUpperCase() + localStatus.slice(1)}
+              </span>
             )}
           </div>
 
@@ -457,6 +478,16 @@ export function ConversationPanelClient({
               </p>
               <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{current.ai_summary}</p>
             </div>
+          )}
+
+          {/* Reply by Email */}
+          {customerEmail && (
+            <button
+              onClick={() => setShowEmailModal(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl border border-[#15A4AE]/40 text-[#15A4AE] hover:bg-[#15A4AE]/8 transition-colors"
+            >
+              <Send className="w-3.5 h-3.5" /> Reply by Email
+            </button>
           )}
 
           <hr className="border-gray-100 dark:border-white/8" />
@@ -496,6 +527,15 @@ export function ConversationPanelClient({
         </div>
       </div>
 
+      {showEmailModal && customerEmail && (
+        <EmailComposeModal
+          to={customerEmail}
+          toName={customerName ?? undefined}
+          subject={`Re: ${current.title ?? 'Your conversation'}`}
+          context={current.ai_summary ?? undefined}
+          onClose={() => setShowEmailModal(false)}
+        />
+      )}
     </div>
   )
 }

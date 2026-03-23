@@ -3,7 +3,7 @@ import { redirect }     from 'next/navigation'
 import type { Metadata } from 'next'
 import type { WorkspaceMember, WorkspaceMemberRole } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
-import { SageDashboardClient } from '@/app/(dashboard)/sage/dashboard/dashboard-client'
+import { SageDashboardClient } from '@/app/(dashboard)/dashboard/dashboard-client'
 import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
 import { TeamMemberBanner } from '@/components/team/team-member-banner'
 

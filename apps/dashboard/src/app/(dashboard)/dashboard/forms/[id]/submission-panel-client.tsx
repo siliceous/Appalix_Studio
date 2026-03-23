@@ -5,8 +5,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Search, X, ArrowLeft, Download, Pencil, Trash2, Loader2,
-  UserPlus, Ticket, ClipboardList,
+  UserPlus, Ticket, ClipboardList, Send,
 } from 'lucide-react'
+import { EmailComposeModal } from '@/components/dashboard/email-compose-modal'
 import { timeAgo, formatDate } from '@/lib/utils'
 import {
   updateSubmissionPriority, updateSubmissionAssignedTo,
@@ -61,6 +62,7 @@ export function SubmissionPanelClient({
   const [saving,        setSaving]        = React.useState<'priority' | 'assign' | null>(null)
   const [actionLoading, setActionLoading] = React.useState<'deal' | 'ticket' | 'analyse' | null>(null)
   const [analyseMsg,    setAnalyseMsg]    = React.useState<string | null>(null)
+  const [showEmailModal, setShowEmailModal] = React.useState(false)
 
   const currentForm = forms.find(f => f.id === current.form_id) ?? null
   const contactName  = current.ai_entities?.name  ?? current.fields.name  ?? 'Anonymous'
@@ -317,11 +319,26 @@ export function SubmissionPanelClient({
       <div className="w-[320px] shrink-0 overflow-y-auto bg-white dark:bg-[#232323] border-l dark:border-white/8">
         <div className="p-4 space-y-5">
 
-          {localPriority && (
-            <span className={`inline-block text-xs px-2.5 py-0.5 rounded-full font-semibold ${PRIORITY_CLS[localPriority] ?? ''}`}>
-              {localPriority.charAt(0).toUpperCase() + localPriority.slice(1)} priority
-            </span>
-          )}
+          {/* Status pills */}
+          <div className="flex flex-wrap gap-1.5">
+            {current.source_platform && (
+              <span className="inline-flex items-center text-xs px-2.5 py-1 rounded-full font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">
+                {current.source_platform}
+              </span>
+            )}
+            {localPriority && (
+              <span className={`inline-flex items-center text-xs px-2.5 py-1 rounded-full font-medium ${PRIORITY_CLS[localPriority] ?? ''}`}>
+                {localPriority.charAt(0).toUpperCase() + localPriority.slice(1)}
+              </span>
+            )}
+            {current.action_type ? (
+              <span className="inline-flex items-center text-xs px-2.5 py-1 rounded-full font-medium bg-gray-100 text-gray-500 border border-gray-200 dark:border-white/10">
+                {current.action_type === 'lead' ? 'Deal created' : current.action_type === 'ticket' ? 'Ticket created' : current.action_type === 'ignored' ? 'Ignored' : current.action_type}
+              </span>
+            ) : (
+              <span className="inline-flex items-center text-xs px-2.5 py-1 rounded-full font-medium bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400 border border-green-200 dark:border-green-500/20">New</span>
+            )}
+          </div>
 
           {current.ai_summary && (
             <div>
@@ -330,6 +347,16 @@ export function SubmissionPanelClient({
               </p>
               <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{current.ai_summary}</p>
             </div>
+          )}
+
+          {/* Reply by Email */}
+          {contactEmail && (
+            <button
+              onClick={() => setShowEmailModal(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl border border-[#15A4AE]/40 text-[#15A4AE] hover:bg-[#15A4AE]/8 transition-colors"
+            >
+              <Send className="w-3.5 h-3.5" /> Reply by Email
+            </button>
           )}
 
           {current.ai_insights && current.ai_insights.length > 0 && (
@@ -386,6 +413,15 @@ export function SubmissionPanelClient({
         </div>
       </div>
 
+      {showEmailModal && contactEmail && (
+        <EmailComposeModal
+          to={contactEmail}
+          toName={contactName ?? undefined}
+          subject={`Re: ${currentForm?.name ?? 'Your enquiry'}`}
+          context={current.ai_summary ?? undefined}
+          onClose={() => setShowEmailModal(false)}
+        />
+      )}
     </div>
   )
 }
