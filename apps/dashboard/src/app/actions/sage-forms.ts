@@ -3,6 +3,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { triageCreateLead, triageCreateTicket } from './sage-triage'
+import Anthropic from '@anthropic-ai/sdk'
 
 async function getWorkspaceId(): Promise<string | null> {
   const supabase = await createClient()
@@ -148,22 +149,85 @@ export async function analyzeFormSubmissions(formId?: string): Promise<{ analyze
   const workspaceId = await getWorkspaceId()
   if (!workspaceId) return { analyzed: 0, error: 'Not authenticated' }
 
-  const API_BASE    = process.env.API_BASE_URL
-  const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!API_BASE || !SERVICE_KEY) return { analyzed: 0, error: 'API not configured' }
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) return { analyzed: 0, error: 'AI not configured' }
 
-  try {
-    const res = await fetch(`${API_BASE}/forms/analyze`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'x-service-key': SERVICE_KEY },
-      body:    JSON.stringify({ workspace_id: workspaceId, form_id: formId }),
-    })
-    const json = await res.json() as { analyzed?: number; error?: string }
-    revalidatePath('/dashboard')
-    return { analyzed: json.analyzed ?? 0, error: json.error }
-  } catch (err) {
-    return { analyzed: 0, error: err instanceof Error ? err.message : 'Request failed' }
-  }
+  const admin = createAdminClient()
+  let query = admin
+    .from('sage_form_submissions')
+    .select('id, fields, raw_payload')
+    .eq('workspace_id', workspaceId)
+    .is('ai_analyzed_at', null)
+    .limit(50)
+  if (formId) query = query.eq('form_id', formId) as typeof query
+
+  const { data: rows, error: fetchErr } = await query
+  if (fetchErr) return { analyzed: 0, error: fetchErr.message }
+  if (!rows || rows.length === 0) return { analyzed: 0 }
+
+  const anthropic = new Anthropic({ apiKey })
+  type Row = { id: string; fields: Record<string, string>; raw_payload: Record<string, string> }
+
+  let analyzed = 0
+  await Promise.all((rows as Row[]).map(async row => {
+    // Use fields (normalized); fall back to raw_payload for platforms that skip normalization
+    const src = Object.keys(row.fields ?? {}).length > 0 ? row.fields : (row.raw_payload ?? {})
+    const SKIP = new Set(['form_title', 'form_name', 'id', 'form_id', 'ip', 'date_created', 'source_url', 'workspace_id', 'entry_id'])
+    const lines = Object.entries(src)
+      .filter(([k, v]) => !SKIP.has(k) && v && String(v).trim())
+      .map(([k, v]) => `${k}: ${v}`)
+      .join('\n')
+    if (!lines) return
+
+    try {
+      const msg = await anthropic.messages.create({
+        model:      'claude-haiku-4-5-20251001',
+        max_tokens: 600,
+        system:     'You are a CRM assistant. Respond only with valid JSON.',
+        messages:   [{
+          role: 'user',
+          content: `Analyse this form submission for a business and return ONLY this JSON:
+{
+  "priority": "high" | "medium" | "low",
+  "summary": "1-2 sentence summary",
+  "insights": ["insight 1"],
+  "action": "create_lead" | "create_ticket" | "ignore",
+  "entities": { "name": "", "email": "", "phone": "", "product_interest": "" }
+}
+
+PRIORITY RULES:
+HIGH   — has contact info (email/phone) AND message shows buying intent, pricing, demo, or partnership interest
+MEDIUM — genuine inquiry with contact info but unclear intent, or strong intent but missing contact details
+LOW    — no message, test submission, or not enough to act on
+
+FORM SUBMISSION:
+${lines}`,
+        }],
+      })
+      const text = msg.content.find(b => b.type === 'text')?.text ?? ''
+      const match = text.match(/\{[\s\S]*\}/)
+      if (!match) return
+      const a = JSON.parse(match[0]) as {
+        priority: 'high' | 'medium' | 'low'
+        summary: string
+        insights: string[]
+        action: string
+        entities: Record<string, string>
+      }
+      await admin.from('sage_form_submissions').update({
+        ai_priority:    a.priority,
+        ai_summary:     a.summary ?? null,
+        ai_insights:    a.insights ?? [],
+        ai_action:      a.action ?? null,
+        ai_entities:    a.entities ?? {},
+        ai_analyzed_at: new Date().toISOString(),
+      }).eq('id', row.id)
+      analyzed++
+    } catch { /* skip individual failure */ }
+  }))
+
+  revalidatePath('/dashboard')
+  return { analyzed }
 }
 
 /** Mark a submission as actioned (lead/ticket/ignored) */
