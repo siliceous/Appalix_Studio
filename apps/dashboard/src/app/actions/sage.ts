@@ -1103,16 +1103,18 @@ export async function saveSageIntegration(provider: string, config: Record<strin
 }
 
 /**
- * Send a signed test webhook payload through the real pipeline for a form integration.
- * Returns { submissionId } on success so the caller can link to it in the Forms section.
+ * Insert a test submission directly into the DB for a form integration.
+ * Bypasses the HTTP webhook layer — no network self-call needed.
  */
 export async function sendTestFormWebhook(
   provider: 'gravity_forms' | 'wpforms' | 'typeform',
 ): Promise<{ ok?: boolean; error?: string }> {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const a = admin as any
 
-  const { data: integ } = await admin
+  const { data: integ } = await a
     .from('sage_integrations')
     .select('config')
     .eq('workspace_id', workspaceId)
@@ -1121,100 +1123,59 @@ export async function sendTestFormWebhook(
     .maybeSingle()
 
   if (!integ) return { error: 'Integration not connected' }
-  const config = (integ as { config: Record<string, string> }).config
 
-  const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-  const pathMap = {
-    gravity_forms: `${appUrl}/api/webhooks/gravity-forms/${workspaceId}`,
-    wpforms:       `${appUrl}/api/webhooks/wpforms/${workspaceId}`,
-    typeform:      `${appUrl}/api/webhooks/typeform/${workspaceId}`,
+  // Resolve created_by — use workspace owner
+  const { data: ownerRow } = await a
+    .from('workspace_members')
+    .select('user_id')
+    .eq('workspace_id', workspaceId)
+    .eq('role', 'owner')
+    .limit(1)
+    .maybeSingle()
+  const createdBy: string | null = ownerRow?.user_id ?? null
+
+  const FORM_TITLE: Record<string, string> = {
+    gravity_forms: 'Test Form (Gravity Forms)',
+    wpforms:       'Test Form (WPForms)',
+    typeform:      'Test Form (Typeform)',
   }
-  const url = pathMap[provider]
-
-  try {
-    if (provider === 'gravity_forms') {
-      const secret = config.webhook_secret ?? ''
-      const body = JSON.stringify({
-        form_title: 'Test Form (Gravity Forms)',
-        '1': 'Jane Smith',
-        '2': 'jane@example.com',
-        '3': '+1 555-0100',
-        '4': 'Acme Corp',
-        '5': 'Interested in your product',
-      })
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Webhook-Secret': secret },
-        body,
-      })
-      if (!res.ok) return { error: `Webhook returned ${res.status}` }
-    }
-
-    if (provider === 'wpforms') {
-      const secret = config.webhook_secret ?? ''
-      const body = JSON.stringify({
-        form_title: 'Test Form (WPForms)',
-        fields: {
-          '1': { name: 'Name',    value: 'Jane Smith' },
-          '2': { name: 'Email',   value: 'jane@example.com' },
-          '3': { name: 'Phone',   value: '+1 555-0100' },
-          '4': { name: 'Company', value: 'Acme Corp' },
-          '5': { name: 'Message', value: 'Interested in your product' },
-        },
-      })
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Webhook-Secret': secret },
-        body,
-      })
-      if (!res.ok) return { error: `Webhook returned ${res.status}` }
-    }
-
-    if (provider === 'typeform') {
-      const { createHmac } = await import('crypto')
-      const accessToken = config.access_token ?? ''
-      const body = JSON.stringify({
-        event_id:   'test-event-' + Date.now(),
-        event_type: 'form_response',
-        form_response: {
-          form_id:    config.form_id || 'test_form_id',
-          form_title: 'Test Form (Typeform)',
-          landed_at:  new Date().toISOString(),
-          submitted_at: new Date().toISOString(),
-          definition: {
-            fields: [
-              { ref: 'name_ref',    title: 'Full Name' },
-              { ref: 'email_ref',   title: 'Email' },
-              { ref: 'phone_ref',   title: 'Phone' },
-              { ref: 'company_ref', title: 'Company' },
-              { ref: 'msg_ref',     title: 'Message' },
-            ],
-          },
-          answers: [
-            { field: { ref: 'name_ref',    type: 'short_text' }, type: 'text',  text:         'Jane Smith' },
-            { field: { ref: 'email_ref',   type: 'email'      }, type: 'email', email:        'jane@example.com' },
-            { field: { ref: 'phone_ref',   type: 'phone_number'}, type: 'phone_number', phone_number: '+1 555-0100' },
-            { field: { ref: 'company_ref', type: 'short_text' }, type: 'text',  text:         'Acme Corp' },
-            { field: { ref: 'msg_ref',     type: 'long_text'  }, type: 'text',  text:         'Interested in your product' },
-          ],
-        },
-      })
-      const signature = 'sha256=' + createHmac('sha256', accessToken).update(body).digest('base64')
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type':      'application/json',
-          'Typeform-Signature': signature,
-        },
-        body,
-      })
-      if (!res.ok) return { error: `Webhook returned ${res.status}` }
-    }
-
-    return { ok: true }
-  } catch (err) {
-    return { error: err instanceof Error ? err.message : 'Request failed' }
+  const TEST_FIELDS: Record<string, Record<string, string>> = {
+    gravity_forms: { Name: 'Jane Smith', Email: 'jane@example.com', Phone: '+1 555-0100', Company: 'Acme Corp', Message: 'Interested in your product' },
+    wpforms:       { Name: 'Jane Smith', Email: 'jane@example.com', Phone: '+1 555-0100', Company: 'Acme Corp', Message: 'Interested in your product' },
+    typeform:      { 'Full Name': 'Jane Smith', Email: 'jane@example.com', Phone: '+1 555-0100', Company: 'Acme Corp', Message: 'Interested in your product' },
   }
+
+  const formTitle = FORM_TITLE[provider]
+  const fields    = TEST_FIELDS[provider]
+
+  // Find or create the sage_form
+  let { data: form } = await a
+    .from('sage_forms')
+    .select('id')
+    .eq('workspace_id', workspaceId)
+    .ilike('name', formTitle)
+    .maybeSingle()
+
+  if (!form) {
+    const { data: newForm, error: formErr } = await a
+      .from('sage_forms')
+      .insert({ workspace_id: workspaceId, name: formTitle, is_active: true, created_by: createdBy })
+      .select('id')
+      .single()
+    if (formErr) return { error: `Could not create form: ${formErr.message}` }
+    form = newForm
+  }
+
+  if (!form?.id) return { error: 'Could not resolve form id' }
+
+  const { error: subErr } = await a
+    .from('sage_form_submissions')
+    .insert({ workspace_id: workspaceId, form_id: form.id, source_platform: provider, fields })
+
+  if (subErr) return { error: `Could not insert submission: ${subErr.message}` }
+
+  revalidatePath('/dashboard/forms')
+  return { ok: true }
 }
 
 /**
