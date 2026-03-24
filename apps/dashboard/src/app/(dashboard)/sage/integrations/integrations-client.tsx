@@ -255,6 +255,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
   const [sigSaved,          setSigSaved]         = useState(false)
   const [connectResult,     setConnectResult]    = useState<Record<string, { webhookUrl?: string; formsRegistered?: number; error?: string }>>({})
   const [testResult,        setTestResult]       = useState<Record<string, { ok?: boolean; error?: string; loading?: boolean }>>({})
+  const [copiedProvider,    setCopiedProvider]   = useState<string | null>(null)
   const sigRef              = useRef<HTMLDivElement>(null)
   const sigImgRef           = useRef<HTMLInputElement>(null)
 
@@ -598,10 +599,10 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                                   {hookUrl}
                                 </code>
                                 <button
-                                  onClick={() => navigator.clipboard.writeText(hookUrl)}
+                                  onClick={() => { navigator.clipboard.writeText(hookUrl); setCopiedProvider(integration.provider); setTimeout(() => setCopiedProvider(null), 2000) }}
                                   className="shrink-0 px-2.5 py-2 text-xs rounded-lg border dark:border-white/10 bg-white dark:bg-[#232323] text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
                                 >
-                                  Copy
+                                  {copiedProvider === integration.provider ? 'Copied!' : 'Copy'}
                                 </button>
                               </div>
                             </div>
@@ -615,10 +616,10 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                                   {hookUrl}
                                 </code>
                                 <button
-                                  onClick={() => navigator.clipboard.writeText(hookUrl)}
+                                  onClick={() => { navigator.clipboard.writeText(hookUrl); setCopiedProvider(integration.provider); setTimeout(() => setCopiedProvider(null), 2000) }}
                                   className="shrink-0 px-2.5 py-2 text-xs rounded-lg border dark:border-white/10 bg-white dark:bg-[#232323] text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
                                 >
-                                  Copy
+                                  {copiedProvider === integration.provider ? 'Copied!' : 'Copy'}
                                 </button>
                               </div>
                             </div>
