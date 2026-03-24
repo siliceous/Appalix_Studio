@@ -11,6 +11,7 @@ import { timeAgo } from '@/lib/utils'
 import {
   formSubmissionCreateLead,
   formSubmissionCreateTicket,
+  deleteSubmission,
   markSubmissionActioned,
   updateFormMailchimpList,
   updateSubmissionPriority,
@@ -234,7 +235,7 @@ export function FormsTable({
   async function handleBulkDelete() {
     if (!window.confirm(`Delete ${selectedIds.size} submission(s)?`)) return
     setBulkSaving(true)
-    await Promise.all([...selectedIds].map(id => markSubmissionActioned(id, 'ignored')))
+    await Promise.all([...selectedIds].map(id => deleteSubmission(id)))
     setBulkSaving(false)
     setSelectedIds(new Set())
     router.refresh()
@@ -274,7 +275,7 @@ export function FormsTable({
 
   async function handleDeleteSubmission(id: string) {
     setQuickAction(p => ({ ...p, [id]: 'loading-delete' }))
-    await markSubmissionActioned(id, 'ignored')
+    await deleteSubmission(id)
     setQuickAction(p => { const n = { ...p }; delete n[id]; return n })
     router.refresh()
   }
