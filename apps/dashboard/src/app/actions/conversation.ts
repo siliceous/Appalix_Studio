@@ -41,9 +41,9 @@ export async function deleteConversation(conversationId: string) {
   const snap = convRow as CS | null
   const convName = snap?.ai_entities?.name ?? snap?.title ?? null
 
-  const { error } = await admin
+  const { error } = await (admin as any)
     .from('conversations')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', conversationId)
     .eq('workspace_id', membership.workspace_id)
 

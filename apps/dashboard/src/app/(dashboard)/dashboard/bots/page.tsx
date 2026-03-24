@@ -10,6 +10,7 @@ import type { WorkspaceMemberRole } from '@/lib/types'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
 import { ActivitySidebar } from '@/components/team/activity-sidebar'
+import { TrashButton } from '@/components/dashboard/trash-button'
 
 export const metadata: Metadata = { title: 'Bot Conversations' }
 
@@ -122,6 +123,7 @@ export default async function BotsPage({
     .from('conversations')
     .select('id, title, platform, status, sentiment, message_count, last_activity_at, ai_priority, ai_summary, ai_entities, bot_id, assigned_to, bots(id, name)')
     .eq('workspace_id', workspaceId)
+    .is('deleted_at', null)
     .order('last_activity_at', { ascending: false })
     .limit(150)
 
@@ -150,11 +152,15 @@ export default async function BotsPage({
   const conversations = (rawConversations ?? []) as ConvRow[]
 
   // Status counts (workspace-level, for the filter tab badges)
-  const [activeCountRes, completedCountRes, archivedCountRes] = await Promise.all([
-    supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('status', 'active'),
-    supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('status', 'completed'),
-    supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('status', 'archived'),
+  const trashCutoff = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [activeCountRes, completedCountRes, archivedCountRes, trashCountRes] = await Promise.all([
+    supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('status', 'active').is('deleted_at', null),
+    supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('status', 'completed').is('deleted_at', null),
+    supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('status', 'archived').is('deleted_at', null),
+    (supabase as any).from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).not('deleted_at', 'is', null).gte('deleted_at', trashCutoff),
   ])
+  const trashCount = trashCountRes.count ?? 0
   const statusCounts = {
     active:    activeCountRes.count    ?? 0,
     completed: completedCountRes.count ?? 0,
@@ -181,6 +187,9 @@ export default async function BotsPage({
       />
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 overflow-y-auto">
+          <div className="flex justify-end px-4 pt-3">
+            <TrashButton type="conversation" count={trashCount} />
+          </div>
           <ConversationsClient
             conversations={conversations}
             bots={bots}

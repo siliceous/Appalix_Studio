@@ -947,7 +947,7 @@ export async function deleteTicket(id: string) {
 
   const { error } = await admin
     .from('sage_tickets')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() } as never)
     .eq('id', id)
     .eq('workspace_id', workspaceId)
 
@@ -994,7 +994,7 @@ export async function deleteTickets(ids: string[]) {
 
   const { error } = await admin
     .from('sage_tickets')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() } as never)
     .in('id', ids)
     .eq('workspace_id', workspaceId)
   if (error) throw new Error(error.message)

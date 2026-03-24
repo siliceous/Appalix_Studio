@@ -120,7 +120,7 @@ export async function deleteSubmission(submissionId: string): Promise<{ error?: 
 
   const { error } = await admin
     .from('sage_form_submissions')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() } as never)
     .eq('id', submissionId)
     .eq('workspace_id', workspaceId)
   if (error) return { error: error.message }

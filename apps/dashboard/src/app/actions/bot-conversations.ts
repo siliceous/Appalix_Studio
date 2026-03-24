@@ -104,22 +104,24 @@ export async function deleteConversations(
     .eq('workspace_id', workspaceId)
     .in('source_conversation_id', conversationIds)
 
+  const deletedAt = new Date().toISOString()
+
   if (linkedContacts && linkedContacts.length > 0) {
     const contactIds = (linkedContacts as { id: string }[]).map(c => c.id)
-    // Delete tickets linked to those contacts
+    // Soft-delete tickets linked to those contacts
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (admin as any)
       .from('sage_tickets')
-      .delete()
+      .update({ deleted_at: deletedAt })
       .eq('workspace_id', workspaceId)
       .in('contact_id', contactIds)
   }
 
-  // Delete the conversations
+  // Soft-delete the conversations
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (admin as any)
     .from('conversations')
-    .delete()
+    .update({ deleted_at: deletedAt })
     .in('id', conversationIds)
     .eq('workspace_id', workspaceId)
 

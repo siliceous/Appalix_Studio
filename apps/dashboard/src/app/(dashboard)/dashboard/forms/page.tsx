@@ -9,6 +9,7 @@ import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpa
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
 import { ActivitySidebar } from '@/components/team/activity-sidebar'
+import { TrashButton } from '@/components/dashboard/trash-button'
 
 export const metadata: Metadata = { title: 'Forms' }
 
@@ -98,6 +99,7 @@ export default async function FormsPage({
     .from('sage_form_submissions')
     .select('id, form_id, source_platform, fields, ai_priority, ai_summary, ai_insights, ai_action, ai_entities, ai_analyzed_at, actioned_at, action_type, assigned_to, created_at, mailchimp_synced_at')
     .eq('workspace_id', workspaceId)
+    .is('deleted_at', null)
 
   if (isRestricted) {
     if (visibleFormIds.length === 0) {
@@ -152,6 +154,15 @@ export default async function FormsPage({
 
   // Connected platform names for the banner
   const connectedEmailProviders = emailIntegrations.map(r => r.provider)
+
+  const trashCutoff = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { count: trashCount } = await (supabase as any)
+    .from('sage_form_submissions')
+    .select('id', { count: 'exact', head: true })
+    .eq('workspace_id', workspaceId)
+    .not('deleted_at', 'is', null)
+    .gte('deleted_at', trashCutoff)
 
   const [formsRes, submissionsRes] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -215,6 +226,9 @@ export default async function FormsPage({
       />
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 overflow-y-auto">
+          <div className="flex justify-end px-4 pt-3">
+            <TrashButton type="submission" count={trashCount ?? 0} />
+          </div>
           <FormsTable
             submissions={submissions}
             forms={forms}

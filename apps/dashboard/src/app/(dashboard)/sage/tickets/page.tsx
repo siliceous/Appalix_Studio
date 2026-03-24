@@ -5,6 +5,7 @@ import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpa
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
 import { ActivitySidebar } from '@/components/team/activity-sidebar'
+import { TrashButton } from '@/components/dashboard/trash-button'
 import type { Metadata } from 'next'
 import type { WorkspaceMember, WorkspaceMemberSummary, WorkspaceMemberRole, SageTicket, SageContact } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
@@ -56,24 +57,19 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
     .from('sage_tickets')
     .select('id, title, name, email, phone, occurred_at, description, status, priority, contact_method, created_at, updated_at, contact_id, deal_id, owner_id, related_url, external_provider, external_id, external_url, contact:sage_contacts(id, name, email)')
     .eq('workspace_id', workspaceId)
+    .is('deleted_at', null)
 
   if (isEmployee) ticketsQuery = (ticketsQuery as any).eq('owner_id', user.id)
   if (dateFrom) ticketsQuery = ticketsQuery.gte('created_at', dateFrom)
   if (dateTo)   ticketsQuery = ticketsQuery.lt('created_at', dateTo)
   ticketsQuery = ticketsQuery.order('created_at', { ascending: false })
 
-  const [{ data: ticketsRaw }, { data: contactsRaw }, { data: membersRaw }] = await Promise.all([
+  const trashCutoff = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+  const [{ data: ticketsRaw }, { data: contactsRaw }, { data: membersRaw }, { count: trashCount }] = await Promise.all([
     ticketsQuery,
-    supabase
-      .from('sage_contacts')
-      .select('id, name')
-      .eq('workspace_id', workspaceId)
-      .order('name'),
-    admin
-      .from('workspace_members')
-      .select('user_id, role')
-      .eq('workspace_id', workspaceId)
-      .not('accepted_at', 'is', null),
+    supabase.from('sage_contacts').select('id, name').eq('workspace_id', workspaceId).order('name'),
+    admin.from('workspace_members').select('user_id, role').eq('workspace_id', workspaceId).not('accepted_at', 'is', null),
+    supabase.from('sage_tickets').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).not('deleted_at', 'is', null).gte('deleted_at', trashCutoff),
   ])
 
   const tickets  = (ticketsRaw  ?? []) as (SageTicket & { contact: Pick<SageContact, 'id' | 'name' | 'email'> | null })[]
@@ -111,6 +107,9 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
       <SubpageToolbar sourceKey="tickets" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.tickets_auto_enabled} />
       <div className="flex flex-1 overflow-hidden min-h-0">
         <div className="flex-1 overflow-y-auto">
+          <div className="flex justify-end px-4 pt-3">
+            <TrashButton type="ticket" count={trashCount ?? 0} />
+          </div>
           <TicketsClient
             tickets={tickets}
             contacts={contacts}
