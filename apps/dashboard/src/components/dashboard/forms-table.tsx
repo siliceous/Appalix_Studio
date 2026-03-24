@@ -64,15 +64,15 @@ interface Props {
   canAllocate?:             boolean
 }
 
-const EMAIL_PLATFORM_META: Record<string, { name: string; logo?: string }> = {
-  mailchimp:       { name: 'Mailchimp',       logo: '/integrations/mailchimp.png' },
-  activecampaign:  { name: 'ActiveCampaign',  logo: '/integrations/activecampaign.png' },
-  convertkit:      { name: 'Kit',             logo: '/integrations/kit.png' },
-  klaviyo:         { name: 'Klaviyo',         logo: '/integrations/Klaviyo.png' },
-  constantcontact: { name: 'Constant Contact',logo: '/integrations/constantcontact.png' },
-  gravity_forms:   { name: 'Gravity Forms' },
-  wpforms:         { name: 'WPForms' },
-  typeform:        { name: 'Typeform' },
+const EMAIL_PLATFORM_META: Record<string, { name: string; logo?: string; pill: string }> = {
+  mailchimp:       { name: 'Mailchimp',        logo: '/integrations/mailchimp.png',       pill: 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-500/20' },
+  activecampaign:  { name: 'ActiveCampaign',   logo: '/integrations/activecampaign.png',  pill: 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20' },
+  convertkit:      { name: 'Kit',              logo: '/integrations/kit.png',             pill: 'bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-500/20' },
+  klaviyo:         { name: 'Klaviyo',          logo: '/integrations/Klaviyo.png',         pill: 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/20' },
+  constantcontact: { name: 'Constant Contact', logo: '/integrations/constantcontact.png', pill: 'bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-200 dark:border-sky-500/20' },
+  gravity_forms:   { name: 'Gravity Forms',    pill: 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/20' },
+  wpforms:         { name: 'WPForms',          pill: 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20' },
+  typeform:        { name: 'Typeform',         pill: 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20' },
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -361,7 +361,7 @@ export function FormsTable({
                 const meta = EMAIL_PLATFORM_META[provider]
                 if (!meta) return null
                 return (
-                  <span key={provider} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                  <span key={provider} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${meta.pill}`}>
                     {meta.logo && <img src={meta.logo} alt="" className="w-3 h-3 object-contain" />}
                     {meta.name}
                   </span>
@@ -525,10 +525,23 @@ export function FormsTable({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[900px]">
+            <table className="w-full text-sm table-fixed min-w-[1000px]">
+              <colgroup>
+                <col className="w-10" />
+                <col className="w-24" />
+                <col className="w-36" />
+                <col className="w-44" />
+                <col className="w-32" />
+                <col className="w-32" />
+                <col className="w-24" />
+                <col className="w-28" />
+                <col className="w-24" />
+                <col className="w-28" />
+                <col className="w-24" />
+              </colgroup>
               <thead>
                 <tr className="border-b dark:border-white/8 bg-gray-50 dark:bg-white/[0.03]">
-                  <th className="px-4 py-3 w-10">
+                  <th className="px-4 py-3">
                     <input
                       type="checkbox"
                       checked={allSelected}
@@ -542,7 +555,7 @@ export function FormsTable({
                   <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Phone</th>
                   <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Company</th>
                   <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">City</th>
-                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Form</th>
+                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Source</th>
                   <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Submitted</th>
                   <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Assigned to</th>
                   <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Actions</th>
@@ -602,68 +615,69 @@ export function FormsTable({
                       </td>
 
                       {/* Name */}
-                      <td className="px-3 py-3 max-w-[140px]">
+                      <td className="px-3 py-3 overflow-hidden">
                         <Link
                           href={`/dashboard/forms/${sub.id}`}
                           className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-[#15A4AE] truncate block"
+                          title={name}
                         >
                           {name}
                         </Link>
                       </td>
 
                       {/* Email */}
-                      <td className="px-3 py-3 max-w-[160px]">
+                      <td className="px-3 py-3 overflow-hidden">
                         {email
-                          ? <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{email}</p>
+                          ? <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={email}>{email}</span>
                           : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
                         }
                       </td>
 
                       {/* Phone */}
-                      <td className="px-3 py-3 whitespace-nowrap">
+                      <td className="px-3 py-3 overflow-hidden">
                         {phone
-                          ? <span className="text-xs text-gray-500 dark:text-gray-400">{phone}</span>
+                          ? <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={phone}>{phone}</span>
                           : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
                         }
                       </td>
 
                       {/* Company */}
-                      <td className="px-3 py-3 max-w-[120px]">
+                      <td className="px-3 py-3 overflow-hidden">
                         {company
-                          ? <span className="text-xs text-gray-700 dark:text-gray-300 truncate block">{company}</span>
+                          ? <span className="text-xs text-gray-700 dark:text-gray-300 truncate block" title={company}>{company}</span>
                           : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
                         }
                       </td>
 
                       {/* City */}
-                      <td className="px-3 py-3 whitespace-nowrap">
+                      <td className="px-3 py-3 overflow-hidden">
                         {city
-                          ? <span className="text-xs text-gray-500 dark:text-gray-400">{city}</span>
+                          ? <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={city}>{city}</span>
                           : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
                         }
                       </td>
 
-                      {/* Form / platform */}
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        {sub.source_platform ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-500/20">
-                            {EMAIL_PLATFORM_META[sub.source_platform]?.logo && (
-                              <img src={EMAIL_PLATFORM_META[sub.source_platform].logo} alt="" className="w-3 h-3 object-contain" />
+                      {/* Source / platform */}
+                      <td className="px-3 py-3 overflow-hidden">
+                        {sub.source_platform && EMAIL_PLATFORM_META[sub.source_platform] ? (
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${EMAIL_PLATFORM_META[sub.source_platform].pill}`}>
+                            {EMAIL_PLATFORM_META[sub.source_platform].logo && (
+                              <img src={EMAIL_PLATFORM_META[sub.source_platform].logo} alt="" className="w-3 h-3 object-contain shrink-0" />
                             )}
-                            {EMAIL_PLATFORM_META[sub.source_platform]?.name ?? sub.source_platform}
+                            <span className="truncate">{EMAIL_PLATFORM_META[sub.source_platform].name}</span>
                           </span>
                         ) : (
-                          <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[100px] block">
+                          <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={form?.name ?? ''}>
                             {form?.name ?? '—'}
                           </span>
                         )}
                       </td>
 
                       {/* Submitted */}
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <span className="text-xs text-gray-400">{timeAgo(sub.created_at)}</span>
+                      <td className="px-3 py-3 overflow-hidden">
+                        <span className="text-xs text-gray-400 truncate block">{timeAgo(sub.created_at)}</span>
                         {sub.mailchimp_synced_at && (
-                          <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-yellow-400/10 text-yellow-700 dark:text-yellow-400 border border-yellow-400/25" title={`Synced ${timeAgo(sub.mailchimp_synced_at)}`}>
+                          <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-yellow-400/10 text-yellow-700 dark:text-yellow-400 border border-yellow-400/25" title={`Synced ${timeAgo(sub.mailchimp_synced_at)}`}>
                             <img src="/integrations/mailchimp.png" alt="" className="w-3 h-3 object-contain" />Synced
                           </span>
                         )}
