@@ -88,16 +88,26 @@ function getField(fields: Record<string, string>, ...keys: string[]): string {
   // Build a normalized lookup map once
   const norm: Record<string, string> = {}
   for (const [k, v] of Object.entries(fields)) {
-    norm[k.toLowerCase().replace(/[\s\-]+/g, '_')] = v
+    norm[k.toLowerCase().replace(/[\s\-\.]+/g, '_')] = v
   }
   for (const key of keys) {
     // Exact match first
     if (fields[key]) return fields[key]
     // Normalized match
-    const nk = key.toLowerCase().replace(/[\s\-]+/g, '_')
+    const nk = key.toLowerCase().replace(/[\s\-\.]+/g, '_')
     if (norm[nk]) return norm[nk]
   }
   return ''
+}
+
+/** Scan all field values for an email address (handles numeric GF field IDs) */
+function detectEmail(fields: Record<string, string>): string {
+  return Object.values(fields).find(v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())) ?? ''
+}
+
+/** Scan all field values for a phone number (handles numeric GF field IDs) */
+function detectPhone(fields: Record<string, string>): string {
+  return Object.values(fields).find(v => /^[\+\d][\d\s\-\(\)\.]{5,18}$/.test(v.trim())) ?? ''
 }
 
 function getName(sub: SageFormSubmission): string {
@@ -105,7 +115,7 @@ function getName(sub: SageFormSubmission): string {
 }
 
 function getEmail(sub: SageFormSubmission): string {
-  return (sub.ai_entities?.email ?? getField(sub.fields, 'email', 'email_address', 'your_email', 'emailaddress')) || ''
+  return (sub.ai_entities?.email ?? (getField(sub.fields, 'email', 'email_address', 'your_email', 'emailaddress') || detectEmail(sub.fields))) || ''
 }
 
 function getCity(sub: SageFormSubmission): string {
@@ -113,7 +123,7 @@ function getCity(sub: SageFormSubmission): string {
 }
 
 function getPhone(sub: SageFormSubmission): string {
-  return (sub.ai_entities?.phone ?? getField(sub.fields, 'phone', 'phone_number', 'mobile', 'mobile_number', 'tel', 'telephone', 'contact_number')) || ''
+  return (sub.ai_entities?.phone ?? (getField(sub.fields, 'phone', 'phone_number', 'mobile', 'mobile_number', 'tel', 'telephone', 'contact_number') || detectPhone(sub.fields))) || ''
 }
 
 function getCompany(sub: SageFormSubmission): string {

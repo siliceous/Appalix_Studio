@@ -85,23 +85,26 @@ export function SubmissionPanelClient({
   }
 
   const currentForm = forms.find(f => f.id === current.form_id) ?? null
-  // Case-insensitive field lookup — handles "Name", "Full Name", "name", "full_name" etc.
+  // Case-insensitive field lookup — handles "Name", "Full Name", "name", "full_name", numeric IDs etc.
   function getField(...keys: string[]): string {
     const norm: Record<string, string> = {}
     for (const [k, v] of Object.entries(current.fields)) {
-      norm[k.toLowerCase().replace(/[\s\-]+/g, '_')] = v
+      norm[k.toLowerCase().replace(/[\s\-\.]+/g, '_')] = v
     }
     for (const key of keys) {
       if (current.fields[key]) return current.fields[key]
-      const nk = key.toLowerCase().replace(/[\s\-]+/g, '_')
+      const nk = key.toLowerCase().replace(/[\s\-\.]+/g, '_')
       if (norm[nk]) return norm[nk]
     }
     return ''
   }
+  // Value-based detection for when GF sends numeric field IDs (e.g. "1", "2.1")
+  const detectedEmail = Object.values(current.fields).find(v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())) ?? ''
+  const detectedPhone = Object.values(current.fields).find(v => /^[\+\d][\d\s\-\(\)\.]{5,18}$/.test(v.trim())) ?? ''
 
   const contactName  = (current.ai_entities?.name  ?? getField('name', 'full_name', 'your_name', 'contact_name', 'first_name')) || 'Anonymous'
-  const contactEmail = (current.ai_entities?.email ?? getField('email', 'email_address', 'your_email')) || null
-  const contactPhone = (current.ai_entities?.phone ?? getField('phone', 'phone_number', 'mobile', 'telephone', 'tel')) || null
+  const contactEmail = (current.ai_entities?.email ?? (getField('email', 'email_address', 'your_email') || detectedEmail)) || null
+  const contactPhone = (current.ai_entities?.phone ?? (getField('phone', 'phone_number', 'mobile', 'telephone', 'tel') || detectedPhone)) || null
   const contactCompany = getField('company', 'company_name', 'organisation', 'organization', 'business')
   const contactCity    = getField('city', 'location', 'town', 'suburb')
 

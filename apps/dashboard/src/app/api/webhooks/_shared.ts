@@ -30,14 +30,15 @@ const FIELD_ALIASES: Record<string, string> = {
 
 /**
  * Normalise raw webhook field keys:
- *  1. lowercase + trim + spaces→underscores
+ *  1. lowercase + trim + spaces/hyphens/dots→underscores
  *  2. apply common label aliases (e.g. "Email Address" → "email")
+ *  3. value-based fallback: detect email/phone by format when keys are numeric IDs
  */
 export function normalizeFields(raw: Record<string, string>): Record<string, string> {
   const result: Record<string, string> = {}
 
   for (const [k, v] of Object.entries(raw)) {
-    const nk = k.toLowerCase().trim().replace(/[\s\-]+/g, '_')
+    const nk = k.toLowerCase().trim().replace(/[\s\-\.]+/g, '_')
     result[nk] = v
   }
 
@@ -45,6 +46,17 @@ export function normalizeFields(raw: Record<string, string>): Record<string, str
     if (result[alias] !== undefined && result[standard] === undefined) {
       result[standard] = result[alias]
     }
+  }
+
+  // Value-based detection: when GF sends numeric field IDs (e.g. "1", "1_3"),
+  // detect email / phone from value format so standard keys are stored in DB.
+  if (!result['email']) {
+    const emailVal = Object.values(result).find(v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()))
+    if (emailVal) result['email'] = emailVal
+  }
+  if (!result['phone']) {
+    const phoneVal = Object.values(result).find(v => /^[\+\d][\d\s\-\(\)\.]{5,18}$/.test(v.trim()))
+    if (phoneVal) result['phone'] = phoneVal
   }
 
   return result
