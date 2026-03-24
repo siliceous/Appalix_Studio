@@ -499,6 +499,7 @@ export function EmailInbox({
           ai_priority: null, ai_summary: null, ai_reason: null, ai_category: null, ai_user_prompt: null,
           ai_action: null, ai_entities: null, ai_insights: null,
           ai_reply_drafts: null, ai_analyzed_at: null,
+          assigned_to: null,
           created_at: new Date().toISOString(),
         }
         setEmails(prev => [sent, ...prev])
