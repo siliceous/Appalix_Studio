@@ -100,18 +100,51 @@ function getField(fields: Record<string, string>, ...keys: string[]): string {
   return ''
 }
 
-/** Scan all field values for an email address (handles numeric GF field IDs) */
-function detectEmail(fields: Record<string, string>): string {
-  return Object.values(fields).find(v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())) ?? ''
+const META_KEYS = new Set(['form_title', 'form_name', 'id', 'form_id', 'ip', 'date_created', 'source_url', 'currency', 'payment_status'])
+
+/** Extract non-meta trimmed values from fields */
+function fieldVals(fields: Record<string, string>): string[] {
+  return Object.entries(fields).filter(([k]) => !META_KEYS.has(k)).map(([, v]) => v.trim()).filter(Boolean)
 }
 
-/** Scan all field values for a phone number (handles numeric GF field IDs) */
+/** Scan all field values for an email address (handles numeric GF field IDs) */
+function detectEmail(fields: Record<string, string>): string {
+  return fieldVals(fields).find(v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) ?? ''
+}
+
+/** Scan all field values for a phone number */
 function detectPhone(fields: Record<string, string>): string {
-  return Object.values(fields).find(v => /^[\+\d][\d\s\-\(\)\.]{5,18}$/.test(v.trim())) ?? ''
+  return fieldVals(fields).find(v => /^[\+\d][\d\s\-\(\)\.]{5,18}$/.test(v)) ?? ''
+}
+
+/** Detect person name: 2-5 words, letters only, not email/phone */
+function detectName(fields: Record<string, string>, skip: Set<string>): string {
+  return fieldVals(fields).find(v => {
+    if (skip.has(v)) return false
+    if (v.length < 3 || v.length > 60) return false
+    if (/[@\/\d]/.test(v)) return false
+    const words = v.split(/\s+/)
+    return words.length >= 2 && words.length <= 5 && words.every(w => /^[A-Za-zÀ-ÿ\-'\.]{2,}$/.test(w))
+  }) ?? ''
+}
+
+/** Detect company: short non-name, non-email, non-phone string */
+function detectCompany(fields: Record<string, string>, skip: Set<string>): string {
+  return fieldVals(fields).find(v => {
+    if (skip.has(v)) return false
+    if (v.length < 2 || v.length > 80) return false
+    if (/[@]/.test(v)) return false
+    return !v.includes('  ') && v.split(/\s+/).length <= 6
+  }) ?? ''
 }
 
 function getName(sub: SageFormSubmission): string {
-  return (sub.ai_entities?.name ?? getField(sub.fields, 'name', 'full_name', 'your_name', 'contact_name', 'first_name', 'fullname')) || ''
+  const byKey = getField(sub.fields, 'name', 'full_name', 'your_name', 'contact_name', 'first_name', 'fullname')
+  if (sub.ai_entities?.name) return sub.ai_entities.name
+  if (byKey) return byKey
+  const email = detectEmail(sub.fields)
+  const phone = detectPhone(sub.fields)
+  return detectName(sub.fields, new Set([email, phone].filter(Boolean)))
 }
 
 function getEmail(sub: SageFormSubmission): string {
@@ -127,7 +160,12 @@ function getPhone(sub: SageFormSubmission): string {
 }
 
 function getCompany(sub: SageFormSubmission): string {
-  return getField(sub.fields, 'company', 'company_name', 'organisation', 'organization', 'business', 'business_name')
+  const byKey = getField(sub.fields, 'company', 'company_name', 'organisation', 'organization', 'business', 'business_name')
+  if (byKey) return byKey
+  const email   = detectEmail(sub.fields)
+  const phone   = detectPhone(sub.fields)
+  const name    = getName(sub)
+  return detectCompany(sub.fields, new Set([email, phone, name].filter(Boolean)))
 }
 
 // ── Main component ────────────────────────────────────────────────────────────

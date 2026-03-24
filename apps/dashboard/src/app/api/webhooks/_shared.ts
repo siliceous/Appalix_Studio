@@ -49,14 +49,43 @@ export function normalizeFields(raw: Record<string, string>): Record<string, str
   }
 
   // Value-based detection: when GF sends numeric field IDs (e.g. "1", "1_3"),
-  // detect email / phone from value format so standard keys are stored in DB.
+  // detect standard fields from value format so they're stored under known keys.
+  const META_KEYS = new Set(['form_title', 'form_name', 'id', 'form_id', 'ip', 'date_created', 'source_url', 'currency', 'payment_status'])
+
+  const vals = Object.entries(result)
+    .filter(([k]) => !META_KEYS.has(k))
+    .map(([, v]) => v.trim())
+    .filter(Boolean)
+
   if (!result['email']) {
-    const emailVal = Object.values(result).find(v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()))
+    const emailVal = vals.find(v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v))
     if (emailVal) result['email'] = emailVal
   }
   if (!result['phone']) {
-    const phoneVal = Object.values(result).find(v => /^[\+\d][\d\s\-\(\)\.]{5,18}$/.test(v.trim()))
+    const phoneVal = vals.find(v => /^[\+\d][\d\s\-\(\)\.]{5,18}$/.test(v))
     if (phoneVal) result['phone'] = phoneVal
+  }
+  if (!result['name']) {
+    const usedVals = new Set([result['email'], result['phone']].filter(Boolean))
+    const nameVal = vals.find(v => {
+      if (usedVals.has(v)) return false
+      if (v.length < 3 || v.length > 60) return false
+      if (/[@\/\d]/.test(v)) return false
+      const words = v.split(/\s+/)
+      return words.length >= 2 && words.length <= 5 && words.every(w => /^[A-Za-zÀ-ÿ\-'\.]{2,}$/.test(w))
+    })
+    if (nameVal) result['name'] = nameVal
+  }
+  if (!result['company']) {
+    const usedVals = new Set([result['email'], result['phone'], result['name']].filter(Boolean))
+    const companyVal = vals.find(v => {
+      if (usedVals.has(v)) return false
+      if (v.length < 2 || v.length > 80) return false
+      if (/[@]/.test(v)) return false
+      // Not a long message (messages tend to be sentences)
+      return !v.includes('  ') && v.split(/\s+/).length <= 6
+    })
+    if (companyVal) result['company'] = companyVal
   }
 
   return result

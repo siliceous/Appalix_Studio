@@ -85,6 +85,11 @@ export function SubmissionPanelClient({
   }
 
   const currentForm = forms.find(f => f.id === current.form_id) ?? null
+  const META_KEYS_PANEL = new Set(['form_title', 'form_name', 'id', 'form_id', 'ip', 'date_created', 'source_url'])
+  function fVals(): string[] {
+    return Object.entries(current.fields).filter(([k]) => !META_KEYS_PANEL.has(k)).map(([, v]) => v.trim()).filter(Boolean)
+  }
+
   // Case-insensitive field lookup — handles "Name", "Full Name", "name", "full_name", numeric IDs etc.
   function getField(...keys: string[]): string {
     const norm: Record<string, string> = {}
@@ -98,14 +103,34 @@ export function SubmissionPanelClient({
     }
     return ''
   }
-  // Value-based detection for when GF sends numeric field IDs (e.g. "1", "2.1")
-  const detectedEmail = Object.values(current.fields).find(v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())) ?? ''
-  const detectedPhone = Object.values(current.fields).find(v => /^[\+\d][\d\s\-\(\)\.]{5,18}$/.test(v.trim())) ?? ''
 
-  const contactName  = (current.ai_entities?.name  ?? getField('name', 'full_name', 'your_name', 'contact_name', 'first_name')) || 'Anonymous'
-  const contactEmail = (current.ai_entities?.email ?? (getField('email', 'email_address', 'your_email') || detectedEmail)) || null
-  const contactPhone = (current.ai_entities?.phone ?? (getField('phone', 'phone_number', 'mobile', 'telephone', 'tel') || detectedPhone)) || null
-  const contactCompany = getField('company', 'company_name', 'organisation', 'organization', 'business')
+  const detectedEmail = fVals().find(v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) ?? ''
+  const detectedPhone = fVals().find(v => /^[\+\d][\d\s\-\(\)\.]{5,18}$/.test(v)) ?? ''
+
+  function detectPersonName(skip: Set<string>): string {
+    return fVals().find(v => {
+      if (skip.has(v)) return false
+      if (v.length < 3 || v.length > 60 || /[@\/\d]/.test(v)) return false
+      const words = v.split(/\s+/)
+      return words.length >= 2 && words.length <= 5 && words.every(w => /^[A-Za-zÀ-ÿ\-'\.]{2,}$/.test(w))
+    }) ?? ''
+  }
+  function detectCompanyVal(skip: Set<string>): string {
+    return fVals().find(v => {
+      if (skip.has(v)) return false
+      if (v.length < 2 || v.length > 80 || /[@]/.test(v)) return false
+      return !v.includes('  ') && v.split(/\s+/).length <= 6
+    }) ?? ''
+  }
+
+  const _nameByKey = getField('name', 'full_name', 'your_name', 'contact_name', 'first_name')
+  const _nameSkip  = new Set([detectedEmail, detectedPhone].filter(Boolean))
+  const contactName    = (current.ai_entities?.name  ?? (_nameByKey || detectPersonName(_nameSkip))) || 'Anonymous'
+  const contactEmail   = (current.ai_entities?.email ?? (getField('email', 'email_address', 'your_email') || detectedEmail)) || null
+  const contactPhone   = (current.ai_entities?.phone ?? (getField('phone', 'phone_number', 'mobile', 'telephone', 'tel') || detectedPhone)) || null
+  const _companyByKey  = getField('company', 'company_name', 'organisation', 'organization', 'business')
+  const _companySkip   = new Set([detectedEmail, detectedPhone, contactName === 'Anonymous' ? '' : contactName].filter(Boolean))
+  const contactCompany = _companyByKey || detectCompanyVal(_companySkip)
   const contactCity    = getField('city', 'location', 'town', 'suburb')
 
   async function handlePriorityChange(val: string) {
