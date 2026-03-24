@@ -20,13 +20,17 @@ export async function POST(
   const { workspaceId } = await params
   if (!workspaceId) return NextResponse.json({ error: 'missing workspace' }, { status: 400 })
 
-  // Log all incoming headers for debugging
-  const incomingSecret = req.headers.get('x-webhook-secret') ?? ''
+  // Accept secret via header OR query param (?secret=...) — GF free tier has no custom headers UI
+  const incomingSecret =
+    req.headers.get('x-webhook-secret') ||
+    new URL(req.url).searchParams.get('secret') ||
+    ''
+
   console.log('[GF webhook] workspaceId:', workspaceId)
-  console.log('[GF webhook] x-webhook-secret present:', !!incomingSecret)
+  console.log('[GF webhook] secret source:', req.headers.get('x-webhook-secret') ? 'header' : 'query')
   console.log('[GF webhook] content-type:', req.headers.get('content-type'))
 
-  if (!incomingSecret) return NextResponse.json({ error: 'missing X-Webhook-Secret header' }, { status: 401 })
+  if (!incomingSecret) return NextResponse.json({ error: 'missing secret (header or ?secret= query param)' }, { status: 401 })
 
   const admin = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

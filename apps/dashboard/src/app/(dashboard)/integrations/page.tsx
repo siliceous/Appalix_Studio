@@ -65,7 +65,7 @@ export default async function IntegrationsPage({
   const EMAIL_PROVIDERS = ['mailchimp', 'activecampaign', 'convertkit', 'klaviyo', 'constantcontact'] as const
 
   const admin = createAdminClient()
-  const [{ data: rawIntegrations }, { data: sageIntegrationsRaw }, { data: sourcesRaw }, { data: emailIntegrationsRaw }, { data: allConnectedEmailsRaw }, { data: profilesRaw }, { data: membersRaw }] = await Promise.all([
+  const [{ data: rawIntegrations }, { data: sageIntegrationsRaw }, { data: sourcesRaw }, { data: emailIntegrationsRaw }, { data: allConnectedEmailsRaw }, { data: profilesRaw }, { data: membersRaw }, { data: formIntegConfigsRaw }] = await Promise.all([
     supabase.from('integrations').select('*, bots(name)').eq('workspace_id', membership.workspace_id).order('created_at', { ascending: false }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('sage_integrations').select('provider, status').eq('workspace_id', membership.workspace_id).eq('user_id', user.id),
@@ -79,6 +79,9 @@ export default async function IntegrationsPage({
     (admin as any).from('user_profiles').select('user_id, first_name, last_name'),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('workspace_members').select('user_id, role').eq('workspace_id', membership.workspace_id),
+    // Form plugin configs — to build webhook URLs with secrets for GF/WPForms
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any).from('sage_integrations').select('provider, config').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', ['gravity_forms', 'wpforms']),
   ])
   const integrations      = (rawIntegrations ?? []) as IntegrationRow[]
   const adSources         = (sourcesRaw ?? []) as LeadAdSource[]
@@ -88,6 +91,16 @@ export default async function IntegrationsPage({
   const host        = headersList.get('host') ?? 'appalix.ai'
   const proto       = host.startsWith('localhost') ? 'http' : 'https'
   const baseUrl     = `${proto}://${host}`
+
+  // Build webhook URLs with secrets for GF / WPForms
+  type FormCfgRow = { provider: string; config: Record<string, string> }
+  const formWebhookUrls: Record<string, string> = {}
+  for (const row of (formIntegConfigsRaw ?? []) as FormCfgRow[]) {
+    const secret = row.config?.webhook_secret ?? ''
+    const slug   = row.provider === 'gravity_forms' ? 'gravity-forms' : row.provider
+    const base   = `${baseUrl}/api/webhooks/${slug}/${membership.workspace_id}`
+    formWebhookUrls[row.provider] = secret ? `${base}?secret=${encodeURIComponent(secret)}` : base
+  }
 
   const connectedPlatforms = new Set(integrations?.map((i) => i.platform))
 
@@ -268,6 +281,7 @@ export default async function IntegrationsPage({
             standalone={false}
             providers={['gravity_forms', 'wpforms', 'typeform']}
             workspaceId={membership.workspace_id}
+            formWebhookUrls={formWebhookUrls}
             columns={2}
           />
         </div>

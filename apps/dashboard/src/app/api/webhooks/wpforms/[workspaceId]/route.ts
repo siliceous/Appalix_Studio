@@ -20,8 +20,13 @@ export async function POST(
   const { workspaceId } = await params
   if (!workspaceId) return NextResponse.json({ error: 'missing workspace' }, { status: 400 })
 
-  const incomingSecret = req.headers.get('x-webhook-secret') ?? ''
-  if (!incomingSecret) return NextResponse.json({ error: 'missing secret' }, { status: 401 })
+  // Accept secret via header OR query param (?secret=...) — some plugin tiers have no custom headers UI
+  const incomingSecret =
+    req.headers.get('x-webhook-secret') ||
+    new URL(req.url).searchParams.get('secret') ||
+    ''
+
+  if (!incomingSecret) return NextResponse.json({ error: 'missing secret (header or ?secret= query param)' }, { status: 401 })
 
   const admin = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

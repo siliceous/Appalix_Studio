@@ -241,9 +241,10 @@ interface IntegrationsClientProps {
   columns?:                     1 | 2
   connectedEmailInfoByProvider?: Record<string, ConnectedEmailInfo> | null
   workspaceId?:                 string
+  formWebhookUrls?:             Record<string, string>  // pre-built URLs with secrets for GF/WPForms
 }
 
-export function IntegrationsClient({ connected: initialConnected, standalone = true, initialExpanded, onboarding, loginHint, providers, columns, connectedEmailInfoByProvider, workspaceId }: IntegrationsClientProps) {
+export function IntegrationsClient({ connected: initialConnected, standalone = true, initialExpanded, onboarding, loginHint, providers, columns, connectedEmailInfoByProvider, workspaceId, formWebhookUrls }: IntegrationsClientProps) {
   const [connected,         setConnected]        = useState<Set<string>>(initialConnected)
   const [expanded,          setExpanded]         = useState<string | null>(initialExpanded ?? null)
   const [pending,           startTransition]     = useTransition()
@@ -570,6 +571,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                     {isConnected && integration.webhookPath && workspaceId && (() => {
                       const result  = connectResult[integration.provider]
                       const hookUrl = result?.webhookUrl
+                        ?? formWebhookUrls?.[integration.provider]
                         ?? `${typeof window !== 'undefined' ? window.location.origin : ''}${integration.webhookPath}/${workspaceId}`
                       const isTypeform = integration.provider === 'typeform'
                       return (

@@ -1202,8 +1202,13 @@ export async function connectFormIntegration(
     )
   if (saveError) return { error: saveError.message }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.appalix.ai'
-  const webhookUrl = `${appUrl}/api/webhooks/${provider === 'gravity_forms' ? 'gravity-forms' : provider}/${workspaceId}`
+  const appUrl    = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.appalix.ai'
+  const basePath  = `${appUrl}/api/webhooks/${provider === 'gravity_forms' ? 'gravity-forms' : provider}/${workspaceId}`
+  // For GF/WPForms: embed the secret in the URL so no custom header is needed
+  const secret     = config.webhook_secret ?? ''
+  const webhookUrl = (provider === 'gravity_forms' || provider === 'wpforms') && secret
+    ? `${basePath}?secret=${encodeURIComponent(secret)}`
+    : basePath
 
   // Typeform: auto-register our webhook via Typeform API
   if (provider === 'typeform') {

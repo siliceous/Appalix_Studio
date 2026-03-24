@@ -54,7 +54,7 @@ export default async function SourcesPage() {
       .in('source_platform', SYNC_PROVIDERS),
     a
       .from('sage_integrations')
-      .select('provider, status')
+      .select('provider, status, config')
       .eq('workspace_id', workspaceId)
       .eq('status', 'connected')
       .in('provider', FORM_PROVIDERS),
@@ -62,11 +62,10 @@ export default async function SourcesPage() {
 
   const sources           = (sourcesRaw ?? []) as LeadAdSource[]
   const emailIntegrations = (emailIntegrationsRaw ?? []) as Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at' | 'sync_enabled' | 'last_synced_at' | 'last_sync_count'>[]
-  const formConnected     = new Set<string>(
-    ((formIntegrationsRaw ?? []) as { provider: string; status: string }[])
-      .filter(r => r.status === 'connected')
-      .map(r => r.provider)
-  )
+
+  type FormRow = { provider: string; status: string; config: Record<string, string> }
+  const formRows      = (formIntegrationsRaw ?? []) as FormRow[]
+  const formConnected = new Set<string>(formRows.filter(r => r.status === 'connected').map(r => r.provider))
 
   // Count leads per email platform
   const leadCounts: Record<string, number> = {}
@@ -79,6 +78,17 @@ export default async function SourcesPage() {
   const host  = headersList.get('host') ?? 'appalix.ai'
   const proto = host.startsWith('localhost') ? 'http' : 'https'
   const baseUrl = `${proto}://${host}`
+
+  // Build webhook URLs with secrets for GF / WPForms
+  const formWebhookUrls: Record<string, string> = {}
+  for (const row of formRows) {
+    if (row.provider === 'gravity_forms' || row.provider === 'wpforms') {
+      const secret = row.config?.webhook_secret ?? ''
+      const slug   = row.provider === 'gravity_forms' ? 'gravity-forms' : row.provider
+      const base   = `${baseUrl}/api/webhooks/${slug}/${workspaceId}`
+      formWebhookUrls[row.provider] = secret ? `${base}?secret=${encodeURIComponent(secret)}` : base
+    }
+  }
 
   return (
     <div className="p-8 max-w-3xl mx-auto">
@@ -105,6 +115,7 @@ export default async function SourcesPage() {
           standalone={false}
           providers={['gravity_forms', 'wpforms', 'typeform']}
           workspaceId={workspaceId}
+          formWebhookUrls={formWebhookUrls}
         />
       </div>
     </div>
