@@ -85,12 +85,13 @@ export default async function FormsPage({
         .map(m => m.user_id)
       visibleUserIds = [user.id, ...employeeIds]
     }
+    // Include forms created by visible users OR with no creator (webhook-created forms)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: visibleForms } = await (admin as any)
       .from('sage_forms')
       .select('id')
       .eq('workspace_id', workspaceId)
-      .in('created_by', visibleUserIds)
+      .or(`created_by.in.(${visibleUserIds.join(',')}),created_by.is.null`)
     visibleFormIds = ((visibleForms ?? []) as { id: string }[]).map(f => f.id)
   }
 
