@@ -2,49 +2,87 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-  ChevronRight, X, Briefcase, Users,
-  Ticket, Clock, CheckCircle2, Phone, Video,
-} from 'lucide-react'
+import { ChevronRight, X } from 'lucide-react'
 import type { ActivityEntry, ViewingAsInfo } from '@/app/actions/activity-feed'
 
-const EVENT_LABELS: Record<string, string> = {
-  contact_created:       'Created contact',
-  contact_updated:       'Updated contact',
-  contact_assigned:      'Assigned contact',
-  deal_created:          'Created deal',
-  stage_changed:         'Moved deal stage',
-  status_changed:        'Updated status',
-  deal_assigned:         'Assigned deal',
-  ticket_created:        'Created ticket',
-  note_added:            'Added a note',
-  call_added:            'Logged a call',
-  meeting_added:         'Logged a meeting',
-  task_added:            'Added a task',
-  email_sent:            'Sent an email',
-  email_replied:         'Replied to email',
-  priority_changed:      'Changed priority',
-  conversation_renamed:  'Renamed conversation',
-  conversation_assigned: 'Assigned conversation',
-  lead_moved:            'Moved lead to pipeline',
-}
-
-const ENTITY_TYPE_LABEL: Record<string, string> = {
+// ── Source bubble ─────────────────────────────────────────────────────────────
+const SOURCE_FROM_ENTITY: Record<string, string> = {
   email:        'email',
-  ticket:       'ticket',
   conversation: 'bot',
-  lead:         'form',
+  lead:         'forms',
+  ticket:       'ticket',
+  contact:      'manual',
+  deal:         'manual',
+  task:         'manual',
 }
 
-function formatEventLabel(eventType: string, entityName?: string | null, entityType?: string | null, priorityFrom?: string | null, priorityTo?: string | null): string {
-  if (eventType === 'priority_changed' && entityType) {
-    const typeLabel = ENTITY_TYPE_LABEL[entityType] ?? entityType
-    const name  = entityName ? ` (${entityName})` : ''
-    const arrow = priorityFrom && priorityTo ? ` ${priorityFrom} → ${priorityTo}` : (priorityTo ? ` → ${priorityTo}` : '')
-    return `Changed priority for ${typeLabel}${name}${arrow}`
+const SOURCE_COLORS: Record<string, string> = {
+  email:  'bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300',
+  bot:    'bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300',
+  forms:  'bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300',
+  ticket: 'bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400',
+  manual: 'bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400',
+}
+
+function getSource(entry: ActivityEntry): string {
+  if (entry.source) return entry.source
+  return SOURCE_FROM_ENTITY[entry.entity_type] ?? 'manual'
+}
+
+// ── Human-readable message ─────────────────────────────────────────────────
+function renderMessage(entry: ActivityEntry): string {
+  const n = entry.entity_name ? `'${entry.entity_name}'` : null
+  switch (entry.event_type) {
+    case 'email_replied':
+      return n ? `Replied to ${n}` : 'Replied to email'
+    case 'email_sent':
+      return n ? `Sent email to ${n}` : 'Sent an email'
+    case 'deal_created':
+      return n ? `Deal created for ${n}` : 'Created deal'
+    case 'deal_assigned': {
+      const to = entry.assignee_name ? ` to ${entry.assignee_name}` : ''
+      return n ? `Assigned ${n}${to}` : `Assigned deal${to}`
+    }
+    case 'stage_changed': {
+      const arrow = entry.stage_from && entry.stage_to ? ` · ${entry.stage_from} → ${entry.stage_to}` : ''
+      return n ? `Moved ${n}${arrow}` : `Moved deal${arrow}`
+    }
+    case 'status_changed': {
+      const arrow = entry.status_from && entry.status_to ? ` · ${entry.status_from} → ${entry.status_to}` : ''
+      return n ? `Status for ${n}${arrow}` : `Status changed${arrow}`
+    }
+    case 'priority_changed': {
+      const arrow = entry.priority_from && entry.priority_to
+        ? ` · ${entry.priority_from} → ${entry.priority_to}`
+        : entry.priority_to ? ` → ${entry.priority_to}` : ''
+      return n ? `Priority for ${n}${arrow}` : `Priority changed${arrow}`
+    }
+    case 'contact_created':       return n ? `Contact created: ${n}` : 'Created contact'
+    case 'contact_updated':       return n ? `Updated contact ${n}` : 'Updated contact'
+    case 'contact_assigned':      return n ? `Assigned contact ${n}` : 'Assigned contact'
+    case 'contact_deleted':       return n ? `Deleted contact ${n}` : 'Deleted contact'
+    case 'ticket_created':        return n ? `Ticket created: ${n}` : 'Created ticket'
+    case 'ticket_deleted':        return n ? `Deleted ticket ${n}` : 'Deleted ticket'
+    case 'deal_deleted':          return n ? `Deleted deal ${n}` : 'Deleted deal'
+    case 'email_deleted':         return n ? `Deleted email from ${n}` : 'Deleted email'
+    case 'lead_deleted':          return n ? `Deleted form submission ${n}` : 'Deleted form submission'
+    case 'conversation_deleted':  return n ? `Deleted bot conversation ${n}` : 'Deleted bot conversation'
+    case 'note_added':            return n ? `Note added on ${n}` : 'Added a note'
+    case 'call_added':            return n ? `Logged call with ${n}` : 'Logged a call'
+    case 'meeting_added':         return n ? `Logged meeting with ${n}` : 'Logged a meeting'
+    case 'task_added':            return n ? `Task added: ${n}` : 'Added a task'
+    case 'conversation_renamed':  return n ? `Renamed conversation to ${n}` : 'Renamed conversation'
+    case 'conversation_assigned': return n ? `Assigned conversation ${n}` : 'Assigned conversation'
+    case 'lead_assigned': {
+      const to = entry.assignee_name ? ` to ${entry.assignee_name}` : ''
+      return n ? `Assigned form ${n}${to}` : `Assigned form${to}`
+    }
+    case 'lead_moved':            return n ? `Moved lead ${n} to pipeline` : 'Moved lead to pipeline'
+    default: {
+      const label = entry.event_type.replace(/_/g, ' ')
+      return n ? `${label}: ${n}` : label
+    }
   }
-  const base = EVENT_LABELS[eventType] ?? eventType.replace(/_/g, ' ')
-  return entityName ? `${base}: ${entityName}` : base
 }
 
 const STORAGE_KEY = 'activity_sidebar_collapsed'
@@ -69,50 +107,35 @@ const ROLE_LABELS: Record<string, string> = {
   employee: 'Employee', member: 'Member', viewer: 'Viewer',
 }
 
-const ENTITY_ICON: Record<string, React.ElementType> = {
-  contact:      Users,
-  deal:         Briefcase,
-  ticket:       Ticket,
-  task:         CheckCircle2,
-  email:        Briefcase,
-  conversation: Briefcase,
-  lead:         Briefcase,
-}
-
-const UPCOMING_ICON: Record<string, React.ElementType> = {
-  task_scheduled:    CheckCircle2,
-  meeting_scheduled: Video,
-  call_scheduled:    Phone,
-}
 
 function ActivityItem({ entry }: { entry: ActivityEntry }) {
-  const Icon = entry.is_upcoming
-    ? (UPCOMING_ICON[entry.event_type] ?? CheckCircle2)
-    : (ENTITY_ICON[entry.entity_type] ?? Briefcase)
+  const source = entry.is_upcoming ? null : getSource(entry)
+  const sourceCls = source ? (SOURCE_COLORS[source] ?? SOURCE_COLORS.manual) : ''
 
   return (
-    <div className="flex items-start gap-2.5 py-2 border-b dark:border-white/6 last:border-0">
-      <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-        entry.is_upcoming
-          ? 'bg-brand-100 dark:bg-brand-500/15 text-brand-600 dark:text-brand-400'
-          : 'bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400'
-      }`}>
-        <Icon className="w-2.5 h-2.5" />
-      </div>
+    <div className="flex items-start gap-2 py-2 border-b dark:border-white/6 last:border-0">
       <div className="flex-1 min-w-0">
-        <p className="text-[11px] text-gray-800 dark:text-gray-200 leading-snug">
-          {formatEventLabel(entry.event_type, entry.entity_name, entry.entity_type, entry.priority_from, entry.priority_to)}
-        </p>
-        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 flex items-center gap-1">
-          <Clock className="w-2 h-2 shrink-0" />
-          {entry.is_upcoming ? `Due ${fmt12h(entry.created_at)}` : fmt12h(entry.created_at)}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {source && (
+            <span className={`shrink-0 text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${sourceCls}`}>
+              {source}
+            </span>
+          )}
+          {entry.is_upcoming && (
+            <span className="shrink-0 text-[9px] px-1 py-0.5 rounded-full bg-brand-100 dark:bg-brand-500/15 text-brand-600 dark:text-brand-400 font-medium border border-brand-200 dark:border-brand-500/20 leading-tight">
+              soon
+            </span>
+          )}
+        </div>
+        <p className="text-[11px] text-gray-800 dark:text-gray-200 leading-snug mt-0.5">
+          {entry.is_upcoming
+            ? (entry.entity_name ?? entry.event_type.replace(/_/g, ' '))
+            : renderMessage(entry)}
         </p>
       </div>
-      {entry.is_upcoming && (
-        <span className="shrink-0 text-[9px] px-1 py-0.5 rounded-full bg-brand-100 dark:bg-brand-500/15 text-brand-600 dark:text-brand-400 font-medium border border-brand-200 dark:border-brand-500/20 leading-tight">
-          soon
-        </span>
-      )}
+      <span className="shrink-0 text-[10px] text-gray-400 dark:text-gray-500 tabular-nums mt-0.5">
+        {entry.is_upcoming ? `Due ${fmt12h(entry.created_at)}` : fmt12h(entry.created_at)}
+      </span>
     </div>
   )
 }

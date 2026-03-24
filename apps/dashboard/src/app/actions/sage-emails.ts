@@ -49,12 +49,55 @@ export async function syncEmails(): Promise<{ synced: number; error?: string }> 
     })
     const data = await res.json() as { synced?: number; error?: string }
     if (!res.ok) return { synced: 0, error: data.error ?? 'Sync failed' }
-    revalidatePath('/sage/emails')
+    revalidatePath('/dashboard/email')
     revalidatePath('/dashboard')
     return { synced: data.synced ?? 0 }
   } catch {
     return { synced: 0, error: 'Could not reach API' }
   }
+}
+
+/**
+ * Full-mailbox search — bypasses the 200-email local limit.
+ * Searches from_name, from_address, subject, ai_summary across all inbound emails.
+ */
+export async function searchTriageEmails(query: string): Promise<{ data: import('@/lib/types').SageEmail[]; error?: string }> {
+  if (!query.trim()) return { data: [] }
+  const supabase = await createClient()
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { data: [], error: 'Not authenticated' }
+
+  const q = `%${query.trim()}%`
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.from('sage_emails') as any)
+    .select('*, contact:sage_contacts(id, name, email)')
+    .eq('workspace_id', workspaceId)
+    .eq('direction', 'inbound')
+    .eq('is_trashed', false)
+    .or(`from_name.ilike.${q},from_address.ilike.${q},subject.ilike.${q},ai_summary.ilike.${q}`)
+    .order('received_at', { ascending: false })
+    .limit(500)
+
+  if (error) return { data: [], error: (error as { message: string }).message }
+  return { data: (data ?? []) as import('@/lib/types').SageEmail[] }
+}
+
+/**
+ * Assign emails to a team member.
+ */
+export async function assignEmailsTo(emailIds: string[], userId: string): Promise<{ assigned: number; error?: string }> {
+  if (!emailIds.length) return { assigned: 0 }
+  const supabase = await createClient()
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { assigned: 0, error: 'Not authenticated' }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error, count } = await (supabase.from('sage_emails') as any)
+    .update({ assigned_to: userId }, { count: 'exact' })
+    .eq('workspace_id', workspaceId)
+    .in('id', emailIds)
+  if (error) return { assigned: 0, error: (error as { message: string }).message }
+  revalidatePath('/dashboard/email')
+  return { assigned: count ?? emailIds.length }
 }
 
 /**
@@ -64,8 +107,20 @@ export async function deleteTriageEmails(emailIds: string[]): Promise<{ deleted:
   if (!emailIds.length) return { deleted: 0 }
 
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   const workspaceId = await getWorkspaceId()
   if (!workspaceId) return { deleted: 0, error: 'Not authenticated' }
+
+  const admin = createAdminClient()
+
+  // Fetch sender names before deleting
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: emailRows } = await (admin.from('sage_emails') as any)
+    .select('id, from_name, from_address, subject')
+    .in('id', emailIds)
+    .eq('workspace_id', workspaceId)
+  type ER = { from_name?: string | null; from_address?: string; subject?: string | null }
+  const names = ((emailRows ?? []) as ER[]).map(e => e.from_name ?? e.from_address ?? null).filter(Boolean)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error, count } = await (supabase.from('sage_emails') as any)
@@ -74,7 +129,19 @@ export async function deleteTriageEmails(emailIds: string[]): Promise<{ deleted:
     .in('id', emailIds)
 
   if (error) return { deleted: 0, error: (error as { message: string }).message }
-  revalidatePath('/sage/emails')
+
+  if (user) {
+    void admin.from('sage_activity_log').insert({
+      workspace_id: workspaceId,
+      entity_type:  'email',
+      entity_id:    emailIds[0],
+      event_type:   'email_deleted',
+      payload:      { names, count: emailIds.length, source: 'email' },
+      user_id:      user.id,
+    })
+  }
+
+  revalidatePath('/dashboard/email')
   revalidatePath('/dashboard')
   return { deleted: count ?? emailIds.length }
 }
@@ -101,7 +168,7 @@ export async function reanalyzeEmails(batchSize = 50, emailIds?: string[]): Prom
     })
     const data = await res.json() as { reanalyzed?: number; error?: string }
     if (!res.ok) return { reanalyzed: 0, error: data.error ?? 'Reanalysis failed' }
-    revalidatePath('/sage/emails')
+    revalidatePath('/dashboard/email')
     revalidatePath('/dashboard')
     return { reanalyzed: data.reanalyzed ?? 0 }
   } catch {
@@ -126,7 +193,7 @@ export async function quickCheckEmails(): Promise<{ synced: number; error?: stri
     })
     const data = await res.json() as { synced?: number; error?: string }
     if (!res.ok) return { synced: 0, error: data.error ?? 'Check failed' }
-    revalidatePath('/sage/emails')
+    revalidatePath('/dashboard/email')
     return { synced: data.synced ?? 0 }
   } catch {
     return { synced: 0, error: 'Could not reach API' }
@@ -166,7 +233,7 @@ export async function markEmailTrashed(emailId: string, trashed: boolean): Promi
     .eq('workspace_id', workspaceId)
 
   if (error) return { error: (error as { message: string }).message }
-  revalidatePath('/sage/emails')
+  revalidatePath('/dashboard/email')
   return {}
 }
 
@@ -327,7 +394,7 @@ export async function markEmailRead(emailId: string): Promise<void> {
   const admin = createAdminClient()
   await admin.from('sage_emails').update({ is_read: true }).eq('id', emailId)
   revalidatePath('/dashboard')
-  revalidatePath('/sage/emails')
+  revalidatePath('/dashboard/email')
 }
 
 export async function enhanceEmailReply(

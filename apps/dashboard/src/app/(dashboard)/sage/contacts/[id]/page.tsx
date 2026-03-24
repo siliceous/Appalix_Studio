@@ -229,6 +229,15 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
             <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Contact Type</p>
             <p className="text-sm text-gray-700 dark:text-gray-300 capitalize">{(contact.contact_type ?? 'potential_customer').replace('_', ' ')}</p>
           </div>
+          <div>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Assigned To</p>
+            {(() => {
+              const assignedMember = members.find(m => m.user_id === contact.assigned_to)
+              return assignedMember
+                ? <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{assignedMember.name || assignedMember.email}</p>
+                : <p className="text-sm text-gray-400 italic">Unassigned</p>
+            })()}
+          </div>
         </div>
       </div>
 

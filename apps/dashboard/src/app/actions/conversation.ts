@@ -35,6 +35,12 @@ export async function deleteConversation(conversationId: string) {
   if (!membership) throw new Error('Unauthorized')
 
   const admin = createAdminClient()
+  const { data: convRow } = await (admin as any)
+    .from('conversations').select('title, ai_entities').eq('id', conversationId).single()
+  type CS = { title?: string | null; ai_entities?: { name?: string } | null }
+  const snap = convRow as CS | null
+  const convName = snap?.ai_entities?.name ?? snap?.title ?? null
+
   const { error } = await admin
     .from('conversations')
     .delete()
@@ -42,6 +48,7 @@ export async function deleteConversation(conversationId: string) {
     .eq('workspace_id', membership.workspace_id)
 
   if (error) throw new Error(error.message)
+  void logConversationActivity(membership.workspace_id, user.id, conversationId, 'conversation_deleted', { name: convName, source: 'bot' })
 }
 
 export async function assignConversation(conversationId: string, assignedTo: string | null): Promise<{ error?: string }> {
@@ -92,6 +99,19 @@ export async function updateConversationStatus(conversationId: string, status: s
   if (!membership) return { error: 'Unauthorized' }
 
   const admin = createAdminClient()
+
+  // Fetch current status + name for the activity log
+  const { data: convRow } = await (admin as any)
+    .from('conversations')
+    .select('status, title, ai_entities')
+    .eq('id', conversationId)
+    .eq('workspace_id', membership.workspace_id)
+    .single()
+  type ConvSnap = { status?: string | null; title?: string | null; ai_entities?: { name?: string } | null }
+  const snap = convRow as ConvSnap | null
+  const oldStatus = snap?.status ?? null
+  const convName  = snap?.ai_entities?.name ?? snap?.title ?? null
+
   const { error } = await admin
     .from('conversations')
     .update({ status } as never)
@@ -99,7 +119,12 @@ export async function updateConversationStatus(conversationId: string, status: s
     .eq('workspace_id', membership.workspace_id)
 
   if (error) return { error: error.message }
-  void logConversationActivity(membership.workspace_id, user.id, conversationId, 'status_changed', { to: status })
+  void logConversationActivity(membership.workspace_id, user.id, conversationId, 'status_changed', {
+    name:        convName,
+    status_from: oldStatus,
+    status_to:   status,
+    source:      'bot',
+  })
   return {}
 }
 

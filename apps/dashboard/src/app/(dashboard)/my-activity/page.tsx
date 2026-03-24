@@ -7,40 +7,69 @@ import { MyActivityClient } from './my-activity-client'
 
 export const metadata: Metadata = { title: 'My Activity' }
 
-const EVENT_LABELS: Record<string, string> = {
-  contact_created:       'Created contact',
-  contact_updated:       'Updated contact',
-  contact_assigned:      'Assigned contact',
-  deal_created:          'Created deal',
-  stage_changed:         'Moved deal stage',
-  status_changed:        'Updated status',
-  deal_assigned:         'Assigned deal',
-  ticket_created:        'Created ticket',
-  note_added:            'Added a note',
-  call_added:            'Logged a call',
-  meeting_added:         'Logged a meeting',
-  task_added:            'Added a task',
-  email_sent:            'Sent an email',
-  email_replied:         'Replied to email',
-  priority_changed:      'Changed priority',
-  conversation_renamed:  'Renamed conversation',
-  conversation_assigned: 'Assigned conversation',
-  lead_moved:            'Moved lead to pipeline',
+const SOURCE_FROM_ENTITY: Record<string, string> = {
+  email: 'email', conversation: 'bot', lead: 'forms', ticket: 'ticket',
+  contact: 'manual', deal: 'manual', task: 'manual',
 }
 
-const ENTITY_TYPE_LABEL: Record<string, string> = {
-  email: 'email', ticket: 'ticket', conversation: 'bot', lead: 'form',
-}
-
-function formatLabel(eventType: string, entityType: string, entityName: string | null, priorityFrom?: string | null, priorityTo?: string | null): string {
-  if (eventType === 'priority_changed' && entityType) {
-    const t     = ENTITY_TYPE_LABEL[entityType] ?? entityType
-    const name  = entityName ? ` (${entityName})` : ''
-    const arrow = priorityFrom && priorityTo ? ` ${priorityFrom} → ${priorityTo}` : (priorityTo ? ` → ${priorityTo}` : '')
-    return `Changed priority for ${t}${name}${arrow}`
+function formatLabel(
+  eventType:     string,
+  entityName:    string | null,
+  priorityFrom?: string | null,
+  priorityTo?:   string | null,
+  statusFrom?:   string | null,
+  statusTo?:     string | null,
+  stageFrom?:    string | null,
+  stageTo?:      string | null,
+  assigneeName?: string | null,
+): string {
+  const n = entityName ? `'${entityName}'` : null
+  switch (eventType) {
+    case 'email_replied':        return n ? `Replied to ${n}` : 'Replied to email'
+    case 'email_sent':           return n ? `Sent email to ${n}` : 'Sent an email'
+    case 'deal_created':         return n ? `Deal created for ${n}` : 'Created deal'
+    case 'deal_assigned': {
+      const to = assigneeName ? ` to ${assigneeName}` : ''
+      return n ? `Assigned ${n}${to}` : `Assigned deal${to}`
+    }
+    case 'stage_changed': {
+      const arrow = stageFrom && stageTo ? ` · ${stageFrom} → ${stageTo}` : ''
+      return n ? `Moved ${n}${arrow}` : `Moved deal${arrow}`
+    }
+    case 'status_changed': {
+      const arrow = statusFrom && statusTo ? ` · ${statusFrom} → ${statusTo}` : ''
+      return n ? `Status for ${n}${arrow}` : `Status changed${arrow}`
+    }
+    case 'priority_changed': {
+      const arrow = priorityFrom && priorityTo ? ` · ${priorityFrom} → ${priorityTo}` : priorityTo ? ` → ${priorityTo}` : ''
+      return n ? `Priority for ${n}${arrow}` : `Priority changed${arrow}`
+    }
+    case 'contact_created':       return n ? `Contact created: ${n}` : 'Created contact'
+    case 'contact_updated':       return n ? `Updated contact ${n}` : 'Updated contact'
+    case 'contact_assigned':      return n ? `Assigned contact ${n}` : 'Assigned contact'
+    case 'contact_deleted':       return n ? `Deleted contact ${n}` : 'Deleted contact'
+    case 'ticket_created':        return n ? `Ticket created: ${n}` : 'Created ticket'
+    case 'ticket_deleted':        return n ? `Deleted ticket ${n}` : 'Deleted ticket'
+    case 'deal_deleted':          return n ? `Deleted deal ${n}` : 'Deleted deal'
+    case 'email_deleted':         return n ? `Deleted email from ${n}` : 'Deleted email'
+    case 'lead_deleted':          return n ? `Deleted form submission ${n}` : 'Deleted form submission'
+    case 'conversation_deleted':  return n ? `Deleted bot conversation ${n}` : 'Deleted bot conversation'
+    case 'note_added':            return n ? `Note added on ${n}` : 'Added a note'
+    case 'call_added':            return n ? `Logged call with ${n}` : 'Logged a call'
+    case 'meeting_added':         return n ? `Logged meeting with ${n}` : 'Logged a meeting'
+    case 'task_added':            return n ? `Task added: ${n}` : 'Added a task'
+    case 'conversation_renamed':  return n ? `Renamed conversation to ${n}` : 'Renamed conversation'
+    case 'conversation_assigned': return n ? `Assigned conversation ${n}` : 'Assigned conversation'
+    case 'lead_assigned': {
+      const to = assigneeName ? ` to ${assigneeName}` : ''
+      return n ? `Assigned form ${n}${to}` : `Assigned form${to}`
+    }
+    case 'lead_moved':            return n ? `Moved lead ${n} to pipeline` : 'Moved lead to pipeline'
+    default: {
+      const base = eventType.replace(/_/g, ' ')
+      return n ? `${base}: ${n}` : base
+    }
   }
-  const base = EVENT_LABELS[eventType] ?? eventType.replace(/_/g, ' ')
-  return entityName ? `${base}: ${entityName}` : base
 }
 
 export interface ActivityRow {
@@ -48,6 +77,7 @@ export interface ActivityRow {
   event_type:  string
   entity_type: string
   entity_name: string | null
+  source:      string
   label:       string
   created_at:  string
 }
@@ -129,15 +159,22 @@ export default async function MyActivityPage({
 
   type RawRow = { id: string; event_type: string; entity_type: string; payload: Record<string, unknown>; created_at: string }
   const rows: ActivityRow[] = ((raw ?? []) as RawRow[]).map(r => {
-    const entityName    = (r.payload?.name ?? r.payload?.title ?? null) as string | null
-    const priorityFrom  = (r.payload?.from as string | null) ?? null
-    const priorityTo    = (r.payload?.to   as string | null) ?? null
+    const p            = r.payload ?? {}
+    const entityName   = (p.name ?? p.title ?? p.contact_name ?? null) as string | null
+    const priorityFrom = (p.from as string | null) ?? null
+    const priorityTo   = (p.to   as string | null) ?? null
+    const statusFrom   = (p.status_from ?? p.from_status ?? null) as string | null
+    const statusTo     = (p.status_to   ?? p.to_status   ?? null) as string | null
+    const stageFrom    = (p.stage_from  ?? p.from_stage  ?? p.from_stage_id ?? null) as string | null
+    const stageTo      = (p.stage_to    ?? p.to_stage    ?? null) as string | null
+    const assigneeName = (p.assignee_name ?? p.assigned_to_name ?? null) as string | null
     return {
       id:          r.id,
       event_type:  r.event_type,
       entity_type: r.entity_type,
       entity_name: entityName,
-      label:       formatLabel(r.event_type, r.entity_type, entityName, priorityFrom, priorityTo),
+      source:      (p.source as string | null) ?? SOURCE_FROM_ENTITY[r.entity_type] ?? 'manual',
+      label:       formatLabel(r.event_type, entityName, priorityFrom, priorityTo, statusFrom, statusTo, stageFrom, stageTo, assigneeName),
       created_at:  r.created_at,
     }
   })

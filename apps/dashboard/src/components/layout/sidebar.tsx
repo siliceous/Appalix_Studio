@@ -32,6 +32,34 @@ import { ROLE_RANK } from '@/lib/types'
 import type { WorkspaceBranding } from '@/app/actions/workspace-branding'
 import { useUserAvatar } from '@/contexts/user-avatar-context'
 
+function SidebarAvatar({ src, userName, userEmail, brandColor }: {
+  src: string | null
+  userName?: string | null
+  userEmail?: string | null
+  brandColor: string
+}) {
+  const initials = userName
+    ? userName.split(' ').map((w: string) => w[0]).slice(0, 2).join('')
+    : (userEmail?.[0] ?? '?')
+  return (
+    <div
+      className="relative w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-white text-[10px] font-bold uppercase select-none overflow-hidden"
+      style={{ backgroundColor: brandColor }}
+    >
+      {initials}
+      {src && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover z-10"
+          onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+        />
+      )}
+    </div>
+  )
+}
+
 interface NavItem {
   href:            string
   label:           string
@@ -149,7 +177,7 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
         <div className="px-3 py-4 border-b dark:border-white/8 shrink-0">
 
           {/* Logo row */}
-          <div className="flex items-center justify-center group-hover:justify-start gap-2.5 mb-3 min-w-0">
+          <div className="flex items-center justify-center group-hover:justify-start group-hover:gap-2.5 mb-3 min-w-0">
             {/* Icon — visible when collapsed, hidden when expanded */}
             <div className="shrink-0 group-hover:hidden">
               {branding?.favicon_url ? (
@@ -223,23 +251,12 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
             )}
           >
             {/* Avatar — w-8 to align exactly under brand mark */}
-            {userAvatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={userAvatar}
-                alt={userName ?? 'Avatar'}
-                className="w-8 h-8 shrink-0 rounded-full object-cover select-none"
-              />
-            ) : (
-              <div
-                className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-white text-[10px] font-bold uppercase select-none"
-                style={{ backgroundColor: branding?.primary_color ?? '#15A4AE' }}
-              >
-                {userName
-                  ? userName.split(' ').map((w: string) => w[0]).slice(0, 2).join('')
-                  : (userEmail?.[0] ?? '?')}
-              </div>
-            )}
+            <SidebarAvatar
+              src={userAvatar}
+              userName={userName}
+              userEmail={userEmail}
+              brandColor={branding?.primary_color ?? '#15A4AE'}
+            />
             {/* Name + email + plan — fades in on hover */}
             <div className="overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-75 min-w-0 flex-1">
               <p className="text-xs font-bold text-gray-900 dark:text-white truncate leading-tight">

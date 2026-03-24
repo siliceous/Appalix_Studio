@@ -85,15 +85,58 @@ export async function updateFormMailchimpList(formId: string, listId: string | n
   return {}
 }
 
-/** Delete a form */
+/** Delete a form and all its submissions */
 export async function deleteForm(formId: string): Promise<{ error?: string }> {
   const workspaceId = await getWorkspaceId()
   if (!workspaceId) return { error: 'Not authenticated' }
 
   const admin = createAdminClient()
+  // Delete submissions first to avoid FK constraint violations
+  await admin.from('sage_form_submissions').delete().eq('form_id', formId).eq('workspace_id', workspaceId)
   const { error } = await admin.from('sage_forms').delete().eq('id', formId).eq('workspace_id', workspaceId)
   if (error) return { error: error.message }
   revalidatePath('/dashboard')
+  return {}
+}
+
+/** Hard-delete a single form submission */
+export async function deleteSubmission(submissionId: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { error: 'Not authenticated' }
+
+  const admin = createAdminClient()
+
+  // Fetch name before deleting for activity log
+  const { data: subRow } = await admin
+    .from('sage_form_submissions')
+    .select('fields, ai_entities')
+    .eq('id', submissionId)
+    .single()
+  type SR = { fields: Record<string, unknown>; ai_entities?: Record<string, unknown> | null }
+  const sub = subRow as SR | null
+  const subName = (sub?.ai_entities?.name ?? sub?.fields?.name ?? null) as string | null
+
+  const { error } = await admin
+    .from('sage_form_submissions')
+    .delete()
+    .eq('id', submissionId)
+    .eq('workspace_id', workspaceId)
+  if (error) return { error: error.message }
+
+  if (user) {
+    void admin.from('sage_activity_log').insert({
+      workspace_id: workspaceId,
+      entity_type:  'lead',
+      entity_id:    submissionId,
+      event_type:   'lead_deleted',
+      payload:      { name: subName, source: 'forms' },
+      user_id:      user.id,
+    })
+  }
+
+  revalidatePath('/dashboard/forms')
   return {}
 }
 
@@ -145,10 +188,21 @@ export async function formSubmissionCreateLead(submission: SageFormSubmission): 
   const { fields, ai_entities, ai_summary } = submission
   const entities = ai_entities ?? {}
 
-  const name      = entities.name      ?? fields.name    ?? 'Unknown'
+  // Name hierarchy: personal name → company + service interested in → 'Unknown'
+  const personalName  = entities.name ?? fields.name ?? null
+  const companyName   = fields.company ?? null
+  const serviceField  = fields.service ?? fields.service_interested_in ?? fields.interested_in
+    ?? fields.service_type ?? fields.enquiry_type ?? null
+  const fallbackLabel = [companyName, serviceField].filter(Boolean).join(' — ') || null
+  const name      = personalName ?? fallbackLabel ?? 'Unknown'
+
   const email     = entities.email     ?? fields.email   ?? ''
-  const company   = fields.company     ?? undefined
-  const dealTitle = fields.name ? `${fields.name} — Form Inquiry` : 'Form Inquiry'
+  const company   = companyName        ?? undefined
+  const dealTitle = personalName
+    ? `${personalName} — Form Inquiry`
+    : fallbackLabel
+      ? `${fallbackLabel} — Form Inquiry`
+      : 'Form Inquiry'
   const notes     = ai_summary ?? fields.message ?? undefined
 
   const result = await triageCreateLead({ name, email, company, dealTitle, notes })
@@ -201,10 +255,38 @@ export async function updateSubmissionStatus(id: string, status: string): Promis
 
 /** Assign a form submission to a team member */
 export async function updateSubmissionAssignedTo(id: string, userId: string | null): Promise<void> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   const workspaceId = await getWorkspaceId()
   if (!workspaceId) return
   const admin = createAdminClient()
+
+  // Fetch submission name + assignee name in parallel for the activity log
+  const [subRes, profileRes] = await Promise.all([
+    admin.from('sage_form_submissions').select('fields, ai_entities').eq('id', id).single(),
+    userId ? admin.from('user_profiles').select('first_name, last_name').eq('user_id', userId).maybeSingle() : Promise.resolve({ data: null }),
+  ])
+  type Sub = { fields: Record<string, unknown>; ai_entities?: Record<string, unknown> | null }
+  type Prof = { first_name: string; last_name: string | null } | null
+  const sub  = subRes.data as Sub | null
+  const prof = profileRes.data as Prof
+
+  const subName = (sub?.ai_entities?.name ?? sub?.fields?.name ?? null) as string | null
+  const assigneeName = prof ? [prof.first_name, prof.last_name].filter(Boolean).join(' ') : null
+
   await admin.from('sage_form_submissions').update({ assigned_to: userId }).eq('id', id).eq('workspace_id', workspaceId)
+
+  if (user) {
+    await admin.from('sage_activity_log').insert({
+      workspace_id: workspaceId,
+      entity_type:  'lead',
+      entity_id:    id,
+      event_type:   'lead_assigned',
+      payload:      { name: subName, assignee_name: assigneeName, source: 'forms' },
+      user_id:      user.id,
+    })
+  }
+
   revalidatePath('/dashboard/forms')
 }
 

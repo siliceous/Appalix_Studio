@@ -10,8 +10,14 @@ export interface ActivityEntry {
   event_type:     string
   entity_type:    string
   entity_name:    string | null
+  source?:        string | null
+  assignee_name?: string | null
   priority_from?: string | null
   priority_to?:   string | null
+  status_from?:   string | null
+  status_to?:     string | null
+  stage_from?:    string | null
+  stage_to?:      string | null
   created_at:     string
   is_upcoming:    boolean
   due_at?:        string | null
@@ -71,16 +77,25 @@ export async function getActivityFeed(
   ])
 
   type ActRow = { id: string; event_type: string; entity_type: string; payload: Record<string, unknown>; created_at: string }
-  const past: ActivityEntry[] = ((activityRes.data ?? []) as ActRow[]).map(row => ({
-    id:          row.id,
-    event_type:  row.event_type,
-    entity_type: row.entity_type,
-    entity_name:    (row.payload?.name ?? row.payload?.title ?? null) as string | null,
-    priority_from:  (row.payload?.from as string | null) ?? null,
-    priority_to:    (row.payload?.to   as string | null) ?? null,
-    created_at:     row.created_at,
-    is_upcoming:    false,
-  }))
+  const past: ActivityEntry[] = ((activityRes.data ?? []) as ActRow[]).map(row => {
+    const p = row.payload ?? {}
+    return {
+      id:            row.id,
+      event_type:    row.event_type,
+      entity_type:   row.entity_type,
+      entity_name:   (p.name ?? p.title ?? p.contact_name ?? null) as string | null,
+      source:        (p.source as string | null) ?? null,
+      assignee_name: (p.assignee_name ?? p.assigned_to_name ?? null) as string | null,
+      priority_from: (p.from as string | null) ?? null,
+      priority_to:   (p.to   as string | null) ?? null,
+      status_from:   (p.status_from ?? p.from_status ?? null) as string | null,
+      status_to:     (p.status_to   ?? p.to_status   ?? null) as string | null,
+      stage_from:    (p.stage_from  ?? p.from_stage  ?? p.from_stage_id ?? null) as string | null,
+      stage_to:      (p.stage_to    ?? p.to_stage    ?? null) as string | null,
+      created_at:    row.created_at,
+      is_upcoming:   false,
+    }
+  })
 
   type UpRow = { id: string; type: string; title: string | null; due_at: string }
   const upcoming: ActivityEntry[] = ((upcomingRes.data ?? []) as UpRow[]).map(row => ({

@@ -211,11 +211,12 @@ export async function triageCreateLead(data: {
  * Create a support ticket from an email triage card.
  */
 export async function triageCreateTicket(data: {
-  title:         string
-  description:   string
-  contactEmail:  string
-  contactName:   string
-  priority:      'low' | 'medium' | 'high' | 'urgent'
+  title:           string
+  description:     string
+  contactEmail:    string
+  contactName:     string
+  priority:        'low' | 'medium' | 'high' | 'urgent'
+  conversationId?: string
 }): Promise<{ ticketId?: string; error?: string }> {
   const workspaceId = await getWorkspaceId()
   if (!workspaceId) return { error: 'Not authenticated' }
@@ -243,17 +244,19 @@ export async function triageCreateTicket(data: {
       contactId = existing.id
       const upd: Record<string, string> = {}
       if (data.contactEmail) upd.email = data.contactEmail.toLowerCase()
+      if (data.conversationId) upd.source_conversation_id = data.conversationId
       if (Object.keys(upd).length > 0) await admin.from('sage_contacts').update(upd).eq('id', contactId)
     } else if (data.contactEmail || data.contactName) {
       const { data: created } = await admin
         .from('sage_contacts')
         .insert({
-          workspace_id: workspaceId,
-          name:         data.contactName,
-          email:        data.contactEmail?.toLowerCase() ?? null,
-          source:       'email',
-          contact_type: 'potential_customer',
-          tags:         [],
+          workspace_id:           workspaceId,
+          name:                   data.contactName,
+          email:                  data.contactEmail?.toLowerCase() ?? null,
+          source:                 'email',
+          contact_type:           'potential_customer',
+          tags:                   [],
+          ...(data.conversationId ? { source_conversation_id: data.conversationId } : {}),
         })
         .select('id')
         .single()
@@ -298,9 +301,12 @@ export async function triageCreateTicket(data: {
     if (ticketErr || !ticket) return { error: ticketErr?.message ?? 'Failed to create ticket' }
     const ticketId = (ticket as { id: string }).id
 
-    if (contactId) {
-      await logActivity(workspaceId, 'contact', contactId, 'ticket_created', { ticket_id: ticketId })
-    }
+    await logActivity(workspaceId, 'ticket', ticketId, 'ticket_created', {
+      title:    data.title,
+      name:     data.contactName || null,
+      priority: data.priority ?? 'medium',
+      source:   'ticket',
+    })
 
     revalidatePath('/dashboard')
     revalidatePath('/sage/tickets')

@@ -119,7 +119,7 @@ export default async function EmailTriagePage({ searchParams }: { searchParams: 
     .eq('is_read', false)
   if (dateFrom) emailQuery = emailQuery.gte('received_at', dateFrom)
   if (dateTo)   emailQuery = emailQuery.lt('received_at', dateTo)
-  emailQuery = emailQuery.order('received_at', { ascending: false }).limit(50)
+  emailQuery = emailQuery.order('received_at', { ascending: false }).limit(200)
 
   const [emailsRes, contactsRes] = await Promise.all([
     emailQuery,
@@ -224,7 +224,7 @@ export default async function EmailTriagePage({ searchParams }: { searchParams: 
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
       <SubpageToolbar sourceKey="email" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.email_auto_enabled} viewAsUserId={viewAsUserId} teamMembers={teamMembers} />
       <div className="flex flex-1 overflow-hidden min-h-0">
-        <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} connectedEmail={connectedEmail} autoSync={params.syncing === '1'} readonly={!!viewAsUserId} />
+        <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} connectedEmail={connectedEmail} autoSync={params.syncing === '1'} readonly={!!viewAsUserId} teamMembers={teamMembers} />
         <ActivitySidebar activity={activity} date={activityDate} currentPath="/dashboard/email" viewingAs={viewingAs} />
       </div>
     </div>

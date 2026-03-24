@@ -128,7 +128,7 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
       <SubpageToolbar sourceKey="tickets" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.tickets_auto_enabled} viewAsUserId={viewAsUserId} teamMembers={teamMembers} />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden min-h-0">
         <div className="flex-1 overflow-y-auto">
           <TicketsTable
             tickets={tickets}

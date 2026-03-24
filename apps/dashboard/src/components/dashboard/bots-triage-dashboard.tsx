@@ -242,32 +242,32 @@ function DetailCard({ tc, actioned, onAction, onDismiss, onClose, onAnalyze, onR
         {/* Actions */}
         <div className="flex items-center gap-2 flex-wrap pt-1">
           {isDone ? (
-            <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded-xl">
-              <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
-              <span className="text-sm font-medium text-green-700 dark:text-green-400">{actionLabel}</span>
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${
+              (actionLabel ?? '').toLowerCase().includes('exist')
+                ? 'bg-orange-50 dark:bg-orange-500/10 border-orange-200 dark:border-orange-500/20'
+                : 'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20'
+            }`}>
+              <Check className={`w-4 h-4 ${(actionLabel ?? '').toLowerCase().includes('exist') ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`} />
+              <span className={`text-sm font-medium ${(actionLabel ?? '').toLowerCase().includes('exist') ? 'text-orange-700 dark:text-orange-400' : 'text-green-700 dark:text-green-400'}`}>{actionLabel}</span>
             </div>
           ) : (
             <>
-              {action === 'create_lead' && (
-                <button
-                  onClick={() => onAction(tc, 'lead')}
-                  disabled={isCreatingLead}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-60"
-                >
-                  {isCreatingLead
-                    ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Creating…</>
-                    : <><UserPlus className="w-3.5 h-3.5" /> Create Lead</>
-                  }
-                </button>
-              )}
-              {action === 'create_ticket' && (
-                <button
-                  onClick={() => onAction(tc, 'ticket')}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-sky-500 hover:bg-sky-600 text-white transition-colors"
-                >
-                  <Ticket className="w-3.5 h-3.5" /> Create Ticket
-                </button>
-              )}
+              <button
+                onClick={() => onAction(tc, 'lead')}
+                disabled={isCreatingLead}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-60"
+              >
+                {isCreatingLead
+                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking…</>
+                  : <><UserPlus className="w-3.5 h-3.5" /> Add a Deal</>
+                }
+              </button>
+              <button
+                onClick={() => onAction(tc, 'ticket')}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-sky-500 hover:bg-sky-600 text-white transition-colors"
+              >
+                <Ticket className="w-3.5 h-3.5" /> Add Ticket
+              </button>
               <button
                 onClick={() => onDismiss(conversation.id)}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 border border-gray-200 dark:border-white/8 transition-colors"
@@ -426,11 +426,12 @@ const [mDealTitle, setMDealTitle] = useState('')
       setModalError(null)
       const convId = modalTc.conversation.id
       const result = await triageCreateTicket({
-        title:        mDealTitle,
-        description:  mNotes,
-        contactEmail: mEmail,
-        contactName:  mName,
-        priority:     mPriority,
+        title:          mDealTitle,
+        description:    mNotes,
+        contactEmail:   mEmail,
+        contactName:    mName,
+        priority:       mPriority,
+        conversationId: convId,
       })
       if (!result.error) {
         setActioned(prev => new Map(prev).set(convId, 'Ticket created'))

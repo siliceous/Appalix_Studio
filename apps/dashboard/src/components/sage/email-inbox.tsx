@@ -183,7 +183,7 @@ export function EmailInbox({
 
   function showNotification(msg: string) {
     setNotification(msg)
-    setTimeout(() => setNotification(null), 5000)
+    setTimeout(() => setNotification(null), msg.toLowerCase().includes('exist') ? 10000 : 5000)
   }
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -1129,7 +1129,11 @@ export function EmailInbox({
               </div>
 
               {notification && (
-                <div className="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-[#15A4AE]/10 border border-[#15A4AE]/20 text-[#15A4AE] text-[11px] font-medium">
+                <div className={`flex items-center gap-2 px-2.5 py-2 rounded-xl text-[11px] font-medium ${
+                  notification.toLowerCase().includes('exist')
+                    ? 'bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 text-orange-600 dark:text-orange-400'
+                    : 'bg-[#15A4AE]/10 border border-[#15A4AE]/20 text-[#15A4AE]'
+                }`}>
                   <CheckCircle className="w-3 h-3 shrink-0" />
                   {notification}
                 </div>

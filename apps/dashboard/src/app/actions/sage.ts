@@ -6,6 +6,8 @@ import { redirect } from 'next/navigation'
 import type { SageContact, SageTicketStatus, SageTicketPriority, SageDealStatus, SageContactType, SageContactVisibility, SageDealActivity } from '@/lib/types'
 import { syncContactOutbound } from '@/lib/server/marketing-sync'
 import Anthropic from '@anthropic-ai/sdk'
+import { upsertEntityEmbedding, buildContactEmbedContent, buildDealEmbedContent } from '@/lib/sage-intelligence/embeddings'
+import { generateRecordSummary } from '@/lib/sage-intelligence/record-summary'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -111,6 +113,9 @@ export async function createContact(formData: FormData) {
   const contact = data as SageContact
   await logActivity(workspaceId, 'contact', contact.id, 'contact_created', { name })
   void syncContactOutbound(workspaceId, { email: contact.email, name: contact.name, phone: contact.phone, company: contact.company_name })
+  // Fire-and-forget: generate embedding + summary (never blocks or throws to caller)
+  void upsertEntityEmbedding(workspaceId, 'contact', contact.id, buildContactEmbedContent(contact)).catch(() => {})
+  void generateRecordSummary(workspaceId, 'contact', contact.id).catch(() => {})
   revalidatePath('/sage/contacts')
   return contact
 }
@@ -153,6 +158,8 @@ export async function updateContact(id: string, formData: FormData) {
 
   await logActivity(workspaceId, 'contact', id, 'contact_updated', { name })
   void syncContactOutbound(workspaceId, { email: (data as SageContact).email, name: (data as SageContact).name, phone: (data as SageContact).phone, company: (data as SageContact).company_name })
+  void upsertEntityEmbedding(workspaceId, 'contact', id, buildContactEmbedContent(data as SageContact)).catch(() => {})
+  void generateRecordSummary(workspaceId, 'contact', id).catch(() => {})
   revalidatePath('/sage/contacts')
   revalidatePath(`/sage/contacts/${id}`)
   return data as SageContact
@@ -165,7 +172,7 @@ export async function deleteContact(id: string) {
   // Check if this contact is linked to a Mailchimp sync
   const { data: contact } = await admin
     .from('sage_contacts')
-    .select('mailchimp_member_id, source')
+    .select('mailchimp_member_id, source, name')
     .eq('id', id)
     .eq('workspace_id', workspaceId)
     .maybeSingle()
@@ -189,6 +196,7 @@ export async function deleteContact(id: string) {
     if (error) throw new Error(error.message)
   }
 
+  void logActivity(workspaceId, 'contact', id, 'contact_deleted', { name: (contact as { name?: string } | null)?.name ?? null, source: 'manual' })
   revalidatePath('/sage/contacts')
   return { softDeleted: !!isMailchimpContact, id }
 }
@@ -213,7 +221,7 @@ export async function deleteContacts(ids: string[]) {
   // Separate Mailchimp-linked contacts from plain ones
   const { data: contacts } = await admin
     .from('sage_contacts')
-    .select('id, mailchimp_member_id, source')
+    .select('id, name, mailchimp_member_id, source')
     .in('id', ids)
     .eq('workspace_id', workspaceId)
 
@@ -237,6 +245,8 @@ export async function deleteContacts(ids: string[]) {
       .eq('workspace_id', workspaceId)
   }
 
+  const names = (contacts ?? []).map((c: { name?: string }) => c.name).filter(Boolean)
+  void logActivity(workspaceId, 'contact', ids[0], 'contact_deleted', { names, count: ids.length, source: 'manual' })
   revalidatePath('/sage/contacts')
   return { softDeleted: mailchimpIds, hardDeleted: hardDeleteIds }
 }
@@ -595,6 +605,8 @@ export async function createDeal(formData: FormData) {
 
   const dealId = (data as { id: string }).id
   await logActivity(workspaceId, 'deal', dealId, 'deal_created', { title, value })
+  void upsertEntityEmbedding(workspaceId, 'deal', dealId, buildDealEmbedContent({ title, value, currency, status, company_name: companyName, priority })).catch(() => {})
+  void generateRecordSummary(workspaceId, 'deal', dealId).catch(() => {})
 
   revalidatePath('/sage/pipelines')
   if (pipelineId) revalidatePath(`/sage/pipelines/${pipelineId}`)
@@ -790,6 +802,10 @@ export async function createTicket(formData: FormData) {
 
   const ticketId = (data as { id: string }).id
   await logActivity(workspaceId, 'ticket', ticketId, 'ticket_created', { title, priority })
+  void upsertEntityEmbedding(workspaceId, 'ticket', ticketId,
+    [title, description ? `Description: ${description}` : '', priority ? `Priority: ${priority}` : ''].filter(Boolean).join('\n')
+  ).catch(() => {})
+  void generateRecordSummary(workspaceId, 'ticket', ticketId).catch(() => {})
 
   revalidatePath('/sage/tickets')
 }
@@ -921,11 +937,13 @@ export async function deleteTicket(id: string) {
   // Fetch contact email before deleting so we can reset source records
   const { data: ticketRow } = await admin
     .from('sage_tickets')
-    .select('contact_id')
+    .select('contact_id, title, name')
     .eq('id', id)
     .eq('workspace_id', workspaceId)
     .single()
-  const contactId = (ticketRow as { contact_id: string | null } | null)?.contact_id
+  const contactId   = (ticketRow as { contact_id: string | null; title?: string; name?: string | null } | null)?.contact_id
+  const ticketTitle = (ticketRow as { title?: string } | null)?.title ?? null
+  const ticketName  = (ticketRow as { name?: string | null } | null)?.name ?? null
 
   const { error } = await admin
     .from('sage_tickets')
@@ -934,6 +952,7 @@ export async function deleteTicket(id: string) {
     .eq('workspace_id', workspaceId)
 
   if (error) throw new Error(error.message)
+  void logActivity(workspaceId, 'ticket', id, 'ticket_deleted', { title: ticketTitle, name: ticketName, source: 'ticket' })
 
   // Reset action_type on form submissions that were actioned as tickets
   if (contactId) {
@@ -964,13 +983,14 @@ export async function deleteTickets(ids: string[]) {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
 
-  // Fetch contact emails before deleting to reset source form submissions
+  // Fetch ticket titles + contact IDs before deleting
   const { data: ticketRows } = await admin
     .from('sage_tickets')
-    .select('contact_id')
+    .select('contact_id, title')
     .in('id', ids)
     .eq('workspace_id', workspaceId)
   const contactIds = [...new Set((ticketRows ?? []).map((r: { contact_id: string | null }) => r.contact_id).filter(Boolean))] as string[]
+  const ticketTitles = (ticketRows ?? []).map((r: { title?: string }) => r.title).filter(Boolean)
 
   const { error } = await admin
     .from('sage_tickets')
@@ -978,6 +998,7 @@ export async function deleteTickets(ids: string[]) {
     .in('id', ids)
     .eq('workspace_id', workspaceId)
   if (error) throw new Error(error.message)
+  void logActivity(workspaceId, 'ticket', ids[0], 'ticket_deleted', { titles: ticketTitles, count: ids.length, source: 'ticket' })
 
   if (contactIds.length > 0) {
     const { data: contacts } = await admin
@@ -1178,12 +1199,15 @@ export async function markReminderSent(reminderId: string): Promise<void> {
 export async function deleteDeal(dealId: string): Promise<{ error?: string }> {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
+  const { data: dealRow } = await admin.from('sage_deals').select('title').eq('id', dealId).eq('workspace_id', workspaceId).single()
+  const dealTitle = (dealRow as { title?: string } | null)?.title ?? null
   const { error } = await admin
     .from('sage_deals')
     .delete()
     .eq('id', dealId)
     .eq('workspace_id', workspaceId)
   if (error) return { error: error.message }
+  void logActivity(workspaceId, 'deal', dealId, 'deal_deleted', { title: dealTitle, name: dealTitle, source: 'manual' })
   revalidatePath('/sage/pipelines')
   return {}
 }

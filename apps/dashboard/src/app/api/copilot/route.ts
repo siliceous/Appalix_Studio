@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import Anthropic from '@anthropic-ai/sdk'
 
 /**
  * POST /api/copilot
@@ -89,6 +90,23 @@ export async function POST(req: NextRequest) {
     const data = await upstream.json() as unknown
     return NextResponse.json(data, { status: upstream.status })
   } catch {
-    return NextResponse.json({ error: 'Upstream API unreachable' }, { status: 502 })
+    // Upstream unreachable (e.g. Fastify not running locally) — fall back to direct Claude call
+    const anthropicKey = process.env.ANTHROPIC_API_KEY
+    if (!anthropicKey) {
+      return NextResponse.json({ error: 'Upstream API unreachable' }, { status: 502 })
+    }
+    try {
+      const anthropic = new Anthropic({ apiKey: anthropicKey })
+      const response = await anthropic.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        system: `You are Sage, an AI copilot built into the Appalix dashboard for ${ws.name}. You help ${userName} manage their CRM, emails, contacts, pipelines, tickets, deals, bots, forms, and daily work. Be concise, practical, and friendly. You have full knowledge of every page in the app and can guide the user to any section.\n\nPage context: ${context ?? 'Dashboard'}`,
+        messages: messages.map(m => ({ role: m.role, content: m.content })),
+      })
+      const reply = response.content[0]?.type === 'text' ? response.content[0].text : 'No response.'
+      return NextResponse.json({ reply })
+    } catch {
+      return NextResponse.json({ error: 'Upstream API unreachable' }, { status: 502 })
+    }
   }
 }

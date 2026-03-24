@@ -12,8 +12,7 @@ import { PipelinePickerModal } from '@/components/sage/pipeline-picker-modal'
 import { timeAgo, formatDate } from '@/lib/utils'
 import {
   updateSubmissionPriority, updateSubmissionAssignedTo,
-  updateSubmissionName, markSubmissionActioned,
-  formSubmissionCreateTicket,
+  updateSubmissionName, formSubmissionCreateTicket, deleteSubmission,
   analyzeFormSubmissions,
 } from '@/app/actions/sage-forms'
 import type { SageFormSubmission, SageForm } from '@/app/actions/sage-forms'
@@ -43,16 +42,18 @@ const PRIORITY_CLS: Record<string, string> = {
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 interface Props {
-  submissions:  SageFormSubmission[]
-  current:      SageFormSubmission
-  forms:        SageForm[]
-  teamMembers?: TeamMember[]
-  canAssign?:   boolean
+  submissions:    SageFormSubmission[]
+  current:        SageFormSubmission
+  forms:          SageForm[]
+  teamMembers?:   TeamMember[]
+  canAssign?:     boolean
+  dealOwnerName?: string | null
 }
 
 export function SubmissionPanelClient({
   submissions, current, forms,
   teamMembers = [], canAssign = false,
+  dealOwnerName,
 }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
@@ -69,7 +70,7 @@ export function SubmissionPanelClient({
 
   function showNotification(msg: string) {
     setNotification(msg)
-    setTimeout(() => setNotification(null), 5000)
+    setTimeout(() => setNotification(null), msg.toLowerCase().includes('exist') ? 10000 : 5000)
   }
 
   const currentForm = forms.find(f => f.id === current.form_id) ?? null
@@ -114,7 +115,8 @@ export function SubmissionPanelClient({
   function handleDelete() {
     if (!window.confirm('Delete this submission? This cannot be undone.')) return
     startTransition(async () => {
-      await markSubmissionActioned(current.id, 'ignored')
+      const res = await deleteSubmission(current.id)
+      if (res.error) { alert(res.error); return }
       router.push('/dashboard/forms')
     })
   }
@@ -347,7 +349,11 @@ export function SubmissionPanelClient({
           </div>
 
           {notification && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#15A4AE]/10 border border-[#15A4AE]/20 text-[#15A4AE] text-xs font-medium">
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium ${
+              notification.toLowerCase().includes('exist')
+                ? 'bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 text-orange-600 dark:text-orange-400'
+                : 'bg-[#15A4AE]/10 border border-[#15A4AE]/20 text-[#15A4AE]'
+            }`}>
               <CheckCircle className="w-3.5 h-3.5 shrink-0" />
               {notification}
             </div>
@@ -399,6 +405,17 @@ export function SubmissionPanelClient({
                   current.action_type === 'ticket' ? 'Ticket created' :
                   current.action_type === 'ignored' ? 'Ignored' : current.action_type
                 } />
+              )}
+              {dealOwnerName && (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-gray-400 shrink-0">Assigned to</span>
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-[#15A4AE]">
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${getAvatarColor(dealOwnerName)}`}>
+                      {getInitials(dealOwnerName)}
+                    </span>
+                    {dealOwnerName}
+                  </span>
+                </div>
               )}
               <DetailRow label="ID" value={`#${current.id.slice(0, 6).toUpperCase()}`} />
             </div>

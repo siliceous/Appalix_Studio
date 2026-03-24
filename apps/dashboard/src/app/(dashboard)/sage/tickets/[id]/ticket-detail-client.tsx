@@ -677,6 +677,25 @@ export function TicketDetailClient({ ticket, allTickets, activities: initialActi
                   </div>
                 </div>
 
+                {/* Assigned To — permanent section */}
+                <div className="p-3 bg-gray-50 dark:bg-white/[0.03] rounded-xl border dark:border-white/8">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1.5">Assigned To</p>
+                  {localAssignee && members.find(m => m.user_id === localAssignee) ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-[#15A4AE]/20 flex items-center justify-center shrink-0">
+                        <span className="text-[10px] font-bold text-[#15A4AE] uppercase">
+                          {(members.find(m => m.user_id === localAssignee)?.name ?? '?').charAt(0)}
+                        </span>
+                      </div>
+                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100">
+                        {members.find(m => m.user_id === localAssignee)?.name}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-400 italic">Unassigned</p>
+                  )}
+                </div>
+
                 {/* Contact section */}
                 {(customerName || customerEmail) && (
                   <div className="rounded-xl border dark:border-white/8 overflow-hidden">

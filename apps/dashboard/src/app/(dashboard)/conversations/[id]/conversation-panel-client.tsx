@@ -137,7 +137,7 @@ export function ConversationPanelClient({
   }
   function showNotification(msg: string) {
     setNotification(msg)
-    setTimeout(() => setNotification(null), 5000)
+    setTimeout(() => setNotification(null), msg.toLowerCase().includes('exist') ? 10000 : 5000)
   }
   async function handleCreateTicket() {
     setActionLoading('ticket')
@@ -469,6 +469,17 @@ export function ConversationPanelClient({
             )}
           </div>
 
+          {notification && (
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium ${
+              notification.toLowerCase().includes('exist')
+                ? 'bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 text-orange-600 dark:text-orange-400'
+                : 'bg-[#15A4AE]/10 border border-[#15A4AE]/20 text-[#15A4AE]'
+            }`}>
+              <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+              {notification}
+            </div>
+          )}
+
           {/* AI Summary */}
           {current.ai_summary && (
             <div>
@@ -533,6 +544,22 @@ export function ConversationPanelClient({
           subject={`Re: ${current.title ?? 'Your conversation'}`}
           context={current.ai_summary ?? undefined}
           onClose={() => setShowEmailModal(false)}
+        />
+      )}
+
+      {showDealPicker && (
+        <PipelinePickerModal
+          prefill={{
+            title:          current.ai_entities?.product_interest ?? current.title ?? `Chat conversation`,
+            contactName:    customerName  ?? '',
+            contactEmail:   customerEmail ?? '',
+            contactPhone:   current.ai_entities?.phone ?? undefined,
+            notes:          current.ai_summary ?? undefined,
+            source:         'chat',
+            conversationId: current.id,
+          }}
+          onSuccess={(msg) => { showNotification(msg); router.refresh() }}
+          onClose={() => setShowDealPicker(false)}
         />
       )}
     </div>

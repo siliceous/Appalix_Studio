@@ -12,9 +12,10 @@ import {
   Maximize2, Minimize2, ArrowLeft, Reply,
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   List, ListOrdered, Link2, Paperclip, Palette,
+  UserCheck,
 } from 'lucide-react'
 import { triageCreateLead, triageCreateTicket, triageAddDealNote } from '@/app/actions/sage-triage'
-import { syncEmails, deleteTriageEmails, reanalyzeEmails, sendEmail, rewriteEmail, markEmailRead, updateEmailPriority } from '@/app/actions/sage-emails'
+import { syncEmails, deleteTriageEmails, reanalyzeEmails, sendEmail, rewriteEmail, markEmailRead, updateEmailPriority, assignEmailsTo, searchTriageEmails } from '@/app/actions/sage-emails'
 import type { SageEmail, SageMeeting } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { RichTextEditor, type RichTextEditorRef, type EmailAttachment } from '@/components/sage/rich-text-editor'
@@ -36,6 +37,8 @@ export interface TriageEmail {
   meeting?:        SageMeeting | null
 }
 
+export interface TeamMember { user_id: string; name: string }
+
 interface Props {
   triageEmails:   TriageEmail[]
   workspaceId:    string
@@ -43,6 +46,7 @@ interface Props {
   connectedEmail?: string | null
   autoSync?:      boolean
   readonly?:      boolean
+  teamMembers?:   TeamMember[]
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -257,14 +261,16 @@ interface DetailCardProps {
   onDelete:           (id: string) => void
   onClose:            () => void
   onAnalyze:          (id: string) => void
+  onAssign?:          (emailId: string, userId: string) => void
   onPriorityChanged?: (emailId: string, priority: string) => void
   isDeleting:         boolean
   isAnalyzing:        boolean
   emailProvider:      'gmail' | 'microsoft' | null
+  teamMembers?:       TeamMember[]
   readonly?:          boolean
 }
 
-function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, onAction, onPriorityChanged, isDeleting, isAnalyzing, emailProvider, modalSize, onResize, readonly = false }: DetailCardProps) {
+function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, onAction, onAssign, onPriorityChanged, isDeleting, isAnalyzing, emailProvider, teamMembers = [], modalSize, onResize, readonly = false }: DetailCardProps) {
   const { email, meeting } = t
   const entities  = email.ai_entities
   const drafts    = email.ai_reply_drafts ?? []
@@ -277,6 +283,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
   const [summaryCollapsed, setSummaryCollapsed] = useState(false)
   const [priorityValue,  setPriorityValue]  = useState<string | null>(null)
   const [priorityOpen,   setPriorityOpen]   = useState(false)
+  const [assignMenuOpen, setAssignMenuOpen] = useState(false)
 
   const currentPriority = priorityValue ?? email.ai_priority ?? null
 
@@ -447,6 +454,40 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
               <span className={cn('text-[11px] px-2.5 py-0.5 rounded-full font-semibold border', categoryClass(email.ai_category))}>
                 {email.ai_category}
               </span>
+            )}
+            {/* Assign to — single email */}
+            {teamMembers.length > 0 && onAssign && (
+              <div className="relative">
+                <button
+                  onClick={e => { e.stopPropagation(); setAssignMenuOpen(v => !v) }}
+                  title="Assign to"
+                  className={cn(
+                    'flex items-center justify-center w-8 h-8 rounded-lg transition-colors border',
+                    assignMenuOpen
+                      ? 'bg-[#15A4AE]/10 border-[#15A4AE]/30 text-[#15A4AE]'
+                      : 'border-transparent text-gray-400 hover:text-[#15A4AE] hover:bg-[#15A4AE]/10 hover:border-[#15A4AE]/20',
+                  )}
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                </button>
+                {assignMenuOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-[#2a2a2a] border dark:border-white/10 rounded-xl shadow-xl z-[200] overflow-hidden">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide px-3 pt-2.5 pb-1">Assign to</p>
+                    {teamMembers.map(m => (
+                      <button
+                        key={m.user_id}
+                        onClick={e => { e.stopPropagation(); onAssign(email.id, m.user_id); setAssignMenuOpen(false) }}
+                        className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2"
+                      >
+                        <span className="w-6 h-6 rounded-full bg-[#15A4AE]/15 text-[#15A4AE] flex items-center justify-center text-[10px] font-bold shrink-0">
+                          {m.name.charAt(0).toUpperCase()}
+                        </span>
+                        {m.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
             <button
               onClick={e => { e.stopPropagation(); onDelete(email.id) }}
@@ -911,7 +952,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEmail, autoSync, readonly = false }: Props) {
+export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEmail, autoSync, readonly = false, teamMembers = [] }: Props) {
   const router = useRouter()
   const [dismissed,       setDismissed]       = useState<Set<string>>(new Set())
   const [actioned,        setActioned]        = useState<Map<string, string>>(new Map())
@@ -923,15 +964,32 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
   const [isSyncing,         startSyncTransition]      = useTransition()
   const [isDeleting,        startDeleteTransition]    = useTransition()
   const [isReanalyzing,     startReanalyzeTransition] = useTransition()
+  const [isAssigning,       startAssignTransition]    = useTransition()
   const [syncMsg,         setSyncMsg]         = useState<string | null>(null)
   const [analyzeMsg,      setAnalyzeMsg]      = useState<string | null>(null)
   const [selectedIds,       setSelectedIds]       = useState<Set<string>>(new Set())
   const [priorityOverrides, setPriorityOverrides] = useState<Map<string, string>>(new Map())
   const [search,            setSearch]            = useState('')
+  const [searchResults,     setSearchResults]     = useState<import('@/lib/types').SageEmail[] | null>(null)
+  const [isSearching,       setIsSearching]       = useState(false)
+  const [showMiniAssign,    setShowMiniAssign]    = useState(false)
+  const [showBulkAssign,    setShowBulkAssign]    = useState(false)
 
   function handlePriorityOverride(emailId: string, priority: string) {
     setPriorityOverrides(prev => new Map(prev).set(emailId, priority))
   }
+
+  // Debounced full-mailbox search — fires 350ms after the user stops typing
+  useEffect(() => {
+    if (!search.trim()) { setSearchResults(null); setIsSearching(false); return }
+    setIsSearching(true)
+    const t = setTimeout(async () => {
+      const { data } = await searchTriageEmails(search)
+      setSearchResults(data)
+      setIsSearching(false)
+    }, 350)
+    return () => clearTimeout(t)
+  }, [search])
 
   function effP(t: TriageEmail): string | null {
     return priorityOverrides.get(t.email.id) ?? t.email.ai_priority ?? null
@@ -1054,6 +1112,22 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
     })
   }
 
+  function handleAssignSelected(userId: string) {
+    const ids = selectedIds.size > 0 ? Array.from(selectedIds) : []
+    if (!ids.length) return
+    setShowBulkAssign(false)
+    startAssignTransition(async () => {
+      await assignEmailsTo(ids, userId)
+      setSelectedIds(new Set())
+    })
+  }
+
+  function handleAssignOne(emailId: string, userId: string) {
+    startAssignTransition(async () => {
+      await assignEmailsTo([emailId], userId)
+    })
+  }
+
   function toggleSelect(emailId: string) {
     setSelectedIds(prev => {
       const next = new Set(prev)
@@ -1165,17 +1239,15 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
     })
   }
 
-  const searchLower = search.trim().toLowerCase()
-  const visible         = triageEmails.filter(t => {
-    if (dismissed.has(t.email.id)) return false
-    if (!searchLower) return true
-    return (
-      (t.email.from_name ?? '').toLowerCase().includes(searchLower) ||
-      t.email.from_address.toLowerCase().includes(searchLower) ||
-      (t.email.subject ?? '').toLowerCase().includes(searchLower) ||
-      (t.email.ai_summary ?? '').toLowerCase().includes(searchLower)
-    )
-  })
+  // When search is active use DB results; otherwise use the preloaded 200
+  const baseEmails: TriageEmail[] = searchResults
+    ? searchResults.map(email => {
+        const existing = triageEmails.find(t => t.email.id === email.id)
+        return existing ?? { email, recommendation: 'create_lead', matchedContact: null, matchedDeal: null, meeting: null }
+      })
+    : triageEmails
+
+  const visible = baseEmails.filter(t => !dismissed.has(t.email.id))
   const highEmails      = visible.filter(t => effP(t) === 'high')
   const medEmails       = visible.filter(t => effP(t) === 'medium')
   const lowEmails       = visible.filter(t => effP(t) === 'low')
@@ -1245,11 +1317,13 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
     onAction:     openModal,
     onDismiss:    dismiss,
     onDelete:     handleDeleteOne,
+    onAssign:     teamMembers.length > 0 ? handleAssignOne : undefined,
     onClose:      () => setSelectedEmailId(''),
     onAnalyze:    handleAnalyzeOne,
     isDeleting,
     isAnalyzing:       isReanalyzing,
     emailProvider,
+    teamMembers,
     modalSize,
     onResize:          () => setModalSize(s => s === 'sm' ? 'md' : s === 'md' ? 'lg' : 'sm'),
     onPriorityChanged: handlePriorityOverride,
@@ -1275,6 +1349,30 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
               </div>
             </div>
             <div className="flex items-center gap-1 shrink-0">
+              {selectedIds.size > 0 && teamMembers.length > 0 && (
+                <div className="relative">
+                  <button
+                    onClick={() => { setShowMiniAssign(v => !v); setShowBulkAssign(false) }}
+                    disabled={isAssigning}
+                    title={`Assign ${selectedIds.size} selected`}
+                    className={cn('flex items-center justify-center w-7 h-7 rounded-lg transition-colors', showMiniAssign ? 'bg-[#15A4AE]/10 text-[#15A4AE]' : 'text-[#15A4AE] hover:bg-[#15A4AE]/10 disabled:opacity-50')}
+                  >
+                    {isAssigning ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserCheck className="w-3 h-3" />}
+                  </button>
+                  {showMiniAssign && (
+                    <div className="absolute left-0 top-full mt-1 w-44 bg-white dark:bg-[#2a2a2a] border dark:border-white/10 rounded-xl shadow-xl z-[200] overflow-hidden">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide px-3 pt-2.5 pb-1">Assign to</p>
+                      {teamMembers.map(m => (
+                        <button key={m.user_id} onClick={() => { handleAssignSelected(m.user_id); setShowMiniAssign(false) }}
+                          className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-full bg-[#15A4AE]/15 text-[#15A4AE] flex items-center justify-center text-[10px] font-bold shrink-0">{m.name.charAt(0).toUpperCase()}</span>
+                          {m.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               {selectedIds.size > 0 && (
                 <button
                   onClick={handleDeleteSelected}
@@ -1308,7 +1406,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
             </div>
           </div>
 
-          {/* Status badges + search */}
+          {/* Status badges */}
           <div className="flex items-center gap-2 flex-wrap">
             {highCount > 0 && (
               <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#15A4AE]/10 text-[#3a9e8a] dark:text-[#15A4AE] font-semibold border border-[#15A4AE]/30">
@@ -1336,21 +1434,6 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
                       : `Analyse ${visible.length}`}
               </button>
             )}
-            {/* Search */}
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-gray-300 dark:border-white/20 bg-transparent min-w-0">
-              <Search className="w-2.5 h-2.5 text-gray-400 shrink-0" />
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search…"
-                className="w-20 bg-transparent text-[11px] text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 outline-none min-w-0"
-              />
-              {search && (
-                <button onClick={() => setSearch('')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 shrink-0">
-                  <X className="w-2.5 h-2.5" />
-                </button>
-              )}
-            </div>
           </div>
           {(syncMsg || (analyzeMsg && !isReanalyzing)) && (
             <p className={cn('text-[11px] mt-1 font-medium', (syncMsg ?? analyzeMsg ?? '').startsWith('Error') ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
@@ -1443,7 +1526,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
 
         {/* Footer */}
         <div className="px-3 py-3 border-t dark:border-white/8 shrink-0">
-          <Link href="/sage/emails"
+          <Link href="/dashboard/email"
             className="flex items-center justify-center gap-1.5 w-full py-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-white dark:hover:bg-white/5 rounded-xl transition-colors">
             Full Email Inbox <ChevronRight className="w-3.5 h-3.5" />
           </Link>
@@ -1484,7 +1567,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
 
         ) : (
           <>
-            {/* ── Select All + Delete toolbar ── */}
+            {/* ── Select All + Assign + Delete + Search toolbar ── */}
             <div className="flex items-center gap-3 px-5 py-2 border-b dark:border-white/8 bg-white dark:bg-[#1a1a1a] shrink-0">
               <button
                 onClick={() => {
@@ -1508,6 +1591,32 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
                   : `Select all (${visible.length})`}
               </button>
 
+              {teamMembers.length > 0 && (
+                <div className="relative">
+                  <button
+                    onClick={() => { setShowBulkAssign(v => !v); setShowMiniAssign(false) }}
+                    disabled={selectedIds.size === 0 || isAssigning}
+                    title={selectedIds.size > 0 ? `Assign ${selectedIds.size} selected` : 'Select emails first'}
+                    className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:text-[#15A4AE] hover:border-[#15A4AE]/30 hover:bg-[#15A4AE]/10 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-gray-200 dark:disabled:hover:border-white/10 disabled:hover:text-gray-500 transition-colors"
+                  >
+                    {isAssigning ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserCheck className="w-3 h-3" />}
+                    Assign to
+                  </button>
+                  {showBulkAssign && selectedIds.size > 0 && (
+                    <div className="absolute left-0 top-full mt-1 w-44 bg-white dark:bg-[#2a2a2a] border dark:border-white/10 rounded-xl shadow-xl z-[200] overflow-hidden">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide px-3 pt-2.5 pb-1">Assign to</p>
+                      {teamMembers.map(m => (
+                        <button key={m.user_id} onClick={() => handleAssignSelected(m.user_id)}
+                          className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-full bg-[#15A4AE]/15 text-[#15A4AE] flex items-center justify-center text-[10px] font-bold shrink-0">{m.name.charAt(0).toUpperCase()}</span>
+                          {m.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <button
                 onClick={handleDeleteSelected}
                 disabled={selectedIds.size === 0 || isDeleting}
@@ -1517,6 +1626,29 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
                 {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                 Delete
               </button>
+
+              <div className="flex-1" />
+
+              {/* Search — queries entire mailbox */}
+              <div className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-transparent transition-colors', search ? 'border-[#15A4AE]/40 dark:border-[#15A4AE]/30' : 'border-gray-200 dark:border-white/10')}>
+                {isSearching
+                  ? <Loader2 className="w-3 h-3 text-[#15A4AE] shrink-0 animate-spin" />
+                  : <Search className="w-3 h-3 text-gray-400 shrink-0" />}
+                <input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search all emails…"
+                  className="w-40 bg-transparent text-[11px] text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+                />
+                {search && !isSearching && searchResults && (
+                  <span className="text-[10px] text-gray-400 shrink-0">{searchResults.length}</span>
+                )}
+                {search && (
+                  <button onClick={() => { setSearch(''); setSearchResults(null) }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 shrink-0">
+                    <X className="w-2.5 h-2.5" />
+                  </button>
+                )}
+              </div>
             </div>
 
             <div key={refreshKey} className="flex-1 overflow-y-auto p-5 space-y-7">

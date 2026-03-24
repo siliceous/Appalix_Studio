@@ -85,6 +85,51 @@ export default async function SubmissionDetailPage({
 
   const autoSettings = await getAutoSettings()
 
+  // If a deal was created from this submission, look up the deal owner name
+  // so the panel can show "Assigned to X"
+  let dealOwnerName: string | null = null
+  const submissionEmail: string | null =
+    (submission as unknown as { fields: Record<string, string> }).fields?.email ?? null
+
+  if (submission.action_type === 'lead' && submissionEmail) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: contactRow } = await (admin as any)
+      .from('sage_contacts')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .ilike('email', submissionEmail)
+      .limit(1)
+      .single()
+
+    const contactId = (contactRow as { id: string } | null)?.id
+    if (contactId) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: dealRow } = await (admin as any)
+        .from('sage_deals')
+        .select('owner_id')
+        .eq('workspace_id', workspaceId)
+        .eq('contact_id', contactId)
+        .neq('status', 'lost')
+        .not('owner_id', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      const ownerId = (dealRow as { owner_id: string } | null)?.owner_id
+      if (ownerId) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: profileRow } = await (admin as any)
+          .from('user_profiles')
+          .select('first_name, last_name')
+          .eq('user_id', ownerId)
+          .single()
+        type PRow = { first_name: string | null; last_name: string | null }
+        const p = profileRow as PRow | null
+        if (p) dealOwnerName = [p.first_name, p.last_name].filter(Boolean).join(' ') || null
+      }
+    }
+  }
+
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
       <SubpageToolbar sourceKey="forms" preset="all" autoEnabled={autoSettings.forms_auto_enabled} />
@@ -95,6 +140,7 @@ export default async function SubmissionDetailPage({
           forms={forms}
           teamMembers={teamMembers}
           canAssign={canAssign}
+          dealOwnerName={dealOwnerName}
         />
       </div>
     </div>

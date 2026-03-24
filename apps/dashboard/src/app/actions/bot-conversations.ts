@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient }  from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 const API_BASE    = process.env.API_BASE_URL
@@ -24,29 +24,58 @@ async function getWorkspaceId(): Promise<string | null> {
 
 /**
  * Rename a bot conversation title.
+ * Also updates the linked contact's name and their tickets' name field.
  */
 export async function renameConversation(
   conversationId: string,
   title:          string,
 ): Promise<{ error?: string }> {
-  const supabase    = await createClient()
   const workspaceId = await getWorkspaceId()
   if (!workspaceId) return { error: 'Not authenticated' }
 
+  const admin = createAdminClient()
+  const newTitle = title.trim() || null
+
+  // Update the conversation
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase as any)
+  const { error } = await (admin as any)
     .from('conversations')
-    .update({ title: title.trim() || null })
+    .update({ title: newTitle })
     .eq('id', conversationId)
     .eq('workspace_id', workspaceId)
 
   if (error) return { error: error.message }
+
+  // Cascade to linked contact + their tickets
+  if (newTitle) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: linkedContacts } = await (admin as any)
+      .from('sage_contacts')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .eq('source_conversation_id', conversationId)
+
+    if (linkedContacts && linkedContacts.length > 0) {
+      const contactIds = (linkedContacts as { id: string }[]).map(c => c.id)
+
+      await Promise.all([
+        // Update contact names
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (admin as any).from('sage_contacts').update({ name: newTitle }).eq('workspace_id', workspaceId).in('id', contactIds),
+        // Update ticket name field (denormalised)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (admin as any).from('sage_tickets').update({ name: newTitle }).eq('workspace_id', workspaceId).in('contact_id', contactIds),
+      ])
+    }
+  }
+
   revalidatePath('/dashboard')
   return {}
 }
 
 /**
  * Delete bot conversations by ID (scoped to the workspace).
+ * Also deletes linked tickets (via contacts whose source_conversation_id matches).
  */
 export async function deleteConversations(
   conversationIds: string[],
@@ -54,17 +83,59 @@ export async function deleteConversations(
   if (!conversationIds.length) return {}
 
   const supabase    = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   const workspaceId = await getWorkspaceId()
   if (!workspaceId) return { error: 'Not authenticated' }
 
+  const admin = createAdminClient()
+
+  // Fetch names before deleting for activity log
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase as any)
+  const { data: convRows } = await (admin as any)
+    .from('conversations').select('id, title, ai_entities').in('id', conversationIds).eq('workspace_id', workspaceId)
+  type CR = { id: string; title?: string | null; ai_entities?: { name?: string } | null }
+  const convNames = ((convRows ?? []) as CR[]).map(c => c.ai_entities?.name ?? c.title ?? null).filter(Boolean)
+
+  // Find contacts linked to these conversations
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: linkedContacts } = await (admin as any)
+    .from('sage_contacts')
+    .select('id')
+    .eq('workspace_id', workspaceId)
+    .in('source_conversation_id', conversationIds)
+
+  if (linkedContacts && linkedContacts.length > 0) {
+    const contactIds = (linkedContacts as { id: string }[]).map(c => c.id)
+    // Delete tickets linked to those contacts
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (admin as any)
+      .from('sage_tickets')
+      .delete()
+      .eq('workspace_id', workspaceId)
+      .in('contact_id', contactIds)
+  }
+
+  // Delete the conversations
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (admin as any)
     .from('conversations')
     .delete()
     .in('id', conversationIds)
     .eq('workspace_id', workspaceId)
 
   if (error) return { error: error.message }
+
+  if (user) {
+    void admin.from('sage_activity_log').insert({
+      workspace_id: workspaceId,
+      entity_type:  'conversation',
+      entity_id:    conversationIds[0],
+      event_type:   'conversation_deleted',
+      payload:      { names: convNames, count: conversationIds.length, source: 'bot' },
+      user_id:      user.id,
+    })
+  }
+
   revalidatePath('/dashboard')
   return {}
 }

@@ -8,7 +8,7 @@ import {
   Mail, Phone, Building2, MessageSquare, Tag, Send,
 } from 'lucide-react'
 import {
-  deleteForm, analyzeFormSubmissions,
+  deleteForm, deleteSubmission, analyzeFormSubmissions,
   formSubmissionCreateTicket, markSubmissionActioned,
   type SageForm, type SageFormSubmission,
 } from '@/app/actions/sage-forms'
@@ -102,7 +102,8 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
 
   async function handleDeleteForm(formId: string) {
     if (!confirm('Delete this form and all its submissions?')) return
-    await deleteForm(formId)
+    const res = await deleteForm(formId)
+    if (res.error) { alert(res.error); return }
     setForms(prev => prev.filter(f => f.id !== formId))
     if (selectedFormId === formId) setSelectedFormId(forms.find(f => f.id !== formId)?.id ?? null)
   }
@@ -139,6 +140,15 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
   async function handleIgnore() {
     if (!selected) return
     await markSubmissionActioned(selected.id, 'ignored')
+    setDone(prev => new Set(prev).add(selected.id))
+    setSelectedId(formSubmissions.find(s => s.id !== selected.id)?.id ?? null)
+  }
+
+  async function handleDeleteSubmission() {
+    if (!selected) return
+    if (!confirm('Delete this submission? This cannot be undone.')) return
+    const res = await deleteSubmission(selected.id)
+    if (res.error) { alert(res.error); return }
     setDone(prev => new Set(prev).add(selected.id))
     setSelectedId(formSubmissions.find(s => s.id !== selected.id)?.id ?? null)
   }
@@ -472,12 +482,24 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
                       <X className="w-3.5 h-3.5" />
                       Ignore
                     </button>
+                    <button
+                      onClick={() => void handleDeleteSubmission()}
+                      className="flex items-center gap-1.5 px-3 py-2 text-xs rounded-xl text-red-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                      title="Delete submission"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete
+                    </button>
                   </div>
-                  {actionResult.get(selected.id) && (
-                    <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                      <Check className="w-3 h-3" />{actionResult.get(selected.id)}
-                    </p>
-                  )}
+                  {actionResult.get(selected.id) && (() => {
+                    const msg = actionResult.get(selected.id)!
+                    const isWarn = msg.toLowerCase().includes('exist')
+                    return (
+                      <p className={`text-xs flex items-center gap-1 ${isWarn ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`}>
+                        <Check className="w-3 h-3" />{msg}
+                      </p>
+                    )
+                  })()}
                 </div>
               )}
             </div>

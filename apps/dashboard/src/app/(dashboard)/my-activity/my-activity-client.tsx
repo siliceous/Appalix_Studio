@@ -6,23 +6,14 @@ import type { ActivityRow } from './page'
 
 type TeamMemberOption = { user_id: string; name: string; email?: string }
 
-const ENTITY_COLORS: Record<string, string> = {
-  email:        'bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300',
-  ticket:       'bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400',
-  conversation: 'bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300',
-  lead:         'bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300',
-  deal:         'bg-[#15A4AE]/15 text-[#3a9e8a] dark:text-[#15A4AE]',
-  contact:      'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-300',
-  task:         'bg-indigo-100 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300',
+const SOURCE_COLORS: Record<string, string> = {
+  email:  'bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300',
+  bot:    'bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300',
+  forms:  'bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300',
+  ticket: 'bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400',
+  manual: 'bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400',
 }
 
-function fmt(iso: string) {
-  const d = new Date(iso)
-  return d.toLocaleString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-    hour: 'numeric', minute: '2-digit', hour12: true,
-  })
-}
 
 function fmtDate(iso: string) {
   const d = new Date(iso)
@@ -53,15 +44,15 @@ export function MyActivityClient({ rows, viewAsName, viewAsUserId, canExport, te
   const [search,     setSearch]     = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
 
-  const entityTypes = useMemo(() => {
-    const s = new Set(rows.map(r => r.entity_type))
+  const sourceTypes = useMemo(() => {
+    const s = new Set(rows.map(r => r.source))
     return ['all', ...Array.from(s).sort()]
   }, [rows])
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim()
     return rows.filter(r => {
-      if (typeFilter !== 'all' && r.entity_type !== typeFilter) return false
+      if (typeFilter !== 'all' && r.source !== typeFilter) return false
       if (q && !r.label.toLowerCase().includes(q)) return false
       return true
     })
@@ -141,8 +132,8 @@ export function MyActivityClient({ rows, viewAsName, viewAsUserId, canExport, te
               onChange={e => setTypeFilter(e.target.value)}
               className="text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
             >
-              {entityTypes.map(t => (
-                <option key={t} value={t}>{t === 'all' ? 'All types' : t.charAt(0).toUpperCase() + t.slice(1)}</option>
+              {sourceTypes.map((t: string) => (
+                <option key={t} value={t}>{t === 'all' ? 'All sources' : t.charAt(0).toUpperCase() + t.slice(1)}</option>
               ))}
             </select>
           </div>
@@ -185,9 +176,9 @@ export function MyActivityClient({ rows, viewAsName, viewAsUserId, canExport, te
                       key={r.id}
                       className="flex items-start gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors group"
                     >
-                      {/* Type pill */}
-                      <span className={`shrink-0 mt-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-full ${ENTITY_COLORS[r.entity_type] ?? 'bg-gray-100 dark:bg-white/8 text-gray-500'}`}>
-                        {r.entity_type}
+                      {/* Source pill */}
+                      <span className={`shrink-0 mt-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-full ${SOURCE_COLORS[r.source] ?? SOURCE_COLORS.manual}`}>
+                        {r.source}
                       </span>
                       {/* Label */}
                       <p className="flex-1 text-sm text-gray-800 dark:text-gray-200 leading-snug">

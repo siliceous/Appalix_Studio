@@ -470,6 +470,7 @@ export interface SageEmail {
   ai_insights:     string[] | null
   ai_reply_drafts: { tone: string; body: string }[] | null
   ai_analyzed_at:  string | null
+  assigned_to:     string | null
   created_at:      string
   // joined
   contact?:        Pick<SageContact, 'id' | 'name' | 'email'> | null

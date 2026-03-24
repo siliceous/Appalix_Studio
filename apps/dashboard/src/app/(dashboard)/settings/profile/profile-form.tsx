@@ -116,16 +116,16 @@ export function ProfileForm({ firstName, lastName, email, avatarUrl: initialAvat
         <div className="px-6 pt-6 pb-5 border-b dark:border-white/8 flex items-center gap-5">
           {/* Avatar circle */}
           <div className="relative shrink-0">
-            <div className="w-16 h-16 rounded-full overflow-hidden bg-[#15A4AE] flex items-center justify-center">
-              {avatarUrl ? (
+            <div className="relative w-16 h-16 rounded-full overflow-hidden bg-[#15A4AE] flex items-center justify-center">
+              <span className="text-white text-lg font-bold uppercase select-none">{initials}</span>
+              {avatarUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={avatarUrl}
                   alt=""
-                  className="block w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover z-10"
+                  onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
                 />
-              ) : (
-                <span className="text-white text-lg font-bold uppercase select-none">{initials}</span>
               )}
             </div>
             {/* Upload button overlaid bottom-right */}

@@ -19,8 +19,17 @@
     "turbo": "^2.0.0",
     "typescript": "^5.4.0"
   },
+  "overrides": {
+    "ajv": "^8",
+    "react": "19.1.0"
+  },
   "packageManager": "npm@10.0.0",
   "engines": {
     "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "expo-auth-session": "^55.0.9",
+    "expo-crypto": "^55.0.10",
+    "react-native-worklets": "^0.8.1"
   }
 }

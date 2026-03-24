@@ -1,0 +1,138 @@
+import Anthropic from '@anthropic-ai/sdk'
+import type { RetrievedContext, SageQueryClassification } from './types'
+
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+function formatContext(ctx: RetrievedContext): string {
+  const parts: string[] = []
+
+  if (ctx.stats) {
+    parts.push('## Stats\n' + JSON.stringify(ctx.stats, null, 2))
+  }
+  if (ctx.contacts?.length) {
+    parts.push(
+      '## Contacts (' + ctx.contacts.length + ')\n' +
+      ctx.contacts
+        .map(c => `- ${c.label}${c.summary ? ': ' + c.summary : ''}`)
+        .join('\n'),
+    )
+  }
+  if (ctx.deals?.length) {
+    parts.push(
+      '## Deals (' + ctx.deals.length + ')\n' +
+      ctx.deals
+        .map(d => {
+          const m = d.metadata as Record<string, unknown>
+          return `- ${d.label} [${m.status ?? ''}${m.priority ? ' · ' + m.priority : ''}${m.value ? ' · $' + m.value : ''}]`
+        })
+        .join('\n'),
+    )
+  }
+  if (ctx.tickets?.length) {
+    parts.push(
+      '## Tickets (' + ctx.tickets.length + ')\n' +
+      ctx.tickets
+        .map(t => {
+          const m = t.metadata as Record<string, unknown>
+          return `- ${t.label} [${m.status ?? ''} · ${m.priority ?? ''}]${t.summary ? ': ' + t.summary : ''}`
+        })
+        .join('\n'),
+    )
+  }
+  if (ctx.emails?.length) {
+    parts.push(
+      '## Emails (' + ctx.emails.length + ')\n' +
+      ctx.emails
+        .map(e => {
+          const m = e.metadata as Record<string, unknown>
+          return `- ${e.label} [${m.ai_priority ?? ''}]${e.summary ? ': ' + e.summary : ''}`
+        })
+        .join('\n'),
+    )
+  }
+  if (ctx.conversations?.length) {
+    parts.push(
+      '## Conversations (' + ctx.conversations.length + ')\n' +
+      ctx.conversations
+        .map(c => `- ${c.label}${c.summary ? ': ' + c.summary : ''}`)
+        .join('\n'),
+    )
+  }
+  if (ctx.reminders?.length) {
+    parts.push(
+      '## Reminders\n' +
+      ctx.reminders
+        .map(r => {
+          const m = r.metadata as Record<string, unknown>
+          return `- ${r.label} — due ${m.due_at}`
+        })
+        .join('\n'),
+    )
+  }
+  if (ctx.semanticHits?.length) {
+    parts.push(
+      '## Related Records (semantic)\n' +
+      ctx.semanticHits
+        .map(h => `- [${h.entityType}] ${h.content.slice(0, 150)}`)
+        .join('\n'),
+    )
+  }
+
+  return parts.join('\n\n') || '(no data retrieved)'
+}
+
+export async function composeSageAnswer(
+  query:         string,
+  classification: SageQueryClassification,
+  context:       RetrievedContext,
+  pageContext:   string,
+  workspaceName: string,
+  userName:      string,
+): Promise<{ reply: string; followUps: string[] }> {
+  const dataStr = formatContext(context)
+
+  const system = `You are Sage, an AI copilot for ${workspaceName}. You are helping ${userName}.
+Be concise, friendly, and actionable. Format with short bullets when listing items.
+Always be specific — use names, numbers, statuses from the data. Never make up data not provided.
+If data is empty, say so honestly and suggest what the user can do.
+Today: ${new Date().toISOString().slice(0, 10)}`
+
+  const userMsg = `User is on: ${pageContext}
+User query: ${query}
+
+Retrieved data:
+${dataStr}`
+
+  try {
+    const response = await client.messages.create({
+      model:      'claude-haiku-4-5-20251001',
+      max_tokens: 800,
+      system,
+      messages: [{ role: 'user', content: userMsg }],
+    })
+
+    const reply = response.content[0]?.type === 'text' ? response.content[0].text : 'No response.'
+    const followUps = generateFollowUps(classification)
+
+    return { reply, followUps }
+  } catch {
+    return {
+      reply:    'I had trouble retrieving that data. Please try again.',
+      followUps: [],
+    }
+  }
+}
+
+function generateFollowUps(cls: SageQueryClassification): string[] {
+  const map: Record<string, string[]> = {
+    contacts:      ['Show high-priority contacts', 'Find contacts without a deal', 'Show recently added contacts'],
+    deals:         ['Show deals closing this week', 'Show stale deals', 'Which deals are high priority?'],
+    tickets:       ['Show open urgent tickets', 'Show unassigned tickets', 'How many tickets were resolved this week?'],
+    emails:        ['Show high-priority emails', 'Which emails need a reply?', 'Show emails from this week'],
+    analytics:     ['How many deals were won this month?', 'Show pipeline breakdown', 'How is my team performing?'],
+    pipeline:      ['Show deals by stage', 'Which pipeline has the most value?', 'Show won deals this month'],
+    reminders:     ['What is due today?', 'Show all upcoming tasks', 'Any overdue items?'],
+    conversations: ['Show unanalysed conversations', 'Which conversations have hot leads?'],
+  }
+  return map[cls.category] ?? ["Show my deals", "Show today's reminders", "What's new this week?"]
+}
