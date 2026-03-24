@@ -287,7 +287,7 @@ export async function moveLeadToPipeline(leadId: string): Promise<void> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (user) {
-    void admin.from('sage_activity_log').insert({
+    await admin.from('sage_activity_log').insert({
       workspace_id: workspaceId,
       entity_type:  'lead',
       entity_id:    leadId,

@@ -131,7 +131,7 @@ export async function deleteTriageEmails(emailIds: string[]): Promise<{ deleted:
   if (error) return { deleted: 0, error: (error as { message: string }).message }
 
   if (user) {
-    void admin.from('sage_activity_log').insert({
+    await admin.from('sage_activity_log').insert({
       workspace_id: workspaceId,
       entity_type:  'email',
       entity_id:    emailIds[0],

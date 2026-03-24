@@ -126,7 +126,7 @@ export async function deleteConversations(
   if (error) return { error: error.message }
 
   if (user) {
-    void admin.from('sage_activity_log').insert({
+    await admin.from('sage_activity_log').insert({
       workspace_id: workspaceId,
       entity_type:  'conversation',
       entity_id:    conversationIds[0],

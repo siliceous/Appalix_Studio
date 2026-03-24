@@ -196,7 +196,7 @@ export async function deleteContact(id: string) {
     if (error) throw new Error(error.message)
   }
 
-  void logActivity(workspaceId, 'contact', id, 'contact_deleted', { name: (contact as { name?: string } | null)?.name ?? null, source: 'manual' })
+  await logActivity(workspaceId, 'contact', id, 'contact_deleted', { name: (contact as { name?: string } | null)?.name ?? null, source: 'manual' })
   revalidatePath('/sage/contacts')
   return { softDeleted: !!isMailchimpContact, id }
 }
@@ -246,7 +246,7 @@ export async function deleteContacts(ids: string[]) {
   }
 
   const names = (contacts ?? []).map((c: { name?: string }) => c.name).filter(Boolean)
-  void logActivity(workspaceId, 'contact', ids[0], 'contact_deleted', { names, count: ids.length, source: 'manual' })
+  await logActivity(workspaceId, 'contact', ids[0], 'contact_deleted', { names, count: ids.length, source: 'manual' })
   revalidatePath('/sage/contacts')
   return { softDeleted: mailchimpIds, hardDeleted: hardDeleteIds }
 }
@@ -952,7 +952,7 @@ export async function deleteTicket(id: string) {
     .eq('workspace_id', workspaceId)
 
   if (error) throw new Error(error.message)
-  void logActivity(workspaceId, 'ticket', id, 'ticket_deleted', { title: ticketTitle, name: ticketName, source: 'ticket' })
+  await logActivity(workspaceId, 'ticket', id, 'ticket_deleted', { title: ticketTitle, name: ticketName, source: 'ticket' })
 
   // Reset action_type on form submissions that were actioned as tickets
   if (contactId) {
@@ -998,7 +998,7 @@ export async function deleteTickets(ids: string[]) {
     .in('id', ids)
     .eq('workspace_id', workspaceId)
   if (error) throw new Error(error.message)
-  void logActivity(workspaceId, 'ticket', ids[0], 'ticket_deleted', { titles: ticketTitles, count: ids.length, source: 'ticket' })
+  await logActivity(workspaceId, 'ticket', ids[0], 'ticket_deleted', { titles: ticketTitles, count: ids.length, source: 'ticket' })
 
   if (contactIds.length > 0) {
     const { data: contacts } = await admin
@@ -1207,7 +1207,7 @@ export async function deleteDeal(dealId: string): Promise<{ error?: string }> {
     .eq('id', dealId)
     .eq('workspace_id', workspaceId)
   if (error) return { error: error.message }
-  void logActivity(workspaceId, 'deal', dealId, 'deal_deleted', { title: dealTitle, name: dealTitle, source: 'manual' })
+  await logActivity(workspaceId, 'deal', dealId, 'deal_deleted', { title: dealTitle, name: dealTitle, source: 'manual' })
   revalidatePath('/sage/pipelines')
   return {}
 }
