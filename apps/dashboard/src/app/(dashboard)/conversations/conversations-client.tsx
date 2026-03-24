@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useTransition } from 'react'
+import React, { useCallback, useTransition, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -60,6 +60,15 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
   const [saving,         setSaving]         = React.useState<{ id: string; field: string } | null>(null)
   const [bulkSaving,     setBulkSaving]     = React.useState(false)
   const [quickAction,    setQuickAction]    = React.useState<Record<string, 'deal' | 'ticket' | 'loading-deal' | 'loading-ticket'>>({})
+
+  // Pagination
+  const [pageSize, setPageSize] = useState(20)
+  const [page,     setPage]     = useState(1)
+  const filterKey = JSON.stringify(filters)
+  useEffect(() => setPage(1), [filterKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  const totalPages = Math.max(1, Math.ceil(conversations.length / pageSize))
+  const safePage   = Math.min(page, totalPages)
+  const paginated  = conversations.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   async function handleCreateDeal(c: ConvRow) {
     setQuickAction(p => ({ ...p, [c.id]: 'loading-deal' }))
@@ -390,7 +399,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-white/5">
-              {conversations.map(c => {
+              {paginated.map(c => {
                 const contactName = c.ai_entities?.name ?? null
                 const title = c.title ?? '(no title)'
                 return (
@@ -573,6 +582,31 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
             </tbody>
           </table>
         )}
+        {/* Pagination — always visible */}
+        <div className="flex items-center justify-between px-4 py-2.5 border-t dark:border-white/8 bg-gray-50/60 dark:bg-white/[0.02]">
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <span>Rows per page:</span>
+            <select
+              value={pageSize}
+              onChange={e => { setPageSize(Number(e.target.value)); setPage(1) }}
+              className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 cursor-pointer"
+            >
+              {[10, 20, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+          <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+            <span>
+              {conversations.length === 0 ? '0' : `${(safePage - 1) * pageSize + 1}–${Math.min(safePage * pageSize, conversations.length)}`} of {conversations.length}
+            </span>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage <= 1}
+                className="px-2.5 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium">← Prev</button>
+              <span className="px-1">{safePage} / {totalPages}</span>
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}
+                className="px-2.5 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium">Next →</button>
+            </div>
+          </div>
+        </div>
       </div>
       )}
 

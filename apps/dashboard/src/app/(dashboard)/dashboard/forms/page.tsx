@@ -99,7 +99,7 @@ export default async function FormsPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let subsQuery = (createAdminClient() as any)
     .from('sage_form_submissions')
-    .select('id, form_id, source_platform, fields, ai_priority, ai_summary, ai_insights, ai_action, ai_entities, ai_analyzed_at, actioned_at, action_type, assigned_to, created_at, mailchimp_synced_at')
+    .select('id, form_id, source_platform, raw_payload, fields, ai_priority, ai_summary, ai_insights, ai_action, ai_entities, ai_analyzed_at, actioned_at, action_type, assigned_to, created_at, mailchimp_synced_at')
     .eq('workspace_id', workspaceId)
     .is('deleted_at', null)
 

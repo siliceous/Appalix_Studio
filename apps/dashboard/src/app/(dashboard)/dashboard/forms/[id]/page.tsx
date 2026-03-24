@@ -39,7 +39,7 @@ export default async function SubmissionDetailPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: subData } = await (admin as any)
     .from('sage_form_submissions')
-    .select('id, form_id, source_platform, fields, ai_priority, ai_summary, ai_insights, ai_action, ai_entities, ai_analyzed_at, actioned_at, action_type, assigned_to, created_at, mailchimp_synced_at')
+    .select('id, form_id, source_platform, raw_payload, fields, ai_priority, ai_summary, ai_insights, ai_action, ai_entities, ai_analyzed_at, actioned_at, action_type, assigned_to, created_at, mailchimp_synced_at')
     .eq('id', id)
     .single()
 
@@ -50,7 +50,7 @@ export default async function SubmissionDetailPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: listData } = await (admin as any)
     .from('sage_form_submissions')
-    .select('id, form_id, source_platform, fields, ai_priority, ai_summary, ai_entities, actioned_at, action_type, assigned_to, created_at, mailchimp_synced_at')
+    .select('id, form_id, source_platform, raw_payload, fields, ai_priority, ai_summary, ai_entities, actioned_at, action_type, assigned_to, created_at, mailchimp_synced_at')
     .eq('workspace_id', workspaceId)
     .order('created_at', { ascending: false })
     .limit(200)
