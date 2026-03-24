@@ -101,8 +101,8 @@ async function insertSubmission(
   source: string,
   formTitle: string | null,
 ) {
-  // Find or create a sage_form for this source
   const formName = formTitle ?? `${source.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} Submissions`
+
   let { data: form } = await a
     .from('sage_forms')
     .select('id')
@@ -111,20 +111,35 @@ async function insertSubmission(
     .maybeSingle()
 
   if (!form) {
-    const { data: newForm } = await a
+    // created_by is NOT NULL — use the workspace owner
+    const { data: owner } = await a
+      .from('workspace_members')
+      .select('user_id')
+      .eq('workspace_id', workspaceId)
+      .eq('role', 'owner')
+      .limit(1)
+      .maybeSingle()
+    const createdBy = owner?.user_id ?? null
+
+    const { data: newForm, error: formErr } = await a
       .from('sage_forms')
-      .insert({ workspace_id: workspaceId, name: formName, is_active: true })
+      .insert({ workspace_id: workspaceId, name: formName, is_active: true, created_by: createdBy })
       .select('id')
       .single()
+    if (formErr) console.error('[GF webhook] sage_forms insert error:', formErr)
     form = newForm
   }
 
-  if (!form?.id) return
+  if (!form?.id) {
+    console.error('[GF webhook] no form id — submission dropped')
+    return
+  }
 
-  await a.from('sage_form_submissions').insert({
+  const { error: subErr } = await a.from('sage_form_submissions').insert({
     workspace_id:    workspaceId,
     form_id:         form.id,
     source_platform: source,
     fields,
   })
+  if (subErr) console.error('[GF webhook] sage_form_submissions insert error:', subErr)
 }

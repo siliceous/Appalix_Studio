@@ -130,9 +130,17 @@ async function insertSubmission(
     .maybeSingle()
 
   if (!form) {
+    const { data: owner } = await a
+      .from('workspace_members')
+      .select('user_id')
+      .eq('workspace_id', workspaceId)
+      .eq('role', 'owner')
+      .limit(1)
+      .maybeSingle()
+
     const { data: newForm } = await a
       .from('sage_forms')
-      .insert({ workspace_id: workspaceId, name: formName, is_active: true })
+      .insert({ workspace_id: workspaceId, name: formName, is_active: true, created_by: owner?.user_id ?? null })
       .select('id')
       .single()
     form = newForm
