@@ -12,7 +12,6 @@ import {
   formSubmissionCreateLead,
   formSubmissionCreateTicket,
   deleteSubmission,
-  markSubmissionActioned,
   updateFormMailchimpList,
   updateSubmissionPriority,
   updateSubmissionStatus,
@@ -21,6 +20,7 @@ import {
 } from '@/app/actions/sage-forms'
 import { toggleMailchimpSync, syncFromEmailPlatform } from '@/app/actions/leads'
 import type { SageForm, SageFormSubmission } from '@/app/actions/sage-forms'
+import { TrashTab } from '@/components/dashboard/trash-tab'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const PRIORITY_OPTIONS = ['high', 'medium', 'low'] as const
@@ -69,12 +69,15 @@ interface Props {
   canAllocate?:             boolean
 }
 
-const EMAIL_PLATFORM_META: Record<string, { name: string; logo: string }> = {
+const EMAIL_PLATFORM_META: Record<string, { name: string; logo?: string }> = {
   mailchimp:       { name: 'Mailchimp',       logo: '/integrations/mailchimp.png' },
   activecampaign:  { name: 'ActiveCampaign',  logo: '/integrations/activecampaign.png' },
   convertkit:      { name: 'Kit',             logo: '/integrations/kit.png' },
   klaviyo:         { name: 'Klaviyo',         logo: '/integrations/Klaviyo.png' },
   constantcontact: { name: 'Constant Contact',logo: '/integrations/constantcontact.png' },
+  gravity_forms:   { name: 'Gravity Forms' },
+  wpforms:         { name: 'WPForms' },
+  typeform:        { name: 'Typeform' },
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -542,6 +545,7 @@ export function FormsTable({
               { value: 'lead',    label: 'Deal created' },
               { value: 'ticket',  label: 'Ticket created' },
               { value: 'ignored', label: 'Ignored' },
+              { value: 'trash',   label: 'Trash' },
             ]).map(s => (
               <button key={s.value}
                 onClick={() => pushFilter({ status: s.value || undefined })}
@@ -553,7 +557,10 @@ export function FormsTable({
         </div>
       </div>
 
-      {/* ── Table ── */}
+      {/* ── Table or Trash ── */}
+      {activeStatus === 'trash' ? (
+        <TrashTab type="submission" />
+      ) : (
       <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-hidden">
         {submissions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -684,7 +691,7 @@ export function FormsTable({
                       <td className="px-3 py-3 whitespace-nowrap">
                         {sub.source_platform ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-500/20">
-                            {EMAIL_PLATFORM_META[sub.source_platform] && (
+                            {EMAIL_PLATFORM_META[sub.source_platform]?.logo && (
                               <img src={EMAIL_PLATFORM_META[sub.source_platform].logo} alt="" className="w-3 h-3 object-contain" />
                             )}
                             {EMAIL_PLATFORM_META[sub.source_platform]?.name ?? sub.source_platform}
@@ -795,8 +802,9 @@ export function FormsTable({
           </div>
         )}
       </div>
+      )}
 
-      {submissions.length === 200 && (
+      {activeStatus !== 'trash' && submissions.length === 200 && (
         <p className="text-xs text-center text-gray-400 pb-2">
           Showing first 200 results — use filters to narrow down.
         </p>

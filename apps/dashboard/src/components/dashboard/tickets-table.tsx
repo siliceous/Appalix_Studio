@@ -13,6 +13,7 @@ import {
   updateTicketPriority, updateTicketStatus, assignTicket,
   deleteTicket, deleteTickets, renameTicket, addContactFromTicket,
 } from '@/app/actions/sage'
+import { TrashTab } from '@/components/dashboard/trash-tab'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type TicketRow = SageTicket & { contact: Pick<SageContact, 'id' | 'name' | 'email'> | null }
@@ -282,7 +283,7 @@ export function TicketsTable({
             )}
           </div>
           <div className="flex items-center gap-1">
-            {[{ value: '', label: 'All' }, ...STATUS_OPTIONS.map(s => ({ value: s, label: STATUS_LABEL[s] }))].map(s => (
+            {[{ value: '', label: 'All' }, ...STATUS_OPTIONS.map(s => ({ value: s, label: STATUS_LABEL[s] })), { value: 'trash', label: 'Trash' }].map(s => (
               <button key={s.value} onClick={() => setActiveStatus(s.value)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${activeStatus === s.value ? ACTIVE_PILL : INACTIVE_PILL}`}>
                 {s.label}
@@ -292,7 +293,10 @@ export function TicketsTable({
         </div>
       </div>
 
-      {/* ── Table ── */}
+      {/* ── Table or Trash ── */}
+      {activeStatus === 'trash' ? (
+        <TrashTab type="ticket" />
+      ) : (
       <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-hidden">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -440,8 +444,9 @@ export function TicketsTable({
           </div>
         )}
       </div>
+      )}
 
-      {filtered.length >= 200 && (
+      {activeStatus !== 'trash' && filtered.length >= 200 && (
         <p className="text-xs text-center text-gray-400 pb-2">Showing first 200 results — use filters to narrow down.</p>
       )}
     </div>

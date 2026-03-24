@@ -141,6 +141,7 @@ interface SourcesClientProps {
   emailIntegrations:    EmailIntegration[]
   leadCounts?:          Record<string, number>
   platformLayout?:      'stack' | 'grid-2'   // default: stack
+  emailLayout?:         'stack' | 'grid-2'   // default: grid-2
   showEmailProviders?:  string[]              // if set, only show these email providers
   hideEmailHeading?:    boolean               // hide the "Email Marketing Platforms" heading
 }
@@ -332,7 +333,7 @@ function EmailPlatformCard({
   )
 }
 
-export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, emailIntegrations, platformLayout = 'stack', showEmailProviders, hideEmailHeading = false }: SourcesClientProps) {
+export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, emailIntegrations, platformLayout = 'stack', emailLayout = 'grid-2', showEmailProviders, hideEmailHeading = false }: SourcesClientProps) {
   const [sources, setSources]   = useState<LeadAdSource[]>(initialSources)
   const [expanded, setExpanded] = useState<LeadAdPlatform | null>(null)
   const [formValues, setFormValues] = useState<Record<string, Record<string, string>>>({})
@@ -569,7 +570,7 @@ export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, e
             Email Marketing Platforms
           </p>
         )}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className={emailLayout === 'grid-2' ? 'grid grid-cols-1 md:grid-cols-2 gap-4' : 'flex flex-col gap-4'}>
           {visibleEmailPlatforms.map(def => (
             <EmailPlatformCard
               key={def.provider}

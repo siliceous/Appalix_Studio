@@ -3,7 +3,7 @@
 import { useState, useTransition, useRef } from 'react'
 import Link from 'next/link'
 import { Check, X, ExternalLink, Loader2, ChevronDown, ChevronUp, BookOpen, FileSignature, Bold, Italic, Underline, ImagePlus, CheckCircle2 } from 'lucide-react'
-import { saveSageIntegration, disconnectSageIntegration } from '@/app/actions/sage'
+import { saveSageIntegration, disconnectSageIntegration, connectFormIntegration, disconnectFormIntegration, sendTestFormWebhook } from '@/app/actions/sage'
 import { saveEmailSignature, getEmailSignature } from '@/app/actions/sage-emails'
 import type { SageIntegrationProvider } from '@/lib/types'
 
@@ -12,11 +12,12 @@ interface IntegrationCard {
   name:         string
   description:  string
   logo:         string
-  category:     'automation' | 'email' | 'tickets' | 'payments' | 'email_marketing'
+  category:     'automation' | 'email' | 'tickets' | 'payments' | 'email_marketing' | 'forms'
   fields:       Array<{ name: string; label: string; type: string; placeholder: string; hint?: string }>
-  docsUrl?:     string
-  tutorialUrl?: string
-  oauthPath?:   string   // e.g. '/api/oauth/google' — if set, OAuth button replaces text fields
+  docsUrl?:      string
+  tutorialUrl?:  string
+  oauthPath?:    string   // e.g. '/api/oauth/google' — if set, OAuth button replaces text fields
+  webhookPath?:  string   // e.g. '/api/webhooks/typeform' — shown after connecting
 }
 
 const INTEGRATIONS: IntegrationCard[] = [
@@ -103,6 +104,44 @@ const INTEGRATIONS: IntegrationCard[] = [
     docsUrl:     'https://support.zendesk.com/hc/en-us/articles/4408889192858',
     tutorialUrl: '/resources/connect-sage-zendesk',
   },
+  // ── Forms ─────────────────────────────────────────────────────────────────
+  {
+    provider:    'gravity_forms',
+    name:        'Gravity Forms',
+    description: 'Receive form submissions from Gravity Forms on your WordPress site. Add the Webhooks Add-On and point it at your Sage webhook URL.',
+    logo:        '🔌',
+    category:    'forms',
+    fields: [
+      { name: 'webhook_secret', label: 'Webhook Secret', type: 'password', placeholder: 'A shared secret you choose', hint: 'Enter any secret here, then add it as a custom request header (X-Webhook-Secret) in your Gravity Forms webhook settings' },
+    ],
+    docsUrl:      'https://docs.gravityforms.com/webhooks/',
+    webhookPath:  '/api/webhooks/gravity-forms',
+  },
+  {
+    provider:    'wpforms',
+    name:        'WPForms',
+    description: 'Push WPForms submissions directly into Sage for AI analysis and lead management. Requires the WPForms Webhooks addon.',
+    logo:        '📋',
+    category:    'forms',
+    fields: [
+      { name: 'webhook_secret', label: 'Webhook Secret', type: 'password', placeholder: 'A shared secret you choose', hint: 'Enter any secret here, then add it as a custom request header (X-Webhook-Secret) in your WPForms webhook settings' },
+    ],
+    docsUrl:      'https://wpforms.com/docs/how-to-use-webhooks-with-wpforms/',
+    webhookPath:  '/api/webhooks/wpforms',
+  },
+  {
+    provider:    'typeform',
+    name:        'Typeform',
+    description: 'Stream Typeform responses into your Forms section in real time. Sage connects via Typeform webhooks using your personal access token.',
+    logo:        '📝',
+    category:    'forms',
+    fields: [
+      { name: 'access_token', label: 'Personal Access Token', type: 'password', placeholder: 'tfp_…', hint: 'Found in Typeform → Account → Personal tokens → Create a new token' },
+      { name: 'form_id',      label: 'Form ID (optional)',    type: 'text',     placeholder: 'Leave blank to receive all forms', hint: 'Copy from your Typeform URL: typeform.com/to/{form_id}' },
+    ],
+    docsUrl:      'https://www.typeform.com/developers/webhooks/',
+    webhookPath:  '/api/webhooks/typeform',
+  },
   // ── Email Marketing ───────────────────────────────────────────────────────
   {
     provider:    'mailchimp',
@@ -167,6 +206,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   email:           'Email',
   tickets:         'Tickets',
   email_marketing: 'Email Marketing',
+  forms:           'Forms',
 }
 
 interface ConnectedEmailInfo {
@@ -200,9 +240,10 @@ interface IntegrationsClientProps {
   providers?:                   SageIntegrationProvider[]
   columns?:                     1 | 2
   connectedEmailInfoByProvider?: Record<string, ConnectedEmailInfo> | null
+  workspaceId?:                 string
 }
 
-export function IntegrationsClient({ connected: initialConnected, standalone = true, initialExpanded, onboarding, loginHint, providers, columns, connectedEmailInfoByProvider }: IntegrationsClientProps) {
+export function IntegrationsClient({ connected: initialConnected, standalone = true, initialExpanded, onboarding, loginHint, providers, columns, connectedEmailInfoByProvider, workspaceId }: IntegrationsClientProps) {
   const [connected,         setConnected]        = useState<Set<string>>(initialConnected)
   const [expanded,          setExpanded]         = useState<string | null>(initialExpanded ?? null)
   const [pending,           startTransition]     = useTransition()
@@ -211,6 +252,8 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
   const [sigExpanded,       setSigExpanded]      = useState<string | null>(null)
   const [sigSaving,         setSigSaving]        = useState(false)
   const [sigSaved,          setSigSaved]         = useState(false)
+  const [connectResult,     setConnectResult]    = useState<Record<string, { webhookUrl?: string; formsRegistered?: number; error?: string }>>({})
+  const [testResult,        setTestResult]       = useState<Record<string, { ok?: boolean; error?: string; loading?: boolean }>>({})
   const sigRef              = useRef<HTMLDivElement>(null)
   const sigImgRef           = useRef<HTMLInputElement>(null)
 
@@ -225,11 +268,18 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
     }))
   }
 
+  const FORM_PROVIDERS = new Set(['gravity_forms', 'wpforms', 'typeform'])
+
   function handleConnect(provider: SageIntegrationProvider) {
     const config = formValues[provider] ?? {}
     setSaving(provider)
     startTransition(async () => {
-      await saveSageIntegration(provider, config)
+      if (FORM_PROVIDERS.has(provider)) {
+        const result = await connectFormIntegration(provider as 'gravity_forms' | 'wpforms' | 'typeform', config)
+        setConnectResult(prev => ({ ...prev, [provider]: result }))
+      } else {
+        await saveSageIntegration(provider, config)
+      }
       setConnected(prev => new Set([...prev, provider]))
       setExpanded(null)
       setSaving(null)
@@ -243,13 +293,26 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
     if (!confirm(`Disconnect ${provider}? You can reconnect at any time.`)) return
     setSaving(provider)
     startTransition(async () => {
-      await disconnectSageIntegration(provider)
+      if (FORM_PROVIDERS.has(provider)) {
+        await disconnectFormIntegration(provider as 'gravity_forms' | 'wpforms' | 'typeform')
+      } else {
+        await disconnectSageIntegration(provider)
+      }
       setConnected(prev => {
         const next = new Set(prev)
         next.delete(provider)
         return next
       })
+      setConnectResult(prev => { const n = { ...prev }; delete n[provider]; return n })
       setSaving(null)
+    })
+  }
+
+  function handleTest(provider: SageIntegrationProvider) {
+    setTestResult(prev => ({ ...prev, [provider]: { loading: true } }))
+    startTransition(async () => {
+      const result = await sendTestFormWebhook(provider as 'gravity_forms' | 'wpforms' | 'typeform')
+      setTestResult(prev => ({ ...prev, [provider]: { ok: result.ok, error: result.error } }))
     })
   }
 
@@ -284,7 +347,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
     e.target.value = ''
   }
 
-  const categories = ['payments', 'automation', 'email', 'tickets', 'email_marketing'] as const
+  const categories = ['payments', 'automation', 'email', 'tickets', 'email_marketing', 'forms'] as const
 
   return (
     <div className={standalone ? 'p-8 max-w-3xl mx-auto' : ''}>
@@ -335,7 +398,9 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                     {/* Card header */}
                     <div className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${isConnected ? 'hover:bg-gray-50 dark:hover:bg-white/[0.03]' : ''}`}>
                       <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-white/5 border dark:border-white/8 flex items-center justify-center text-xl shrink-0">
-                        {integration.logo}
+                        {integration.logo.startsWith('/')
+                          ? <img src={integration.logo} alt={integration.name} className="w-6 h-6 object-contain" />
+                          : integration.logo}
                       </div>
 
                       <div className="flex-1 min-w-0">
@@ -500,6 +565,86 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                         )}
                       </>
                     )}
+
+                    {/* Post-connect panel — forms integrations only */}
+                    {isConnected && integration.webhookPath && workspaceId && (() => {
+                      const result  = connectResult[integration.provider]
+                      const hookUrl = result?.webhookUrl
+                        ?? `${typeof window !== 'undefined' ? window.location.origin : ''}${integration.webhookPath}/${workspaceId}`
+                      const isTypeform = integration.provider === 'typeform'
+                      return (
+                        <div className="border-t dark:border-white/8 rounded-b-xl overflow-hidden">
+                          {/* Typeform: registration result banner */}
+                          {isTypeform && result && (
+                            <div className={`px-4 py-2.5 flex items-center gap-2 text-xs ${result.error ? 'bg-amber-50 dark:bg-amber-500/8 text-amber-700 dark:text-amber-400' : 'bg-emerald-50 dark:bg-emerald-500/8 text-emerald-700 dark:text-emerald-400'}`}>
+                              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                              {result.error
+                                ? result.error
+                                : result.formsRegistered === 0
+                                  ? 'Connected. No Typeform forms found — create a form in Typeform and reconnect.'
+                                  : `Webhook auto-registered on ${result.formsRegistered} form${result.formsRegistered !== 1 ? 's' : ''}.`}
+                            </div>
+                          )}
+                          {/* Webhook URL row (always shown for GF/WPForms; shown for Typeform as fallback) */}
+                          {(!isTypeform || !result || result.error) && (
+                            <div className="px-4 py-3 bg-gray-50 dark:bg-white/3">
+                              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                                {isTypeform ? 'Or register the webhook manually in Typeform' : 'Paste this URL into your form plugin'}
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <code className="flex-1 px-3 py-2 text-xs rounded-lg bg-white dark:bg-[#232323] border dark:border-white/10 text-gray-700 dark:text-gray-300 font-mono truncate select-all">
+                                  {hookUrl}
+                                </code>
+                                <button
+                                  onClick={() => navigator.clipboard.writeText(hookUrl)}
+                                  className="shrink-0 px-2.5 py-2 text-xs rounded-lg border dark:border-white/10 bg-white dark:bg-[#232323] text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+                                >
+                                  Copy
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          {/* Typeform success: just show URL as reference */}
+                          {isTypeform && result && !result.error && (
+                            <div className="px-4 py-3 bg-gray-50 dark:bg-white/3">
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5">Webhook URL (for reference)</p>
+                              <div className="flex items-center gap-2">
+                                <code className="flex-1 px-3 py-2 text-xs rounded-lg bg-white dark:bg-[#232323] border dark:border-white/10 text-gray-600 dark:text-gray-400 font-mono truncate select-all">
+                                  {hookUrl}
+                                </code>
+                                <button
+                                  onClick={() => navigator.clipboard.writeText(hookUrl)}
+                                  className="shrink-0 px-2.5 py-2 text-xs rounded-lg border dark:border-white/10 bg-white dark:bg-[#232323] text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+                                >
+                                  Copy
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          {/* Test submission row */}
+                          {(() => {
+                            const tr = testResult[integration.provider]
+                            return (
+                              <div className="px-4 py-3 border-t dark:border-white/8 flex items-center justify-between gap-3 bg-gray-50 dark:bg-white/3">
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                  {tr?.ok && <span className="text-emerald-600 dark:text-emerald-400 font-medium">Test sent — check your Forms tab.</span>}
+                                  {tr?.error && <span className="text-red-600 dark:text-red-400">{tr.error}</span>}
+                                  {!tr?.ok && !tr?.error && <span>Send a sample submission to verify the connection end-to-end.</span>}
+                                </div>
+                                <button
+                                  onClick={() => handleTest(integration.provider)}
+                                  disabled={tr?.loading || pending}
+                                  className="shrink-0 flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border dark:border-white/10 bg-white dark:bg-[#232323] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors disabled:opacity-60"
+                                >
+                                  {tr?.loading && <Loader2 className="w-3 h-3 animate-spin" />}
+                                  {tr?.loading ? 'Sending…' : 'Send test submission'}
+                                </button>
+                              </div>
+                            )
+                          })()}
+                        </div>
+                      )
+                    })()}
 
                     {/* Config form — shown when expanding a non-connected, non-OAuth integration */}
                     {isExpanded && !isConnected && !integration.oauthPath && (

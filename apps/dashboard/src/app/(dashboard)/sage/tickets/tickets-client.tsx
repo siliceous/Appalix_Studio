@@ -8,6 +8,7 @@ import { TicketSlideOver } from '@/components/dashboard/ticket-slide-over'
 import { updateTicketStatus, updateTicketPriority, deleteTicket, deleteTickets, mergeTickets, assignTicket } from '@/app/actions/sage'
 import { exportTickets } from '@/app/actions/csv-export'
 import { CsvExportButton } from '@/components/ui/csv-export-button'
+import { TrashTab } from '@/components/dashboard/trash-tab'
 import { timeAgo } from '@/lib/utils'
 import type { SageTicket, SageContact, SageTicketStatus, SageTicketPriority, WorkspaceMemberSummary } from '@/lib/types'
 
@@ -35,6 +36,7 @@ const FILTERS: Array<{ label: string; value: string }> = [
   { label: 'Pending',     value: 'pending' },
   { label: 'Resolved',    value: 'resolved' },
   { label: 'Closed',      value: 'closed' },
+  { label: 'Trash',       value: 'trash' },
 ]
 
 interface TicketsClientProps {
@@ -318,7 +320,10 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
         </div>
       </div>
 
-      {/* Tickets list */}
+      {/* Tickets list or Trash */}
+      {filter === 'trash' ? (
+        <TrashTab type="ticket" />
+      ) : (
       <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-hidden">
         {filtered.length === 0 ? (
           <div className="py-20 text-center">
@@ -459,6 +464,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
           </div>
         )}
       </div>
+      )}
 
       {showModal && <TicketModal contacts={contacts} onClose={() => setShowModal(false)} />}
 

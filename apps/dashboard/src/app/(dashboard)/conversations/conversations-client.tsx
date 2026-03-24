@@ -13,6 +13,7 @@ import { deleteConversations } from '@/app/actions/bot-conversations'
 import { exportConversations } from '@/app/actions/csv-export'
 import { CsvExportButton } from '@/components/ui/csv-export-button'
 import type { ConvRow, BotOption, ConvFilters, TeamMember } from './page'
+import { TrashTab } from '@/components/dashboard/trash-tab'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const PLATFORMS = ['slack', 'google_chat', 'facebook_messenger', 'whatsapp', 'wordpress', 'web_widget', 'shopify'] as const
@@ -320,6 +321,15 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                 </button>
               )
             })}
+            <button
+              onClick={() => pushFilter({ status: 'trash' })}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                activeStatus === 'trash'
+                  ? 'bg-[#15A4AE]/15 dark:bg-[#15A4AE]/20 text-[#1f6157] dark:text-[#15A4AE] border border-[#15A4AE]/30'
+                  : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
+              }`}>
+              Trash
+            </button>
           </div>
         </div>
 
@@ -348,7 +358,10 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
         </div>
       </div>
 
-      {/* ── Table ── */}
+      {/* ── Table or Trash ── */}
+      {activeStatus === 'trash' ? (
+        <TrashTab type="conversation" />
+      ) : (
       <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-x-auto">
         {conversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -561,8 +574,9 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
           </table>
         )}
       </div>
+      )}
 
-      {conversations.length === 150 && (
+      {activeStatus !== 'trash' && conversations.length === 150 && (
         <p className="text-xs text-center text-gray-400 pb-2">
           Showing first 150 results — use filters to narrow down.
         </p>

@@ -1102,6 +1102,252 @@ export async function saveSageIntegration(provider: string, config: Record<strin
   revalidatePath('/sage/integrations')
 }
 
+/**
+ * Send a signed test webhook payload through the real pipeline for a form integration.
+ * Returns { submissionId } on success so the caller can link to it in the Forms section.
+ */
+export async function sendTestFormWebhook(
+  provider: 'gravity_forms' | 'wpforms' | 'typeform',
+): Promise<{ ok?: boolean; error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+
+  const { data: integ } = await admin
+    .from('sage_integrations')
+    .select('config')
+    .eq('workspace_id', workspaceId)
+    .eq('provider', provider)
+    .eq('status', 'connected')
+    .maybeSingle()
+
+  if (!integ) return { error: 'Integration not connected' }
+  const config = (integ as { config: Record<string, string> }).config
+
+  const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const pathMap = {
+    gravity_forms: `${appUrl}/api/webhooks/gravity-forms/${workspaceId}`,
+    wpforms:       `${appUrl}/api/webhooks/wpforms/${workspaceId}`,
+    typeform:      `${appUrl}/api/webhooks/typeform/${workspaceId}`,
+  }
+  const url = pathMap[provider]
+
+  try {
+    if (provider === 'gravity_forms') {
+      const secret = config.webhook_secret ?? ''
+      const body = JSON.stringify({
+        form_title: 'Test Form (Gravity Forms)',
+        '1': 'Jane Smith',
+        '2': 'jane@example.com',
+        '3': '+1 555-0100',
+        '4': 'Acme Corp',
+        '5': 'Interested in your product',
+      })
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Webhook-Secret': secret },
+        body,
+      })
+      if (!res.ok) return { error: `Webhook returned ${res.status}` }
+    }
+
+    if (provider === 'wpforms') {
+      const secret = config.webhook_secret ?? ''
+      const body = JSON.stringify({
+        form_title: 'Test Form (WPForms)',
+        fields: {
+          '1': { name: 'Name',    value: 'Jane Smith' },
+          '2': { name: 'Email',   value: 'jane@example.com' },
+          '3': { name: 'Phone',   value: '+1 555-0100' },
+          '4': { name: 'Company', value: 'Acme Corp' },
+          '5': { name: 'Message', value: 'Interested in your product' },
+        },
+      })
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Webhook-Secret': secret },
+        body,
+      })
+      if (!res.ok) return { error: `Webhook returned ${res.status}` }
+    }
+
+    if (provider === 'typeform') {
+      const { createHmac } = await import('crypto')
+      const accessToken = config.access_token ?? ''
+      const body = JSON.stringify({
+        event_id:   'test-event-' + Date.now(),
+        event_type: 'form_response',
+        form_response: {
+          form_id:    config.form_id || 'test_form_id',
+          form_title: 'Test Form (Typeform)',
+          landed_at:  new Date().toISOString(),
+          submitted_at: new Date().toISOString(),
+          definition: {
+            fields: [
+              { ref: 'name_ref',    title: 'Full Name' },
+              { ref: 'email_ref',   title: 'Email' },
+              { ref: 'phone_ref',   title: 'Phone' },
+              { ref: 'company_ref', title: 'Company' },
+              { ref: 'msg_ref',     title: 'Message' },
+            ],
+          },
+          answers: [
+            { field: { ref: 'name_ref',    type: 'short_text' }, type: 'text',  text:         'Jane Smith' },
+            { field: { ref: 'email_ref',   type: 'email'      }, type: 'email', email:        'jane@example.com' },
+            { field: { ref: 'phone_ref',   type: 'phone_number'}, type: 'phone_number', phone_number: '+1 555-0100' },
+            { field: { ref: 'company_ref', type: 'short_text' }, type: 'text',  text:         'Acme Corp' },
+            { field: { ref: 'msg_ref',     type: 'long_text'  }, type: 'text',  text:         'Interested in your product' },
+          ],
+        },
+      })
+      const signature = 'sha256=' + createHmac('sha256', accessToken).update(body).digest('base64')
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type':      'application/json',
+          'Typeform-Signature': signature,
+        },
+        body,
+      })
+      if (!res.ok) return { error: `Webhook returned ${res.status}` }
+    }
+
+    return { ok: true }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Request failed' }
+  }
+}
+
+/**
+ * Connect a form integration provider (gravity_forms, wpforms, typeform).
+ * Saves config and — for Typeform — auto-registers the webhook via the Typeform API.
+ * Returns { webhookUrl } so the client can display it for manual webhook setup (GF / WPForms).
+ */
+export async function connectFormIntegration(
+  provider: 'gravity_forms' | 'wpforms' | 'typeform',
+  config: Record<string, string>,
+): Promise<{ webhookUrl?: string; formsRegistered?: number; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+
+  // Save / upsert the integration record
+  const { error: saveError } = await admin
+    .from('sage_integrations')
+    .upsert(
+      { workspace_id: workspaceId, user_id: user.id, provider, config, status: 'connected', updated_at: new Date().toISOString() },
+      { onConflict: 'workspace_id,user_id,provider' },
+    )
+  if (saveError) return { error: saveError.message }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.appalix.ai'
+  const webhookUrl = `${appUrl}/api/webhooks/${provider === 'gravity_forms' ? 'gravity-forms' : provider}/${workspaceId}`
+
+  // Typeform: auto-register our webhook via Typeform API
+  if (provider === 'typeform') {
+    const accessToken = config.access_token ?? ''
+    if (!accessToken) {
+      revalidatePath('/sage/integrations')
+      return { webhookUrl }
+    }
+
+    try {
+      // List all forms (or use the specific form_id if provided)
+      const formIds: string[] = []
+      if (config.form_id) {
+        formIds.push(config.form_id)
+      } else {
+        const listRes = await fetch('https://api.typeform.com/forms?page_size=200', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        if (listRes.ok) {
+          const listData = await listRes.json() as { items?: Array<{ id: string }> }
+          formIds.push(...(listData.items ?? []).map(f => f.id))
+        }
+      }
+
+      // Register webhook for each form
+      let registered = 0
+      for (const formId of formIds) {
+        const res = await fetch(`https://api.typeform.com/forms/${formId}/webhooks/sage_webhook`, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            enabled:    true,
+            url:        webhookUrl,
+            secret:     accessToken,
+            verify_ssl: true,
+          }),
+        })
+        if (res.ok) registered++
+      }
+
+      revalidatePath('/sage/integrations')
+      return { webhookUrl, formsRegistered: registered }
+    } catch (err) {
+      // Webhook registration failed — integration is still saved, just show the URL
+      revalidatePath('/sage/integrations')
+      return { webhookUrl, error: `Integration saved but webhook registration failed: ${err instanceof Error ? err.message : 'unknown error'}` }
+    }
+  }
+
+  revalidatePath('/sage/integrations')
+  return { webhookUrl }
+}
+
+/**
+ * Disconnect a form integration and clean up remote webhooks (Typeform only).
+ */
+export async function disconnectFormIntegration(
+  provider: 'gravity_forms' | 'wpforms' | 'typeform',
+): Promise<void> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+
+  // For Typeform: de-register our webhook before clearing config
+  if (provider === 'typeform') {
+    const { data: integ } = await admin
+      .from('sage_integrations')
+      .select('config')
+      .eq('workspace_id', workspaceId)
+      .eq('provider', 'typeform')
+      .maybeSingle()
+
+    const accessToken = (integ as { config?: Record<string, string> } | null)?.config?.access_token ?? ''
+    if (accessToken) {
+      try {
+        const listRes = await fetch('https://api.typeform.com/forms?page_size=200', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        if (listRes.ok) {
+          const listData = await listRes.json() as { items?: Array<{ id: string }> }
+          for (const form of listData.items ?? []) {
+            await fetch(`https://api.typeform.com/forms/${form.id}/webhooks/sage_webhook`, {
+              method: 'DELETE',
+              headers: { Authorization: `Bearer ${accessToken}` },
+            }).catch(() => { /* best-effort */ })
+          }
+        }
+      } catch { /* best-effort cleanup */ }
+    }
+  }
+
+  await admin
+    .from('sage_integrations')
+    .update({ status: 'disconnected', config: {}, updated_at: new Date().toISOString() })
+    .eq('workspace_id', workspaceId)
+    .eq('provider', provider)
+
+  revalidatePath('/sage/integrations')
+}
+
 export async function disconnectSageIntegration(provider: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

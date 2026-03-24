@@ -19,6 +19,17 @@ import type { SageFormSubmission, SageForm } from '@/app/actions/sage-forms'
 
 export type TeamMember = { user_id: string; name: string }
 
+const SOURCE_PLATFORM_LABELS: Record<string, string> = {
+  mailchimp:       'Mailchimp',
+  activecampaign:  'ActiveCampaign',
+  convertkit:      'Kit (ConvertKit)',
+  klaviyo:         'Klaviyo',
+  constantcontact: 'Constant Contact',
+  gravity_forms:   'Gravity Forms',
+  wpforms:         'WPForms',
+  typeform:        'Typeform',
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 const AVATAR_COLORS = [
   'bg-purple-500', 'bg-blue-500', 'bg-[#15A4AE]', 'bg-yellow-500',
@@ -331,7 +342,7 @@ export function SubmissionPanelClient({
           <div className="flex flex-wrap gap-1.5 items-center">
             {current.source_platform && (
               <span className="inline-flex items-center text-xs px-2.5 py-1 rounded-full font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">
-                {current.source_platform}
+                {SOURCE_PLATFORM_LABELS[current.source_platform] ?? current.source_platform}
               </span>
             )}
             {localPriority && (
@@ -398,7 +409,7 @@ export function SubmissionPanelClient({
             <div className="space-y-2.5">
               {currentForm && <DetailRow label="Form"      value={currentForm.name} />}
               <DetailRow label="Submitted"  value={formatDate(current.created_at)} />
-              {current.source_platform && <DetailRow label="Source" value={current.source_platform} />}
+              {current.source_platform && <DetailRow label="Source" value={SOURCE_PLATFORM_LABELS[current.source_platform] ?? current.source_platform} />}
               {current.action_type && (
                 <DetailRow label="Status" value={
                   current.action_type === 'lead' ? 'Deal created' :
