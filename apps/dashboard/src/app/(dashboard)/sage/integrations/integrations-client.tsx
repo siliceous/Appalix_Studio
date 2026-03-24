@@ -13,7 +13,7 @@ interface IntegrationCard {
   description:  string
   logo:         string
   category:     'automation' | 'email' | 'tickets' | 'payments' | 'email_marketing' | 'forms'
-  fields:       Array<{ name: string; label: string; type: string; placeholder: string; hint?: string }>
+  fields:       Array<{ name: string; label: string; type: string; placeholder: string; hint?: string; optional?: boolean }>
   docsUrl?:      string
   tutorialUrl?:  string
   oauthPath?:    string   // e.g. '/api/oauth/google' — if set, OAuth button replaces text fields
@@ -112,7 +112,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     logo:        '🔌',
     category:    'forms',
     fields: [
-      { name: 'webhook_secret', label: 'Webhook Secret', type: 'password', placeholder: 'A shared secret you choose', hint: 'Enter any secret here, then add it as a custom request header (X-Webhook-Secret) in your Gravity Forms webhook settings' },
+      { name: 'webhook_secret', label: 'Webhook Secret', type: 'password', placeholder: 'Optional — leave blank to skip verification', hint: 'If set, your webhook URL will include ?secret=… automatically. Leave blank if you just want the plain URL.', optional: true },
     ],
     docsUrl:      'https://docs.gravityforms.com/webhooks/',
     webhookPath:  '/api/webhooks/gravity-forms',
@@ -124,7 +124,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     logo:        '📋',
     category:    'forms',
     fields: [
-      { name: 'webhook_secret', label: 'Webhook Secret', type: 'password', placeholder: 'A shared secret you choose', hint: 'Enter any secret here, then add it as a custom request header (X-Webhook-Secret) in your WPForms webhook settings' },
+      { name: 'webhook_secret', label: 'Webhook Secret', type: 'password', placeholder: 'Optional — leave blank to skip verification', hint: 'If set, your webhook URL will include ?secret=… automatically. Leave blank if you just want the plain URL.', optional: true },
     ],
     docsUrl:      'https://wpforms.com/docs/how-to-use-webhooks-with-wpforms/',
     webhookPath:  '/api/webhooks/wpforms',
@@ -380,7 +380,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                 const isExpanded     = expanded === integration.provider
                 const isSaving       = saving === integration.provider
                 const values         = formValues[integration.provider] ?? {}
-                const requiredFields  = integration.fields.filter(f => f.name !== 'publishable_key')
+                const requiredFields  = integration.fields.filter(f => !f.optional && f.name !== 'publishable_key')
                 const allFilled      = requiredFields.every(f => (values[f.name] ?? '').trim().length > 0)
                 const emailProviders = ['gmail', 'microsoft']
                 const otherEmailConnected =
