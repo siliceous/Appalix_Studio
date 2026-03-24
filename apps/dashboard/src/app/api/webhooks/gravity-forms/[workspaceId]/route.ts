@@ -30,7 +30,7 @@ export async function POST(
   console.log('[GF webhook] secret source:', req.headers.get('x-webhook-secret') ? 'header' : 'query')
   console.log('[GF webhook] content-type:', req.headers.get('content-type'))
 
-  if (!incomingSecret) return NextResponse.json({ error: 'missing secret (header or ?secret= query param)' }, { status: 401 })
+  // Secret is optional — verified below once we load the stored config
 
   const admin = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,8 +54,9 @@ export async function POST(
   }
 
   const storedSecret = integration.config?.webhook_secret ?? ''
-  if (!storedSecret || incomingSecret !== storedSecret) {
-    console.error('[GF webhook] Secret mismatch. Stored:', storedSecret ? '(set)' : '(empty)', 'Incoming:', incomingSecret ? '(set)' : '(empty)')
+  // Only enforce secret if one is configured — if none stored, accept all requests
+  if (storedSecret && incomingSecret !== storedSecret) {
+    console.error('[GF webhook] Secret mismatch. Stored:(set) Incoming:', incomingSecret ? '(set)' : '(empty)')
     return NextResponse.json({ error: 'invalid secret' }, { status: 401 })
   }
 

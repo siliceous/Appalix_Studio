@@ -26,8 +26,6 @@ export async function POST(
     new URL(req.url).searchParams.get('secret') ||
     ''
 
-  if (!incomingSecret) return NextResponse.json({ error: 'missing secret (header or ?secret= query param)' }, { status: 401 })
-
   const admin = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const a = admin as any
@@ -43,7 +41,7 @@ export async function POST(
   if (!integration) return NextResponse.json({ error: 'integration not found' }, { status: 404 })
 
   const storedSecret = integration.config?.webhook_secret ?? ''
-  if (!storedSecret || incomingSecret !== storedSecret) {
+  if (storedSecret && incomingSecret !== storedSecret) {
     return NextResponse.json({ error: 'invalid secret' }, { status: 401 })
   }
 
