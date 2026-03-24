@@ -85,9 +85,25 @@ export function SubmissionPanelClient({
   }
 
   const currentForm = forms.find(f => f.id === current.form_id) ?? null
-  const contactName  = current.ai_entities?.name  ?? current.fields.name  ?? 'Anonymous'
-  const contactEmail = current.ai_entities?.email ?? current.fields.email ?? null
-  const contactPhone = current.ai_entities?.phone ?? current.fields.phone ?? current.fields.phone_number ?? null
+  // Case-insensitive field lookup — handles "Name", "Full Name", "name", "full_name" etc.
+  function getField(...keys: string[]): string {
+    const norm: Record<string, string> = {}
+    for (const [k, v] of Object.entries(current.fields)) {
+      norm[k.toLowerCase().replace(/[\s\-]+/g, '_')] = v
+    }
+    for (const key of keys) {
+      if (current.fields[key]) return current.fields[key]
+      const nk = key.toLowerCase().replace(/[\s\-]+/g, '_')
+      if (norm[nk]) return norm[nk]
+    }
+    return ''
+  }
+
+  const contactName  = (current.ai_entities?.name  ?? getField('name', 'full_name', 'your_name', 'contact_name', 'first_name')) || 'Anonymous'
+  const contactEmail = (current.ai_entities?.email ?? getField('email', 'email_address', 'your_email')) || null
+  const contactPhone = (current.ai_entities?.phone ?? getField('phone', 'phone_number', 'mobile', 'telephone', 'tel')) || null
+  const contactCompany = getField('company', 'company_name', 'organisation', 'organization', 'business')
+  const contactCity    = getField('city', 'location', 'town', 'suburb')
 
   async function handlePriorityChange(val: string) {
     setLocalPriority(val)
@@ -156,8 +172,9 @@ export function SubmissionPanelClient({
   const filtered = submissions.filter(s => {
     if (!search) return true
     const q = search.toLowerCase()
-    const n = (s.ai_entities?.name ?? s.fields.name ?? '').toLowerCase()
-    const e = (s.ai_entities?.email ?? s.fields.email ?? '').toLowerCase()
+    const norm = Object.fromEntries(Object.entries(s.fields).map(([k, v]) => [k.toLowerCase().replace(/[\s\-]+/g, '_'), v]))
+    const n = (s.ai_entities?.name  ?? norm['name']  ?? '').toLowerCase()
+    const e = (s.ai_entities?.email ?? norm['email'] ?? '').toLowerCase()
     return n.includes(q) || e.includes(q)
   })
 
@@ -194,8 +211,9 @@ export function SubmissionPanelClient({
               <p className="text-xs text-gray-400">No submissions found</p>
             </div>
           ) : filtered.map(s => {
-            const name    = s.ai_entities?.name ?? s.fields.name ?? 'Anonymous'
-            const email   = s.ai_entities?.email ?? s.fields.email ?? null
+            const sNorm   = Object.fromEntries(Object.entries(s.fields).map(([k, v]) => [k.toLowerCase().replace(/[\s\-]+/g, '_'), v]))
+            const name    = s.ai_entities?.name  ?? sNorm['name']  ?? 'Anonymous'
+            const email   = s.ai_entities?.email ?? sNorm['email'] ?? null
             const isActive = s.id === current.id
             const form    = forms.find(f => f.id === s.form_id)
             return (
@@ -441,8 +459,8 @@ export function SubmissionPanelClient({
                   {contactName  && <DetailRow label="Name"  value={contactName} />}
                   {contactEmail && <DetailRow label="Email" value={contactEmail} />}
                   {contactPhone && <DetailRow label="Phone" value={contactPhone} />}
-                  {current.fields.company && <DetailRow label="Company" value={current.fields.company} />}
-                  {current.fields.city    && <DetailRow label="City"    value={current.fields.city} />}
+                  {contactCompany && <DetailRow label="Company" value={contactCompany} />}
+                  {contactCity    && <DetailRow label="City"    value={contactCity} />}
                   {current.ai_entities?.product_interest && (
                     <DetailRow label="Interest" value={current.ai_entities.product_interest} />
                   )}

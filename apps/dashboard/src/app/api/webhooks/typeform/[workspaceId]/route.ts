@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { createHmac, timingSafeEqual } from 'crypto'
+import { normalizeFields, triggerFormAnalysis } from '../../_shared'
 
 export const dynamic = 'force-dynamic'
 
@@ -109,7 +110,8 @@ export async function POST(
     fields[key] = val
   }
 
-  await insertSubmission(a, workspaceId, fields, 'typeform', formTitle ?? formId ?? null)
+  const result = await insertSubmission(a, workspaceId, normalizeFields(fields), 'typeform', formTitle ?? formId ?? null)
+  if (result && 'formId' in result) triggerFormAnalysis(workspaceId, result.formId)
   return NextResponse.json({ ok: true })
 }
 
@@ -120,7 +122,7 @@ async function insertSubmission(
   fields: Record<string, string>,
   source: string,
   formTitle: string | null,
-) {
+): Promise<{ formId: string } | null> {
   const formName = formTitle ?? 'Typeform Submissions'
   let { data: form } = await a
     .from('sage_forms')
@@ -146,7 +148,7 @@ async function insertSubmission(
     form = newForm
   }
 
-  if (!form?.id) return
+  if (!form?.id) return null
 
   await a.from('sage_form_submissions').insert({
     workspace_id:    workspaceId,
@@ -154,4 +156,6 @@ async function insertSubmission(
     source_platform: source,
     fields,
   })
+
+  return { formId: form.id }
 }

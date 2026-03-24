@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { normalizeFields, triggerFormAnalysis } from '../_shared'
 
 export const dynamic = 'force-dynamic'
 
@@ -84,17 +85,19 @@ export async function POST(
   console.log('[GF webhook] body keys:', Object.keys(body))
 
   // Flatten: GF sends field values under numeric keys or label keys
-  const fields: Record<string, string> = {}
+  const rawFields: Record<string, string> = {}
   for (const [k, v] of Object.entries(body)) {
     if (typeof v === 'string' || typeof v === 'number') {
-      fields[k] = String(v)
+      rawFields[k] = String(v)
     }
   }
+  const fields = normalizeFields(rawFields)
 
   const formTitle = (body['form_title'] ?? body['form_name']) as string | undefined
 
-  const err = await insertSubmission(a, workspaceId, fields, 'gravity_forms', formTitle ?? null)
-  if (err) return NextResponse.json({ error: err }, { status: 500 })
+  const result = await insertSubmission(a, workspaceId, fields, 'gravity_forms', formTitle ?? null)
+  if ('error' in result) return NextResponse.json({ error: result.error }, { status: 500 })
+  triggerFormAnalysis(workspaceId, result.formId)
   return NextResponse.json({ ok: true })
 }
 
@@ -105,7 +108,7 @@ async function insertSubmission(
   fields: Record<string, string>,
   source: string,
   formTitle: string | null,
-): Promise<string | null> {
+): Promise<{ error: string } | { formId: string }> {
   const formName = formTitle ?? `${source.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} Submissions`
 
   let { data: form } = await a
@@ -129,11 +132,11 @@ async function insertSubmission(
       .insert({ workspace_id: workspaceId, name: formName, is_active: true, created_by: owner?.user_id ?? null })
       .select('id')
       .single()
-    if (formErr) return `sage_forms insert failed: ${formErr.message}`
+    if (formErr) return { error: `sage_forms insert failed: ${formErr.message}` }
     form = newForm
   }
 
-  if (!form?.id) return 'no form id after insert'
+  if (!form?.id) return { error: 'no form id after insert' }
 
   const { error: subErr } = await a.from('sage_form_submissions').insert({
     workspace_id:    workspaceId,
@@ -141,7 +144,7 @@ async function insertSubmission(
     source_platform: source,
     fields,
   })
-  if (subErr) return `sage_form_submissions insert failed: ${subErr.message}`
+  if (subErr) return { error: `sage_form_submissions insert failed: ${subErr.message}` }
 
-  return null
+  return { formId: form.id }
 }

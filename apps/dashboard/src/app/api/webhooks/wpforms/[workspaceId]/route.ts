@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { normalizeFields, triggerFormAnalysis } from '../../_shared'
 
 export const dynamic = 'force-dynamic'
 
@@ -67,7 +68,9 @@ export async function POST(
 
   const formTitle = data['form_title'] as string | undefined
 
-  await insertSubmission(a, workspaceId, fields, 'wpforms', formTitle ?? null)
+  const result = await insertSubmission(a, workspaceId, normalizeFields(fields), 'wpforms', formTitle ?? null)
+  if (result && 'error' in result) return NextResponse.json({ error: result.error }, { status: 500 })
+  if (result && 'formId' in result) triggerFormAnalysis(workspaceId, result.formId)
   return NextResponse.json({ ok: true })
 }
 
@@ -78,7 +81,7 @@ async function insertSubmission(
   fields: Record<string, string>,
   source: string,
   formTitle: string | null,
-) {
+): Promise<{ error: string } | { formId: string } | null> {
   const formName = formTitle ?? 'WPForms Submissions'
   let { data: form } = await a
     .from('sage_forms')
@@ -96,20 +99,24 @@ async function insertSubmission(
       .limit(1)
       .maybeSingle()
 
-    const { data: newForm } = await a
+    const { data: newForm, error: formErr } = await a
       .from('sage_forms')
       .insert({ workspace_id: workspaceId, name: formName, is_active: true, created_by: owner?.user_id ?? null })
       .select('id')
       .single()
+    if (formErr) return { error: `sage_forms insert failed: ${formErr.message}` }
     form = newForm
   }
 
-  if (!form?.id) return
+  if (!form?.id) return { error: 'no form id after insert' }
 
-  await a.from('sage_form_submissions').insert({
+  const { error: subErr } = await a.from('sage_form_submissions').insert({
     workspace_id:    workspaceId,
     form_id:         form.id,
     source_platform: source,
     fields,
   })
+  if (subErr) return { error: `sage_form_submissions insert failed: ${subErr.message}` }
+
+  return { formId: form.id }
 }

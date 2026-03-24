@@ -135,25 +135,6 @@ export default async function FormsPage({
   type EmailIntegRow = { provider: string; status: string; config: Record<string, string>; sync_enabled: boolean }
   const emailIntegrations = (emailIntegRaw ?? []) as EmailIntegRow[]
 
-  const mailchimpInteg     = emailIntegrations.find(r => r.provider === 'mailchimp') ?? null
-  const mailchimpCfg       = mailchimpInteg?.config ?? null
-  const mailchimpConnected = !!mailchimpCfg
-  const mailchimpSyncEnabled = mailchimpInteg?.sync_enabled ?? false
-  const mailchimpListId    = mailchimpCfg?.list_id ?? ''
-
-  // Fetch all Mailchimp audiences so users can pick per-form
-  let mailchimpLists: Array<{ id: string; name: string }> = []
-  if (mailchimpConnected && mailchimpCfg?.access_token) {
-    try {
-      const mcServer = mailchimpCfg.server ?? 'us1'
-      const mcRes = await fetch(`https://${mcServer}.api.mailchimp.com/3.0/lists?count=50&fields=lists.id,lists.name`, {
-        headers: { Authorization: `Bearer ${mailchimpCfg.access_token}` },
-      })
-      const mcData = await mcRes.json() as { lists?: Array<{ id: string; name: string }> }
-      mailchimpLists = mcData.lists ?? []
-    } catch { /* non-fatal */ }
-  }
-
   // Connected platform names for the banner
   const connectedEmailProviders = emailIntegrations.map(r => r.provider)
 
@@ -224,11 +205,7 @@ export default async function FormsPage({
             forms={forms}
             filters={params}
             readonly={!!viewAsUserId}
-            mailchimpConnected={mailchimpConnected}
-            mailchimpListId={mailchimpListId}
-            mailchimpLists={mailchimpLists}
             connectedEmailProviders={connectedEmailProviders}
-            mailchimpSyncEnabled={mailchimpSyncEnabled}
             teamMembers={teamMembersForPicker}
             canAllocate={callerRank >= ROLE_RANK.manager}
           />

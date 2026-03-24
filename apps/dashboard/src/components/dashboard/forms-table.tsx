@@ -5,20 +5,19 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ClipboardList, Search, ChevronDown, X,
-  UserPlus, Ticket, Download, ChevronUp, Loader2, Trash2, Pencil,
+  UserPlus, Ticket, Download, Loader2, Trash2, Pencil, Sparkles,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import {
   formSubmissionCreateLead,
   formSubmissionCreateTicket,
   deleteSubmission,
-  updateFormMailchimpList,
   updateSubmissionPriority,
   updateSubmissionStatus,
   updateSubmissionAssignedTo,
   updateSubmissionName,
+  analyzeFormSubmissions,
 } from '@/app/actions/sage-forms'
-import { toggleMailchimpSync, syncFromEmailPlatform } from '@/app/actions/leads'
 import type { SageForm, SageFormSubmission } from '@/app/actions/sage-forms'
 import { TrashTab } from '@/components/dashboard/trash-tab'
 
@@ -60,11 +59,7 @@ interface Props {
   forms:                    SageForm[]
   filters:                  FormFilters
   readonly?:                boolean
-  mailchimpConnected?:      boolean
-  mailchimpListId?:         string
-  mailchimpLists?:          Array<{ id: string; name: string }>
   connectedEmailProviders?:  string[]
-  mailchimpSyncEnabled?:     boolean
   teamMembers?:             Array<{ user_id: string; name: string }>
   canAllocate?:             boolean
 }
@@ -81,17 +76,6 @@ const EMAIL_PLATFORM_META: Record<string, { name: string; logo?: string }> = {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function openOAuthPopup(path: string, onClose: () => void) {
-  const w = 600, h = 700
-  const left = Math.round(window.screenX + (window.outerWidth - w) / 2)
-  const top  = Math.round(window.screenY + (window.outerHeight - h) / 2)
-  const popup = window.open(path, 'oauth-popup', `width=${w},height=${h},left=${left},top=${top},toolbar=0,menubar=0,location=0`)
-  if (!popup) return
-  const timer = setInterval(() => {
-    if (popup.closed) { clearInterval(timer); onClose() }
-  }, 500)
-}
-
 function buildUrl(base: string, filters: FormFilters): string {
   const p = new URLSearchParams()
   Object.entries(filters).forEach(([k, v]) => { if (v) p.set(k, v) })
@@ -99,23 +83,47 @@ function buildUrl(base: string, filters: FormFilters): string {
   return qs ? `${base}?${qs}` : base
 }
 
+/** Case-insensitive field lookup — handles "Name", "Full Name", "name", "full_name" etc. */
+function getField(fields: Record<string, string>, ...keys: string[]): string {
+  // Build a normalized lookup map once
+  const norm: Record<string, string> = {}
+  for (const [k, v] of Object.entries(fields)) {
+    norm[k.toLowerCase().replace(/[\s\-]+/g, '_')] = v
+  }
+  for (const key of keys) {
+    // Exact match first
+    if (fields[key]) return fields[key]
+    // Normalized match
+    const nk = key.toLowerCase().replace(/[\s\-]+/g, '_')
+    if (norm[nk]) return norm[nk]
+  }
+  return ''
+}
+
+function getName(sub: SageFormSubmission): string {
+  return (sub.ai_entities?.name ?? getField(sub.fields, 'name', 'full_name', 'your_name', 'contact_name', 'first_name', 'fullname')) || ''
+}
+
+function getEmail(sub: SageFormSubmission): string {
+  return (sub.ai_entities?.email ?? getField(sub.fields, 'email', 'email_address', 'your_email', 'emailaddress')) || ''
+}
+
 function getCity(sub: SageFormSubmission): string {
-  return sub.fields.city ?? sub.fields.location ?? ''
+  return getField(sub.fields, 'city', 'location', 'town', 'suburb')
 }
 
 function getPhone(sub: SageFormSubmission): string {
-  return sub.ai_entities?.phone ?? sub.fields.phone ?? sub.fields.phone_number ?? sub.fields.mobile ?? ''
+  return (sub.ai_entities?.phone ?? getField(sub.fields, 'phone', 'phone_number', 'mobile', 'mobile_number', 'tel', 'telephone', 'contact_number')) || ''
 }
 
 function getCompany(sub: SageFormSubmission): string {
-  return sub.fields.company ?? sub.fields.company_name ?? sub.fields.organisation ?? sub.fields.organization ?? ''
+  return getField(sub.fields, 'company', 'company_name', 'organisation', 'organization', 'business', 'business_name')
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
 export function FormsTable({
   submissions, forms, filters, readonly = false,
-  mailchimpConnected = false, mailchimpListId = '', mailchimpLists = [],
-  connectedEmailProviders = [], mailchimpSyncEnabled = false,
+  connectedEmailProviders = [],
   teamMembers = [], canAllocate = false,
 }: Props) {
   const router = useRouter()
@@ -134,44 +142,20 @@ export function FormsTable({
   // Bulk saving
   const [bulkSaving, setBulkSaving] = useState(false)
 
+  // AI analysis
+  const [analyzing, setAnalyzing] = useState(false)
+  const pendingCount = submissions.filter(s => !s.ai_analyzed_at).length
+
+  async function handleAnalyze() {
+    if (analyzing) return
+    setAnalyzing(true)
+    await analyzeFormSubmissions()
+    setAnalyzing(false)
+    router.refresh()
+  }
+
   // Per-row quick action loading state
   const [quickAction, setQuickAction] = useState<Record<string, 'loading-deal' | 'loading-ticket' | 'loading-delete'>>({})
-
-  // Email integration state
-  const [mcExpanded, setMcExpanded] = useState(false)
-  const [mcSaving, setMcSaving]     = useState<Record<string, boolean>>({})
-  const [syncEnabled, setSyncEnabled]   = useState(mailchimpSyncEnabled)
-  const [syncToggling, setSyncToggling] = useState(false)
-  const [syncing, setSyncing]           = useState(false)
-  const [syncResult, setSyncResult]     = useState<{ synced: number; skipped: number; error?: string } | null>(null)
-  const [bannerCollapsed, setBannerCollapsed] = useState(false)
-
-  // ── Email integration handlers ───────────────────────────────────────────
-  async function handleToggleSync() {
-    if (syncToggling) return
-    const next = !syncEnabled
-    setSyncEnabled(next)
-    setSyncToggling(true)
-    try {
-      await toggleMailchimpSync(next)
-      router.refresh()
-    } finally {
-      setSyncToggling(false)
-    }
-  }
-
-  async function handleSyncNow() {
-    if (syncing) return
-    setSyncing(true)
-    setSyncResult(null)
-    try {
-      const result = await syncFromEmailPlatform('mailchimp')
-      setSyncResult(result)
-      router.refresh()
-    } finally {
-      setSyncing(false)
-    }
-  }
 
   // ── Filter navigation ────────────────────────────────────────────────────
   const pushFilter = useCallback((patch: Partial<FormFilters>) => {
@@ -260,14 +244,14 @@ export function FormsTable({
   }
 
   function handleRename(sub: SageFormSubmission) {
-    const current = sub.ai_entities?.name ?? sub.fields.name ?? ''
+    const current = getName(sub) || ''
     const newName = window.prompt('Rename contact:', current)
     if (newName === null || newName === current) return
     updateSubmissionName(sub.id, newName.trim()).then(() => router.refresh())
   }
 
   function handleDownload(sub: SageFormSubmission) {
-    const name = sub.ai_entities?.name ?? sub.fields.name ?? 'submission'
+    const name = getName(sub) || 'submission'
     const data = JSON.stringify({ ...sub.fields, ...sub.ai_entities, submitted: sub.created_at }, null, 2)
     const blob = new Blob([data], { type: 'application/json' })
     const url  = URL.createObjectURL(blob)
@@ -290,8 +274,8 @@ export function FormsTable({
   const exportCSV = () => {
     const headers = ['Name', 'Email', 'Phone', 'Company', 'City', 'Form', 'Priority', 'Status', 'Submitted', 'Assigned to']
     const rows = submissions.map(sub => {
-      const name     = sub.ai_entities?.name  ?? sub.fields.name  ?? 'Anonymous'
-      const email    = sub.ai_entities?.email ?? sub.fields.email ?? ''
+      const name     = getName(sub) || 'Anonymous'
+      const email    = getEmail(sub)
       const phone    = getPhone(sub)
       const company  = getCompany(sub)
       const city     = getCity(sub)
@@ -312,127 +296,31 @@ export function FormsTable({
   return (
     <div className="max-w-full mx-auto space-y-5 p-8">
 
-      {/* ── Email integrations banner ── */}
-      <div className="rounded-xl border border-gray-200 dark:border-white/8 bg-white dark:bg-white/[0.03] overflow-hidden">
-        {connectedEmailProviders.length > 0 && (
-          <div className="border-b border-gray-100 dark:border-white/6">
-            <div className="flex flex-wrap items-center gap-3 px-4 py-3">
-              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium shrink-0">Syncing to:</span>
-              {connectedEmailProviders.map(provider => {
+      {/* ── Connected sources bar ── */}
+      {(() => {
+        const formProviders = [...new Set(submissions.map(s => s.source_platform).filter(Boolean))]
+          .filter(p => ['gravity_forms', 'wpforms', 'typeform'].includes(p as string)) as string[]
+        const allProviders = [...connectedEmailProviders, ...formProviders]
+        if (allProviders.length === 0) return null
+        return (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/8 bg-white dark:bg-white/[0.03]">
+            <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium shrink-0">Connected:</span>
+            <div className="flex flex-wrap gap-1.5 flex-1">
+              {allProviders.map(provider => {
                 const meta = EMAIL_PLATFORM_META[provider]
                 if (!meta) return null
                 return (
-                  <div key={provider} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
-                    <img src={meta.logo} alt={meta.name} className="w-3.5 h-3.5 object-contain" />
-                    <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">{meta.name}</span>
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-500">✓ Connected</span>
-                  </div>
+                  <span key={provider} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                    {meta.logo && <img src={meta.logo} alt="" className="w-3 h-3 object-contain" />}
+                    {meta.name}
+                  </span>
                 )
               })}
-              <div className="ml-auto flex items-center gap-2 shrink-0">
-                <Link href="/sage/integrations" className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">Manage →</Link>
-                <button
-                  onClick={() => setBannerCollapsed(v => !v)}
-                  className="p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
-                >
-                  {bannerCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
-                </button>
-              </div>
             </div>
-
-            {!bannerCollapsed && connectedEmailProviders.includes('mailchimp') && (
-              <div className="flex items-center gap-3 px-4 py-2.5 border-t border-gray-100 dark:border-white/6 bg-gray-50/60 dark:bg-white/[0.02] overflow-x-auto">
-                <button
-                  onClick={handleToggleSync}
-                  disabled={syncToggling}
-                  className={`flex items-center gap-2 px-2.5 py-1 rounded-lg border transition-colors ${
-                    syncEnabled
-                      ? 'border-brand-200 dark:border-[#15A4AE]/30 bg-brand-50 dark:bg-[#15A4AE]/10'
-                      : 'border-gray-200 dark:border-white/10 bg-white dark:bg-white/5'
-                  } ${syncToggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-brand-300 dark:hover:border-[#15A4AE]/40'}`}
-                >
-                  <span className={`text-[11px] font-medium ${syncEnabled ? 'text-brand-600 dark:text-[#15A4AE]' : 'text-gray-400 dark:text-gray-500'}`}>
-                    Mailchimp Auto Sync
-                  </span>
-                  <span className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${syncEnabled ? 'bg-brand-600' : 'bg-gray-200 dark:bg-white/15'}`}>
-                    <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${syncEnabled ? 'translate-x-[14px]' : 'translate-x-[2px]'}`} />
-                  </span>
-                </button>
-                <button
-                  onClick={handleSyncNow}
-                  disabled={syncing}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-[11px] font-medium text-gray-600 dark:text-gray-300 hover:border-brand-300 dark:hover:border-[#15A4AE]/40 hover:text-brand-600 dark:hover:text-[#15A4AE] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {syncing ? 'Syncing…' : 'Sync Now'}
-                </button>
-                {syncResult && (
-                  <span className={`text-[11px] font-medium whitespace-nowrap shrink-0 ${syncResult.error ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                    {syncResult.error
-                      ? `⚠ ${syncResult.error}`
-                      : syncResult.synced === 0 && syncResult.skipped === 0
-                        ? '✓ No contacts found in Mailchimp'
-                        : `✓ ${syncResult.synced} new · ${syncResult.skipped} duplicate${syncResult.skipped !== 1 ? 's' : ''} skipped`
-                    }
-                  </span>
-                )}
-              </div>
-            )}
+            <Link href="/forms/sources" className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 shrink-0">Manage →</Link>
           </div>
-        )}
-
-        {mailchimpConnected && (
-          <div className="flex items-center gap-2.5 px-4 py-2.5 text-sm">
-            <img src="/integrations/mailchimp.png" alt="Mailchimp" className="w-4 h-4 object-contain shrink-0" />
-            <span className="text-xs text-gray-500 dark:text-gray-400">Mailchimp default list{mailchimpListId ? `: ${mailchimpListId}` : ''}</span>
-            {mailchimpLists.length > 1 && forms.length > 0 && (
-              <button onClick={() => setMcExpanded(v => !v)} className="ml-auto text-xs font-medium text-[#15A4AE] hover:underline shrink-0">
-                {mcExpanded ? 'Hide per-form settings ↑' : 'Set audience per form ↓'}
-              </button>
-            )}
-          </div>
-        )}
-        {mcExpanded && mailchimpConnected && forms.length > 0 && mailchimpLists.length > 0 && (
-          <div className="border-t border-gray-100 dark:border-white/6 px-4 py-3 space-y-2 bg-gray-50 dark:bg-white/[0.02]">
-            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-2">Override Mailchimp audience per form</p>
-            {forms.map(form => (
-              <div key={form.id} className="flex items-center gap-3">
-                <span className="text-xs text-gray-700 dark:text-gray-300 min-w-[140px] truncate">{form.name}</span>
-                <select
-                  value={form.mailchimp_list_id ?? ''}
-                  disabled={mcSaving[form.id]}
-                  onChange={async e => {
-                    const listId = e.target.value || null
-                    setMcSaving(p => ({ ...p, [form.id]: true }))
-                    await updateFormMailchimpList(form.id, listId)
-                    setMcSaving(p => ({ ...p, [form.id]: false }))
-                    router.refresh()
-                  }}
-                  className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 disabled:opacity-50"
-                >
-                  <option value="">— Workspace default —</option>
-                  {mailchimpLists.map(l => (
-                    <option key={l.id} value={l.id}>{l.name}</option>
-                  ))}
-                </select>
-                {mcSaving[form.id] && <span className="text-[10px] text-gray-400 animate-pulse">Saving…</span>}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {connectedEmailProviders.length === 0 && !mailchimpConnected && (
-          <div className="flex items-center gap-3 px-4 py-3">
-            <span className="text-xs text-gray-500 dark:text-gray-400">Connect an email platform to auto-sync form submissions</span>
-            <button
-              onClick={() => openOAuthPopup('/api/oauth/mailchimp', () => router.refresh())}
-              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors shrink-0 whitespace-nowrap"
-            >
-              <img src="/integrations/mailchimp.png" alt="" className="w-3.5 h-3.5 object-contain" />
-              Connect Mailchimp
-            </button>
-          </div>
-        )}
-      </div>
+        )
+      })()}
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4">
@@ -486,6 +374,18 @@ export function FormsTable({
                 Delete ({selectedIds.size})
               </button>
             </div>
+          )}
+          {pendingCount > 0 && (
+            <button
+              onClick={() => void handleAnalyze()}
+              disabled={analyzing}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#15A4AE] bg-[#15A4AE]/8 dark:bg-[#15A4AE]/15 border border-[#15A4AE]/30 rounded-lg hover:bg-[#15A4AE]/15 transition-colors disabled:opacity-50"
+            >
+              {analyzing
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <Sparkles className="w-3.5 h-3.5" />}
+              {analyzing ? 'Analysing…' : `Analyse (${pendingCount})`}
+            </button>
           )}
           <button
             onClick={exportCSV}
@@ -594,8 +494,8 @@ export function FormsTable({
               </thead>
               <tbody className="divide-y dark:divide-white/5">
                 {submissions.map(sub => {
-                  const name     = sub.ai_entities?.name  ?? sub.fields.name  ?? 'Anonymous'
-                  const email    = sub.ai_entities?.email ?? sub.fields.email ?? null
+                  const name     = getName(sub) || 'Anonymous'
+                  const email    = getEmail(sub) || null
                   const phone    = getPhone(sub)
                   const company  = getCompany(sub)
                   const city     = getCity(sub)

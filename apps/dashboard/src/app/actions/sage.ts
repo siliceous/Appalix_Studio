@@ -1140,9 +1140,9 @@ export async function sendTestFormWebhook(
     typeform:      'Test Form (Typeform)',
   }
   const TEST_FIELDS: Record<string, Record<string, string>> = {
-    gravity_forms: { Name: 'Jane Smith', Email: 'jane@example.com', Phone: '+1 555-0100', Company: 'Acme Corp', Message: 'Interested in your product' },
-    wpforms:       { Name: 'Jane Smith', Email: 'jane@example.com', Phone: '+1 555-0100', Company: 'Acme Corp', Message: 'Interested in your product' },
-    typeform:      { 'Full Name': 'Jane Smith', Email: 'jane@example.com', Phone: '+1 555-0100', Company: 'Acme Corp', Message: 'Interested in your product' },
+    gravity_forms: { name: 'Jane Smith', email: 'jane@example.com', phone: '+1 555-0100', company: 'Acme Corp', message: 'Interested in your product' },
+    wpforms:       { name: 'Jane Smith', email: 'jane@example.com', phone: '+1 555-0100', company: 'Acme Corp', message: 'Interested in your product' },
+    typeform:      { name: 'Jane Smith', email: 'jane@example.com', phone: '+1 555-0100', company: 'Acme Corp', message: 'Interested in your product' },
   }
 
   const formTitle = FORM_TITLE[provider]
