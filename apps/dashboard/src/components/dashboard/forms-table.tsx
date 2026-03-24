@@ -193,9 +193,9 @@ const ALL_COLS: { key: ColKey; label: string; required?: boolean }[] = [
   { key: 'address',   label: 'Address' },
   { key: 'city',      label: 'City' },
   { key: 'message',   label: 'Message' },
-  { key: 'status',    label: 'Status' },
   { key: 'source',    label: 'Source' },
   { key: 'submitted', label: 'Submitted' },
+  { key: 'status',    label: 'Status' },
   { key: 'assigned',  label: 'Assigned to' },
 ]
 
@@ -220,6 +220,8 @@ export function FormsTable({
   // Inline saving per row
   const [prioritySaving, setPrioritySaving] = useState<Record<string, boolean>>({})
   const [assignSaving,   setAssignSaving]   = useState<Record<string, boolean>>({})
+  const [statusSaving,   setStatusSaving]   = useState<Record<string, boolean>>({})
+  const [localStatus,    setLocalStatus]    = useState<Record<string, string>>({})
 
   // Bulk saving
   const [bulkSaving, setBulkSaving] = useState(false)
@@ -324,6 +326,14 @@ export function FormsTable({
     setAssignSaving(p => ({ ...p, [id]: true }))
     await updateSubmissionAssignedTo(id, val || null)
     setAssignSaving(p => ({ ...p, [id]: false }))
+    router.refresh()
+  }
+
+  async function handleStatusChange(id: string, val: string) {
+    setLocalStatus(p => ({ ...p, [id]: val }))
+    setStatusSaving(p => ({ ...p, [id]: true }))
+    await updateSubmissionStatus(id, val)
+    setStatusSaving(p => ({ ...p, [id]: false }))
     router.refresh()
   }
 
@@ -697,9 +707,9 @@ export function FormsTable({
                 {show('address')   && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Address</th>}
                 {show('city')      && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">City</th>}
                 {show('message')   && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Message</th>}
-                {show('status')    && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</th>}
                 {show('source')    && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Source</th>}
                 {show('submitted') && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Submitted</th>}
+                {show('status')    && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</th>}
                 {show('assigned')  && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Assigned to</th>}
                 <th className="sticky right-0 rounded-tr-xl text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide bg-gray-50 dark:bg-[#1e1e1e] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)]">Actions</th>
               </tr>
@@ -824,16 +834,6 @@ export function FormsTable({
                         </td>
                       )}
 
-                      {/* Status */}
-                      {show('status') && (
-                        <td className="px-3 py-3 whitespace-nowrap">
-                          {sub.action_type
-                            ? <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">{STATUS_LABEL[sub.action_type] ?? sub.action_type}</span>
-                            : <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500">Pending</span>
-                          }
-                        </td>
-                      )}
-
                       {/* Source / platform */}
                       {show('source') && (
                         <td className="px-3 py-3 overflow-hidden">
@@ -860,6 +860,29 @@ export function FormsTable({
                             <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-yellow-400/10 text-yellow-700 dark:text-yellow-400 border border-yellow-400/25" title={`Synced ${timeAgo(sub.mailchimp_synced_at)}`}>
                               <img src="/integrations/mailchimp.png" alt="" className="w-3 h-3 object-contain" />Synced
                             </span>
+                          )}
+                        </td>
+                      )}
+
+                      {/* Status — inline dropdown */}
+                      {show('status') && (
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          {statusSaving[sub.id] ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
+                          ) : (
+                            <div className="relative inline-flex items-center">
+                              <select
+                                value={localStatus[sub.id] ?? sub.action_type ?? 'pending'}
+                                disabled={readonly || statusSaving[sub.id]}
+                                onChange={e => handleStatusChange(sub.id, e.target.value)}
+                                className="appearance-none pl-2 pr-5 py-0.5 rounded-full text-[10px] font-semibold cursor-pointer border-0 bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 disabled:cursor-default"
+                              >
+                                {STATUS_OPTIONS.map(s => (
+                                  <option key={s} value={s}>{STATUS_LABEL[s]}</option>
+                                ))}
+                              </select>
+                              {!readonly && <ChevronDown className="absolute right-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-current opacity-60 pointer-events-none" />}
+                            </div>
                           )}
                         </td>
                       )}
