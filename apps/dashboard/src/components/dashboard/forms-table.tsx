@@ -190,8 +190,8 @@ const ALL_COLS: { key: ColKey; label: string; required?: boolean }[] = [
   { key: 'email',     label: 'Email' },
   { key: 'phone',     label: 'Phone' },
   { key: 'company',   label: 'Company' },
-  { key: 'city',      label: 'City' },
   { key: 'address',   label: 'Address' },
+  { key: 'city',      label: 'City' },
   { key: 'message',   label: 'Message' },
   { key: 'status',    label: 'Status' },
   { key: 'source',    label: 'Source' },
@@ -694,8 +694,8 @@ export function FormsTable({
                 {show('email')     && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Email</th>}
                 {show('phone')     && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Phone</th>}
                 {show('company')   && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Company</th>}
-                {show('city')      && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">City</th>}
                 {show('address')   && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Address</th>}
+                {show('city')      && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">City</th>}
                 {show('message')   && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Message</th>}
                 {show('status')    && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</th>}
                 {show('source')    && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Source</th>}
@@ -803,17 +803,17 @@ export function FormsTable({
                         </td>
                       )}
 
-                      {/* City */}
-                      {show('city') && (
-                        <td className="px-3 py-3 overflow-hidden">
-                          {(() => { const v = getCity(sub); return v ? <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={v}>{v}</span> : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span> })()}
-                        </td>
-                      )}
-
                       {/* Address */}
                       {show('address') && (
                         <td className="px-3 py-3 overflow-hidden">
-                          {(() => { const v = getAddress(sub); return v ? <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={v}>{v}</span> : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span> })()}
+                          {(() => { const v = getAddress(sub); return v ? <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={v}>{v.length > 30 ? v.slice(0, 30) + '…' : v}</span> : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span> })()}
+                        </td>
+                      )}
+
+                      {/* City */}
+                      {show('city') && (
+                        <td className="px-3 py-3 overflow-hidden">
+                          {(() => { const v = getCity(sub); return v ? <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={v}>{v.length > 15 ? v.slice(0, 15) + '…' : v}</span> : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span> })()}
                         </td>
                       )}
 
