@@ -93,8 +93,8 @@ export async function POST(
 
   const formTitle = (body['form_title'] ?? body['form_name']) as string | undefined
 
-  await insertSubmission(a, workspaceId, fields, 'gravity_forms', formTitle ?? null)
-  console.log('[GF webhook] submission inserted, formTitle:', formTitle)
+  const err = await insertSubmission(a, workspaceId, fields, 'gravity_forms', formTitle ?? null)
+  if (err) return NextResponse.json({ error: err }, { status: 500 })
   return NextResponse.json({ ok: true })
 }
 
@@ -105,7 +105,7 @@ async function insertSubmission(
   fields: Record<string, string>,
   source: string,
   formTitle: string | null,
-) {
+): Promise<string | null> {
   const formName = formTitle ?? `${source.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} Submissions`
 
   let { data: form } = await a
@@ -116,7 +116,6 @@ async function insertSubmission(
     .maybeSingle()
 
   if (!form) {
-    // created_by is NOT NULL — use the workspace owner
     const { data: owner } = await a
       .from('workspace_members')
       .select('user_id')
@@ -124,21 +123,17 @@ async function insertSubmission(
       .eq('role', 'owner')
       .limit(1)
       .maybeSingle()
-    const createdBy = owner?.user_id ?? null
 
     const { data: newForm, error: formErr } = await a
       .from('sage_forms')
-      .insert({ workspace_id: workspaceId, name: formName, is_active: true, created_by: createdBy })
+      .insert({ workspace_id: workspaceId, name: formName, is_active: true, created_by: owner?.user_id ?? null })
       .select('id')
       .single()
-    if (formErr) console.error('[GF webhook] sage_forms insert error:', formErr)
+    if (formErr) return `sage_forms insert failed: ${formErr.message}`
     form = newForm
   }
 
-  if (!form?.id) {
-    console.error('[GF webhook] no form id — submission dropped')
-    return
-  }
+  if (!form?.id) return 'no form id after insert'
 
   const { error: subErr } = await a.from('sage_form_submissions').insert({
     workspace_id:    workspaceId,
@@ -146,5 +141,7 @@ async function insertSubmission(
     source_platform: source,
     fields,
   })
-  if (subErr) console.error('[GF webhook] sage_form_submissions insert error:', subErr)
+  if (subErr) return `sage_form_submissions insert failed: ${subErr.message}`
+
+  return null
 }
