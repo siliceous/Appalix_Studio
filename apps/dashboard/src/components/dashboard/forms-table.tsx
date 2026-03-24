@@ -153,14 +153,17 @@ export function FormsTable({
   const [bulkSaving, setBulkSaving] = useState(false)
 
   // AI analysis
-  const [analyzing, setAnalyzing] = useState(false)
+  const [analyzing,    setAnalyzing]    = useState(false)
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null)
   const pendingCount = submissions.filter(s => !s.ai_analyzed_at).length
 
   async function handleAnalyze() {
     if (analyzing) return
     setAnalyzing(true)
-    await analyzeFormSubmissions()
+    setAnalyzeError(null)
+    const result = await analyzeFormSubmissions()
     setAnalyzing(false)
+    if (result.error) setAnalyzeError(result.error)
     router.refresh()
   }
 
@@ -386,16 +389,21 @@ export function FormsTable({
             </div>
           )}
           {pendingCount > 0 && (
-            <button
-              onClick={() => void handleAnalyze()}
-              disabled={analyzing}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#15A4AE] bg-[#15A4AE]/8 dark:bg-[#15A4AE]/15 border border-[#15A4AE]/30 rounded-lg hover:bg-[#15A4AE]/15 transition-colors disabled:opacity-50"
-            >
-              {analyzing
-                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                : <Sparkles className="w-3.5 h-3.5" />}
-              {analyzing ? 'Analysing…' : `Analyse (${pendingCount})`}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => void handleAnalyze()}
+                disabled={analyzing}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#15A4AE] bg-[#15A4AE]/8 dark:bg-[#15A4AE]/15 border border-[#15A4AE]/30 rounded-lg hover:bg-[#15A4AE]/15 transition-colors disabled:opacity-50"
+              >
+                {analyzing
+                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  : <Sparkles className="w-3.5 h-3.5" />}
+                {analyzing ? 'Analysing…' : `Analyse (${pendingCount})`}
+              </button>
+              {analyzeError && (
+                <span className="text-xs text-red-500 dark:text-red-400">{analyzeError}</span>
+              )}
+            </div>
           )}
           <button
             onClick={exportCSV}
