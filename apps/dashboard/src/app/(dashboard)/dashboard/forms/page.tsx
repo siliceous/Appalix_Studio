@@ -94,8 +94,9 @@ export default async function FormsPage({
     visibleFormIds = ((visibleForms ?? []) as { id: string }[]).map(f => f.id)
   }
 
+  // Use admin client to bypass RLS — webhook-inserted submissions have no auth context
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let subsQuery = (supabase as any)
+  let subsQuery = (createAdminClient() as any)
     .from('sage_form_submissions')
     .select('id, form_id, source_platform, fields, ai_priority, ai_summary, ai_insights, ai_action, ai_entities, ai_analyzed_at, actioned_at, action_type, assigned_to, created_at, mailchimp_synced_at')
     .eq('workspace_id', workspaceId)
