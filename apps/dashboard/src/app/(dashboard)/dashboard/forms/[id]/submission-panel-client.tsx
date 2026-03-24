@@ -19,6 +19,16 @@ import type { SageFormSubmission, SageForm } from '@/app/actions/sage-forms'
 
 export type TeamMember = { user_id: string; name: string }
 
+const TRACKING_KEYS = new Set([
+  'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+  'gclid', 'fbclid', 'ttclid', 'msclkid',
+  'page_url', 'source_url', 'referrer', 'landing_page', 'ref',
+])
+const SYSTEM_KEYS = new Set([
+  'form_title', 'form_name', 'id', 'form_id', 'ip', 'date_created',
+  'workspace_id', 'entry_id', 'entry_date', 'source_platform',
+])
+
 const SOURCE_PLATFORM_LABELS: Record<string, string> = {
   mailchimp:       'Mailchimp',
   activecampaign:  'ActiveCampaign',
@@ -75,9 +85,11 @@ export function SubmissionPanelClient({
   const [saving,        setSaving]        = React.useState<'priority' | 'assign' | null>(null)
   const [actionLoading, setActionLoading] = React.useState<'ticket' | 'analyse' | null>(null)
   const [analyseMsg,    setAnalyseMsg]    = React.useState<string | null>(null)
-  const [showEmailModal, setShowEmailModal] = React.useState(false)
-  const [showDealPicker, setShowDealPicker] = React.useState(false)
-  const [notification,   setNotification]  = React.useState<string | null>(null)
+  const [showEmailModal,  setShowEmailModal]  = React.useState(false)
+  const [showDealPicker,  setShowDealPicker]  = React.useState(false)
+  const [notification,    setNotification]    = React.useState<string | null>(null)
+  const [showTracking,    setShowTracking]    = React.useState(false)
+  const [showRawPayload,  setShowRawPayload]  = React.useState(false)
 
   function showNotification(msg: string) {
     setNotification(msg)
@@ -369,14 +381,56 @@ export function SubmissionPanelClient({
           {analyseMsg && <p className="mt-1.5 text-xs text-purple-600 dark:text-purple-400">{analyseMsg}</p>}
         </div>
 
-        {/* Form fields */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Form Fields</h2>
-          {Object.keys(current.fields).length === 0 ? (
-            <p className="text-sm text-gray-400">No fields collected.</p>
-          ) : (
-            <FieldGroups fields={current.fields} />
+        {/* Submission Answers */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+
+          {/* Section 1 — Primary Contact */}
+          {(contactEmail || contactPhone || contactCompany || contactCity) && (
+            <div>
+              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Primary Contact</h2>
+              <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-gray-100 dark:border-white/8 overflow-hidden">
+                {[
+                  { label: 'Name',    value: contactName !== 'Anonymous' ? contactName : null },
+                  { label: 'Email',   value: contactEmail },
+                  { label: 'Phone',   value: contactPhone },
+                  { label: 'Company', value: contactCompany },
+                  { label: 'City',    value: contactCity },
+                ].filter(r => r.value).map((r, i, arr) => (
+                  <div key={r.label} className={`flex items-baseline gap-4 px-4 py-2.5 ${i < arr.length - 1 ? 'border-b border-gray-50 dark:border-white/5' : ''}`}>
+                    <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide w-20 shrink-0">{r.label}</span>
+                    <span className="text-sm text-gray-800 dark:text-gray-100 break-all">{r.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
+
+          {/* Section 2 — Submission Answers */}
+          <div>
+            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Submission Answers</h2>
+            {(() => {
+              const src = Object.keys(current.raw_payload ?? {}).length > 0 ? current.raw_payload : current.fields
+              const rows = Object.entries(src).filter(([k]) => !TRACKING_KEYS.has(k) && !SYSTEM_KEYS.has(k))
+              if (rows.length === 0) return <p className="text-sm text-gray-400">No data collected.</p>
+              return (
+                <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-gray-100 dark:border-white/8 overflow-hidden">
+                  {rows.map(([k, v], i) => {
+                    const label = /^\d+(\.\d+)?$/.test(k) ? `Field ${k}` : k.replace(/[_\-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+                    const isLong = String(v).length > 80
+                    return (
+                      <div key={k} className={`px-4 py-2.5 ${i > 0 ? 'border-t border-gray-50 dark:border-white/5' : ''} ${isLong ? 'flex flex-col gap-1' : 'flex items-baseline gap-4'}`}>
+                        <span className={`text-[11px] font-semibold text-gray-400 uppercase tracking-wide shrink-0 ${isLong ? '' : 'w-28'}`}>{label}</span>
+                        <span className="text-sm text-gray-800 dark:text-gray-100 whitespace-pre-wrap break-words leading-snug">
+                          {String(v) || <span className="italic text-gray-300">—</span>}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })()}
+          </div>
+
         </div>
       </div>
 
@@ -450,8 +504,9 @@ export function SubmissionPanelClient({
 
           <hr className="border-gray-100 dark:border-white/8" />
 
+          {/* Section 3 — Metadata */}
           <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Form Details</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Metadata</p>
             <div className="space-y-2.5">
               {currentForm && <DetailRow label="Form"      value={currentForm.name} />}
               <DetailRow label="Submitted"  value={formatDate(current.created_at)} />
@@ -474,25 +529,56 @@ export function SubmissionPanelClient({
                   </span>
                 </div>
               )}
+              {current.ai_entities?.product_interest && (
+                <DetailRow label="Interest" value={current.ai_entities.product_interest} />
+              )}
               <DetailRow label="ID" value={`#${current.id.slice(0, 6).toUpperCase()}`} />
             </div>
           </div>
 
-          {(contactName || contactEmail || contactPhone) && (
+          {/* Section 4 — Tracking (collapsible) */}
+          {(() => {
+            const src = Object.keys(current.raw_payload ?? {}).length > 0 ? current.raw_payload : current.fields
+            const trackingRows = Object.entries(src).filter(([k]) => TRACKING_KEYS.has(k) && src[k])
+            if (trackingRows.length === 0) return null
+            return (
+              <>
+                <hr className="border-gray-100 dark:border-white/8" />
+                <div>
+                  <button
+                    onClick={() => setShowTracking(v => !v)}
+                    className="flex items-center gap-1.5 w-full text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 hover:text-gray-600 transition-colors"
+                  >
+                    <span>{showTracking ? '▾' : '▸'}</span> Tracking
+                  </button>
+                  {showTracking && (
+                    <div className="space-y-2 mt-2">
+                      {trackingRows.map(([k, v]) => (
+                        <DetailRow key={k} label={k.replace(/_/g, ' ')} value={String(v)} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )
+          })()}
+
+          {/* Section 5 — Raw Payload (collapsible, debug) */}
+          {Object.keys(current.raw_payload ?? {}).length > 0 && (
             <>
               <hr className="border-gray-100 dark:border-white/8" />
               <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">User Details</p>
-                <div className="space-y-2.5">
-                  {contactName  && <DetailRow label="Name"  value={contactName} />}
-                  {contactEmail && <DetailRow label="Email" value={contactEmail} />}
-                  {contactPhone && <DetailRow label="Phone" value={contactPhone} />}
-                  {contactCompany && <DetailRow label="Company" value={contactCompany} />}
-                  {contactCity    && <DetailRow label="City"    value={contactCity} />}
-                  {current.ai_entities?.product_interest && (
-                    <DetailRow label="Interest" value={current.ai_entities.product_interest} />
-                  )}
-                </div>
+                <button
+                  onClick={() => setShowRawPayload(v => !v)}
+                  className="flex items-center gap-1.5 w-full text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 hover:text-gray-600 transition-colors"
+                >
+                  <span>{showRawPayload ? '▾' : '▸'}</span> Raw Payload
+                </button>
+                {showRawPayload && (
+                  <pre className="mt-2 text-[10px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-white/5 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">
+                    {JSON.stringify(current.raw_payload, null, 2)}
+                  </pre>
+                )}
               </div>
             </>
           )}
@@ -529,63 +615,6 @@ export function SubmissionPanelClient({
   )
 }
 
-// ── Smart field grouping ───────────────────────────────────────────────────────
-const ADDRESS_KEYS = ['street', 'city', 'state', 'zip', 'postcode', 'postal_code', 'country']
-const FIRST_KEYS   = ['first_name', 'firstname']
-const LAST_KEYS    = ['last_name', 'lastname']
-const NAME_KEYS    = [...FIRST_KEYS, ...LAST_KEYS]
-
-function fieldLabel(key: string) {
-  return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-}
-
-function FieldGroups({ fields }: { fields: Record<string, string> }) {
-  const keys     = Object.keys(fields)
-  const rendered = new Set<string>()
-  const rows: { label: string; value: string; long?: boolean }[] = []
-
-  // 1. Name — combine first + last into one row
-  const firstKey = keys.find(k => FIRST_KEYS.includes(k.toLowerCase()))
-  const lastKey  = keys.find(k => LAST_KEYS.includes(k.toLowerCase()))
-  if (firstKey || lastKey) {
-    const combined = [firstKey && fields[firstKey], lastKey && fields[lastKey]].filter(Boolean).join(' ')
-    if (combined) rows.push({ label: 'Name', value: combined })
-    if (firstKey) rendered.add(firstKey)
-    if (lastKey)  rendered.add(lastKey)
-  }
-
-  // 2. Address — single "Address" row with stacked lines
-  const addrKeys = keys.filter(k => ADDRESS_KEYS.includes(k.toLowerCase()) && fields[k])
-  if (addrKeys.length > 0) {
-    rows.push({ label: 'Address', value: addrKeys.map(k => fields[k]).filter(Boolean).join('\n') })
-    addrKeys.forEach(k => rendered.add(k))
-  }
-
-  // 3. Remaining fields
-  for (const k of keys) {
-    if (rendered.has(k) || NAME_KEYS.includes(k.toLowerCase())) continue
-    const v = fields[k] ?? ''
-    rows.push({ label: fieldLabel(k), value: v, long: v.length > 80 })
-  }
-
-  return (
-    <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-gray-100 dark:border-white/8 overflow-hidden">
-      {rows.map((row, i) => (
-        <div
-          key={i}
-          className={`flex gap-4 px-4 py-2.5 ${i > 0 ? 'border-t border-gray-50 dark:border-white/5' : ''} ${row.long ? 'flex-col gap-1' : 'items-baseline'}`}
-        >
-          <span className={`text-[11px] font-semibold text-gray-400 uppercase tracking-wide shrink-0 ${row.long ? '' : 'w-28'}`}>
-            {row.label}
-          </span>
-          <span className="text-sm text-gray-800 dark:text-gray-100 whitespace-pre-wrap break-words leading-snug">
-            {row.value || <span className="italic text-gray-300">—</span>}
-          </span>
-        </div>
-      ))}
-    </div>
-  )
-}
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (

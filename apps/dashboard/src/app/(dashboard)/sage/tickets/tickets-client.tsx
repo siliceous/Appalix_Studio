@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import Link from 'next/link'
 import { Ticket, Plus, Trash2, Mail, Pencil, Merge, X, Loader2, Search, ChevronDown } from 'lucide-react'
 import { TicketModal } from '@/components/sage/ticket-modal'
@@ -123,6 +123,9 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
     })
   }
 
+  const [pageSize, setPageSize] = useState(20)
+  const [page,     setPage]     = useState(1)
+
   const q = search.toLowerCase()
   const searched = q
     ? tickets.filter(t =>
@@ -135,6 +138,12 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
       )
     : tickets
   const filtered = sortTickets(filter === 'all' ? searched : searched.filter(t => t.status === filter))
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const safePage   = Math.min(page, totalPages)
+  const paginated  = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
+  // Reset to page 1 when filters/search change
+  useEffect(() => setPage(1), [search, filter])
 
   async function handleStatusChange(id: string, status: SageTicketStatus) {
     setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t))
@@ -339,7 +348,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
           </div>
         ) : (
           <div className="divide-y dark:divide-white/8">
-            {filtered.map(ticket => {
+            {paginated.map(ticket => {
               const sc = STATUS_CONFIG[ticket.status] ?? STATUS_CONFIG.open
 
               const currentPriority = priorityMap[ticket.id] ?? ticket.priority ?? 'medium'
@@ -463,6 +472,31 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
             })}
           </div>
         )}
+        {/* Pagination — always visible */}
+        <div className="flex items-center justify-between px-5 py-2.5 border-t dark:border-white/8 bg-gray-50/60 dark:bg-white/[0.02]">
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <span>Rows per page:</span>
+            <select
+              value={pageSize}
+              onChange={e => { setPageSize(Number(e.target.value)); setPage(1) }}
+              className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 cursor-pointer"
+            >
+              {[10, 20, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+          <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+            <span>
+              {filtered.length === 0 ? '0' : `${(safePage - 1) * pageSize + 1}–${Math.min(safePage * pageSize, filtered.length)}`} of {filtered.length}
+            </span>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage <= 1}
+                className="px-2.5 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium">← Prev</button>
+              <span className="px-1">{safePage} / {totalPages}</span>
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}
+                className="px-2.5 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium">Next →</button>
+            </div>
+          </div>
+        </div>
       </div>
       )}
 

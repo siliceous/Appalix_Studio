@@ -1,11 +1,11 @@
 'use client'
 
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ClipboardList, Search, ChevronDown, X,
-  UserPlus, Ticket, Download, Loader2, Trash2, Pencil, Sparkles,
+  UserPlus, Ticket, Download, Loader2, Trash2, Pencil, Sparkles, Columns3,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import {
@@ -152,7 +152,12 @@ function getEmail(sub: SageFormSubmission): string {
 }
 
 function getCity(sub: SageFormSubmission): string {
-  return getField(sub.fields, 'city', 'location', 'town', 'suburb')
+  const val = getField(sub.fields, 'city', 'location', 'town', 'suburb')
+  // Reject emails, URLs, phone-like strings, or anything too long to be a city
+  if (!val) return ''
+  if (/[@\/]/.test(val)) return ''
+  if (val.length > 50) return ''
+  return val
 }
 
 function getPhone(sub: SageFormSubmission): string {
@@ -167,6 +172,35 @@ function getCompany(sub: SageFormSubmission): string {
   const name    = getName(sub)
   return detectCompany(sub.fields, new Set([email, phone, name].filter(Boolean)))
 }
+
+function getAddress(sub: SageFormSubmission): string {
+  return getField(sub.fields, 'address', 'street', 'street_address', 'address_1', 'address_line_1', 'address_line1')
+}
+
+function getMessage(sub: SageFormSubmission): string {
+  return getField(sub.fields, 'message', 'notes', 'note', 'comments', 'comment', 'enquiry', 'your_message', 'description', 'details')
+}
+
+// ── Column visibility ─────────────────────────────────────────────────────────
+type ColKey = 'priority' | 'name' | 'email' | 'phone' | 'company' | 'source' | 'submitted' | 'assigned' | 'city' | 'address' | 'message' | 'status'
+
+const ALL_COLS: { key: ColKey; label: string; required?: boolean }[] = [
+  { key: 'priority',  label: 'Priority' },
+  { key: 'name',      label: 'Name',        required: true },
+  { key: 'email',     label: 'Email' },
+  { key: 'phone',     label: 'Phone' },
+  { key: 'company',   label: 'Company' },
+  { key: 'city',      label: 'City' },
+  { key: 'address',   label: 'Address' },
+  { key: 'message',   label: 'Message' },
+  { key: 'status',    label: 'Status' },
+  { key: 'source',    label: 'Source' },
+  { key: 'submitted', label: 'Submitted' },
+  { key: 'assigned',  label: 'Assigned to' },
+]
+
+// Visible by default; city/address/message/status are hidden until user enables them
+const DEFAULT_COLS = new Set<ColKey>(['priority', 'name', 'email', 'phone', 'company', 'source', 'submitted', 'assigned'])
 
 // ── Main component ────────────────────────────────────────────────────────────
 export function FormsTable({
@@ -189,6 +223,56 @@ export function FormsTable({
 
   // Bulk saving
   const [bulkSaving, setBulkSaving] = useState(false)
+
+  // Source platform filter (client-side — Mailchimp, ActiveCampaign, etc.)
+  const [localSource, setLocalSource] = useState('')
+  const filteredSubs = localSource
+    ? submissions.filter(s => s.source_platform === localSource)
+    : submissions
+
+  // Pagination
+  const [pageSize, setPageSize] = useState(20)
+  const [page,     setPage]     = useState(1)
+  // Reset to page 1 whenever filters or source changes
+  const filterKey = JSON.stringify(filters) + localSource
+  React.useEffect(() => setPage(1), [filterKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  const totalPages  = Math.max(1, Math.ceil(filteredSubs.length / pageSize))
+  const safePage    = Math.min(page, totalPages)
+  const paginated   = filteredSubs.slice((safePage - 1) * pageSize, safePage * pageSize)
+
+  // Column visibility — persisted to localStorage
+  const [visibleCols,    setVisibleCols]    = useState<Set<ColKey>>(() => {
+    try {
+      const saved = typeof window !== 'undefined' && localStorage.getItem('forms-table-cols')
+      if (saved) {
+        const arr = JSON.parse(saved) as ColKey[]
+        return new Set(arr)
+      }
+    } catch {}
+    return DEFAULT_COLS
+  })
+  const [showColPicker,  setShowColPicker]  = useState(false)
+  const colPickerRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (colPickerRef.current && !colPickerRef.current.contains(e.target as Node)) {
+        setShowColPicker(false)
+      }
+    }
+    if (showColPicker) document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showColPicker])
+
+  function toggleCol(key: ColKey) {
+    setVisibleCols(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      try { localStorage.setItem('forms-table-cols', JSON.stringify([...next])) } catch {}
+      return next
+    })
+  }
+  const show = (key: ColKey) => visibleCols.has(key)
 
   // AI analysis
   const [analyzing,    setAnalyzing]    = useState(false)
@@ -378,7 +462,7 @@ export function FormsTable({
         <div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Form Submissions</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            All submissions across your forms — {submissions.length} shown
+            All submissions across your forms — {filteredSubs.length} shown
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -480,19 +564,90 @@ export function FormsTable({
             )}
           </div>
 
-          {forms.length > 1 && (
-            <div className="relative">
-              <select
-                value={activeForm}
-                onChange={e => pushFilter({ form: e.target.value || undefined })}
-                className="appearance-none pl-3 pr-8 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer"
-              >
-                <option value="">All forms</option>
-                {forms.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-            </div>
-          )}
+          {(() => {
+            // Unique source platforms present in the current submissions
+            const srcPlatforms = [...new Set(submissions.map(s => s.source_platform).filter(Boolean))] as string[]
+            const showDropdown = forms.length > 1 || srcPlatforms.length > 0
+            if (!showDropdown) return null
+            // Combined select value: form ID or '__src__<platform>'
+            const combinedValue = localSource ? `__src__${localSource}` : (activeForm ?? '')
+            return (
+              <div className="relative">
+                <select
+                  value={combinedValue}
+                  onChange={e => {
+                    const val = e.target.value
+                    if (val.startsWith('__src__')) {
+                      setLocalSource(val.slice(7))
+                      pushFilter({ form: undefined })
+                    } else {
+                      setLocalSource('')
+                      pushFilter({ form: val || undefined })
+                    }
+                  }}
+                  className="appearance-none pl-3 pr-8 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer"
+                >
+                  <option value="">All sources</option>
+                  {forms.length > 0 && (
+                    <optgroup label="Forms">
+                      {forms.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                    </optgroup>
+                  )}
+                  {srcPlatforms.length > 0 && (
+                    <optgroup label="Integrations">
+                      {srcPlatforms.map(p => (
+                        <option key={p} value={`__src__${p}`}>
+                          {EMAIL_PLATFORM_META[p]?.name ?? p}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+              </div>
+            )
+          })()}
+
+          {/* Edit Columns picker */}
+          <div className="relative" ref={colPickerRef}>
+            <button
+              onClick={() => setShowColPicker(v => !v)}
+              className={`flex items-center gap-1.5 px-3 py-2 text-sm border rounded-lg transition-colors ${
+                showColPicker
+                  ? 'bg-[#15A4AE]/10 dark:bg-[#15A4AE]/15 border-[#15A4AE]/30 text-[#1f6157] dark:text-[#15A4AE]'
+                  : 'bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10'
+              }`}
+            >
+              <Columns3 className="w-3.5 h-3.5" />
+              <span>Edit columns</span>
+            </button>
+            {showColPicker && (
+              <div className="absolute left-0 top-full mt-1.5 z-50 w-52 bg-white dark:bg-[#1e1e1e] rounded-xl border border-gray-200 dark:border-white/10 shadow-lg py-1.5">
+                <div className="px-3 pt-1 pb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                  Toggle columns
+                </div>
+                {ALL_COLS.map(col => (
+                  <label key={col.key} className="flex items-center justify-between px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer select-none">
+                    <span className="text-sm text-gray-700 dark:text-gray-200">{col.label}</span>
+                    <button
+                      type="button"
+                      disabled={col.required}
+                      onClick={() => !col.required && toggleCol(col.key)}
+                      className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none ${
+                        visibleCols.has(col.key)
+                          ? 'bg-[#15A4AE]'
+                          : 'bg-gray-200 dark:bg-white/15'
+                      } ${col.required ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
+                      <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition-transform ${
+                        visibleCols.has(col.key) ? 'translate-x-4' : 'translate-x-0'
+                      }`} />
+                    </button>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="flex items-center gap-1">
             {([
@@ -517,57 +672,46 @@ export function FormsTable({
       {activeStatus === 'trash' ? (
         <TrashTab type="submission" />
       ) : (
-      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-hidden">
-        {submissions.length === 0 ? (
+      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8">
+        {filteredSubs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <ClipboardList className="w-10 h-10 text-gray-200 dark:text-gray-600 mb-3" />
             <p className="text-sm text-gray-400">No submissions match your filters.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm table-fixed min-w-[1000px]">
-              <colgroup>
-                <col className="w-10" />
-                <col className="w-24" />
-                <col className="w-36" />
-                <col className="w-44" />
-                <col className="w-32" />
-                <col className="w-32" />
-                <col className="w-24" />
-                <col className="w-28" />
-                <col className="w-24" />
-                <col className="w-28" />
-                <col className="w-24" />
-              </colgroup>
-              <thead>
-                <tr className="border-b dark:border-white/8 bg-gray-50 dark:bg-white/[0.03]">
-                  <th className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={allSelected}
-                      onChange={toggleAll}
-                      className="rounded border-gray-300 dark:border-white/20 text-brand-600 focus:ring-[#15A4AE]/40"
-                    />
-                  </th>
-                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Priority</th>
-                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Name</th>
-                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Email</th>
-                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Phone</th>
-                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Company</th>
-                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">City</th>
-                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Source</th>
-                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Submitted</th>
-                  <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Assigned to</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Actions</th>
-                </tr>
-              </thead>
+          <table className="w-full text-sm table-auto">
+            <thead>
+              <tr className="border-b dark:border-white/8 bg-gray-50 dark:bg-white/[0.03]">
+                <th className="rounded-tl-xl px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleAll}
+                    className="rounded border-gray-300 dark:border-white/20 text-brand-600 focus:ring-[#15A4AE]/40"
+                  />
+                </th>
+                {show('priority')  && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Priority</th>}
+                {show('name')      && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Name</th>}
+                {show('email')     && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Email</th>}
+                {show('phone')     && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Phone</th>}
+                {show('company')   && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Company</th>}
+                {show('city')      && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">City</th>}
+                {show('address')   && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Address</th>}
+                {show('message')   && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Message</th>}
+                {show('status')    && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</th>}
+                {show('source')    && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Source</th>}
+                {show('submitted') && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Submitted</th>}
+                {show('assigned')  && <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Assigned to</th>}
+                <th className="sticky right-0 rounded-tr-xl text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide bg-gray-50 dark:bg-[#1e1e1e] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)]">Actions</th>
+              </tr>
+            </thead>
               <tbody className="divide-y dark:divide-white/5">
-                {submissions.map(sub => {
+                {paginated.map(sub => {
                   const name     = getName(sub) || 'Anonymous'
                   const email    = getEmail(sub) || null
                   const phone    = getPhone(sub)
                   const company  = getCompany(sub)
-                  const city     = getCity(sub)
                   const form     = forms.find(f => f.id === sub.form_id)
                   const priority = localPriority[sub.id] ?? sub.ai_priority ?? null
                   const assigneeId = localAssign[sub.id] !== undefined ? localAssign[sub.id] : (sub.assigned_to ?? '')
@@ -591,121 +735,162 @@ export function FormsTable({
                       </td>
 
                       {/* Priority — inline editable pill */}
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        {prioritySaving[sub.id] ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
-                        ) : (
-                          <div className="relative inline-flex items-center">
-                            <select
-                              value={priority ?? ''}
-                              disabled={readonly || prioritySaving[sub.id]}
-                              onChange={e => handlePriorityChange(sub.id, e.target.value)}
-                              className={`appearance-none pl-2 pr-5 py-0.5 rounded-full text-[10px] font-semibold cursor-pointer border-0 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 disabled:cursor-default ${
-                                priority ? PRIORITY_CLS[priority] : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500'
-                              }`}
-                            >
-                              <option value="">— none —</option>
-                              {PRIORITY_OPTIONS.map(p => (
-                                <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
-                              ))}
-                            </select>
-                            {!readonly && <ChevronDown className="absolute right-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-current opacity-60 pointer-events-none" />}
-                          </div>
-                        )}
-                      </td>
+                      {show('priority') && (
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          {prioritySaving[sub.id] ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
+                          ) : (
+                            <div className="relative inline-flex items-center">
+                              <select
+                                value={priority ?? ''}
+                                disabled={readonly || prioritySaving[sub.id]}
+                                onChange={e => handlePriorityChange(sub.id, e.target.value)}
+                                className={`appearance-none pl-2 pr-5 py-0.5 rounded-full text-[10px] font-semibold cursor-pointer border-0 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 disabled:cursor-default ${
+                                  priority ? PRIORITY_CLS[priority] : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500'
+                                }`}
+                              >
+                                <option value="">— none —</option>
+                                {PRIORITY_OPTIONS.map(p => (
+                                  <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
+                                ))}
+                              </select>
+                              {!readonly && <ChevronDown className="absolute right-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-current opacity-60 pointer-events-none" />}
+                            </div>
+                          )}
+                        </td>
+                      )}
 
                       {/* Name */}
-                      <td className="px-3 py-3 overflow-hidden">
-                        <Link
-                          href={`/dashboard/forms/${sub.id}`}
-                          className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-[#15A4AE] truncate block"
-                          title={name}
-                        >
-                          {name}
-                        </Link>
-                      </td>
+                      {show('name') && (
+                        <td className="px-3 py-3 overflow-hidden">
+                          <Link
+                            href={`/dashboard/forms/${sub.id}`}
+                            className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-[#15A4AE] truncate block"
+                            title={name}
+                          >
+                            {name}
+                          </Link>
+                        </td>
+                      )}
 
                       {/* Email */}
-                      <td className="px-3 py-3 overflow-hidden">
-                        {email
-                          ? <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={email}>{email}</span>
-                          : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
-                        }
-                      </td>
+                      {show('email') && (
+                        <td className="px-3 py-3 overflow-hidden">
+                          {email
+                            ? <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={email}>{email}</span>
+                            : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
+                          }
+                        </td>
+                      )}
 
                       {/* Phone */}
-                      <td className="px-3 py-3 overflow-hidden">
-                        {phone
-                          ? <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={phone}>{phone}</span>
-                          : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
-                        }
-                      </td>
+                      {show('phone') && (
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          {phone
+                            ? <span className="text-xs text-gray-500 dark:text-gray-400">{phone}</span>
+                            : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
+                          }
+                        </td>
+                      )}
 
-                      {/* Company */}
-                      <td className="px-3 py-3 overflow-hidden">
-                        {company
-                          ? <span className="text-xs text-gray-700 dark:text-gray-300 truncate block" title={company}>{company}</span>
-                          : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
-                        }
-                      </td>
+                      {/* Company — max 25 chars */}
+                      {show('company') && (
+                        <td className="px-3 py-3 overflow-hidden">
+                          {company
+                            ? <span className="text-xs text-gray-700 dark:text-gray-300 truncate block" title={company}>
+                                {company.length > 25 ? company.slice(0, 25) + '…' : company}
+                              </span>
+                            : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
+                          }
+                        </td>
+                      )}
 
                       {/* City */}
-                      <td className="px-3 py-3 overflow-hidden">
-                        {city
-                          ? <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={city}>{city}</span>
-                          : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
-                        }
-                      </td>
+                      {show('city') && (
+                        <td className="px-3 py-3 overflow-hidden">
+                          {(() => { const v = getCity(sub); return v ? <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={v}>{v}</span> : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span> })()}
+                        </td>
+                      )}
+
+                      {/* Address */}
+                      {show('address') && (
+                        <td className="px-3 py-3 overflow-hidden">
+                          {(() => { const v = getAddress(sub); return v ? <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={v}>{v}</span> : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span> })()}
+                        </td>
+                      )}
+
+                      {/* Message */}
+                      {show('message') && (
+                        <td className="px-3 py-3 overflow-hidden">
+                          {(() => { const v = getMessage(sub); return v ? <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={v}>{v.length > 60 ? v.slice(0, 60) + '…' : v}</span> : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span> })()}
+                        </td>
+                      )}
+
+                      {/* Status */}
+                      {show('status') && (
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          {sub.action_type
+                            ? <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">{STATUS_LABEL[sub.action_type] ?? sub.action_type}</span>
+                            : <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500">Pending</span>
+                          }
+                        </td>
+                      )}
 
                       {/* Source / platform */}
-                      <td className="px-3 py-3 overflow-hidden">
-                        {sub.source_platform && EMAIL_PLATFORM_META[sub.source_platform] ? (
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${EMAIL_PLATFORM_META[sub.source_platform].pill}`}>
-                            {EMAIL_PLATFORM_META[sub.source_platform].logo && (
-                              <img src={EMAIL_PLATFORM_META[sub.source_platform].logo} alt="" className="w-3 h-3 object-contain shrink-0" />
-                            )}
-                            <span className="truncate">{EMAIL_PLATFORM_META[sub.source_platform].name}</span>
-                          </span>
-                        ) : (
-                          <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={form?.name ?? ''}>
-                            {form?.name ?? '—'}
-                          </span>
-                        )}
-                      </td>
+                      {show('source') && (
+                        <td className="px-3 py-3 overflow-hidden">
+                          {sub.source_platform && EMAIL_PLATFORM_META[sub.source_platform] ? (
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${EMAIL_PLATFORM_META[sub.source_platform].pill}`}>
+                              {EMAIL_PLATFORM_META[sub.source_platform].logo && (
+                                <img src={EMAIL_PLATFORM_META[sub.source_platform].logo} alt="" className="w-3 h-3 object-contain shrink-0" />
+                              )}
+                              <span className="truncate">{EMAIL_PLATFORM_META[sub.source_platform].name}</span>
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={form?.name ?? ''}>
+                              {form?.name ?? '—'}
+                            </span>
+                          )}
+                        </td>
+                      )}
 
                       {/* Submitted */}
-                      <td className="px-3 py-3 overflow-hidden">
-                        <span className="text-xs text-gray-400 truncate block">{timeAgo(sub.created_at)}</span>
-                        {sub.mailchimp_synced_at && (
-                          <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-yellow-400/10 text-yellow-700 dark:text-yellow-400 border border-yellow-400/25" title={`Synced ${timeAgo(sub.mailchimp_synced_at)}`}>
-                            <img src="/integrations/mailchimp.png" alt="" className="w-3 h-3 object-contain" />Synced
-                          </span>
-                        )}
-                      </td>
+                      {show('submitted') && (
+                        <td className="px-3 py-3 overflow-hidden">
+                          <span className="text-xs text-gray-400 truncate block">{timeAgo(sub.created_at)}</span>
+                          {sub.mailchimp_synced_at && (
+                            <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-yellow-400/10 text-yellow-700 dark:text-yellow-400 border border-yellow-400/25" title={`Synced ${timeAgo(sub.mailchimp_synced_at)}`}>
+                              <img src="/integrations/mailchimp.png" alt="" className="w-3 h-3 object-contain" />Synced
+                            </span>
+                          )}
+                        </td>
+                      )}
 
                       {/* Assigned to */}
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        {assignSaving[sub.id] ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
-                        ) : canAllocate && teamMembers.length > 0 ? (
-                          <select
-                            value={assigneeId}
-                            disabled={readonly || assignSaving[sub.id]}
-                            onChange={e => handleAssignChange(sub.id, e.target.value)}
-                            className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-transparent text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 disabled:opacity-60 max-w-[120px]"
-                          >
-                            <option value="">Unassigned</option>
-                            {teamMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
-                          </select>
-                        ) : assignee ? (
-                          <span className="text-xs text-gray-600 dark:text-gray-300">{assignee.name}</span>
-                        ) : (
-                          <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
-                        )}
-                      </td>
+                      {show('assigned') && (
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          {assignSaving[sub.id] ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
+                          ) : canAllocate && teamMembers.length > 0 ? (
+                            <select
+                              value={assigneeId}
+                              disabled={readonly || assignSaving[sub.id]}
+                              onChange={e => handleAssignChange(sub.id, e.target.value)}
+                              className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-transparent text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 disabled:opacity-60 max-w-[120px]"
+                            >
+                              <option value="">Unassigned</option>
+                              {teamMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
+                            </select>
+                          ) : assignee ? (
+                            <span className="text-xs text-gray-600 dark:text-gray-300">{assignee.name}</span>
+                          ) : (
+                            <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
+                          )}
+                        </td>
+                      )}
 
                       {/* Actions */}
-                      <td className="px-4 py-3.5 w-px whitespace-nowrap">
+                      <td className="sticky right-0 px-4 py-3.5 whitespace-nowrap bg-white dark:bg-[#1e1e1e] group-hover:bg-gray-50 dark:group-hover:bg-[#1e1e1e] z-10 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.08)]">
                         <div className="flex items-center gap-1 justify-end">
                           {!readonly && (
                             qa === 'loading-deal' ? (
@@ -771,6 +956,31 @@ export function FormsTable({
             </table>
           </div>
         )}
+        {/* Pagination — always visible */}
+        <div className="flex items-center justify-between px-4 py-2.5 border-t dark:border-white/8 bg-gray-50/60 dark:bg-white/[0.02]">
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <span>Rows per page:</span>
+            <select
+              value={pageSize}
+              onChange={e => { setPageSize(Number(e.target.value)); setPage(1) }}
+              className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 cursor-pointer"
+            >
+              {[10, 20, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+          <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+            <span>
+              {filteredSubs.length === 0 ? '0' : `${(safePage - 1) * pageSize + 1}–${Math.min(safePage * pageSize, filteredSubs.length)}`} of {filteredSubs.length}
+            </span>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage <= 1}
+                className="px-2.5 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium">← Prev</button>
+              <span className="px-1">{safePage} / {totalPages}</span>
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}
+                className="px-2.5 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium">Next →</button>
+            </div>
+          </div>
+        </div>
       </div>
       )}
 

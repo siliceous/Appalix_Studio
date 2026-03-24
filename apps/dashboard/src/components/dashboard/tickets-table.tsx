@@ -107,6 +107,8 @@ export function TicketsTable({
   const [assignSaving,   setAssignSaving]   = useState<Record<string, boolean>>({})
   const [quickAction,    setQuickAction]    = useState<Record<string, 'loading-contact' | 'loading-delete'>>({})
   const [bulkSaving,     setBulkSaving]     = useState(false)
+  const [pageSize,       setPageSize]       = useState(20)
+  const [page,           setPage]           = useState(1)
 
   // ── Filter ───────────────────────────────────────────────────────────────
   const filtered = tickets.filter(t => {
@@ -115,6 +117,13 @@ export function TicketsTable({
     if (activeStatus && t.status !== activeStatus) return false
     return true
   })
+
+  // ── Pagination ───────────────────────────────────────────────────────────
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const safePage   = Math.min(page, totalPages)
+  const paginated  = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
+  // Reset page when search/filter changes
+  React.useEffect(() => setPage(1), [search, activeStatus])
 
   // ── Selection ────────────────────────────────────────────────────────────
   const allSelected = filtered.length > 0 && filtered.every(t => selectedIds.has(t.id))
@@ -322,7 +331,7 @@ export function TicketsTable({
                 </tr>
               </thead>
               <tbody className="divide-y dark:divide-white/5">
-                {filtered.map(t => {
+                {paginated.map(t => {
                   const name       = t.name ?? t.contact?.name ?? 'Unknown'
                   const priority   = localPriority[t.id] ?? t.priority ?? 'low'
                   const status     = localStatus[t.id]   ?? t.status   ?? 'open'
@@ -443,11 +452,31 @@ export function TicketsTable({
             </table>
           </div>
         )}
+        {filtered.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-2.5 border-t dark:border-white/8">
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <span>Rows per page:</span>
+              <select
+                value={pageSize}
+                onChange={e => { setPageSize(Number(e.target.value)); setPage(1) }}
+                className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 cursor-pointer"
+              >
+                {[10, 20, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+              <span>{(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, filtered.length)} of {filtered.length}</span>
+              <div className="flex items-center gap-1">
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage <= 1}
+                  className="px-2.5 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium">← Prev</button>
+                <span className="px-1">{safePage} / {totalPages}</span>
+                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}
+                  className="px-2.5 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium">Next →</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-      )}
-
-      {activeStatus !== 'trash' && filtered.length >= 200 && (
-        <p className="text-xs text-center text-gray-400 pb-2">Showing first 200 results — use filters to narrow down.</p>
       )}
     </div>
   )

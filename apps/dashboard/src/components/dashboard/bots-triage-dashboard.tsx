@@ -298,6 +298,8 @@ export function BotTriageDashboard({ triageConversations }: Props) {
   const [isAnalyzing,        startAnalyzeTransition]   = useTransition()
   const [isDeleting,         startDeleteTransition]    = useTransition()
   const [analyzeMsg,       setAnalyzeMsg]       = useState<string | null>(null)
+  const [convPage,         setConvPage]         = useState(1)
+  const convPageSize = 20
 
   const pendingCountRef     = useRef(0)
   const isAutoAnalyzingRef  = useRef(false)
@@ -470,6 +472,12 @@ const [mDealTitle, setMDealTitle] = useState('')
     ? [...visible.filter(tc => tc.botName === selectedBotName)].sort(sortByRecency)
     : sortedVisible
 
+  // Paginate conversation list; reset on bot change
+  useEffect(() => setConvPage(1), [selectedBotName])
+  const convTotalPages = Math.max(1, Math.ceil(convListVisible.length / convPageSize))
+  const convSafePage   = Math.min(convPage, convTotalPages)
+  const convPaginated  = convListVisible.slice((convSafePage - 1) * convPageSize, convSafePage * convPageSize)
+
   return (
     <div className="flex flex-1 overflow-hidden">
 
@@ -577,7 +585,7 @@ const [mDealTitle, setMDealTitle] = useState('')
                 <Link href="/bots/new" className="text-xs text-blue-500 hover:underline">Create a bot →</Link>
               )}
             </div>
-          ) : convListVisible.map(tc => {
+          ) : convPaginated.map(tc => {
             const { conversation } = tc
             const isActive  = selectedId === conversation.id
             const priority  = conversation.ai_priority
@@ -623,6 +631,14 @@ const [mDealTitle, setMDealTitle] = useState('')
               </div>
             )
           })}
+        </div>
+
+        <div className="shrink-0 border-t dark:border-white/8 px-3 py-2 flex items-center justify-between">
+          <button onClick={() => setConvPage(p => Math.max(1, p - 1))} disabled={convSafePage <= 1}
+            className="text-[10px] px-2 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium text-gray-500 dark:text-gray-400">← Prev</button>
+          <span className="text-[10px] text-gray-400">{convSafePage} / {convTotalPages}</span>
+          <button onClick={() => setConvPage(p => Math.min(convTotalPages, p + 1))} disabled={convSafePage >= convTotalPages}
+            className="text-[10px] px-2 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium text-gray-500 dark:text-gray-400">Next →</button>
         </div>
       </aside>
 
