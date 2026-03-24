@@ -240,17 +240,15 @@ export function FormsTable({
   const safePage    = Math.min(page, totalPages)
   const paginated   = filteredSubs.slice((safePage - 1) * pageSize, safePage * pageSize)
 
-  // Column visibility — persisted to localStorage
-  const [visibleCols,    setVisibleCols]    = useState<Set<ColKey>>(() => {
+  // Column visibility — persisted to localStorage; initialise from DEFAULT_COLS
+  // to match SSR, then hydrate from storage in an effect
+  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(DEFAULT_COLS)
+  useEffect(() => {
     try {
-      const saved = typeof window !== 'undefined' && localStorage.getItem('forms-table-cols')
-      if (saved) {
-        const arr = JSON.parse(saved) as ColKey[]
-        return new Set(arr)
-      }
+      const saved = localStorage.getItem('forms-table-cols')
+      if (saved) setVisibleCols(new Set(JSON.parse(saved) as ColKey[]))
     } catch {}
-    return DEFAULT_COLS
-  })
+  }, [])
   const [showColPicker,  setShowColPicker]  = useState(false)
   const colPickerRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
