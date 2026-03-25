@@ -41,12 +41,11 @@ async function pushMailchimp(cfg: Cfg, c: ContactData) {
 }
 
 async function pushKit(cfg: Cfg, c: ContactData) {
-  const token = cfg.api_secret ?? cfg.access_token ?? cfg.api_key
-  if (!c.email || !token) return
+  if (!c.email || !cfg.api_key) return
   const { first } = nameParts(c.name ?? '')
   await fetch('https://api.kit.com/v4/subscribers', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    headers: { 'Content-Type': 'application/json', 'X-Kit-Api-Key': cfg.api_key },
     body: JSON.stringify({ email_address: c.email, first_name: first }),
   }).catch(e => console.error('[sync/kit]', e))
 }

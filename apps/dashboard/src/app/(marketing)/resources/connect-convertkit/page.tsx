@@ -38,7 +38,7 @@ export default function ConnectConvertKitPage() {
         slug="connect-convertkit"
         datePublished="2026-03-25"
         steps={[
-          { name: 'Find your Kit API Key', text: 'In Kit, go to Settings → Developer → API and copy your API Key.' },
+          { name: 'Find your Kit API Key', text: 'In Kit, go to Settings → Developer → API and copy your v4 API Key.' },
           { name: 'Connect in Sage → Contacts → Automations', text: 'In Appalix, go to Sage → Contacts → Automations, find the Kit card, click Connect, and paste your API Key and API Secret.' },
           { name: 'Confirm the connection', text: 'The Kit card shows a Connected badge. Contacts will sync to your Kit account as they are created or updated in Sage.' },
           { name: 'Pull existing Kit subscribers (optional)', text: 'Go to Forms → Sources, find the Kit card, and click Sync Now to import your existing subscribers into Appalix as leads.' },
@@ -78,7 +78,7 @@ export default function ConnectConvertKitPage() {
             <ul className="list-disc pl-5 space-y-2">
               <li>An <strong className="text-white">Appalix account</strong> on Pro plan or above</li>
               <li>A <strong className="text-white">Kit account</strong> (any plan)</li>
-              <li>Your Kit <strong className="text-white">API Key</strong> and <strong className="text-white">API Secret</strong></li>
+              <li>Your Kit <strong className="text-white">v4 API Key</strong></li>
             </ul>
           </section>
 
@@ -87,13 +87,7 @@ export default function ConnectConvertKitPage() {
             <ol className="list-decimal pl-5 space-y-3">
               <li>Log in to <strong className="text-white">Kit</strong> and click your account name (top-right).</li>
               <li>Go to <strong className="text-white">Settings → Developer → API</strong>.</li>
-              <li>
-                Copy both values shown:
-                <ul className="list-disc pl-5 mt-2 space-y-1">
-                  <li><strong className="text-white">API Key</strong> — used to authenticate requests</li>
-                  <li><strong className="text-white">API Secret</strong> — required for account-level actions</li>
-                </ul>
-              </li>
+              <li>Copy your <strong className="text-white">v4 API Key</strong> — this is the key labelled <em>API Key</em> (not the legacy v3 Secret).</li>
             </ol>
           </section>
 
@@ -102,7 +96,7 @@ export default function ConnectConvertKitPage() {
             <ol className="list-decimal pl-5 space-y-3">
               <li>In Appalix, navigate to <strong className="text-white">Sage → Contacts</strong> and click <strong className="text-white">Automations</strong> in the top-right.</li>
               <li>Find the <strong className="text-white">Kit (ConvertKit)</strong> card and click <strong className="text-white">Connect</strong>.</li>
-              <li>Paste your <strong>API Key</strong> and <strong>API Secret</strong> and click <strong className="text-white">Save &amp; Connect</strong>.</li>
+              <li>Paste your <strong>v4 API Key</strong> and click <strong className="text-white">Save &amp; Connect</strong>.</li>
               <li>The card shows a green <em>Connected</em> badge.</li>
             </ol>
             <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
@@ -141,7 +135,7 @@ export default function ConnectConvertKitPage() {
             <div className="space-y-5">
               <div>
                 <p className="font-semibold text-white">Which Kit plan do I need?</p>
-                <p className="text-sm text-gray-400 mt-1">All Kit plans include API access. The API Key and API Secret are available on every plan under Settings → Developer → API.</p>
+                <p className="text-sm text-gray-400 mt-1">All Kit plans include API access. The v4 API Key is available on every plan under Settings → Developer → API.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Will existing Kit subscribers be updated?</p>
@@ -162,7 +156,7 @@ export default function ConnectConvertKitPage() {
             <p className="text-2xl mb-3">✉️</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to connect Kit?</h3>
             <p className="text-sm text-gray-400 mb-5">
-              Go to Sage → Contacts → Automations and paste your API Key and API Secret.
+              Go to Sage → Contacts → Automations and paste your Kit v4 API Key.
             </p>
             <Link
               href="/sage/contacts/automations"

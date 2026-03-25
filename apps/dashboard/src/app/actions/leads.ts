@@ -459,8 +459,8 @@ async function fetchKlaviyoProfiles(config: Record<string, string>): Promise<Nor
 }
 
 async function fetchConvertKitSubscribers(config: Record<string, string>): Promise<NormalizedContact[]> {
-  const token = config.api_secret ?? config.access_token ?? config.api_key
-  if (!token) throw new Error('ConvertKit API secret is missing.')
+  const apiKey = config.api_key
+  if (!apiKey) throw new Error('ConvertKit API key is missing.')
   const results: NormalizedContact[] = []
   let cursor: string | null = null
 
@@ -470,7 +470,7 @@ async function fetchConvertKitSubscribers(config: Record<string, string>): Promi
     if (cursor) url.searchParams.set('after', cursor)
 
     const res = await fetch(url.toString(), {
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { 'X-Kit-Api-Key': apiKey, 'Content-Type': 'application/json' },
     })
     if (!res.ok) {
       const errText = await res.text().catch(() => res.statusText)

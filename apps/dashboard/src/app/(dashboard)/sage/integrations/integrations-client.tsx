@@ -189,8 +189,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     logo:        '✉️',
     category:    'email_marketing',
     fields: [
-      { name: 'api_key',    label: 'API Key',    type: 'password', placeholder: 'Your Kit API key',    hint: 'Found in Kit → Settings → Developer → API' },
-      { name: 'api_secret', label: 'API Secret', type: 'password', placeholder: 'Your Kit API secret', hint: 'Found in Kit → Settings → Developer → API' },
+      { name: 'api_key', label: 'API Key', type: 'password', placeholder: 'Your Kit v4 API key', hint: 'Found in Kit → Settings → Developer → API' },
     ],
     docsUrl:     'https://developers.kit.com/v4',
     tutorialUrl: '/resources/connect-convertkit',
