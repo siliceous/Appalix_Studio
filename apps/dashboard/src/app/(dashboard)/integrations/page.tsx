@@ -287,7 +287,7 @@ export default async function IntegrationsPage({
           baseUrl={baseUrl}
           emailIntegrations={emailIntegrations}
           platformLayout="grid-2"
-          showEmailProviders={['mailchimp', 'klaviyo']}
+          showEmailProviders={['mailchimp']}
           hideEmailHeading
         />
         <div className="mt-4">
