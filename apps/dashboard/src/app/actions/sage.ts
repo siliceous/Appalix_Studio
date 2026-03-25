@@ -1284,6 +1284,12 @@ export async function connectFormIntegration(
         return { webhookUrl, formsRegistered: 0 }
       }
 
+      // Typeform rejects localhost URLs — skip auto-registration in local dev
+      if (/localhost|127\.0\.0\.1/.test(webhookUrl)) {
+        revalidatePath('/sage/integrations')
+        return { webhookUrl, error: 'Integration saved. Webhook auto-registration skipped on localhost — deploy to production first, then reconnect to register automatically. Or register the webhook manually in Typeform using the URL below.' }
+      }
+
       // Register webhook for each form
       let registered = 0
       let lastErr = ''
