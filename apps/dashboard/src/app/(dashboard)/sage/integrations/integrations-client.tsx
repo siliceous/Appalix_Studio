@@ -268,6 +268,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
   const [sigSaved,          setSigSaved]         = useState(false)
   const [connectResult,     setConnectResult]    = useState<Record<string, { webhookUrl?: string; formsRegistered?: number; error?: string }>>({})
   const [testResult,        setTestResult]       = useState<Record<string, { ok?: boolean; error?: string; loading?: boolean }>>({})
+  const [webhookPanelOpen,  setWebhookPanelOpen] = useState<Record<string, boolean>>({})
   const [copiedProvider,    setCopiedProvider]   = useState<string | null>(null)
   const sigRef              = useRef<HTMLDivElement>(null)
   const sigImgRef           = useRef<HTMLInputElement>(null)
@@ -292,6 +293,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
       if (FORM_PROVIDERS.has(provider)) {
         const result = await connectFormIntegration(provider as 'gravity_forms' | 'wpforms' | 'typeform' | 'fluent_forms', config)
         setConnectResult(prev => ({ ...prev, [provider]: result }))
+        setWebhookPanelOpen(prev => ({ ...prev, [provider]: true }))
       } else {
         await saveSageIntegration(provider, config)
       }
@@ -454,6 +456,14 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                                   {ROLE_LABELS[providerInfo.role] ?? providerInfo.role}
                                 </span>
                               )}
+                              {integration.webhookPath && workspaceId && (
+                                <button
+                                  onClick={() => setWebhookPanelOpen(prev => ({ ...prev, [integration.provider]: !prev[integration.provider] }))}
+                                  className="text-[11px] text-brand-600 dark:text-[#15A4AE] hover:underline ml-1"
+                                >
+                                  {webhookPanelOpen[integration.provider] ? 'Hide URL' : 'Show webhook URL'}
+                                </button>
+                              )}
                             </div>
                           )
                           return (
@@ -593,8 +603,8 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                       </>
                     )}
 
-                    {/* Post-connect panel — forms integrations only */}
-                    {isConnected && integration.webhookPath && workspaceId && (() => {
+                    {/* Post-connect panel — forms integrations only, hidden by default */}
+                    {isConnected && integration.webhookPath && workspaceId && webhookPanelOpen[integration.provider] && (() => {
                       const result  = connectResult[integration.provider]
                       const hookUrl = result?.webhookUrl
                         ?? formWebhookUrls?.[integration.provider]
