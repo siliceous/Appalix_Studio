@@ -87,12 +87,19 @@ export async function POST(req: NextRequest) {
     if (liveData) enrichedContext = `${pageContext}\n\n${liveData}`
   }
 
-  // Classify query (AI) — then apply regex override so common action phrases
-  // are never misclassified as informational queries.
+  // Classify query (AI) — then apply regex overrides.
   const classification = await classifySageQuery(query, enrichedContext)
   if (!classification.actionIntent) {
     const regexIntent = detectActionIntent(query)
     if (regexIntent) classification.actionIntent = regexIntent
+  }
+  // Keyword override for categories the AI model frequently misclassifies.
+  if (!classification.actionIntent) {
+    const overrideCategory = detectCategoryOverride(query)
+    if (overrideCategory) {
+      classification.category = overrideCategory
+      classification.retrieval = 'structured'
+    }
   }
 
   // Action intent — resolve names → IDs and execute
@@ -164,6 +171,22 @@ type ActionIntentType =
   | 'convert_to_deal' | 'create_deal' | 'create_ticket'
   | 'create_reminder' | 'create_task' | 'save_note' | 'draft_reply'
   | 'create_contact'
+
+type SageCategoryOverride = 'forms' | 'conversations' | 'emails' | 'tickets' | 'contacts' | 'deals' | 'reminders'
+
+/**
+ * Keyword-based category override — catches cases where the AI classifier
+ * returns 'general' for queries that clearly belong to a specific category.
+ */
+function detectCategoryOverride(query: string): SageCategoryOverride | null {
+  const q = query.toLowerCase()
+  // Match "form", "forms", "form entry", "forms entry", "form submission", etc.
+  if (/\bforms?\b/.test(q) && !/\bformat\b|\binform\b/.test(q)) return 'forms'
+  if (/\b(bot\s+(chat|conv|response)|bot\s+activ|chat\s+histor|conversation)\b/.test(q)) return 'conversations'
+  if (/\b(my\s+email|inbox|unread\s+email|email\s+from)\b/.test(q)) return 'emails'
+  if (/\b(my\s+ticket|open\s+ticket|support\s+ticket)\b/.test(q)) return 'tickets'
+  return null
+}
 
 function detectActionIntent(query: string): ActionIntentType | null {
   const q = query.toLowerCase()
