@@ -136,7 +136,19 @@ export async function POST(req: NextRequest) {
 
   const { reply, followUps } = await composeSageAnswer(query, classification, context, enrichedContext, ws.name, userName)
 
-  return NextResponse.json({ reply, classification, context, suggestedFollowUps: followUps })
+  // Auto-navigate for category queries that map to a specific page
+  const CATEGORY_NAV: Record<string, string> = {
+    pipeline:      '/sage/pipelines',
+    deals:         '/sage/pipelines',
+    tickets:       '/sage/tickets',
+    emails:        '/dashboard/email',
+    conversations: '/dashboard/bots',
+    contacts:      '/sage/contacts',
+    analytics:     '/sage/contacts',
+  }
+  const navigateTo = CATEGORY_NAV[classification.category]
+
+  return NextResponse.json({ reply, classification, context, suggestedFollowUps: followUps, navigateTo })
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
