@@ -60,6 +60,7 @@ interface Props {
   filters:                  FormFilters
   readonly?:                boolean
   connectedEmailProviders?:  string[]
+  connectedFormProviders?:   string[]
   teamMembers?:             Array<{ user_id: string; name: string }>
   canAllocate?:             boolean
 }
@@ -73,6 +74,7 @@ const EMAIL_PLATFORM_META: Record<string, { name: string; logo?: string; pill: s
   gravity_forms:   { name: 'Gravity Forms',    pill: 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/20' },
   wpforms:         { name: 'WPForms',          pill: 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20' },
   typeform:        { name: 'Typeform',         pill: 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20' },
+  fluent_forms:    { name: 'Fluent Forms',     pill: 'bg-teal-50 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-200 dark:border-teal-500/20' },
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -206,6 +208,7 @@ const DEFAULT_COLS = new Set<ColKey>(['name', 'email', 'phone', 'company', 'sour
 export function FormsTable({
   submissions, forms, filters, readonly = false,
   connectedEmailProviders = [],
+  connectedFormProviders = [],
   teamMembers = [], canAllocate = false,
 }: Props) {
   const router = useRouter()
@@ -441,9 +444,9 @@ export function FormsTable({
 
       {/* ── Connected sources bar ── */}
       {(() => {
-        const formProviders = [...new Set(submissions.map(s => s.source_platform).filter(Boolean))]
-          .filter(p => ['gravity_forms', 'wpforms', 'typeform'].includes(p as string)) as string[]
-        const allProviders = [...connectedEmailProviders, ...formProviders]
+        const submissionFormProviders = [...new Set(submissions.map(s => s.source_platform).filter(Boolean))]
+          .filter(p => ['gravity_forms', 'wpforms', 'typeform', 'fluent_forms'].includes(p as string)) as string[]
+        const allProviders = [...new Set([...connectedEmailProviders, ...connectedFormProviders, ...submissionFormProviders])]
         if (allProviders.length === 0) return null
         return (
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/8 bg-white dark:bg-white/[0.03]">

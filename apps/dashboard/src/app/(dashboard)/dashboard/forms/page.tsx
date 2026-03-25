@@ -123,8 +123,9 @@ export default async function FormsPage({
 
   subsQuery = subsQuery.order('created_at', { ascending: false }).limit(200)
 
+  const adminClient = createAdminClient()
   // All connected email marketing integrations (admin client bypasses RLS)
-  const { data: emailIntegRaw } = await createAdminClient()
+  const { data: emailIntegRaw } = await adminClient
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .from('sage_integrations' as any)
     .select('provider, status, config, sync_enabled')
@@ -132,11 +133,21 @@ export default async function FormsPage({
     .eq('status', 'connected')
     .in('provider', ['mailchimp', 'activecampaign', 'convertkit', 'klaviyo', 'constantcontact'])
 
+  // Connected form plugin integrations
+  const { data: formIntegRaw } = await adminClient
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('sage_integrations' as any)
+    .select('provider')
+    .eq('workspace_id', workspaceId)
+    .eq('status', 'connected')
+    .in('provider', ['gravity_forms', 'wpforms', 'typeform', 'fluent_forms'])
+
   type EmailIntegRow = { provider: string; status: string; config: Record<string, string>; sync_enabled: boolean }
   const emailIntegrations = (emailIntegRaw ?? []) as EmailIntegRow[]
 
   // Connected platform names for the banner
   const connectedEmailProviders = emailIntegrations.map(r => r.provider)
+  const connectedFormProviders  = ((formIntegRaw ?? []) as { provider: string }[]).map(r => r.provider)
 
   const [formsRes, submissionsRes] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -206,6 +217,7 @@ export default async function FormsPage({
             filters={params}
             readonly={!!viewAsUserId}
             connectedEmailProviders={connectedEmailProviders}
+            connectedFormProviders={connectedFormProviders}
             teamMembers={teamMembersForPicker}
             canAllocate={callerRank >= ROLE_RANK.manager}
           />
