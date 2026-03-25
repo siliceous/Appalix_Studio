@@ -75,9 +75,6 @@ export default async function IntegrationsPage({
     // All connected email integrations for this workspace (gmail + microsoft) — to show per-provider info
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('sage_integrations').select('provider, user_id, config').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', ['gmail', 'microsoft']),
-    // All connected sage integrations — for connector name/role display
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (admin as any).from('sage_integrations').select('provider, user_id').eq('workspace_id', membership.workspace_id).eq('status', 'connected'),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('user_profiles').select('user_id, first_name, last_name'),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -85,6 +82,9 @@ export default async function IntegrationsPage({
     // Form plugin configs — to build webhook URLs with secrets for GF/WPForms/Fluent Forms
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('sage_integrations').select('provider, config').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', ['gravity_forms', 'wpforms', 'fluent_forms']),
+    // All connected sage integrations — for connector name/role display
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any).from('sage_integrations').select('provider, user_id').eq('workspace_id', membership.workspace_id).eq('status', 'connected'),
   ])
   const integrations      = (rawIntegrations ?? []) as IntegrationRow[]
   const adSources         = (sourcesRaw ?? []) as LeadAdSource[]
