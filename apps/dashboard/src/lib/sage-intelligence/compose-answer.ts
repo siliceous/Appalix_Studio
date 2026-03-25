@@ -124,12 +124,12 @@ ${dataStr}`
 }
 
 function generateFollowUps(cls: SageQueryClassification, context?: RetrievedContext): string[] {
-  // Overdue-aware follow-ups when we know there are overdue reminders
-  const hasOverdue = (context?.reminders ?? []).some(r => (r.metadata as Record<string, unknown>)?.overdue)
-  if (hasOverdue) {
-    return ['Show me the overdue reminder details', 'Show my open deals', 'Show open tickets']
-  }
+  // Build item-specific follow-ups from actual context records.
+  // These align with the numbered list the AI will render, so "1" → details on item 1.
+  const itemFollowUps = buildItemFollowUps(cls.category, context)
+  if (itemFollowUps.length >= 2) return itemFollowUps.slice(0, 9)
 
+  // Fallback generic suggestions when there aren't enough items
   const map: Record<string, string[]> = {
     contacts:      ['Show high-priority contacts', 'Find contacts without a deal', 'Show recently added contacts'],
     deals:         ['Show deals closing this week', 'Show stale deals', 'Which deals are high priority?'],
@@ -142,5 +142,53 @@ function generateFollowUps(cls: SageQueryClassification, context?: RetrievedCont
     general:       ['Show my open deals', 'Show overdue reminders', 'How many contacts do I have?'],
     conversations: ['Show unanalysed conversations', 'Which conversations have hot leads?'],
   }
-  return map[cls.category] ?? ["Show my open deals", "Show overdue reminders", "What's new this week?"]
+  return map[cls.category] ?? ['Show my open deals', 'Show overdue reminders', "What's new this week?"]
+}
+
+/**
+ * Build numbered follow-up queries that correspond 1:1 with the items Sage
+ * will list in its reply. Typing "1" will query details on the first record.
+ */
+function buildItemFollowUps(category: string, context?: RetrievedContext): string[] {
+  if (!context) return []
+
+  // Pick the primary collection for this category
+  type Rec = { label: string; metadata: Record<string, unknown> }
+  let records: Rec[] = []
+
+  if (category === 'contacts' || (category === 'general' && context.contacts?.length)) {
+    records = (context.contacts ?? []) as Rec[]
+    return records.slice(0, 9).map(r => `Tell me about ${r.label.split(' <')[0]}`)
+  }
+  if (category === 'deals' || category === 'pipeline') {
+    records = (context.deals ?? []) as Rec[]
+    return records.slice(0, 9).map(r => `Show me the ${r.label} deal`)
+  }
+  if (category === 'tickets' || category === 'activities') {
+    const tickets = (context.tickets ?? []) as Rec[]
+    const reminders = (context.reminders ?? []) as Rec[]
+    // Interleave tickets and reminders in display order
+    records = [...tickets, ...reminders]
+    return records.slice(0, 9).map(r =>
+      r.metadata?.overdue
+        ? `What is the reminder "${r.label}"?`
+        : `Tell me about ticket "${r.label}"`
+    )
+  }
+  if (category === 'reminders') {
+    records = (context.reminders ?? []) as Rec[]
+    return records.slice(0, 9).map(r => `What is the reminder "${r.label}"?`)
+  }
+  if (category === 'emails') {
+    records = (context.emails ?? []) as Rec[]
+    return records.slice(0, 9).map(r => {
+      const subject = r.label.split(' — from ')[0]
+      return `Tell me about the email "${subject}"`
+    })
+  }
+  if (category === 'conversations') {
+    records = (context.conversations ?? []) as Rec[]
+    return records.slice(0, 9).map(r => `Summarise the conversation "${r.label}"`)
+  }
+  return []
 }
