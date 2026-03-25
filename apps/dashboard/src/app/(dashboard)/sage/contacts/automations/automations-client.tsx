@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { Check, X, ExternalLink, Loader2, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react'
 import { saveSageIntegration, disconnectSageIntegration } from '@/app/actions/sage'
+import { toggleEmailPlatformSync } from '@/app/actions/leads'
 import Link from 'next/link'
 import type { SageIntegrationProvider } from '@/lib/types'
 
@@ -76,15 +77,18 @@ const AUTOMATIONS: AutomationCard[] = [
 ]
 
 interface AutomationsClientProps {
-  initialConnected: Set<string>
+  initialConnected:     Set<string>
+  syncEnabledByProvider: Record<string, boolean>
 }
 
-export function AutomationsClient({ initialConnected }: AutomationsClientProps) {
-  const [connected,  setConnected]  = useState<Set<string>>(initialConnected)
-  const [expanded,   setExpanded]   = useState<string | null>(null)
-  const [saving,     setSaving]     = useState<string | null>(null)
-  const [formValues, setFormValues] = useState<Record<string, Record<string, string>>>({})
-  const [pending,    startTransition] = useTransition()
+export function AutomationsClient({ initialConnected, syncEnabledByProvider }: AutomationsClientProps) {
+  const [connected,      setConnected]      = useState<Set<string>>(initialConnected)
+  const [expanded,       setExpanded]       = useState<string | null>(null)
+  const [saving,         setSaving]         = useState<string | null>(null)
+  const [formValues,     setFormValues]     = useState<Record<string, Record<string, string>>>({})
+  const [autoSync,       setAutoSync]       = useState<Record<string, boolean>>(syncEnabledByProvider)
+  const [togglingSync,   setTogglingSync]   = useState<string | null>(null)
+  const [pending,        startTransition]   = useTransition()
 
   function toggleExpand(provider: SageIntegrationProvider) {
     setExpanded(prev => prev === provider ? null : provider)
@@ -115,6 +119,21 @@ export function AutomationsClient({ initialConnected }: AutomationsClientProps) 
     })
   }
 
+  function handleToggleAutoSync(provider: SageIntegrationProvider) {
+    const next = !autoSync[provider]
+    setAutoSync(prev => ({ ...prev, [provider]: next }))
+    setTogglingSync(provider)
+    startTransition(async () => {
+      try {
+        await toggleEmailPlatformSync(provider as 'mailchimp' | 'activecampaign' | 'klaviyo' | 'convertkit' | 'constantcontact', next)
+      } catch {
+        setAutoSync(prev => ({ ...prev, [provider]: !next }))
+      } finally {
+        setTogglingSync(null)
+      }
+    })
+  }
+
   return (
     <div className="p-8 max-w-3xl mx-auto">
       {/* Header */}
@@ -138,6 +157,9 @@ export function AutomationsClient({ initialConnected }: AutomationsClientProps) 
           const isSaving    = saving === card.provider
           const values      = formValues[card.provider] ?? {}
           const allFilled   = card.fields.every(f => (values[f.name] ?? '').trim().length > 0)
+
+          const syncOn      = autoSync[card.provider] ?? false
+          const isToggling  = togglingSync === card.provider
 
           return (
             <div
@@ -169,14 +191,34 @@ export function AutomationsClient({ initialConnected }: AutomationsClientProps) 
                     </a>
                   )}
                   {isConnected ? (
-                    <button
-                      onClick={() => handleDisconnect(card.provider)}
-                      disabled={isSaving}
-                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors disabled:opacity-60"
-                    >
-                      {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
-                      Disconnect
-                    </button>
+                    <>
+                      {/* Auto Sync toggle */}
+                      <button
+                        onClick={() => handleToggleAutoSync(card.provider)}
+                        disabled={isToggling}
+                        title={syncOn ? 'Turn off auto-sync' : 'Turn on auto-sync'}
+                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-colors ${
+                          syncOn
+                            ? 'border-brand-200 dark:border-[#15A4AE]/30 bg-brand-50 dark:bg-[#15A4AE]/10'
+                            : 'border-gray-200 dark:border-white/10 bg-white dark:bg-white/5'
+                        } ${isToggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                      >
+                        <span className={`text-[11px] font-medium ${syncOn ? 'text-brand-600 dark:text-[#15A4AE]' : 'text-gray-400 dark:text-gray-500'}`}>
+                          Auto Sync
+                        </span>
+                        <span className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${syncOn ? 'bg-brand-600' : 'bg-gray-200 dark:bg-white/15'}`}>
+                          <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${syncOn ? 'translate-x-[14px]' : 'translate-x-[2px]'}`} />
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => handleDisconnect(card.provider)}
+                        disabled={isSaving}
+                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors disabled:opacity-60"
+                      >
+                        {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                        Disconnect
+                      </button>
+                    </>
                   ) : (
                     <button
                       onClick={() => toggleExpand(card.provider)}
@@ -188,6 +230,15 @@ export function AutomationsClient({ initialConnected }: AutomationsClientProps) 
                   )}
                 </div>
               </div>
+
+              {/* Auto Sync disclaimer */}
+              {isConnected && (
+                <div className="border-t dark:border-white/8 px-4 py-2 text-[11px] text-gray-400 dark:text-gray-500">
+                  {syncOn
+                    ? `Auto sync ON · New and updated Sage contacts are pushed to ${card.name} automatically`
+                    : `Auto sync OFF · Sage contacts will not be pushed to ${card.name} automatically`}
+                </div>
+              )}
 
               {/* Config form */}
               {isExpanded && !isConnected && (

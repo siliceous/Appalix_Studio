@@ -608,7 +608,7 @@ export async function toggleMailchimpSync(enabled: boolean): Promise<void> {
 }
 
 export async function toggleEmailPlatformSync(
-  provider: 'mailchimp' | 'activecampaign' | 'klaviyo',
+  provider: 'mailchimp' | 'activecampaign' | 'klaviyo' | 'convertkit' | 'constantcontact',
   enabled: boolean,
 ): Promise<void> {
   const workspaceId = await getWorkspaceId()

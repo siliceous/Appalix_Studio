@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AutomationsClient } from './automations-client'
 import type { WorkspaceMember } from '@/lib/types'
@@ -19,16 +19,24 @@ export default async function ContactAutomationsPage() {
   const membership = membershipRaw as Pick<WorkspaceMember, 'workspace_id'> | null
   if (!membership) redirect('/login')
 
-  const { data: integrationsRaw } = await supabase
+  const admin = createAdminClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: integrationsRaw } = await (admin as any)
     .from('sage_integrations')
-    .select('provider, status')
+    .select('provider, status, sync_enabled')
     .eq('workspace_id', membership.workspace_id)
 
+  type IntRow = { provider: string; status: string; sync_enabled: boolean }
+  const rows = (integrationsRaw ?? []) as IntRow[]
+
   const connected = new Set<string>(
-    (integrationsRaw ?? [])
-      .filter((r: { provider: string; status: string }) => r.status === 'connected')
-      .map((r: { provider: string; status: string }) => r.provider)
+    rows.filter(r => r.status === 'connected').map(r => r.provider)
   )
 
-  return <AutomationsClient initialConnected={connected} />
+  const syncEnabledByProvider: Record<string, boolean> = {}
+  for (const r of rows.filter(r => r.status === 'connected')) {
+    syncEnabledByProvider[r.provider] = r.sync_enabled ?? false
+  }
+
+  return <AutomationsClient initialConnected={connected} syncEnabledByProvider={syncEnabledByProvider} />
 }
