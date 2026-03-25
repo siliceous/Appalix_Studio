@@ -322,10 +322,30 @@ function ItemPopup({
           .eq('id', popup.id).single()
         setData(d)
       } else if (popup.kind === 'form') {
-        const { data: d } = await supabase.from('leads')
-          .select('id, name, email, phone, company, job_title, website, lead_score, source_platform, campaign_name, ad_name, form_name, created_at')
+        const { data: d } = await supabase.from('sage_form_submissions')
+          .select('id, fields, ai_priority, ai_summary, source_platform, created_at, actioned_at, action_type')
           .eq('id', popup.id).single()
-        setData(d)
+        if (d) {
+          const f = (d as any).fields as Record<string, string> | null ?? {}
+          // Normalize into Lead-compatible flat shape for the existing modal render
+          setData({
+            id:              d.id,
+            name:            f.name ?? f.full_name ?? f.first_name ?? '(unknown)',
+            email:           f.email ?? null,
+            phone:           f.phone ?? null,
+            company:         f.company ?? f.company_name ?? null,
+            job_title:       f.job_title ?? f.title ?? null,
+            website:         f.website ?? null,
+            lead_score:      (d as any).ai_priority ?? null,
+            source_platform: (d as any).source_platform,
+            campaign_name:   f.campaign ?? f.campaign_name ?? null,
+            form_name:       f.form_name ?? f.form ?? null,
+            ai_summary:      (d as any).ai_summary ?? null,
+            created_at:      d.created_at,
+          })
+        } else {
+          setData(null)
+        }
       } else if (popup.kind === 'ticket') {
         const { data: d } = await supabase.from('sage_tickets')
           .select('id, title, description, priority, status, created_at, name, email, phone, contact_method, related_url, occurred_at, contact:sage_contacts(name, email, phone)')
@@ -2214,7 +2234,9 @@ export function SageDashboardClient({
                         <PriorityDot priority={f.lead_score ?? 'low'} />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{f.name}</p>
-                          <p className="text-[11px] text-green-600/80 dark:text-green-300/70 truncate">{f.company ?? f.email ?? f.source_platform}</p>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                            {[f.email, f.phone, f.company].filter(Boolean).join(' · ') || f.source_platform}
+                          </p>
                         </div>
                         <span className="text-[10px] text-green-500/70 dark:text-green-400/60 shrink-0">{timeAgo(f.created_at)}</span>
                         <button onClick={ev => handleDismiss('form', f.id, ev)} title="Dismiss"
