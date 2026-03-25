@@ -702,27 +702,30 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
       </div>
 
       {/* Pagination footer */}
-      {filtered.length > 0 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t dark:border-white/8 text-xs text-gray-500 dark:text-gray-400 shrink-0">
-          <span>{filtered.length} contact{filtered.length !== 1 ? 's' : ''} · page {safePage} of {totalPages}</span>
-          <div className="flex items-center gap-3">
-            <select
-              value={pageSize}
-              onChange={e => { setPageSize(Number(e.target.value)); setPage(1) }}
-              className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 cursor-pointer"
-            >
-              {[10, 20, 50, 100].map(n => <option key={n} value={n}>{n} / page</option>)}
-            </select>
-            <div className="flex items-center gap-1">
-              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage <= 1}
-                className="px-2.5 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium">← Prev</button>
-              <span className="px-1">{safePage} / {totalPages}</span>
-              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}
-                className="px-2.5 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium">Next →</button>
-            </div>
+      <div className="flex items-center justify-between px-4 py-2.5 border-t dark:border-white/8 bg-gray-50/60 dark:bg-white/[0.02] shrink-0">
+        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <span>Rows per page:</span>
+          <select
+            value={pageSize}
+            onChange={e => { setPageSize(Number(e.target.value)); setPage(1) }}
+            className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 cursor-pointer"
+          >
+            {[10, 20, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </div>
+        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+          <span>
+            {filtered.length === 0 ? '0' : `${(safePage - 1) * pageSize + 1}–${Math.min(safePage * pageSize, filtered.length)}`} of {filtered.length}
+          </span>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage <= 1}
+              className="px-2.5 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium">← Prev</button>
+            <span className="px-1">{safePage} / {totalPages}</span>
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}
+              className="px-2.5 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium">Next →</button>
           </div>
         </div>
-      )}
+      </div>
 
       {(showModal || editingContact) && (
         <ContactModal
