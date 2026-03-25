@@ -46,7 +46,7 @@ const AUTOMATIONS: AutomationCard[] = [
     description: 'Add contacts as Kit subscribers and apply tags. Ideal for creators and course-based businesses.',
     logo:        '✉️',
     fields: [
-      { name: 'api_key', label: 'API Key', type: 'password', placeholder: 'Your Kit v4 API key', hint: 'Found in Kit → Settings → Developer → API' },
+      { name: 'api_key', label: 'API Key (v4)', type: 'password', placeholder: 'Your Kit v4 API key', hint: 'Kit → Settings → Developer → click "Add new key" to generate a v4 key (shown once only — not the legacy v3 API key)' },
     ],
     docsUrl: 'https://developers.kit.com/v4',
   },

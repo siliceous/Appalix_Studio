@@ -86,8 +86,9 @@ export default function ConnectConvertKitPage() {
             <h2 className="text-xl font-semibold text-white mb-3">Step 1 — Find your Kit API credentials</h2>
             <ol className="list-decimal pl-5 space-y-3">
               <li>Log in to <strong className="text-white">Kit</strong> and click your account name (top-right).</li>
-              <li>Go to <strong className="text-white">Settings → Developer → API</strong>.</li>
-              <li>Copy your <strong className="text-white">v4 API Key</strong> — this is the key labelled <em>API Key</em> (not the legacy v3 Secret).</li>
+              <li>Go to <strong className="text-white">Settings → Developer</strong>.</li>
+              <li>Click <strong className="text-white">Add new key</strong> to generate a <strong className="text-white">v4 API Key</strong>. Give it a name (e.g. "Appalix") and copy it — <strong className="text-white">it is only shown once</strong>.</li>
+              <li className="text-amber-400/80 text-xs">Do not use the legacy <em>v3 API Key</em> or <em>API Secret</em> shown on the same page — those will not work with the v4 API.</li>
             </ol>
           </section>
 
