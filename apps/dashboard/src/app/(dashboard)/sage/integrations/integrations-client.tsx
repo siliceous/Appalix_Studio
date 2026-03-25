@@ -188,8 +188,10 @@ const INTEGRATIONS: IntegrationCard[] = [
     description: 'Add contacts as Kit subscribers and apply tags. Ideal for creators and course-based businesses.',
     logo:        '✉️',
     category:    'email_marketing',
-    fields:      [],
-    oauthPath:   '/api/oauth/kit',
+    fields: [
+      { name: 'api_key',    label: 'API Key',    type: 'password', placeholder: 'Your Kit API key',    hint: 'Found in Kit → Settings → Developer → API' },
+      { name: 'api_secret', label: 'API Secret', type: 'password', placeholder: 'Your Kit API secret', hint: 'Found in Kit → Settings → Developer → API' },
+    ],
     docsUrl:     'https://developers.kit.com/v4',
     tutorialUrl: '/resources/connect-convertkit',
     canSync:     true,
