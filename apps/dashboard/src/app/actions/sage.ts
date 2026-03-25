@@ -1225,6 +1225,16 @@ export async function connectFormIntegration(
     }
 
     try {
+      // Validate token first via /me
+      const meRes = await fetch('https://api.typeform.com/me', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+      if (!meRes.ok) {
+        const errData = await meRes.json().catch(() => ({})) as { code?: string; description?: string }
+        revalidatePath('/sage/integrations')
+        return { webhookUrl, error: `Invalid token (${meRes.status}): ${errData.description ?? errData.code ?? 'Authentication failed'}. Please generate a new token in Typeform → Settings → Personal tokens.` }
+      }
+
       // List all forms (or use the specific form_id if provided)
       const formIds: string[] = []
       if (config.form_id?.trim()) {
@@ -1235,8 +1245,8 @@ export async function connectFormIntegration(
         })
         if (!listRes.ok) {
           const errText = await listRes.text().catch(() => '')
-          const hint = listRes.status === 401 || listRes.status === 403
-            ? 'Check your token has Forms (read) and Webhooks (write) scopes enabled.'
+          const hint = listRes.status === 403
+            ? 'Token is missing Forms (read) scope.'
             : `Typeform API error ${listRes.status}.`
           revalidatePath('/sage/integrations')
           return { webhookUrl, error: `Could not fetch forms: ${hint} ${errText}`.trim() }
