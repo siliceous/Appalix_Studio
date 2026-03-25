@@ -1237,9 +1237,15 @@ export async function connectFormIntegration(
 
       // List all forms (or use the specific form_id if provided)
       const formIds: string[] = []
-      // Accept full Typeform URL (https://…/to/FORM_ID) or bare form ID
+      // Accept any Typeform URL format or bare form ID:
+      //   https://…/to/FORM_ID          (share/embed URL)
+      //   https://admin.typeform.com/form/FORM_ID/…  (editor URL)
       const rawFormId = config.form_id?.trim() ?? ''
-      const formIdFromUrl = rawFormId.match(/\/to\/([a-zA-Z0-9]+)/)?.[1] ?? rawFormId
+      const formIdFromUrl =
+        rawFormId.match(/\/to\/([a-zA-Z0-9]+)/)?.[1] ??
+        rawFormId.match(/\/form\/([a-zA-Z0-9]+)/)?.[1] ??
+        rawFormId.split('?')[0].split('/').pop() ??
+        rawFormId
       if (formIdFromUrl) {
         formIds.push(formIdFromUrl)
       } else {
