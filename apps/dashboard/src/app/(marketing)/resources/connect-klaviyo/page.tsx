@@ -38,10 +38,11 @@ export default function ConnectKlaviyoPage() {
         slug="connect-klaviyo"
         datePublished="2026-03-04"
         steps={[
-          { name: 'Create a Klaviyo Private API Key', text: 'In Klaviyo, go to Settings → API Keys → Create Private API Key. Grant read/write access for Lists and Profiles.' },
-          { name: 'Find your Klaviyo List ID', text: 'In Klaviyo, go to Lists & Segments, open the target list, click Settings, and copy the List ID.' },
+          { name: 'Create a Klaviyo Private API Key', text: 'In Klaviyo, go to Settings → API Keys → Create Private API Key. Set Lists and Profiles to Full Access.' },
+          { name: 'Find your Klaviyo List ID', text: 'In Klaviyo, go to Audience → Lists and Segments, open the target list, click Settings, and copy the List ID.' },
           { name: 'Connect in Sage → Integrations', text: 'In Appalix, go to Sage → Integrations → Email Marketing, find the Klaviyo card, click Connect, and paste your Private API Key and List ID.' },
           { name: 'Confirm the connection', text: 'The Klaviyo card shows a Connected badge. Contacts will sync to your Klaviyo list as they are created or updated in Sage.' },
+          { name: 'Pull existing Klaviyo profiles (optional)', text: 'Go to Forms → Sources, find the Klaviyo card, and click Sync Now to import your existing Klaviyo profiles into Appalix as leads.' },
         ]}
       />
 
@@ -88,26 +89,26 @@ export default function ConnectKlaviyoPage() {
               <li>Go to <strong className="text-white">Settings → API Keys</strong>.</li>
               <li>Click <strong className="text-white">Create Private API Key</strong>.</li>
               <li>
-                Give the key a name (e.g. &quot;Appalix Sync&quot;) and grant the following access:
+                Give the key a name (e.g. &quot;Appalix Sync&quot;) and set the following scopes to <strong className="text-white">Full Access</strong>:
                 <ul className="list-disc pl-5 mt-2 space-y-1">
-                  <li><strong>Lists</strong> — Read/Write</li>
-                  <li><strong>Profiles</strong> — Read/Write</li>
+                  <li><strong>Lists</strong> — Full Access</li>
+                  <li><strong>Profiles</strong> — Full Access</li>
                 </ul>
+                All other scopes can remain at their default (No Access).
               </li>
               <li>Click <strong className="text-white">Create</strong> and copy the key — it starts with <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">pk_</code>.</li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-sm text-blue-300">
-              <strong>Use a restricted key.</strong> Only grant the minimum permissions listed above — Lists and Profiles read/write. Do not use a full access key.
-            </div>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">Step 2 — Find your Klaviyo List ID</h2>
             <ol className="list-decimal pl-5 space-y-3">
-              <li>In Klaviyo, go to <strong className="text-white">Lists &amp; Segments</strong> in the left sidebar.</li>
-              <li>Click the list you want to sync contacts into.</li>
-              <li>Click <strong className="text-white">Settings</strong> (gear icon) at the top of the list view.</li>
-              <li>Copy the <strong className="text-white">List ID</strong> — it&apos;s a short alphanumeric code like <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">Xk7abc</code>.</li>
+              <li>In Klaviyo, go to <strong className="text-white">Audience → Lists and Segments</strong> in the left sidebar.</li>
+              <li>Choose a <strong className="text-white">List</strong> (not a Segment — segments are auto-populated and can&apos;t receive direct profile additions). Click on it to open it.</li>
+              <li>Look at your browser&apos;s address bar. The URL will look like:<br />
+                <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300 text-xs">https://www.klaviyo.com/list/</code><strong className="text-brand-300">Xk7abc</strong><code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300 text-xs">/members</code>
+              </li>
+              <li>The code between <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300 text-xs">/list/</code> and <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300 text-xs">/members</code> is your <strong className="text-white">List ID</strong> — copy it.</li>
             </ol>
           </section>
 
@@ -129,11 +130,26 @@ export default function ConnectKlaviyoPage() {
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">What the integration does</h2>
             <ul className="list-disc pl-5 space-y-2">
-              <li><strong className="text-white">Contact sync</strong> — contacts created or updated in Sage are added to your specified Klaviyo list as profiles.</li>
-              <li><strong className="text-white">Flow triggers</strong> — adding a profile to a list automatically triggers any Klaviyo flows subscribed to that list (welcome series, nurture sequences, etc.).</li>
+              <li><strong className="text-white">Outbound contact sync</strong> — contacts created or updated in Sage are pushed to your Klaviyo list as profiles, triggering any flows subscribed to that list.</li>
+              <li><strong className="text-white">Flow triggers</strong> — adding a profile to a list automatically starts any Klaviyo flows (welcome series, win-back sequences, etc.).</li>
+              <li><strong className="text-white">Inbound pull sync</strong> — pull your existing Klaviyo profiles into Appalix on demand from <strong className="text-white">Forms → Sources → Sync Now</strong>.</li>
             </ul>
-            <div className="mt-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-sm text-amber-300">
-              <strong>Forms sync:</strong> Klaviyo is not currently supported in the Forms → Sources pull sync. To import Klaviyo profiles into Appalix leads, use Klaviyo&apos;s webhook or export integrations.
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-white mb-3">Pulling Klaviyo profiles into Forms</h2>
+            <p>
+              Once connected, you can import your existing Klaviyo profiles into <strong className="text-white">Forms → Sources</strong> — the same inbox used for Meta Lead Ads and Google Ads leads.
+            </p>
+            <ol className="list-decimal pl-5 space-y-3 mt-3">
+              <li>Navigate to <strong className="text-white">Forms → Sources</strong> in Appalix.</li>
+              <li>Find the <strong className="text-white">Klaviyo</strong> card in the Email Marketing Platforms section.</li>
+              <li>Click <strong className="text-white">Sync Now</strong>. Appalix fetches all profiles from your connected list (or all profiles if no list ID was set).</li>
+              <li>A result banner shows how many contacts were imported and how many were skipped as duplicates.</li>
+              <li>Imported contacts appear immediately in <strong className="text-white">Forms → All Leads</strong> with a Klaviyo platform badge.</li>
+            </ol>
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+              <strong className="text-white">Deduplication:</strong> Before inserting, Appalix checks whether a lead with the same email or phone already exists. Duplicates are skipped — you can run Sync Now multiple times safely.
             </div>
           </section>
 

@@ -240,7 +240,7 @@ export default function ConnectSageMicrosoftPage() {
           <Link href="/resources" className="text-sm text-brand-400 hover:text-brand-300 transition-colors">
             ← Back to Resources
           </Link>
-          <Link href="/sage/emails" className="text-sm text-brand-400 hover:text-brand-300 transition-colors">
+          <Link href="/dashboard/email" className="text-sm text-brand-400 hover:text-brand-300 transition-colors">
             Open Email Inbox →
           </Link>
         </div>

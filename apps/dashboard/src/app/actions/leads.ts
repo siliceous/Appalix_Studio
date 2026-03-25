@@ -405,8 +405,61 @@ async function fetchActiveCampaignContacts(config: Record<string, string>): Prom
   return results
 }
 
+async function fetchKlaviyoProfiles(config: Record<string, string>): Promise<NormalizedContact[]> {
+  const { api_key, list_id } = config
+  const results: NormalizedContact[] = []
+  const headers = {
+    'Authorization': `Klaviyo-API-Key ${api_key}`,
+    'revision': '2024-02-15',
+  }
+
+  // Fetch from a specific list if list_id is provided, otherwise fetch all profiles
+  const baseUrl = list_id
+    ? `https://a.klaviyo.com/api/lists/${list_id}/profiles/`
+    : 'https://a.klaviyo.com/api/profiles/'
+
+  let url: string | null = baseUrl
+
+  while (url) {
+    const res = await fetch(url, { headers })
+    if (!res.ok) {
+      const errText = await res.text().catch(() => res.statusText)
+      throw new Error(`Klaviyo API error ${res.status}: ${errText}`)
+    }
+    const data = await res.json() as {
+      data?: Record<string, unknown>[]
+      links?: { next?: string | null }
+    }
+    const profiles = data.data ?? []
+    for (const p of profiles) {
+      const attrs = (p.attributes ?? p) as Record<string, unknown>
+      const name = `${attrs.first_name ?? ''} ${attrs.last_name ?? ''}`.trim()
+        || (attrs.email as string | undefined)
+        || ''
+      const location = (attrs.location ?? {}) as Record<string, unknown>
+      results.push({
+        name,
+        email:       (attrs.email        as string | null) ?? null,
+        phone:       (attrs.phone_number as string | null) ?? null,
+        company:     (attrs.organization as string | null) ?? null,
+        job_title:   (attrs.title        as string | null) ?? null,
+        website_url: null,
+        street:      (location.address1  as string | null) ?? null,
+        city:        (location.city      as string | null) ?? null,
+        state:       (location.region    as string | null) ?? null,
+        zip:         (location.zip       as string | null) ?? null,
+        country:     (location.country   as string | null) ?? null,
+        tags:        [],
+        raw:         p,
+      })
+    }
+    url = (data.links?.next as string | null | undefined) ?? null
+  }
+  return results
+}
+
 export async function syncFromEmailPlatform(
-  provider: 'mailchimp' | 'activecampaign',
+  provider: 'mailchimp' | 'activecampaign' | 'klaviyo',
 ): Promise<{ synced: number; skipped: number; error?: string }> {
   const workspaceId = await getWorkspaceId()
   const admin       = createAdminClient()
@@ -429,7 +482,9 @@ export async function syncFromEmailPlatform(
   try {
     contacts = provider === 'mailchimp'
       ? await fetchMailchimpContacts(config)
-      : await fetchActiveCampaignContacts(config)
+      : provider === 'klaviyo'
+        ? await fetchKlaviyoProfiles(config)
+        : await fetchActiveCampaignContacts(config)
   } catch (err) {
     return { synced: 0, skipped: 0, error: err instanceof Error ? err.message : 'Fetch failed' }
   }

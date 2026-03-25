@@ -56,8 +56,8 @@ const AUTOMATIONS: AutomationCard[] = [
     description: 'Sync contacts to Klaviyo lists and trigger flows. Great for e-commerce and lifecycle email marketing.',
     logo:        '📊',
     fields: [
-      { name: 'api_key', label: 'Private API Key', type: 'password', placeholder: 'pk_…', hint: 'Found in Klaviyo → Settings → API Keys → Create Private API Key' },
-      { name: 'list_id', label: 'List ID',         type: 'text',     placeholder: 'Your Klaviyo list ID', hint: 'Found in Lists & Segments → your list → Settings' },
+      { name: 'api_key', label: 'Private API Key', type: 'password', placeholder: 'pk_…', hint: 'Klaviyo → Settings → API Keys → Create Private API Key → set Lists & Profiles to Full Access' },
+      { name: 'list_id', label: 'List ID',         type: 'text',     placeholder: 'Your Klaviyo list ID', hint: 'Open your list in Klaviyo — the List ID is in the URL: klaviyo.com/list/YOUR_ID/members' },
     ],
     docsUrl: 'https://developers.klaviyo.com/en/reference/api-overview',
   },

@@ -1099,6 +1099,7 @@ export async function saveSageIntegration(provider: string, config: Record<strin
     )
 
   if (error) throw new Error(error.message)
+  revalidatePath('/integrations')
   revalidatePath('/sage/integrations')
 }
 

@@ -279,7 +279,7 @@ export default async function IntegrationsPage({
       </section>
 
       {/* Form Lead Sources — Google Ads + Meta, Mailchimp + Klaviyo, GF/WPForms/Typeform */}
-      <section className="mb-8">
+      <section id="sage-email-marketing" className="mb-8">
         <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Form Lead Sources</h2>
         <SourcesClient
           sources={adSources}
@@ -290,6 +290,15 @@ export default async function IntegrationsPage({
           showEmailProviders={['mailchimp', 'klaviyo']}
           hideEmailHeading
         />
+        <div className="mt-4">
+          <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3 px-1">Email Marketing — API Connections</p>
+          <IntegrationsClient
+            connected={sageConnected}
+            standalone={false}
+            providers={['klaviyo', 'activecampaign']}
+            connectedProviderInfo={connectedProviderInfo}
+          />
+        </div>
         <div className="mt-4">
           <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3 px-1">Form Plugins</p>
           <IntegrationsClient

@@ -241,6 +241,15 @@ const POSTS = [
   // Sage CRM integration tutorials
   {
     category: 'Tutorial',
+    title: 'Connect Google Forms to Sage',
+    excerpt: 'Receive Google Form submissions inside Appalix Sage automatically — no paid add-ons required. A one-time Apps Script setup sends every response to your Sage inbox in real time.',
+    readTime: '8 min read',
+    date: 'Mar 25, 2026',
+    emoji: '📊',
+    slug: 'connect-google-forms',
+  },
+  {
+    category: 'Tutorial',
     title: 'Connect Stripe to Sage CRM',
     excerpt: 'Create and send payment invoices directly from Sage deal records using Stripe. Get your Secret Key from the Stripe Dashboard, paste it into Sage Integrations, and start billing from your CRM.',
     readTime: '6 min read',
