@@ -137,7 +137,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     category:    'forms',
     fields: [
       { name: 'access_token', label: 'Personal Access Token', type: 'password', placeholder: 'tfp_…', hint: 'Found in Typeform → Account → Personal tokens → Create a new token' },
-      { name: 'form_id',      label: 'Form ID (optional)',    type: 'text',     placeholder: 'Leave blank to receive all forms', hint: 'Copy from your Typeform URL: typeform.com/to/{form_id}' },
+      { name: 'form_id',      label: 'Form ID (optional)',    type: 'text',     placeholder: 'Leave blank to receive all forms', hint: 'Copy from your Typeform URL: typeform.com/to/{form_id}', optional: true },
     ],
     docsUrl:      'https://www.typeform.com/developers/webhooks/',
     webhookPath:  '/api/webhooks/typeform',
