@@ -113,8 +113,8 @@ export async function POST(req: NextRequest) {
   // Route to the right retrieval mode based on classifier output.
   // Existing 'structured' path is unchanged; 'semantic' and 'hybrid' are new.
   let context: RetrievedContext
-  // Force structured retrieval for general/briefing/alerts — never leave them with no data
-  const mode = (classification.retrieval === 'none' && ['general', 'briefing', 'alerts', 'activities', 'reminders'].includes(classification.category))
+  // Force structured retrieval for general/briefing/alerts/forms — never leave them with no data
+  const mode = (classification.retrieval === 'none' && ['general', 'briefing', 'alerts', 'activities', 'reminders', 'forms'].includes(classification.category))
     ? 'structured'
     : classification.retrieval
 
@@ -136,15 +136,19 @@ export async function POST(req: NextRequest) {
 
   const { reply, followUps } = await composeSageAnswer(query, classification, context, enrichedContext, ws.name, userName)
 
-  // Auto-navigate for category queries that map to a specific page
+  // Auto-navigate for category queries that map to a specific page.
+  // If the user is already on the main dashboard, open the activity feed section
+  // directly (collapse donuts + show the right grid) rather than navigating away.
+  const isOnDashboard = pageContext.includes('MAIN DASHBOARD')
   const CATEGORY_NAV: Record<string, string> = {
     pipeline:      '/sage/pipelines',
     deals:         '/sage/pipelines',
-    tickets:       '/sage/tickets',
-    emails:        '/dashboard/email',
-    conversations: '/dashboard/bots',
+    tickets:       isOnDashboard ? '/dashboard?section=tickets' : '/sage/tickets',
+    emails:        isOnDashboard ? '/dashboard?section=emails'  : '/dashboard/email',
+    conversations: isOnDashboard ? '/dashboard?section=bots'    : '/dashboard/bots',
     contacts:      '/sage/contacts',
     analytics:     '/sage/contacts',
+    forms:         '/dashboard?section=forms',
   }
   const navigateTo = CATEGORY_NAV[classification.category]
 

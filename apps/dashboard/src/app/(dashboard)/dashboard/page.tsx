@@ -1,3 +1,4 @@
+import { Suspense }     from 'react'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect }     from 'next/navigation'
 import type { Metadata } from 'next'
@@ -136,17 +137,19 @@ export default async function DashboardPage({
           <TeamMemberBanner activity={overviewActivity} date={overviewActivityDate} currentPath="/dashboard" viewingAs={viewingAs} selectedDate={activityDate} />
         </div>
       )}
-      <SageDashboardClient
-        workspaceId={membership.workspace_id}
-        callerRole={membership.role as WorkspaceMemberRole}
-        currentUserId={user.id}
-        viewAsUserId={viewAsUserId}
-        viewAsName={viewAsName}
-        teamMembers={teamMembers}
-        userName={firstName}
-        emailConnected={emailConnected}
-        connectProvider={connectProvider}
-      />
+      <Suspense>
+        <SageDashboardClient
+          workspaceId={membership.workspace_id}
+          callerRole={membership.role as WorkspaceMemberRole}
+          currentUserId={user.id}
+          viewAsUserId={viewAsUserId}
+          viewAsName={viewAsName}
+          teamMembers={teamMembers}
+          userName={firstName}
+          emailConnected={emailConnected}
+          connectProvider={connectProvider}
+        />
+      </Suspense>
     </>
   )
 }

@@ -429,9 +429,11 @@ export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt }: S
           // Strip query params/hash for comparison
           const currentBase = pathname.split('?')[0].split('#')[0]
           const targetBase  = target.split('?')[0].split('#')[0]
-          if (targetBase === currentBase) {
+          if (targetBase === currentBase && target === currentBase) {
+            // Same page, no query params — just refresh server data
             router.refresh()
           } else {
+            // Different page OR same page with new query params (e.g. ?section=bots)
             router.push(target)
           }
         }, 1800)

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { PieChart, Pie, Cell, Tooltip } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import {
   Mail, MessageSquare, FileText, Ticket as TicketIcon,
   Plus, Kanban, Zap, RefreshCw, Calendar,
@@ -1357,11 +1357,30 @@ export function SageDashboardClient({
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
   const [donutsCollapsed, setDonutsCollapsed] = useState(false)
   const [loadingDonut,    setLoadingDonut]    = useState<string | null>(null)
-  const router   = useRouter()
-  const pathname = usePathname()
+  const router      = useRouter()
+  const pathname    = usePathname()
+  const searchParams = useSearchParams()
 
   // Clear donut loading state once navigation settles
   useEffect(() => { setLoadingDonut(null) }, [pathname])
+
+  // Sage activity-feed trigger: ?section=bots|emails|tickets|forms
+  // Collapses the overview donuts and opens the relevant grid section.
+  useEffect(() => {
+    const section = searchParams.get('section')
+    const sectionMap: Record<string, 'bot' | 'email' | 'ticket' | 'form'> = {
+      bots:    'bot',
+      emails:  'email',
+      tickets: 'ticket',
+      forms:   'form',
+    }
+    const type = section ? sectionMap[section] : null
+    if (type) {
+      setDonutsCollapsed(true)
+      setFeedView('grid')
+      setTopType(type)
+    }
+  }, [searchParams])
   const [pipelines, setPipelines] = useState<{ id: string; name: string }[]>([])
   const [defaultPipelineId, setDefaultPipelineId] = useState<string | null>(null)
   const [contactMatches, setContactMatches] = useState<Record<string, ContactMatch | null | undefined>>({})

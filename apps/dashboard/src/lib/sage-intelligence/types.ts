@@ -25,6 +25,7 @@ export type SageQueryCategory =
   | 'tickets'
   | 'emails'
   | 'conversations'
+  | 'forms'
   | 'companies'
   | 'activities'
   | 'reminders'
@@ -62,6 +63,7 @@ export interface RetrievedContext {
   tickets?:       RetrievedRecord[]
   emails?:        RetrievedRecord[]
   conversations?: RetrievedRecord[]
+  forms?:         RetrievedRecord[]
   activities?:    RetrievedRecord[]
   reminders?:     RetrievedRecord[]
   stats?:         Record<string, number | string>

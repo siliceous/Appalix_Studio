@@ -7,7 +7,13 @@ function formatContext(ctx: RetrievedContext): string {
   const parts: string[] = []
 
   if (ctx.stats) {
-    parts.push('## Stats\n' + JSON.stringify(ctx.stats, null, 2))
+    const { noEntriesForPeriod, ...otherStats } = ctx.stats
+    if (noEntriesForPeriod) {
+      parts.push('## Note\nNo entries found for the requested period. Showing most recent records instead.')
+    }
+    if (Object.keys(otherStats).length > 0) {
+      parts.push('## Stats\n' + JSON.stringify(otherStats, null, 2))
+    }
   }
   if (ctx.contacts?.length) {
     parts.push(
@@ -46,6 +52,17 @@ function formatContext(ctx: RetrievedContext): string {
         .map(e => {
           const m = e.metadata as Record<string, unknown>
           return `- ${e.label} [${m.ai_priority ?? ''}]${e.summary ? ': ' + e.summary : ''}`
+        })
+        .join('\n'),
+    )
+  }
+  if (ctx.forms?.length) {
+    parts.push(
+      '## Form Submissions (' + ctx.forms.length + ')\n' +
+      ctx.forms
+        .map(f => {
+          const m = f.metadata as Record<string, unknown>
+          return `- ${f.label} [${m.ai_priority ?? ''}${m.actioned_at ? ' · actioned' : ' · new'}]${f.summary ? ': ' + f.summary : ''}`
         })
         .join('\n'),
     )
@@ -94,7 +111,8 @@ export async function composeSageAnswer(
   const system = `You are Sage, an AI copilot for ${workspaceName}. You are helping ${userName}.
 Be concise, friendly, and actionable. Format with short bullets when listing items.
 Always be specific — use names, numbers, statuses from the data. Never make up data not provided.
-If data is empty, say so honestly and suggest what the user can do.
+If data is empty or a "noEntriesForPeriod" stat is present, acknowledge no new entries for the requested period, then show the most recent records from the data as a helpful activity overview (do NOT say there is no data if records are present).
+Opening context: when you have data for forms/emails/bots/tickets, you are already opening that section for the user — say "Opening your [section] — " before summarising.
 Today: ${new Date().toISOString().slice(0, 10)}`
 
   const userMsg = `User is on: ${pageContext}
@@ -141,6 +159,7 @@ function generateFollowUps(cls: SageQueryClassification, context?: RetrievedCont
     activities:    ['Show overdue reminders', 'Show open tickets', 'What did I work on this week?'],
     general:       ['Show my open deals', 'Show overdue reminders', 'How many contacts do I have?'],
     conversations: ['Show unanalysed conversations', 'Which conversations have hot leads?'],
+    forms:         ['Show new form submissions', 'Show high-priority form entries', 'Show actioned form submissions'],
   }
   return map[cls.category] ?? ['Show my open deals', 'Show overdue reminders', "What's new this week?"]
 }
@@ -189,6 +208,13 @@ function buildItemFollowUps(category: string, context?: RetrievedContext): strin
   if (category === 'conversations') {
     records = (context.conversations ?? []) as Rec[]
     return records.slice(0, 9).map(r => `Summarise the conversation "${r.label}"`)
+  }
+  if (category === 'forms') {
+    records = (context.forms ?? []) as Rec[]
+    return records.slice(0, 9).map(r => {
+      const name = r.label.split(' <')[0]
+      return `Tell me about the form entry from ${name}`
+    })
   }
   return []
 }

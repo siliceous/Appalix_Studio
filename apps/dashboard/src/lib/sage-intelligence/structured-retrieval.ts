@@ -150,6 +150,50 @@ export async function runStructuredRetrieval(
       break
     }
 
+    case 'forms': {
+      const buildFormQuery = (withDateFilter: boolean) => {
+        let q = admin
+          .from('sage_form_submissions')
+          .select('id, fields, ai_summary, ai_priority, ai_entities, assigned_to, actioned_at, action_type, created_at, form_id, source_platform')
+          .eq('workspace_id', workspaceId)
+          .is('deleted_at', null)
+          .order('created_at', { ascending: false })
+          .limit(limit)
+        if (assignedToFilter) q = q.in('assigned_to', assignedToFilter)
+        if (filters.priority)  q = q.eq('ai_priority', filters.priority)
+        if (filters.status === 'actioned') q = q.not('actioned_at', 'is', null)
+        if (filters.status === 'new')      q = q.is('actioned_at', null)
+        if (withDateFilter && filters.dateRange?.from) q = q.gte('created_at', filters.dateRange.from)
+        if (withDateFilter && filters.dateRange?.to)   q = q.lte('created_at', filters.dateRange.to)
+        return q
+      }
+
+      let { data } = await buildFormQuery(true)
+      // If date-filtered query returned nothing, fall back to most recent entries
+      // so the AI can show "no new entries today, but here are recent submissions"
+      const hadDateFilter = !!(filters.dateRange?.from || filters.dateRange?.to)
+      if (hadDateFilter && (!data || data.length === 0)) {
+        const fallback = await buildFormQuery(false)
+        data = fallback.data
+        // Signal to the AI that results are fallback (no entries for the requested period)
+        ctx.stats = { ...ctx.stats, noEntriesForPeriod: 1 }
+      }
+
+      ctx.forms = (data ?? []).map((f: Record<string, unknown>) => {
+        const fields = f.fields as Record<string, string> | null
+        const name  = fields?.name ?? fields?.full_name ?? fields?.first_name ?? '(unknown)'
+        const email = fields?.email ?? ''
+        return {
+          id:      f.id as string,
+          type:    'form',
+          label:   email ? `${name} <${email}>` : name,
+          summary: f.ai_summary as string | undefined,
+          metadata: f,
+        }
+      })
+      break
+    }
+
     case 'activities':
     case 'reminders': {
       // Fetch ALL pending reminders (overdue + upcoming)

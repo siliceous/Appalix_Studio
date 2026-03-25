@@ -13,6 +13,7 @@ Categories:
 - tickets: support tickets, issues, tasks
 - emails: email inbox, messages, threads
 - conversations: bot conversations, chat history
+- forms: form submissions, lead forms, website forms, form entries, form responses
 - activities: pending work, tasks, what to do, workload ("pending", "my tasks", "what should I do")
 - reminders: reminders, follow-ups, due dates, overdue items
 - team: team members, roles, who is on the team
