@@ -112,7 +112,7 @@ ${dataStr}`
     })
 
     const reply = response.content[0]?.type === 'text' ? response.content[0].text : 'No response.'
-    const followUps = generateFollowUps(classification)
+    const followUps = generateFollowUps(classification, context)
 
     return { reply, followUps }
   } catch {
@@ -123,7 +123,13 @@ ${dataStr}`
   }
 }
 
-function generateFollowUps(cls: SageQueryClassification): string[] {
+function generateFollowUps(cls: SageQueryClassification, context?: RetrievedContext): string[] {
+  // Overdue-aware follow-ups when we know there are overdue reminders
+  const hasOverdue = (context?.reminders ?? []).some(r => (r.metadata as Record<string, unknown>)?.overdue)
+  if (hasOverdue) {
+    return ['Show me the overdue reminder details', 'Show my open deals', 'Show open tickets']
+  }
+
   const map: Record<string, string[]> = {
     contacts:      ['Show high-priority contacts', 'Find contacts without a deal', 'Show recently added contacts'],
     deals:         ['Show deals closing this week', 'Show stale deals', 'Which deals are high priority?'],
@@ -131,8 +137,10 @@ function generateFollowUps(cls: SageQueryClassification): string[] {
     emails:        ['Show high-priority emails', 'Which emails need a reply?', 'Show emails from this week'],
     analytics:     ['How many deals were won this month?', 'Show pipeline breakdown', 'How is my team performing?'],
     pipeline:      ['Show deals by stage', 'Which pipeline has the most value?', 'Show won deals this month'],
-    reminders:     ['What is due today?', 'Show all upcoming tasks', 'Any overdue items?'],
+    reminders:     ['Show overdue reminders', 'What is due today?', 'Show all upcoming tasks'],
+    activities:    ['Show overdue reminders', 'Show open tickets', 'What did I work on this week?'],
+    general:       ['Show my open deals', 'Show overdue reminders', 'How many contacts do I have?'],
     conversations: ['Show unanalysed conversations', 'Which conversations have hot leads?'],
   }
-  return map[cls.category] ?? ["Show my deals", "Show today's reminders", "What's new this week?"]
+  return map[cls.category] ?? ["Show my open deals", "Show overdue reminders", "What's new this week?"]
 }

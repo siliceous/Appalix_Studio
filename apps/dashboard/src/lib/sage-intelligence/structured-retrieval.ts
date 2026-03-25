@@ -268,24 +268,50 @@ export async function runStructuredRetrieval(
           id: t.id as string, type: 'ticket', label: t.title as string, metadata: t,
         }))
       } else {
-        // No name — return workspace overview stats
-        const [dealsRes, contactsRes, ticketsRes, remRes] = await Promise.all([
+        // No name — return workspace overview stats + actual reminder records
+        const now = new Date().toISOString()
+        const [dealsRes, contactsRes, ticketsRes, overdueRemRes, upcomingRemRes] = await Promise.all([
           admin.from('sage_deals').select('id, status, value', { count: 'exact' }).eq('workspace_id', workspaceId),
           admin.from('sage_contacts').select('id', { count: 'exact' }).eq('workspace_id', workspaceId),
           admin.from('sage_tickets').select('id, status', { count: 'exact' }).eq('workspace_id', workspaceId),
-          admin.from('sage_reminders').select('id, due_at').eq('workspace_id', workspaceId).eq('is_sent', false),
+          // Actual overdue reminders — so Sage can name them
+          admin.from('sage_reminders')
+            .select('id, title, note, due_at, deal_id, contact_id')
+            .eq('workspace_id', workspaceId)
+            .eq('is_sent', false)
+            .lt('due_at', now)
+            .order('due_at', { ascending: true })
+            .limit(5),
+          // Upcoming today
+          admin.from('sage_reminders')
+            .select('id, title, due_at')
+            .eq('workspace_id', workspaceId)
+            .eq('is_sent', false)
+            .gte('due_at', now)
+            .order('due_at', { ascending: true })
+            .limit(5),
         ])
-        const now = new Date().toISOString()
         const deals = (dealsRes.data ?? []) as Array<{ status: string; value: number | null }>
         ctx.stats = {
-          totalContacts:   contactsRes.count ?? 0,
-          totalDeals:      dealsRes.count ?? 0,
-          openDeals:       deals.filter(d => d.status === 'open').length,
-          wonDeals:        deals.filter(d => d.status === 'won').length,
-          openTickets:     ((ticketsRes.data ?? []) as Array<{ status: string }>).filter(t => t.status === 'open').length,
-          overdueReminders: ((remRes.data ?? []) as Array<{ due_at: string }>).filter(r => r.due_at < now).length,
-          upcomingReminders: ((remRes.data ?? []) as Array<{ due_at: string }>).filter(r => r.due_at >= now).length,
+          totalContacts:     contactsRes.count ?? 0,
+          totalDeals:        dealsRes.count ?? 0,
+          openDeals:         deals.filter(d => d.status === 'open').length,
+          wonDeals:          deals.filter(d => d.status === 'won').length,
+          openTickets:       ((ticketsRes.data ?? []) as Array<{ status: string }>).filter(t => t.status === 'open').length,
         }
+        // Attach actual reminders as context so Sage can mention titles
+        const overdue   = (overdueRemRes.data ?? []) as Record<string, unknown>[]
+        const upcoming  = (upcomingRemRes.data ?? []) as Record<string, unknown>[]
+        ctx.reminders = [
+          ...overdue.map(r => ({
+            id: r.id as string, type: 'reminder', label: r.title as string,
+            metadata: { ...r as object, overdue: true },
+          })),
+          ...upcoming.map(r => ({
+            id: r.id as string, type: 'reminder', label: r.title as string,
+            metadata: { ...r as object, overdue: false },
+          })),
+        ]
       }
       break
     }
