@@ -8,7 +8,7 @@ import type { WorkspaceMember, LeadAdSource, SageIntegration } from '@/lib/types
 
 const EMAIL_PROVIDERS = ['mailchimp', 'activecampaign', 'convertkit', 'klaviyo', 'constantcontact'] as const
 const SYNC_PROVIDERS  = ['mailchimp', 'activecampaign'] as const
-const FORM_PROVIDERS  = ['gravity_forms', 'wpforms', 'typeform'] as const
+const FORM_PROVIDERS  = ['gravity_forms', 'wpforms', 'typeform', 'fluent_forms'] as const
 
 export default async function SourcesPage() {
   const supabase = await createClient()
@@ -81,10 +81,11 @@ export default async function SourcesPage() {
 
   // Build webhook URLs with secrets for GF / WPForms
   const formWebhookUrls: Record<string, string> = {}
+  const SLUG_MAP: Record<string, string> = { gravity_forms: 'gravity-forms', fluent_forms: 'fluent-forms' }
   for (const row of formRows) {
-    if (row.provider === 'gravity_forms' || row.provider === 'wpforms') {
+    if (row.provider === 'gravity_forms' || row.provider === 'wpforms' || row.provider === 'fluent_forms') {
       const secret = row.config?.webhook_secret ?? ''
-      const slug   = row.provider === 'gravity_forms' ? 'gravity-forms' : row.provider
+      const slug   = SLUG_MAP[row.provider] ?? row.provider
       const base   = `${baseUrl}/api/webhooks/${slug}/${workspaceId}`
       formWebhookUrls[row.provider] = secret ? `${base}?secret=${encodeURIComponent(secret)}` : base
     }
@@ -113,7 +114,7 @@ export default async function SourcesPage() {
         <IntegrationsClient
           connected={formConnected}
           standalone={false}
-          providers={['gravity_forms', 'wpforms', 'typeform']}
+          providers={['gravity_forms', 'wpforms', 'typeform', 'fluent_forms']}
           workspaceId={workspaceId}
           formWebhookUrls={formWebhookUrls}
         />

@@ -142,6 +142,18 @@ const INTEGRATIONS: IntegrationCard[] = [
     docsUrl:      'https://www.typeform.com/developers/webhooks/',
     webhookPath:  '/api/webhooks/typeform',
   },
+  {
+    provider:    'fluent_forms',
+    name:        'Fluent Forms',
+    description: 'Push Fluent Forms submissions directly into Sage for AI analysis and lead management. Uses the Fluent Forms Webhook feed.',
+    logo:        '🧩',
+    category:    'forms',
+    fields: [
+      { name: 'webhook_secret', label: 'Webhook Secret', type: 'password', placeholder: 'Optional — leave blank to skip verification', hint: 'If set, your webhook URL will include ?secret=… automatically. Leave blank if you just want the plain URL.', optional: true },
+    ],
+    docsUrl:     'https://fluentforms.com/docs/webhooks/',
+    webhookPath: '/api/webhooks/fluent-forms',
+  },
   // ── Email Marketing ───────────────────────────────────────────────────────
   {
     provider:    'mailchimp',
@@ -270,14 +282,14 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
     }))
   }
 
-  const FORM_PROVIDERS = new Set(['gravity_forms', 'wpforms', 'typeform'])
+  const FORM_PROVIDERS = new Set(['gravity_forms', 'wpforms', 'typeform', 'fluent_forms'])
 
   function handleConnect(provider: SageIntegrationProvider) {
     const config = formValues[provider] ?? {}
     setSaving(provider)
     startTransition(async () => {
       if (FORM_PROVIDERS.has(provider)) {
-        const result = await connectFormIntegration(provider as 'gravity_forms' | 'wpforms' | 'typeform', config)
+        const result = await connectFormIntegration(provider as 'gravity_forms' | 'wpforms' | 'typeform' | 'fluent_forms', config)
         setConnectResult(prev => ({ ...prev, [provider]: result }))
       } else {
         await saveSageIntegration(provider, config)
@@ -296,7 +308,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
     setSaving(provider)
     startTransition(async () => {
       if (FORM_PROVIDERS.has(provider)) {
-        await disconnectFormIntegration(provider as 'gravity_forms' | 'wpforms' | 'typeform')
+        await disconnectFormIntegration(provider as 'gravity_forms' | 'wpforms' | 'typeform' | 'fluent_forms')
       } else {
         await disconnectSageIntegration(provider)
       }
@@ -313,7 +325,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
   function handleTest(provider: SageIntegrationProvider) {
     setTestResult(prev => ({ ...prev, [provider]: { loading: true } }))
     startTransition(async () => {
-      const result = await sendTestFormWebhook(provider as 'gravity_forms' | 'wpforms' | 'typeform')
+      const result = await sendTestFormWebhook(provider as 'gravity_forms' | 'wpforms' | 'typeform' | 'fluent_forms')
       setTestResult(prev => ({ ...prev, [provider]: { ok: result.ok, error: result.error } }))
     })
   }

@@ -259,7 +259,7 @@ export type SageContactVisibility   = 'everyone' | 'team' | 'only_me'
 export type SageIntegrationProvider =
   | 'stripe' | 'gmail' | 'microsoft' | 'zapier' | 'make' | 'freshdesk' | 'zendesk'
   | 'mailchimp' | 'activecampaign' | 'convertkit' | 'klaviyo' | 'constantcontact'
-  | 'gravity_forms' | 'wpforms' | 'typeform'
+  | 'gravity_forms' | 'wpforms' | 'typeform' | 'fluent_forms'
 export type SageIntegrationStatus   = 'connected' | 'disconnected' | 'error'
 export type SageActivityEntityType  = 'contact' | 'deal' | 'ticket' | 'company'
 
