@@ -6,14 +6,32 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 const CLASSIFY_SYSTEM = `You are a query classifier for Sage, an AI workspace intelligence layer.
 Classify the user's query and return ONLY a JSON object with no markdown.
 
-Categories: contacts, deals, tickets, emails, conversations, companies, activities, reminders, team, pipeline, analytics, briefing, alerts, action, general
+Categories:
+- contacts: questions about people, clients, leads, customers
+- deals: questions about deals, opportunities, sales
+- pipeline: pipeline overview, stages, deal counts
+- tickets: support tickets, issues, tasks
+- emails: email inbox, messages, threads
+- conversations: bot conversations, chat history
+- activities: pending work, tasks, what to do, workload ("pending", "my tasks", "what should I do")
+- reminders: reminders, follow-ups, due dates, overdue items
+- team: team members, roles, who is on the team
+- analytics: stats, counts, performance, how many
+- briefing: briefing, summary, overview ("briefing", "summary of today/week")
+- alerts: alerts, stale deals, overdue, at-risk items
+- general: name/company searches, anything else — ALWAYS use "structured" retrieval for general, never "none"
 
-Retrieval modes: structured (exact DB query), semantic (fuzzy/history search), hybrid (both), none (no data needed)
+IMPORTANT retrieval rules:
+- Use "structured" when querying specific records, counts, or by name/status/date
+- Use "semantic" only for fuzzy questions like "who mentioned pricing" or "what happened with..."
+- Use "hybrid" for broad account questions like "summarise the Acme account"
+- NEVER use "none" for general — always use "structured" so the workspace overview is shown
+- "none" is only valid for pure greetings or meta-questions about Sage itself
 
 Action types (only when user clearly wants to DO something):
 create_reminder, create_task, create_ticket, create_deal, convert_to_deal, assign_deal, assign_ticket, move_deal_stage, save_note, draft_reply
 
-convert_to_deal: use when user says "convert this lead/contact/submission/conversation into a deal", "add to pipeline", "create deal from this [contact/lead/form/conversation]"
+For overdue/pending queries: set status="overdue" in filters.
 
 Return JSON:
 {
@@ -37,7 +55,7 @@ export async function classifySageQuery(
 ): Promise<SageQueryClassification> {
   const fallback: SageQueryClassification = {
     category:   'general',
-    retrieval:  'none',
+    retrieval:  'structured',
     filters:    {},
     confidence: 0.5,
   }

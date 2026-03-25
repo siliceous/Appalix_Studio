@@ -113,7 +113,10 @@ export async function POST(req: NextRequest) {
   // Route to the right retrieval mode based on classifier output.
   // Existing 'structured' path is unchanged; 'semantic' and 'hybrid' are new.
   let context: RetrievedContext
-  const mode = classification.retrieval
+  // Force structured retrieval for general/briefing/alerts — never leave them with no data
+  const mode = (classification.retrieval === 'none' && ['general', 'briefing', 'alerts', 'activities', 'reminders'].includes(classification.category))
+    ? 'structured'
+    : classification.retrieval
 
   if (mode === 'semantic') {
     const entityTypes = inferEntityTypesFromCategory(classification.category)

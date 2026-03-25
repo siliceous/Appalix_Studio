@@ -152,22 +152,45 @@ export async function runStructuredRetrieval(
 
     case 'activities':
     case 'reminders': {
-      // Fetch upcoming reminders + deal activities
+      // Fetch ALL pending reminders (overdue + upcoming)
       const now = new Date().toISOString()
-      const { data: reminders } = await admin
+      const isOverdueQuery = filters.status === 'overdue'
+      let remQ = admin
         .from('sage_reminders')
         .select('id, title, note, due_at, created_by, deal_id, contact_id')
         .eq('workspace_id', workspaceId)
         .eq('is_sent', false)
-        .gte('due_at', now)
         .order('due_at', { ascending: true })
         .limit(limit)
+      if (isOverdueQuery) {
+        remQ = remQ.lt('due_at', now)
+      }
+      const { data: reminders } = await remQ
       ctx.reminders = (reminders ?? []).map((r: Record<string, unknown>) => ({
         id:       r.id as string,
         type:     'reminder',
         label:    r.title as string,
-        metadata: r,
+        metadata: { ...r as object, overdue: (r.due_at as string) < now },
       }))
+
+      // For 'activities' / pending work — also include open tickets
+      if (classification.category === 'activities') {
+        let tQ = admin
+          .from('sage_tickets')
+          .select('id, title, status, priority, assigned_to, created_at')
+          .eq('workspace_id', workspaceId)
+          .eq('status', 'open')
+          .order('created_at', { ascending: false })
+          .limit(limit)
+        if (assignedToFilter) tQ = tQ.in('assigned_to', assignedToFilter)
+        const { data: tickets } = await tQ
+        ctx.tickets = (tickets ?? []).map((t: Record<string, unknown>) => ({
+          id:       t.id as string,
+          type:     'ticket',
+          label:    t.title as string,
+          metadata: t,
+        }))
+      }
       break
     }
 
@@ -215,6 +238,55 @@ export async function runStructuredRetrieval(
         .eq('workspace_id', workspaceId)
         .not('accepted_at', 'is', null)
       ctx.stats = { teamSize: (members ?? []).length }
+      break
+    }
+
+    case 'general':
+    case 'alerts':
+    case 'briefing': {
+      const name = filters.entity?.name
+      if (name) {
+        // Name-based broad search — search contacts, deals, companies by name
+        const [contactsRes, dealsRes, ticketsRes] = await Promise.all([
+          admin.from('sage_contacts').select('id, name, email, company_name, ai_summary, ai_priority')
+            .eq('workspace_id', workspaceId).ilike('name', `%${name}%`).limit(5),
+          admin.from('sage_deals').select('id, title, status, priority, value, currency')
+            .eq('workspace_id', workspaceId).or(`title.ilike.%${name}%,company_name.ilike.%${name}%`).limit(5),
+          admin.from('sage_tickets').select('id, title, status, priority')
+            .eq('workspace_id', workspaceId).ilike('title', `%${name}%`).limit(5),
+        ])
+        ctx.contacts = (contactsRes.data ?? []).map((c: Record<string, unknown>) => ({
+          id: c.id as string, type: 'contact',
+          label: `${c.name} <${c.email ?? ''}>`,
+          summary: c.ai_summary as string | undefined,
+          metadata: c,
+        }))
+        ctx.deals = (dealsRes.data ?? []).map((d: Record<string, unknown>) => ({
+          id: d.id as string, type: 'deal', label: d.title as string, metadata: d,
+        }))
+        ctx.tickets = (ticketsRes.data ?? []).map((t: Record<string, unknown>) => ({
+          id: t.id as string, type: 'ticket', label: t.title as string, metadata: t,
+        }))
+      } else {
+        // No name — return workspace overview stats
+        const [dealsRes, contactsRes, ticketsRes, remRes] = await Promise.all([
+          admin.from('sage_deals').select('id, status, value', { count: 'exact' }).eq('workspace_id', workspaceId),
+          admin.from('sage_contacts').select('id', { count: 'exact' }).eq('workspace_id', workspaceId),
+          admin.from('sage_tickets').select('id, status', { count: 'exact' }).eq('workspace_id', workspaceId),
+          admin.from('sage_reminders').select('id, due_at').eq('workspace_id', workspaceId).eq('is_sent', false),
+        ])
+        const now = new Date().toISOString()
+        const deals = (dealsRes.data ?? []) as Array<{ status: string; value: number | null }>
+        ctx.stats = {
+          totalContacts:   contactsRes.count ?? 0,
+          totalDeals:      dealsRes.count ?? 0,
+          openDeals:       deals.filter(d => d.status === 'open').length,
+          wonDeals:        deals.filter(d => d.status === 'won').length,
+          openTickets:     ((ticketsRes.data ?? []) as Array<{ status: string }>).filter(t => t.status === 'open').length,
+          overdueReminders: ((remRes.data ?? []) as Array<{ due_at: string }>).filter(r => r.due_at < now).length,
+          upcomingReminders: ((remRes.data ?? []) as Array<{ due_at: string }>).filter(r => r.due_at >= now).length,
+        }
+      }
       break
     }
 
