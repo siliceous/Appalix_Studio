@@ -540,23 +540,28 @@ export async function createDeal(formData: FormData) {
   const pipelineId    = (formData.get('pipeline_id') as string | null) || null
   const stageId       = (formData.get('stage_id') as string | null) || null
   const contactName   = (formData.get('contact_name') as string | null)?.trim() || null
+  const contactEmail  = (formData.get('contact_email') as string | null)?.trim().toLowerCase() || null
 
-  // Resolve contact: match existing by name (case-insensitive), or auto-create new
+  // Resolve contact: email first → name → auto-create
   let contactId: string | null = null
-  if (contactName) {
-    const { data: existing } = await admin
-      .from('sage_contacts')
-      .select('id')
-      .eq('workspace_id', workspaceId)
-      .ilike('name', contactName)
-      .limit(1)
-      .maybeSingle()
+  if (contactName || contactEmail) {
+    let existing: { id: string } | null = null
+
+    if (contactEmail) {
+      const { data: d } = await admin.from('sage_contacts').select('id').eq('workspace_id', workspaceId).ilike('email', contactEmail).limit(1).maybeSingle()
+      if (d) existing = d as { id: string }
+    }
+    if (!existing && contactName) {
+      const { data: d } = await admin.from('sage_contacts').select('id').eq('workspace_id', workspaceId).ilike('name', contactName).limit(1).maybeSingle()
+      if (d) existing = d as { id: string }
+    }
+
     if (existing) {
-      contactId = (existing as { id: string }).id
+      contactId = existing.id
     } else {
       const { data: created } = await admin
         .from('sage_contacts')
-        .insert({ workspace_id: workspaceId, name: contactName, source: 'manual', contact_type: 'potential_customer', visibility: 'everyone' })
+        .insert({ workspace_id: workspaceId, name: contactName ?? contactEmail ?? 'Unknown', email: contactEmail, source: 'manual', contact_type: 'potential_customer', visibility: 'everyone' })
         .select('id')
         .single()
       if (created) contactId = (created as { id: string }).id

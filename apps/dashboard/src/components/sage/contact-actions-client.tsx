@@ -119,7 +119,7 @@ export function ContactActionsClient({
         <DealModal
           pipelineId={pipelineId}
           stages={stages}
-          contacts={[{ id: contact.id, name: contact.name }]}
+          contacts={[{ id: contact.id, name: contact.name, email: contact.email ?? null }]}
           allPipelines={allPipelines}
           ownerName={ownerName}
           onClose={() => setShowDeal(false)}

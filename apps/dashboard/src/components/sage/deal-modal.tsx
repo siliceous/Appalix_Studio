@@ -9,7 +9,7 @@ import type { SageContact, SagePipelineStage, SagePipeline } from '@/lib/types'
 interface DealModalProps {
   pipelineId:     string
   stages:         SagePipelineStage[]
-  contacts:       Pick<SageContact, 'id' | 'name'>[]
+  contacts:       Pick<SageContact, 'id' | 'name' | 'email'>[]
   allPipelines:   Pick<SagePipeline, 'id' | 'name'>[]
   ownerName:      string
   defaultStageId?: string
@@ -30,6 +30,13 @@ export function DealModal({
 }: DealModalProps) {
   const [pending, startTransition] = useTransition()
   const [closeDate, setCloseDate] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+
+  function handleContactNameChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value.trim().toLowerCase()
+    const match = contacts.find(c => c.name.toLowerCase() === val)
+    setContactEmail(match?.email ?? '')
+  }
 
   function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -105,7 +112,9 @@ export function DealModal({
                 placeholder="Type a name…"
                 className={FIELD_CLS}
                 autoComplete="off"
+                onChange={handleContactNameChange}
               />
+              <input type="hidden" name="contact_email" value={contactEmail} />
               <datalist id="deal-modal-contacts">
                 {contacts.map(c => (
                   <option key={c.id} value={c.name} />

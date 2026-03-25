@@ -72,7 +72,7 @@ export default async function PipelineBoardPage({
     supabase.from('sage_pipelines').select('*').eq('id', id).eq('workspace_id', workspaceId).single(),
     supabase.from('sage_pipeline_stages').select('*').eq('pipeline_id', id).order('position'),
     filteredDealsQ,
-    supabase.from('sage_contacts').select('id, name, company_name').eq('workspace_id', workspaceId).order('name'),
+    supabase.from('sage_contacts').select('id, name, email, company_name').eq('workspace_id', workspaceId).order('name'),
     supabase.from('sage_pipelines').select('id, name').eq('workspace_id', workspaceId).order('created_at'),
     isManager
       ? admin.from('workspace_members').select('user_id, role').eq('workspace_id', workspaceId).not('accepted_at', 'is', null)
@@ -84,7 +84,7 @@ export default async function PipelineBoardPage({
   const pipeline     = pipelineRaw      as SagePipeline
   const stages       = (stagesRaw       ?? []) as SagePipelineStage[]
   const deals        = (dealsRaw        ?? []) as (SageDeal & { contact: Pick<SageContact, 'id' | 'name' | 'email' | 'phone'> | null })[]
-  const contacts     = (contactsRaw     ?? []) as Pick<SageContact, 'id' | 'name' | 'company_name'>[]
+  const contacts     = (contactsRaw     ?? []) as Pick<SageContact, 'id' | 'name' | 'email' | 'company_name'>[]
   const allPipelines = (allPipelinesRaw ?? []) as Pick<SagePipeline, 'id' | 'name'>[]
   const ownerName    = user.email ?? 'You'
 

@@ -22,7 +22,7 @@ interface PipelineBoardProps {
   pipelineId:        string
   stages:            SagePipelineStage[]
   deals:             DealWithContact[]
-  contacts:          Pick<SageContact, 'id' | 'name' | 'company_name'>[]
+  contacts:          Pick<SageContact, 'id' | 'name' | 'email' | 'company_name'>[]
   allPipelines:      Pick<SagePipeline, 'id' | 'name'>[]
   ownerName:         string
   dealLastActivity:  Record<string, string>  // dealId → ISO timestamp of last activity
