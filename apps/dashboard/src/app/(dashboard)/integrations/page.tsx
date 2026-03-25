@@ -65,7 +65,7 @@ export default async function IntegrationsPage({
   const EMAIL_PROVIDERS = ['mailchimp', 'activecampaign', 'convertkit', 'klaviyo', 'constantcontact'] as const
 
   const admin = createAdminClient()
-  const [{ data: rawIntegrations }, { data: sageIntegrationsRaw }, { data: sourcesRaw }, { data: emailIntegrationsRaw }, { data: allConnectedEmailsRaw }, { data: profilesRaw }, { data: membersRaw }, { data: formIntegConfigsRaw }] = await Promise.all([
+  const [{ data: rawIntegrations }, { data: sageIntegrationsRaw }, { data: sourcesRaw }, { data: emailIntegrationsRaw }, { data: allConnectedEmailsRaw }, { data: profilesRaw }, { data: membersRaw }, { data: formIntegConfigsRaw }, { data: allConnectedRaw }] = await Promise.all([
     supabase.from('integrations').select('*, bots(name)').eq('workspace_id', membership.workspace_id).order('created_at', { ascending: false }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('sage_integrations').select('provider, status').eq('workspace_id', membership.workspace_id).eq('user_id', user.id),
@@ -75,6 +75,9 @@ export default async function IntegrationsPage({
     // All connected email integrations for this workspace (gmail + microsoft) — to show per-provider info
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('sage_integrations').select('provider, user_id, config').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', ['gmail', 'microsoft']),
+    // All connected sage integrations — for connector name/role display
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any).from('sage_integrations').select('provider, user_id').eq('workspace_id', membership.workspace_id).eq('status', 'connected'),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('user_profiles').select('user_id, first_name, last_name'),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -115,6 +118,7 @@ export default async function IntegrationsPage({
   type ProfileRow = { user_id: string; first_name: string; last_name: string | null }
   type MemberRow  = { user_id: string; role: string }
   type EmailRow   = { provider: string; user_id: string; config: Record<string, string> }
+  type ConnRow    = { provider: string; user_id: string }
   const profileMap = new Map(((profilesRaw ?? []) as ProfileRow[]).map(p => [p.user_id, p]))
   const memberMap  = new Map(((membersRaw  ?? []) as MemberRow[]).map(m => [m.user_id, m]))
   const connectedEmailInfoByProvider: Record<string, { email: string; userName: string; role: string }> = {}
@@ -127,6 +131,15 @@ export default async function IntegrationsPage({
       userName: name,
       role:     m?.role ?? '',
     }
+  }
+
+  // Build connector info for all providers (name + role shown on every connected card)
+  const connectedProviderInfo: Record<string, { userName: string; role: string }> = {}
+  for (const row of (allConnectedRaw ?? []) as ConnRow[]) {
+    const p    = profileMap.get(row.user_id)
+    const m    = memberMap.get(row.user_id)
+    const name = p ? [p.first_name, p.last_name].filter(Boolean).join(' ') : ''
+    connectedProviderInfo[row.provider] = { userName: name, role: m?.role ?? '' }
   }
 
   return (
@@ -250,6 +263,7 @@ export default async function IntegrationsPage({
           onboarding={onboarding === '1'}
           loginHint={hint}
           connectedEmailInfoByProvider={connectedEmailInfoByProvider}
+          connectedProviderInfo={connectedProviderInfo}
         />
       </section>
 
@@ -260,6 +274,7 @@ export default async function IntegrationsPage({
           connected={sageConnected}
           standalone={false}
           providers={['stripe']}
+          connectedProviderInfo={connectedProviderInfo}
         />
       </section>
 
@@ -283,7 +298,7 @@ export default async function IntegrationsPage({
             providers={['gravity_forms', 'wpforms', 'typeform', 'fluent_forms']}
             workspaceId={membership.workspace_id}
             formWebhookUrls={formWebhookUrls}
-            columns={2}
+            connectedProviderInfo={connectedProviderInfo}
           />
         </div>
       </section>
@@ -296,6 +311,7 @@ export default async function IntegrationsPage({
           standalone={false}
           providers={['freshdesk', 'zendesk']}
           columns={2}
+          connectedProviderInfo={connectedProviderInfo}
         />
       </section>
 
@@ -307,6 +323,7 @@ export default async function IntegrationsPage({
           standalone={false}
           providers={['zapier', 'make']}
           columns={2}
+          connectedProviderInfo={connectedProviderInfo}
         />
       </section>
 

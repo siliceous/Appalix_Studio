@@ -252,11 +252,12 @@ interface IntegrationsClientProps {
   providers?:                   SageIntegrationProvider[]
   columns?:                     1 | 2
   connectedEmailInfoByProvider?: Record<string, ConnectedEmailInfo> | null
+  connectedProviderInfo?:        Record<string, { userName: string; role: string }>
   workspaceId?:                 string
   formWebhookUrls?:             Record<string, string>  // pre-built URLs with secrets for GF/WPForms
 }
 
-export function IntegrationsClient({ connected: initialConnected, standalone = true, initialExpanded, onboarding, loginHint, providers, columns, connectedEmailInfoByProvider, workspaceId, formWebhookUrls }: IntegrationsClientProps) {
+export function IntegrationsClient({ connected: initialConnected, standalone = true, initialExpanded, onboarding, loginHint, providers, columns, connectedEmailInfoByProvider, connectedProviderInfo, workspaceId, formWebhookUrls }: IntegrationsClientProps) {
   const [connected,         setConnected]        = useState<Set<string>>(initialConnected)
   const [expanded,          setExpanded]         = useState<string | null>(initialExpanded ?? null)
   const [pending,           startTransition]     = useTransition()
@@ -430,20 +431,32 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                           )}
                         </div>
                         {(() => {
-                          const info = (integration.provider === 'gmail' || integration.provider === 'microsoft')
+                          const emailInfo = (integration.provider === 'gmail' || integration.provider === 'microsoft')
                             ? connectedEmailInfoByProvider?.[integration.provider]
                             : undefined
-                          return info ? (
+                          const providerInfo = isConnected ? connectedProviderInfo?.[integration.provider] : undefined
+
+                          if (emailInfo) return (
                             <div className="flex items-center gap-2 mt-1 flex-wrap">
-                              <span className="text-xs text-gray-700 dark:text-gray-200 font-medium">{info.email}</span>
-                              {info.userName && (
-                                <span className="text-[11px] text-gray-400">· {info.userName}</span>
-                              )}
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${ROLE_COLORS[info.role] ?? ROLE_COLORS.viewer}`}>
-                                {ROLE_LABELS[info.role] ?? info.role}
+                              <span className="text-xs text-gray-700 dark:text-gray-200 font-medium">{emailInfo.email}</span>
+                              {emailInfo.userName && <span className="text-[11px] text-gray-400">· {emailInfo.userName}</span>}
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${ROLE_COLORS[emailInfo.role] ?? ROLE_COLORS.viewer}`}>
+                                {ROLE_LABELS[emailInfo.role] ?? emailInfo.role}
                               </span>
                             </div>
-                          ) : (
+                          )
+                          if (providerInfo?.userName) return (
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              <span className="text-[11px] text-gray-500 dark:text-gray-400">Connected by</span>
+                              <span className="text-xs text-gray-700 dark:text-gray-200 font-medium">{providerInfo.userName}</span>
+                              {providerInfo.role && (
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${ROLE_COLORS[providerInfo.role] ?? ROLE_COLORS.viewer}`}>
+                                  {ROLE_LABELS[providerInfo.role] ?? providerInfo.role}
+                                </span>
+                              )}
+                            </div>
+                          )
+                          return (
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed line-clamp-2">
                               {integration.description}
                             </p>
