@@ -467,6 +467,7 @@ async function fetchConvertKitSubscribers(config: Record<string, string>): Promi
   while (true) {
     const url = new URL('https://api.kit.com/v4/subscribers')
     url.searchParams.set('per_page', '1000')
+    url.searchParams.set('status', 'all')
     if (cursor) url.searchParams.set('after', cursor)
 
     const res = await fetch(url.toString(), {
@@ -482,11 +483,10 @@ async function fetchConvertKitSubscribers(config: Record<string, string>): Promi
     }
     for (const s of data.subscribers ?? []) {
       const firstName = (s.first_name as string | null) ?? ''
-      const lastName  = (s.last_name  as string | null) ?? ''
-      const name      = `${firstName} ${lastName}`.trim() || (s.email as string | undefined) || ''
+      const name      = firstName || (s.email_address as string | undefined) || ''
       results.push({
         name,
-        email:       (s.email as string | null) ?? null,
+        email:       (s.email_address as string | null) ?? null,
         phone:       null,
         company:     null,
         job_title:   null,
