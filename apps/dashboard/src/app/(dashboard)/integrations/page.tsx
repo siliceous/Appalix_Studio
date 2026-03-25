@@ -79,9 +79,9 @@ export default async function IntegrationsPage({
     (admin as any).from('user_profiles').select('user_id, first_name, last_name'),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('workspace_members').select('user_id, role').eq('workspace_id', membership.workspace_id),
-    // Form plugin configs — to build webhook URLs with secrets for GF/WPForms
+    // Form plugin configs — to build webhook URLs with secrets for GF/WPForms/Fluent Forms
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (admin as any).from('sage_integrations').select('provider, config').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', ['gravity_forms', 'wpforms']),
+    (admin as any).from('sage_integrations').select('provider, config').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', ['gravity_forms', 'wpforms', 'fluent_forms']),
   ])
   const integrations      = (rawIntegrations ?? []) as IntegrationRow[]
   const adSources         = (sourcesRaw ?? []) as LeadAdSource[]
@@ -92,12 +92,13 @@ export default async function IntegrationsPage({
   const proto       = host.startsWith('localhost') ? 'http' : 'https'
   const baseUrl     = `${proto}://${host}`
 
-  // Build webhook URLs with secrets for GF / WPForms
+  // Build webhook URLs with secrets for GF / WPForms / Fluent Forms
+  const SLUG_MAP: Record<string, string> = { gravity_forms: 'gravity-forms', fluent_forms: 'fluent-forms' }
   type FormCfgRow = { provider: string; config: Record<string, string> }
   const formWebhookUrls: Record<string, string> = {}
   for (const row of (formIntegConfigsRaw ?? []) as FormCfgRow[]) {
     const secret = row.config?.webhook_secret ?? ''
-    const slug   = row.provider === 'gravity_forms' ? 'gravity-forms' : row.provider
+    const slug   = SLUG_MAP[row.provider] ?? row.provider
     const base   = `${baseUrl}/api/webhooks/${slug}/${membership.workspace_id}`
     formWebhookUrls[row.provider] = secret ? `${base}?secret=${encodeURIComponent(secret)}` : base
   }
@@ -279,7 +280,7 @@ export default async function IntegrationsPage({
           <IntegrationsClient
             connected={sageConnected}
             standalone={false}
-            providers={['gravity_forms', 'wpforms', 'typeform']}
+            providers={['gravity_forms', 'wpforms', 'typeform', 'fluent_forms']}
             workspaceId={membership.workspace_id}
             formWebhookUrls={formWebhookUrls}
             columns={2}
