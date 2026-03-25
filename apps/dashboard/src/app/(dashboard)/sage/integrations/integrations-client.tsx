@@ -2,8 +2,9 @@
 
 import { useState, useTransition, useRef } from 'react'
 import Link from 'next/link'
-import { Check, X, ExternalLink, Loader2, ChevronDown, ChevronUp, BookOpen, FileSignature, Bold, Italic, Underline, ImagePlus, CheckCircle2 } from 'lucide-react'
+import { Check, X, ExternalLink, Loader2, ChevronDown, ChevronUp, BookOpen, FileSignature, Bold, Italic, Underline, ImagePlus, CheckCircle2, RefreshCw } from 'lucide-react'
 import { saveSageIntegration, disconnectSageIntegration, connectFormIntegration, disconnectFormIntegration, sendTestFormWebhook } from '@/app/actions/sage'
+import { syncFromEmailPlatform, toggleEmailPlatformSync } from '@/app/actions/leads'
 import { saveEmailSignature, getEmailSignature } from '@/app/actions/sage-emails'
 import type { SageIntegrationProvider } from '@/lib/types'
 
@@ -18,6 +19,7 @@ interface IntegrationCard {
   tutorialUrl?:  string
   oauthPath?:    string   // e.g. '/api/oauth/google' — if set, OAuth button replaces text fields
   webhookPath?:  string   // e.g. '/api/webhooks/typeform' — shown after connecting
+  canSync?:      boolean  // shows Sync Now button when connected
 }
 
 const INTEGRATIONS: IntegrationCard[] = [
@@ -176,7 +178,9 @@ const INTEGRATIONS: IntegrationCard[] = [
       { name: 'api_url', label: 'API URL',  type: 'url',      placeholder: 'https://youraccountname.api-us1.com', hint: 'Found in ActiveCampaign → Settings → Developer' },
       { name: 'api_key', label: 'API Key',  type: 'password', placeholder: 'Your ActiveCampaign API key' },
     ],
-    docsUrl: 'https://developers.activecampaign.com/reference/overview',
+    docsUrl:     'https://developers.activecampaign.com/reference/overview',
+    tutorialUrl: '/resources/connect-activecampaign',
+    canSync:     true,
   },
   {
     provider:    'convertkit',
@@ -198,7 +202,8 @@ const INTEGRATIONS: IntegrationCard[] = [
       { name: 'api_key', label: 'Private API Key', type: 'password', placeholder: 'pk_…', hint: 'Klaviyo → Settings → API Keys → Create Private API Key → set Lists & Profiles to Full Access' },
       { name: 'list_id', label: 'List ID',         type: 'text',     placeholder: 'Your Klaviyo list ID', hint: 'Open your list in Klaviyo — the List ID is in the URL: klaviyo.com/list/YOUR_ID/members' },
     ],
-    docsUrl: 'https://developers.klaviyo.com/en/reference/api-overview',
+    docsUrl:  'https://developers.klaviyo.com/en/reference/api-overview',
+    canSync:  true,
   },
   {
     provider:    'constantcontact',
@@ -255,9 +260,10 @@ interface IntegrationsClientProps {
   connectedProviderInfo?:        Record<string, { userName: string; role: string }>
   workspaceId?:                 string
   formWebhookUrls?:             Record<string, string>  // pre-built URLs with secrets for GF/WPForms
+  syncEnabledByProvider?:       Record<string, boolean>
 }
 
-export function IntegrationsClient({ connected: initialConnected, standalone = true, initialExpanded, onboarding, loginHint, providers, columns, connectedEmailInfoByProvider, connectedProviderInfo, workspaceId, formWebhookUrls }: IntegrationsClientProps) {
+export function IntegrationsClient({ connected: initialConnected, standalone = true, initialExpanded, onboarding, loginHint, providers, columns, connectedEmailInfoByProvider, connectedProviderInfo, workspaceId, formWebhookUrls, syncEnabledByProvider }: IntegrationsClientProps) {
   const [connected,         setConnected]        = useState<Set<string>>(initialConnected)
   const [expanded,          setExpanded]         = useState<string | null>(initialExpanded ?? null)
   const [pending,           startTransition]     = useTransition()
@@ -270,6 +276,10 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
   const [testResult,        setTestResult]       = useState<Record<string, { ok?: boolean; error?: string; loading?: boolean }>>({})
   const [webhookPanelOpen,  setWebhookPanelOpen] = useState<Record<string, boolean>>({})
   const [copiedProvider,    setCopiedProvider]   = useState<string | null>(null)
+  const [syncingProvider,   setSyncingProvider]  = useState<string | null>(null)
+  const [syncResult,        setSyncResult]       = useState<Record<string, { synced: number; skipped: number; error?: string } | null>>({})
+  const [autoSyncEnabled,   setAutoSyncEnabled]  = useState<Record<string, boolean>>(syncEnabledByProvider ?? {})
+  const [togglingSync,      setTogglingSync]     = useState<string | null>(null)
   const sigRef              = useRef<HTMLDivElement>(null)
   const sigImgRef           = useRef<HTMLInputElement>(null)
 
@@ -322,6 +332,31 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
       })
       setConnectResult(prev => { const n = { ...prev }; delete n[provider]; return n })
       setSaving(null)
+    })
+  }
+
+  function handleToggleAutoSync(provider: SageIntegrationProvider) {
+    const next = !autoSyncEnabled[provider]
+    setAutoSyncEnabled(prev => ({ ...prev, [provider]: next }))
+    setTogglingSync(provider)
+    startTransition(async () => {
+      try {
+        await toggleEmailPlatformSync(provider as 'mailchimp' | 'activecampaign' | 'klaviyo', next)
+      } catch {
+        setAutoSyncEnabled(prev => ({ ...prev, [provider]: !next }))
+      } finally {
+        setTogglingSync(null)
+      }
+    })
+  }
+
+  function handleSync(provider: SageIntegrationProvider) {
+    setSyncingProvider(provider)
+    setSyncResult(prev => ({ ...prev, [provider]: null }))
+    startTransition(async () => {
+      const result = await syncFromEmailPlatform(provider as 'mailchimp' | 'activecampaign' | 'klaviyo')
+      setSyncResult(prev => ({ ...prev, [provider]: result }))
+      setSyncingProvider(null)
     })
   }
 
@@ -499,6 +534,42 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                         )}
 
                         {isConnected ? (
+                          <>
+                          {integration.canSync && (() => {
+                            const syncOn = autoSyncEnabled[integration.provider] ?? false
+                            const isToggling = togglingSync === integration.provider
+                            return (
+                              <>
+                                <button
+                                  onClick={() => handleToggleAutoSync(integration.provider)}
+                                  disabled={isToggling}
+                                  title={syncOn ? 'Turn off auto-sync' : 'Turn on auto-sync'}
+                                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-colors ${
+                                    syncOn
+                                      ? 'border-brand-200 dark:border-[#15A4AE]/30 bg-brand-50 dark:bg-[#15A4AE]/10'
+                                      : 'border-gray-200 dark:border-white/10 bg-white dark:bg-white/5'
+                                  } ${isToggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                >
+                                  <span className={`text-[11px] font-medium ${syncOn ? 'text-brand-600 dark:text-[#15A4AE]' : 'text-gray-400 dark:text-gray-500'}`}>
+                                    Auto Sync
+                                  </span>
+                                  <span className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${syncOn ? 'bg-brand-600' : 'bg-gray-200 dark:bg-white/15'}`}>
+                                    <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${syncOn ? 'translate-x-[14px]' : 'translate-x-[2px]'}`} />
+                                  </span>
+                                </button>
+                                <button
+                                  onClick={() => handleSync(integration.provider)}
+                                  disabled={syncingProvider === integration.provider || pending}
+                                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors disabled:opacity-60"
+                                >
+                                  {syncingProvider === integration.provider
+                                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                                    : <RefreshCw className="w-3 h-3" />}
+                                  Sync Now
+                                </button>
+                              </>
+                            )
+                          })()}
                           <button
                             onClick={() => handleDisconnect(integration.provider)}
                             disabled={isSaving}
@@ -507,6 +578,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                             {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
                             Disconnect
                           </button>
+                          </>
                         ) : integration.oauthPath ? (
                           /* OAuth providers — single-click sign-in */
                           otherEmailConnected ? (
@@ -535,6 +607,28 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                         )}
                       </div>
                     </div>
+
+                    {/* Auto Sync disclaimer */}
+                    {isConnected && integration.canSync && (
+                      <div className="border-t dark:border-white/8 px-4 py-2 text-[11px] text-gray-400 dark:text-gray-500">
+                        {autoSyncEnabled[integration.provider]
+                          ? `Auto sync ON · New and updated Sage contacts are pushed to ${integration.name} automatically`
+                          : `Auto sync OFF · Sage contacts will not be pushed to ${integration.name} automatically · use Sync Now to pull contacts in`}
+                      </div>
+                    )}
+
+                    {/* Sync result banner */}
+                    {syncResult[integration.provider] && (
+                      <div className={`border-t dark:border-white/8 px-4 py-2.5 rounded-b-xl text-xs flex items-center gap-2 ${
+                        syncResult[integration.provider]?.error
+                          ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'
+                          : 'bg-brand-50 dark:bg-[#15A4AE]/10 text-brand-700 dark:text-[#15A4AE]'
+                      }`}>
+                        {syncResult[integration.provider]?.error
+                          ? `Error: ${syncResult[integration.provider]?.error}`
+                          : `Synced ${syncResult[integration.provider]?.synced} contacts · ${syncResult[integration.provider]?.skipped} skipped`}
+                      </div>
+                    )}
 
                     {/* Signature editor — email providers only, when connected */}
                     {isConnected && (integration.provider === 'gmail' || integration.provider === 'microsoft') && (

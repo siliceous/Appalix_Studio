@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   UserPlus, Search, Mail, Phone, Globe, Trash2, Pencil,
@@ -150,6 +150,8 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
   const [sortDir,     setSortDir]     = useState<'asc' | 'desc'>('asc')
   const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(new Set(DEFAULT_VISIBLE))
   const [filters,     setFilters]     = useState<FilterState>(EMPTY_FILTER)
+  const [page,        setPage]        = useState(1)
+  const [pageSize,    setPageSize]    = useState(20)
 
   function togglePanel(p: 'sort' | 'filter' | 'columns') {
     setOpenPanel(prev => prev === p ? null : p)
@@ -207,6 +209,13 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
     }
     return result
   }, [contacts, search, filters, sortField, sortDir])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const safePage   = Math.min(page, totalPages)
+  const paginated  = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
+
+  // Reset to page 1 when filters/search/sort change
+  useEffect(() => setPage(1), [search, filters, sortField, sortDir])
 
   const allSelected = filtered.length > 0 && filtered.every(c => selectedIds.has(c.id))
 
@@ -644,7 +653,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-white/8">
-              {filtered.map(contact => (
+              {paginated.map(contact => (
                 <tr
                   key={contact.id}
                   className={`transition-colors cursor-pointer ${selectedIds.has(contact.id) ? 'bg-brand-50 dark:bg-[#15A4AE]/8' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}
@@ -691,6 +700,29 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
           </table>
         )}
       </div>
+
+      {/* Pagination footer */}
+      {filtered.length > 0 && (
+        <div className="flex items-center justify-between px-4 py-3 border-t dark:border-white/8 text-xs text-gray-500 dark:text-gray-400 shrink-0">
+          <span>{filtered.length} contact{filtered.length !== 1 ? 's' : ''} · page {safePage} of {totalPages}</span>
+          <div className="flex items-center gap-3">
+            <select
+              value={pageSize}
+              onChange={e => { setPageSize(Number(e.target.value)); setPage(1) }}
+              className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 cursor-pointer"
+            >
+              {[10, 20, 50, 100].map(n => <option key={n} value={n}>{n} / page</option>)}
+            </select>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage <= 1}
+                className="px-2.5 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium">← Prev</button>
+              <span className="px-1">{safePage} / {totalPages}</span>
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}
+                className="px-2.5 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium">Next →</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {(showModal || editingContact) && (
         <ContactModal

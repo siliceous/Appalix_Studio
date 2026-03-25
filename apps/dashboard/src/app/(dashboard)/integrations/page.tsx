@@ -133,6 +133,12 @@ export default async function IntegrationsPage({
     }
   }
 
+  // Build sync_enabled map for email marketing providers
+  const syncEnabledByProvider: Record<string, boolean> = {}
+  for (const row of emailIntegrations) {
+    syncEnabledByProvider[row.provider] = row.sync_enabled ?? false
+  }
+
   // Build connector info for all providers (name + role shown on every connected card)
   const connectedProviderInfo: Record<string, { userName: string; role: string }> = {}
   for (const row of (allConnectedRaw ?? []) as ConnRow[]) {
@@ -286,7 +292,8 @@ export default async function IntegrationsPage({
           workspaceId={membership.workspace_id}
           baseUrl={baseUrl}
           emailIntegrations={emailIntegrations}
-          platformLayout="grid-2"
+          platformLayout="stack"
+          emailLayout="stack"
           showEmailProviders={['mailchimp']}
           hideEmailHeading
         />
@@ -297,6 +304,7 @@ export default async function IntegrationsPage({
             standalone={false}
             providers={['klaviyo', 'activecampaign']}
             connectedProviderInfo={connectedProviderInfo}
+            syncEnabledByProvider={syncEnabledByProvider}
           />
         </div>
         <div className="mt-4">

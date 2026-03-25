@@ -604,6 +604,13 @@ export async function syncFromEmailPlatform(
 }
 
 export async function toggleMailchimpSync(enabled: boolean): Promise<void> {
+  return toggleEmailPlatformSync('mailchimp', enabled)
+}
+
+export async function toggleEmailPlatformSync(
+  provider: 'mailchimp' | 'activecampaign' | 'klaviyo',
+  enabled: boolean,
+): Promise<void> {
   const workspaceId = await getWorkspaceId()
   const admin       = createAdminClient()
 
@@ -611,8 +618,10 @@ export async function toggleMailchimpSync(enabled: boolean): Promise<void> {
     .from('sage_integrations')
     .update({ sync_enabled: enabled })
     .eq('workspace_id', workspaceId)
-    .eq('provider', 'mailchimp')
+    .eq('provider', provider)
 
   if (error) throw new Error(error.message)
   revalidatePath('/forms/sources')
+  revalidatePath('/sage/integrations')
+  revalidatePath('/integrations')
 }
