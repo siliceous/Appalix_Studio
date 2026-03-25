@@ -670,7 +670,7 @@ export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt }: S
                       <button
                         key={`${fu}-${i}`}
                         onClick={() => send(fu)}
-                        className="w-full text-left text-[12px] px-3 py-1.5 rounded-lg border border-[#0e7a82]/40 text-[#0a6068] dark:text-[#1fc8d4] hover:bg-[#0e7a82]/10 transition-colors"
+                        className="w-full text-left text-[12px] px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
                       >
                         {fu}
                       </button>

@@ -1506,10 +1506,13 @@ export function SageDashboardClient({
         return q
       })(),
       (() => {
-        let q = supabase.from('leads')
-          .select('id, name, email, phone, company, lead_score, source_platform, created_at')
-          .eq('workspace_id', workspaceId).gte('created_at', from).lte('created_at', to)
+        let q = supabase.from('sage_form_submissions')
+          .select('id, fields, ai_priority, source_platform, created_at, assigned_to')
+          .eq('workspace_id', workspaceId)
+          .is('deleted_at', null)
+          .gte('created_at', from).lte('created_at', to)
           .order('created_at', { ascending: false })
+          .limit(100)
         if (viewAsUserId) q = (q as any).eq('assigned_to', viewAsUserId)
         else if (visibleUserIds.length === 1) q = (q as any).eq('assigned_to', visibleUserIds[0])
         else if (visibleUserIds.length > 1) q = (q as any).in('assigned_to', visibleUserIds)
@@ -1534,7 +1537,19 @@ export function SageDashboardClient({
       if (cancelled) return
       const newEmails  = (eR.data  ?? []) as RawEmail[]
       const newBots    = (bR.data  ?? []) as RawBot[]
-      const newForms   = (fR.data  ?? []) as RawLead[]
+      const newForms = ((fR.data ?? []) as Array<{
+        id: string; fields: Record<string, string> | null; ai_priority: string | null
+        source_platform: string; created_at: string; assigned_to: string | null
+      }>).map(f => ({
+        id:              f.id,
+        name:            f.fields?.name ?? f.fields?.full_name ?? f.fields?.first_name ?? '(unknown)',
+        email:           f.fields?.email ?? null,
+        phone:           f.fields?.phone ?? null,
+        company:         f.fields?.company ?? f.fields?.company_name ?? null,
+        lead_score:      f.ai_priority,
+        source_platform: f.source_platform,
+        created_at:      f.created_at,
+      })) as RawLead[]
       const newTickets = (tR.data  ?? []) as RawTicket[]
       setEmails(newEmails)
       setBots(newBots)
