@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { createHmac, timingSafeEqual } from 'crypto'
-import { normalizeFields, triggerFormAnalysis } from '../../_shared'
+import { normalizeFields, insertFormSubmission, triggerFormAnalysis } from '../../_shared'
 
 export const dynamic = 'force-dynamic'
 
@@ -110,52 +110,9 @@ export async function POST(
     fields[key] = val
   }
 
-  const result = await insertSubmission(a, workspaceId, normalizeFields(fields), 'typeform', formTitle ?? formId ?? null)
+  // rawPayload: Typeform uses field title as key (label-based, not numeric)
+  const rawPayload: Record<string, string> = fields
+  const result = await insertFormSubmission(a, workspaceId, rawPayload, normalizeFields(rawPayload), 'typeform', formTitle ?? formId ?? null)
   if (result && 'formId' in result) triggerFormAnalysis(workspaceId, result.formId)
   return NextResponse.json({ ok: true })
-}
-
-async function insertSubmission(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  a: any,
-  workspaceId: string,
-  fields: Record<string, string>,
-  source: string,
-  formTitle: string | null,
-): Promise<{ formId: string } | null> {
-  const formName = formTitle ?? 'Typeform Submissions'
-  let { data: form } = await a
-    .from('sage_forms')
-    .select('id')
-    .eq('workspace_id', workspaceId)
-    .ilike('name', formName)
-    .maybeSingle()
-
-  if (!form) {
-    const { data: owner } = await a
-      .from('workspace_members')
-      .select('user_id')
-      .eq('workspace_id', workspaceId)
-      .eq('role', 'owner')
-      .limit(1)
-      .maybeSingle()
-
-    const { data: newForm } = await a
-      .from('sage_forms')
-      .insert({ workspace_id: workspaceId, name: formName, is_active: true, created_by: owner?.user_id ?? null })
-      .select('id')
-      .single()
-    form = newForm
-  }
-
-  if (!form?.id) return null
-
-  await a.from('sage_form_submissions').insert({
-    workspace_id:    workspaceId,
-    form_id:         form.id,
-    source_platform: source,
-    fields,
-  })
-
-  return { formId: form.id }
 }

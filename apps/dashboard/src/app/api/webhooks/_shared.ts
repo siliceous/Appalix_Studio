@@ -92,6 +92,64 @@ export function normalizeFields(raw: Record<string, string>): Record<string, str
 }
 
 /**
+ * Insert a form submission with two layers:
+ *  - raw_payload : exact data as received from the source
+ *  - fields      : normalized Appalix fields (name, email, phone, …)
+ *
+ * Finds-or-creates the sage_form record by name.
+ * Returns { formId } on success, { error } on failure.
+ */
+export async function insertFormSubmission(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  a: any,
+  workspaceId: string,
+  rawPayload: Record<string, string>,
+  normalizedFields: Record<string, string>,
+  source: string,
+  formTitle: string | null,
+): Promise<{ error: string } | { formId: string }> {
+  const formName = formTitle ?? `${source.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} Submissions`
+
+  let { data: form } = await a
+    .from('sage_forms')
+    .select('id')
+    .eq('workspace_id', workspaceId)
+    .ilike('name', formName)
+    .maybeSingle()
+
+  if (!form) {
+    const { data: owner } = await a
+      .from('workspace_members')
+      .select('user_id')
+      .eq('workspace_id', workspaceId)
+      .eq('role', 'owner')
+      .limit(1)
+      .maybeSingle()
+
+    const { data: newForm, error: formErr } = await a
+      .from('sage_forms')
+      .insert({ workspace_id: workspaceId, name: formName, is_active: true, created_by: owner?.user_id ?? null })
+      .select('id')
+      .single()
+    if (formErr) return { error: `sage_forms insert failed: ${formErr.message}` }
+    form = newForm
+  }
+
+  if (!form?.id) return { error: 'no form id after insert' }
+
+  const { error: subErr } = await a.from('sage_form_submissions').insert({
+    workspace_id:    workspaceId,
+    form_id:         form.id,
+    source_platform: source,
+    raw_payload:     rawPayload,
+    fields:          normalizedFields,
+  })
+  if (subErr) return { error: `sage_form_submissions insert failed: ${subErr.message}` }
+
+  return { formId: form.id }
+}
+
+/**
  * Fire-and-forget: trigger AI analysis for a form after a new submission
  * is inserted. Does not block the webhook response.
  */
