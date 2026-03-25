@@ -1240,19 +1240,34 @@ export async function connectFormIntegration(
       if (config.form_id?.trim()) {
         formIds.push(config.form_id.trim())
       } else {
-        const listRes = await fetch('https://api.typeform.com/forms?page_size=200', {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
-        if (!listRes.ok) {
-          const errText = await listRes.text().catch(() => '')
-          const hint = listRes.status === 403
-            ? 'Token is missing Forms (read) scope.'
-            : `Typeform API error ${listRes.status}.`
-          revalidatePath('/sage/integrations')
-          return { webhookUrl, error: `Could not fetch forms: ${hint} ${errText}`.trim() }
+        const tfHeaders = { Authorization: `Bearer ${accessToken}` }
+
+        // Collect form IDs from personal workspace
+        const personalRes = await fetch('https://api.typeform.com/forms?page_size=200', { headers: tfHeaders })
+        if (personalRes.ok) {
+          const d = await personalRes.json() as { items?: Array<{ id: string }> }
+          formIds.push(...(d.items ?? []).map(f => f.id))
         }
-        const listData = await listRes.json() as { items?: Array<{ id: string }> }
-        formIds.push(...(listData.items ?? []).map(f => f.id))
+
+        // Also collect from all team/shared workspaces
+        const wsRes = await fetch('https://api.typeform.com/workspaces?page_size=200', { headers: tfHeaders })
+        if (wsRes.ok) {
+          const wsData = await wsRes.json() as { items?: Array<{ id: string; self?: { href?: string } }> }
+          await Promise.all((wsData.items ?? []).map(async ws => {
+            const wsId = ws.id ?? ws.self?.href?.split('/').pop()
+            if (!wsId) return
+            const fRes = await fetch(`https://api.typeform.com/workspaces/${wsId}/forms?page_size=200`, { headers: tfHeaders })
+            if (fRes.ok) {
+              const fd = await fRes.json() as { items?: Array<{ id: string }> }
+              formIds.push(...(fd.items ?? []).map(f => f.id))
+            }
+          }))
+        }
+
+        // Deduplicate
+        const unique = [...new Set(formIds)]
+        formIds.length = 0
+        formIds.push(...unique)
       }
 
       // Register webhook for each form
