@@ -1225,16 +1225,22 @@ export async function connectFormIntegration(
     try {
       // List all forms (or use the specific form_id if provided)
       const formIds: string[] = []
-      if (config.form_id) {
-        formIds.push(config.form_id)
+      if (config.form_id?.trim()) {
+        formIds.push(config.form_id.trim())
       } else {
         const listRes = await fetch('https://api.typeform.com/forms?page_size=200', {
           headers: { Authorization: `Bearer ${accessToken}` },
         })
-        if (listRes.ok) {
-          const listData = await listRes.json() as { items?: Array<{ id: string }> }
-          formIds.push(...(listData.items ?? []).map(f => f.id))
+        if (!listRes.ok) {
+          const errText = await listRes.text().catch(() => '')
+          const hint = listRes.status === 401 || listRes.status === 403
+            ? 'Check your token has Forms (read) and Webhooks (write) scopes enabled.'
+            : `Typeform API error ${listRes.status}.`
+          revalidatePath('/sage/integrations')
+          return { webhookUrl, error: `Could not fetch forms: ${hint} ${errText}`.trim() }
         }
+        const listData = await listRes.json() as { items?: Array<{ id: string }> }
+        formIds.push(...(listData.items ?? []).map(f => f.id))
       }
 
       // Register webhook for each form
@@ -1259,7 +1265,6 @@ export async function connectFormIntegration(
       revalidatePath('/sage/integrations')
       return { webhookUrl, formsRegistered: registered }
     } catch (err) {
-      // Webhook registration failed — integration is still saved, just show the URL
       revalidatePath('/sage/integrations')
       return { webhookUrl, error: `Integration saved but webhook registration failed: ${err instanceof Error ? err.message : 'unknown error'}` }
     }
