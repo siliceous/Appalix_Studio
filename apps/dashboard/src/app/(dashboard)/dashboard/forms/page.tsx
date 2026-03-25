@@ -140,7 +140,7 @@ export default async function FormsPage({
     .select('provider')
     .eq('workspace_id', workspaceId)
     .eq('status', 'connected')
-    .in('provider', ['gravity_forms', 'wpforms', 'typeform', 'fluent_forms'])
+    .in('provider', ['gravity_forms', 'google_forms', 'typeform', 'fluent_forms'])
 
   type EmailIntegRow = { provider: string; status: string; config: Record<string, string>; sync_enabled: boolean }
   const emailIntegrations = (emailIntegRaw ?? []) as EmailIntegRow[]

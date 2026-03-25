@@ -81,7 +81,7 @@ export default async function IntegrationsPage({
     (admin as any).from('workspace_members').select('user_id, role').eq('workspace_id', membership.workspace_id),
     // Form plugin configs — to build webhook URLs with secrets for GF/WPForms/Fluent Forms
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (admin as any).from('sage_integrations').select('provider, config').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', ['gravity_forms', 'wpforms', 'fluent_forms']),
+    (admin as any).from('sage_integrations').select('provider, config').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', ['gravity_forms', 'google_forms', 'fluent_forms']),
     // All connected sage integrations — for connector name/role display
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('sage_integrations').select('provider, user_id').eq('workspace_id', membership.workspace_id).eq('status', 'connected'),
@@ -295,7 +295,7 @@ export default async function IntegrationsPage({
           <IntegrationsClient
             connected={sageConnected}
             standalone={false}
-            providers={['gravity_forms', 'wpforms', 'typeform', 'fluent_forms']}
+            providers={['gravity_forms', 'google_forms', 'typeform', 'fluent_forms']}
             workspaceId={membership.workspace_id}
             formWebhookUrls={formWebhookUrls}
             connectedProviderInfo={connectedProviderInfo}

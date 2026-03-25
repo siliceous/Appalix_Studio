@@ -36,7 +36,7 @@ const SOURCE_PLATFORM_LABELS: Record<string, string> = {
   klaviyo:         'Klaviyo',
   constantcontact: 'Constant Contact',
   gravity_forms:   'Gravity Forms',
-  wpforms:         'WPForms',
+  google_forms:    'Google Forms',
   typeform:        'Typeform',
 }
 

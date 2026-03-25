@@ -72,7 +72,7 @@ const EMAIL_PLATFORM_META: Record<string, { name: string; logo?: string; pill: s
   klaviyo:         { name: 'Klaviyo',          logo: '/integrations/Klaviyo.png',         pill: 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/20' },
   constantcontact: { name: 'Constant Contact', logo: '/integrations/constantcontact.png', pill: 'bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-200 dark:border-sky-500/20' },
   gravity_forms:   { name: 'Gravity Forms',    pill: 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/20' },
-  wpforms:         { name: 'WPForms',          pill: 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20' },
+  google_forms:    { name: 'Google Forms',      pill: 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/20' },
   typeform:        { name: 'Typeform',         pill: 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20' },
   fluent_forms:    { name: 'Fluent Forms',     pill: 'bg-teal-50 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-200 dark:border-teal-500/20' },
 }
@@ -445,7 +445,7 @@ export function FormsTable({
       {/* ── Connected sources bar ── */}
       {(() => {
         const submissionFormProviders = [...new Set(submissions.map(s => s.source_platform).filter(Boolean))]
-          .filter(p => ['gravity_forms', 'wpforms', 'typeform', 'fluent_forms'].includes(p as string)) as string[]
+          .filter(p => ['gravity_forms', 'google_forms', 'typeform', 'fluent_forms'].includes(p as string)) as string[]
         const allProviders = [...new Set([...connectedEmailProviders, ...connectedFormProviders, ...submissionFormProviders])]
         if (allProviders.length === 0) return null
         return (
