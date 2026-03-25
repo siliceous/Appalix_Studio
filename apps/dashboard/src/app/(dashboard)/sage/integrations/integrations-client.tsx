@@ -189,7 +189,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     logo:        '✉️',
     category:    'email_marketing',
     fields: [
-      { name: 'api_key', label: 'API Key (v4)', type: 'password', placeholder: 'Your Kit v4 API key', hint: 'Kit → Settings → Developer → click "Add new key" to generate a v4 key (shown once only — not the legacy v3 API key)' },
+      { name: 'api_key', label: 'API Key (v4)', type: 'password', placeholder: 'Your Kit v4 API key', hint: 'You must CREATE a new key: Kit → Settings → Developer → "Add new key". Copy it immediately — shown once only. Do NOT use the existing API Key or Secret shown on that page (those are v3 only).' },
     ],
     docsUrl:     'https://developers.kit.com/v4',
     tutorialUrl: '/resources/connect-convertkit',
