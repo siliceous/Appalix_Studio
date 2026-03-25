@@ -617,7 +617,8 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-x-auto">
+      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col">
+      <div className="overflow-x-auto">
         {filtered.length === 0 ? (
           <div className="py-20 text-center">
             <UserPlus className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
@@ -702,7 +703,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
       </div>
 
       {/* Pagination footer */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-t dark:border-white/8 bg-gray-50/60 dark:bg-white/[0.02] shrink-0">
+      <div className="flex items-center justify-between px-4 py-2.5 border-t dark:border-white/8 bg-gray-50/60 dark:bg-white/[0.02] rounded-b-xl">
         <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
           <span>Rows per page:</span>
           <select
@@ -725,6 +726,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
               className="px-2.5 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium">Next →</button>
           </div>
         </div>
+      </div>
       </div>
 
       {(showModal || editingContact) && (
