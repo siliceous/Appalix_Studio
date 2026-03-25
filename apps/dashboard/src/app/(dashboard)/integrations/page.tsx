@@ -302,7 +302,7 @@ export default async function IntegrationsPage({
           <IntegrationsClient
             connected={sageConnected}
             standalone={false}
-            providers={['klaviyo', 'activecampaign']}
+            providers={['klaviyo', 'activecampaign', 'convertkit', 'constantcontact']}
             connectedProviderInfo={connectedProviderInfo}
             syncEnabledByProvider={syncEnabledByProvider}
           />
