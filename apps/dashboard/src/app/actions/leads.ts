@@ -459,8 +459,8 @@ async function fetchKlaviyoProfiles(config: Record<string, string>): Promise<Nor
 }
 
 async function fetchConvertKitSubscribers(config: Record<string, string>): Promise<NormalizedContact[]> {
-  const token = config.access_token ?? config.api_key
-  if (!token) throw new Error('ConvertKit API key is missing.')
+  const token = config.api_secret ?? config.access_token ?? config.api_key
+  if (!token) throw new Error('ConvertKit API secret is missing.')
   const results: NormalizedContact[] = []
   let cursor: string | null = null
 

@@ -41,7 +41,7 @@ async function pushMailchimp(cfg: Cfg, c: ContactData) {
 }
 
 async function pushKit(cfg: Cfg, c: ContactData) {
-  const token = cfg.access_token ?? cfg.api_key
+  const token = cfg.api_secret ?? cfg.access_token ?? cfg.api_key
   if (!c.email || !token) return
   const { first } = nameParts(c.name ?? '')
   await fetch('https://api.kit.com/v4/subscribers', {
