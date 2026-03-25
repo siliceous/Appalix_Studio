@@ -690,7 +690,7 @@ export function FormsTable({
             <p className="text-sm text-gray-400">No submissions match your filters.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
           <table className="min-w-full text-sm table-auto">
             <thead>
               <tr className="border-b dark:border-white/8 bg-gray-50 dark:bg-white/[0.03]">
