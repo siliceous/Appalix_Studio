@@ -302,12 +302,15 @@ function EmailPlatformCard({
             Connect
           </button>
         ) : (
-          <Link
-            href="/integrations#sage-email-marketing"
+          <button
+            onClick={() => {
+              const el = document.getElementById('sage-email-marketing')
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
           >
-            Connect in Sage →
-          </Link>
+            Connect in Sage ↓
+          </button>
         )}
       </div>
 
