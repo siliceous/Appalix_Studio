@@ -7,7 +7,7 @@ import { IntegrationsClient } from '@/app/(dashboard)/sage/integrations/integrat
 import type { WorkspaceMember, LeadAdSource, SageIntegration } from '@/lib/types'
 
 const EMAIL_PROVIDERS = ['mailchimp', 'activecampaign', 'convertkit', 'klaviyo', 'constantcontact'] as const
-const SYNC_PROVIDERS  = ['mailchimp', 'activecampaign', 'klaviyo'] as const
+const SYNC_PROVIDERS  = ['mailchimp', 'activecampaign', 'klaviyo', 'convertkit'] as const
 const FORM_PROVIDERS  = ['gravity_forms', 'google_forms', 'typeform', 'fluent_forms'] as const
 
 export default async function SourcesPage() {

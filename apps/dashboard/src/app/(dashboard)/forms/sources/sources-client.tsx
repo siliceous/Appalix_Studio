@@ -161,7 +161,7 @@ interface EmailPlatformDef {
 const EMAIL_PLATFORMS: EmailPlatformDef[] = [
   { provider: 'mailchimp',       name: 'Mailchimp',        emoji: '/integrations/mailchimp.png',       canSync: true,  tutorialUrl: '/resources/connect-mailchimp' },
   { provider: 'activecampaign',  name: 'ActiveCampaign',   emoji: '/integrations/activecampaign.png',  canSync: true,  tutorialUrl: '/resources/connect-activecampaign' },
-  { provider: 'convertkit',      name: 'Kit (ConvertKit)',  emoji: '/integrations/kit.png',             canSync: false, tutorialUrl: '/resources/connect-convertkit' },
+  { provider: 'convertkit',      name: 'Kit (ConvertKit)',  emoji: '/integrations/kit.png',             canSync: true,  tutorialUrl: '/resources/connect-convertkit' },
   { provider: 'klaviyo',         name: 'Klaviyo',           emoji: '/integrations/Klaviyo.png',         canSync: true,  tutorialUrl: '/resources/connect-klaviyo' },
   { provider: 'constantcontact', name: 'Constant Contact',  emoji: '/integrations/constantcontact.png', canSync: false, tutorialUrl: '/resources/connect-constantcontact' },
 ]
@@ -199,7 +199,7 @@ function EmailPlatformCard({
     setSyncErr(null)
     startTransition(async () => {
       try {
-        const res = await syncFromEmailPlatform(def.provider as 'mailchimp' | 'activecampaign' | 'klaviyo')
+        const res = await syncFromEmailPlatform(def.provider as 'mailchimp' | 'activecampaign' | 'klaviyo' | 'convertkit')
         setResult(res)
       } catch (e) {
         setSyncErr(e instanceof Error ? e.message : 'Sync failed')

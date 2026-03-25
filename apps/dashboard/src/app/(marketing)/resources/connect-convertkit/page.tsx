@@ -3,28 +3,28 @@ import type { Metadata } from 'next'
 import { ArticleSeo } from '@/components/marketing/article-seo'
 
 export const metadata: Metadata = {
-  title: 'Connect Kit (ConvertKit) to Appalix — Sync Subscribers to Sage CRM',
+  title: 'Connect Kit (ConvertKit) to Appalix — Sync Contacts & Pull Subscribers',
   description:
-    'Connect Kit (formerly ConvertKit) to Appalix Sage in under 3 minutes. Sync subscribers to your CRM contacts automatically as deals and leads flow through your pipeline.',
+    'Connect Kit (ConvertKit) to Appalix Sage in minutes. Push CRM contacts as Kit subscribers and pull existing subscribers into Forms for AI lead scoring.',
   keywords: [
     'ConvertKit Appalix integration',
-    'Kit Appalix tutorial',
-    'ConvertKit CRM sync',
-    'Appalix email marketing',
+    'Kit ConvertKit CRM sync',
+    'Appalix ConvertKit tutorial',
     'Kit subscriber sync',
+    'email marketing Appalix',
   ],
   alternates: { canonical: 'https://appalix.ai/resources/connect-convertkit' },
   openGraph: {
-    title: 'Connect Kit (ConvertKit) to Appalix — Sync Subscribers to Sage CRM',
-    description: 'Connect Kit to Appalix Sage and keep your subscriber base in sync with your CRM contacts automatically.',
+    title: 'Connect Kit (ConvertKit) to Appalix — Sync Contacts & Pull Subscribers',
+    description: 'Push Appalix CRM contacts to Kit and pull existing subscribers into Forms for AI lead scoring.',
     url: 'https://appalix.ai/resources/connect-convertkit',
     type: 'article',
     siteName: 'Appalix',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Connect Kit (ConvertKit) to Appalix — Sync Subscribers to Sage CRM',
-    description: 'Connect Kit to Appalix Sage and keep your subscriber base in sync with your CRM contacts automatically.',
+    title: 'Connect Kit (ConvertKit) to Appalix — Sync Contacts & Pull Subscribers',
+    description: 'Push Appalix CRM contacts to Kit and pull existing subscribers into Forms for AI lead scoring.',
   },
 }
 
@@ -34,13 +34,14 @@ export default function ConnectConvertKitPage() {
       <ArticleSeo
         type="HowTo"
         title="Connect Kit (ConvertKit) to Appalix"
-        description="Connect Kit (formerly ConvertKit) to Appalix Sage. Sync subscribers to your CRM contacts automatically as deals and leads flow through your pipeline."
+        description="Connect Kit (ConvertKit) to Appalix Sage. Push CRM contacts as Kit subscribers and pull existing subscribers into Forms for AI lead scoring."
         slug="connect-convertkit"
-        datePublished="2026-03-04"
+        datePublished="2026-03-25"
         steps={[
-          { name: 'Get your Kit API key and secret', text: 'In Kit, go to Settings → Advanced → API. Copy your API Key and API Secret.' },
-          { name: 'Connect in Sage → Integrations', text: 'In Appalix, go to Sage → Integrations → Email Marketing, find the Kit (ConvertKit) card, click Connect, and paste your API Key and API Secret.' },
-          { name: 'Confirm the connection', text: 'The Kit card shows a Connected badge. Kit subscribers will be synced as contacts are created or updated in Sage.' },
+          { name: 'Find your Kit API Key', text: 'In Kit, go to Settings → Advanced → API and copy your API Key.' },
+          { name: 'Connect in Sage → Contacts → Automations', text: 'In Appalix, go to Sage → Contacts → Automations, find the Kit card, click Connect, and paste your API Key and API Secret.' },
+          { name: 'Confirm the connection', text: 'The Kit card shows a Connected badge. Contacts will sync to your Kit account as they are created or updated in Sage.' },
+          { name: 'Pull existing Kit subscribers (optional)', text: 'Go to Forms → Sources, find the Kit card, and click Sync Now to import your existing subscribers into Appalix as leads.' },
         ]}
       />
 
@@ -61,9 +62,10 @@ export default function ConnectConvertKitPage() {
             Connect Kit (ConvertKit) to Appalix
           </h1>
           <p className="text-gray-400 text-lg leading-relaxed">
-            Kit is the email platform of choice for creators and course businesses. Connecting it to Appalix Sage
-            lets you sync contacts as Kit subscribers and apply tags automatically — keeping your CRM and email
-            platform in harmony. Setup takes under 3 minutes with just your API key and secret.
+            Kit is the go-to email platform for creators, course builders, and indie businesses. Connecting it
+            to Appalix means every contact you add to Sage CRM is automatically added as a Kit subscriber —
+            triggering your welcome sequences and automations instantly. You can also pull your existing
+            subscribers into Appalix for AI lead scoring.
           </p>
         </div>
 
@@ -75,43 +77,62 @@ export default function ConnectConvertKitPage() {
             <h2 className="text-xl font-semibold text-white mb-3">What you&apos;ll need</h2>
             <ul className="list-disc pl-5 space-y-2">
               <li>An <strong className="text-white">Appalix account</strong> on Pro plan or above</li>
-              <li>A <strong className="text-white">Kit account</strong> (any plan — formerly ConvertKit)</li>
+              <li>A <strong className="text-white">Kit account</strong> (any plan)</li>
               <li>Your Kit <strong className="text-white">API Key</strong> and <strong className="text-white">API Secret</strong></li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">Step 1 — Get your Kit API credentials</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">Step 1 — Find your Kit API credentials</h2>
             <ol className="list-decimal pl-5 space-y-3">
-              <li>Log in to <strong className="text-white">Kit</strong> (kit.com) and click your profile name in the top-right corner.</li>
-              <li>Select <strong className="text-white">Settings</strong> from the dropdown.</li>
-              <li>Click <strong className="text-white">Advanced</strong> in the left sidebar, then scroll to the <strong className="text-white">API</strong> section.</li>
-              <li>Copy your <strong className="text-white">API Key</strong> and <strong className="text-white">API Secret</strong>. Keep the API Secret private — treat it like a password.</li>
+              <li>Log in to <strong className="text-white">Kit</strong> and click your account name (top-right).</li>
+              <li>Go to <strong className="text-white">Settings → Advanced → API</strong>.</li>
+              <li>
+                Copy both values shown:
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li><strong className="text-white">API Key</strong> — used to authenticate requests</li>
+                  <li><strong className="text-white">API Secret</strong> — required for account-level actions</li>
+                </ul>
+              </li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-sm text-blue-300">
-              <strong>Note:</strong> Kit&apos;s V4 API uses the API Key for read operations and the API Secret for write operations (subscribing contacts). Both are required for the full integration to work.
-            </div>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">Step 2 — Connect in Sage → Integrations</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">Step 2 — Connect in Sage → Contacts → Automations</h2>
             <ol className="list-decimal pl-5 space-y-3">
-              <li>In Appalix, navigate to <strong className="text-white">Sage → Integrations</strong> in the left sidebar.</li>
-              <li>Scroll to the <strong className="text-white">Email Marketing</strong> section and find the <strong className="text-white">Kit (ConvertKit)</strong> card.</li>
-              <li>Click <strong className="text-white">Connect</strong> to expand the form.</li>
-              <li>Enter your <strong className="text-white">API Key</strong> and <strong className="text-white">API Secret</strong>.</li>
-              <li>Click <strong className="text-white">Save &amp; Connect</strong>. The card shows a green <em>Connected</em> badge.</li>
+              <li>In Appalix, navigate to <strong className="text-white">Sage → Contacts</strong> and click <strong className="text-white">Automations</strong> in the top-right.</li>
+              <li>Find the <strong className="text-white">Kit (ConvertKit)</strong> card and click <strong className="text-white">Connect</strong>.</li>
+              <li>Paste your <strong>API Key</strong> and <strong>API Secret</strong> and click <strong className="text-white">Save &amp; Connect</strong>.</li>
+              <li>The card shows a green <em>Connected</em> badge.</li>
             </ol>
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+              <strong className="text-white">Auto Sync toggle:</strong> Once connected, enable <strong className="text-white">Auto Sync</strong> on the card to automatically push new and updated Sage contacts to Kit as subscribers.
+            </div>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">What the integration does</h2>
             <ul className="list-disc pl-5 space-y-2">
-              <li><strong className="text-white">Contact sync</strong> — when you create or update contacts in Sage CRM, Appalix adds them as Kit subscribers and applies any configured tags.</li>
-              <li><strong className="text-white">Tags</strong> — contacts synced from Sage are tagged to identify their source, making segmentation in Kit straightforward.</li>
+              <li><strong className="text-white">Outbound contact sync</strong> — contacts created or updated in Sage are pushed to Kit as subscribers, triggering your welcome sequences.</li>
+              <li><strong className="text-white">Sequence triggers</strong> — Kit automations that start on subscriber creation will fire automatically when contacts are pushed.</li>
+              <li><strong className="text-white">Inbound pull sync</strong> — pull your existing Kit subscribers into Appalix on demand from <strong className="text-white">Forms → Sources → Sync Now</strong>.</li>
             </ul>
-            <div className="mt-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-sm text-amber-300">
-              <strong>Forms sync:</strong> Kit is not currently supported in the Forms → Sources pull sync. To import leads from Kit forms into Appalix, use Kit&apos;s Zapier integration or a webhook to push submissions to Appalix.
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-white mb-3">Pulling Kit subscribers into Forms</h2>
+            <p>
+              Once connected, you can import your existing Kit subscribers into <strong className="text-white">Forms → Sources</strong>.
+            </p>
+            <ol className="list-decimal pl-5 space-y-3 mt-3">
+              <li>Navigate to <strong className="text-white">Forms → Sources</strong> in Appalix.</li>
+              <li>Find the <strong className="text-white">Kit (ConvertKit)</strong> card in the Email Marketing Platforms section.</li>
+              <li>Click <strong className="text-white">Sync Now</strong>. Appalix fetches all active subscribers from your Kit account.</li>
+              <li>A result banner shows how many contacts were imported and how many were skipped as duplicates.</li>
+              <li>Imported contacts appear immediately in <strong className="text-white">Forms → All Leads</strong> with a Kit platform badge.</li>
+            </ol>
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+              <strong className="text-white">Deduplication:</strong> Before inserting, Appalix checks whether a lead with the same email already exists. Duplicates are skipped — you can run Sync Now multiple times safely.
             </div>
           </section>
 
@@ -119,16 +140,20 @@ export default function ConnectConvertKitPage() {
             <h2 className="text-xl font-semibold text-white mb-3">Frequently asked questions</h2>
             <div className="space-y-5">
               <div>
-                <p className="font-semibold text-white">Does this work with Kit&apos;s V4 API?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes. Appalix uses Kit&apos;s V4 API (developers.kit.com/v4), which is the current recommended version. V3 is deprecated and not supported.</p>
+                <p className="font-semibold text-white">Which Kit plan do I need?</p>
+                <p className="text-sm text-gray-400 mt-1">All Kit plans include API access. The API Key and API Secret are available on every plan under Settings → Advanced → API.</p>
               </div>
               <div>
-                <p className="font-semibold text-white">Can I add subscribers to a specific Kit form or sequence?</p>
-                <p className="text-sm text-gray-400 mt-1">The current integration adds contacts as general subscribers. Adding to specific forms or sequences will be available in a future update.</p>
+                <p className="font-semibold text-white">Will existing Kit subscribers be updated?</p>
+                <p className="text-sm text-gray-400 mt-1">Yes. Kit uses email as the unique identifier. If a subscriber with the same email already exists, it is updated rather than duplicated.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Are my API credentials stored securely?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes. Your API Key and Secret are stored encrypted in your workspace database and are never exposed in plain text after saving.</p>
+                <p className="text-sm text-gray-400 mt-1">Yes. Your API Key and Secret are stored encrypted in your workspace database and never exposed in plain text after saving.</p>
+              </div>
+              <div>
+                <p className="font-semibold text-white">Can I tag Kit subscribers from Appalix?</p>
+                <p className="text-sm text-gray-400 mt-1">Tag support is on the roadmap. Currently, Appalix pushes subscriber email and first name. Tags can be applied manually in Kit or via Kit automations triggered by subscriber creation.</p>
               </div>
             </div>
           </section>
@@ -137,13 +162,13 @@ export default function ConnectConvertKitPage() {
             <p className="text-2xl mb-3">✉️</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to connect Kit?</h3>
             <p className="text-sm text-gray-400 mb-5">
-              Go to Sage → Integrations → Email Marketing and paste your API key and secret.
+              Go to Sage → Contacts → Automations and paste your API Key and API Secret.
             </p>
             <Link
-              href="/sage/integrations"
+              href="/sage/contacts/automations"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors"
             >
-              Go to Sage → Integrations →
+              Go to Automations →
             </Link>
           </section>
 

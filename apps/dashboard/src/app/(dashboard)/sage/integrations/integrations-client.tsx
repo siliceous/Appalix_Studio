@@ -190,7 +190,9 @@ const INTEGRATIONS: IntegrationCard[] = [
     category:    'email_marketing',
     fields:      [],
     oauthPath:   '/api/oauth/kit',
-    docsUrl: 'https://developers.kit.com/v4',
+    docsUrl:     'https://developers.kit.com/v4',
+    tutorialUrl: '/resources/connect-convertkit',
+    canSync:     true,
   },
   {
     provider:    'klaviyo',

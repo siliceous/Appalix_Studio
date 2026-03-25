@@ -458,8 +458,52 @@ async function fetchKlaviyoProfiles(config: Record<string, string>): Promise<Nor
   return results
 }
 
+async function fetchConvertKitSubscribers(config: Record<string, string>): Promise<NormalizedContact[]> {
+  const token = config.access_token ?? config.api_key
+  if (!token) throw new Error('ConvertKit API key is missing.')
+  const results: NormalizedContact[] = []
+  let cursor: string | null = null
+
+  while (true) {
+    const url = new URL('https://api.kit.com/v4/subscribers')
+    url.searchParams.set('per_page', '1000')
+    if (cursor) url.searchParams.set('after', cursor)
+
+    const res = await fetch(url.toString(), {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    })
+    if (!res.ok) {
+      const errText = await res.text().catch(() => res.statusText)
+      throw new Error(`Kit API error ${res.status}: ${errText}`)
+    }
+    const data = await res.json() as {
+      subscribers?: Record<string, unknown>[]
+      pagination?: { has_next_page?: boolean; end_cursor?: string | null }
+    }
+    for (const s of data.subscribers ?? []) {
+      const firstName = (s.first_name as string | null) ?? ''
+      const lastName  = (s.last_name  as string | null) ?? ''
+      const name      = `${firstName} ${lastName}`.trim() || (s.email as string | undefined) || ''
+      results.push({
+        name,
+        email:       (s.email as string | null) ?? null,
+        phone:       null,
+        company:     null,
+        job_title:   null,
+        website_url: null,
+        street: null, city: null, state: null, zip: null, country: null,
+        tags:        [],
+        raw:         s,
+      })
+    }
+    if (!data.pagination?.has_next_page || !data.pagination.end_cursor) break
+    cursor = data.pagination.end_cursor
+  }
+  return results
+}
+
 export async function syncFromEmailPlatform(
-  provider: 'mailchimp' | 'activecampaign' | 'klaviyo',
+  provider: 'mailchimp' | 'activecampaign' | 'klaviyo' | 'convertkit',
 ): Promise<{ synced: number; skipped: number; error?: string }> {
   const workspaceId = await getWorkspaceId()
   const admin       = createAdminClient()
@@ -484,7 +528,9 @@ export async function syncFromEmailPlatform(
       ? await fetchMailchimpContacts(config)
       : provider === 'klaviyo'
         ? await fetchKlaviyoProfiles(config)
-        : await fetchActiveCampaignContacts(config)
+        : provider === 'convertkit'
+          ? await fetchConvertKitSubscribers(config)
+          : await fetchActiveCampaignContacts(config)
   } catch (err) {
     return { synced: 0, skipped: 0, error: err instanceof Error ? err.message : 'Fetch failed' }
   }
