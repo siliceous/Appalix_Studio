@@ -1273,8 +1273,14 @@ export async function connectFormIntegration(
         formIds.push(...unique)
       }
 
+      if (formIds.length === 0) {
+        revalidatePath('/sage/integrations')
+        return { webhookUrl, formsRegistered: 0 }
+      }
+
       // Register webhook for each form
       let registered = 0
+      let lastErr = ''
       for (const formId of formIds) {
         const res = await fetch(`https://api.typeform.com/forms/${formId}/webhooks/sage_webhook`, {
           method: 'PUT',
@@ -1289,10 +1295,18 @@ export async function connectFormIntegration(
             verify_ssl: true,
           }),
         })
-        if (res.ok) registered++
+        if (res.ok) {
+          registered++
+        } else {
+          const errData = await res.json().catch(() => ({})) as { code?: string; description?: string }
+          lastErr = `[${formId}] ${res.status}: ${errData.description ?? errData.code ?? 'unknown'}`
+        }
       }
 
       revalidatePath('/sage/integrations')
+      if (registered === 0 && lastErr) {
+        return { webhookUrl, error: `Integration saved but webhook registration failed: ${lastErr}` }
+      }
       return { webhookUrl, formsRegistered: registered }
     } catch (err) {
       revalidatePath('/sage/integrations')
