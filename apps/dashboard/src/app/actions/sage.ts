@@ -1216,10 +1216,12 @@ export async function connectFormIntegration(
 
   // Typeform: auto-register our webhook via Typeform API
   if (provider === 'typeform') {
-    const accessToken = config.access_token ?? ''
+    // Strip any non-ASCII characters that could have been introduced by copy-paste
+    // (e.g. em dash U+2014, curly quotes) — Fetch rejects non-Latin-1 header values
+    const accessToken = (config.access_token ?? '').replace(/[^\x20-\x7E]/g, '').trim()
     if (!accessToken) {
       revalidatePath('/sage/integrations')
-      return { webhookUrl }
+      return { webhookUrl, error: 'Personal access token is missing or contains invalid characters. Please re-paste it from Typeform.' }
     }
 
     try {
