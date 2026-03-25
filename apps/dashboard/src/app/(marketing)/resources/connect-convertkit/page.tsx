@@ -38,7 +38,7 @@ export default function ConnectConvertKitPage() {
         slug="connect-convertkit"
         datePublished="2026-03-25"
         steps={[
-          { name: 'Find your Kit API Key', text: 'In Kit, go to Settings → Advanced → API and copy your API Key.' },
+          { name: 'Find your Kit API Key', text: 'In Kit, go to Settings → Developer → API and copy your API Key.' },
           { name: 'Connect in Sage → Contacts → Automations', text: 'In Appalix, go to Sage → Contacts → Automations, find the Kit card, click Connect, and paste your API Key and API Secret.' },
           { name: 'Confirm the connection', text: 'The Kit card shows a Connected badge. Contacts will sync to your Kit account as they are created or updated in Sage.' },
           { name: 'Pull existing Kit subscribers (optional)', text: 'Go to Forms → Sources, find the Kit card, and click Sync Now to import your existing subscribers into Appalix as leads.' },
@@ -86,7 +86,7 @@ export default function ConnectConvertKitPage() {
             <h2 className="text-xl font-semibold text-white mb-3">Step 1 — Find your Kit API credentials</h2>
             <ol className="list-decimal pl-5 space-y-3">
               <li>Log in to <strong className="text-white">Kit</strong> and click your account name (top-right).</li>
-              <li>Go to <strong className="text-white">Settings → Advanced → API</strong>.</li>
+              <li>Go to <strong className="text-white">Settings → Developer → API</strong>.</li>
               <li>
                 Copy both values shown:
                 <ul className="list-disc pl-5 mt-2 space-y-1">
@@ -141,7 +141,7 @@ export default function ConnectConvertKitPage() {
             <div className="space-y-5">
               <div>
                 <p className="font-semibold text-white">Which Kit plan do I need?</p>
-                <p className="text-sm text-gray-400 mt-1">All Kit plans include API access. The API Key and API Secret are available on every plan under Settings → Advanced → API.</p>
+                <p className="text-sm text-gray-400 mt-1">All Kit plans include API access. The API Key and API Secret are available on every plan under Settings → Developer → API.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Will existing Kit subscribers be updated?</p>
