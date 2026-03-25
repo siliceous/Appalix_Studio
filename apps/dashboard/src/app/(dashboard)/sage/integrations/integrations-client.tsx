@@ -605,11 +605,27 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
 
                     {/* Post-connect panel — forms integrations only, hidden by default */}
                     {isConnected && integration.webhookPath && workspaceId && webhookPanelOpen[integration.provider] && (() => {
-                      const result  = connectResult[integration.provider]
-                      const hookUrl = result?.webhookUrl
+                      const result          = connectResult[integration.provider]
+                      const hookUrl         = result?.webhookUrl
                         ?? formWebhookUrls?.[integration.provider]
                         ?? `${typeof window !== 'undefined' ? window.location.origin : ''}${integration.webhookPath}/${workspaceId}`
-                      const isTypeform = integration.provider === 'typeform'
+                      const isTypeform      = integration.provider === 'typeform'
+                      const isGoogleForms   = integration.provider === 'google_forms'
+
+                      const appsScript = `function sendToAppalix(e) {
+  var form = FormApp.getActiveForm();
+  var fields = {};
+  e.response.getItemResponses().forEach(function(r) {
+    fields[r.getItem().getTitle()] = String(r.getResponse());
+  });
+  UrlFetchApp.fetch('${hookUrl}', {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify({ form_title: form.getTitle(), responses: fields }),
+    muteHttpExceptions: true
+  });
+}`
+
                       return (
                         <div className="border-t dark:border-white/8 rounded-b-xl overflow-hidden">
                           {/* Typeform: registration result banner */}
@@ -623,8 +639,42 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                                   : `Webhook auto-registered on ${result.formsRegistered} form${result.formsRegistered !== 1 ? 's' : ''}.`}
                             </div>
                           )}
-                          {/* Webhook URL row (always shown for GF/WPForms; shown for Typeform as fallback) */}
-                          {(!isTypeform || !result || result.error) && (
+
+                          {/* Google Forms: step-by-step Apps Script guide */}
+                          {isGoogleForms && (
+                            <div className="px-4 py-4 bg-gray-50 dark:bg-white/3 space-y-3">
+                              <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">Set up in 3 steps</p>
+                              <ol className="space-y-2.5">
+                                {[
+                                  { n: '1', text: 'Open your Google Form → click the 3-dot menu (⋮) → select Extensions → Apps Script' },
+                                  { n: '2', text: 'Delete any existing code, paste the script below, then click Save (💾)' },
+                                  { n: '3', text: 'Click Triggers (⏰) → Add Trigger → choose sendToAppalix → Event type: On form submit → Save' },
+                                ].map(step => (
+                                  <li key={step.n} className="flex gap-2.5">
+                                    <span className="shrink-0 w-5 h-5 rounded-full bg-brand-600 text-white text-[10px] font-bold flex items-center justify-center">{step.n}</span>
+                                    <span className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">{step.text}</span>
+                                  </li>
+                                ))}
+                              </ol>
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Apps Script (webhook URL pre-filled)</p>
+                                  <button
+                                    onClick={() => { navigator.clipboard.writeText(appsScript); setCopiedProvider(integration.provider + '_script'); setTimeout(() => setCopiedProvider(null), 2000) }}
+                                    className="text-[11px] px-2 py-0.5 rounded border dark:border-white/10 bg-white dark:bg-[#232323] text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+                                  >
+                                    {copiedProvider === integration.provider + '_script' ? 'Copied!' : 'Copy script'}
+                                  </button>
+                                </div>
+                                <pre className="text-[10px] font-mono bg-white dark:bg-[#1a1a1a] border dark:border-white/10 rounded-lg px-3 py-2.5 text-gray-600 dark:text-gray-400 overflow-x-auto whitespace-pre leading-relaxed">
+                                  {appsScript}
+                                </pre>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Webhook URL row — GF/Fluent/Gravity; Typeform fallback */}
+                          {!isGoogleForms && (!isTypeform || !result || result.error) && (
                             <div className="px-4 py-3 bg-gray-50 dark:bg-white/3">
                               <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
                                 {isTypeform ? 'Or register the webhook manually in Typeform' : 'Paste this URL into your form plugin'}
