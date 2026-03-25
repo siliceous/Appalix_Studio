@@ -1237,8 +1237,11 @@ export async function connectFormIntegration(
 
       // List all forms (or use the specific form_id if provided)
       const formIds: string[] = []
-      if (config.form_id?.trim()) {
-        formIds.push(config.form_id.trim())
+      // Accept full Typeform URL (https://…/to/FORM_ID) or bare form ID
+      const rawFormId = config.form_id?.trim() ?? ''
+      const formIdFromUrl = rawFormId.match(/\/to\/([a-zA-Z0-9]+)/)?.[1] ?? rawFormId
+      if (formIdFromUrl) {
+        formIds.push(formIdFromUrl)
       } else {
         const tfHeaders = { Authorization: `Bearer ${accessToken}` }
 
