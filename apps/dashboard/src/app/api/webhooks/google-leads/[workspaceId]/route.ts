@@ -147,6 +147,25 @@ async function upsertLead(
       event_data: { source: 'google_ads', score },
     })
 
+    // Also mirror into sage_form_submissions so it appears in the Forms activity feed
+    await admin.from('sage_form_submissions').insert({
+      workspace_id:    workspaceId,
+      source_platform: 'google_ads',
+      fields: {
+        name:          lead.name,
+        email:         lead.email,
+        phone:         lead.phone,
+        company:       lead.company,
+        job_title:     lead.job_title,
+        website:       lead.website,
+        campaign:      lead.campaign_name,
+        form_name:     lead.form_name,
+        ad_name:       lead.ad_name,
+      },
+      raw_payload:     rawPayload as Record<string, unknown>,
+      ai_priority:     score,
+    })
+
     // Update source stats
     const { data: src } = await admin
       .from('lead_ad_sources')

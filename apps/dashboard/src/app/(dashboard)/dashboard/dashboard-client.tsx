@@ -326,22 +326,26 @@ function ItemPopup({
           .select('id, fields, ai_priority, ai_summary, source_platform, created_at, actioned_at, action_type')
           .eq('id', popup.id).single()
         if (d) {
-          const f = (d as any).fields as Record<string, string> | null ?? {}
+          const row = d as Record<string, unknown>
+          const f = (row.fields as Record<string, string> | null) ?? {}
           // Normalize into Lead-compatible flat shape for the existing modal render
           setData({
-            id:              d.id,
+            id:              row.id as string,
             name:            f.name ?? f.full_name ?? f.first_name ?? '(unknown)',
             email:           f.email ?? null,
             phone:           f.phone ?? null,
             company:         f.company ?? f.company_name ?? null,
             job_title:       f.job_title ?? f.title ?? null,
             website:         f.website ?? null,
-            lead_score:      (d as any).ai_priority ?? null,
-            source_platform: (d as any).source_platform,
+            lead_score:      row.ai_priority as string ?? null,
+            source_platform: row.source_platform as string,
             campaign_name:   f.campaign ?? f.campaign_name ?? null,
             form_name:       f.form_name ?? f.form ?? null,
-            ai_summary:      (d as any).ai_summary ?? null,
-            created_at:      d.created_at,
+            ai_summary:      row.ai_summary as string ?? null,
+            created_at:      row.created_at as string,
+            actioned_at:     row.actioned_at as string ?? null,
+            action_type:     row.action_type as string ?? null,
+            raw_fields:      f,
           })
         } else {
           setData(null)
@@ -476,7 +480,7 @@ function ItemPopup({
     if (result.ok) { onAction(); setTimeout(() => onClose(), 3000) }
   }
 
-const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 dark:bg-purple-500/30', form: 'bg-green-200 dark:bg-green-500/30', ticket: 'bg-amber-100 dark:bg-amber-500/25' }[popup.kind]
+const iconCls   = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 dark:bg-purple-500/30', form: 'bg-green-200 dark:bg-green-500/30', ticket: 'bg-amber-100 dark:bg-amber-500/25' }[popup.kind]
   const Icon    = { email: Mail, bot: MessageSquare, form: FileText, ticket: TicketIcon }[popup.kind]
   const iconCol = { email: 'text-blue-700 dark:text-blue-300', bot: 'text-purple-700 dark:text-purple-300', form: 'text-green-700 dark:text-green-300', ticket: 'text-amber-700 dark:text-amber-400' }[popup.kind]
   const label   = { email: 'Email Summary', bot: 'Chat Summary', form: 'Lead Details', ticket: 'Ticket Summary' }[popup.kind]
@@ -488,19 +492,19 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:px-6 sm:py-8 bg-black/55 dark:bg-black/70"
       onClick={onClose}>
-      <div className={`relative w-full ${sizeClass} bg-white dark:bg-[#2a2a2a] rounded-t-2xl sm:rounded-2xl shadow-2xl border-t sm:border dark:border-white/12 h-[96vh] sm:h-[calc(100vh-64px)] flex flex-col transition-all duration-200`}
+      <div className={`relative w-full ${sizeClass} bg-white dark:bg-[#2a2a2a] rounded-t-2xl sm:rounded-2xl shadow-2xl h-[96vh] sm:h-[calc(100vh-64px)] flex flex-col transition-all duration-200`}
         onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b dark:border-white/10 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 shrink-0 bg-[#141c2b] rounded-t-2xl sm:rounded-t-2xl">
           <div className="flex items-center gap-2.5">
             <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${iconCls}`}>
               <Icon className={`w-4 h-4 ${iconCol}`} />
             </div>
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{label}</h2>
+            <h2 className="text-sm font-semibold text-white">{label}</h2>
             <Sparkles className="w-3.5 h-3.5 text-[#15A4AE]" />
             {!postAction && contactMatch !== null && contactMatch !== undefined && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200/70 dark:border-blue-500/20 text-[10px] font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/10 border border-white/20 text-[10px] font-semibold text-white/80 whitespace-nowrap">
                 Existing contact{contactMatch.dealId ? ' · has deal' : ''}
               </span>
             )}
@@ -510,7 +514,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
             {popup.kind === 'email' && !loading && data && showReply && (
               <button
                 onClick={() => setShowReply(false)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 hover:text-gray-800 dark:hover:text-gray-200 transition-colors border border-gray-200 dark:border-white/10"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors border border-white/20"
               >
                 <ArrowLeft className="w-3.5 h-3.5" /> Back
               </button>
@@ -518,12 +522,12 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
             <button
               onClick={() => setPopupSize(s => s === 'sm' ? 'md' : s === 'md' ? 'lg' : 'sm')}
               title={popupSize === 'sm' ? 'Original size' : popupSize === 'md' ? 'Full width' : 'Small'}
-              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
             >
-              {popupSize === 'lg' ? <Minimize2 className="w-4 h-4 text-gray-400" /> : <Maximize2 className="w-4 h-4 text-gray-400" />}
+              {popupSize === 'lg' ? <Minimize2 className="w-4 h-4 text-white/60" /> : <Maximize2 className="w-4 h-4 text-white/60" />}
             </button>
-            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors">
-              <X className="w-4 h-4 text-gray-400" />
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors">
+              <X className="w-4 h-4 text-white/60" />
             </button>
           </div>
         </div>
@@ -650,22 +654,22 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                           <div>
                             <p className="text-xs text-gray-400 mb-2">Contact details</p>
                             <div className="flex flex-wrap gap-2">
-                              <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300">
+                              <span className="flex items-center gap-1.5 text-xs bg-[#f0eeeb] dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300">
                                 <User className="w-3 h-3 text-gray-400" />{e.ai_entities?.name ?? e.from_name ?? e.from_address}
                               </span>
-                              <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300">
+                              <span className="flex items-center gap-1.5 text-xs bg-[#f0eeeb] dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300">
                                 <Mail className="w-3 h-3 text-gray-400" />{e.ai_entities?.email ?? e.from_address}
                               </span>
-                              {e.ai_entities?.phone   && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Phone className="w-3 h-3 text-gray-400" />{e.ai_entities.phone}</span>}
-                              {e.ai_entities?.company && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Building2 className="w-3 h-3 text-gray-400" />{e.ai_entities.company}</span>}
-                              {e.ai_entities?.product_interest && <span className="text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300">{e.ai_entities.product_interest}</span>}
+                              {e.ai_entities?.phone   && <span className="flex items-center gap-1.5 text-xs bg-[#f0eeeb] dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Phone className="w-3 h-3 text-gray-400" />{e.ai_entities.phone}</span>}
+                              {e.ai_entities?.company && <span className="flex items-center gap-1.5 text-xs bg-[#f0eeeb] dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Building2 className="w-3 h-3 text-gray-400" />{e.ai_entities.company}</span>}
+                              {e.ai_entities?.product_interest && <span className="text-xs bg-[#f0eeeb] dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300">{e.ai_entities.product_interest}</span>}
                             </div>
                           </div>
 
                           {/* Key Insights */}
                           {(e.ai_insights ?? []).length > 0 && (
-                            <div className="bg-gray-50 dark:bg-white/[0.07] border border-gray-100 dark:border-white/10 rounded-xl p-4">
-                              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2.5">Key Insights</p>
+                            <div className="bg-teal-50 dark:bg-teal-500/10 border border-teal-200/60 dark:border-teal-500/20 rounded-xl p-4">
+                              <p className="text-[11px] font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wide mb-2.5">Key Insights</p>
                               <ul className="space-y-2">
                                 {(e.ai_insights ?? []).map((ins: string, i: number) => (
                                   <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
@@ -682,11 +686,11 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                     {/* Full email body — hidden when reply compose is open */}
                     {!showReply && e.body_text && (
                       <div className="border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden flex-1 flex flex-col min-h-0 bg-white dark:bg-[#1e1e1e]">
-                        <div className="px-4 py-2.5 border-b border-gray-200 bg-gray-50 shrink-0">
+                        <div className="px-4 py-2.5 border-b border-gray-200 bg-white shrink-0">
                           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Email</p>
                         </div>
                         <div className="px-4 py-4 flex-1 overflow-y-auto">
-                          <div className="text-sm text-gray-700 leading-relaxed" style={{ fontFamily: 'Arial, sans-serif' }}>{renderEmailBody(e.body_text)}</div>
+                          <div className="text-sm text-gray-900 leading-relaxed" style={{ fontFamily: 'Arial, sans-serif' }}>{renderEmailBody(e.body_text)}</div>
                         </div>
                       </div>
                     )}
@@ -976,10 +980,10 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                       <div>
                         <p className="text-xs text-gray-400 mb-2">Contact details extracted</p>
                         <div className="flex flex-wrap gap-2">
-                          {c.ai_entities.name  && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><User className="w-3 h-3 text-gray-400" />{c.ai_entities.name}</span>}
-                          {c.ai_entities.email && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Mail className="w-3 h-3 text-gray-400" />{c.ai_entities.email}</span>}
-                          {c.ai_entities.phone && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Phone className="w-3 h-3 text-gray-400" />{c.ai_entities.phone}</span>}
-                          {c.ai_entities.product_interest && <span className="text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300">{c.ai_entities.product_interest}</span>}
+                          {c.ai_entities.name  && <span className="flex items-center gap-1.5 text-xs bg-[#f0eeeb] dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><User className="w-3 h-3 text-gray-400" />{c.ai_entities.name}</span>}
+                          {c.ai_entities.email && <span className="flex items-center gap-1.5 text-xs bg-[#f0eeeb] dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Mail className="w-3 h-3 text-gray-400" />{c.ai_entities.email}</span>}
+                          {c.ai_entities.phone && <span className="flex items-center gap-1.5 text-xs bg-[#f0eeeb] dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Phone className="w-3 h-3 text-gray-400" />{c.ai_entities.phone}</span>}
+                          {c.ai_entities.product_interest && <span className="text-xs bg-[#f0eeeb] dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300">{c.ai_entities.product_interest}</span>}
                         </div>
                       </div>
                     )}
@@ -990,15 +994,33 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
               {/* ── Form lead popup ── */}
               {popup.kind === 'form' && (() => {
                 const l = data as Lead
+                const row = data as Record<string, unknown>
+                const formAiSummary = row.ai_summary as string | null | undefined
+                const actionedAt    = row.actioned_at as string | null | undefined
+                const actionType    = row.action_type as string | null | undefined
+                const rawFields     = (row.raw_fields ?? {}) as Record<string, string>
+                // Known fields already shown as named cards — skip them in the "extra" section
+                const knownKeys = new Set(['name','full_name','first_name','last_name','email','phone','company','company_name','job_title','title','website','campaign','campaign_name','form_name','form'])
+                const extraFields = Object.entries(rawFields).filter(([k, v]) => !knownKeys.has(k) && v)
+                // Fallback summary when AI hasn't processed this submission yet
+                const autoSummary = !formAiSummary ? [
+                  l.name && l.name !== '(unknown)' ? `Submitted by ${l.name}` : 'New submission',
+                  l.company ? `from ${l.company}` : null,
+                  `via ${l.source_platform ?? 'unknown source'}`,
+                  l.email ? `· ${l.email}` : null,
+                  l.phone ? `· ${l.phone}` : null,
+                ].filter(Boolean).join(' ') : null
+                const displaySummary = formAiSummary ?? autoSummary
                 return (
                   <>
+                    {/* Header row */}
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-purple-200 dark:bg-purple-500/30 flex items-center justify-center shrink-0 text-xs font-bold text-purple-700 dark:text-purple-300">
+                      <div className="w-9 h-9 rounded-full bg-green-100 dark:bg-green-500/25 flex items-center justify-center shrink-0 text-sm font-bold text-green-700 dark:text-green-300">
                         {l.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{l.name}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{l.source_platform} · {timeAgo(l.created_at)}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{timeAgo(l.created_at)}</p>
                       </div>
                       {l.lead_score && (
                         <span className="text-xs font-semibold px-2.5 py-1 rounded-full shrink-0"
@@ -1007,21 +1029,70 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                         </span>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 gap-2.5">
-                      {[
-                        { label: 'Email',    value: l.email,         icon: Mail },
-                        { label: 'Phone',    value: l.phone,         icon: Phone },
-                        { label: 'Company',  value: l.company,       icon: Building2 },
-                        { label: 'Job',      value: l.job_title,     icon: User },
-                        { label: 'Campaign', value: l.campaign_name, icon: Sparkles },
-                        { label: 'Form',     value: l.form_name,     icon: FileText },
-                      ].filter(f => f.value).map(f => (
-                        <div key={f.label} className="bg-gray-50 dark:bg-white/5 rounded-xl p-3">
-                          <p className="text-[10px] text-gray-400 mb-0.5">{f.label}</p>
-                          <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{f.value}</p>
-                        </div>
-                      ))}
+
+                    {/* Source + action status badges */}
+                    <div className="flex flex-wrap gap-2">
+                      <span className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-500/20">
+                        <ExternalLink className="w-3 h-3" />{l.source_platform}
+                      </span>
+                      {actionedAt ? (
+                        <span className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-[#15A4AE]/10 text-[#3a9e8a] dark:text-[#15A4AE] border border-[#15A4AE]/25">
+                          <CheckCircle2 className="w-3 h-3" />Actioned{actionType ? ` · ${actionType}` : ''}
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-500/20">
+                          New submission
+                        </span>
+                      )}
                     </div>
+
+                    {/* AI Summary (or auto-generated fallback) */}
+                    {displaySummary && (
+                      <div className="bg-green-50 dark:bg-green-500/20 border border-green-200 dark:border-green-500/30 rounded-xl p-4">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <Sparkles className="w-3 h-3 text-green-500 dark:text-green-400" />
+                          <p className="text-[11px] text-green-700 dark:text-green-300 font-bold uppercase tracking-wide">AI Summary</p>
+                          {!formAiSummary && <span className="text-[10px] text-gray-400 ml-auto">auto-generated</span>}
+                        </div>
+                        <p className="text-sm text-gray-800 dark:text-gray-100 leading-relaxed">{displaySummary}</p>
+                      </div>
+                    )}
+
+                    {/* Standard contact fields */}
+                    <div>
+                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">Contact Details</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { label: 'Email',    value: l.email,         icon: Mail },
+                          { label: 'Phone',    value: l.phone,         icon: Phone },
+                          { label: 'Company',  value: l.company,       icon: Building2 },
+                          { label: 'Job Title',value: l.job_title,     icon: User },
+                          { label: 'Website',  value: l.website,       icon: ExternalLink },
+                          { label: 'Campaign', value: l.campaign_name, icon: Sparkles },
+                          { label: 'Form',     value: l.form_name,     icon: FileText },
+                        ].filter(f => f.value).map(f => (
+                          <div key={f.label} className="bg-[#f0eeeb] dark:bg-white/5 rounded-xl p-3">
+                            <p className="text-[10px] text-gray-400 mb-0.5">{f.label}</p>
+                            <p className="text-xs font-medium text-gray-800 dark:text-gray-200 break-all">{f.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* All extra collected fields from the form */}
+                    {extraFields.length > 0 && (
+                      <div>
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">Form Fields</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {extraFields.map(([k, v]) => (
+                            <div key={k} className="bg-[#f0eeeb] dark:bg-white/5 rounded-xl p-3">
+                              <p className="text-[10px] text-gray-400 mb-0.5 capitalize">{k.replace(/_/g, ' ')}</p>
+                              <p className="text-xs font-medium text-gray-800 dark:text-gray-200 break-all">{v}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </>
                 )
               })()}
@@ -1060,9 +1131,9 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                       <div>
                         <p className="text-xs text-gray-400 mb-2">Contact details</p>
                         <div className="flex flex-wrap gap-2">
-                          {displayName  && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><User className="w-3 h-3 text-gray-400" />{displayName}</span>}
-                          {displayEmail && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Mail className="w-3 h-3 text-gray-400" />{displayEmail}</span>}
-                          {displayPhone && <span className="flex items-center gap-1.5 text-xs bg-gray-100 dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Phone className="w-3 h-3 text-gray-400" />{displayPhone}</span>}
+                          {displayName  && <span className="flex items-center gap-1.5 text-xs bg-[#f0eeeb] dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><User className="w-3 h-3 text-gray-400" />{displayName}</span>}
+                          {displayEmail && <span className="flex items-center gap-1.5 text-xs bg-[#f0eeeb] dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Mail className="w-3 h-3 text-gray-400" />{displayEmail}</span>}
+                          {displayPhone && <span className="flex items-center gap-1.5 text-xs bg-[#f0eeeb] dark:bg-white/8 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300"><Phone className="w-3 h-3 text-gray-400" />{displayPhone}</span>}
                         </div>
                       </div>
                     )}
@@ -1101,7 +1172,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
 
         {/* Footer actions */}
         {!loading && data && (
-          <div className="px-6 py-4 border-t dark:border-white/10 shrink-0">
+          <div className="px-6 py-4 shrink-0 rounded-b-2xl sm:rounded-b-2xl" style={{ backgroundColor: popup.kind === 'email' ? '#84d2f6' : '#141c2b' }}>
 
             {/* Pipeline picker */}
             {showPipelinePicker && (
@@ -1127,7 +1198,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
               {/* ── Reply compose footer ── */}
               {showReply ? (
                 sendResult === 'sent' ? (
-                  <p className="flex items-center gap-1.5 text-sm font-semibold text-[#15A4AE]">
+                  <p className="flex items-center gap-1.5 text-sm font-semibold text-[#0a5a70]">
                     <CheckCircle2 className="w-4 h-4" /> Reply sent
                   </p>
                 ) : (
@@ -1147,7 +1218,7 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                           setIsEnhancing(false)
                         }
                       }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#15A4AE] hover:bg-[#15A4AE]/10 rounded-xl transition-colors disabled:opacity-50 border border-[#15A4AE]/30"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#0a5a70] hover:bg-[#0a5a70]/10 rounded-xl transition-colors disabled:opacity-50 border border-[#0a5a70]/30"
                     >
                       {isEnhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                       {isEnhancing ? 'Enhancing…' : 'Enhance with Sage AI'}
@@ -1164,10 +1235,10 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
               ) : postAction ? (
                 <>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-[#15A4AE] font-semibold">
+                    <p className={`text-xs font-semibold ${popup.kind === 'email' ? 'text-[#0a5a70]' : 'text-[#15A4AE]'}`}>
                       {postAction === 'deal_added' ? 'Deal added to pipeline.' : 'Ticket created.'}
                     </p>
-                    {ignoring && <p className="text-[11px] text-gray-400 mt-0.5">Closing…</p>}
+                    {ignoring && <p className={`text-[11px] mt-0.5 ${popup.kind === 'email' ? 'text-[#0a5a70]/70' : 'text-gray-400'}`}>Closing…</p>}
                   </div>
                   {!ignoring && popup.kind === 'email' && (
                     <button onClick={() => setShowReply(true)}
@@ -1177,19 +1248,19 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                   )}
                   {!ignoring && popup.kind === 'bot' && (data as Conversation)?.ai_entities?.email && (
                     <button onClick={() => setOutboundEmail({ to: (data as Conversation).ai_entities!.email!, toName: (data as Conversation).ai_entities?.name ?? undefined, subject: `Following up — ${(data as Conversation).title ?? 'your conversation'}`, context: [(data as Conversation).title ? `Conversation: ${(data as Conversation).title}` : '', (data as Conversation).ai_summary ? `Summary: ${(data as Conversation).ai_summary}` : ''].filter(Boolean).join('\n') })}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] hover:bg-[#15A4AE]/8 rounded-xl transition-colors">
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
                       <Mail className="w-3.5 h-3.5" /> Reply via Email
                     </button>
                   )}
                   {!ignoring && popup.kind === 'form' && (data as Lead)?.email && (
                     <button onClick={() => setOutboundEmail({ to: (data as Lead).email!, toName: (data as Lead).name ?? undefined, subject: `Following up — ${(data as Lead).form_name ?? 'your enquiry'}`, context: [(data as Lead).name ? `Name: ${(data as Lead).name}` : '', (data as Lead).campaign_name ? `Campaign: ${(data as Lead).campaign_name}` : ''].filter(Boolean).join('\n') })}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] hover:bg-[#15A4AE]/8 rounded-xl transition-colors">
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
                       <Mail className="w-3.5 h-3.5" /> Reply via Email
                     </button>
                   )}
                   {!ignoring && popup.kind === 'ticket' && ((data as {email?:string|null})?.email ?? (data as {contact?:{email?:string|null}|null})?.contact?.email) && (
                     <button onClick={() => { const t = data as {title?:string;description?:string;email?:string|null;name?:string|null;contact?:{email?:string|null;name?:string|null}|null}; const toEmail = t.contact?.email ?? t.email ?? ''; const toName = t.contact?.name ?? t.name ?? undefined; setOutboundEmail({ to: toEmail, toName: toName ?? undefined, subject: `Re: ${t.title ?? 'your ticket'}`, context: [t.title ? `Ticket: ${t.title}` : '', t.description ? `Details: ${t.description}` : ''].filter(Boolean).join('\n') }) }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] hover:bg-[#15A4AE]/8 rounded-xl transition-colors">
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
                       <Mail className="w-3.5 h-3.5" /> Reply via Email
                     </button>
                   )}
@@ -1229,19 +1300,19 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                   )}
                   {popup.kind === 'bot' && (data as Conversation)?.ai_entities?.email && (
                     <button onClick={() => setOutboundEmail({ to: (data as Conversation).ai_entities!.email!, toName: (data as Conversation).ai_entities?.name ?? undefined, subject: `Following up — ${(data as Conversation).title ?? 'your conversation'}`, context: [(data as Conversation).title ? `Conversation: ${(data as Conversation).title}` : '', (data as Conversation).ai_summary ? `Summary: ${(data as Conversation).ai_summary}` : ''].filter(Boolean).join('\n') })}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] hover:bg-[#15A4AE]/8 rounded-xl transition-colors">
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
                       <Mail className="w-3.5 h-3.5" /> Reply via Email
                     </button>
                   )}
                   {popup.kind === 'form' && (data as Lead)?.email && (
                     <button onClick={() => setOutboundEmail({ to: (data as Lead).email!, toName: (data as Lead).name ?? undefined, subject: `Following up — ${(data as Lead).form_name ?? 'your enquiry'}`, context: [(data as Lead).name ? `Name: ${(data as Lead).name}` : '', (data as Lead).campaign_name ? `Campaign: ${(data as Lead).campaign_name}` : ''].filter(Boolean).join('\n') })}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] hover:bg-[#15A4AE]/8 rounded-xl transition-colors">
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
                       <Mail className="w-3.5 h-3.5" /> Reply via Email
                     </button>
                   )}
                   {popup.kind === 'ticket' && ((data as {email?:string|null})?.email ?? (data as {contact?:{email?:string|null}|null})?.contact?.email) && (
                     <button onClick={() => { const t = data as {title?:string;description?:string;email?:string|null;name?:string|null;contact?:{email?:string|null;name?:string|null}|null}; const toEmail = t.contact?.email ?? t.email ?? ''; const toName = t.contact?.name ?? t.name ?? undefined; setOutboundEmail({ to: toEmail, toName: toName ?? undefined, subject: `Re: ${t.title ?? 'your ticket'}`, context: [t.title ? `Ticket: ${t.title}` : '', t.description ? `Details: ${t.description}` : ''].filter(Boolean).join('\n') }) }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] hover:bg-[#15A4AE]/8 rounded-xl transition-colors">
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
                       <Mail className="w-3.5 h-3.5" /> Reply via Email
                     </button>
                   )}
@@ -1287,19 +1358,19 @@ const iconCls = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 
                   )}
                   {popup.kind === 'bot' && (data as Conversation)?.ai_entities?.email && (
                     <button onClick={() => setOutboundEmail({ to: (data as Conversation).ai_entities!.email!, toName: (data as Conversation).ai_entities?.name ?? undefined, subject: `Following up — ${(data as Conversation).title ?? 'your conversation'}`, context: [(data as Conversation).title ? `Conversation: ${(data as Conversation).title}` : '', (data as Conversation).ai_summary ? `Summary: ${(data as Conversation).ai_summary}` : ''].filter(Boolean).join('\n') })}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] hover:bg-[#15A4AE]/8 rounded-xl transition-colors">
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
                       <Mail className="w-3.5 h-3.5" /> Reply via Email
                     </button>
                   )}
                   {popup.kind === 'form' && (data as Lead)?.email && (
                     <button onClick={() => setOutboundEmail({ to: (data as Lead).email!, toName: (data as Lead).name ?? undefined, subject: `Following up — ${(data as Lead).form_name ?? 'your enquiry'}`, context: [(data as Lead).name ? `Name: ${(data as Lead).name}` : '', (data as Lead).campaign_name ? `Campaign: ${(data as Lead).campaign_name}` : ''].filter(Boolean).join('\n') })}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] hover:bg-[#15A4AE]/8 rounded-xl transition-colors">
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
                       <Mail className="w-3.5 h-3.5" /> Reply via Email
                     </button>
                   )}
                   {popup.kind === 'ticket' && ((data as {email?:string|null})?.email ?? (data as {contact?:{email?:string|null}|null})?.contact?.email) && (
                     <button onClick={() => { const t = data as {title?:string;description?:string;email?:string|null;name?:string|null;contact?:{email?:string|null;name?:string|null}|null}; const toEmail = t.contact?.email ?? t.email ?? ''; const toName = t.contact?.name ?? t.name ?? undefined; setOutboundEmail({ to: toEmail, toName: toName ?? undefined, subject: `Re: ${t.title ?? 'your ticket'}`, context: [t.title ? `Ticket: ${t.title}` : '', t.description ? `Details: ${t.description}` : ''].filter(Boolean).join('\n') }) }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] hover:bg-[#15A4AE]/8 rounded-xl transition-colors">
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
                       <Mail className="w-3.5 h-3.5" /> Reply via Email
                     </button>
                   )}

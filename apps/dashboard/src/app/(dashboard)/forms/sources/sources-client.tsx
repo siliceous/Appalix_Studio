@@ -369,18 +369,23 @@ export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, e
 
     setSaving(platform)
     startTransition(async () => {
-      const fd = new FormData()
-      fd.set('platform', platform)
-      fd.set('name', name)
-      for (const [k, v] of Object.entries(fields)) fd.set(k, v)
+      try {
+        const fd = new FormData()
+        fd.set('platform', platform)
+        fd.set('name', name)
+        for (const [k, v] of Object.entries(fields)) fd.set(k, v)
 
-      const saved = await saveLeadSource(fd)
-      setSources(prev => {
-        const without = prev.filter(s => s.platform !== platform)
-        return [...without, saved]
-      })
-      setExpanded(null)
-      setSaving(null)
+        const saved = await saveLeadSource(fd)
+        setSources(prev => {
+          const without = prev.filter(s => s.platform !== platform)
+          return [...without, saved]
+        })
+        setExpanded(null)
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to save. Please try again.')
+      } finally {
+        setSaving(null)
+      }
     })
   }
 
