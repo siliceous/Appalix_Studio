@@ -7,7 +7,7 @@ import { createClient }              from '@/lib/supabase/server'
  * URL: /api/oauth/meta-leads
  */
 export async function GET(req: NextRequest) {
-  const appId  = process.env.META_APP_ID
+  const appId  = process.env.META_APP_ID || process.env.FACEBOOK_APP_ID
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
 
   if (!appId) {

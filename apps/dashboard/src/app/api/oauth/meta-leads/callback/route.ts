@@ -34,9 +34,9 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
   const code     = searchParams.get('code')
   const rawState = searchParams.get('state') ?? ''
-  const appUrl   = process.env.NEXT_PUBLIC_APP_URL ?? ''
-  const appId    = process.env.META_APP_ID     ?? ''
-  const appSecret = process.env.META_APP_SECRET ?? ''
+  const appUrl    = process.env.NEXT_PUBLIC_APP_URL ?? ''
+  const appId     = process.env.META_APP_ID     || process.env.FACEBOOK_APP_ID     || ''
+  const appSecret = process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || ''
 
   if (!appId || !appSecret) return closeWithError('Meta OAuth not configured on server')
 
