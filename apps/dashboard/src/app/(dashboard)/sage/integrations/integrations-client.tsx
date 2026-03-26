@@ -224,7 +224,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     provider:    'linkedin',
     name:        'LinkedIn Lead Gen Forms',
     description: 'Capture leads from LinkedIn Lead Gen Forms and Sponsored Content campaigns directly into your pipeline.',
-    logo:        '__linkedin__',
+    logo:        '/integrations/linkedin.png',
     category:    'lead_ads',
     fields:      [],
     comingSoon:  true,
@@ -500,11 +500,6 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                           <svg viewBox="0 0 40 40" className="w-full h-full">
                             <rect width="40" height="40" rx="8" fill="#635BFF"/>
                             <path d="M18.5 15.5c0-1.1.9-1.5 2.4-1.5 2.1 0 4.8.7 6.9 1.8v-6.5C25.6 8.5 23 8 20.3 8c-5.3 0-8.8 2.8-8.8 7.4 0 7.2 9.9 6 9.9 9.1 0 1.3-1.1 1.7-2.7 1.7-2.3 0-5.3-.9-7.6-2.2V30c2.6 1.1 5.2 1.6 7.6 1.6 5.5 0 9.2-2.7 9.2-7.4-.1-7.8-9.4-6.4-9.4-8.7z" fill="white"/>
-                          </svg>
-                        ) : integration.logo === '__linkedin__' ? (
-                          <svg viewBox="0 0 40 40" className="w-full h-full">
-                            <rect width="40" height="40" rx="8" fill="#0A66C2"/>
-                            <path d="M13 16h4v12h-4V16zm2-6a2.5 2.5 0 110 5 2.5 2.5 0 010-5zm6 6h3.8v1.7h.1c.5-1 1.8-2.1 3.7-2.1 4 0 4.7 2.6 4.7 6V28h-4v-5.8c0-1.4 0-3.2-2-3.2s-2.3 1.5-2.3 3.1V28h-4V16z" fill="white"/>
                           </svg>
                         ) : integration.logo.startsWith('/') ? (
                           <img src={integration.logo} alt={integration.name} className="w-full h-full object-contain" />

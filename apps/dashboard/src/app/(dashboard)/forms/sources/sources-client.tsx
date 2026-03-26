@@ -130,24 +130,15 @@ function GoogleLogo({ className }: { className?: string }) {
 
 const PLATFORM_LOGO_IMAGES: Partial<Record<LeadAdPlatform, string>> = {
   meta:          '/integrations/meta.png',
+  linkedin:      '/integrations/linkedin.png',
   tiktok:        '/integrations/tiktok.png',
   microsoft_ads: '/integrations/microsoft.png',
   calendly:      '/integrations/calendly.png',
 }
 
-function LinkedInSVG({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 40 40" fill="none">
-      <rect width="40" height="40" rx="8" fill="#0A66C2"/>
-      <path d="M13 16h4v12h-4V16zm2-6a2.5 2.5 0 110 5 2.5 2.5 0 010-5zm6 6h3.8v1.7h.1c.5-1 1.8-2.1 3.7-2.1 4 0 4.7 2.6 4.7 6V28h-4v-5.8c0-1.4 0-3.2-2-3.2s-2.3 1.5-2.3 3.1V28h-4V16z" fill="white"/>
-    </svg>
-  )
-}
-
 function PlatformLogo({ platform, size = 40 }: { platform: LeadAdPlatform; size?: number }) {
   const sz = `w-${size/4} h-${size/4}`
-  if (platform === 'google_ads') return <GoogleLogo  className={sz} />
-  if (platform === 'linkedin')   return <LinkedInSVG className={sz} />
+  if (platform === 'google_ads') return <GoogleLogo className={sz} />
   const imgSrc = PLATFORM_LOGO_IMAGES[platform]
   if (imgSrc) {
     return (
