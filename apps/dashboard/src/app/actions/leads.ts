@@ -4,6 +4,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import type { LeadAdSource, Lead } from '@/lib/types'
+import { ingestLead } from '@/lib/ingest-lead'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -541,60 +542,38 @@ export async function syncFromEmailPlatform(
   for (const contact of contacts) {
     if (!contact.email && !contact.phone) { skipped++; continue }
 
-    // Deduplicate against sage_form_submissions by email or phone + same platform
-    let existingSub: { id: string } | null = null
-    if (contact.email) {
-      const { data } = await admin
-        .from('sage_form_submissions')
-        .select('id')
-        .eq('workspace_id', workspaceId)
-        .eq('source_platform', provider)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .filter('fields->>email' as any, 'eq', contact.email)
-        .limit(1)
-        .maybeSingle()
-      existingSub = data as { id: string } | null
+    // Build extra fields (address, tags, etc.) for ingestLead
+    const extra: Record<string, string> = {}
+    if (contact.website_url) extra.website = contact.website_url
+    if (contact.street)      extra.street  = contact.street
+    if (contact.city)        extra.city    = contact.city
+    if (contact.state)       extra.state   = contact.state
+    if (contact.zip)         extra.zip     = contact.zip
+    if (contact.country)     extra.country = contact.country
+    if (contact.tags.length) extra.tags    = contact.tags.join(', ')
+
+    try {
+      const result = await ingestLead(
+        {
+          name:          contact.name,
+          email:         contact.email,
+          phone:         contact.phone,
+          company:       contact.company,
+          job_title:     contact.job_title,
+          website:       contact.website_url || null,
+          campaign_name: null,
+          ad_name:       null,
+          form_name:     null,
+          extra,
+        },
+        { workspaceId, sourcePlatform: provider, rawPayload: contact },
+      )
+      if (result.status === 'deduplicated') { skipped++; continue }
+      synced++
+    } catch {
+      skipped++
+      continue
     }
-    if (!existingSub && contact.phone) {
-      const { data } = await admin
-        .from('sage_form_submissions')
-        .select('id')
-        .eq('workspace_id', workspaceId)
-        .eq('source_platform', provider)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .filter('fields->>phone' as any, 'eq', contact.phone)
-        .limit(1)
-        .maybeSingle()
-      existingSub = data as { id: string } | null
-    }
-
-    if (existingSub) { skipped++; continue }
-
-    // Insert as a form submission so it appears on Dashboard → Forms with AI triage
-    const fields: Record<string, string> = {}
-    if (contact.name)        fields.name      = contact.name
-    if (contact.email)       fields.email     = contact.email
-    if (contact.phone)       fields.phone     = contact.phone
-    if (contact.company)     fields.company   = contact.company
-    if (contact.job_title)   fields.job_title = contact.job_title
-    if (contact.website_url) fields.website   = contact.website_url
-    if (contact.street)      fields.street    = contact.street
-    if (contact.city)        fields.city      = contact.city
-    if (contact.state)       fields.state     = contact.state
-    if (contact.zip)         fields.zip       = contact.zip
-    if (contact.country)     fields.country   = contact.country
-    if (contact.tags.length) fields.tags      = contact.tags.join(', ')
-
-    const { error: insertErr } = await admin
-      .from('sage_form_submissions')
-      .insert({
-        workspace_id:    workspaceId,
-        form_id:         null,
-        source_platform: provider,
-        fields,
-      })
-    if (insertErr) return { synced, skipped, error: `Submission insert failed: ${insertErr.message}` }
-    synced++
 
     // If Sage auto-sync is ON, also upsert into sage_contacts
     if (syncEnabled) {
