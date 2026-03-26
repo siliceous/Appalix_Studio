@@ -43,7 +43,7 @@ const AVAILABLE_PLATFORMS: { platform: Platform; desc: string; guide: string }[]
   { platform: 'wordpress',          desc: 'Embed a widget on any WordPress site',                  guide: '/resources/add-wordpress-chatbot' },
   { platform: 'web_widget',         desc: 'Add a chat widget to any website via script tag',       guide: '/resources/embed-web-widget' },
   { platform: 'telegram',           desc: 'Deploy your bot on Telegram — DMs and group chats',     guide: '/resources/connect-telegram' },
-  { platform: 'shopify',            desc: 'Connect to Woo, Shopify or Magento & let bot answer order, shipping & customer queries', guide: '/resources/connect-shopify' },
+  { platform: 'shopify',            desc: 'Connect Woo, Shopify & let bot answer orders & shipping queries.', guide: '/resources/connect-shopify' },
   { platform: 'custom_api',         desc: 'Connect via REST API — build any custom integration',   guide: '/resources/custom-api-integration' },
 ]
 
@@ -106,7 +106,8 @@ export default async function IntegrationsPage({
     formWebhookUrls[row.provider] = secret ? `${base}?secret=${encodeURIComponent(secret)}` : base
   }
 
-  const connectedPlatforms = new Set(integrations?.map((i) => i.platform))
+  const connectedPlatforms   = new Set(integrations?.map((i) => i.platform))
+  const platformIntegrationId = new Map(integrations?.map((i) => [i.platform, i.id]))
 
   const sageConnected = new Set<string>(
     (sageIntegrationsRaw ?? [])
@@ -227,13 +228,17 @@ export default async function IntegrationsPage({
                   </div>
                 </div>
                 <div className="flex items-center gap-3 pt-1">
-                  <a
-                    href={`/integrations/new?platform=${platform}`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
-                  >
-                    <Plug className="w-3 h-3" />
-                    Connect
-                  </a>
+                  {connected ? (
+                    <IntegrationActions id={platformIntegrationId.get(platform)!} status="active" />
+                  ) : (
+                    <a
+                      href={`/integrations/new?platform=${platform}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
+                    >
+                      <Plug className="w-3 h-3" />
+                      Connect
+                    </a>
+                  )}
                   <a href={guide} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
                     Setup guide →
                   </a>

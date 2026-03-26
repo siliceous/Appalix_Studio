@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing token or platform' }, { status: 400 })
   }
 
-  const appId     = process.env.META_APP_ID!
-  const appSecret = process.env.META_APP_SECRET!
+  const appId     = process.env.META_APP_ID     || process.env.FACEBOOK_APP_ID     || ''
+  const appSecret = process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || ''
 
   // ── Auth check ────────────────────────────────────────────────────────────
   const supabase = await createClient()

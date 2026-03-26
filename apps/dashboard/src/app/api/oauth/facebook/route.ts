@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/server'
  *   bot_id  – Appalix bot to attach to this integration
  */
 export async function GET(req: NextRequest) {
-  const appId = process.env.META_APP_ID
+  const appId = process.env.META_APP_ID || process.env.FACEBOOK_APP_ID
   if (!appId) {
     return NextResponse.json({ error: 'Facebook OAuth not configured' }, { status: 500 })
   }
