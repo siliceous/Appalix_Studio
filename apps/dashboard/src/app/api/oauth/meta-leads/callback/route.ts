@@ -107,27 +107,38 @@ export async function GET(req: NextRequest) {
   const verifyToken = randomBytes(16).toString('hex')
   const page        = pages[0]
 
-  const { error: upsertError } = await (admin as ReturnType<typeof createAdminClient>)
-    .from('lead_ad_sources')
-    .upsert({
-      workspace_id: wid,
-      platform:     'meta',
-      name:         `Meta — ${page.name}`,
-      status:       'active',
-      config: {
-        page_access_token: page.access_token,
-        page_id:           page.id,
-        page_name:         page.name,
-        verify_token:      verifyToken,
-      },
-      updated_at: new Date().toISOString(),
-    }, {
-      onConflict: 'workspace_id,platform',
-    })
+  const config = {
+    page_access_token: page.access_token,
+    page_id:           page.id,
+    page_name:         page.name,
+    verify_token:      verifyToken,
+  }
 
-  if (upsertError) {
-    console.error('[oauth/meta-leads/callback] upsert failed:', upsertError.message)
-    return closeWithError(`Failed to save: ${upsertError.message}`)
+  // Check for existing record and update, otherwise insert
+  const { data: existing } = await admin
+    .from('lead_ad_sources')
+    .select('id')
+    .eq('workspace_id', wid)
+    .eq('platform', 'meta')
+    .maybeSingle()
+
+  let saveError: { message: string } | null = null
+  if (existing) {
+    const { error } = await admin
+      .from('lead_ad_sources')
+      .update({ name: `Meta — ${page.name}`, status: 'active', config, updated_at: new Date().toISOString() })
+      .eq('id', (existing as { id: string }).id)
+    saveError = error
+  } else {
+    const { error } = await admin
+      .from('lead_ad_sources')
+      .insert({ workspace_id: wid, platform: 'meta', name: `Meta — ${page.name}`, status: 'active', config })
+    saveError = error
+  }
+
+  if (saveError) {
+    console.error('[oauth/meta-leads/callback] save failed:', saveError.message)
+    return closeWithError(`Failed to save: ${saveError.message}`)
   }
 
   // ── 6. Subscribe page to leadgen events (non-fatal) ───────────────────────
