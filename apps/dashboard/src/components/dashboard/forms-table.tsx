@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ClipboardList, Search, ChevronDown, X,
-  UserPlus, Ticket, Download, Loader2, Trash2, Pencil, Sparkles, Columns3,
+  UserPlus, Ticket, Download, Loader2, Trash2, Pencil, Sparkles, Columns3, RefreshCw,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import {
@@ -18,6 +18,7 @@ import {
   updateSubmissionName,
   analyzeFormSubmissions,
 } from '@/app/actions/sage-forms'
+import { syncAllConnectedSources } from '@/app/actions/leads'
 import type { SageForm, SageFormSubmission } from '@/app/actions/sage-forms'
 import { TrashTab } from '@/components/dashboard/trash-tab'
 
@@ -228,6 +229,25 @@ export function FormsTable({
 
   // Bulk saving
   const [bulkSaving, setBulkSaving] = useState(false)
+
+  // Refresh (sync all connected sources)
+  const [refreshing,     setRefreshing]     = useState(false)
+  const [refreshResult,  setRefreshResult]  = useState<string | null>(null)
+
+  async function handleRefresh() {
+    setRefreshing(true)
+    setRefreshResult(null)
+    try {
+      const res = await syncAllConnectedSources()
+      setRefreshResult(res.synced > 0 ? `+${res.synced} new` : 'Up to date')
+      router.refresh()
+    } catch {
+      setRefreshResult('Error')
+    } finally {
+      setRefreshing(false)
+      setTimeout(() => setRefreshResult(null), 4000)
+    }
+  }
 
   // Source platform filter (client-side — Mailchimp, ActiveCampaign, etc.)
   const [localSource, setLocalSource] = useState('')
@@ -538,6 +558,17 @@ export function FormsTable({
               )}
             </div>
           )}
+          <button
+            onClick={() => void handleRefresh()}
+            disabled={refreshing}
+            title="Sync new contacts from all connected sources"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-white/5 border dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-colors disabled:opacity-50"
+          >
+            {refreshing
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <RefreshCw className="w-3.5 h-3.5" />}
+            {refreshResult ?? 'Refresh'}
+          </button>
           <button
             onClick={exportCSV}
             disabled={submissions.length === 0}

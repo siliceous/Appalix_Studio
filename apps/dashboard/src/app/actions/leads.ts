@@ -653,6 +653,100 @@ export async function toggleMailchimpSync(enabled: boolean): Promise<void> {
   return toggleEmailPlatformSync('mailchimp', enabled)
 }
 
+/** Backfill leads from the `leads` table (Google Ads / Meta) into sage_form_submissions */
+async function backfillAdLeads(workspaceId: string, admin: ReturnType<typeof createAdminClient>): Promise<number> {
+  // Fetch ad leads not yet mirrored into sage_form_submissions
+  const { data: adLeads } = await admin
+    .from('leads')
+    .select('id, name, email, phone, company, job_title, website, campaign_name, ad_name, form_name, lead_score, source_platform, raw_payload, created_at')
+    .eq('workspace_id', workspaceId)
+    .in('source_platform', ['google_ads', 'meta'])
+
+  if (!adLeads || adLeads.length === 0) return 0
+
+  type AdLead = {
+    id: string; name: string; email: string | null; phone: string | null
+    company: string | null; job_title: string | null; website: string | null
+    campaign_name: string | null; ad_name: string | null; form_name: string | null
+    lead_score: string | null; source_platform: string; raw_payload: unknown; created_at: string
+  }
+
+  let synced = 0
+  for (const lead of adLeads as AdLead[]) {
+    // Check if already mirrored
+    const { data: existing } = await admin
+      .from('sage_form_submissions')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .eq('source_platform', lead.source_platform)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .filter('fields->>lead_id' as any, 'eq', lead.id)
+      .limit(1)
+      .maybeSingle()
+
+    if (existing) continue
+
+    const fields = Object.fromEntries(
+      Object.entries({
+        lead_id:   lead.id,
+        name:      lead.name,
+        email:     lead.email,
+        phone:     lead.phone,
+        company:   lead.company,
+        job_title: lead.job_title,
+        website:   lead.website,
+        campaign:  lead.campaign_name,
+        form_name: lead.form_name,
+        ad_name:   lead.ad_name,
+      }).filter(([, v]) => v != null)
+    ) as Record<string, string>
+
+    await admin.from('sage_form_submissions').insert({
+      workspace_id:    workspaceId,
+      source_platform: lead.source_platform,
+      fields,
+      raw_payload:     lead.raw_payload as Record<string, unknown> ?? {},
+      ai_priority:     (lead.lead_score as 'high' | 'medium' | 'low') ?? 'low',
+      created_at:      lead.created_at,
+    })
+    synced++
+  }
+  return synced
+}
+
+export async function syncAllConnectedSources(): Promise<{ synced: number; skipped: number; errors: string[] }> {
+  const workspaceId = await getWorkspaceId()
+  const admin       = createAdminClient()
+
+  // Find all connected email platform integrations
+  const { data: integrations } = await admin
+    .from('sage_integrations')
+    .select('provider')
+    .eq('workspace_id', workspaceId)
+    .eq('status', 'connected')
+    .in('provider', ['mailchimp', 'activecampaign', 'klaviyo', 'convertkit'])
+
+  const providers = (integrations ?? []).map(i => i.provider) as ('mailchimp' | 'activecampaign' | 'klaviyo' | 'convertkit')[]
+
+  const [emailResults, adSynced] = await Promise.all([
+    providers.length > 0 ? Promise.all(providers.map(p => syncFromEmailPlatform(p))) : Promise.resolve([]),
+    backfillAdLeads(workspaceId, admin),
+  ])
+
+  let totalSynced  = adSynced
+  let totalSkipped = 0
+  const errors: string[] = []
+  for (const r of emailResults) {
+    totalSynced  += r.synced
+    totalSkipped += r.skipped
+    if (r.error) errors.push(r.error)
+  }
+  const totals = { synced: totalSynced, skipped: totalSkipped, errors }
+
+  revalidatePath('/dashboard/forms')
+  return totals
+}
+
 export async function toggleEmailPlatformSync(
   provider: 'mailchimp' | 'activecampaign' | 'klaviyo' | 'convertkit' | 'constantcontact',
   enabled: boolean,
