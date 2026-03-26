@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Check, Copy, ChevronDown, ChevronUp, ExternalLink, BookOpen, Loader2, Unplug, AlertCircle, RefreshCw } from 'lucide-react'
@@ -368,6 +368,14 @@ function EmailPlatformCard({
 export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, emailIntegrations, platformLayout = 'stack', emailLayout = 'grid-2', showEmailProviders, hideEmailHeading = false }: SourcesClientProps) {
   const router = useRouter()
   const [sources, setSources]   = useState<LeadAdSource[]>(initialSources)
+
+  useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      if (e.data?.type === 'meta-leads-connected') router.refresh()
+    }
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [router])
   const [expanded, setExpanded] = useState<LeadAdPlatform | null>(null)
   const [formValues, setFormValues] = useState<Record<string, Record<string, string>>>({})
   const [saving, setSaving]       = useState<LeadAdPlatform | null>(null)
