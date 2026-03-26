@@ -56,14 +56,15 @@ export type FormFilters = {
 }
 
 interface Props {
-  submissions:              SageFormSubmission[]
-  forms:                    SageForm[]
-  filters:                  FormFilters
-  readonly?:                boolean
+  submissions:               SageFormSubmission[]
+  forms:                     SageForm[]
+  filters:                   FormFilters
+  readonly?:                 boolean
   connectedEmailProviders?:  string[]
   connectedFormProviders?:   string[]
-  teamMembers?:             Array<{ user_id: string; name: string }>
-  canAllocate?:             boolean
+  connectedLeadAdProviders?: string[]
+  teamMembers?:              Array<{ user_id: string; name: string }>
+  canAllocate?:              boolean
 }
 
 const EMAIL_PLATFORM_META: Record<string, { name: string; logo?: string; pill: string }> = {
@@ -212,6 +213,7 @@ export function FormsTable({
   submissions, forms, filters, readonly = false,
   connectedEmailProviders = [],
   connectedFormProviders = [],
+  connectedLeadAdProviders = [],
   teamMembers = [], canAllocate = false,
 }: Props) {
   const router = useRouter()
@@ -468,7 +470,7 @@ export function FormsTable({
       {(() => {
         const submissionFormProviders = [...new Set(submissions.map(s => s.source_platform).filter(Boolean))]
           .filter(p => ['gravity_forms', 'google_forms', 'typeform', 'fluent_forms', 'google_ads', 'meta'].includes(p as string)) as string[]
-        const allProviders = [...new Set([...connectedEmailProviders, ...connectedFormProviders, ...submissionFormProviders])]
+        const allProviders = [...new Set([...connectedEmailProviders, ...connectedFormProviders, ...connectedLeadAdProviders, ...submissionFormProviders])]
         if (allProviders.length === 0) return null
         return (
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/8 bg-white dark:bg-white/[0.03]">

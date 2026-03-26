@@ -142,12 +142,20 @@ export default async function FormsPage({
     .eq('status', 'connected')
     .in('provider', ['gravity_forms', 'google_forms', 'typeform', 'fluent_forms'])
 
+  // Connected lead ad sources (meta, google_ads)
+  const { data: leadAdRaw } = await adminClient
+    .from('lead_ad_sources')
+    .select('platform')
+    .eq('workspace_id', workspaceId)
+    .eq('status', 'active')
+
   type EmailIntegRow = { provider: string; status: string; config: Record<string, string>; sync_enabled: boolean }
   const emailIntegrations = (emailIntegRaw ?? []) as EmailIntegRow[]
 
   // Connected platform names for the banner
   const connectedEmailProviders = emailIntegrations.map(r => r.provider)
   const connectedFormProviders  = ((formIntegRaw ?? []) as { provider: string }[]).map(r => r.provider)
+  const connectedLeadAdProviders = ((leadAdRaw ?? []) as { platform: string }[]).map(r => r.platform)
 
   const [formsRes, submissionsRes] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -218,6 +226,7 @@ export default async function FormsPage({
             readonly={!!viewAsUserId}
             connectedEmailProviders={connectedEmailProviders}
             connectedFormProviders={connectedFormProviders}
+            connectedLeadAdProviders={connectedLeadAdProviders}
             teamMembers={teamMembersForPicker}
             canAllocate={callerRank >= ROLE_RANK.manager}
           />
