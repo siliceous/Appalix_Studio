@@ -519,6 +519,8 @@ export interface LeadAdSourceConfig {
   verify_token?:      string
   app_secret?:        string
   page_access_token?: string
+  page_id?:           string
+  page_name?:         string
   // Google Ads
   webhook_key?:       string
 }

@@ -17,6 +17,8 @@ interface PlatformDef {
   description: string
   color:       string
   comingSoon?: boolean
+  /** If set, clicking Connect opens an OAuth popup instead of expanding manual fields */
+  oauthPath?:  string
   fields: {
     name:        string
     label:       string
@@ -49,29 +51,8 @@ const PLATFORMS: PlatformDef[] = [
     name:        'Meta (Facebook & Instagram)',
     description: 'Receive leads from Facebook and Instagram Lead Ad forms in real time.',
     color:       'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20 text-blue-700 dark:text-blue-400',
-    fields: [
-      {
-        name:        'verify_token',
-        label:       'Verify Token',
-        type:        'text',
-        placeholder: 'my_secret_verify_token',
-        hint:        'A token you create and enter in Meta App → Webhooks → Callback URL',
-      },
-      {
-        name:        'app_secret',
-        label:       'App Secret',
-        type:        'password',
-        placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        hint:        'Found in Meta App → Settings → Basic → App Secret',
-      },
-      {
-        name:        'page_access_token',
-        label:       'Page Access Token',
-        type:        'password',
-        placeholder: 'EAAxxxx…',
-        hint:        'Long-lived Page Access Token from your Facebook Page',
-      },
-    ],
+    oauthPath:   '/api/oauth/meta-leads',
+    fields:      [],
     tutorialUrl: '/resources/connect-meta-leads',
   },
   {
@@ -385,6 +366,7 @@ function EmailPlatformCard({
 }
 
 export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, emailIntegrations, platformLayout = 'stack', emailLayout = 'grid-2', showEmailProviders, hideEmailHeading = false }: SourcesClientProps) {
+  const router = useRouter()
   const [sources, setSources]   = useState<LeadAdSource[]>(initialSources)
   const [expanded, setExpanded] = useState<LeadAdPlatform | null>(null)
   const [formValues, setFormValues] = useState<Record<string, Record<string, string>>>({})
@@ -520,6 +502,13 @@ export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, e
                       : <Unplug  className="w-3 h-3" />
                     }
                     Disconnect
+                  </button>
+                ) : def.oauthPath ? (
+                  <button
+                    onClick={() => openOAuthPopup(def.oauthPath!, () => router.refresh())}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#1877F2] hover:bg-[#166FE5] text-white rounded-lg transition-colors"
+                  >
+                    Connect with Facebook
                   </button>
                 ) : (
                   <button
