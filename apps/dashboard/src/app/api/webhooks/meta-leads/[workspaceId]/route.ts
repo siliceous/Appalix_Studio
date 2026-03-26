@@ -166,6 +166,29 @@ async function upsertLead(
       event_type: 'lead_created',
       event_data: { source: 'meta', score },
     })
+
+    // Mirror into sage_form_submissions so it appears in the Forms activity feed
+    const fields = Object.fromEntries(
+      Object.entries({
+        name:      lead.name,
+        email:     lead.email,
+        phone:     lead.phone,
+        company:   lead.company,
+        job_title: lead.job_title,
+        website:   lead.website,
+        campaign:  lead.campaign_name,
+        form_name: lead.form_name,
+        ad_name:   lead.ad_name,
+      }).filter(([, v]) => v != null)
+    )
+    await admin.from('sage_form_submissions').insert({
+      workspace_id:    workspaceId,
+      source_platform: 'meta',
+      fields,
+      raw_payload:     rawPayload as Record<string, unknown>,
+      ai_priority:     score,
+    })
+
     // Update source stats (fetch current count then increment)
     const { data: src } = await admin
       .from('lead_ad_sources')
