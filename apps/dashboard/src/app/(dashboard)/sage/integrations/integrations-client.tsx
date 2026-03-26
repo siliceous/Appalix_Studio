@@ -136,7 +136,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     provider:    'typeform',
     name:        'Typeform',
     description: 'Stream Typeform responses into your Forms section in real time. Sage connects via Typeform webhooks using your personal access token.',
-    logo:        '/integrations/typeform.png',
+    logo:        '__typeform__',
     category:    'forms',
     fields: [
       { name: 'access_token', label: 'Personal Access Token', type: 'password', placeholder: 'tfp_…', hint: 'Found in Typeform → Account → Personal tokens → Create a new token' },
@@ -500,6 +500,18 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                           <svg viewBox="0 0 40 40" className="w-full h-full">
                             <rect width="40" height="40" rx="8" fill="#635BFF"/>
                             <path d="M18.5 15.5c0-1.1.9-1.5 2.4-1.5 2.1 0 4.8.7 6.9 1.8v-6.5C25.6 8.5 23 8 20.3 8c-5.3 0-8.8 2.8-8.8 7.4 0 7.2 9.9 6 9.9 9.1 0 1.3-1.1 1.7-2.7 1.7-2.3 0-5.3-.9-7.6-2.2V30c2.6 1.1 5.2 1.6 7.6 1.6 5.5 0 9.2-2.7 9.2-7.4-.1-7.8-9.4-6.4-9.4-8.7z" fill="white"/>
+                          </svg>
+                        ) : integration.logo === '__monday__' ? (
+                          <svg viewBox="0 0 40 40" className="w-full h-full">
+                            <rect width="40" height="40" rx="8" fill="#1F1F3D"/>
+                            <ellipse cx="12" cy="24" rx="4" ry="4" fill="#FF3D57"/>
+                            <ellipse cx="20" cy="24" rx="4" ry="4" fill="#FFCB00"/>
+                            <ellipse cx="28" cy="24" rx="4" ry="4" fill="#00CA72"/>
+                          </svg>
+                        ) : integration.logo === '__typeform__' ? (
+                          <svg viewBox="0 0 40 40" className="w-full h-full">
+                            <rect width="40" height="40" rx="8" fill="#0A0A0A"/>
+                            <text x="50%" y="58%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="16" fontWeight="700" fontFamily="serif">T</text>
                           </svg>
                         ) : integration.logo.startsWith('/') ? (
                           <img src={integration.logo} alt={integration.name} className="w-full h-full object-contain" />
