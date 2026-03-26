@@ -7,11 +7,13 @@ import { setIntegrationStatus, deleteIntegration } from '@/app/actions/integrati
 import type { IntegrationStatus } from '@/lib/types'
 
 interface Props {
-  id: string
-  status: IntegrationStatus
+  id:       string
+  status:   IntegrationStatus
+  /** When true, shows only a Disconnect button (used in platform cards) */
+  compact?: boolean
 }
 
-export function IntegrationActions({ id, status }: Props) {
+export function IntegrationActions({ id, status, compact = false }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
@@ -65,6 +67,18 @@ export function IntegrationActions({ id, status }: Props) {
         Error
       </span>
     )
+
+  if (compact) {
+    return (
+      <button
+        onClick={handleDelete}
+        disabled={isPending}
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
+      >
+        Disconnect
+      </button>
+    )
+  }
 
   return (
     <div className="flex items-center gap-1.5 shrink-0">

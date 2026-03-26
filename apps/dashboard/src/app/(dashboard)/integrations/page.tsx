@@ -229,7 +229,7 @@ export default async function IntegrationsPage({
                 </div>
                 <div className="flex items-center gap-3 pt-1">
                   {connected ? (
-                    <IntegrationActions id={platformIntegrationId.get(platform)!} status="active" />
+                    <IntegrationActions id={platformIntegrationId.get(platform)!} status="active" compact />
                   ) : (
                     <a
                       href={`/integrations/new?platform=${platform}`}
