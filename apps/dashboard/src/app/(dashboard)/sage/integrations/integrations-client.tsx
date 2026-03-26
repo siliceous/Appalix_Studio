@@ -503,7 +503,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                           </svg>
                         ) : integration.logo === '__monday__' ? (
                           <svg viewBox="0 0 40 40" className="w-full h-full">
-                            <rect width="40" height="40" rx="8" fill="#1F1F3D"/>
+                            <rect width="40" height="40" rx="8" fill="white" stroke="#E5E7EB"/>
                             <ellipse cx="12" cy="24" rx="4" ry="4" fill="#FF3D57"/>
                             <ellipse cx="20" cy="24" rx="4" ry="4" fill="#FFCB00"/>
                             <ellipse cx="28" cy="24" rx="4" ry="4" fill="#00CA72"/>
