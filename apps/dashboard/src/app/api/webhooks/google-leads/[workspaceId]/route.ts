@@ -148,20 +148,23 @@ async function upsertLead(
     })
 
     // Also mirror into sage_form_submissions so it appears in the Forms activity feed
+    const fields = Object.fromEntries(
+      Object.entries({
+        name:      lead.name,
+        email:     lead.email,
+        phone:     lead.phone,
+        company:   lead.company,
+        job_title: lead.job_title,
+        website:   lead.website,
+        campaign:  lead.campaign_name,
+        form_name: lead.form_name,
+        ad_name:   lead.ad_name,
+      }).filter(([, v]) => v != null)
+    )
     await admin.from('sage_form_submissions').insert({
       workspace_id:    workspaceId,
       source_platform: 'google_ads',
-      fields: {
-        name:          lead.name,
-        email:         lead.email,
-        phone:         lead.phone,
-        company:       lead.company,
-        job_title:     lead.job_title,
-        website:       lead.website,
-        campaign:      lead.campaign_name,
-        form_name:     lead.form_name,
-        ad_name:       lead.ad_name,
-      },
+      fields,
       raw_payload:     rawPayload as Record<string, unknown>,
       ai_priority:     score,
     })

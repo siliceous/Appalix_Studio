@@ -106,7 +106,7 @@ const META_KEYS = new Set(['form_title', 'form_name', 'id', 'form_id', 'ip', 'da
 
 /** Extract non-meta trimmed values from fields */
 function fieldVals(fields: Record<string, string>): string[] {
-  return Object.entries(fields).filter(([k]) => !META_KEYS.has(k)).map(([, v]) => v.trim()).filter(Boolean)
+  return Object.entries(fields).filter(([k]) => !META_KEYS.has(k)).map(([, v]) => v?.trim() ?? '').filter(Boolean)
 }
 
 /** Scan all field values for an email address (handles numeric GF field IDs) */
