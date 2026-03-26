@@ -16,6 +16,7 @@ interface PlatformDef {
   name:        string
   description: string
   color:       string
+  comingSoon?: boolean
   fields: {
     name:        string
     label:       string
@@ -73,20 +74,47 @@ const PLATFORMS: PlatformDef[] = [
     ],
     tutorialUrl: '/resources/connect-meta-leads',
   },
+  {
+    platform:    'linkedin',
+    name:        'LinkedIn Lead Gen Forms',
+    description: 'Capture leads from LinkedIn Lead Gen Forms and Sponsored Content campaigns directly into your pipeline.',
+    color:       'bg-sky-50 dark:bg-sky-500/10 border-sky-200 dark:border-sky-500/20 text-sky-700 dark:text-sky-400',
+    comingSoon:  true,
+    fields:      [],
+    tutorialUrl: '/resources/connect-linkedin-leads',
+  },
+  {
+    platform:    'tiktok',
+    name:        'TikTok Lead Ads',
+    description: 'Receive leads from TikTok Instant Forms campaigns in real time. Integrates with TikTok for Business.',
+    color:       'bg-gray-50 dark:bg-gray-500/10 border-gray-200 dark:border-gray-500/20 text-gray-700 dark:text-gray-400',
+    comingSoon:  true,
+    fields:      [],
+    tutorialUrl: '/resources/connect-tiktok-leads',
+  },
+  {
+    platform:    'microsoft_ads',
+    name:        'Microsoft Ads',
+    description: 'Import leads from Microsoft Advertising Lead Extensions on Bing and the Microsoft Audience Network.',
+    color:       'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20 text-green-700 dark:text-green-400',
+    comingSoon:  true,
+    fields:      [],
+    tutorialUrl: '/resources/connect-microsoft-ads-leads',
+  },
+  {
+    platform:    'calendly',
+    name:        'Calendly',
+    description: 'Automatically capture booking details as leads when prospects schedule a meeting via Calendly.',
+    color:       'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/20 text-indigo-700 dark:text-indigo-400',
+    comingSoon:  true,
+    fields:      [],
+    tutorialUrl: '/resources/connect-calendly',
+  },
 ]
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function MetaLogo({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 40 40" fill="none">
-      <rect width="40" height="40" rx="8" fill="#1877F2"/>
-      <path d="M28 20c0-4.418-3.582-8-8-8s-8 3.582-8 8c0 3.993 2.927 7.302 6.75 7.91V22.5h-2.031V20H18.75v-1.781c0-2.007 1.195-3.114 3.022-3.114.875 0 1.79.156 1.79.156V17.2h-1.008c-.993 0-1.304.617-1.304 1.25V20h2.219l-.354 2.5H21.25v5.41C25.073 27.302 28 23.993 28 20z" fill="white"/>
-    </svg>
-  )
-}
 
 function GoogleLogo({ className }: { className?: string }) {
   return (
@@ -100,10 +128,39 @@ function GoogleLogo({ className }: { className?: string }) {
   )
 }
 
+const PLATFORM_LOGO_IMAGES: Partial<Record<LeadAdPlatform, string>> = {
+  meta:          '/integrations/meta.png',
+  tiktok:        '/integrations/tiktok.png',
+  microsoft_ads: '/integrations/microsoft.png',
+  calendly:      '/integrations/calendly.png',
+}
+
+function LinkedInSVG({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 40 40" fill="none">
+      <rect width="40" height="40" rx="8" fill="#0A66C2"/>
+      <path d="M13 16h4v12h-4V16zm2-6a2.5 2.5 0 110 5 2.5 2.5 0 010-5zm6 6h3.8v1.7h.1c.5-1 1.8-2.1 3.7-2.1 4 0 4.7 2.6 4.7 6V28h-4v-5.8c0-1.4 0-3.2-2-3.2s-2.3 1.5-2.3 3.1V28h-4V16z" fill="white"/>
+    </svg>
+  )
+}
+
 function PlatformLogo({ platform, size = 40 }: { platform: LeadAdPlatform; size?: number }) {
-  const cls = `w-${size/4} h-${size/4}`
-  if (platform === 'meta')       return <MetaLogo   className={cls} />
-  if (platform === 'google_ads') return <GoogleLogo className={cls} />
+  const sz = `w-${size/4} h-${size/4}`
+  if (platform === 'google_ads') return <GoogleLogo  className={sz} />
+  if (platform === 'linkedin')   return <LinkedInSVG className={sz} />
+  const imgSrc = PLATFORM_LOGO_IMAGES[platform]
+  if (imgSrc) {
+    return (
+      <div className={`w-${size/4} h-${size/4} rounded-lg bg-white dark:bg-white/8 border border-gray-100 dark:border-white/8 flex items-center justify-center overflow-hidden p-1 shrink-0`}>
+        <img
+          src={imgSrc}
+          alt={platform}
+          className="w-full h-full object-contain"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+        />
+      </div>
+    )
+  }
   return null
 }
 
@@ -457,7 +514,11 @@ export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, e
                   <BookOpen className="w-3.5 h-3.5 text-gray-400" />
                 </Link>
 
-                {connected ? (
+                {def.comingSoon ? (
+                  <span className="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-white/8 text-gray-400 dark:text-gray-500 rounded-lg cursor-not-allowed">
+                    Coming Soon
+                  </span>
+                ) : connected ? (
                   <button
                     onClick={() => handleDisconnect(connected)}
                     disabled={disconnecting === connected.id}
@@ -482,7 +543,7 @@ export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, e
             </div>
 
             {/* Expanded form */}
-            {isExpanded && !connected && (
+            {isExpanded && !connected && !def.comingSoon && (
               <div className="border-t border-gray-100 dark:border-white/6 px-5 py-4 space-y-4 bg-gray-50 dark:bg-white/2">
                 {/* Webhook URL */}
                 <div>

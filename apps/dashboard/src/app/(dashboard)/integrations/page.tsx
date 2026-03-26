@@ -14,13 +14,13 @@ type IntegrationRow = Integration & { bots?: { name: string } | null }
 
 export const metadata: Metadata = { title: 'Integrations' }
 
-const CRM_PROVIDERS: { emoji: string; name: string; desc: string; guide: string }[] = [
-  { emoji: '🔗', name: 'Zapier',     desc: 'Route leads to HubSpot, Salesforce, Google Sheets, and 6,000+ apps via a Catch Hook.',        guide: '/resources/connect-zapier' },
-  { emoji: '🟠', name: 'HubSpot',    desc: 'Push captured leads directly into HubSpot contacts using a Private App token.',                 guide: '/resources/connect-hubspot' },
-  { emoji: '💬', name: 'Intercom',   desc: 'Create Intercom leads instantly when a visitor shares contact details in chat.',                guide: '/resources/connect-intercom' },
-  { emoji: '🔵', name: 'Zoho CRM',   desc: 'Automatically add leads to Zoho CRM using an OAuth access token.',                             guide: '/resources/connect-zoho-crm' },
-  { emoji: '☁️', name: 'Salesforce',  desc: 'Create Salesforce Lead records via the REST API the moment a lead is captured.',               guide: '/resources/connect-salesforce' },
-  { emoji: '📋', name: 'Monday.com', desc: 'Create Monday.com board items automatically when your bot captures a lead.',                    guide: '/resources/connect-monday' },
+const CRM_PROVIDERS: { logo: string; name: string; desc: string; guide: string }[] = [
+  { logo: '/integrations/zapier.png',     name: 'Zapier',     desc: 'Route leads to HubSpot, Salesforce, Google Sheets, and 6,000+ apps via a Catch Hook.',        guide: '/resources/connect-zapier' },
+  { logo: '/integrations/hubspot.png',    name: 'HubSpot',    desc: 'Push captured leads directly into HubSpot contacts using a Private App token.',                 guide: '/resources/connect-hubspot' },
+  { logo: '/integrations/intercom.png',   name: 'Intercom',   desc: 'Create Intercom leads instantly when a visitor shares contact details in chat.',                guide: '/resources/connect-intercom' },
+  { logo: '/integrations/zoho.png',       name: 'Zoho CRM',   desc: 'Automatically add leads to Zoho CRM using an OAuth access token.',                             guide: '/resources/connect-zoho-crm' },
+  { logo: '/integrations/salesforce.png', name: 'Salesforce', desc: 'Create Salesforce Lead records via the REST API the moment a lead is captured.',               guide: '/resources/connect-salesforce' },
+  { logo: '/integrations/monday.png',     name: 'Monday.com', desc: 'Create Monday.com board items automatically when your bot captures a lead.',                    guide: '/resources/connect-monday' },
 ]
 
 // Action label shown on each platform card / connected row
@@ -351,8 +351,8 @@ export default async function IntegrationsPage({
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {CRM_PROVIDERS.map((crm) => (
             <div key={crm.name} className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-[#15A4AE]/30 p-4 flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center text-base shrink-0">
-                {crm.emoji}
+              <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center shrink-0 overflow-hidden p-1">
+                <img src={crm.logo} alt={crm.name} className="w-full h-full object-contain" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">

@@ -260,6 +260,7 @@ export type SageIntegrationProvider =
   | 'stripe' | 'gmail' | 'microsoft' | 'zapier' | 'make' | 'freshdesk' | 'zendesk'
   | 'mailchimp' | 'activecampaign' | 'convertkit' | 'klaviyo' | 'constantcontact'
   | 'gravity_forms' | 'google_forms' | 'typeform' | 'fluent_forms'
+  | 'linkedin' | 'tiktok' | 'microsoft_ads' | 'calendly'
 export type SageIntegrationStatus   = 'connected' | 'disconnected' | 'error'
 export type SageActivityEntityType  = 'contact' | 'deal' | 'ticket' | 'company'
 
@@ -509,7 +510,8 @@ export interface SageReminder {
 // ---------------------------------------------------------------
 // Lead Ads (Forms section)
 // ---------------------------------------------------------------
-export type LeadAdPlatform = 'meta' | 'google_ads' | 'mailchimp' | 'activecampaign'
+// Lead ad + booking platforms (active: meta, google_ads — coming soon: linkedin, tiktok, microsoft_ads, calendly)
+export type LeadAdPlatform = 'meta' | 'google_ads' | 'mailchimp' | 'activecampaign' | 'linkedin' | 'tiktok' | 'microsoft_ads' | 'calendly'
 export type LeadScore = 'high' | 'medium' | 'low'
 
 export interface LeadAdSourceConfig {

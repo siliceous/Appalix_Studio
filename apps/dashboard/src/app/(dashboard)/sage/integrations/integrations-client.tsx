@@ -13,13 +13,14 @@ interface IntegrationCard {
   name:         string
   description:  string
   logo:         string
-  category:     'automation' | 'email' | 'tickets' | 'payments' | 'email_marketing' | 'forms'
+  category:     'automation' | 'email' | 'tickets' | 'payments' | 'email_marketing' | 'forms' | 'lead_ads'
   fields:       Array<{ name: string; label: string; type: string; placeholder: string; hint?: string; optional?: boolean }>
   docsUrl?:      string
   tutorialUrl?:  string
   oauthPath?:    string   // e.g. '/api/oauth/google' — if set, OAuth button replaces text fields
   webhookPath?:  string   // e.g. '/api/webhooks/typeform' — shown after connecting
   canSync?:      boolean  // shows Sync Now button when connected
+  comingSoon?:   boolean  // shows Coming Soon badge, disables connect
 }
 
 const INTEGRATIONS: IntegrationCard[] = [
@@ -27,7 +28,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     provider:    'stripe',
     name:        'Stripe',
     description: 'Create and send invoices directly from deals. Stripe handles payment collection, receipts, and status tracking.',
-    logo:        '💳',
+    logo:        '__stripe__',
     category:    'payments',
     fields: [
       { name: 'secret_key',      label: 'Secret Key',      type: 'password', placeholder: 'sk_live_…', hint: 'Found in Stripe Dashboard → Developers → API keys' },
@@ -39,7 +40,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     provider:    'zapier',
     name:        'Zapier',
     description: 'Send Sage events (lead captured, deal created, stage changed) to 6,000+ apps via Zapier webhooks.',
-    logo:        '⚡',
+    logo:        '/integrations/zapier.png',
     category:    'automation',
     fields: [
       { name: 'webhook_url', label: 'Webhook URL', type: 'url', placeholder: 'https://hooks.zapier.com/…', hint: 'Create a "Catch Hook" trigger in Zapier and paste the URL here' },
@@ -51,7 +52,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     provider:    'make',
     name:        'Make (Integromat)',
     description: 'Trigger Make scenarios when Sage events fire — leads captured, deals updated, tickets created, and more.',
-    logo:        '🔄',
+    logo:        '/integrations/make.png',
     category:    'automation',
     fields: [
       { name: 'webhook_url', label: 'Webhook URL', type: 'url', placeholder: 'https://hook.eu1.make.com/…', hint: 'Create a "Custom webhook" module in Make and paste the URL here' },
@@ -63,7 +64,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     provider:    'gmail',
     name:        'Gmail',
     description: 'Connect your Gmail account via Google Sign-In. Emails are synced automatically and sent from your address.',
-    logo:        '📧',
+    logo:        '/integrations/gmail.png',
     category:    'email',
     fields:      [],
     oauthPath:   '/api/oauth/google',
@@ -73,7 +74,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     provider:    'microsoft',
     name:        'Microsoft / Outlook',
     description: 'Connect your Outlook or Office 365 account via Microsoft Sign-In. Emails are synced automatically.',
-    logo:        '📬',
+    logo:        '/integrations/outlook.png',
     category:    'email',
     fields:      [],
     oauthPath:   '/api/oauth/microsoft',
@@ -83,7 +84,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     provider:    'freshdesk',
     name:        'Freshdesk',
     description: 'Create Freshdesk tickets directly from Sage and sync ticket status back to the activity timeline. Free tier available.',
-    logo:        '🎫',
+    logo:        '/integrations/freshdesk.png',
     category:    'tickets',
     fields: [
       { name: 'domain',  label: 'Domain',  type: 'text',     placeholder: 'yourcompany.freshdesk.com' },
@@ -96,7 +97,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     provider:    'zendesk',
     name:        'Zendesk',
     description: 'Create Zendesk tickets from Sage records and sync status updates to the activity timeline.',
-    logo:        '🛟',
+    logo:        '/integrations/zendesk.png',
     category:    'tickets',
     fields: [
       { name: 'subdomain', label: 'Subdomain', type: 'text',     placeholder: 'yourcompany (from yourcompany.zendesk.com)' },
@@ -111,7 +112,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     provider:    'gravity_forms',
     name:        'Gravity Forms',
     description: 'Receive form submissions from Gravity Forms on your WordPress site. Add the Webhooks Add-On and point it at your Sage webhook URL.',
-    logo:        '🔌',
+    logo:        '/integrations/gravity-forms.png',
     category:    'forms',
     fields: [
       { name: 'webhook_secret', label: 'Webhook Secret', type: 'password', placeholder: 'Optional — leave blank to skip verification', hint: 'If set, your webhook URL will include ?secret=… automatically. Leave blank if you just want the plain URL.', optional: true },
@@ -123,7 +124,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     provider:    'google_forms',
     name:        'Google Forms',
     description: 'Receive Google Form submissions instantly via a one-time Apps Script setup. No paid add-ons required.',
-    logo:        '📊',
+    logo:        '/integrations/google-forms.png',
     category:    'forms',
     fields: [
       { name: 'webhook_secret', label: 'Webhook Secret', type: 'password', placeholder: 'Optional — leave blank to skip verification', hint: 'If set, your webhook URL will include ?secret=… automatically. Leave blank if you just want the plain URL.', optional: true },
@@ -135,7 +136,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     provider:    'typeform',
     name:        'Typeform',
     description: 'Stream Typeform responses into your Forms section in real time. Sage connects via Typeform webhooks using your personal access token.',
-    logo:        '📝',
+    logo:        '/integrations/typeform.png',
     category:    'forms',
     fields: [
       { name: 'access_token', label: 'Personal Access Token', type: 'password', placeholder: 'tfp_…', hint: 'Found in Typeform → Account → Personal tokens → Create a new token' },
@@ -148,7 +149,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     provider:    'fluent_forms',
     name:        'Fluent Forms',
     description: 'Push Fluent Forms submissions directly into Sage for AI analysis and lead management. Uses the Fluent Forms Webhook feed.',
-    logo:        '🧩',
+    logo:        '/integrations/fluent-forms.png',
     category:    'forms',
     fields: [
       { name: 'webhook_secret', label: 'Webhook Secret', type: 'password', placeholder: 'Optional — leave blank to skip verification', hint: 'If set, your webhook URL will include ?secret=… automatically. Leave blank if you just want the plain URL.', optional: true },
@@ -161,7 +162,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     provider:    'mailchimp',
     name:        'Mailchimp',
     description: 'Sync contacts to Mailchimp audiences automatically and pull lead form data into your Forms section for AI analysis.',
-    logo:        '🐒',
+    logo:        '/integrations/mailchimp.png',
     category:    'email_marketing',
     fields:      [],
     oauthPath:   '/api/oauth/mailchimp',
@@ -172,7 +173,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     provider:    'activecampaign',
     name:        'ActiveCampaign',
     description: 'Push contacts to ActiveCampaign lists and trigger automations. Pull existing contacts into Forms for AI lead analysis.',
-    logo:        '⚡',
+    logo:        '/integrations/activecampaign.png',
     category:    'email_marketing',
     fields: [
       { name: 'api_url', label: 'API URL',  type: 'url',      placeholder: 'https://youraccountname.api-us1.com', hint: 'Found in ActiveCampaign → Settings → Developer' },
@@ -186,7 +187,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     provider:    'convertkit',
     name:        'Kit (ConvertKit)',
     description: 'Add contacts as Kit subscribers and apply tags. Ideal for creators and course-based businesses.',
-    logo:        '✉️',
+    logo:        '/integrations/kit.png',
     category:    'email_marketing',
     fields: [
       { name: 'api_key', label: 'API Key (v4)', type: 'password', placeholder: 'Your Kit v4 API key', hint: 'You must CREATE a new key: Kit → Settings → Developer → "Add new key". Copy it immediately — shown once only. Do NOT use the existing API Key or Secret shown on that page (those are v3 only).' },
@@ -199,7 +200,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     provider:    'klaviyo',
     name:        'Klaviyo',
     description: 'Sync contacts to Klaviyo lists and trigger flows. Great for e-commerce and lifecycle email marketing.',
-    logo:        '📊',
+    logo:        '/integrations/Klaviyo.png',
     category:    'email_marketing',
     fields: [
       { name: 'api_key', label: 'Private API Key', type: 'password', placeholder: 'pk_…', hint: 'Klaviyo → Settings → API Keys → Create Private API Key → set Lists & Profiles to Full Access' },
@@ -212,11 +213,52 @@ const INTEGRATIONS: IntegrationCard[] = [
     provider:    'constantcontact',
     name:        'Constant Contact',
     description: 'Add new contacts to Constant Contact lists and keep them in sync as contact details are updated.',
-    logo:        '📬',
+    logo:        '/integrations/constantcontact.png',
     category:    'email_marketing',
     fields:      [],
     oauthPath:   '/api/oauth/constantcontact',
     docsUrl: 'https://developer.constantcontact.com/api_reference/',
+  },
+  // ── Lead Ads ──────────────────────────────────────────────────────────────
+  {
+    provider:    'linkedin',
+    name:        'LinkedIn Lead Gen Forms',
+    description: 'Capture leads from LinkedIn Lead Gen Forms and Sponsored Content campaigns directly into your pipeline.',
+    logo:        '__linkedin__',
+    category:    'lead_ads',
+    fields:      [],
+    comingSoon:  true,
+    tutorialUrl: '/resources/connect-linkedin-leads',
+  },
+  {
+    provider:    'tiktok',
+    name:        'TikTok Lead Ads',
+    description: 'Receive leads from TikTok Instant Forms campaigns in real time via TikTok for Business.',
+    logo:        '/integrations/tiktok.png',
+    category:    'lead_ads',
+    fields:      [],
+    comingSoon:  true,
+    tutorialUrl: '/resources/connect-tiktok-leads',
+  },
+  {
+    provider:    'microsoft_ads',
+    name:        'Microsoft Ads',
+    description: 'Import leads from Microsoft Advertising Lead Extensions on Bing and the Microsoft Audience Network.',
+    logo:        '/integrations/microsoft.png',
+    category:    'lead_ads',
+    fields:      [],
+    comingSoon:  true,
+    tutorialUrl: '/resources/connect-microsoft-ads-leads',
+  },
+  {
+    provider:    'calendly',
+    name:        'Calendly',
+    description: 'Automatically capture booking details as leads when prospects schedule a meeting via Calendly.',
+    logo:        '/integrations/calendly.png',
+    category:    'lead_ads',
+    fields:      [],
+    comingSoon:  true,
+    tutorialUrl: '/resources/connect-calendly',
   },
 ]
 
@@ -227,6 +269,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   tickets:         'Tickets',
   email_marketing: 'Email Marketing',
   forms:           'Forms',
+  lead_ads:        'Lead Ads',
 }
 
 interface ConnectedEmailInfo {
@@ -402,7 +445,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
     e.target.value = ''
   }
 
-  const categories = ['payments', 'automation', 'email', 'tickets', 'email_marketing', 'forms'] as const
+  const categories = ['payments', 'automation', 'email', 'tickets', 'email_marketing', 'forms', 'lead_ads'] as const
 
   return (
     <div className={standalone ? 'p-8 max-w-3xl mx-auto' : ''}>
@@ -452,10 +495,22 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                   >
                     {/* Card header */}
                     <div className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${isConnected ? 'hover:bg-gray-50 dark:hover:bg-white/[0.03]' : ''}`}>
-                      <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-white/5 border dark:border-white/8 flex items-center justify-center text-xl shrink-0">
-                        {integration.logo.startsWith('/')
-                          ? <img src={integration.logo} alt={integration.name} className="w-6 h-6 object-contain" />
-                          : integration.logo}
+                      <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-white/5 border dark:border-white/8 shrink-0 overflow-hidden flex items-center justify-center text-xl p-1.5">
+                        {integration.logo === '__stripe__' ? (
+                          <svg viewBox="0 0 40 40" className="w-full h-full">
+                            <rect width="40" height="40" rx="8" fill="#635BFF"/>
+                            <path d="M18.5 15.5c0-1.1.9-1.5 2.4-1.5 2.1 0 4.8.7 6.9 1.8v-6.5C25.6 8.5 23 8 20.3 8c-5.3 0-8.8 2.8-8.8 7.4 0 7.2 9.9 6 9.9 9.1 0 1.3-1.1 1.7-2.7 1.7-2.3 0-5.3-.9-7.6-2.2V30c2.6 1.1 5.2 1.6 7.6 1.6 5.5 0 9.2-2.7 9.2-7.4-.1-7.8-9.4-6.4-9.4-8.7z" fill="white"/>
+                          </svg>
+                        ) : integration.logo === '__linkedin__' ? (
+                          <svg viewBox="0 0 40 40" className="w-full h-full">
+                            <rect width="40" height="40" rx="8" fill="#0A66C2"/>
+                            <path d="M13 16h4v12h-4V16zm2-6a2.5 2.5 0 110 5 2.5 2.5 0 010-5zm6 6h3.8v1.7h.1c.5-1 1.8-2.1 3.7-2.1 4 0 4.7 2.6 4.7 6V28h-4v-5.8c0-1.4 0-3.2-2-3.2s-2.3 1.5-2.3 3.1V28h-4V16z" fill="white"/>
+                          </svg>
+                        ) : integration.logo.startsWith('/') ? (
+                          <img src={integration.logo} alt={integration.name} className="w-full h-full object-contain" />
+                        ) : (
+                          integration.logo
+                        )}
                       </div>
 
                       <div className="flex-1 min-w-0">
@@ -536,7 +591,11 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                           </a>
                         )}
 
-                        {isConnected ? (
+                        {integration.comingSoon ? (
+                          <span className="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-white/8 text-gray-400 dark:text-gray-500 rounded-lg cursor-not-allowed">
+                            Coming Soon
+                          </span>
+                        ) : isConnected ? (
                           <>
                           {integration.canSync && (() => {
                             const syncOn = autoSyncEnabled[integration.provider] ?? false
