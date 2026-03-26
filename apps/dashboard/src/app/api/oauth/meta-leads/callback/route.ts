@@ -153,7 +153,7 @@ export async function GET(req: NextRequest) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         object:       'page',
-        callback_url: `${appUrl}/api/webhooks/meta-leads`,
+        callback_url: `${appUrl}/api/webhooks/meta-leadgen`,
         fields:       'leadgen',
         verify_token: appVerifyToken,
         access_token: appToken,
