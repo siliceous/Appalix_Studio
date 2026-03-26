@@ -1,6 +1,7 @@
 /**
  * Shared utilities for form webhook handlers.
  */
+import { ingestLead, type SourcePlatform } from '@/lib/ingest-lead'
 
 // Map normalised label keys → standard field names used throughout the app
 const FIELD_ALIASES: Record<string, string> = {
@@ -92,11 +93,10 @@ export function normalizeFields(raw: Record<string, string>): Record<string, str
 }
 
 /**
- * Insert a form submission with two layers:
- *  - raw_payload : exact data as received from the source
- *  - fields      : normalized Appalix fields (name, email, phone, …)
+ * Insert a form submission through the Universal Lead Ingestion Layer.
  *
- * Finds-or-creates the sage_form record by name.
+ * Finds-or-creates the sage_form record by name, then calls ingestLead()
+ * with dedup=false (same person can submit a form multiple times).
  * Returns { formId } on success, { error } on failure.
  */
 export async function insertFormSubmission(
@@ -137,14 +137,35 @@ export async function insertFormSubmission(
 
   if (!form?.id) return { error: 'no form id after insert' }
 
-  const { error: subErr } = await a.from('sage_form_submissions').insert({
-    workspace_id:    workspaceId,
-    form_id:         form.id,
-    source_platform: source,
-    raw_payload:     rawPayload,
-    fields:          normalizedFields,
-  })
-  if (subErr) return { error: `sage_form_submissions insert failed: ${subErr.message}` }
+  // Extract standard fields; everything else goes into extra
+  const STANDARD = new Set(['name', 'email', 'phone', 'company', 'job_title', 'website'])
+  const extra = Object.fromEntries(Object.entries(normalizedFields).filter(([k]) => !STANDARD.has(k)))
+
+  try {
+    await ingestLead(
+      {
+        name:          normalizedFields['name'] || 'Unknown',
+        email:         normalizedFields['email'] || null,
+        phone:         normalizedFields['phone'] || null,
+        company:       normalizedFields['company'] || null,
+        job_title:     normalizedFields['job_title'] || null,
+        website:       normalizedFields['website'] || null,
+        campaign_name: null,
+        ad_name:       null,
+        form_name:     formName,
+        extra,
+      },
+      {
+        workspaceId,
+        sourcePlatform: source as SourcePlatform,
+        rawPayload,
+        formId: form.id,
+        dedup:  false, // form submissions are events — same person can submit twice
+      },
+    )
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'ingestLead failed' }
+  }
 
   return { formId: form.id }
 }

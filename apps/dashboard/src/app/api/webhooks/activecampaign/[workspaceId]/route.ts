@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { ingestLead } from '@/lib/ingest-lead'
 
 /**
  * ActiveCampaign webhook — contact_add / contact_update events
@@ -35,6 +36,12 @@ export async function POST(
     .eq('workspace_id', workspaceId)
     .ilike('email', email)
     .maybeSingle()
+
+  // Mirror into sage_form_submissions (Forms feed + AI triage)
+  await ingestLead(
+    { name: name || email.split('@')[0], email, phone: phone || null, company: null, job_title: null, website: null, campaign_name: null, ad_name: null, form_name: null },
+    { workspaceId, sourcePlatform: 'activecampaign', rawPayload: Object.fromEntries(p.entries()), dedup: true },
+  ).catch(() => null)
 
   if (existing) {
     await a.from('sage_contacts').update({

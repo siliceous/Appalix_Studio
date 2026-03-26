@@ -57,6 +57,12 @@ export interface IngestOptions {
   sourceId?:      string
   /** sage_forms.id — for native form submissions */
   formId?:        string
+  /**
+   * Whether to deduplicate by email/phone before inserting.
+   * Default: true (syncs, ad webhooks).
+   * Set false for form submissions — same person can submit multiple times.
+   */
+  dedup?:         boolean
 }
 
 export interface IngestResult {
@@ -113,14 +119,15 @@ export async function ingestLead(
   lead: UniversalLead,
   opts: IngestOptions,
 ): Promise<IngestResult> {
-  const { workspaceId, sourcePlatform, rawPayload, sourceId, formId } = opts
+  const { workspaceId, sourcePlatform, rawPayload, sourceId, formId, dedup = true } = opts
   const admin  = createAdminClient()
   const score  = scoreLead(lead)
   const fields = buildLeadFields(lead)
 
   // ── 1. Deduplication ────────────────────────────────────────────────────────
-  // Workspace-wide dedup: same contact from different sources is one record
-  if (lead.email || lead.phone) {
+  // Workspace-wide dedup: same contact from different sources is one record.
+  // Skipped for form submissions (dedup=false) — same person can submit twice.
+  if (dedup && (lead.email || lead.phone)) {
     let existingSub: { id: string } | null = null
 
     if (lead.email) {

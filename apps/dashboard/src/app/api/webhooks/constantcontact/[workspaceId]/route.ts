@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { ingestLead } from '@/lib/ingest-lead'
 
 /**
  * Constant Contact webhook — contact.created / contact.updated
@@ -36,6 +37,12 @@ export async function POST(
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function upsertContact(admin: any, workspaceId: string, contact: { email: string; name: string; phone: string; company: string }) {
+  // Mirror into sage_form_submissions (Forms feed + AI triage)
+  await ingestLead(
+    { name: contact.name || contact.email.split('@')[0], email: contact.email, phone: contact.phone || null, company: contact.company || null, job_title: null, website: null, campaign_name: null, ad_name: null, form_name: null },
+    { workspaceId, sourcePlatform: 'constantcontact', rawPayload: contact, dedup: true },
+  ).catch(() => null)
+
   const { data: existing } = await admin
     .from('sage_contacts')
     .select('id')

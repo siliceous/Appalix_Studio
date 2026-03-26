@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { ingestLead } from '@/lib/ingest-lead'
 
 /**
  * Kit (ConvertKit) webhook — subscriber.created / subscriber.updated
@@ -31,6 +32,12 @@ async function upsertContact(workspaceId: string, contact: { email: string; name
   const admin = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const a = admin as any
+
+  // Mirror into sage_form_submissions (Forms feed + AI triage)
+  await ingestLead(
+    { name: contact.name || contact.email.split('@')[0], email: contact.email, phone: null, company: null, job_title: null, website: null, campaign_name: null, ad_name: null, form_name: null },
+    { workspaceId, sourcePlatform: 'convertkit', rawPayload: contact, dedup: true },
+  ).catch(() => null)
 
   const { data: existing } = await a
     .from('sage_contacts')
