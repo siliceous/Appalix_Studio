@@ -99,7 +99,7 @@ export function SubmissionPanelClient({
   const currentForm = forms.find(f => f.id === current.form_id) ?? null
   const META_KEYS_PANEL = new Set(['form_title', 'form_name', 'id', 'form_id', 'ip', 'date_created', 'source_url'])
   function fVals(): string[] {
-    return Object.entries(current.fields).filter(([k]) => !META_KEYS_PANEL.has(k)).map(([, v]) => v.trim()).filter(Boolean)
+    return Object.entries(current.fields).filter(([k]) => !META_KEYS_PANEL.has(k)).map(([, v]) => v?.trim() ?? '').filter(Boolean)
   }
 
   // Case-insensitive field lookup — handles "Name", "Full Name", "name", "full_name", numeric IDs etc.
