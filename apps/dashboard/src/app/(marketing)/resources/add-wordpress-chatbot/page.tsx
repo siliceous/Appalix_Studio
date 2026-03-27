@@ -50,29 +50,29 @@ export default function AddWordPressChatbotPage() {
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Add an AI Chatbot to WordPress</span>
+          <span className="text-white/65">Add an AI Chatbot to WordPress</span>
         </div>
 
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">8 min read · All plans</span>
+            <span className="text-xs text-white/60">8 min read · All plans</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             How to Add an AI Chatbot to WordPress with Appalix
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             The Appalix WordPress integration connects your WordPress site to your AI bot in under 10 minutes. Visitors chat directly on your site — the plugin handles the widget UI while Appalix processes every message through your trained bot, captures leads, and logs every conversation in your dashboard.
           </p>
         </div>
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">What you&apos;ll need</h2>
@@ -118,7 +118,7 @@ export default function AddWordPressChatbotPage() {
               <li>Choose the <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">appalix-chat.zip</code> file and click <strong className="text-white">Install Now</strong>.</li>
               <li>Click <strong className="text-white">Activate Plugin</strong> once installation completes.</li>
             </ol>
-            <p className="mt-4 text-sm text-gray-400">
+            <p className="mt-4 text-sm text-white/65">
               Already have the old <em>Claude AI Chat</em> plugin? Deactivate and delete it first — the Appalix plugin replaces it entirely.
             </p>
           </section>
@@ -136,11 +136,11 @@ export default function AddWordPressChatbotPage() {
               <li>Paste the <strong className="text-white">API Key</strong> shown on the same setup page.</li>
               <li>Click <strong className="text-white">Save Settings</strong>.</li>
             </ol>
-            <p className="mt-4 text-sm text-gray-400">
+            <p className="mt-4 text-sm text-white/65">
               Once saved, the settings page shows a green <em>"Widget is active"</em> status and links directly to your Appalix Conversations tab.
             </p>
-            <p className="mt-2 text-sm text-gray-400">
-              <strong className="text-gray-300">Welcome message</strong> — configure this inside the bot&apos;s settings in your Appalix dashboard, not in the WordPress plugin. It applies across all platforms the bot is connected to.
+            <p className="mt-2 text-sm text-white/65">
+              <strong className="text-white/80">Welcome message</strong> — configure this inside the bot&apos;s settings in your Appalix dashboard, not in the WordPress plugin. It applies across all platforms the bot is connected to.
             </p>
           </section>
 
@@ -174,7 +174,7 @@ export default function AddWordPressChatbotPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">🔌</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to add a chatbot to your WordPress site?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Create a WordPress integration in your dashboard, install the plugin, and your bot will be live in minutes.
             </p>
             <Link

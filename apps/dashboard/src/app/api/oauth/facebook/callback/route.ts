@@ -41,8 +41,8 @@ export async function GET(req: NextRequest) {
   }
 
   // ── 2. Exchange code for short-lived user token ──────────────────────────
-  const appId     = process.env.META_APP_ID     || process.env.FACEBOOK_APP_ID     || ''
-  const appSecret = process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || ''
+  const appId     = process.env.MESSENGER_APP_ID     || process.env.META_APP_ID     || process.env.FACEBOOK_APP_ID     || ''
+  const appSecret = process.env.MESSENGER_APP_SECRET || process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || ''
   const redirectUri = `${appUrl}/api/oauth/facebook/callback`
 
   let shortToken: string

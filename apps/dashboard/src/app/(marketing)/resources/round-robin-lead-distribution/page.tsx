@@ -42,21 +42,21 @@ export default function RoundRobinLeadDistributionPage() {
       />
       <div className="max-w-3xl mx-auto">
 
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Round-Robin Lead Distribution</span>
+          <span className="text-white/65">Round-Robin Lead Distribution</span>
         </div>
 
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-pink-500/15 text-pink-400 border border-pink-500/20 font-medium">Product</span>
-            <span className="text-xs text-gray-500">8 min read · Pro &amp; above</span>
+            <span className="text-xs text-white/60">8 min read · Pro &amp; above</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Round-Robin Lead Distribution in Appalix
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Manual assignment works well for existing leads — but what about the dozen new contacts
             your bot, email triage, and form submissions create every day? Round-robin distribution
             automates the entire process: every inbound lead is assigned to the next rep in rotation,
@@ -66,7 +66,7 @@ export default function RoundRobinLeadDistributionPage() {
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">What is round-robin distribution?</h2>
@@ -99,7 +99,7 @@ export default function RoundRobinLeadDistributionPage() {
 
             <div className="mt-5 rounded-xl border border-brand-600/20 bg-brand-600/5 p-5">
               <p className="text-sm font-semibold text-white mb-2">What happens immediately after enabling</p>
-              <ul className="list-disc pl-5 space-y-2 text-sm text-gray-400">
+              <ul className="list-disc pl-5 space-y-2 text-sm text-white/65">
                 <li>The next contact created by the bot, email triage, or a form submission will be automatically assigned to a team member.</li>
                 <li>Existing contacts are not retroactively reassigned — only newly created contacts are affected.</li>
                 <li>Manual assignments you make in the Contact modal continue to work and override the round-robin assignment.</li>
@@ -128,7 +128,7 @@ export default function RoundRobinLeadDistributionPage() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-white mb-0.5">{label}</p>
-                    <p className="text-sm text-gray-400">{detail}</p>
+                    <p className="text-sm text-white/65">{detail}</p>
                   </div>
                 </div>
               ))}
@@ -151,7 +151,7 @@ export default function RoundRobinLeadDistributionPage() {
                   <span className="text-xl">🤖</span>
                   <p className="text-sm font-semibold text-white">Bot triage (chat conversations)</p>
                 </div>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-white/65">
                   When a visitor provides their details in a chat conversation and the bot marks them as a lead,
                   a new Sage contact is created automatically. If round-robin is enabled, the contact is
                   immediately assigned to the next rep.
@@ -163,7 +163,7 @@ export default function RoundRobinLeadDistributionPage() {
                   <span className="text-xl">📧</span>
                   <p className="text-sm font-semibold text-white">Email triage</p>
                 </div>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-white/65">
                   Inbound emails processed by the AI triage system that result in a new contact being
                   created (first email from an unknown sender) are automatically distributed to the
                   next rep in rotation.
@@ -175,7 +175,7 @@ export default function RoundRobinLeadDistributionPage() {
                   <span className="text-xl">📋</span>
                   <p className="text-sm font-semibold text-white">Form submissions (Meta Ads, Google Ads, and embedded forms)</p>
                 </div>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-white/65">
                   Leads from Meta Lead Ads, Google Ads Lead Forms, and any embedded Appalix form that
                   create a new contact are automatically assigned via round-robin. Duplicate contacts
                   (matched by email) are merged without triggering a new assignment.
@@ -216,7 +216,7 @@ export default function RoundRobinLeadDistributionPage() {
               effect immediately. New contacts created after this point will be unassigned by default.
               Contacts that were already assigned retain their assignment — nothing is undone.
             </p>
-            <p className="mt-3 text-sm text-gray-400">
+            <p className="mt-3 text-sm text-white/65">
               The <code className="text-brand-400">rr_index</code> counter is preserved in the database. If you re-enable
               round-robin later, the rotation picks up exactly where it left off.
             </p>
@@ -235,24 +235,24 @@ export default function RoundRobinLeadDistributionPage() {
                 </thead>
                 <tbody className="divide-y divide-white/[0.06]">
                   <tr>
-                    <td className="py-3 pr-6 text-gray-300">High-volume inbound (10+ leads/day)</td>
-                    <td className="py-3 text-gray-300">Round-robin + occasional manual overrides</td>
+                    <td className="py-3 pr-6 text-white/80">High-volume inbound (10+ leads/day)</td>
+                    <td className="py-3 text-white/80">Round-robin + occasional manual overrides</td>
                   </tr>
                   <tr>
-                    <td className="py-3 pr-6 text-gray-300">Territory-based sales (leads for specific regions)</td>
-                    <td className="py-3 text-gray-300">Manual assignment by territory manager</td>
+                    <td className="py-3 pr-6 text-white/80">Territory-based sales (leads for specific regions)</td>
+                    <td className="py-3 text-white/80">Manual assignment by territory manager</td>
                   </tr>
                   <tr>
-                    <td className="py-3 pr-6 text-gray-300">Enterprise accounts (high-value, named reps)</td>
-                    <td className="py-3 text-gray-300">Manual assignment, always</td>
+                    <td className="py-3 pr-6 text-white/80">Enterprise accounts (high-value, named reps)</td>
+                    <td className="py-3 text-white/80">Manual assignment, always</td>
                   </tr>
                   <tr>
-                    <td className="py-3 pr-6 text-gray-300">Small team (&lt; 4 reps) with mixed inbound</td>
-                    <td className="py-3 text-gray-300">Round-robin — simple and fair</td>
+                    <td className="py-3 pr-6 text-white/80">Small team (&lt; 4 reps) with mixed inbound</td>
+                    <td className="py-3 text-white/80">Round-robin — simple and fair</td>
                   </tr>
                   <tr>
-                    <td className="py-3 pr-6 text-gray-300">Solo operator</td>
-                    <td className="py-3 text-gray-300">Not needed — all leads go to you</td>
+                    <td className="py-3 pr-6 text-white/80">Solo operator</td>
+                    <td className="py-3 text-white/80">Not needed — all leads go to you</td>
                   </tr>
                 </tbody>
               </table>
@@ -262,10 +262,10 @@ export default function RoundRobinLeadDistributionPage() {
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">What&apos;s coming next</h2>
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-              <ul className="list-disc pl-5 space-y-2 text-sm text-gray-400">
-                <li><strong className="text-gray-200">Weighted round-robin</strong> — Give senior reps a higher share of the rotation (e.g. 2× the leads of a junior rep).</li>
-                <li><strong className="text-gray-200">Capacity-based routing</strong> — Pause a rep&apos;s slot when they reach a deal-count threshold.</li>
-                <li><strong className="text-gray-200">Scoped views</strong> — Members optionally see only their own leads, keeping the dashboard focused.</li>
+              <ul className="list-disc pl-5 space-y-2 text-sm text-white/65">
+                <li><strong className="text-white/90">Weighted round-robin</strong> — Give senior reps a higher share of the rotation (e.g. 2× the leads of a junior rep).</li>
+                <li><strong className="text-white/90">Capacity-based routing</strong> — Pause a rep&apos;s slot when they reach a deal-count threshold.</li>
+                <li><strong className="text-white/90">Scoped views</strong> — Members optionally see only their own leads, keeping the dashboard focused.</li>
               </ul>
             </div>
           </section>
@@ -273,7 +273,7 @@ export default function RoundRobinLeadDistributionPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">🔄</p>
             <h3 className="text-lg font-semibold text-white mb-2">Turn on round-robin in under 10 seconds</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Settings → Lead Distribution → flip the toggle. The next inbound lead will be assigned automatically.
             </p>
             <div className="flex items-center justify-center gap-3 flex-wrap">

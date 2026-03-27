@@ -25,7 +25,7 @@ export function ContactSalesButton({
   return (
     <button
       onClick={handleClick}
-      className={className ?? 'inline-flex items-center gap-2 px-6 py-3 border border-white/20 hover:border-white/40 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm'}
+      className={className ?? 'inline-flex items-center gap-2 px-6 py-3 border border-white/20 hover:border-white/40 text-white/80 hover:text-white font-medium rounded-xl transition-colors text-sm'}
     >
       {copied ? (
         <>

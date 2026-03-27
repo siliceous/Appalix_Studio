@@ -46,22 +46,22 @@ export default function SageAutomationRulesPage() {
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Sage Automation Rules</span>
+          <span className="text-white/65">Sage Automation Rules</span>
         </div>
 
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Product</span>
-            <span className="text-xs text-gray-500">10 min read · Mar 13, 2026</span>
+            <span className="text-xs text-white/60">10 min read · Mar 13, 2026</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Sage Automation Rules: Route Every Lead to the Right Pipeline Automatically
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Sage Auto is powerful on its own — it watches your emails, bot conversations, forms, and tickets, and creates contacts and deals without you lifting a finger. But every business is different. An enterprise enquiry should land in your Sales pipeline. A support complaint should become a ticket. A casual question from a student should be ignored. Automation Rules let you encode that logic so Sage always does the right thing.
           </p>
         </div>
@@ -69,7 +69,7 @@ export default function SageAutomationRulesPage() {
         {/* Hero callout */}
         <div className="mb-10 p-6 rounded-2xl bg-gradient-to-br from-brand-600/15 to-transparent border border-brand-600/20">
           <p className="text-sm font-semibold text-brand-300 mb-2">⚡ Available on Pro and above</p>
-          <p className="text-sm text-gray-400 leading-relaxed">
+          <p className="text-sm text-white/65 leading-relaxed">
             Sage Automation Rules are part of the Sage CRM feature set, included with every{' '}
             <strong className="text-white">Pro, Scale, and Enterprise</strong> plan. Rules are evaluated in real-time every time Sage processes an incoming item — no delays, no manual review.
           </p>
@@ -79,7 +79,7 @@ export default function SageAutomationRulesPage() {
         <div className="border-t border-white/10 mb-10" />
 
         {/* Body */}
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           {/* What are rules */}
           <section>
@@ -99,12 +99,12 @@ export default function SageAutomationRulesPage() {
               <p className="text-sm font-semibold text-white mb-3">Rules vs. default Sage Auto settings</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Default Sage Auto</p>
-                  <p className="text-sm text-gray-400 leading-relaxed">One global switch per channel. All matching items go to the same default pipeline with the same action.</p>
+                  <p className="text-xs font-semibold text-white/65 uppercase tracking-wide mb-1">Default Sage Auto</p>
+                  <p className="text-sm text-white/65 leading-relaxed">One global switch per channel. All matching items go to the same default pipeline with the same action.</p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-brand-400 uppercase tracking-wide mb-1">With Rules</p>
-                  <p className="text-sm text-gray-400 leading-relaxed">Each item is evaluated individually. Different keywords, priorities, or channels route to different pipelines with different actions.</p>
+                  <p className="text-sm text-white/65 leading-relaxed">Each item is evaluated individually. Different keywords, priorities, or channels route to different pipelines with different actions.</p>
                 </div>
               </div>
             </div>
@@ -139,7 +139,7 @@ export default function SageAutomationRulesPage() {
                   <span className="text-2xl shrink-0">{f.icon}</span>
                   <div>
                     <p className="font-semibold text-white mb-1">{f.title}</p>
-                    <p className="text-sm text-gray-400 leading-relaxed">{f.desc}</p>
+                    <p className="text-sm text-white/65 leading-relaxed">{f.desc}</p>
                   </div>
                 </div>
               ))}
@@ -147,7 +147,7 @@ export default function SageAutomationRulesPage() {
 
             <div className="mt-6 p-5 rounded-xl bg-white/5 border border-white/10">
               <p className="text-sm font-semibold text-white mb-2">First-match wins</p>
-              <p className="text-sm text-gray-400 leading-relaxed">
+              <p className="text-sm text-white/65 leading-relaxed">
                 Rules are evaluated in priority order (highest number first). The <strong className="text-white">first rule that matches</strong> wins — Sage stops checking and uses that rule&apos;s action. This means you can place specific, high-priority rules at the top and a catch-all rule at the bottom, and only items that don&apos;t match the specific rules will fall through to the catch-all.
               </p>
             </div>
@@ -224,7 +224,7 @@ export default function SageAutomationRulesPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-white mb-1">{item.title}</p>
-                    <p className="text-sm text-gray-400 leading-relaxed">{item.desc}</p>
+                    <p className="text-sm text-white/65 leading-relaxed">{item.desc}</p>
                   </div>
                 </li>
               ))}
@@ -283,13 +283,13 @@ export default function SageAutomationRulesPage() {
                   </div>
                   <div className="space-y-1 mb-3">
                     {ex.conditions.map((c, ci) => (
-                      <p key={ci} className="text-xs text-gray-400 font-mono bg-white/5 px-2 py-1 rounded">
-                        {ci > 0 && <span className="text-gray-500 mr-2">AND</span>}{c}
+                      <p key={ci} className="text-xs text-white/65 font-mono bg-white/5 px-2 py-1 rounded">
+                        {ci > 0 && <span className="text-white/60 mr-2">AND</span>}{c}
                       </p>
                     ))}
                   </div>
                   <p className="text-xs text-brand-400 mb-2">→ {ex.action}</p>
-                  <p className="text-xs text-gray-500 leading-relaxed italic">{ex.why}</p>
+                  <p className="text-xs text-white/60 leading-relaxed italic">{ex.why}</p>
                 </div>
               ))}
             </div>
@@ -312,7 +312,7 @@ export default function SageAutomationRulesPage() {
                   <span className="text-lg shrink-0">{item.icon}</span>
                   <div>
                     <p className="font-semibold text-white text-sm mb-0.5">{item.label}</p>
-                    <p className="text-xs text-gray-400 leading-relaxed">{item.desc}</p>
+                    <p className="text-xs text-white/65 leading-relaxed">{item.desc}</p>
                   </div>
                 </li>
               ))}
@@ -359,7 +359,7 @@ export default function SageAutomationRulesPage() {
                   <span className="text-xl shrink-0">{tip.icon}</span>
                   <div>
                     <p className="font-semibold text-white text-sm mb-1">{tip.title}</p>
-                    <p className="text-xs text-gray-400 leading-relaxed">{tip.desc}</p>
+                    <p className="text-xs text-white/65 leading-relaxed">{tip.desc}</p>
                   </div>
                 </div>
               ))}
@@ -387,17 +387,17 @@ export default function SageAutomationRulesPage() {
 
         {/* CTA */}
         <div className="text-center">
-          <p className="text-gray-400 mb-5 text-sm">Ready to route leads to the right pipeline automatically?</p>
+          <p className="text-white/65 mb-5 text-sm">Ready to route leads to the right pipeline automatically?</p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link
               href="/signup"
               className="px-6 py-2.5 bg-[#1a8c76] hover:bg-[#14705d] text-white text-sm font-medium rounded-xl transition-colors"
             >
-              Start a 7 Day Free Trial →
+              Start a 14-Day Free Trial →
             </Link>
             <Link
               href="/pricing"
-              className="px-6 py-2.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white text-sm font-medium rounded-xl transition-colors"
+              className="px-6 py-2.5 border border-white/10 hover:border-white/20 text-white/80 hover:text-white text-sm font-medium rounded-xl transition-colors"
             >
               View Pro plan features
             </Link>

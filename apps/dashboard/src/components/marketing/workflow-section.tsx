@@ -187,7 +187,7 @@ export function WorkflowSection() {
               <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
                 Automate repetitive workflows —<br className="hidden sm:block" /> from data entry to CRM routing
               </h2>
-              <p className="text-gray-400 text-base leading-relaxed mb-6 max-w-2xl">
+              <p className="text-white/65 text-base leading-relaxed mb-6 max-w-2xl">
                 AI steps in and eliminates the processes that slow your business down — not just doing them faster, but removing them from your team&apos;s plate entirely.
               </p>
             </motion.div>
@@ -199,7 +199,7 @@ export function WorkflowSection() {
               animate={isInView ? { opacity: 1 } : {}}
               transition={{ delay: 0.3, duration: 0.6 }}
             >
-              <p className="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-3">AI replaces</p>
+              <p className="text-xs text-white/60 uppercase tracking-widest font-semibold mb-3">AI replaces</p>
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {REPLACEMENTS.map((r, i) => (
                   <motion.li
@@ -214,7 +214,7 @@ export function WorkflowSection() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </span>
-                    <span className="text-sm text-gray-300">{r.label}</span>
+                    <span className="text-sm text-white/80">{r.label}</span>
                   </motion.li>
                 ))}
               </ul>
@@ -230,11 +230,11 @@ export function WorkflowSection() {
               {METRICS.map((m) => (
                 <div key={m.label} className="text-center sm:text-left">
                   <p className="text-2xl font-bold text-white">{m.value}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{m.label}</p>
+                  <p className="text-xs text-white/60 mt-0.5">{m.label}</p>
                 </div>
               ))}
               <div className="hidden sm:block w-px self-stretch bg-white/10" />
-              <p className="text-xs text-gray-400 leading-relaxed flex-1 min-w-[180px]">
+              <p className="text-xs text-white/65 leading-relaxed flex-1 min-w-[180px]">
                 <span className="text-white font-medium">Business result:</span> Fewer bottlenecks, fewer errors, faster cycle times.
               </p>
             </motion.div>
@@ -252,7 +252,7 @@ export function WorkflowSection() {
               >
                 <span className="text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full bg-[#15A4AE]/15 border border-[#15A4AE]/25 text-[#15A4AE]">✦</span>
                 <span className="text-sm text-[#15A4AE] font-medium">Powered by Appalix Sage</span>
-                <span className="text-xs text-gray-500 group-hover:text-[#15A4AE] transition-colors">→</span>
+                <span className="text-xs text-white/60 group-hover:text-[#15A4AE] transition-colors">→</span>
               </Link>
             </motion.div>
 

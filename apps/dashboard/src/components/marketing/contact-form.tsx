@@ -27,7 +27,7 @@ export function ContactForm() {
       {/* Name + Email */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1.5">
+          <label className="block text-sm font-medium text-white/80 mb-1.5">
             Full name <span className="text-brand-500">*</span>
           </label>
           <input
@@ -39,7 +39,7 @@ export function ContactForm() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1.5">
+          <label className="block text-sm font-medium text-white/80 mb-1.5">
             Work email <span className="text-brand-500">*</span>
           </label>
           <input
@@ -55,7 +55,7 @@ export function ContactForm() {
       {/* Phone + Country */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1.5">Phone number</label>
+          <label className="block text-sm font-medium text-white/80 mb-1.5">Phone number</label>
           <input
             type="tel"
             name="phone"
@@ -64,10 +64,10 @@ export function ContactForm() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1.5">Country</label>
+          <label className="block text-sm font-medium text-white/80 mb-1.5">Country</label>
           <select
             name="country"
-            className="w-full bg-[#2a2a2a] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-300 outline-none focus:border-brand-600/50 transition-colors"
+            className="w-full bg-[#2a2a2a] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white/80 outline-none focus:border-brand-600/50 transition-colors"
           >
             <option value="">Select your country</option>
             {COUNTRIES.map((c) => (
@@ -79,7 +79,7 @@ export function ContactForm() {
 
       {/* Inquiry type */}
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1.5">Inquiry type</label>
+        <label className="block text-sm font-medium text-white/80 mb-1.5">Inquiry type</label>
         <div className="grid grid-cols-3 gap-3">
           {[
             { value: 'sales',    label: '💼 Sales',    desc: 'Plans & pricing' },
@@ -91,7 +91,7 @@ export function ContactForm() {
                 defaultChecked={opt.value === 'general'} />
               <div className="p-3 rounded-xl border border-white/10 text-center peer-checked:border-brand-600/60 peer-checked:bg-brand-600/10 hover:border-white/20 transition-colors">
                 <p className="text-sm font-medium text-white">{opt.label}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
+                <p className="text-xs text-white/60 mt-0.5">{opt.desc}</p>
               </div>
             </label>
           ))}
@@ -100,7 +100,7 @@ export function ContactForm() {
 
       {/* Message */}
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1.5">
+        <label className="block text-sm font-medium text-white/80 mb-1.5">
           Message <span className="text-brand-500">*</span>
         </label>
         <textarea

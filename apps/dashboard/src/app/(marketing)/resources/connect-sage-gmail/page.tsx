@@ -49,28 +49,28 @@ export default function ConnectSageGmailPage() {
       />
       <div className="max-w-3xl mx-auto">
 
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect Gmail to Sage</span>
+          <span className="text-white/65">Connect Gmail to Sage</span>
         </div>
 
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">8 min read · Pro+ plan</span>
+            <span className="text-xs text-white/60">8 min read · Pro+ plan</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Connect Gmail to Sage CRM
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Connecting Gmail gives you a full AI-powered email inbox inside Sage. Sage reads your incoming emails via IMAP, scores each one for priority, surfaces key insights, and pre-writes three reply drafts. You can reply directly from Sage — with file attachments, Stripe invoice PDFs, or auto-generated proposal documents — and every email is logged to the contact&apos;s activity timeline.
           </p>
         </div>
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           {/* What you get */}
           <section>
@@ -82,7 +82,7 @@ export default function ConnectSageGmailPage() {
               <li><strong className="text-white">Attachments</strong> — attach any file from your computer, attach a Stripe invoice PDF (if Stripe is connected), or generate a branded proposal PDF from a linked deal.</li>
               <li><strong className="text-white">Activity logging</strong> — every email you send from Sage is logged to the contact timeline automatically.</li>
             </ul>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">How it connects:</strong> Sage uses your Gmail App Password for both IMAP (reading, imap.gmail.com port 993 SSL) and SMTP (sending, smtp.gmail.com port 587 STARTTLS). A single App Password covers both — no extra setup required.
             </div>
           </section>
@@ -119,7 +119,7 @@ export default function ConnectSageGmailPage() {
               <li>Click <strong className="text-white">Create</strong>.</li>
               <li>Google will display a <strong className="text-white">16-character password</strong> (formatted as four groups of four letters). Copy this — it will only be shown once.</li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Security tip:</strong> This App Password grants access only to your Gmail via IMAP and SMTP — not to your full Google Account. You can revoke it at any time from the App Passwords page without affecting your main password.
             </div>
           </section>
@@ -146,7 +146,7 @@ export default function ConnectSageGmailPage() {
               <li>Sage fetches your most recent emails from Gmail, runs AI analysis on each one, and displays them in the inbox with priority badges (High / Medium / Low).</li>
               <li>Click any email to open it. On the right you&apos;ll see the full email body, an <strong className="text-white">AI Insights panel</strong> (summary + key action points), and a compose area pre-loaded with three AI reply drafts.</li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Filtering:</strong> Use the All / High / Medium / Low tabs at the top of the inbox to focus on the emails that need your attention first.
             </div>
           </section>
@@ -187,23 +187,23 @@ export default function ConnectSageGmailPage() {
             <div className="space-y-5">
               <div>
                 <p className="font-semibold text-white">Will inbound emails appear in Sage automatically?</p>
-                <p className="text-sm text-gray-400 mt-1">Sage syncs on demand — click <strong className="text-white">Sync</strong> whenever you want to pull new emails. There is no background polling in the current version, so new emails will not appear until you sync.</p>
+                <p className="text-sm text-white/65 mt-1">Sage syncs on demand — click <strong className="text-white">Sync</strong> whenever you want to pull new emails. There is no background polling in the current version, so new emails will not appear until you sync.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Does AI analysis cost me extra credits?</p>
-                <p className="text-sm text-gray-400 mt-1">AI analysis uses your workspace&apos;s Claude AI credits. Each email analysed costs a small number of credits for the priority scoring, insights, and three reply drafts. Credits are shared across all AI features in your workspace.</p>
+                <p className="text-sm text-white/65 mt-1">AI analysis uses your workspace&apos;s Claude AI credits. Each email analysed costs a small number of credits for the priority scoring, insights, and three reply drafts. Credits are shared across all AI features in your workspace.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Can I use a Google Workspace account (G Suite)?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes. The same App Password process applies to Google Workspace accounts. Your admin may need to allow App Passwords depending on your organisation&apos;s security policy.</p>
+                <p className="text-sm text-white/65 mt-1">Yes. The same App Password process applies to Google Workspace accounts. Your admin may need to allow App Passwords depending on your organisation&apos;s security policy.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">What happens if I change my Gmail password?</p>
-                <p className="text-sm text-gray-400 mt-1">App Passwords are independent of your main Gmail password. Changing your Gmail password does not invalidate the App Password. However, if you revoke the App Password in Google, you&apos;ll need to generate a new one and reconnect in Sage.</p>
+                <p className="text-sm text-white/65 mt-1">App Passwords are independent of your main Gmail password. Changing your Gmail password does not invalidate the App Password. However, if you revoke the App Password in Google, you&apos;ll need to generate a new one and reconnect in Sage.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Will emails I send from Sage appear in my Gmail Sent folder?</p>
-                <p className="text-sm text-gray-400 mt-1">Gmail does not automatically add SMTP-sent messages to the Sent folder. The email is sent and logged in Sage&apos;s activity timeline, but you may not see it in Gmail Sent Items.</p>
+                <p className="text-sm text-white/65 mt-1">Gmail does not automatically add SMTP-sent messages to the Sent folder. The email is sent and logged in Sage&apos;s activity timeline, but you may not see it in Gmail Sent Items.</p>
               </div>
             </div>
           </section>
@@ -211,7 +211,7 @@ export default function ConnectSageGmailPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">🤖</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready for your AI-powered inbox?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Connect Gmail in Sage Integrations, open Sage → Emails, click Sync, and let the AI handle the heavy lifting.
             </p>
             <Link

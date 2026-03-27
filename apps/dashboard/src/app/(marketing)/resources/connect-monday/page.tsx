@@ -50,29 +50,29 @@ export default function ConnectMondayPage() {
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect Monday.com to Appalix</span>
+          <span className="text-white/65">Connect Monday.com to Appalix</span>
         </div>
 
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">6 min read · Pro+ plan</span>
+            <span className="text-xs text-white/60">6 min read · Pro+ plan</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             How to Connect Monday.com to Appalix
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             When a visitor shares their email or phone number in your AI chat, Appalix instantly creates a new item on your Monday.com board — no Zapier, no manual entry. Your sales team sees the lead appear in real time.
           </p>
         </div>
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           {/* What you'll need */}
           <section>
@@ -137,7 +137,7 @@ export default function ConnectMondayPage() {
                 The number after <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">/boards/</code> is your <strong className="text-white">Board ID</strong>. Copy it — you&apos;ll need it in the next step.
               </li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Tip:</strong> Create a dedicated <em>Appalix Leads</em> board in Monday.com so chat leads are kept separate from other work items. You can then set up Monday.com automations to notify your team, assign an owner, or move items through columns.
             </div>
           </section>
@@ -205,7 +205,7 @@ export default function ConnectMondayPage() {
                 Switch to your Monday.com board. Within a few seconds a new item should appear with the email address as its name.
               </li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Not seeing the item?</strong> Double-check that:
               <ul className="list-disc pl-5 mt-2 space-y-1">
                 <li>You&apos;re looking at the correct board (Board ID matches)</li>
@@ -249,31 +249,31 @@ export default function ConnectMondayPage() {
             <div className="space-y-5">
               <div>
                 <p className="font-semibold text-white">Can I send leads to multiple Monday.com boards?</p>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-white/65 mt-1">
                   Each Appalix integration (e.g. Web Widget, Slack, WhatsApp) can have its own CRM configuration, so you can point different integrations at different boards.
                 </p>
               </div>
               <div>
                 <p className="font-semibold text-white">Will duplicate leads create duplicate items?</p>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-white/65 mt-1">
                   Yes — Monday.com does not have native deduplication for items. If the same visitor shares their email twice, two items are created. Use a Monday.com automation or a Dedupe column to handle this.
                 </p>
               </div>
               <div>
                 <p className="font-semibold text-white">What Monday.com plan do I need?</p>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-white/65 mt-1">
                   The Monday.com API is available on all paid plans (Basic, Standard, Pro, Enterprise). Free accounts do not have API access.
                 </p>
               </div>
               <div>
                 <p className="font-semibold text-white">Can I use Zapier to connect Monday.com instead?</p>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-white/65 mt-1">
                   Yes — if you prefer, select <em>Zapier</em> in the CRM provider dropdown (available on Core plan and above), create a Zapier Catch Hook, and add a Monday.com action in Zapier to create items. The native integration is simpler and works out of the box on Pro+.
                 </p>
               </div>
               <div>
                 <p className="font-semibold text-white">My board uses custom column IDs — can Appalix populate them?</p>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-white/65 mt-1">
                   Appalix automatically tries to populate columns named <code className="bg-white/5 px-1 rounded">email</code> and <code className="bg-white/5 px-1 rounded">phone</code>. If your board uses different column IDs, the contact details will still appear in the item name. You can use a Monday.com automation to copy the name into a specific column.
                 </p>
               </div>
@@ -284,7 +284,7 @@ export default function ConnectMondayPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">📋</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to connect Monday.com?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Go to your Appalix integration, select Monday.com as your CRM, and paste your API token and board ID. Done in under 5 minutes.
             </p>
             <Link

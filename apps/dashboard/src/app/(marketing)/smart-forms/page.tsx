@@ -86,7 +86,7 @@ function FormsPreview({ onClick }: { onClick: () => void }) {
             <div className="w-3 h-3 rounded-full bg-green-400" />
           </div>
           <div className="flex items-center gap-2 px-4 py-1 rounded-md bg-white border border-gray-200">
-            <span className="text-xs text-gray-400">app.appalix.ai/forms/leads</span>
+            <span className="text-xs text-white/65">app.appalix.ai/forms/leads</span>
           </div>
           <div className="w-16" />
         </div>
@@ -98,7 +98,7 @@ function FormsPreview({ onClick }: { onClick: () => void }) {
             <div className="flex items-start justify-between mb-5">
               <div>
                 <h2 className="text-base font-bold text-gray-900">All Leads</h2>
-                <p className="text-[11px] text-gray-500 mt-0.5">Leads captured from connected ad platforms</p>
+                <p className="text-[11px] text-white/60 mt-0.5">Leads captured from connected ad platforms</p>
               </div>
               <Tip label="Connect Meta Leads, Google Ads, TikTok Ads, and more to capture leads automatically" dir="bottom" clickable>
                 <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#15A4AE] text-white text-[10px] font-semibold hover:bg-[#0e8f99] transition-colors">
@@ -109,7 +109,7 @@ function FormsPreview({ onClick }: { onClick: () => void }) {
 
             {/* Platform chips */}
             <div className="flex items-center gap-2 mb-4">
-              <p className="text-[10px] font-semibold text-gray-500 mr-1">Sources:</p>
+              <p className="text-[10px] font-semibold text-white/60 mr-1">Sources:</p>
               {SOURCES.map(s => (
                 <Tip key={s} label={`Filter leads from ${s} only`} dir="bottom" clickable>
                   <button
@@ -138,7 +138,7 @@ function FormsPreview({ onClick }: { onClick: () => void }) {
               {/* Column headers */}
               <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-50 border-b border-gray-100">
                 {['Name / Company', 'Email', 'Phone', 'Source', 'Status', 'Time'].map((h, i) => (
-                  <p key={h} className={`text-[9px] font-semibold uppercase tracking-wide text-gray-400 ${i === 0 ? 'col-span-3' : i === 1 ? 'col-span-3' : i === 2 ? 'col-span-2' : 'col-span-1'}`}>{h}</p>
+                  <p key={h} className={`text-[9px] font-semibold uppercase tracking-wide text-white/65 ${i === 0 ? 'col-span-3' : i === 1 ? 'col-span-3' : i === 2 ? 'col-span-2' : 'col-span-1'}`}>{h}</p>
                 ))}
               </div>
 
@@ -153,7 +153,7 @@ function FormsPreview({ onClick }: { onClick: () => void }) {
                         <div className="w-6 h-6 rounded-full bg-[#15A4AE]/20 flex items-center justify-center text-[9px] font-bold text-[#15A4AE] shrink-0">{l.name[0]}</div>
                         <div className="min-w-0">
                           <p className="text-[10px] font-semibold text-gray-900 truncate">{l.name}</p>
-                          <p className="text-[9px] text-gray-500 truncate">{l.company}</p>
+                          <p className="text-[9px] text-white/60 truncate">{l.company}</p>
                         </div>
                       </div>
                       <p className="col-span-3 text-[9px] text-gray-600 truncate">{l.email}</p>
@@ -164,7 +164,7 @@ function FormsPreview({ onClick }: { onClick: () => void }) {
                       <div className="col-span-1">
                         <span className={`text-[8px] font-medium px-1.5 py-0.5 rounded-full ${STATUS_MAP[l.status as keyof typeof STATUS_MAP].cls}`}>{STATUS_MAP[l.status as keyof typeof STATUS_MAP].label}</span>
                       </div>
-                      <p className="col-span-1 text-[9px] text-gray-400">{l.time}</p>
+                      <p className="col-span-1 text-[9px] text-white/65">{l.time}</p>
                     </div>
                   </Tip>
                 ))}
@@ -177,8 +177,8 @@ function FormsPreview({ onClick }: { onClick: () => void }) {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-[11px] font-bold text-gray-900">{lead.name} · {lead.company}</p>
-                    <p className="text-[9px] text-gray-500 mt-0.5">{lead.email} · {lead.phone}</p>
-                    <p className="text-[9px] text-gray-500 mt-0.5">Source: <span className="font-medium">{lead.source}</span> · Captured {lead.time} ago</p>
+                    <p className="text-[9px] text-white/60 mt-0.5">{lead.email} · {lead.phone}</p>
+                    <p className="text-[9px] text-white/60 mt-0.5">Source: <span className="font-medium">{lead.source}</span> · Captured {lead.time} ago</p>
                   </div>
                   <div className="flex items-center gap-2 ml-4 shrink-0">
                     <Tip label="Assign this lead to a team member for follow-up" dir="top" clickable>
@@ -208,19 +208,19 @@ function DemoModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
       <div className="relative w-full max-w-lg bg-[#222] border border-white/10 rounded-2xl p-8 shadow-2xl" onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors flex items-center justify-center text-sm">✕</button>
+        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white/65 hover:text-white transition-colors flex items-center justify-center text-sm">✕</button>
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-brand-600/40 bg-brand-600/10 text-brand-400 text-xs font-medium mb-5">
           <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse" />Live demo · No credit card needed
         </div>
         <h2 className="text-2xl font-bold text-white mb-2">See Form Intelligence in action</h2>
-        <p className="text-sm text-gray-400 leading-relaxed mb-7">Watch Sage capture leads from your ad platforms, enrich them automatically, and route them to the right person.</p>
+        <p className="text-sm text-white/65 leading-relaxed mb-7">Watch Sage capture leads from your ad platforms, enrich them automatically, and route them to the right person.</p>
         <div className="flex flex-col gap-3">
-          <Link href="/login" onClick={onClose} className="w-full py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors text-sm text-center">Start a 7-day free trial — free</Link>
-          <Link href="/contact" onClick={onClose} className="w-full py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm text-center">Book a live demo →</Link>
+          <Link href="/login" onClick={onClose} className="w-full py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors text-sm text-center">Start a 14-day free trial — free</Link>
+          <Link href="/contact" onClick={onClose} className="w-full py-3.5 border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-medium rounded-xl transition-colors text-sm text-center">Book a live demo →</Link>
         </div>
         <div className="mt-6 pt-5 border-t border-white/5 flex items-center justify-center gap-5">
-          {['No credit card', 'Cancel anytime', '7-day free trial'].map(t => (
-            <span key={t} className="flex items-center gap-1.5 text-[11px] text-gray-500">
+          {['No credit card', 'Cancel anytime', '14-day free trial'].map(t => (
+            <span key={t} className="flex items-center gap-1.5 text-[11px] text-white/60">
               <svg className="w-3 h-3 text-brand-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>{t}
             </span>
           ))}
@@ -246,8 +246,8 @@ export default function FormsPage() {
         <div className="relative max-w-4xl mx-auto text-center">
           <FadeUp delay={0}><div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-brand-600/40 bg-brand-600/10 text-brand-400 text-xs font-medium mb-6"><span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse" />AI-enriched lead capture from ad platforms</div></FadeUp>
           <FadeUp delay={0.1}><h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-snug mb-6">Every ad lead, captured<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-brand-600">and routed automatically</span></h1></FadeUp>
-          <FadeUp delay={0.2}><p className="text-base sm:text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto mb-10">Connect Meta Leads and Google Ads — every submission lands in your dashboard, enriched by AI and routed to the right person before you even open it.</p></FadeUp>
-          <FadeUp delay={0.3}><div className="flex flex-col sm:flex-row gap-3 justify-center"><Link href="/login" className="px-7 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors text-sm">Start a 7 Day Free Trial</Link><button onClick={() => setModalOpen(true)} className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm">See it in action →</button></div></FadeUp>
+          <FadeUp delay={0.2}><p className="text-base sm:text-xl text-white/65 leading-relaxed max-w-2xl mx-auto mb-10">Connect Meta Leads and Google Ads — every submission lands in your dashboard, enriched by AI and routed to the right person before you even open it.</p></FadeUp>
+          <FadeUp delay={0.3}><div className="flex flex-col sm:flex-row gap-3 justify-center"><Link href="/login" className="px-7 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors text-sm">Start a 14-Day Free Trial</Link><button onClick={() => setModalOpen(true)} className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-medium rounded-xl transition-colors text-sm">See it in action →</button></div></FadeUp>
         </div>
       </section>
       <section className="pb-24 px-6">
@@ -258,14 +258,14 @@ export default function FormsPage() {
       </section>
       <section className="py-20 px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto">
-          <ScrollReveal className="text-center mb-14"><p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Lead Intelligence</p><h2 className="text-3xl sm:text-4xl font-bold mb-4">Ad leads that actually convert</h2><p className="text-gray-400 max-w-xl mx-auto text-sm leading-relaxed">Stop copying leads from spreadsheets. Connect your ad platforms and let Sage handle everything else.</p></ScrollReveal>
+          <ScrollReveal className="text-center mb-14"><p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Lead Intelligence</p><h2 className="text-3xl sm:text-4xl font-bold mb-4">Ad leads that actually convert</h2><p className="text-white/65 max-w-xl mx-auto text-sm leading-relaxed">Stop copying leads from spreadsheets. Connect your ad platforms and let Sage handle everything else.</p></ScrollReveal>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {FEATURES.map((f, i) => (<ScrollReveal key={f.tag} delay={i * 0.05}><div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-brand-600/30 transition-colors"><span className="text-xs text-brand-400 font-semibold uppercase tracking-widest mb-2 block">{f.tag}</span><p className="text-xl mb-1">{f.icon}</p><h3 className="text-base font-bold text-white mb-2">{f.title}</h3><p className="text-sm text-gray-400 leading-relaxed">{f.desc}</p></div></ScrollReveal>))}
+            {FEATURES.map((f, i) => (<ScrollReveal key={f.tag} delay={i * 0.05}><div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-brand-600/30 transition-colors"><span className="text-xs text-brand-400 font-semibold uppercase tracking-widest mb-2 block">{f.tag}</span><p className="text-xl mb-1">{f.icon}</p><h3 className="text-base font-bold text-white mb-2">{f.title}</h3><p className="text-sm text-white/65 leading-relaxed">{f.desc}</p></div></ScrollReveal>))}
           </div>
         </div>
       </section>
       <section className="py-24 px-6 border-t border-white/5 text-center">
-        <ScrollReveal><h2 className="text-3xl sm:text-4xl font-bold mb-4">Ready to capture better leads?</h2><p className="text-gray-400 mb-8 text-sm max-w-md mx-auto">Connect your first ad platform free. No credit card required.</p><Link href="/login" className="inline-block px-8 py-4 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors text-sm">Start free trial →</Link></ScrollReveal>
+        <ScrollReveal><h2 className="text-3xl sm:text-4xl font-bold mb-4">Ready to capture better leads?</h2><p className="text-white/65 mb-8 text-sm max-w-md mx-auto">Connect your first ad platform free. No credit card required.</p><Link href="/login" className="inline-block px-8 py-4 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors text-sm">Start free trial →</Link></ScrollReveal>
       </section>
       {modalOpen && <DemoModal onClose={() => setModalOpen(false)} />}
     </div>

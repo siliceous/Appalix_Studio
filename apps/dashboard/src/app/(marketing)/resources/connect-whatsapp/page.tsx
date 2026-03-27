@@ -49,28 +49,28 @@ export default function ConnectWhatsAppPage() {
       />
       <div className="max-w-3xl mx-auto">
 
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect WhatsApp Business</span>
+          <span className="text-white/65">Connect WhatsApp Business</span>
         </div>
 
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">11 min read · Core plan and above</span>
+            <span className="text-xs text-white/60">11 min read · Core plan and above</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             How to Connect Appalix to WhatsApp Business
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             WhatsApp is the world&apos;s most-used messaging app. With the WhatsApp Business API and Appalix, your AI bot can answer customer questions, capture leads, and hand off to a human agent — all inside WhatsApp, 24 hours a day.
           </p>
         </div>
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">What you&apos;ll need</h2>
@@ -133,7 +133,7 @@ export default function ConnectWhatsAppPage() {
               <li>Appalix should respond with your bot&apos;s reply within seconds.</li>
               <li>The conversation appears in Appalix <strong className="text-white">Conversations</strong> with platform <em>WhatsApp</em>.</li>
             </ol>
-            <p className="mt-3 text-sm text-gray-400">
+            <p className="mt-3 text-sm text-white/65">
               In sandbox/test mode, only pre-registered test numbers can send messages. Submit your app and phone number for production approval to accept messages from anyone.
             </p>
           </section>
@@ -150,7 +150,7 @@ export default function ConnectWhatsAppPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">💬</p>
             <h3 className="text-lg font-semibold text-white mb-2">Put your AI bot on WhatsApp</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Create a WhatsApp integration in Appalix, connect your Meta app, and start replying to customers automatically.
             </p>
             <Link

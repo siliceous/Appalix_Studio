@@ -49,29 +49,29 @@ export default function ConnectZohoCrmPage() {
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect Zoho CRM to Appalix</span>
+          <span className="text-white/65">Connect Zoho CRM to Appalix</span>
         </div>
 
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">9 min read · Pro+ plan</span>
+            <span className="text-xs text-white/60">9 min read · Pro+ plan</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             How to Connect Zoho CRM to Appalix
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Appalix pushes leads directly into Zoho CRM the moment a visitor shares their email or phone number in chat. Leads appear under the <em>Leads</em> module automatically. This guide walks you through getting a Zoho OAuth token and connecting it to Appalix in minutes.
           </p>
         </div>
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           {/* What you'll need */}
           <section>
@@ -226,7 +226,7 @@ export default function ConnectZohoCrmPage() {
                 In Zoho CRM, go to <strong className="text-white">Modules → Leads</strong>. The new lead should appear within a few seconds.
               </li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Note on token expiry:</strong> Zoho access tokens expire after 1 hour. If you see leads stop flowing in after a while, your token may have expired. For production, use the refresh token approach (Step 1B) and re-generate a fresh access token when needed. Full automatic token refresh support is coming to Appalix — until then, refresh manually when prompted.
             </div>
           </section>
@@ -238,15 +238,15 @@ export default function ConnectZohoCrmPage() {
             <div className="space-y-5">
               <div>
                 <p className="font-semibold text-white">Which Zoho CRM plans support the API?</p>
-                <p className="text-sm text-gray-400 mt-1">Zoho CRM Standard, Professional, Enterprise, and Ultimate plans include REST API access. The free plan does not include API access.</p>
+                <p className="text-sm text-white/65 mt-1">Zoho CRM Standard, Professional, Enterprise, and Ultimate plans include REST API access. The free plan does not include API access.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">What is the correct data centre URL?</p>
-                <p className="text-sm text-gray-400 mt-1">Appalix uses the default <code className="bg-white/10 px-1 py-0.5 rounded text-brand-300">https://www.zohoapis.com</code> endpoint, which routes to your correct data centre automatically. If you&apos;re on the EU data centre, use <code className="bg-white/10 px-1 py-0.5 rounded text-brand-300">https://www.zohoapis.eu</code> — contact Appalix support if you need a custom endpoint.</p>
+                <p className="text-sm text-white/65 mt-1">Appalix uses the default <code className="bg-white/10 px-1 py-0.5 rounded text-brand-300">https://www.zohoapis.com</code> endpoint, which routes to your correct data centre automatically. If you&apos;re on the EU data centre, use <code className="bg-white/10 px-1 py-0.5 rounded text-brand-300">https://www.zohoapis.eu</code> — contact Appalix support if you need a custom endpoint.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Can I use Zapier with Zoho CRM instead?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes — select <em>Zapier</em> in the CRM provider dropdown (Core plan), paste a Zapier Catch Hook URL, then add a Zoho CRM action in Zapier to create a Lead record.</p>
+                <p className="text-sm text-white/65 mt-1">Yes — select <em>Zapier</em> in the CRM provider dropdown (Core plan), paste a Zapier Catch Hook URL, then add a Zoho CRM action in Zapier to create a Lead record.</p>
               </div>
             </div>
           </section>
@@ -255,7 +255,7 @@ export default function ConnectZohoCrmPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">🔵</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to connect Zoho CRM?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Paste your Zoho OAuth token in Appalix and leads will start flowing into your CRM automatically.
             </p>
             <Link

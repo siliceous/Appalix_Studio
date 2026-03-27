@@ -45,22 +45,22 @@ export default function MultipleBotsPage() {
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Multiple Bots on Multiple Platforms</span>
+          <span className="text-white/65">Multiple Bots on Multiple Platforms</span>
         </div>
 
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Guide</span>
-            <span className="text-xs text-gray-500">6 min read · Mar 5, 2026</span>
+            <span className="text-xs text-white/60">6 min read · Mar 5, 2026</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Multiple Bots on Multiple Platforms
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Train one AI agent on your product knowledge and deploy it everywhere your customers are — website, Slack, WhatsApp, Telegram, and more — each channel with its own identity, settings, and automations.
           </p>
         </div>
@@ -69,7 +69,7 @@ export default function MultipleBotsPage() {
         <div className="border-t border-white/10 mb-10" />
 
         {/* Article body */}
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           {/* Overview */}
           <section>
@@ -82,7 +82,7 @@ export default function MultipleBotsPage() {
             </p>
             <div className="mt-6 p-5 rounded-xl bg-white/5 border border-white/10">
               <p className="text-sm font-semibold text-white mb-2">Think of it like this:</p>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-white/65">
                 The <span className="text-white">bot</span> is your AI&apos;s knowledge and personality. An <span className="text-white">integration</span> is a deployment of that bot onto a platform. One bot → many integrations → many channels.
               </p>
             </div>
@@ -114,7 +114,7 @@ export default function MultipleBotsPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-white text-sm">{p.label}</p>
-                    <p className="text-sm text-gray-400 mt-0.5">{p.desc}</p>
+                    <p className="text-sm text-white/65 mt-0.5">{p.desc}</p>
                   </div>
                 </li>
               ))}
@@ -140,7 +140,7 @@ export default function MultipleBotsPage() {
                   <span className="text-xl shrink-0">{item.icon}</span>
                   <div>
                     <p className="font-semibold text-white text-sm mb-1">{item.title}</p>
-                    <p className="text-xs text-gray-400 leading-relaxed">{item.desc}</p>
+                    <p className="text-xs text-white/65 leading-relaxed">{item.desc}</p>
                   </div>
                 </div>
               ))}
@@ -154,28 +154,28 @@ export default function MultipleBotsPage() {
             <div className="space-y-5">
               <div className="p-5 rounded-xl border border-white/10 bg-white/5">
                 <p className="font-semibold text-white mb-2">🛒 E-commerce brand with a blog and a store</p>
-                <p className="text-sm text-gray-400 leading-relaxed">
+                <p className="text-sm text-white/65 leading-relaxed">
                   Deploy one web widget integration on the marketing blog (welcome message: &quot;Ask about any product&quot;) and a separate integration on the checkout / store pages (welcome message: &quot;Need help with your order?&quot;). Both draw from the same product knowledge base but greet shoppers appropriately for where they are.
                 </p>
               </div>
 
               <div className="p-5 rounded-xl border border-white/10 bg-white/5">
                 <p className="font-semibold text-white mb-2">💼 B2B SaaS with a Slack community</p>
-                <p className="text-sm text-gray-400 leading-relaxed">
+                <p className="text-sm text-white/65 leading-relaxed">
                   Add a Slack integration for internal employee support (HR questions, IT help-desk) and a separate web widget integration on the public docs site for customer support. The same trained agent handles both — only the channel and escalation routing differ.
                 </p>
               </div>
 
               <div className="p-5 rounded-xl border border-white/10 bg-white/5">
                 <p className="font-semibold text-white mb-2">🌍 Agency managing multiple client sites</p>
-                <p className="text-sm text-gray-400 leading-relaxed">
+                <p className="text-sm text-white/65 leading-relaxed">
                   Train one bot per client, then create a web widget integration for each of their sites. Each client gets their own welcome message, brand colours, CRM webhook, and allowed-origins restriction. You manage everything from a single Appalix workspace.
                 </p>
               </div>
 
               <div className="p-5 rounded-xl border border-white/10 bg-white/5">
                 <p className="font-semibold text-white mb-2">📱 Mobile-first brand on WhatsApp & Google Chat</p>
-                <p className="text-sm text-gray-400 leading-relaxed">
+                <p className="text-sm text-white/65 leading-relaxed">
                   Create a WhatsApp integration for your main customer support number and a Google Chat integration for your internal team workspace. Leads from WhatsApp go to Salesforce; Google Chat conversations fire a Slack alert to your team manager. One bot, two channels, two workflows.
                 </p>
               </div>
@@ -219,7 +219,7 @@ export default function MultipleBotsPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-white mb-1">{item.title}</p>
-                    <p className="text-sm text-gray-400 leading-relaxed">{item.desc}</p>
+                    <p className="text-sm text-white/65 leading-relaxed">{item.desc}</p>
                   </div>
                 </li>
               ))}
@@ -241,7 +241,7 @@ export default function MultipleBotsPage() {
                   <svg className="w-5 h-5 text-brand-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
-                  <p className="text-sm text-gray-300 leading-relaxed">{tip}</p>
+                  <p className="text-sm text-white/80 leading-relaxed">{tip}</p>
                 </li>
               ))}
             </ul>
@@ -265,17 +265,17 @@ export default function MultipleBotsPage() {
 
         {/* CTA */}
         <div className="text-center">
-          <p className="text-gray-400 mb-5 text-sm">Ready to deploy your AI agent everywhere?</p>
+          <p className="text-white/65 mb-5 text-sm">Ready to deploy your AI agent everywhere?</p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link
               href="/signup"
               className="px-6 py-2.5 bg-[#1a8c76] hover:bg-[#14705d] text-white text-sm font-medium rounded-xl transition-colors"
             >
-              Start a 7 Day Free Trial →
+              Start a 14-Day Free Trial →
             </Link>
             <Link
               href="/platforms"
-              className="px-6 py-2.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white text-sm font-medium rounded-xl transition-colors"
+              className="px-6 py-2.5 border border-white/10 hover:border-white/20 text-white/80 hover:text-white text-sm font-medium rounded-xl transition-colors"
             >
               View all integrations
             </Link>

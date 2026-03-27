@@ -67,7 +67,7 @@ export default function ContactPage() {
             <h1 className="text-4xl sm:text-5xl font-bold mb-5 leading-tight">
               Let&apos;s talk
             </h1>
-            <p className="text-gray-400 text-lg leading-relaxed max-w-xl mx-auto">
+            <p className="text-white/65 text-lg leading-relaxed max-w-xl mx-auto">
               Whether you're exploring Appalix for the first time or need help with an existing account,
               our team is ready to help.
             </p>
@@ -84,7 +84,7 @@ export default function ContactPage() {
                 <span className="text-2xl">{card.emoji}</span>
                 <div>
                   <p className="font-semibold text-white mb-1">{card.title}</p>
-                  <p className="text-sm text-gray-400 leading-relaxed">{card.desc}</p>
+                  <p className="text-sm text-white/65 leading-relaxed">{card.desc}</p>
                 </div>
                 <a
                   href={`mailto:${card.email}`}
@@ -106,7 +106,7 @@ export default function ContactPage() {
           <div className="lg:col-span-3">
             <ScrollReveal>
               <h2 className="text-2xl font-bold mb-2">Send us a message</h2>
-              <p className="text-gray-400 text-sm mb-8">
+              <p className="text-white/65 text-sm mb-8">
                 Fill in the form and we&apos;ll route your message to the right team automatically.
               </p>
               <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
@@ -123,7 +123,7 @@ export default function ContactPage() {
                 {FAQS.map((faq) => (
                   <div key={faq.q} className="border-b border-white/5 pb-6 last:border-0 last:pb-0">
                     <p className="font-medium text-white mb-2">{faq.q}</p>
-                    <p className="text-sm text-gray-400 leading-relaxed">{faq.a}</p>
+                    <p className="text-sm text-white/65 leading-relaxed">{faq.a}</p>
                   </div>
                 ))}
               </div>
@@ -133,7 +133,7 @@ export default function ContactPage() {
                 <span className="text-[#15A4AE] text-lg mt-0.5">⏱</span>
                 <div>
                   <p className="text-sm font-semibold text-[#15A4AE]">Fast response times</p>
-                  <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                  <p className="text-xs text-white/60 mt-0.5 leading-relaxed">
                     Sales inquiries are answered within a few hours.
                     All other messages within one business day.
                   </p>

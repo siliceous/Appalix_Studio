@@ -34,7 +34,7 @@ export function TrialBanner({ trialEndsAt }: Props) {
         <span>
           {urgency
             ? `Your free trial ends in ${days} day${days === 1 ? '' : 's'} — all Pro features are currently active.`
-            : `You're on a 7-day free trial. ${days} day${days === 1 ? '' : 's'} remaining with full Pro access.`
+            : `You're on a 14-day free trial. ${days} day${days === 1 ? '' : 's'} remaining with full Pro access.`
           }
         </span>
         <Link

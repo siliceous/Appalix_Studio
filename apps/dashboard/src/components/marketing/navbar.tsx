@@ -35,7 +35,7 @@ function DashboardDropdown() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1 text-sm text-gray-400 hover:text-white transition-colors"
+        className="flex items-center gap-1 text-sm text-white/65 hover:text-white transition-colors"
       >
         Dashboard
         <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
@@ -51,8 +51,8 @@ function DashboardDropdown() {
                 onClick={() => setOpen(false)}
                 className="flex flex-col px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors group"
               >
-                <span className="text-sm font-medium text-gray-200 group-hover:text-white">{l.label}</span>
-                <span className="text-xs text-gray-500 group-hover:text-gray-400 mt-0.5">{l.desc}</span>
+                <span className="text-sm font-medium text-white/90 group-hover:text-white">{l.label}</span>
+                <span className="text-xs text-white/60 group-hover:text-white/65 mt-0.5">{l.desc}</span>
               </Link>
             ))}
           </div>
@@ -85,7 +85,7 @@ export function MarketingNavbar() {
             <Link
               key={l.href}
               href={l.href}
-              className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 text-sm text-white/65 hover:text-white transition-colors"
             >
               {l.label}
               {'badge' in l && l.badge && (
@@ -101,7 +101,7 @@ export function MarketingNavbar() {
         <div className="flex items-center gap-3">
           <Link
             href="/login"
-            className="text-sm text-gray-400 hover:text-white transition-colors px-3 py-1.5"
+            className="text-sm text-white/65 hover:text-white transition-colors px-3 py-1.5"
           >
             Sign in
           </Link>

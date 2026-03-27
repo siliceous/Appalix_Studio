@@ -220,7 +220,7 @@ export function OrbitSection() {
         >
           <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">How it works</p>
           <h2 className="text-3xl sm:text-4xl font-bold text-white">Up and running in minutes</h2>
-          <p className="text-gray-400 mt-4 max-w-xl mx-auto text-sm leading-relaxed">
+          <p className="text-white/65 mt-4 max-w-xl mx-auto text-sm leading-relaxed">
             From zero to a fully deployed AI agent — no engineers, no complexity.
           </p>
         </motion.div>
@@ -248,8 +248,8 @@ export function OrbitSection() {
               </span>
 
               <h3 className="text-2xl font-bold text-white mb-1">{s.title}</h3>
-              <p className="text-sm font-medium text-gray-400 mb-3">{s.subtitle}</p>
-              <p className="text-sm text-gray-500 leading-relaxed max-w-xs">{s.desc}</p>
+              <p className="text-sm font-medium text-white/65 mb-3">{s.subtitle}</p>
+              <p className="text-sm text-white/60 leading-relaxed max-w-xs">{s.desc}</p>
             </motion.div>
           ))}
         </div>

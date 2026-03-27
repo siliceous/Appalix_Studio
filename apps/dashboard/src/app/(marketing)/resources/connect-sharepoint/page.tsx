@@ -49,28 +49,28 @@ export default function ConnectSharePointPage() {
       />
       <div className="max-w-3xl mx-auto">
 
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect SharePoint to Appalix</span>
+          <span className="text-white/65">Connect SharePoint to Appalix</span>
         </div>
 
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">10 min read · Pro plan and above</span>
+            <span className="text-xs text-white/60">10 min read · Pro plan and above</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             How to Connect SharePoint to Appalix
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Index documents from Microsoft SharePoint sites so your AI bot can answer questions from your organisation&apos;s intranet content, policies, and wikis. Appalix uses the Microsoft Graph API — you need a token, the file URL, and your SharePoint Site ID.
           </p>
         </div>
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">What you&apos;ll need</h2>
@@ -90,14 +90,14 @@ export default function ConnectSharePointPage() {
             <pre className="bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-brand-300 overflow-x-auto mt-3">
               {`https://yourcompany.sharepoint.com/sites/MySite/Shared%20Documents/policy.docx`}
             </pre>
-            <p className="mt-3 text-sm text-gray-400">
+            <p className="mt-3 text-sm text-white/65">
               Alternatively, right-click the file → <strong className="text-white">Share → Copy link</strong> to get a shareable URL.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">Step 2 — Generate a Microsoft Graph access token</h2>
-            <p className="mb-3 text-sm text-gray-400">
+            <p className="mb-3 text-sm text-white/65">
               Graph Explorer only shows permissions relevant to the active query. You need to run a SharePoint query first so that <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">Files.Read.All</code> and <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">Sites.Read.All</code> appear.
             </p>
             <ol className="list-decimal pl-5 space-y-3">
@@ -143,7 +143,7 @@ export default function ConnectSharePointPage() {
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">Step 3 — Find your SharePoint Site ID</h2>
-            <p className="mb-3 text-sm text-gray-400">
+            <p className="mb-3 text-sm text-white/65">
               Appalix needs the Site ID to locate your file within the Graph API.
             </p>
             <ol className="list-decimal pl-5 space-y-3">
@@ -158,7 +158,7 @@ export default function ConnectSharePointPage() {
             <pre className="bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-brand-300 overflow-x-auto mt-3">
               {`yourcompany.sharepoint.com,aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee,ffffffff-gggg-hhhh-iiii-jjjjjjjjjjjj`}
             </pre>
-            <p className="mt-3 text-sm text-gray-400">
+            <p className="mt-3 text-sm text-white/65">
               You can also get the site ID directly by appending <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">/_api/site/id</code> to your SharePoint site URL in a browser (requires login).
             </p>
           </section>
@@ -197,7 +197,7 @@ export default function ConnectSharePointPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">🏢</p>
             <h3 className="text-lg font-semibold text-white mb-2">Bring your SharePoint content to life</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Index your organisation&apos;s policies, wikis, and intranet documents so your AI bot can answer questions from them instantly.
             </p>
             <Link

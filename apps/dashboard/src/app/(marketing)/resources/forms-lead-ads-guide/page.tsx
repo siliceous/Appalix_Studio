@@ -45,22 +45,22 @@ export default function FormsLeadAdsGuidePage() {
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Appalix Forms — Complete Guide</span>
+          <span className="text-white/65">Appalix Forms — Complete Guide</span>
         </div>
 
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Guide</span>
-            <span className="text-xs text-gray-500">15 min read · Pro+ plan</span>
+            <span className="text-xs text-white/60">15 min read · Pro+ plan</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Appalix Forms — Complete Guide
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Appalix Forms is your lead operations hub. Connect Meta Lead Ads and Google Ads via webhook,
             pull in contacts from Mailchimp and ActiveCampaign, let Appalix score and deduplicate everything automatically,
             then push the best leads into your Sage CRM pipeline with a single click.
@@ -72,7 +72,7 @@ export default function FormsLeadAdsGuidePage() {
 
         {/* Table of contents */}
         <div className="mb-10 p-5 rounded-xl bg-white/3 border border-white/8">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">In this guide</p>
+          <p className="text-xs font-semibold text-white/65 uppercase tracking-wider mb-3">In this guide</p>
           <ol className="space-y-1.5 text-sm">
             {[
               ['Overview & prerequisites', '#overview'],
@@ -93,7 +93,7 @@ export default function FormsLeadAdsGuidePage() {
           </ol>
         </div>
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-12 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-12 text-white/80">
 
           {/* ── Overview ─────────────────────────────────────────────────────── */}
           <section id="overview">
@@ -218,9 +218,9 @@ export default function FormsLeadAdsGuidePage() {
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-white/10">
-                    <th className="text-left py-2 pr-4 text-gray-400 font-medium">Field</th>
-                    <th className="text-left py-2 pr-4 text-gray-400 font-medium">Mailchimp</th>
-                    <th className="text-left py-2 text-gray-400 font-medium">ActiveCampaign</th>
+                    <th className="text-left py-2 pr-4 text-white/65 font-medium">Field</th>
+                    <th className="text-left py-2 pr-4 text-white/65 font-medium">Mailchimp</th>
+                    <th className="text-left py-2 text-white/65 font-medium">ActiveCampaign</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -233,8 +233,8 @@ export default function FormsLeadAdsGuidePage() {
                   ].map(([f, mc, ac]) => (
                     <tr key={f}>
                       <td className="py-2 pr-4 text-white">{f}</td>
-                      <td className="py-2 pr-4 text-gray-300">{mc}</td>
-                      <td className="py-2 text-gray-300">{ac}</td>
+                      <td className="py-2 pr-4 text-white/80">{mc}</td>
+                      <td className="py-2 text-white/80">{ac}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -287,26 +287,26 @@ export default function FormsLeadAdsGuidePage() {
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-white/10">
-                    <th className="text-left py-2 pr-6 text-gray-400 font-medium">Score</th>
-                    <th className="text-left py-2 pr-6 text-gray-400 font-medium">Condition</th>
-                    <th className="text-left py-2 text-gray-400 font-medium">Badge colour</th>
+                    <th className="text-left py-2 pr-6 text-white/65 font-medium">Score</th>
+                    <th className="text-left py-2 pr-6 text-white/65 font-medium">Condition</th>
+                    <th className="text-left py-2 text-white/65 font-medium">Badge colour</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   <tr>
                     <td className="py-2 pr-6"><span className="text-green-400 font-semibold">High</span></td>
-                    <td className="py-2 pr-6 text-gray-300">3 or 4 of: email, phone, company, job title present</td>
-                    <td className="py-2 text-gray-300">Green</td>
+                    <td className="py-2 pr-6 text-white/80">3 or 4 of: email, phone, company, job title present</td>
+                    <td className="py-2 text-white/80">Green</td>
                   </tr>
                   <tr>
                     <td className="py-2 pr-6"><span className="text-yellow-400 font-semibold">Medium</span></td>
-                    <td className="py-2 pr-6 text-gray-300">Exactly 2 of the above fields present</td>
-                    <td className="py-2 text-gray-300">Amber</td>
+                    <td className="py-2 pr-6 text-white/80">Exactly 2 of the above fields present</td>
+                    <td className="py-2 text-white/80">Amber</td>
                   </tr>
                   <tr>
-                    <td className="py-2 pr-6"><span className="text-gray-400 font-semibold">Low</span></td>
-                    <td className="py-2 pr-6 text-gray-300">Only 1 field present (typically email only)</td>
-                    <td className="py-2 text-gray-300">Gray</td>
+                    <td className="py-2 pr-6"><span className="text-white/65 font-semibold">Low</span></td>
+                    <td className="py-2 pr-6 text-white/80">Only 1 field present (typically email only)</td>
+                    <td className="py-2 text-white/80">Gray</td>
                   </tr>
                 </tbody>
               </table>
@@ -375,35 +375,35 @@ export default function FormsLeadAdsGuidePage() {
             <div className="space-y-6">
               <div>
                 <p className="font-semibold text-white">Can I connect both Meta and Google Ads at the same time?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes. Each platform has its own independent webhook. Connect as many sources as you like — all leads flow into the same All Leads table and are distinguished by platform badge.</p>
+                <p className="text-sm text-white/65 mt-1">Yes. Each platform has its own independent webhook. Connect as many sources as you like — all leads flow into the same All Leads table and are distinguished by platform badge.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Do I need separate credentials for Mailchimp in Forms vs. Sage → Integrations?</p>
-                <p className="text-sm text-gray-400 mt-1">No. The email platform sync in Forms → Sources reads the credentials you already saved in Sage → Integrations → Email Marketing. Connect once, use everywhere.</p>
+                <p className="text-sm text-white/65 mt-1">No. The email platform sync in Forms → Sources reads the credentials you already saved in Sage → Integrations → Email Marketing. Connect once, use everywhere.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">What happens if I sync Mailchimp and a contact already exists as a Meta lead?</p>
-                <p className="text-sm text-gray-400 mt-1">Appalix checks email and phone against all existing leads in your workspace before inserting. If there's a match, the duplicate is skipped. The original lead's source platform and data are preserved.</p>
+                <p className="text-sm text-white/65 mt-1">Appalix checks email and phone against all existing leads in your workspace before inserting. If there's a match, the duplicate is skipped. The original lead's source platform and data are preserved.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Can I delete a lead?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes. Click the delete icon in the Actions column of All Leads. This permanently removes the lead and its event log. It does not affect any Sage Contact or Deal that was already created from the lead.</p>
+                <p className="text-sm text-white/65 mt-1">Yes. Click the delete icon in the Actions column of All Leads. This permanently removes the lead and its event log. It does not affect any Sage Contact or Deal that was already created from the lead.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">What plan do I need?</p>
-                <p className="text-sm text-gray-400 mt-1">Forms is available on Pro, Scale, and Enterprise plans. If you're on a Starter or Core plan, you'll see an upgrade prompt when you navigate to any Forms page.</p>
+                <p className="text-sm text-white/65 mt-1">Forms is available on Pro, Scale, and Enterprise plans. If you're on a Starter or Core plan, you'll see an upgrade prompt when you navigate to any Forms page.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Is there a limit on how many leads I can store?</p>
-                <p className="text-sm text-gray-400 mt-1">There is no hard limit on the number of lead records. Storage limits follow your plan's database quota. For most Pro and Scale users this is not a practical concern.</p>
+                <p className="text-sm text-white/65 mt-1">There is no hard limit on the number of lead records. Storage limits follow your plan's database quota. For most Pro and Scale users this is not a practical concern.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Can I sync ConvertKit, Klaviyo, or Constant Contact contacts into Forms?</p>
-                <p className="text-sm text-gray-400 mt-1">The current email platform sync supports Mailchimp and ActiveCampaign. ConvertKit, Klaviyo, and Constant Contact credentials can be stored in Sage → Integrations for future outbound sync features, but Forms pull sync is limited to Mailchimp and ActiveCampaign today.</p>
+                <p className="text-sm text-white/65 mt-1">The current email platform sync supports Mailchimp and ActiveCampaign. ConvertKit, Klaviyo, and Constant Contact credentials can be stored in Sage → Integrations for future outbound sync features, but Forms pull sync is limited to Mailchimp and ActiveCampaign today.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Are my API keys and tokens stored securely?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes. All credentials (app secrets, page access tokens, API keys, webhook keys) are stored encrypted in your workspace database. They are never exposed in plain text after saving.</p>
+                <p className="text-sm text-white/65 mt-1">Yes. All credentials (app secrets, page access tokens, API keys, webhook keys) are stored encrypted in your workspace database. They are never exposed in plain text after saving.</p>
               </div>
             </div>
           </section>
@@ -424,7 +424,7 @@ export default function FormsLeadAdsGuidePage() {
                 >
                   <div className="text-xl mb-2">{item.emoji}</div>
                   <p className="text-sm font-semibold text-white group-hover:text-brand-400 transition-colors mb-1">{item.title}</p>
-                  <p className="text-xs text-gray-400">{item.desc}</p>
+                  <p className="text-xs text-white/65">{item.desc}</p>
                 </Link>
               ))}
             </div>
@@ -434,7 +434,7 @@ export default function FormsLeadAdsGuidePage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-4">
             <p className="text-2xl mb-3">📥</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to start capturing leads?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Connect your first source in Forms → Sources and your leads will start flowing in automatically.
             </p>
             <Link

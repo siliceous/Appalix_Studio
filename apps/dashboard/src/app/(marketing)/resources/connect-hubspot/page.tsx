@@ -49,29 +49,29 @@ export default function ConnectHubspotPage() {
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect HubSpot to Appalix</span>
+          <span className="text-white/65">Connect HubSpot to Appalix</span>
         </div>
 
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">8 min read · Pro+ plan</span>
+            <span className="text-xs text-white/60">8 min read · Pro+ plan</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             How to Connect HubSpot CRM to Appalix
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             With Appalix&apos;s native HubSpot integration, every lead your AI agent captures — an email address or phone number shared mid-conversation — is automatically created as a contact in HubSpot. No Zapier, no middleware, no code.
           </p>
         </div>
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           {/* What you'll need */}
           <section>
@@ -182,7 +182,7 @@ export default function ConnectHubspotPage() {
                 In HubSpot, go to <strong className="text-white">CRM → Contacts</strong> and search for the email address. You should see the new contact appear within a few seconds.
               </li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Tip:</strong> If the contact doesn&apos;t appear, check that your Private App token has the <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">crm.objects.contacts.write</code> scope. You can view the scopes on the Private Apps page in HubSpot Settings.
             </div>
           </section>
@@ -211,19 +211,19 @@ export default function ConnectHubspotPage() {
             <div className="space-y-5">
               <div>
                 <p className="font-semibold text-white">Will existing HubSpot contacts be duplicated?</p>
-                <p className="text-sm text-gray-400 mt-1">No. Appalix uses HubSpot&apos;s upsert API, which updates an existing contact if the email already exists rather than creating a duplicate.</p>
+                <p className="text-sm text-white/65 mt-1">No. Appalix uses HubSpot&apos;s upsert API, which updates an existing contact if the email already exists rather than creating a duplicate.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Does this work with all Appalix integration types?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes — CRM integration is available for every integration type (Web Widget, Slack, WhatsApp, Facebook Messenger, WordPress, and Custom API).</p>
+                <p className="text-sm text-white/65 mt-1">Yes — CRM integration is available for every integration type (Web Widget, Slack, WhatsApp, Facebook Messenger, WordPress, and Custom API).</p>
               </div>
               <div>
                 <p className="font-semibold text-white">What HubSpot plan do I need?</p>
-                <p className="text-sm text-gray-400 mt-1">The free HubSpot CRM supports Private Apps and the Contacts API, so any plan (including free) works.</p>
+                <p className="text-sm text-white/65 mt-1">The free HubSpot CRM supports Private Apps and the Contacts API, so any plan (including free) works.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Can I use Zapier with HubSpot instead?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes — the Zapier webhook option is available on Core plan and above. Select <em>Zapier</em> in the CRM provider dropdown and paste your Zapier Catch Hook URL, then add a HubSpot action in Zapier.</p>
+                <p className="text-sm text-white/65 mt-1">Yes — the Zapier webhook option is available on Core plan and above. Select <em>Zapier</em> in the CRM provider dropdown and paste your Zapier Catch Hook URL, then add a HubSpot action in Zapier.</p>
               </div>
             </div>
           </section>
@@ -232,7 +232,7 @@ export default function ConnectHubspotPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">🟠</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to connect HubSpot?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Open your Appalix integrations dashboard and add your HubSpot token in under 2 minutes.
             </p>
             <Link

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 }
 
 const PLATFORMS = [
-  { name: 'WooCommerce', emoji: '🟣', desc: 'Plug in your WooCommerce REST API key and secret.', plan: 'Starter', planColor: 'bg-gray-500/20 text-gray-300 border-gray-500/30' },
+  { name: 'WooCommerce', emoji: '🟣', desc: 'Plug in your WooCommerce REST API key and secret.', plan: 'Starter', planColor: 'bg-gray-500/20 text-white/80 border-gray-500/30' },
   { name: 'Shopify',     emoji: '🛍️', desc: 'Connect via Admin API access token. No app store required.', plan: 'Pro', planColor: 'bg-[#15A4AE]/15 text-[#15A4AE] border-[#15A4AE]/30' },
   { name: 'Magento',     emoji: '🟠', desc: 'Connect via Magento REST API for full order access.', plan: 'Team', planColor: 'bg-amber-400/10 text-amber-400 border-amber-400/25' },
   { name: 'Any store',   emoji: '⚡', desc: 'Custom API integration for any eCommerce platform.', plan: 'Enterprise', planColor: 'bg-purple-500/10 text-purple-400 border-purple-500/25' },
@@ -102,7 +102,7 @@ export default function EcommercePage() {
             </h1>
           </FadeUp>
           <FadeUp delay={0.2}>
-            <p className="text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto mb-10">
+            <p className="text-xl text-white/65 leading-relaxed max-w-2xl mx-auto mb-10">
               Connect Appalix to your Shopify, WooCommerce, or Magento store. Your AI bot answers order status, shipping tracking, and customer queries instantly — 24/7, without a support team.
             </p>
           </FadeUp>
@@ -111,7 +111,7 @@ export default function EcommercePage() {
               <Link href="/login" className="px-10 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white text-lg font-medium rounded-xl transition-colors">
                 Connect your store free
               </Link>
-              <BookDemoButton label="See it live →" className="px-10 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white text-lg font-medium rounded-xl transition-colors" />
+              <BookDemoButton label="See it live →" className="px-10 py-3.5 border border-white/10 hover:border-white/20 text-white/80 hover:text-white text-lg font-medium rounded-xl transition-colors" />
             </div>
           </FadeUp>
         </div>
@@ -130,7 +130,7 @@ export default function EcommercePage() {
                 <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/8 text-center hover:border-[#15A4AE]/30 transition-colors flex flex-col items-center">
                   <span className="text-3xl block mb-3">{p.emoji}</span>
                   <p className="text-sm font-semibold text-white mb-1">{p.name}</p>
-                  <p className="text-xs text-gray-500 leading-relaxed mb-3">{p.desc}</p>
+                  <p className="text-xs text-white/60 leading-relaxed mb-3">{p.desc}</p>
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${p.planColor}`}>{p.plan}</span>
                 </div>
               </ScrollReveal>
@@ -151,8 +151,8 @@ export default function EcommercePage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/8 bg-white/[0.03]">
-                    <th className="text-left px-5 py-3 text-gray-400 font-medium">Platform</th>
-                    <th className="text-center px-4 py-3 text-gray-400 font-medium">Starter</th>
+                    <th className="text-left px-5 py-3 text-white/65 font-medium">Platform</th>
+                    <th className="text-center px-4 py-3 text-white/65 font-medium">Starter</th>
                     <th className="text-center px-4 py-3 text-[#15A4AE] font-semibold">Pro</th>
                     <th className="text-center px-4 py-3 text-amber-400 font-medium">Team</th>
                   </tr>
@@ -189,7 +189,7 @@ export default function EcommercePage() {
           <ScrollReveal className="text-center mb-12">
             <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-3">Real questions. Real answers.</p>
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">What customers ask — and what the bot does</h2>
-            <p className="text-gray-400 text-lg max-w-2xl mx-auto">Every answer comes from live store data, not a script.</p>
+            <p className="text-white/65 text-lg max-w-2xl mx-auto">Every answer comes from live store data, not a script.</p>
           </ScrollReveal>
           <div className="space-y-3">
             {WHAT_IT_ANSWERS.map((item, i) => (
@@ -197,7 +197,7 @@ export default function EcommercePage() {
                 <div className="flex gap-4 p-5 rounded-2xl bg-white/[0.03] border border-white/8 hover:border-[#15A4AE]/20 transition-colors">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-white mb-1.5">{item.q}</p>
-                    <p className="text-sm text-gray-400 leading-relaxed">{item.a}</p>
+                    <p className="text-sm text-white/65 leading-relaxed">{item.a}</p>
                   </div>
                   <div className="w-6 h-6 rounded-full bg-[#15A4AE]/15 flex items-center justify-center shrink-0 mt-0.5">
                     <span className="text-[#15A4AE] text-xs font-bold">✓</span>
@@ -225,7 +225,7 @@ export default function EcommercePage() {
                     <span className="text-[#15A4AE] text-xs font-bold">{s.step}</span>
                   </div>
                   <h3 className="text-base font-semibold text-white mb-2">{s.title}</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed">{s.desc}</p>
+                  <p className="text-sm text-white/65 leading-relaxed">{s.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -246,7 +246,7 @@ export default function EcommercePage() {
                 <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/8 hover:border-[#15A4AE]/25 transition-colors h-full">
                   <span className="text-3xl block mb-4">{f.icon}</span>
                   <h3 className="text-base font-semibold text-white mb-2">{f.title}</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed">{f.desc}</p>
+                  <p className="text-sm text-white/65 leading-relaxed">{f.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -260,7 +260,7 @@ export default function EcommercePage() {
           <ScrollReveal className="text-center mb-10">
             <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-3">Shopify quickstart</p>
             <h2 className="text-3xl font-bold mb-4">Connect Shopify in 2 minutes</h2>
-            <p className="text-gray-400">No app store install. Just an API token from your Shopify admin.</p>
+            <p className="text-white/65">No app store install. Just an API token from your Shopify admin.</p>
           </ScrollReveal>
           <ScrollReveal>
             <div className="rounded-2xl border border-white/10 overflow-hidden">
@@ -268,7 +268,7 @@ export default function EcommercePage() {
                 <span className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
                 <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
                 <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
-                <span className="text-xs text-gray-500 ml-2">Shopify Admin → Apps → Develop apps</span>
+                <span className="text-xs text-white/60 ml-2">Shopify Admin → Apps → Develop apps</span>
               </div>
               <div className="p-6 space-y-4 bg-[#161616]">
                 {[
@@ -279,7 +279,7 @@ export default function EcommercePage() {
                 ].map((step) => (
                   <div key={step.num} className="flex gap-3">
                     <span className="w-5 h-5 rounded-full bg-[#15A4AE]/20 text-[#15A4AE] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{step.num}</span>
-                    <p className="text-sm text-gray-300 leading-relaxed">{step.text}</p>
+                    <p className="text-sm text-white/80 leading-relaxed">{step.text}</p>
                   </div>
                 ))}
               </div>
@@ -295,7 +295,7 @@ export default function EcommercePage() {
             <div className="absolute inset-0 bg-[#15A4AE]/8 rounded-3xl blur-3xl" />
             <div className="relative p-12 rounded-3xl border border-[#15A4AE]/20 bg-white/[0.02]">
               <h2 className="text-3xl sm:text-4xl font-bold mb-4">Stop answering order emails manually</h2>
-              <p className="text-gray-400 mb-8 max-w-xl mx-auto">
+              <p className="text-white/65 mb-8 max-w-xl mx-auto">
                 Connect your store today. Your bot handles order queries from the first message — so your team focuses on growth, not support queues.
               </p>
               <Link
@@ -304,7 +304,7 @@ export default function EcommercePage() {
               >
                 Connect your store — it&apos;s free
               </Link>
-              <p className="text-xs text-gray-500 mt-4">7-day free trial · No credit card required</p>
+              <p className="text-xs text-white/60 mt-4">14-day free trial · No credit card required</p>
             </div>
           </div>
         </ScrollReveal>

@@ -224,7 +224,7 @@ export function SupportSection() {
               <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
                 Resolve queries instantly,<br className="hidden sm:block" /> without adding headcount
               </h2>
-              <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-2xl ml-auto">
+              <p className="text-white/65 text-base leading-relaxed mb-8 max-w-2xl ml-auto">
                 AI handles repetitive queries, automates ticket triage, drafts agent responses, and gives customers instant self-service access — so your team focuses on the work that actually needs a human.
               </p>
             </motion.div>
@@ -239,11 +239,11 @@ export function SupportSection() {
               {METRICS.map((m) => (
                 <div key={m.label} className="text-center sm:text-right">
                   <p className="text-2xl font-bold text-white">{m.value}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{m.label}</p>
+                  <p className="text-xs text-white/60 mt-0.5">{m.label}</p>
                 </div>
               ))}
               <div className="hidden sm:block w-px self-stretch bg-white/10" />
-              <p className="text-xs text-gray-400 leading-relaxed flex-1 min-w-[180px]">
+              <p className="text-xs text-white/65 leading-relaxed flex-1 min-w-[180px]">
                 <span className="text-white font-medium">Business result:</span> Lower headcount pressure, faster response SLAs, and agents free to handle complex issues that truly need a human.
               </p>
             </motion.div>

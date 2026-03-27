@@ -8,7 +8,7 @@ import { ContactSalesButton } from '@/components/marketing/contact-sales-button'
 export const metadata: Metadata = {
   title: 'Pricing — Plans from $29/mo | Save 35% Annual | Appalix',
   description:
-    'Starter $29, Core $39, Pro $79, Scale $299/mo on annual. Save ~35% with annual billing. 7-day free trial on all plans, no credit card required.',
+    'Starter $29, Core $39, Pro $79, Scale $299/mo on annual. Save ~35% with annual billing. 14-day free trial on all plans, no credit card required.',
   keywords: [
     'AI chatbot pricing',
     'chatbot SaaS plans',
@@ -30,7 +30,7 @@ const FAQS = [
   },
   {
     q: 'Is there a free trial?',
-    a: 'Every plan includes a 7-day free trial with no credit card required. You get access to all features on your chosen plan.',
+    a: 'Every plan includes a 14-day free trial with no credit card required. You get access to all features on your chosen plan.',
   },
   {
     q: 'What counts as a conversation?',
@@ -49,8 +49,8 @@ export default function PricingPage() {
           <ScrollReveal>
             <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Pricing</p>
             <h1 className="text-4xl sm:text-5xl font-bold mb-5">Simple, transparent pricing</h1>
-            <p className="text-gray-400 text-lg">
-              7-day free trial on all plans. No credit card required. Cancel any time.
+            <p className="text-white/65 text-lg">
+              14-day free trial on all plans. No credit card required. Cancel any time.
             </p>
             <div className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20">
               <span className="text-green-400 text-sm font-semibold">Save about 35% when you choose annual billing</span>
@@ -83,7 +83,7 @@ export default function PricingPage() {
             <div className="text-center mb-10">
               <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Top-ups</p>
               <h2 className="text-2xl font-bold mb-3">Need a little more?</h2>
-              <p className="text-gray-400 text-sm">One-time top-ups — no subscription change required. Credits are added instantly to your workspace.</p>
+              <p className="text-white/65 text-sm">One-time top-ups — no subscription change required. Credits are added instantly to your workspace.</p>
             </div>
           </ScrollReveal>
           <TopupCards />
@@ -104,7 +104,7 @@ export default function PricingPage() {
               <ScrollReveal key={faq.q} delay={i * 0.07}>
                 <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
                   <h3 className="font-semibold mb-2">{faq.q}</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed">{faq.a}</p>
+                  <p className="text-sm text-white/65 leading-relaxed">{faq.a}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -116,7 +116,7 @@ export default function PricingPage() {
       <section className="py-16 px-6 border-t border-white/5 text-center">
         <ScrollReveal>
           <h2 className="text-xl font-bold mb-3">Need something bigger?</h2>
-          <p className="text-gray-400 mb-6 text-sm">Talk to us about custom volume, SSO, dedicated infrastructure, and SLAs.</p>
+          <p className="text-white/65 mb-6 text-sm">Talk to us about custom volume, SSO, dedicated infrastructure, and SLAs.</p>
           <ContactSalesButton />
         </ScrollReveal>
       </section>

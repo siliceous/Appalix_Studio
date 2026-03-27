@@ -116,7 +116,7 @@ export default function FeaturesPage() {
           <ScrollReveal>
             <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Features</p>
             <h1 className="text-4xl sm:text-5xl font-bold mb-5">Built to convert, built to scale</h1>
-            <p className="text-gray-400 text-lg leading-relaxed">
+            <p className="text-white/65 text-lg leading-relaxed">
               Everything you need to deploy, manage, and optimise AI sales agents across every channel your customers use.
             </p>
           </ScrollReveal>
@@ -143,7 +143,7 @@ export default function FeaturesPage() {
                 <div className="text-3xl mb-4">{f.icon}</div>
                 <span className="text-xs text-brand-400 font-semibold uppercase tracking-widest mb-2">{f.tag}</span>
                 <h3 className="font-semibold text-white mb-2">{f.title}</h3>
-                <p className="text-sm text-gray-400 leading-relaxed flex-1">{f.desc}</p>
+                <p className="text-sm text-white/65 leading-relaxed flex-1">{f.desc}</p>
               </div>
             </ScrollReveal>
           ))}
@@ -161,9 +161,9 @@ export default function FeaturesPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10">
-                    <th className="text-left py-3 pr-6 text-gray-500 font-medium">Feature</th>
+                    <th className="text-left py-3 pr-6 text-white/60 font-medium">Feature</th>
                     {['Starter', 'Core', 'Pro', 'Scale'].map((p) => (
-                      <th key={p} className={`py-3 px-4 text-center font-semibold ${p === 'Pro' ? 'text-brand-400' : 'text-gray-300'}`}>
+                      <th key={p} className={`py-3 px-4 text-center font-semibold ${p === 'Pro' ? 'text-brand-400' : 'text-white/80'}`}>
                         {p}
                         {p === 'Pro' && <span className="ml-1 text-xs bg-brand-600 text-white px-1.5 py-0.5 rounded-full align-middle">Popular</span>}
                       </th>
@@ -180,18 +180,18 @@ export default function FeaturesPage() {
                             {row.feature}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-center text-gray-500">{row.starter}</td>
-                        <td className="py-3 px-4 text-center text-gray-500">{row.core}</td>
+                        <td className="py-3 px-4 text-center text-white/60">{row.starter}</td>
+                        <td className="py-3 px-4 text-center text-white/60">{row.core}</td>
                         <td className="py-3 px-4 text-center text-[#15A4AE] font-semibold">{row.pro}</td>
                         <td className="py-3 px-4 text-center text-[#15A4AE] font-semibold">{row.scale}</td>
                       </tr>
                     ) : (
                       <tr key={row.feature} className={`border-b border-white/5 ${i % 2 === 0 ? '' : 'bg-white/[0.02]'}`}>
-                        <td className="py-3 pr-6 text-gray-400">{row.feature}</td>
-                        <td className="py-3 px-4 text-center text-gray-400">{row.starter}</td>
-                        <td className="py-3 px-4 text-center text-gray-400">{row.core}</td>
+                        <td className="py-3 pr-6 text-white/65">{row.feature}</td>
+                        <td className="py-3 px-4 text-center text-white/65">{row.starter}</td>
+                        <td className="py-3 px-4 text-center text-white/65">{row.core}</td>
                         <td className="py-3 px-4 text-center text-brand-300 font-medium">{row.pro}</td>
-                        <td className="py-3 px-4 text-center text-gray-400">{row.scale}</td>
+                        <td className="py-3 px-4 text-center text-white/65">{row.scale}</td>
                       </tr>
                     )
                   )}
@@ -206,12 +206,12 @@ export default function FeaturesPage() {
       <section className="py-20 px-6 border-t border-white/5 text-center">
         <ScrollReveal>
           <h2 className="text-2xl font-bold mb-4">Ready to get started?</h2>
-          <p className="text-gray-400 mb-8 text-sm">7-day free trial on every plan. No credit card required.</p>
+          <p className="text-white/65 mb-8 text-sm">14-day free trial on every plan. No credit card required.</p>
           <Link
             href="/login"
             className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors"
           >
-            Start a 7 Day Free Trial
+            Start a 14-Day Free Trial
           </Link>
         </ScrollReveal>
       </section>

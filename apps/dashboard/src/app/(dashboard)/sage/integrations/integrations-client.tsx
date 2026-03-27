@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef } from 'react'
 import Link from 'next/link'
-import { Check, X, ExternalLink, Loader2, ChevronDown, ChevronUp, BookOpen, FileSignature, Bold, Italic, Underline, ImagePlus, CheckCircle2, RefreshCw } from 'lucide-react'
+import { Check, ExternalLink, Loader2, ChevronDown, ChevronUp, BookOpen, FileSignature, Bold, Italic, Underline, ImagePlus, CheckCircle2, RefreshCw } from 'lucide-react'
 import { saveSageIntegration, disconnectSageIntegration, connectFormIntegration, disconnectFormIntegration, sendTestFormWebhook } from '@/app/actions/sage'
 import { syncFromEmailPlatform, toggleEmailPlatformSync } from '@/app/actions/leads'
 import { saveEmailSignature, getEmailSignature } from '@/app/actions/sage-emails'
@@ -613,7 +613,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                                   onClick={() => handleToggleAutoSync(integration.provider)}
                                   disabled={isToggling}
                                   title={syncOn ? 'Turn off auto-sync' : 'Turn on auto-sync'}
-                                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-colors ${
+                                  className={`flex items-center gap-2 px-2.5 py-1 rounded-lg border transition-colors ${
                                     syncOn
                                       ? 'border-brand-200 dark:border-[#15A4AE]/30 bg-brand-50 dark:bg-[#15A4AE]/10'
                                       : 'border-gray-200 dark:border-white/10 bg-white dark:bg-white/5'
@@ -629,7 +629,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                                 <button
                                   onClick={() => handleSync(integration.provider)}
                                   disabled={syncingProvider === integration.provider || pending}
-                                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors disabled:opacity-60"
+                                  className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 disabled:bg-gray-300 dark:disabled:bg-white/10 text-white disabled:text-gray-400 transition-colors disabled:opacity-60"
                                 >
                                   {syncingProvider === integration.provider
                                     ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -642,9 +642,9 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                           <button
                             onClick={() => handleDisconnect(integration.provider)}
                             disabled={isSaving}
-                            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors disabled:opacity-60"
+                            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors disabled:opacity-60"
                           >
-                            {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                            {isSaving && <Loader2 className="w-3 h-3 animate-spin" />}
                             Disconnect
                           </button>
                           </>

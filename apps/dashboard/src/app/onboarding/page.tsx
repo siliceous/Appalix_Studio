@@ -39,7 +39,7 @@ export default async function OnboardingPage() {
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-4">
-          Your 7-day free trial has started. No credit card required.
+          Your 14-day free trial has started. No credit card required.
         </p>
       </div>
     </div>

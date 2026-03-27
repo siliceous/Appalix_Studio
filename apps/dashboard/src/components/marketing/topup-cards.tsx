@@ -70,11 +70,11 @@ export function TopupCards() {
         >
           <div>
             <p className="text-sm font-semibold text-white mb-1">{pack.name}</p>
-            <p className="text-xs text-gray-400 leading-relaxed">{pack.tagline}</p>
+            <p className="text-xs text-white/65 leading-relaxed">{pack.tagline}</p>
           </div>
           <ul className="space-y-2">
             {pack.perks.map((perk) => (
-              <li key={perk} className="flex items-center gap-2 text-sm text-gray-300">
+              <li key={perk} className="flex items-center gap-2 text-sm text-white/80">
                 <span className="text-brand-400">✦</span> {perk}
               </li>
             ))}
@@ -82,7 +82,7 @@ export function TopupCards() {
           <div className="mt-auto flex items-end justify-between gap-4">
             <div>
               <span className="text-3xl font-black text-white">${pack.price}</span>
-              <span className="text-gray-500 text-sm"> one-time</span>
+              <span className="text-white/60 text-sm"> one-time</span>
             </div>
             <button
               onClick={() => handleBuy(pack.id)}

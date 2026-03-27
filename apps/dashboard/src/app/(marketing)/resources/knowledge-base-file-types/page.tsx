@@ -156,28 +156,28 @@ export default function KnowledgeBaseFileTypesPage() {
       />
       <div className="max-w-3xl mx-auto">
 
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Knowledge Base File Types</span>
+          <span className="text-white/65">Knowledge Base File Types</span>
         </div>
 
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Guide</span>
-            <span className="text-xs text-gray-500">6 min read · Mar 1, 2026</span>
+            <span className="text-xs text-white/60">6 min read · Mar 1, 2026</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Knowledge Base File Types — Everything Appalix Can Ingest
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Appalix can train your AI bot on a wide variety of documents, spreadsheets, presentations, and cloud sources. This guide covers every supported format, how each one is processed, and tips for getting the best results.
           </p>
         </div>
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-12 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-12 text-white/80">
 
           {/* Upload & URL sources */}
           <section>
@@ -191,9 +191,9 @@ export default function KnowledgeBaseFileTypesPage() {
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xl">{ft.emoji}</span>
                     <span className="font-semibold text-white">{ft.name}</span>
-                    <span className="ml-auto text-xs text-gray-500 font-mono">{ft.extensions}</span>
+                    <span className="ml-auto text-xs text-white/60 font-mono">{ft.extensions}</span>
                   </div>
-                  <p className="text-sm text-gray-400 mb-2">{ft.how}</p>
+                  <p className="text-sm text-white/65 mb-2">{ft.how}</p>
                   <p className="text-xs text-brand-400 border-t border-white/10 pt-2 mt-2">
                     <strong className="text-brand-300">Tip:</strong> {ft.tip}
                   </p>
@@ -218,7 +218,7 @@ export default function KnowledgeBaseFileTypesPage() {
                     <span className="font-semibold text-white text-sm">{cs.name}</span>
                     <span className="ml-auto text-xs px-1.5 py-0.5 rounded bg-brand-600/15 text-brand-400 border border-brand-600/20">{cs.plan}</span>
                   </div>
-                  <p className="text-xs text-gray-400">{cs.note}</p>
+                  <p className="text-xs text-white/65">{cs.note}</p>
                 </div>
               ))}
             </div>
@@ -280,31 +280,31 @@ export default function KnowledgeBaseFileTypesPage() {
             <div className="space-y-5">
               <div>
                 <p className="font-medium text-white mb-1">Can I upload multiple files at once?</p>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-white/65">
                   Not yet — each source is added individually. To bulk-upload, put all your text files into a single ZIP archive and upload that.
                 </p>
               </div>
               <div>
                 <p className="font-medium text-white mb-1">Are scanned PDFs supported?</p>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-white/65">
                   Yes. Claude&apos;s vision capabilities read scanned and image-only PDFs. Quality depends on scan resolution — 300 DPI or above gives the best results.
                 </p>
               </div>
               <div>
                 <p className="font-medium text-white mb-1">How long does ingestion take?</p>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-white/65">
                   Most sources process in under 30 seconds. Large sitemaps or multi-sheet Excel files may take 1–2 minutes. The source status changes from <em>Pending</em> → <em>Processing</em> → <em>Ready</em> in real time.
                 </p>
               </div>
               <div>
                 <p className="font-medium text-white mb-1">My source shows &quot;failed&quot; — what should I check?</p>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-white/65">
                   Open the source row in your dashboard to see the error message. Common causes: the URL is behind a login wall, the file is corrupt or password-protected, or an API token has expired. Fix the issue and click Re-sync.
                 </p>
               </div>
               <div>
                 <p className="font-medium text-white mb-1">Does Appalix store my documents?</p>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-white/65">
                   Uploaded files are stored in Supabase Storage within your workspace bucket and are never shared with other customers. Only the extracted text chunks (not the original file) are used for AI retrieval.
                 </p>
               </div>
@@ -317,7 +317,7 @@ export default function KnowledgeBaseFileTypesPage() {
         <div className="mt-16 border-t border-white/10 pt-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <p className="text-white font-semibold mb-1">Ready to train your bot?</p>
-            <p className="text-sm text-gray-400">Add your first knowledge source and watch your AI answer from your own content.</p>
+            <p className="text-sm text-white/65">Add your first knowledge source and watch your AI answer from your own content.</p>
           </div>
           <Link
             href="/register"
@@ -328,7 +328,7 @@ export default function KnowledgeBaseFileTypesPage() {
         </div>
 
         <div className="mt-8">
-          <Link href="/resources" className="text-sm text-gray-500 hover:text-brand-400 transition-colors">
+          <Link href="/resources" className="text-sm text-white/60 hover:text-brand-400 transition-colors">
             ← Back to Resources
           </Link>
         </div>

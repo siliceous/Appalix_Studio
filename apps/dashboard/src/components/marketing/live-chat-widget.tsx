@@ -28,7 +28,7 @@ const FAQS: { q: string; a: string; link?: { text: string; href: string } }[] = 
   },
   {
     q: "What if it's not the right fit?",
-    a: "Start with our 7-day free trial, test real use cases, and scale only when you see value. No pressure to commit before you're confident.",
+    a: "Start with our 14-day free trial, test real use cases, and scale only when you see value. No pressure to commit before you're confident.",
   },
   {
     q: 'How does pricing work?',

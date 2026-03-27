@@ -51,22 +51,22 @@ export default function ConnectGoogleFormsPage() {
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect Google Forms to Sage</span>
+          <span className="text-white/65">Connect Google Forms to Sage</span>
         </div>
 
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">8 min read · Pro+ plan</span>
+            <span className="text-xs text-white/60">8 min read · Pro+ plan</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Connect Google Forms to Sage
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Every time someone submits your Google Form, Appalix Sage receives the response instantly — no paid add-ons, no Zapier, no polling.
             A one-time Apps Script setup fires a webhook with the full submission, which Sage scores and stores automatically.
             This guide walks through the complete setup in under 10 minutes.
@@ -75,7 +75,7 @@ export default function ConnectGoogleFormsPage() {
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           {/* ── How it works ────────────────────────────────────────────────── */}
           <section>
@@ -122,7 +122,7 @@ export default function ConnectGoogleFormsPage() {
               </li>
               <li>Click <strong className="text-white">Save &amp; Connect</strong>. The card will show a green <em>Connected</em> badge.</li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Tip:</strong> After connecting, click the <strong className="text-white">Set up</strong> button on the card to reveal the Apps Script setup guide with your pre-filled webhook URL.
             </div>
           </section>
@@ -137,7 +137,7 @@ export default function ConnectGoogleFormsPage() {
             <p className="mt-4">
               The script looks like this:
             </p>
-            <pre className="mt-3 text-[11px] font-mono bg-white/3 border border-white/10 rounded-xl px-4 py-3 text-gray-400 overflow-x-auto whitespace-pre leading-relaxed">{`function sendToAppalix(e) {
+            <pre className="mt-3 text-[11px] font-mono bg-white/3 border border-white/10 rounded-xl px-4 py-3 text-white/65 overflow-x-auto whitespace-pre leading-relaxed">{`function sendToAppalix(e) {
   var form = FormApp.getActiveForm();
   var fields = {};
   e.response.getItemResponses().forEach(function(r) {
@@ -163,7 +163,7 @@ export default function ConnectGoogleFormsPage() {
               <li>Click the <strong className="text-white">3-dot menu (⋮)</strong> in the top-right corner of the form editor.</li>
               <li>Select <strong className="text-white">Extensions</strong> → <strong className="text-white">Apps Script</strong>. The Apps Script editor opens in a new tab.</li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Note:</strong> The Apps Script editor is linked to this specific form. You&apos;ll need to repeat steps 3–5 for each Google Form you want to connect — each form gets its own script and trigger.
             </div>
           </section>
@@ -173,8 +173,8 @@ export default function ConnectGoogleFormsPage() {
             <h2 className="text-xl font-semibold text-white mb-3">Step 4 — Paste and save the script</h2>
             <ol className="list-decimal pl-5 space-y-3">
               <li>In the Apps Script editor, you&apos;ll see a <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300 text-xs">Code.gs</code> file with a default function. <strong className="text-white">Select all existing code and delete it.</strong></li>
-              <li>Paste the script you copied from Appalix (<kbd className="bg-white/10 px-1.5 py-0.5 rounded text-xs text-gray-300">⌘V</kbd> on Mac, <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-xs text-gray-300">Ctrl+V</kbd> on Windows).</li>
-              <li>Click the <strong className="text-white">Save</strong> icon (floppy disk 💾) or press <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-xs text-gray-300">⌘S</kbd> / <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-xs text-gray-300">Ctrl+S</kbd>.</li>
+              <li>Paste the script you copied from Appalix (<kbd className="bg-white/10 px-1.5 py-0.5 rounded text-xs text-white/80">⌘V</kbd> on Mac, <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-xs text-white/80">Ctrl+V</kbd> on Windows).</li>
+              <li>Click the <strong className="text-white">Save</strong> icon (floppy disk 💾) or press <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-xs text-white/80">⌘S</kbd> / <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-xs text-white/80">Ctrl+S</kbd>.</li>
               <li>If prompted to name the project, enter something like <em>Appalix Webhook</em> and click <strong className="text-white">OK</strong>.</li>
             </ol>
           </section>
@@ -216,7 +216,7 @@ export default function ConnectGoogleFormsPage() {
             <p className="mt-4">
               Alternatively, submit your actual Google Form. The response will appear in <strong className="text-white">Sage → Forms</strong> within seconds.
             </p>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Not receiving submissions?</strong> Check the Apps Script execution log: in the Apps Script editor, click <strong>Executions</strong> in the left sidebar. Look for failed runs — common causes are a typo in the webhook URL or the trigger not being saved correctly.
             </div>
           </section>
@@ -231,8 +231,8 @@ export default function ConnectGoogleFormsPage() {
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-white/10">
-                    <th className="text-left py-2 pr-6 text-gray-400 font-medium">Standard field</th>
-                    <th className="text-left py-2 text-gray-400 font-medium">Detected from labels like…</th>
+                    <th className="text-left py-2 pr-6 text-white/65 font-medium">Standard field</th>
+                    <th className="text-left py-2 text-white/65 font-medium">Detected from labels like…</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -245,7 +245,7 @@ export default function ConnectGoogleFormsPage() {
                   ].map(([field, labels]) => (
                     <tr key={field}>
                       <td className="py-2 pr-6 text-white font-medium">{field}</td>
-                      <td className="py-2 text-gray-300 text-xs">{labels}</td>
+                      <td className="py-2 text-white/80 text-xs">{labels}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -274,27 +274,27 @@ export default function ConnectGoogleFormsPage() {
             <div className="space-y-5">
               <div>
                 <p className="font-semibold text-white">Do I need a paid Google Workspace account?</p>
-                <p className="text-sm text-gray-400 mt-1">No. Apps Script is available in all free Google accounts and is enabled by default for any Google Form you create.</p>
+                <p className="text-sm text-white/65 mt-1">No. Apps Script is available in all free Google accounts and is enabled by default for any Google Form you create.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">What happens to submissions received before the trigger was set up?</p>
-                <p className="text-sm text-gray-400 mt-1">The Apps Script only fires for new submissions after the trigger is saved. Existing responses are not sent retroactively. Use the test submission button to confirm the live connection is working.</p>
+                <p className="text-sm text-white/65 mt-1">The Apps Script only fires for new submissions after the trigger is saved. Existing responses are not sent retroactively. Use the test submission button to confirm the live connection is working.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Is the webhook secret required?</p>
-                <p className="text-sm text-gray-400 mt-1">No — it is optional. Without it, your webhook URL is still unique to your workspace (it contains your workspace ID). Adding a secret provides an extra layer of protection against anyone guessing your URL and posting fake submissions.</p>
+                <p className="text-sm text-white/65 mt-1">No — it is optional. Without it, your webhook URL is still unique to your workspace (it contains your workspace ID). Adding a secret provides an extra layer of protection against anyone guessing your URL and posting fake submissions.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Can I edit the script after saving?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes. Open Apps Script on the form, edit the code, and save. The trigger will continue to work — you don&apos;t need to re-create it after editing the script.</p>
+                <p className="text-sm text-white/65 mt-1">Yes. Open Apps Script on the form, edit the code, and save. The trigger will continue to work — you don&apos;t need to re-create it after editing the script.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Will it work if a respondent leaves a question blank?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes. Blank answers are simply omitted from the fields object sent to Appalix. Required vs. optional questions behave identically from the webhook&apos;s perspective.</p>
+                <p className="text-sm text-white/65 mt-1">Yes. Blank answers are simply omitted from the fields object sent to Appalix. Required vs. optional questions behave identically from the webhook&apos;s perspective.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">How do I disconnect?</p>
-                <p className="text-sm text-gray-400 mt-1">Click <strong className="text-white">Disconnect</strong> on the Google Forms card in Sage Integrations. To stop submissions from being sent, also delete the trigger in Apps Script (Triggers → hover over the trigger → click the three-dot menu → Delete trigger). Existing submissions in Sage are not affected.</p>
+                <p className="text-sm text-white/65 mt-1">Click <strong className="text-white">Disconnect</strong> on the Google Forms card in Sage Integrations. To stop submissions from being sent, also delete the trigger in Apps Script (Triggers → hover over the trigger → click the three-dot menu → Delete trigger). Existing submissions in Sage are not affected.</p>
               </div>
             </div>
           </section>
@@ -303,7 +303,7 @@ export default function ConnectGoogleFormsPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">📊</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to connect your Google Form?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Connect in Sage Integrations, paste the script, and your form submissions will start flowing into Appalix automatically.
             </p>
             <Link
@@ -331,7 +331,7 @@ export default function ConnectGoogleFormsPage() {
                 >
                   <div className="text-xl mb-2">{item.emoji}</div>
                   <p className="text-sm font-semibold text-white group-hover:text-brand-400 transition-colors mb-1">{item.title}</p>
-                  <p className="text-xs text-gray-400">{item.desc}</p>
+                  <p className="text-xs text-white/65">{item.desc}</p>
                 </Link>
               ))}
             </div>

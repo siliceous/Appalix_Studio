@@ -88,7 +88,7 @@ export default async function IntegrationsPage({
   ])
   const integrations      = (rawIntegrations ?? []) as IntegrationRow[]
   const adSources         = (sourcesRaw ?? []) as LeadAdSource[]
-  const emailIntegrations = (emailIntegrationsRaw ?? []) as Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at' | 'sync_enabled' | 'last_synced_at' | 'last_sync_count'>[]
+  const emailIntegrationsRawTyped = (emailIntegrationsRaw ?? []) as Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at' | 'sync_enabled' | 'last_synced_at' | 'last_sync_count'>[]
 
   const headersList = await headers()
   const host        = headersList.get('host') ?? 'appalix.ai'
@@ -136,18 +136,28 @@ export default async function IntegrationsPage({
 
   // Build sync_enabled map for email marketing providers
   const syncEnabledByProvider: Record<string, boolean> = {}
-  for (const row of emailIntegrations) {
+  for (const row of emailIntegrationsRawTyped) {
     syncEnabledByProvider[row.provider] = row.sync_enabled ?? false
   }
 
   // Build connector info for all providers (name + role shown on every connected card)
   const connectedProviderInfo: Record<string, { userName: string; role: string }> = {}
+  const connectedProviderUserId: Record<string, string> = {}
   for (const row of (allConnectedRaw ?? []) as ConnRow[]) {
     const p    = profileMap.get(row.user_id)
     const m    = memberMap.get(row.user_id)
     const name = p ? [p.first_name, p.last_name].filter(Boolean).join(' ') : ''
-    connectedProviderInfo[row.provider] = { userName: name, role: m?.role ?? '' }
+    connectedProviderInfo[row.provider]  = { userName: name, role: m?.role ?? '' }
+    connectedProviderUserId[row.provider] = row.user_id
   }
+
+  // Enrich email integrations with connected-by info for EmailPlatformCard
+  const emailIntegrations = emailIntegrationsRawTyped.map(row => {
+    const uid  = connectedProviderUserId[row.provider]
+    const info = connectedProviderInfo[row.provider]
+    const email = uid === user.id ? (user.email ?? '') : ''
+    return { ...row, connected_by_name: info?.userName || undefined, connected_by_email: email || undefined, connected_by_role: info?.role || undefined }
+  })
 
   return (
     <div className="max-w-5xl mx-auto">

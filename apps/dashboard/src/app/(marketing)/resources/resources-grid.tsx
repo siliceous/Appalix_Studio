@@ -57,7 +57,7 @@ export function ResourcesGrid({
           {/* Search bar */}
           <div className="relative max-w-xl mx-auto">
             <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
-              <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="w-4 h-4 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
               </svg>
             </div>
@@ -71,7 +71,7 @@ export function ResourcesGrid({
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-300 transition-colors"
+                className="absolute inset-y-0 right-3 flex items-center text-white/60 hover:text-white/80 transition-colors"
                 aria-label="Clear search"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -92,7 +92,7 @@ export function ResourcesGrid({
                   className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                     isActive
                       ? 'bg-brand-600/20 border-brand-600/40 text-brand-300'
-                      : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20 hover:text-white'
+                      : 'bg-white/5 border-white/10 text-white/65 hover:border-white/20 hover:text-white'
                   }`}
                 >
                   {cat}
@@ -107,9 +107,9 @@ export function ResourcesGrid({
       <section className="py-4 px-6 pb-16">
         <div className="max-w-7xl mx-auto">
           {filtered.length === 0 ? (
-            <div className="text-center py-20 text-gray-500">
+            <div className="text-center py-20 text-white/60">
               <p className="text-4xl mb-4">🔍</p>
-              <p className="text-lg font-medium text-gray-400">No results found</p>
+              <p className="text-lg font-medium text-white/65">No results found</p>
               <p className="text-sm mt-1">Try a different search term or category.</p>
               <button
                 onClick={() => { setSearch(''); setActiveCategory('All') }}
@@ -147,7 +147,7 @@ export function ResourcesGrid({
                       <h2 className={`font-semibold text-white leading-snug mb-2 transition-colors ${href ? 'group-hover:text-brand-300' : ''}`}>
                         {post.title}
                       </h2>
-                      <p className="text-sm text-gray-400 leading-relaxed flex-1">{post.excerpt}</p>
+                      <p className="text-sm text-white/65 leading-relaxed flex-1">{post.excerpt}</p>
 
                       <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
                         <span className="text-xs text-gray-600">{post.date}</span>

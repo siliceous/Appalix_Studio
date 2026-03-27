@@ -67,7 +67,7 @@ export default function SecurityPage() {
           <ScrollReveal>
             <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Security & Privacy</p>
             <h1 className="text-4xl sm:text-5xl font-bold mb-5">Built secure by default</h1>
-            <p className="text-gray-400 text-lg leading-relaxed max-w-2xl mx-auto">
+            <p className="text-white/65 text-lg leading-relaxed max-w-2xl mx-auto">
               Appalix uses industry-standard authentication, cryptographic verification, and strict data isolation to protect your business and your customers.
             </p>
           </ScrollReveal>
@@ -100,7 +100,7 @@ export default function SecurityPage() {
                 <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-brand-600/30 transition-colors h-full">
                   <div className="text-3xl mb-4">{p.icon}</div>
                   <h3 className="font-semibold text-white mb-2">{p.title}</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed">{p.body}</p>
+                  <p className="text-sm text-white/65 leading-relaxed">{p.body}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -115,7 +115,7 @@ export default function SecurityPage() {
             <div className="mb-10">
               <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Data privacy</p>
               <h2 className="text-3xl font-bold mb-4">GDPR & data privacy commitments</h2>
-              <p className="text-gray-400 leading-relaxed">
+              <p className="text-white/65 leading-relaxed">
                 We are committed to handling personal data responsibly and in compliance with applicable data protection regulations including GDPR.
               </p>
             </div>
@@ -127,7 +127,7 @@ export default function SecurityPage() {
                   <svg className="w-5 h-5 text-brand-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
-                  <p className="text-sm text-gray-300 leading-relaxed">{item}</p>
+                  <p className="text-sm text-white/80 leading-relaxed">{item}</p>
                 </li>
               ))}
             </ul>
@@ -158,7 +158,7 @@ export default function SecurityPage() {
                   <span className="text-2xl shrink-0">{item.icon}</span>
                   <div>
                     <p className="font-semibold text-white text-sm mb-1">{item.title}</p>
-                    <p className="text-xs text-gray-400 leading-relaxed">{item.desc}</p>
+                    <p className="text-xs text-white/65 leading-relaxed">{item.desc}</p>
                   </div>
                 </div>
               ))}
@@ -180,7 +180,7 @@ export default function SecurityPage() {
                 <div key={item.label}>
                   <div className="text-3xl mb-2">{item.icon}</div>
                   <p className="text-xl font-bold text-white mb-1">{item.stat}</p>
-                  <p className="text-sm text-gray-400">{item.label}</p>
+                  <p className="text-sm text-white/65">{item.label}</p>
                 </div>
               ))}
             </div>
@@ -194,7 +194,7 @@ export default function SecurityPage() {
           <div className="max-w-2xl mx-auto text-center">
             <div className="text-3xl mb-4">📬</div>
             <h2 className="text-2xl font-bold mb-3">Found a security issue?</h2>
-            <p className="text-gray-400 mb-6 text-sm leading-relaxed">
+            <p className="text-white/65 mb-6 text-sm leading-relaxed">
               We take security reports seriously. If you discover a vulnerability, please contact us responsibly before disclosure and we will work with you to address it promptly.
             </p>
             <ContactSalesButton

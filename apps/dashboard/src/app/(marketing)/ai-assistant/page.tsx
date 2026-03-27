@@ -149,7 +149,7 @@ export default function SagePage() {
           </FadeUp>
 
           <FadeUp delay={0.2}>
-            <p className="text-base sm:text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto mb-10">
+            <p className="text-base sm:text-xl text-white/65 leading-relaxed max-w-2xl mx-auto mb-10">
               Appalix Sage is your internal AI assistant. It searches your knowledge base, drafts documents, and shares content with your colleagues — all inside the Appalix dashboard.
             </p>
           </FadeUp>
@@ -160,11 +160,11 @@ export default function SagePage() {
                 href="/login"
                 className="px-7 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors text-sm"
               >
-                Start a 7 Day Free Trial
+                Start a 14-Day Free Trial
               </Link>
               <Link
                 href="/pricing"
-                className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm"
+                className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-medium rounded-xl transition-colors text-sm"
               >
                 View Pro plan →
               </Link>
@@ -183,7 +183,7 @@ export default function SagePage() {
             <h2 className="text-3xl sm:text-4xl font-bold leading-snug">
               From first message to finished proposal in seconds
             </h2>
-            <p className="text-gray-400 leading-relaxed">
+            <p className="text-white/65 leading-relaxed">
               Ask Sage for a proposal, a report, a policy summary, or anything else your team needs. It searches your knowledge base, drafts the full document, and can email it to a colleague — all in one conversation.
             </p>
             <ul className="space-y-4">
@@ -195,7 +195,7 @@ export default function SagePage() {
               ].map((item) => (
                 <li key={item.text} className="flex gap-3 items-start">
                   <span className="text-brand-400 text-xs mt-1 shrink-0 font-bold">{item.icon}</span>
-                  <p className="text-sm text-gray-300 leading-relaxed">{item.text}</p>
+                  <p className="text-sm text-white/80 leading-relaxed">{item.text}</p>
                 </li>
               ))}
             </ul>
@@ -211,7 +211,7 @@ export default function SagePage() {
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-white">Appalix Sage</p>
-                  <p className="text-[10px] text-gray-500">Your internal AI assistant</p>
+                  <p className="text-[10px] text-white/60">Your internal AI assistant</p>
                 </div>
               </div>
 
@@ -220,14 +220,14 @@ export default function SagePage() {
                 {CHAT_DEMO.map((msg, i) => (
                   <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                     <div className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-[10px] font-bold ${
-                      msg.role === 'user' ? 'bg-white/10 text-gray-300' : 'bg-brand-600/20 text-brand-400'
+                      msg.role === 'user' ? 'bg-white/10 text-white/80' : 'bg-brand-600/20 text-brand-400'
                     }`}>
                       {msg.role === 'user' ? 'You' : '✦'}
                     </div>
                     <div className={`max-w-[82%] px-4 py-3 rounded-2xl text-xs leading-relaxed whitespace-pre-wrap ${
                       msg.role === 'user'
-                        ? 'bg-white/8 text-gray-300 rounded-tr-sm'
-                        : 'bg-brand-600/10 border border-brand-600/20 text-gray-200 rounded-tl-sm'
+                        ? 'bg-white/8 text-white/80 rounded-tr-sm'
+                        : 'bg-brand-600/10 border border-brand-600/20 text-white/90 rounded-tl-sm'
                     }`}>
                       {msg.content}
                     </div>
@@ -257,7 +257,7 @@ export default function SagePage() {
           <ScrollReveal className="text-center mb-14">
             <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Capabilities</p>
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">Everything your team needs in one place</h2>
-            <p className="text-gray-400 max-w-xl mx-auto text-sm leading-relaxed">
+            <p className="text-white/65 max-w-xl mx-auto text-sm leading-relaxed">
               Sage combines knowledge retrieval, document generation, and team sharing into a single AI-powered conversation.
             </p>
           </ScrollReveal>
@@ -271,7 +271,7 @@ export default function SagePage() {
                   </div>
                   <span className="text-xs text-brand-400 font-semibold uppercase tracking-widest mb-2">{f.tag}</span>
                   <h3 className="font-semibold text-white mb-3 leading-snug">{f.title}</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed flex-1">{f.desc}</p>
+                  <p className="text-sm text-white/65 leading-relaxed flex-1">{f.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -285,7 +285,7 @@ export default function SagePage() {
           <ScrollReveal className="text-center mb-14">
             <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">For every role</p>
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">Your whole team, moving faster</h2>
-            <p className="text-gray-400 max-w-xl mx-auto text-sm leading-relaxed">
+            <p className="text-white/65 max-w-xl mx-auto text-sm leading-relaxed">
               Sage doesn&apos;t just help one department. Every team member benefits from having an AI that knows your business inside-out.
             </p>
           </ScrollReveal>
@@ -304,7 +304,7 @@ export default function SagePage() {
                         <svg className="w-4 h-4 text-brand-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        <p className="text-xs text-gray-400 leading-relaxed">{task}</p>
+                        <p className="text-xs text-white/65 leading-relaxed">{task}</p>
                       </li>
                     ))}
                   </ul>
@@ -321,7 +321,7 @@ export default function SagePage() {
           <ScrollReveal className="text-center mb-14">
             <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">How it works</p>
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">Up and running in under 5 minutes</h2>
-            <p className="text-gray-400 max-w-xl mx-auto text-sm leading-relaxed">
+            <p className="text-white/65 max-w-xl mx-auto text-sm leading-relaxed">
               There is nothing to install, configure, or integrate. Sage is built directly into your Appalix dashboard and uses your existing knowledge base.
             </p>
           </ScrollReveal>
@@ -335,7 +335,7 @@ export default function SagePage() {
                   )}
                   <p className="text-4xl font-bold text-brand-600/30 mb-4 leading-none">{s.step}</p>
                   <h3 className="font-semibold text-white mb-2">{s.title}</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed">{s.desc}</p>
+                  <p className="text-sm text-white/65 leading-relaxed">{s.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -350,7 +350,7 @@ export default function SagePage() {
           <ScrollReveal>
             {/* Visual: knowledge base flow */}
             <div className="rounded-2xl bg-[#2a2a2a] border border-white/10 p-6 space-y-3">
-              <p className="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-4">Your knowledge base</p>
+              <p className="text-xs text-white/60 uppercase tracking-widest font-semibold mb-4">Your knowledge base</p>
               {[
                 { icon: '🌐', label: 'Website pages',        count: '47 pages synced' },
                 { icon: '📄', label: 'Product documentation', count: '12 PDFs trained' },
@@ -360,7 +360,7 @@ export default function SagePage() {
                 <div key={src.label} className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.06]">
                   <div className="flex items-center gap-3">
                     <span className="text-base">{src.icon}</span>
-                    <p className="text-sm text-gray-300">{src.label}</p>
+                    <p className="text-sm text-white/80">{src.label}</p>
                   </div>
                   <span className="text-xs text-brand-400">{src.count}</span>
                 </div>
@@ -377,10 +377,10 @@ export default function SagePage() {
             <h2 className="text-3xl sm:text-4xl font-bold leading-snug">
               Your knowledge base is already Sage&apos;s memory
             </h2>
-            <p className="text-gray-400 leading-relaxed">
+            <p className="text-white/65 leading-relaxed">
               The same content that powers your customer chatbot is immediately available to Sage. Every document, URL, FAQ, and training file you&apos;ve already uploaded is part of Sage&apos;s context — with no duplication, no re-uploading, and no extra configuration.
             </p>
-            <p className="text-gray-400 leading-relaxed">
+            <p className="text-white/65 leading-relaxed">
               When your team asks Sage a question, it uses <span className="text-white font-medium">semantic search</span> to find the most relevant passages from your knowledge base and grounds its answer in your actual company content.
             </p>
             <Link
@@ -406,7 +406,7 @@ export default function SagePage() {
                 <div key={item.title}>
                   <span className="text-2xl block mb-3">{item.icon}</span>
                   <h4 className="font-semibold text-white text-sm mb-2">{item.title}</h4>
-                  <p className="text-xs text-gray-400 leading-relaxed">{item.desc}</p>
+                  <p className="text-xs text-white/65 leading-relaxed">{item.desc}</p>
                 </div>
               ))}
             </div>
@@ -425,7 +425,7 @@ export default function SagePage() {
                   Included in Pro · Scale · Enterprise
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-bold mb-4">Sage is part of every Pro plan</h2>
-                <p className="text-gray-400 text-sm leading-relaxed max-w-lg mx-auto mb-8">
+                <p className="text-white/65 text-sm leading-relaxed max-w-lg mx-auto mb-8">
                   There is no separate subscription or add-on. Appalix Sage is included with every Pro, Scale, and Enterprise workspace at no extra charge — alongside unlimited AI automation tools, advanced analytics, and custom branding.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -433,11 +433,11 @@ export default function SagePage() {
                     href="/login"
                     className="px-7 py-3 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors text-sm"
                   >
-                    Start a 7 Day Free Trial
+                    Start a 14-Day Free Trial
                   </Link>
                   <Link
                     href="/pricing"
-                    className="px-7 py-3 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm"
+                    className="px-7 py-3 border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-medium rounded-xl transition-colors text-sm"
                   >
                     Compare all plans →
                   </Link>
@@ -458,19 +458,19 @@ export default function SagePage() {
               Now your team does too.
             </span>
           </h2>
-          <p className="text-gray-400 mb-10 text-sm max-w-md mx-auto">
-            7-day free trial on every plan. No credit card required. Sage is live in your dashboard from day one.
+          <p className="text-white/65 mb-10 text-sm max-w-md mx-auto">
+            14-day free trial on every plan. No credit card required. Sage is live in your dashboard from day one.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/login"
               className="px-8 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors"
             >
-              Start a 7 Day Free Trial
+              Start a 14-Day Free Trial
             </Link>
             <Link
               href="/resources/meet-appalix-sage"
-              className="px-8 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm"
+              className="px-8 py-3.5 border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-medium rounded-xl transition-colors text-sm"
             >
               Read the full guide →
             </Link>

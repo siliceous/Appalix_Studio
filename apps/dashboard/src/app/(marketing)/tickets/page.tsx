@@ -99,11 +99,11 @@ function DemoModal({ onClose }: { onClose: () => void }) {
           </svg>
         </div>
         <h3 className="text-lg font-bold text-gray-900 mb-2">See Tickets Live</h3>
-        <p className="text-sm text-gray-500 mb-6">Create your free account and manage every customer issue in one place.</p>
+        <p className="text-sm text-white/60 mb-6">Create your free account and manage every customer issue in one place.</p>
         <Link href="/login" className="block w-full py-2.5 bg-[#15A4AE] hover:bg-[#0f8a94] text-white text-sm font-semibold rounded-xl transition-colors">
           Get started free
         </Link>
-        <button onClick={onClose} className="mt-3 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+        <button onClick={onClose} className="mt-3 text-xs text-white/65 hover:text-gray-600 transition-colors">
           Maybe later
         </button>
       </div>
@@ -125,11 +125,11 @@ function SlideOver({ ticket, onClose }: { ticket: DemoTicket; onClose: () => voi
         {/* Header */}
         <div className="flex items-start justify-between gap-2">
           <div>
-            <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide mb-1">Ticket detail</p>
+            <p className="text-[10px] text-white/65 font-medium uppercase tracking-wide mb-1">Ticket detail</p>
             <h3 className="text-sm font-bold text-gray-900 leading-snug">{ticket.title}</h3>
           </div>
           <button onClick={onClose} className="shrink-0 p-1.5 rounded-lg hover:bg-gray-100 transition-colors mt-0.5">
-            <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-3.5 h-3.5 text-white/65" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -141,17 +141,17 @@ function SlideOver({ ticket, onClose }: { ticket: DemoTicket; onClose: () => voi
         </div>
         {/* Description */}
         <div>
-          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Description</p>
+          <p className="text-[10px] font-semibold text-white/60 uppercase tracking-wide mb-1">Description</p>
           <p className="text-xs text-gray-700 leading-relaxed">{ticket.description}</p>
         </div>
         {/* Contact */}
         <div>
-          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Contact</p>
+          <p className="text-[10px] font-semibold text-white/60 uppercase tracking-wide mb-1">Contact</p>
           <p className="text-xs text-gray-700">{ticket.contact}</p>
         </div>
         {/* Activity */}
         <div>
-          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-2">Activity</p>
+          <p className="text-[10px] font-semibold text-white/60 uppercase tracking-wide mb-2">Activity</p>
           <div className="space-y-2">
             {notes.map((n, i) => (
               <div key={i} className="flex gap-2">
@@ -212,7 +212,7 @@ export default function TicketsPage() {
             Every issue tracked,<br />
             <span className="text-[#15A4AE]">nothing falls through</span>
           </h1>
-          <p className="text-gray-400 text-lg max-w-xl mx-auto mb-8">
+          <p className="text-white/65 text-lg max-w-xl mx-auto mb-8">
             Prioritise, assign, and resolve customer tickets from every channel — all in one focused list.
           </p>
           <div className="flex items-center justify-center gap-3">
@@ -222,7 +222,7 @@ export default function TicketsPage() {
             >
               Get started free
             </button>
-            <Link href="/pricing" className="px-6 py-2.5 border border-white/15 text-gray-300 hover:text-white text-sm font-medium rounded-xl transition-colors">
+            <Link href="/pricing" className="px-6 py-2.5 border border-white/15 text-white/80 hover:text-white text-sm font-medium rounded-xl transition-colors">
               View pricing
             </Link>
           </div>
@@ -239,7 +239,7 @@ export default function TicketsPage() {
               <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
               <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
               <span className="w-3 h-3 rounded-full bg-[#28c840]" />
-              <div className="flex-1 mx-4 bg-[#2a2a2a] rounded-md px-3 py-1 text-[11px] text-gray-500">
+              <div className="flex-1 mx-4 bg-[#2a2a2a] rounded-md px-3 py-1 text-[11px] text-white/60">
                 app.appalix.ai/sage/tickets
               </div>
             </div>
@@ -259,7 +259,7 @@ export default function TicketsPage() {
                     <Tip label="All your support tickets from every channel" dir="right">
                       <h2 className="text-lg font-bold text-gray-900 cursor-default">Tickets</h2>
                     </Tip>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-white/60 mt-0.5">
                       {DEMO_TICKETS.filter(t => statuses[t.id] === 'open').length} open · {DEMO_TICKETS.length} total
                     </p>
                   </div>
@@ -291,7 +291,7 @@ export default function TicketsPage() {
                   {/* Search */}
                   <Tip label="Search tickets by title, contact, or description" dir="bottom">
                     <div className="relative min-w-[160px]">
-                      <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/65 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <circle cx="11" cy="11" r="8" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" />
                       </svg>
                       <input
@@ -328,7 +328,7 @@ export default function TicketsPage() {
                 <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                   <div className="divide-y divide-gray-100">
                     {filtered.length === 0 ? (
-                      <div className="py-12 text-center text-sm text-gray-400">No tickets match this filter.</div>
+                      <div className="py-12 text-center text-sm text-white/65">No tickets match this filter.</div>
                     ) : filtered.map(ticket => {
                       const sc = STATUS_CONFIG[statuses[ticket.id] ?? ticket.status]
                       const pc = PRIORITY_CONFIG[priorities[ticket.id] ?? ticket.priority]
@@ -367,15 +367,15 @@ export default function TicketsPage() {
                             {/* Content */}
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-semibold text-gray-900 truncate">{ticket.title}</p>
-                              <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-1 leading-relaxed">{ticket.description}</p>
+                              <p className="text-[11px] text-white/60 mt-0.5 line-clamp-1 leading-relaxed">{ticket.description}</p>
                               <div className="flex items-center gap-2 mt-1">
-                                <span className="flex items-center gap-1 text-[10px] text-gray-400">
+                                <span className="flex items-center gap-1 text-[10px] text-white/65">
                                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                   </svg>
                                   {ticket.contact}
                                 </span>
-                                <span className="text-[10px] text-gray-400">{ticket.time}</span>
+                                <span className="text-[10px] text-white/65">{ticket.time}</span>
                               </div>
                             </div>
 
@@ -401,7 +401,7 @@ export default function TicketsPage() {
                                 <select
                                   onClick={e => e.stopPropagation()}
                                   onChange={() => {}}
-                                  className="text-[10px] pl-2 pr-5 py-0.5 rounded-lg border border-gray-200 text-gray-500 bg-white cursor-pointer focus:outline-none max-w-[90px]"
+                                  className="text-[10px] pl-2 pr-5 py-0.5 rounded-lg border border-gray-200 text-white/60 bg-white cursor-pointer focus:outline-none max-w-[90px]"
                                 >
                                   <option>Unassigned</option>
                                   <option>Amy C.</option>
@@ -416,7 +416,7 @@ export default function TicketsPage() {
                                   onClick={() => setActive(isActive ? null : ticket)}
                                   className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
                                 >
-                                  <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                  <svg className="w-3.5 h-3.5 text-white/65" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                   </svg>
                                 </button>
@@ -425,7 +425,7 @@ export default function TicketsPage() {
                               {/* Delete */}
                               <Tip label="Delete this ticket permanently" dir="left">
                                 <button className="p-1 rounded-lg hover:bg-red-50 transition-colors">
-                                  <svg className="w-3.5 h-3.5 text-gray-300 hover:text-red-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                  <svg className="w-3.5 h-3.5 text-white/80 hover:text-red-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                   </svg>
                                 </button>
@@ -510,7 +510,7 @@ export default function TicketsPage() {
                   {c.icon}
                 </div>
                 <h3 className="font-semibold text-white mb-2">{c.title}</h3>
-                <p className="text-sm text-gray-400 leading-relaxed">{c.desc}</p>
+                <p className="text-sm text-white/65 leading-relaxed">{c.desc}</p>
               </div>
             ))}
           </div>
@@ -521,7 +521,7 @@ export default function TicketsPage() {
       <section className="max-w-2xl mx-auto px-6 pb-24 text-center">
         <ScrollReveal>
           <h2 className="text-3xl font-bold mb-4">Ready to tame your support queue?</h2>
-          <p className="text-gray-400 mb-8">Join teams that resolve issues faster with Appalix Tickets.</p>
+          <p className="text-white/65 mb-8">Join teams that resolve issues faster with Appalix Tickets.</p>
           <button
             onClick={() => setShowDemo(true)}
             className="px-8 py-3 bg-[#15A4AE] hover:bg-[#0f8a94] text-white font-semibold rounded-xl transition-colors"

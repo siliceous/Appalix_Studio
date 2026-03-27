@@ -125,7 +125,7 @@ export default async function HomePage() {
             </FadeUp>
 
             <FadeUp delay={0.25}>
-              <ul className="flex flex-col sm:flex-row gap-2 justify-center text-sm text-gray-300 mb-8">
+              <ul className="flex flex-col sm:flex-row gap-2 justify-center text-sm text-white/75 mb-8">
                 <li className="flex items-center gap-1.5">
                   <svg className="w-4 h-4 text-brand-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -147,11 +147,11 @@ export default async function HomePage() {
                   href="https://app.appalix.ai/login"
                   className="px-6 py-3 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors text-sm"
                 >
-                  Start a 7 Day Free Trial
+                  Start a 14-Day Free Trial
                 </Link>
                 <Link
                   href="/features"
-                  className="px-6 py-3 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm"
+                  className="px-6 py-3 border border-white/10 hover:border-white/20 text-white/75 hover:text-white font-medium rounded-xl transition-colors text-sm"
                 >
                   See all features →
                 </Link>
@@ -173,7 +173,7 @@ export default async function HomePage() {
               <h2 className="text-3xl sm:text-4xl font-bold leading-snug mb-4">
                 Your AI Agent: Trained, Deployed &amp; Converting.
               </h2>
-              <p className="text-gray-400 text-base leading-relaxed">
+              <p className="text-white/80 text-base leading-relaxed">
                 Ask anything about Appalix. This is a real agent running live on our own platform — the same one you can deploy on your website in minutes.
               </p>
             </div>
@@ -188,7 +188,7 @@ export default async function HomePage() {
                   <span className="text-2xl mt-0.5 shrink-0">{item.icon}</span>
                   <div>
                     <p className="font-semibold text-white text-sm mb-0.5">{item.title}</p>
-                    <p className="text-sm text-gray-400 leading-relaxed">{item.desc}</p>
+                    <p className="text-sm text-white/75 leading-relaxed">{item.desc}</p>
                   </div>
                 </li>
               ))}
@@ -213,12 +213,12 @@ export default async function HomePage() {
       {/* ── Social proof ───────────────────────────────────────────── */}
       <section className="py-10 border-y border-white/5">
         <div className="max-w-5xl mx-auto px-6 text-center">
-          <p className="text-xs text-gray-400 uppercase tracking-widest font-medium mb-6">
+          <p className="text-xs text-white/75 uppercase tracking-widest font-medium mb-6">
             Powering customer conversations for 500+ teams
           </p>
           <div className="flex flex-wrap items-center justify-center gap-10">
             {['Acme Corp', 'GrowthCo', 'Nexus Labs', 'Skyline Inc', 'Orbit AI'].map((name) => (
-              <span key={name} className="text-sm font-semibold text-gray-400">{name}</span>
+              <span key={name} className="text-sm font-semibold text-white/75">{name}</span>
             ))}
           </div>
         </div>
@@ -258,14 +258,14 @@ export default async function HomePage() {
               </h2>
 
               {/* Description */}
-              <p className="text-gray-400 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto mb-8">
+              <p className="text-white/75 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto mb-8">
                 Your team&apos;s internal AI assistant. Draft proposals, generate documents, search your knowledge base, and share work with colleagues — all from inside your dashboard.
               </p>
 
               {/* Feature chips */}
               <div className="flex flex-wrap justify-center gap-2 mb-10">
                 {['Draft proposals', 'Generate documents', 'Search knowledge base', 'Collaborate with team'].map((f) => (
-                  <span key={f} className="text-xs px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/10 text-gray-300">
+                  <span key={f} className="text-xs px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/10 text-white/75">
                     {f}
                   </span>
                 ))}
@@ -281,7 +281,7 @@ export default async function HomePage() {
                 </Link>
                 <Link
                   href="/pricing"
-                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl border border-white/15 hover:border-white/30 text-gray-300 hover:text-white text-sm font-medium transition-all"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl border border-white/15 hover:border-white/30 text-white/75 hover:text-white text-sm font-medium transition-all"
                 >
                   View plans
                 </Link>
@@ -320,7 +320,7 @@ export default async function HomePage() {
                     <span className="text-brand-400 text-xs font-bold">{s.step}</span>
                   </div>
                   <h3 className="text-lg font-semibold mb-2">{s.title}</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed">{s.desc}</p>
+                  <p className="text-sm text-white/75 leading-relaxed">{s.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -343,7 +343,7 @@ export default async function HomePage() {
                 <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-brand-600/30 transition-colors h-full">
                   <div className="text-3xl mb-4">{f.icon}</div>
                   <h3 className="font-semibold mb-2">{f.title}</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed">{f.desc}</p>
+                  <p className="text-sm text-white/75 leading-relaxed">{f.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -363,7 +363,7 @@ export default async function HomePage() {
             <div className="text-center mb-16">
               <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Integrations</p>
               <h2 className="text-3xl sm:text-4xl font-bold">One agent, every platform</h2>
-              <p className="text-gray-400 mt-4 max-w-xl mx-auto text-sm">Connect your AI agent to the channels your customers already use.</p>
+              <p className="text-white/75 mt-4 max-w-xl mx-auto text-sm">Connect your AI agent to the channels your customers already use.</p>
             </div>
           </ScrollReveal>
           <ScrollReveal delay={0.1}>
@@ -379,7 +379,7 @@ export default async function HomePage() {
                       <span className="text-lg">{'emoji' in p ? p.emoji : ''}</span>
                     )}
                   </div>
-                  <span className="text-sm text-gray-300 font-medium">{p.name}</span>
+                  <span className="text-sm text-white/75 font-medium">{p.name}</span>
                 </div>
               ))}
             </div>
@@ -398,7 +398,7 @@ export default async function HomePage() {
           <ScrollReveal>
             <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Pricing</p>
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">Simple, transparent pricing</h2>
-            <p className="text-gray-400 mb-8 text-sm">Plans from $29/mo. 7-day free trial on all plans. No credit card required.</p>
+            <p className="text-white/75 mb-8 text-sm">Plans from $29/mo. 14-day free trial on all plans. No credit card required.</p>
           </ScrollReveal>
           <ScrollReveal delay={0.1}>
             <div className="flex flex-wrap justify-center gap-3 mb-8">
@@ -415,10 +415,10 @@ export default async function HomePage() {
                   className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors cursor-pointer ${
                     p.popular
                       ? 'bg-brand-600/20 border-brand-600/50 text-brand-300 hover:bg-brand-600/30 hover:border-brand-600/70'
-                      : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20 hover:text-gray-200'
+                      : 'bg-white/5 border-white/10 text-white/75 hover:bg-white/10 hover:border-white/20 hover:text-white/85'
                   }`}
                 >
-                  {p.name} <span className={p.popular ? 'text-white' : 'text-gray-300'}>{p.price}</span>
+                  {p.name} <span className={p.popular ? 'text-white' : 'text-white/75'}>{p.price}</span>
                   {p.popular && <span className="ml-2 text-xs bg-brand-600 text-white px-1.5 py-0.5 rounded-full">Popular</span>}
                 </Link>
               ))}
@@ -437,16 +437,16 @@ export default async function HomePage() {
             <div className="absolute inset-0 bg-brand-600/10 rounded-3xl blur-3xl" />
             <div className="relative p-12 rounded-3xl border border-brand-600/20 bg-white/[0.02]">
               <h2 className="text-3xl sm:text-4xl font-bold mb-4">Ready to put your sales on autopilot?</h2>
-              <p className="text-gray-400 mb-8 text-sm max-w-xl mx-auto">
+              <p className="text-white/75 mb-8 text-sm max-w-xl mx-auto">
                 Join 500+ teams using Appalix to convert more visitors, capture more leads, and support customers around the clock.
               </p>
               <Link
                 href="https://app.appalix.ai/login"
                 className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors"
               >
-                Start a 7 Day Free Trial
+                Start a 14-Day Free Trial
               </Link>
-              <p className="text-xs text-gray-400 mt-4">7-day free trial · No credit card required · Cancel anytime</p>
+              <p className="text-xs text-white/75 mt-4">14-day free trial · No credit card required · Cancel anytime</p>
             </div>
           </div>
         </ScrollReveal>

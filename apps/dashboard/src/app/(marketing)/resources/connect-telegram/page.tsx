@@ -50,29 +50,29 @@ export default function ConnectTelegramPage() {
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect Telegram to Appalix</span>
+          <span className="text-white/65">Connect Telegram to Appalix</span>
         </div>
 
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">8 min read · All plans</span>
+            <span className="text-xs text-white/60">8 min read · All plans</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             How to Connect Telegram to Appalix
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Give your Appalix AI agent a Telegram presence. Anyone who messages your bot on Telegram gets an instant AI response — privately, in groups, or in channels. Setup takes about 10 minutes and requires no code.
           </p>
         </div>
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           {/* What you'll need */}
           <section>
@@ -178,7 +178,7 @@ export default function ConnectTelegramPage() {
               &nbsp;&nbsp;-d &apos;secret_token=<strong>&lt;WEBHOOK_SECRET&gt;</strong>&apos;
             </div>
 
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Where to find the values:</strong>
               <ul className="list-disc pl-5 mt-2 space-y-1">
                 <li><code className="bg-white/5 px-1 rounded">BOT_TOKEN</code> — copied from @BotFather in Step 1</li>
@@ -202,7 +202,7 @@ export default function ConnectTelegramPage() {
                 Your Appalix AI agent should reply within a second or two.
               </li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Not getting a response?</strong> Check:
               <ul className="list-disc pl-5 mt-2 space-y-1">
                 <li>Your Appalix integration has a bot connected (required for responses)</li>
@@ -246,7 +246,7 @@ export default function ConnectTelegramPage() {
               <li>Select your bot and choose <strong className="text-white">Disable</strong>.</li>
               <li>Remove and re-add the bot to the group for the change to take effect.</li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Tip:</strong> Keep Privacy Mode <strong>enabled</strong> for private support bots — this means the bot only sees messages directed at it and reduces noise.
             </div>
           </section>
@@ -268,31 +268,31 @@ export default function ConnectTelegramPage() {
             <div className="space-y-5">
               <div>
                 <p className="font-semibold text-white">Does this work with Telegram channels (broadcast channels)?</p>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-white/65 mt-1">
                   Telegram channel posts trigger the bot only if the bot is an administrator of the channel. The bot can read messages but replying in a channel isn&apos;t supported — channels are one-way broadcast tools. For two-way conversations, use private chats or groups.
                 </p>
               </div>
               <div>
                 <p className="font-semibold text-white">Can I use the same Telegram bot token on multiple Appalix integrations?</p>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-white/65 mt-1">
                   No. Telegram only allows one active webhook per bot token. If you need separate bots for different use cases, create a new bot with @BotFather.
                 </p>
               </div>
               <div>
                 <p className="font-semibold text-white">Does Appalix store Telegram message history?</p>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-white/65 mt-1">
                   Yes — all conversations are saved to your Appalix dashboard under <strong>Conversations</strong>. You can review transcripts, search messages, and monitor sentiment just like any other channel.
                 </p>
               </div>
               <div>
                 <p className="font-semibold text-white">What if I regenerate the bot token in @BotFather?</p>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-white/65 mt-1">
                   The old token is immediately invalidated. Go to your Appalix integration, paste the new token into the <em>Bot token</em> field, save, then re-run the <code className="bg-white/5 px-1 rounded">setWebhook</code> call with the new token.
                 </p>
               </div>
               <div>
                 <p className="font-semibold text-white">Can the bot handle images, stickers, or voice messages?</p>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-white/65 mt-1">
                   Currently Appalix processes text messages only. Non-text updates (photos, stickers, voice, video) are acknowledged but not processed. The user will receive no response for those message types.
                 </p>
               </div>
@@ -303,7 +303,7 @@ export default function ConnectTelegramPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">✈️</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to launch your Telegram bot?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Create a new integration in Appalix, paste your @BotFather token, and register the webhook. Your AI agent will be live on Telegram in under 10 minutes.
             </p>
             <Link

@@ -43,21 +43,21 @@ export default function TeamSeatsRolesPage() {
       />
       <div className="max-w-3xl mx-auto">
 
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Team Seats, Roles &amp; Permissions</span>
+          <span className="text-white/65">Team Seats, Roles &amp; Permissions</span>
         </div>
 
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-pink-500/15 text-pink-400 border border-pink-500/20 font-medium">Product</span>
-            <span className="text-xs text-gray-500">8 min read · All plans</span>
+            <span className="text-xs text-white/60">8 min read · All plans</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Team Seats, Roles &amp; Permissions in Appalix
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             As your business grows, so does your team. Appalix gives you fine-grained control over
             who can do what — with a clear four-tier role hierarchy, per-plan seat limits, and
             real-time enforcement that prevents overspending while keeping the right people
@@ -67,7 +67,7 @@ export default function TeamSeatsRolesPage() {
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">Why seat limits and roles matter</h2>
@@ -92,9 +92,9 @@ export default function TeamSeatsRolesPage() {
               <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/20">Owner</span>
-                  <span className="text-xs text-gray-500">1 per workspace</span>
+                  <span className="text-xs text-white/60">1 per workspace</span>
                 </div>
-                <p className="text-sm text-gray-300 leading-relaxed">
+                <p className="text-sm text-white/80 leading-relaxed">
                   The person who created the workspace. Has unrestricted access to every feature:
                   billing management, workspace deletion, bot configuration, integrations, all data,
                   and the ability to assign or change any member&apos;s role. There is exactly one Owner
@@ -106,9 +106,9 @@ export default function TeamSeatsRolesPage() {
               <div className="rounded-xl border border-brand-600/20 bg-brand-600/5 p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20">Admin</span>
-                  <span className="text-xs text-gray-500">Trusted team leads</span>
+                  <span className="text-xs text-white/60">Trusted team leads</span>
                 </div>
-                <p className="text-sm text-gray-300 leading-relaxed">
+                <p className="text-sm text-white/80 leading-relaxed">
                   Can manage integrations, configure bots, view all conversations and CRM data, and
                   invite new members (up to Member level). Admins <em>cannot</em> delete the workspace,
                   access billing, change other admins&apos; roles, or promote anyone to Owner. Ideal for
@@ -119,10 +119,10 @@ export default function TeamSeatsRolesPage() {
               {/* Member */}
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/8 text-gray-400 border border-white/10">Member</span>
-                  <span className="text-xs text-gray-500">Standard team members</span>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/8 text-white/65 border border-white/10">Member</span>
+                  <span className="text-xs text-white/60">Standard team members</span>
                 </div>
-                <p className="text-sm text-gray-300 leading-relaxed">
+                <p className="text-sm text-white/80 leading-relaxed">
                   Full access to use all platform features — Sage CRM, conversations, pipeline,
                   forms, emails, meetings, and analytics. Cannot manage integrations, configure bots,
                   or invite colleagues. The right role for sales reps, support agents, and anyone
@@ -133,10 +133,10 @@ export default function TeamSeatsRolesPage() {
               {/* Viewer */}
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/8 text-gray-500 border border-white/10">Viewer</span>
-                  <span className="text-xs text-gray-500">Read-only access</span>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/8 text-white/60 border border-white/10">Viewer</span>
+                  <span className="text-xs text-white/60">Read-only access</span>
                 </div>
-                <p className="text-sm text-gray-300 leading-relaxed">
+                <p className="text-sm text-white/80 leading-relaxed">
                   Can view all data in the workspace but cannot create, edit, or delete anything.
                   Useful for stakeholders, executives, or external consultants who need visibility
                   without the ability to make changes.
@@ -165,34 +165,34 @@ export default function TeamSeatsRolesPage() {
                 </thead>
                 <tbody className="divide-y divide-white/[0.06]">
                   <tr>
-                    <td className="py-3 pr-6 text-gray-300">Individual</td>
-                    <td className="py-3 pr-6 text-gray-300">1</td>
-                    <td className="py-3 pr-6 text-gray-300">Up to 2</td>
-                    <td className="py-3 text-gray-300">$29/mo annual · $45/mo monthly</td>
+                    <td className="py-3 pr-6 text-white/80">Individual</td>
+                    <td className="py-3 pr-6 text-white/80">1</td>
+                    <td className="py-3 pr-6 text-white/80">Up to 2</td>
+                    <td className="py-3 text-white/80">$29/mo annual · $45/mo monthly</td>
                   </tr>
                   <tr>
-                    <td className="py-3 pr-6 text-gray-300">Pro</td>
-                    <td className="py-3 pr-6 text-gray-300">3</td>
-                    <td className="py-3 pr-6 text-gray-300">Up to 6</td>
-                    <td className="py-3 text-gray-300">$29/mo annual · $45/mo monthly</td>
+                    <td className="py-3 pr-6 text-white/80">Pro</td>
+                    <td className="py-3 pr-6 text-white/80">3</td>
+                    <td className="py-3 pr-6 text-white/80">Up to 6</td>
+                    <td className="py-3 text-white/80">$29/mo annual · $45/mo monthly</td>
                   </tr>
                   <tr>
-                    <td className="py-3 pr-6 text-gray-300">Team</td>
-                    <td className="py-3 pr-6 text-gray-300">10</td>
-                    <td className="py-3 pr-6 text-gray-300">Unlimited</td>
-                    <td className="py-3 text-gray-300">$29/mo annual · $45/mo monthly</td>
+                    <td className="py-3 pr-6 text-white/80">Team</td>
+                    <td className="py-3 pr-6 text-white/80">10</td>
+                    <td className="py-3 pr-6 text-white/80">Unlimited</td>
+                    <td className="py-3 text-white/80">$29/mo annual · $45/mo monthly</td>
                   </tr>
                   <tr>
-                    <td className="py-3 pr-6 text-gray-300">Enterprise</td>
-                    <td className="py-3 pr-6 text-gray-300">Unlimited</td>
-                    <td className="py-3 pr-6 text-gray-300">—</td>
-                    <td className="py-3 text-gray-300">Custom</td>
+                    <td className="py-3 pr-6 text-white/80">Enterprise</td>
+                    <td className="py-3 pr-6 text-white/80">Unlimited</td>
+                    <td className="py-3 pr-6 text-white/80">—</td>
+                    <td className="py-3 text-white/80">Custom</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            <p className="text-sm text-gray-500 mt-3">
+            <p className="text-sm text-white/60 mt-3">
               Extra seats are purchased through the Stripe billing portal and activate immediately.
               The seat bar in Settings updates in real time — green when there&apos;s room, amber when
               you&apos;re approaching the limit, and red when you&apos;re full.
@@ -207,7 +207,7 @@ export default function TeamSeatsRolesPage() {
               <li>Click <strong className="text-white">Send invite</strong>. They&apos;ll receive an email with a magic link to join the workspace.</li>
               <li>Until they accept, their row shows <em>Invitation pending</em>. Once accepted, it shows their join date.</li>
             </ol>
-            <p className="mt-4 text-sm text-gray-500">
+            <p className="mt-4 text-sm text-white/60">
               If the seat limit is already reached, the invite is blocked and you&apos;ll see a link to
               purchase extra seats or upgrade your plan before proceeding.
             </p>
@@ -250,7 +250,7 @@ export default function TeamSeatsRolesPage() {
             <div className="space-y-4">
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
                 <h3 className="text-sm font-semibold text-white mb-2">Manual assignment</h3>
-                <p className="text-sm text-gray-300 leading-relaxed">
+                <p className="text-sm text-white/80 leading-relaxed">
                   Open any contact and select a team member from the <strong className="text-white">Assigned to</strong> dropdown.
                   Use the <strong className="text-white">Assigned To</strong> filter in the contacts table to view a
                   specific rep&apos;s leads, or select <em>Unassigned</em> to find contacts that haven&apos;t been picked up yet.
@@ -259,7 +259,7 @@ export default function TeamSeatsRolesPage() {
 
               <div className="rounded-xl border border-brand-600/20 bg-brand-600/5 p-5">
                 <h3 className="text-sm font-semibold text-white mb-2">Round-robin auto-distribution</h3>
-                <p className="text-sm text-gray-300 leading-relaxed">
+                <p className="text-sm text-white/80 leading-relaxed">
                   Enable <strong className="text-white">Lead Distribution</strong> in Settings to automatically rotate
                   incoming leads across your accepted team members in join order. Every new contact created by the bot,
                   email triage, or form submission is assigned to the next rep — no manual work required.
@@ -269,9 +269,9 @@ export default function TeamSeatsRolesPage() {
             </div>
 
             <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Coming next</p>
-              <ul className="list-disc pl-5 space-y-1.5 text-sm text-gray-400">
-                <li><strong className="text-gray-300">Scoped views</strong> — Members optionally see only their own assigned leads, keeping pipelines clean on large teams.</li>
+              <p className="text-xs font-semibold text-white/65 uppercase tracking-wider mb-2">Coming next</p>
+              <ul className="list-disc pl-5 space-y-1.5 text-sm text-white/65">
+                <li><strong className="text-white/80">Scoped views</strong> — Members optionally see only their own assigned leads, keeping pipelines clean on large teams.</li>
               </ul>
             </div>
           </section>
@@ -279,7 +279,7 @@ export default function TeamSeatsRolesPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">👥</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to build your team in Appalix?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Head to Settings → Team members to invite your first colleague, assign the right role, and
               watch the seat bar track your usage in real time.
             </p>

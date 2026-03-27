@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: portal.url })
   }
 
-  // No subscription yet → new checkout session with 7-day free trial
+  // No subscription yet → new checkout session with 14-day free trial (card required upfront)
   const session = await stripe.checkout.sessions.create({
     mode:                 'subscription',
     payment_method_types: ['card'],
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     customer_email:       stripe_customer_id ? undefined : user.email,
     line_items:           [{ price: priceId, quantity: 1 }],
     subscription_data: {
-      trial_period_days: 7,
+      trial_period_days: 14,
     },
     payment_method_collection: 'if_required',
     metadata: {

@@ -518,7 +518,7 @@ export default function ResourcesPage() {
           <ScrollReveal>
             <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Resources</p>
             <h1 className="text-4xl sm:text-5xl font-bold mb-5">Insights for AI-first teams</h1>
-            <p className="text-gray-400 text-lg leading-relaxed">
+            <p className="text-white/65 text-lg leading-relaxed">
               Guides, tutorials, and strategies to help you get more from your AI sales agents.
             </p>
           </ScrollReveal>

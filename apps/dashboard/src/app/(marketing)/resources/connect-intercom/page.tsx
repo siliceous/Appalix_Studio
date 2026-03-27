@@ -49,29 +49,29 @@ export default function ConnectIntercomPage() {
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect Intercom to Appalix</span>
+          <span className="text-white/65">Connect Intercom to Appalix</span>
         </div>
 
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">7 min read · Pro+ plan</span>
+            <span className="text-xs text-white/60">7 min read · Pro+ plan</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             How to Connect Intercom to Appalix
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Appalix can create leads directly in your Intercom workspace the moment a visitor shares their email or phone number in chat. Contacts appear in your Intercom inbox automatically — ready for follow-up. All you need is an Intercom Access Token.
           </p>
         </div>
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           {/* What you'll need */}
           <section>
@@ -169,7 +169,7 @@ export default function ConnectIntercomPage() {
                 In Intercom, go to <strong className="text-white">Contacts → Leads</strong>. Sort by <em>Last seen</em> and you should see the new lead appear within seconds.
               </li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Tip:</strong> If the lead doesn&apos;t appear, verify that your Access Token is from the correct Intercom workspace. Tokens are workspace-specific — a token from one workspace won&apos;t work in another.
             </div>
           </section>
@@ -193,19 +193,19 @@ export default function ConnectIntercomPage() {
             <div className="space-y-5">
               <div>
                 <p className="font-semibold text-white">What Intercom plan do I need?</p>
-                <p className="text-sm text-gray-400 mt-1">Any paid Intercom plan that includes the Contacts API. The Starter plan and above supports this. Check your Intercom billing page to confirm API access is included.</p>
+                <p className="text-sm text-white/65 mt-1">Any paid Intercom plan that includes the Contacts API. The Starter plan and above supports this. Check your Intercom billing page to confirm API access is included.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Will duplicate leads be created if the same email is captured twice?</p>
-                <p className="text-sm text-gray-400 mt-1">Intercom&apos;s API will create a new lead for each request. To avoid duplicates, consider using an Intercom workflow to merge contacts with the same email address.</p>
+                <p className="text-sm text-white/65 mt-1">Intercom&apos;s API will create a new lead for each request. To avoid duplicates, consider using an Intercom workflow to merge contacts with the same email address.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Can I use Zapier with Intercom instead?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes — the Zapier webhook option is available on Core plan. Select <em>Zapier</em> in the CRM provider dropdown, paste your Zapier Catch Hook URL, then add an Intercom action in Zapier.</p>
+                <p className="text-sm text-white/65 mt-1">Yes — the Zapier webhook option is available on Core plan. Select <em>Zapier</em> in the CRM provider dropdown, paste your Zapier Catch Hook URL, then add an Intercom action in Zapier.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Is the Access Token permanent?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes — Access Tokens for Intercom developer apps don&apos;t expire unless you manually revoke them in the Developer Hub. If you rotate the token, update it in Appalix immediately.</p>
+                <p className="text-sm text-white/65 mt-1">Yes — Access Tokens for Intercom developer apps don&apos;t expire unless you manually revoke them in the Developer Hub. If you rotate the token, update it in Appalix immediately.</p>
               </div>
             </div>
           </section>
@@ -214,7 +214,7 @@ export default function ConnectIntercomPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">💬</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to connect Intercom?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Add your Intercom Access Token in Appalix and start capturing leads automatically.
             </p>
             <Link

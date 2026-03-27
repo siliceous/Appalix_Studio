@@ -242,7 +242,7 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
             <div className="w-3 h-3 rounded-full bg-green-400" />
           </div>
           <div className="flex items-center gap-2 px-4 py-1 rounded-md bg-white border border-gray-200">
-            <span className="text-xs text-gray-400">app.appalix.ai/dashboard</span>
+            <span className="text-xs text-white/65">app.appalix.ai/dashboard</span>
           </div>
           <div className="w-16" />
         </div>
@@ -260,7 +260,7 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                 </div>
                 <span className="text-xs font-bold text-gray-900">Appalix</span>
               </div>
-              <div className="flex items-center gap-1 text-[10px] text-gray-400">
+              <div className="flex items-center gap-1 text-[10px] text-white/65">
                 <span>My Workspace</span><span>▾</span>
               </div>
             </div>
@@ -268,7 +268,7 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
             {SIDEBAR_GROUPS.map((g, gi) => (
               <div key={gi} className="mb-1">
                 {g.label && (
-                  <p className="px-4 pt-2 pb-1 text-[9px] font-semibold uppercase tracking-widest text-gray-400">{g.label}</p>
+                  <p className="px-4 pt-2 pb-1 text-[9px] font-semibold uppercase tracking-widest text-white/65">{g.label}</p>
                 )}
                 {g.items.map((item) => (
                   <Tip key={item.label} label={item.tip} dir="right">
@@ -279,7 +279,7 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                           : 'text-gray-600'
                       } ${item.sub ? 'pl-8' : ''}`}
                     >
-                      <span className={`text-[11px] ${item.color || (item.active ? 'text-[#15A4AE]' : 'text-gray-400')}`}>{item.icon}</span>
+                      <span className={`text-[11px] ${item.color || (item.active ? 'text-[#15A4AE]' : 'text-white/65')}`}>{item.icon}</span>
                       {item.label}
                     </div>
                   </Tip>
@@ -292,7 +292,7 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
               <div className="w-6 h-6 rounded-full bg-[#15A4AE]/20 flex items-center justify-center text-[9px] text-[#15A4AE] font-bold">J</div>
               <div>
                 <p className="text-[10px] text-gray-800 font-medium leading-none">James</p>
-                <p className="text-[9px] text-gray-400 mt-0.5">Pro Plan</p>
+                <p className="text-[9px] text-white/65 mt-0.5">Pro Plan</p>
               </div>
             </div>
           </div>
@@ -323,32 +323,32 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                   <Tip label="View the dashboard as any team member — managers see full team activity" dir="bottom" clickable>
                     <button
                       onClick={(e) => { stop(e); setShowViewAs(v => !v); setShowDate(false) }}
-                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${showViewAs || viewAsName ? 'border-[#15A4AE]/50 bg-[#15A4AE]/5 text-[#15A4AE]' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'}`}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${showViewAs || viewAsName ? 'border-[#15A4AE]/50 bg-[#15A4AE]/5 text-[#15A4AE]' : 'border-gray-200 bg-white text-white/60 hover:border-gray-300'}`}
                     >
-                      {viewAsName ? `👤 ${viewAsName}` : 'View as…'} <span className="text-gray-400">▾</span>
+                      {viewAsName ? `👤 ${viewAsName}` : 'View as…'} <span className="text-white/65">▾</span>
                     </button>
                   </Tip>
                   {showViewAs && (
                     <div className="absolute right-0 top-full mt-1 z-20 w-44 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
-                      <p className="px-3 pt-2 pb-1 text-[8px] font-semibold uppercase tracking-widest text-gray-400">Managers</p>
+                      <p className="px-3 pt-2 pb-1 text-[8px] font-semibold uppercase tracking-widest text-white/65">Managers</p>
                       {VIEW_AS_MANAGERS.map(n => (
                         <button key={n} onClick={(e) => { stop(e); setViewAsName(n); setShowViewAs(false) }}
                           className={`w-full text-left px-3 py-1.5 text-[10px] flex items-center gap-2 hover:bg-gray-50 transition-colors ${viewAsName === n ? 'text-[#15A4AE] font-semibold' : 'text-gray-700'}`}>
                           <span className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center text-[7px] text-blue-600 font-bold shrink-0">{n[0]}</span>
-                          {n} <span className="ml-auto text-[8px] text-gray-400">Manager</span>
+                          {n} <span className="ml-auto text-[8px] text-white/65">Manager</span>
                         </button>
                       ))}
-                      <p className="px-3 pt-2 pb-1 text-[8px] font-semibold uppercase tracking-widest text-gray-400 border-t border-gray-100 mt-1">Employees</p>
+                      <p className="px-3 pt-2 pb-1 text-[8px] font-semibold uppercase tracking-widest text-white/65 border-t border-gray-100 mt-1">Employees</p>
                       {VIEW_AS_EMPLOYEES.map(n => (
                         <button key={n} onClick={(e) => { stop(e); setViewAsName(n); setShowViewAs(false) }}
                           className={`w-full text-left px-3 py-1.5 text-[10px] flex items-center gap-2 hover:bg-gray-50 transition-colors ${viewAsName === n ? 'text-[#15A4AE] font-semibold' : 'text-gray-700'}`}>
-                          <span className="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center text-[7px] text-gray-500 font-bold shrink-0">{n[0]}</span>
-                          {n} <span className="ml-auto text-[8px] text-gray-400">Employee</span>
+                          <span className="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center text-[7px] text-white/60 font-bold shrink-0">{n[0]}</span>
+                          {n} <span className="ml-auto text-[8px] text-white/65">Employee</span>
                         </button>
                       ))}
                       {viewAsName && (
                         <button onClick={(e) => { stop(e); setViewAsName(null); setShowViewAs(false) }}
-                          className="w-full text-left px-3 py-2 text-[10px] text-gray-400 hover:text-gray-600 border-t border-gray-100 hover:bg-gray-50 transition-colors">
+                          className="w-full text-left px-3 py-2 text-[10px] text-white/65 hover:text-gray-600 border-t border-gray-100 hover:bg-gray-50 transition-colors">
                           ← Back to my view
                         </button>
                       )}
@@ -363,7 +363,7 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                       onClick={(e) => { stop(e); setShowDate(v => !v); setShowViewAs(false) }}
                       className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${showDate ? 'border-[#15A4AE]/50 bg-[#15A4AE]/5 text-[#15A4AE]' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`}
                     >
-                      {selectedDate} <span className="text-gray-400">▾</span>
+                      {selectedDate} <span className="text-white/65">▾</span>
                     </button>
                   </Tip>
                   {showDate && (
@@ -397,8 +397,8 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
             {/* 4 Donut cards */}
             <div onClick={stop}>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[9px] font-semibold uppercase tracking-widest text-gray-400">Overview</p>
-                <span className="text-[9px] text-gray-400">Collapse ▾</span>
+                <p className="text-[9px] font-semibold uppercase tracking-widest text-white/65">Overview</p>
+                <span className="text-[9px] text-white/65">Collapse ▾</span>
               </div>
               <div className="grid grid-cols-4 gap-3">
                 {[
@@ -421,7 +421,7 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                     <MiniDonut high={c.high} medium={c.medium} low={c.low} total={c.total} color={c.color} />
                     <div className="flex items-center gap-2 mt-2 flex-wrap justify-center">
                       {[{ label: `${c.high} high`, dot: 'bg-green-400' }, { label: `${c.medium} med`, dot: 'bg-yellow-400' }, { label: `${c.low} low`, dot: 'bg-gray-300' }].map((s) => (
-                        <span key={s.label} className="flex items-center gap-1 text-[9px] text-gray-500">
+                        <span key={s.label} className="flex items-center gap-1 text-[9px] text-white/60">
                           <span className={`w-2 h-2 rounded-full ${s.dot}`} />
                           {s.label}
                         </span>
@@ -447,13 +447,13 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                     <div className="flex items-center gap-0.5 bg-gray-100 rounded p-0.5">
                       <Tip label="List view — chronological feed of all activity" dir="bottom" clickable>
                         <button onClick={(e) => handleListGrid(e, 'list')}
-                          className={`w-5 h-4 rounded flex items-center justify-center transition-colors ${feedView === 'list' ? 'bg-white shadow-sm text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}>
+                          className={`w-5 h-4 rounded flex items-center justify-center transition-colors ${feedView === 'list' ? 'bg-white shadow-sm text-gray-700' : 'text-white/65 hover:text-gray-600'}`}>
                           <span className="text-[8px]">≡</span>
                         </button>
                       </Tip>
                       <Tip label="Grid view — items grouped by channel type" dir="bottom" clickable>
                         <button onClick={(e) => handleListGrid(e, 'grid')}
-                          className={`w-5 h-4 rounded flex items-center justify-center transition-colors ${feedView === 'grid' ? 'bg-white shadow-sm text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}>
+                          className={`w-5 h-4 rounded flex items-center justify-center transition-colors ${feedView === 'grid' ? 'bg-white shadow-sm text-gray-700' : 'text-white/65 hover:text-gray-600'}`}>
                           <span className="text-[8px]">⊞</span>
                         </button>
                       </Tip>
@@ -491,7 +491,7 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                             <p className="text-[11px] font-semibold text-gray-900 truncate leading-snug">{item.title}</p>
                             <p className="text-[9px] text-gray-600 truncate mt-0.5">{item.sub}</p>
                           </div>
-                          <span className="text-[9px] text-gray-500 shrink-0">{item.time}</span>
+                          <span className="text-[9px] text-white/60 shrink-0">{item.time}</span>
                         </div>
                       </Tip>
                     ))}
@@ -543,17 +543,17 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                 <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
                   <Tip label="Tasks linked to your deals and contacts — overdue items are highlighted in red" dir="top">
                     <div className="flex items-center gap-1.5 cursor-default">
-                      <span className="text-xs text-gray-400">☑</span>
+                      <span className="text-xs text-white/65">☑</span>
                       <p className="text-xs font-semibold text-gray-900">Tasks</p>
                     </div>
                   </Tip>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{PENDING_TASKS.length + UPCOMING_TASKS.length}</span>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-white/60">{PENDING_TASKS.length + UPCOMING_TASKS.length}</span>
                 </div>
 
                 {/* Pending */}
                 <div className="px-4 py-1.5 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
                   <Tip label="Overdue tasks that need immediate attention" dir="top">
-                    <span className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 cursor-default">Pending</span>
+                    <span className="text-[9px] font-semibold uppercase tracking-wide text-white/65 cursor-default">Pending</span>
                   </Tip>
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-50 text-red-500">{PENDING_TASKS.length}</span>
                 </div>
@@ -575,9 +575,9 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                 {/* Upcoming */}
                 <div className="px-4 py-1.5 bg-gray-50 border-y border-gray-100 flex items-center justify-between">
                   <Tip label="Scheduled tasks and follow-ups coming up this week" dir="top">
-                    <span className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 cursor-default">Upcoming</span>
+                    <span className="text-[9px] font-semibold uppercase tracking-wide text-white/65 cursor-default">Upcoming</span>
                   </Tip>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{UPCOMING_TASKS.length}</span>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-white/60">{UPCOMING_TASKS.length}</span>
                 </div>
                 <div className="divide-y divide-gray-50">
                   {UPCOMING_TASKS.map((t, i) => (
@@ -587,7 +587,7 @@ function DashboardPreview({ onClick }: { onClick: () => void }) {
                         <div className="flex-1 min-w-0">
                           <p className="text-[10px] font-medium text-gray-900 truncate leading-snug">{t.title}</p>
                           <p className="text-[9px] text-gray-600 mt-0.5">{t.sub}</p>
-                          <p className="text-[9px] text-gray-500 mt-0.5">📅 {t.due}</p>
+                          <p className="text-[9px] text-white/60 mt-0.5">📅 {t.due}</p>
                         </div>
                       </div>
                     </Tip>
@@ -619,26 +619,26 @@ function DemoModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
       <div className="relative w-full max-w-lg bg-[#222] border border-white/10 rounded-2xl p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors flex items-center justify-center text-sm">✕</button>
+        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white/65 hover:text-white transition-colors flex items-center justify-center text-sm">✕</button>
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-brand-600/40 bg-brand-600/10 text-brand-400 text-xs font-medium mb-5">
           <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse" />
           Live demo · No credit card needed
         </div>
         <h2 className="text-2xl font-bold text-white mb-2">See Appalix in action</h2>
-        <p className="text-sm text-gray-400 leading-relaxed mb-7">
+        <p className="text-sm text-white/65 leading-relaxed mb-7">
           Get a personalised walkthrough of the dashboard, bot builder, and integrations — or start your free trial right now and explore it yourself.
         </p>
         <div className="flex flex-col gap-3">
           <Link href="/login" onClick={onClose} className="w-full py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors text-sm text-center">
-            Start a 7-day free trial — free
+            Start a 14-day free trial — free
           </Link>
-          <Link href="/contact" onClick={onClose} className="w-full py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm text-center">
+          <Link href="/contact" onClick={onClose} className="w-full py-3.5 border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-medium rounded-xl transition-colors text-sm text-center">
             Book a live demo →
           </Link>
         </div>
         <div className="mt-6 pt-5 border-t border-white/5 flex items-center justify-center gap-5">
-          {['No credit card', 'Cancel anytime', '7-day free trial'].map((t) => (
-            <span key={t} className="flex items-center gap-1.5 text-[11px] text-gray-500">
+          {['No credit card', 'Cancel anytime', '14-day free trial'].map((t) => (
+            <span key={t} className="flex items-center gap-1.5 text-[11px] text-white/60">
               <svg className="w-3 h-3 text-brand-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
@@ -691,16 +691,16 @@ export default function ProductPage() {
             </h1>
           </FadeUp>
           <FadeUp delay={0.2}>
-            <p className="text-base sm:text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto mb-10">
+            <p className="text-base sm:text-xl text-white/65 leading-relaxed max-w-2xl mx-auto mb-10">
               The Appalix dashboard gives you real-time visibility across all your emails, bots, forms, and tickets — with AI that scores and surfaces what matters before you have to ask.
             </p>
           </FadeUp>
           <FadeUp delay={0.3}>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/login" className="px-7 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors text-sm">
-                Start a 7 Day Free Trial
+                Start a 14-Day Free Trial
               </Link>
-              <button onClick={() => setModalOpen(true)} className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm">
+              <button onClick={() => setModalOpen(true)} className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-medium rounded-xl transition-colors text-sm">
                 See the dashboard →
               </button>
             </div>
@@ -726,7 +726,7 @@ export default function ProductPage() {
           <ScrollReveal className="text-center mb-14">
             <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Dashboard</p>
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">Built for clarity, not complexity</h2>
-            <p className="text-gray-400 max-w-xl mx-auto text-sm leading-relaxed">
+            <p className="text-white/65 max-w-xl mx-auto text-sm leading-relaxed">
               Every metric you care about, one click away. No spreadsheets, no manual reports — just signal.
             </p>
           </ScrollReveal>
@@ -737,7 +737,7 @@ export default function ProductPage() {
                   <div className="w-11 h-11 rounded-xl bg-brand-600/10 border border-brand-600/20 flex items-center justify-center text-2xl mb-5 group-hover:bg-brand-600/15 transition-colors">{f.icon}</div>
                   <span className="text-xs text-brand-400 font-semibold uppercase tracking-widest mb-2">{f.tag}</span>
                   <h3 className="font-semibold text-white mb-3 leading-snug">{f.title}</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed flex-1">{f.desc}</p>
+                  <p className="text-sm text-white/65 leading-relaxed flex-1">{f.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -759,7 +759,7 @@ export default function ProductPage() {
                 <div key={s.label}>
                   <p className="text-3xl sm:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-br from-brand-400 to-brand-600 mb-1">{s.value}</p>
                   <p className="text-sm font-semibold text-white mb-1">{s.label}</p>
-                  <p className="text-xs text-gray-500">{s.sub}</p>
+                  <p className="text-xs text-white/60">{s.sub}</p>
                 </div>
               ))}
             </div>
@@ -781,7 +781,7 @@ export default function ProductPage() {
                   {i < STEPS.length - 1 && <div className="hidden sm:block absolute top-10 -right-3 w-6 h-px bg-brand-600/30 z-10" />}
                   <p className="text-4xl font-bold text-brand-600/30 mb-4 leading-none">{s.step}</p>
                   <h3 className="font-semibold text-white mb-2">{s.title}</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed">{s.desc}</p>
+                  <p className="text-sm text-white/65 leading-relaxed">{s.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -795,7 +795,7 @@ export default function ProductPage() {
           <ScrollReveal delay={0.1} className="space-y-6">
             <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold">Your control panel</p>
             <h2 className="text-3xl sm:text-4xl font-bold leading-snug">One dashboard.<br />Every channel, bot, and lead.</h2>
-            <p className="text-gray-400 leading-relaxed">
+            <p className="text-white/65 leading-relaxed">
               Whether you&apos;re running one bot or twenty, the Appalix dashboard gives you a single source of truth. Real-time metrics, AI priority scoring, and one-click access to every conversation.
             </p>
             <ul className="space-y-4">
@@ -807,15 +807,15 @@ export default function ProductPage() {
               ].map((t) => (
                 <li key={t} className="flex gap-3 items-start">
                   <span className="text-brand-400 text-xs mt-1 shrink-0 font-bold">✦</span>
-                  <p className="text-sm text-gray-300 leading-relaxed">{t}</p>
+                  <p className="text-sm text-white/80 leading-relaxed">{t}</p>
                 </li>
               ))}
             </ul>
             <div className="flex flex-col sm:flex-row gap-3">
               <Link href="/login" className="px-7 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors text-sm text-center">
-                Start a 7 Day Free Trial
+                Start a 14-Day Free Trial
               </Link>
-              <button onClick={() => setModalOpen(true)} className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm">
+              <button onClick={() => setModalOpen(true)} className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-medium rounded-xl transition-colors text-sm">
                 Book a demo →
               </button>
             </div>
@@ -834,12 +834,12 @@ export default function ProductPage() {
             Your AI-powered command centre<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-brand-600">is one click away.</span>
           </h2>
-          <p className="text-gray-400 mb-10 text-sm max-w-md mx-auto">7-day free trial on every plan. No credit card required.</p>
+          <p className="text-white/65 mb-10 text-sm max-w-md mx-auto">14-day free trial on every plan. No credit card required.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/login" className="px-8 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors">
-              Start a 7 Day Free Trial
+              Start a 14-Day Free Trial
             </Link>
-            <button onClick={() => setModalOpen(true)} className="px-8 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm">
+            <button onClick={() => setModalOpen(true)} className="px-8 py-3.5 border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-medium rounded-xl transition-colors text-sm">
               See the dashboard live →
             </button>
           </div>

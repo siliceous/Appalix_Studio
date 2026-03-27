@@ -189,7 +189,7 @@ export default function IntegrationsPage() {
           <ScrollReveal>
             <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Integrations</p>
             <h1 className="text-4xl sm:text-5xl font-bold mb-5">One platform, endless connections</h1>
-            <p className="text-gray-400 text-lg leading-relaxed">
+            <p className="text-white/65 text-lg leading-relaxed">
               Deploy your AI agent on any channel, route leads to your CRM, and train it from your existing content — all from one dashboard.
             </p>
           </ScrollReveal>
@@ -212,7 +212,7 @@ export default function IntegrationsPage() {
         <div className="max-w-7xl mx-auto">
           <ScrollReveal>
             <div className="mb-6">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest">Chat &amp; messaging channels</h2>
+              <h2 className="text-sm font-semibold text-white/60 uppercase tracking-widest">Chat &amp; messaging channels</h2>
               <p className="text-xs text-gray-600 mt-1">Deploy your bot on the platforms your customers already use</p>
             </div>
           </ScrollReveal>
@@ -231,14 +231,14 @@ export default function IntegrationsPage() {
                       </div>
                       <div>
                         <h3 className="font-semibold text-white">{item.name}</h3>
-                        <span className="text-xs text-gray-500">{item.category}</span>
+                        <span className="text-xs text-white/60">{item.category}</span>
                       </div>
                     </div>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-[#15A4AE]/10 text-[#15A4AE] border border-[#15A4AE]/20 font-medium">
                       Available
                     </span>
                   </div>
-                  <p className="text-sm text-gray-400 leading-relaxed">{item.desc}</p>
+                  <p className="text-sm text-white/65 leading-relaxed">{item.desc}</p>
                   <div className="flex items-center gap-4 mt-4">
                     <Link
                       href="/integrations/new"
@@ -249,7 +249,7 @@ export default function IntegrationsPage() {
                     {'guide' in item && item.guide && (
                       <Link
                         href={item.guide}
-                        className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                        className="text-xs text-white/60 hover:text-white/80 transition-colors"
                       >
                         Setup guide →
                       </Link>
@@ -267,7 +267,7 @@ export default function IntegrationsPage() {
         <div className="max-w-7xl mx-auto">
           <ScrollReveal>
             <div className="mb-6">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest">CRM &amp; lead capture</h2>
+              <h2 className="text-sm font-semibold text-white/60 uppercase tracking-widest">CRM &amp; lead capture</h2>
               <p className="text-xs text-gray-600 mt-1">Automatically push captured leads to your CRM the moment a visitor shares their email or phone number</p>
             </div>
           </ScrollReveal>
@@ -282,14 +282,14 @@ export default function IntegrationsPage() {
                       </div>
                       <div>
                         <h3 className="font-semibold text-white">{item.name}</h3>
-                        <span className="text-xs text-gray-500">{item.category}</span>
+                        <span className="text-xs text-white/60">{item.category}</span>
                       </div>
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${PLAN_BADGE[item.plan]}`}>
                       {item.plan}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-400 leading-relaxed flex-1">{item.desc}</p>
+                  <p className="text-sm text-white/65 leading-relaxed flex-1">{item.desc}</p>
                   <div className="flex items-center gap-4 mt-4">
                     <Link
                       href="/integrations/new"
@@ -300,7 +300,7 @@ export default function IntegrationsPage() {
                     {item.guide && (
                       <Link
                         href={item.guide}
-                        className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                        className="text-xs text-white/60 hover:text-white/80 transition-colors"
                       >
                         Setup guide →
                       </Link>
@@ -318,7 +318,7 @@ export default function IntegrationsPage() {
         <div className="max-w-7xl mx-auto">
           <ScrollReveal>
             <div className="mb-6">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest">Knowledge source connectors</h2>
+              <h2 className="text-sm font-semibold text-white/60 uppercase tracking-widest">Knowledge source connectors</h2>
               <p className="text-xs text-gray-600 mt-1">Train your bot directly from cloud storage, documentation tools, and productivity apps</p>
             </div>
           </ScrollReveal>
@@ -333,14 +333,14 @@ export default function IntegrationsPage() {
                       </div>
                       <div>
                         <h3 className="font-semibold text-white">{item.name}</h3>
-                        <span className="text-xs text-gray-500">{item.category}</span>
+                        <span className="text-xs text-white/60">{item.category}</span>
                       </div>
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${PLAN_BADGE[item.plan]}`}>
                       {item.plan}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-400 leading-relaxed">{item.desc}</p>
+                  <p className="text-sm text-white/65 leading-relaxed">{item.desc}</p>
                   <Link
                     href="/sources/new"
                     className="inline-block mt-4 text-xs text-[#15A4AE] hover:text-[#4aaa96] font-medium transition-colors"
@@ -360,7 +360,7 @@ export default function IntegrationsPage() {
           <div className="max-w-3xl mx-auto text-center">
             <div className="text-3xl mb-4">🛠️</div>
             <h2 className="text-2xl font-bold mb-3">Need a custom integration?</h2>
-            <p className="text-gray-400 mb-8 text-sm leading-relaxed">
+            <p className="text-white/65 mb-8 text-sm leading-relaxed">
               Enterprise customers get dedicated engineering support and custom connector builds. Talk to us about your use case.
             </p>
             <Link

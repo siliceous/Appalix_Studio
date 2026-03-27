@@ -28,7 +28,7 @@ const COUNTRY_CODES = [
 const EMPLOYEE_OPTIONS = ['Sole entrepreneur', '2–5', '5–10', '11–50', '50–200', '201–500', '500+']
 
 const INPUT = 'w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-[#15A4AE]/60 focus:bg-white/8 transition-colors'
-const LABEL = 'block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5'
+const LABEL = 'block text-xs font-semibold text-white/65 uppercase tracking-wide mb-1.5'
 
 export function BookDemoModal({ onClose }: { onClose: () => void }) {
   const [countryCode, setCountryCode] = useState('+1')
@@ -84,11 +84,11 @@ export function BookDemoModal({ onClose }: { onClose: () => void }) {
               Book a Demo
             </div>
             <h2 className="text-xl font-bold text-white">See Appalix in action</h2>
-            <p className="text-sm text-gray-500 mt-1">Fill in your details and we&apos;ll get back to you within 24 hours.</p>
+            <p className="text-sm text-white/60 mt-1">Fill in your details and we&apos;ll get back to you within 24 hours.</p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors flex items-center justify-center text-sm shrink-0 ml-4"
+            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white/65 hover:text-white transition-colors flex items-center justify-center text-sm shrink-0 ml-4"
           >✕</button>
         </div>
 
@@ -100,7 +100,7 @@ export function BookDemoModal({ onClose }: { onClose: () => void }) {
               </svg>
             </div>
             <h3 className="text-xl font-bold text-white mb-2">Request received!</h3>
-            <p className="text-gray-400 text-sm">We&apos;ll reach out within 24 hours to schedule your demo.</p>
+            <p className="text-white/65 text-sm">We&apos;ll reach out within 24 hours to schedule your demo.</p>
             <button onClick={onClose} className="mt-8 px-6 py-2.5 bg-[#15A4AE] hover:bg-[#0e8f99] text-white text-sm font-semibold rounded-xl transition-colors">Close</button>
           </div>
         ) : (
@@ -123,7 +123,7 @@ export function BookDemoModal({ onClose }: { onClose: () => void }) {
               <div>
                 <label className={LABEL}>No. of Employees <span className="text-[#15A4AE]">*</span></label>
                 <select ref={employeesRef} required className={INPUT + ' cursor-pointer'} defaultValue="">
-                  <option value="" disabled className="bg-[#1a1a1a] text-gray-500">Select range</option>
+                  <option value="" disabled className="bg-[#1a1a1a] text-white/60">Select range</option>
                   {EMPLOYEE_OPTIONS.map(o => (
                     <option key={o} value={o} className="bg-[#1a1a1a] text-white">{o}</option>
                   ))}
@@ -182,7 +182,7 @@ export function BookDemoModal({ onClose }: { onClose: () => void }) {
               >
                 {loading ? 'Sending…' : 'Request A Demo →'}
               </button>
-              <button type="button" onClick={onClose} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
+              <button type="button" onClick={onClose} className="text-xs text-white/60 hover:text-white/80 transition-colors">
                 Maybe later
               </button>
             </div>

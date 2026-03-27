@@ -14,13 +14,14 @@ declare global {
 interface Page { id: string; name: string; access_token: string }
 
 interface Props {
-  platform: 'facebook_messenger' | 'whatsapp'
-  name: string
-  botId: string
-  appId: string
+  platform:  'facebook_messenger' | 'whatsapp'
+  name:      string
+  botId:     string
+  appId:     string
+  configId?: string
 }
 
-export function MetaEmbeddedSignup({ platform, name, botId, appId }: Props) {
+export function MetaEmbeddedSignup({ platform, name, botId, appId, configId }: Props) {
   const router = useRouter()
   const [sdkReady, setSdkReady]   = useState(false)
   const [loading, setLoading]     = useState(false)
@@ -33,15 +34,21 @@ export function MetaEmbeddedSignup({ platform, name, botId, appId }: Props) {
       window.FB.init({ appId, version: 'v18.0', xfbml: false, cookie: true })
       setSdkReady(true)
     }
-    if (window.FB) { init(); return }
+
+    // Always force-reload the SDK so the correct appId is used,
+    // even if another component (e.g. FacebookPageSwitcher) already initialised it.
+    const existing = document.getElementById('facebook-jssdk')
+    if (existing) existing.remove()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).FB
+    setSdkReady(false)
+
     window.fbAsyncInit = init
-    if (!document.getElementById('facebook-jssdk')) {
-      const script = document.createElement('script')
-      script.id  = 'facebook-jssdk'
-      script.src = 'https://connect.facebook.net/en_US/sdk.js'
-      script.async = true
-      document.head.appendChild(script)
-    }
+    const script = document.createElement('script')
+    script.id    = 'facebook-jssdk'
+    script.src   = 'https://connect.facebook.net/en_US/sdk.js'
+    script.async = true
+    document.head.appendChild(script)
   }, [appId])
 
   function handleConnect() {
@@ -60,14 +67,18 @@ export function MetaEmbeddedSignup({ platform, name, botId, appId }: Props) {
       setError('Timed out — popup was blocked or closed. Allow popups for this site and try again.')
     }, 90_000)
 
-    const scope =
-      platform === 'facebook_messenger'
-        ? 'pages_messaging,pages_manage_metadata,pages_show_list'
-        : 'whatsapp_business_messaging,whatsapp_business_management'
+    const loginOptions =
+      platform === 'facebook_messenger' && configId
+        ? { config_id: configId, return_scopes: true, auth_type: 'rerequest' }
+        : { scope: platform === 'facebook_messenger'
+              ? 'pages_messaging,pages_manage_metadata,pages_show_list'
+              : 'whatsapp_business_messaging,whatsapp_business_management',
+            return_scopes: true,
+            auth_type: 'rerequest' }
 
     try {
       window.FB.login(
-        (res: { authResponse?: { accessToken: string }; status: string }) => {
+        (res: { authResponse?: { accessToken: string }; status: string; grantedScopes?: string }) => {
           clearTimeout(timeout)
           if (!res.authResponse?.accessToken) {
             setLoading(false)
@@ -107,7 +118,7 @@ export function MetaEmbeddedSignup({ platform, name, botId, appId }: Props) {
             createIntegration(token, undefined)
           }
         },
-        { scope, return_scopes: true },
+        loginOptions,
       )
     } catch (err) {
       clearTimeout(timeout)

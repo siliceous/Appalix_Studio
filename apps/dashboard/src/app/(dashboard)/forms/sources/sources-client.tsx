@@ -3,8 +3,9 @@
 import { useState, useTransition, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Check, Copy, ChevronDown, ChevronUp, ExternalLink, BookOpen, Loader2, Unplug, AlertCircle, RefreshCw } from 'lucide-react'
+import { Check, Copy, ChevronDown, ChevronUp, BookOpen, Loader2, Unplug, AlertCircle, RefreshCw } from 'lucide-react'
 import { saveLeadSource, deleteLeadSource, syncFromEmailPlatform, toggleMailchimpSync } from '@/app/actions/leads'
+import { disconnectSageIntegration } from '@/app/actions/sage'
 import type { LeadAdSource, LeadAdPlatform, SageIntegration } from '@/lib/types'
 
 // ---------------------------------------------------------------------------
@@ -60,7 +61,7 @@ const PLATFORMS: PlatformDef[] = [
     name:        'LinkedIn Lead Gen Forms',
     description: 'Capture leads from LinkedIn Lead Gen Forms and Sponsored Content campaigns directly into your pipeline.',
     color:       'bg-sky-50 dark:bg-sky-500/10 border-sky-200 dark:border-sky-500/20 text-sky-700 dark:text-sky-400',
-    comingSoon:  true,
+    oauthPath:   '/api/oauth/linkedin',
     fields:      [],
     tutorialUrl: '/resources/connect-linkedin-leads',
   },
@@ -69,7 +70,7 @@ const PLATFORMS: PlatformDef[] = [
     name:        'TikTok Lead Ads',
     description: 'Receive leads from TikTok Instant Forms campaigns in real time. Integrates with TikTok for Business.',
     color:       'bg-gray-50 dark:bg-gray-500/10 border-gray-200 dark:border-gray-500/20 text-gray-700 dark:text-gray-400',
-    comingSoon:  true,
+    oauthPath:   '/api/oauth/tiktok',
     fields:      [],
     tutorialUrl: '/resources/connect-tiktok-leads',
   },
@@ -161,7 +162,11 @@ function CopyButton({ text }: { text: string }) {
 // Main component
 // ---------------------------------------------------------------------------
 
-type EmailIntegration = Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at' | 'sync_enabled' | 'last_synced_at' | 'last_sync_count'>
+type EmailIntegration = Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at' | 'sync_enabled' | 'last_synced_at' | 'last_sync_count'> & {
+  connected_by_name?:  string
+  connected_by_email?: string
+  connected_by_role?:  string
+}
 
 interface SourcesClientProps {
   sources:              LeadAdSource[]
@@ -254,6 +259,17 @@ function EmailPlatformCard({
   }
 
   const isMailchimp = def.provider === 'mailchimp'
+  const [disconnecting, setDisconnecting] = useState(false)
+
+  async function handleDisconnectEmail() {
+    setDisconnecting(true)
+    try {
+      await disconnectSageIntegration(def.provider)
+      router.refresh()
+    } finally {
+      setDisconnecting(false)
+    }
+  }
 
   return (
     <div className="bg-white dark:bg-[#232323] rounded-xl border border-gray-200 dark:border-white/8 overflow-hidden">
@@ -263,13 +279,35 @@ function EmailPlatformCard({
           <img src={def.emoji} alt={def.name} className="w-full h-full object-contain" />
         </div>
 
-        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex-1">{def.name}</p>
-
-        {isConnected && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
-            Connected
-          </span>
-        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{def.name}</p>
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-[#15A4AE]/12 text-[#3a9e8a] dark:text-[#15A4AE] border border-[#15A4AE]/25">
+              Sage
+            </span>
+            {isConnected && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+                Connected
+              </span>
+            )}
+          </div>
+          {isConnected && (integration?.connected_by_name || integration?.connected_by_email) && (
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              <span className="text-[11px] text-gray-500 dark:text-gray-400">Connected by</span>
+              {integration.connected_by_name && (
+                <span className="text-[11px] text-gray-700 dark:text-gray-200 font-medium">{integration.connected_by_name}</span>
+              )}
+              {integration.connected_by_email && (
+                <span className="text-[11px] text-gray-500 dark:text-gray-400">{integration.connected_by_name ? `· ${integration.connected_by_email}` : integration.connected_by_email}</span>
+              )}
+              {integration.connected_by_role && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium border bg-gray-100 text-gray-600 dark:bg-white/8 dark:text-gray-400 border-gray-200 dark:border-white/10 capitalize">
+                  {integration.connected_by_role}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Two-way sync toggle — Mailchimp only */}
         {isConnected && isMailchimp && (
@@ -305,24 +343,26 @@ function EmailPlatformCard({
         </Link>
 
         {isConnected ? (
-          def.canSync ? (
+          <>
+            {def.canSync && (
+              <button
+                onClick={handleSync}
+                disabled={syncing}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 disabled:bg-gray-300 dark:disabled:bg-white/10 text-white disabled:text-gray-400 rounded-lg transition-colors"
+              >
+                {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                {syncing ? 'Syncing…' : 'Sync Now'}
+              </button>
+            )}
             <button
-              onClick={handleSync}
-              disabled={syncing}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 disabled:bg-gray-300 dark:disabled:bg-white/10 text-white disabled:text-gray-400 rounded-lg transition-colors"
+              onClick={handleDisconnectEmail}
+              disabled={disconnecting}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
             >
-              {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-              {syncing ? 'Syncing…' : 'Sync Now'}
+              {disconnecting && <Loader2 className="w-3 h-3 animate-spin" />}
+              Disconnect
             </button>
-          ) : (
-            <Link
-              href="/sage/integrations"
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg transition-colors"
-            >
-              <ExternalLink className="w-3 h-3" />
-              Manage
-            </Link>
-          )
+          </>
         ) : def.provider === 'mailchimp' ? (
           <button
             onClick={() => openOAuthPopup('/api/oauth/mailchimp', () => router.refresh())}
@@ -370,8 +410,9 @@ export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, e
   const [sources, setSources]   = useState<LeadAdSource[]>(initialSources)
 
   useEffect(() => {
+    const REFRESH_TYPES = ['meta-leads-connected', 'linkedin-connected', 'tiktok-connected']
     function handleMessage(e: MessageEvent) {
-      if (e.data?.type === 'meta-leads-connected') router.refresh()
+      if (REFRESH_TYPES.includes(e.data?.type)) router.refresh()
     }
     window.addEventListener('message', handleMessage)
     return () => window.removeEventListener('message', handleMessage)
@@ -514,9 +555,17 @@ export function SourcesClient({ sources: initialSources, workspaceId, baseUrl, e
                 ) : def.oauthPath ? (
                   <button
                     onClick={() => openOAuthPopup(def.oauthPath!, () => router.refresh())}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#1877F2] hover:bg-[#166FE5] text-white rounded-lg transition-colors"
+                    style={{
+                      backgroundColor:
+                        def.platform === 'linkedin' ? '#0A66C2' :
+                        def.platform === 'tiktok'   ? '#010101' :
+                        '#1877F2',
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-opacity hover:opacity-90"
                   >
-                    Connect with Facebook
+                    {def.platform === 'linkedin' ? 'Connect with LinkedIn' :
+                     def.platform === 'tiktok'   ? 'Connect with TikTok'  :
+                     'Connect with Facebook'}
                   </button>
                 ) : (
                   <button

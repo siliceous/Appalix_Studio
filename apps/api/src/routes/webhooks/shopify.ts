@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify'
+import { createHmac, timingSafeEqual } from 'crypto'
 import {
   verifyShopifySignature,
   parseShopifyEvents,
@@ -6,7 +7,57 @@ import {
 } from '../../adapters/shopify.js'
 import { processMessage, resolveIntegration } from '../../services/processor.js'
 
+/**
+ * Verify a Shopify GDPR webhook using the app's client secret.
+ * Shopify signs the raw body with HMAC-SHA256 and sends it base64-encoded
+ * in the X-Shopify-Hmac-Sha256 header.
+ */
+function verifyGdprHmac(rawBody: string, hmacHeader: string | undefined, secret: string): boolean {
+  if (!hmacHeader) return false
+  const expected = createHmac('sha256', secret).update(rawBody, 'utf8').digest('base64')
+  try {
+    return timingSafeEqual(Buffer.from(expected), Buffer.from(hmacHeader))
+  } catch {
+    return false
+  }
+}
+
 export async function shopifyRoutes(fastify: FastifyInstance) {
+  const clientSecret = process.env.SHOPIFY_CLIENT_SECRET ?? ''
+
+  /**
+   * GDPR mandatory webhooks — required for Shopify App Store review.
+   * Register these URLs in the Shopify Partner Dashboard → App setup → GDPR webhooks:
+   *   customers/data_request → https://api.appalix.ai/webhooks/shopify/customers/data_request
+   *   customers/redact       → https://api.appalix.ai/webhooks/shopify/customers/redact
+   *   shop/redact            → https://api.appalix.ai/webhooks/shopify/shop/redact
+   */
+  fastify.post('/shopify/customers/data_request', { config: { rawBody: true } }, async (request, reply) => {
+    const rawBody = (request as never as { rawBody?: string }).rawBody ?? JSON.stringify(request.body)
+    const hmac    = request.headers['x-shopify-hmac-sha256'] as string | undefined
+    if (!verifyGdprHmac(rawBody, hmac, clientSecret)) return reply.status(401).send('Unauthorized')
+    fastify.log.info({ body: request.body }, '[shopify gdpr] customers/data_request received')
+    return reply.status(200).send()
+  })
+
+  fastify.post('/shopify/customers/redact', { config: { rawBody: true } }, async (request, reply) => {
+    const rawBody = (request as never as { rawBody?: string }).rawBody ?? JSON.stringify(request.body)
+    const hmac    = request.headers['x-shopify-hmac-sha256'] as string | undefined
+    if (!verifyGdprHmac(rawBody, hmac, clientSecret)) return reply.status(401).send('Unauthorized')
+    fastify.log.info({ body: request.body }, '[shopify gdpr] customers/redact received')
+    // TODO: delete customer data associated with this shop from your database
+    return reply.status(200).send()
+  })
+
+  fastify.post('/shopify/shop/redact', { config: { rawBody: true } }, async (request, reply) => {
+    const rawBody = (request as never as { rawBody?: string }).rawBody ?? JSON.stringify(request.body)
+    const hmac    = request.headers['x-shopify-hmac-sha256'] as string | undefined
+    if (!verifyGdprHmac(rawBody, hmac, clientSecret)) return reply.status(401).send('Unauthorized')
+    fastify.log.info({ body: request.body }, '[shopify gdpr] shop/redact received')
+    // TODO: delete all data associated with this shop from your database
+    return reply.status(200).send()
+  })
+
   /**
    * POST — inbound Shopify webhooks
    *

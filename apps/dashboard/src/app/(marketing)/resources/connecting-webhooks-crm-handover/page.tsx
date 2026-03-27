@@ -49,22 +49,22 @@ export default function WebhookGuidePage() {
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connecting webhooks to CRMs &amp; human handover</span>
+          <span className="text-white/65">Connecting webhooks to CRMs &amp; human handover</span>
         </div>
 
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">10 min read · Feb 24, 2026</span>
+            <span className="text-xs text-white/60">10 min read · Feb 24, 2026</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Connecting Webhook URLs to CRMs and Human Handover
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Your Appalix AI agent can automatically capture leads into any CRM and alert a human team member the moment a visitor wants to speak to a real person — with no code required.
           </p>
         </div>
@@ -73,7 +73,7 @@ export default function WebhookGuidePage() {
         <div className="border-t border-white/10 mb-10" />
 
         {/* Article body */}
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           {/* Overview */}
           <section>
@@ -152,7 +152,7 @@ export default function WebhookGuidePage() {
               <li>Copy the webhook URL (starts with <code>https://hooks.slack.com/services/…</code>).</li>
               <li>In Appalix → select <strong>Slack</strong> → paste the URL → Save.</li>
             </ol>
-            <p className="text-sm text-gray-500 mt-2">What your team sees: a rich block message with the visitor&apos;s exact words, the conversation ID, and a timestamp.</p>
+            <p className="text-sm text-white/60 mt-2">What your team sees: a rich block message with the visitor&apos;s exact words, the conversation ID, and a timestamp.</p>
 
             {/* Discord */}
             <h3 className="text-base font-semibold text-white mt-8 mb-2">Discord</h3>
@@ -161,7 +161,7 @@ export default function WebhookGuidePage() {
               <li><strong>Integrations → Webhooks → New Webhook</strong> → give it a name → <strong>Copy Webhook URL</strong>.</li>
               <li>In Appalix → select <strong>Discord</strong> → paste the URL → Save.</li>
             </ol>
-            <p className="text-sm text-gray-500 mt-2">What your team sees: an orange embed with the visitor&apos;s message, conversation ID, and timestamp.</p>
+            <p className="text-sm text-white/60 mt-2">What your team sees: an orange embed with the visitor&apos;s message, conversation ID, and timestamp.</p>
 
             {/* Telegram */}
             <h3 className="text-base font-semibold text-white mt-8 mb-2">Telegram</h3>
@@ -171,7 +171,7 @@ export default function WebhookGuidePage() {
               <li>Get the <strong>Chat ID</strong>: send any message in the group, then open <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> and find <code>&quot;chat&quot;:&#123;&quot;id&quot;: -100xxxxxxx&#125;</code>.</li>
               <li>In Appalix → select <strong>Telegram</strong> → paste the bot token and chat ID → Save.</li>
             </ol>
-            <p className="text-sm text-gray-500 mt-2">Group chat IDs start with <code>-100</code>. You can also use a private chat ID for a single-person inbox.</p>
+            <p className="text-sm text-white/60 mt-2">Group chat IDs start with <code>-100</code>. You can also use a private chat ID for a single-person inbox.</p>
 
             {/* WhatsApp */}
             <h3 className="text-base font-semibold text-white mt-8 mb-2">WhatsApp (via Twilio)</h3>
@@ -226,7 +226,7 @@ export default function WebhookGuidePage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">🔌</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to connect?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Go to your integrations dashboard and set up CRM lead capture and human handoff in under 2 minutes.
             </p>
             <Link

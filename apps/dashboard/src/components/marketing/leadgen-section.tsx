@@ -187,7 +187,7 @@ export function LeadGenSection() {
               <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
                 More pipeline, without<br className="hidden sm:block" /> increasing ad spend
               </h2>
-              <p className="text-gray-400 text-base leading-relaxed mb-6 max-w-2xl">
+              <p className="text-white/65 text-base leading-relaxed mb-6 max-w-2xl">
                 AI works your top of funnel around the clock — qualifying leads, personalising journeys, and making sure no enquiry ever goes unanswered.
               </p>
             </motion.div>
@@ -203,7 +203,7 @@ export function LeadGenSection() {
                   <svg className="w-4 h-4 text-[#15A4AE] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-sm text-gray-300">{item}</span>
+                  <span className="text-sm text-white/80">{item}</span>
                 </li>
               ))}
             </motion.ul>
@@ -217,11 +217,11 @@ export function LeadGenSection() {
               {METRICS.map((m) => (
                 <div key={m.label} className="text-center sm:text-left">
                   <p className="text-2xl font-bold text-white">{m.value}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{m.label}</p>
+                  <p className="text-xs text-white/60 mt-0.5">{m.label}</p>
                 </div>
               ))}
               <div className="hidden sm:block w-px self-stretch bg-white/10" />
-              <p className="text-xs text-gray-400 leading-relaxed flex-1 min-w-[180px]">
+              <p className="text-xs text-white/65 leading-relaxed flex-1 min-w-[180px]">
                 <span className="text-white font-medium">Business result:</span> More pipeline without increasing ad spend — every visitor becomes a qualified opportunity.
               </p>
             </motion.div>

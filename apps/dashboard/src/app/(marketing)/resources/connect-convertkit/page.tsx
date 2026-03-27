@@ -47,21 +47,21 @@ export default function ConnectConvertKitPage() {
 
       <div className="max-w-3xl mx-auto">
 
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect Kit (ConvertKit)</span>
+          <span className="text-white/65">Connect Kit (ConvertKit)</span>
         </div>
 
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">5 min read · Pro+ plan</span>
+            <span className="text-xs text-white/60">5 min read · Pro+ plan</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Connect Kit (ConvertKit) to Appalix
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Kit is the go-to email platform for creators, course builders, and indie businesses. Connecting it
             to Appalix means every contact you add to Sage CRM is automatically added as a Kit subscriber —
             triggering your welcome sequences and automations instantly. You can also pull your existing
@@ -71,7 +71,7 @@ export default function ConnectConvertKitPage() {
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">What you&apos;ll need</h2>
@@ -100,7 +100,7 @@ export default function ConnectConvertKitPage() {
               <li>Paste your <strong>v4 API Key</strong> and click <strong className="text-white">Save &amp; Connect</strong>.</li>
               <li>The card shows a green <em>Connected</em> badge.</li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Auto Sync toggle:</strong> Once connected, enable <strong className="text-white">Auto Sync</strong> on the card to automatically push new and updated Sage contacts to Kit as subscribers.
             </div>
           </section>
@@ -126,7 +126,7 @@ export default function ConnectConvertKitPage() {
               <li>A result banner shows how many contacts were imported and how many were skipped as duplicates.</li>
               <li>Imported contacts appear immediately in <strong className="text-white">Forms → All Leads</strong> with a Kit platform badge.</li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Deduplication:</strong> Before inserting, Appalix checks whether a lead with the same email already exists. Duplicates are skipped — you can run Sync Now multiple times safely.
             </div>
           </section>
@@ -136,19 +136,19 @@ export default function ConnectConvertKitPage() {
             <div className="space-y-5">
               <div>
                 <p className="font-semibold text-white">Which Kit plan do I need?</p>
-                <p className="text-sm text-gray-400 mt-1">All Kit plans include API access. The v4 API Key is available on every plan under Settings → Developer → API.</p>
+                <p className="text-sm text-white/65 mt-1">All Kit plans include API access. The v4 API Key is available on every plan under Settings → Developer → API.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Will existing Kit subscribers be updated?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes. Kit uses email as the unique identifier. If a subscriber with the same email already exists, it is updated rather than duplicated.</p>
+                <p className="text-sm text-white/65 mt-1">Yes. Kit uses email as the unique identifier. If a subscriber with the same email already exists, it is updated rather than duplicated.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Are my API credentials stored securely?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes. Your API Key and Secret are stored encrypted in your workspace database and never exposed in plain text after saving.</p>
+                <p className="text-sm text-white/65 mt-1">Yes. Your API Key and Secret are stored encrypted in your workspace database and never exposed in plain text after saving.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Can I tag Kit subscribers from Appalix?</p>
-                <p className="text-sm text-gray-400 mt-1">Tag support is on the roadmap. Currently, Appalix pushes subscriber email and first name. Tags can be applied manually in Kit or via Kit automations triggered by subscriber creation.</p>
+                <p className="text-sm text-white/65 mt-1">Tag support is on the roadmap. Currently, Appalix pushes subscriber email and first name. Tags can be applied manually in Kit or via Kit automations triggered by subscriber creation.</p>
               </div>
             </div>
           </section>
@@ -156,7 +156,7 @@ export default function ConnectConvertKitPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center">
             <p className="text-2xl mb-3">✉️</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to connect Kit?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Go to Sage → Contacts → Automations and paste your Kit v4 API Key.
             </p>
             <Link

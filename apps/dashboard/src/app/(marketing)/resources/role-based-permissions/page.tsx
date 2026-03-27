@@ -42,21 +42,21 @@ export default function RoleBasedPermissionsPage() {
       />
       <div className="max-w-3xl mx-auto">
 
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Role-Based Permissions</span>
+          <span className="text-white/65">Role-Based Permissions</span>
         </div>
 
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-pink-500/15 text-pink-400 border border-pink-500/20 font-medium">Product</span>
-            <span className="text-xs text-gray-500">9 min read · All plans</span>
+            <span className="text-xs text-white/60">9 min read · All plans</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Role-Based Permissions in Appalix
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Appalix enforces permissions at every layer of the UI — not just in a settings page.
             Viewers see data but cannot change it. Members work freely within their scope. Admins and
             Owners control the platform. This guide maps exactly what each role can and cannot do, section by section.
@@ -65,7 +65,7 @@ export default function RoleBasedPermissionsPage() {
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">The four roles — a quick recap</h2>
@@ -73,12 +73,12 @@ export default function RoleBasedPermissionsPage() {
               {[
                 { role: 'Owner', color: 'border-amber-400/20 bg-amber-400/5 text-amber-400', desc: '1 per workspace. Full control including billing and deletion.' },
                 { role: 'Admin', color: 'border-brand-600/20 bg-brand-600/5 text-brand-400', desc: 'Manage bots, integrations, and team. Cannot access billing.' },
-                { role: 'Member', color: 'border-white/10 bg-white/[0.03] text-gray-300', desc: 'Full CRM/pipeline access. Cannot configure bots or invite.' },
-                { role: 'Viewer', color: 'border-white/10 bg-white/[0.03] text-gray-500', desc: 'Read-only. Can see everything, change nothing.' },
+                { role: 'Member', color: 'border-white/10 bg-white/[0.03] text-white/80', desc: 'Full CRM/pipeline access. Cannot configure bots or invite.' },
+                { role: 'Viewer', color: 'border-white/10 bg-white/[0.03] text-white/60', desc: 'Read-only. Can see everything, change nothing.' },
               ].map(({ role, color, desc }) => (
                 <div key={role} className={`rounded-xl border p-4 ${color}`}>
                   <p className="text-xs font-bold mb-1">{role}</p>
-                  <p className="text-xs text-gray-400 leading-relaxed">{desc}</p>
+                  <p className="text-xs text-white/65 leading-relaxed">{desc}</p>
                 </div>
               ))}
             </div>
@@ -97,8 +97,8 @@ export default function RoleBasedPermissionsPage() {
                     <th className="text-left py-3 pr-4 font-semibold text-white">Action</th>
                     <th className="py-3 pr-4 text-center font-semibold text-amber-400">Owner</th>
                     <th className="py-3 pr-4 text-center font-semibold text-brand-400">Admin</th>
-                    <th className="py-3 pr-4 text-center font-semibold text-gray-300">Member</th>
-                    <th className="py-3 text-center font-semibold text-gray-500">Viewer</th>
+                    <th className="py-3 pr-4 text-center font-semibold text-white/80">Member</th>
+                    <th className="py-3 text-center font-semibold text-white/60">Viewer</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.06] text-sm">
@@ -113,7 +113,7 @@ export default function RoleBasedPermissionsPage() {
                     ['Export contacts', '✓', '✓', '✓', '—'],
                   ].map(([action, ...perms]) => (
                     <tr key={action}>
-                      <td className="py-2.5 pr-4 text-gray-300">{action}</td>
+                      <td className="py-2.5 pr-4 text-white/80">{action}</td>
                       {perms.map((p, i) => (
                         <td key={i} className={`py-2.5 pr-4 text-center font-medium ${p === '✓' ? 'text-green-400' : 'text-gray-600'}`}>{p}</td>
                       ))}
@@ -138,8 +138,8 @@ export default function RoleBasedPermissionsPage() {
                     <th className="text-left py-3 pr-4 font-semibold text-white">Action</th>
                     <th className="py-3 pr-4 text-center font-semibold text-amber-400">Owner</th>
                     <th className="py-3 pr-4 text-center font-semibold text-brand-400">Admin</th>
-                    <th className="py-3 pr-4 text-center font-semibold text-gray-300">Member</th>
-                    <th className="py-3 text-center font-semibold text-gray-500">Viewer</th>
+                    <th className="py-3 pr-4 text-center font-semibold text-white/80">Member</th>
+                    <th className="py-3 text-center font-semibold text-white/60">Viewer</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.06] text-sm">
@@ -156,7 +156,7 @@ export default function RoleBasedPermissionsPage() {
                     ['Change stage (list view)', '✓', '✓', '✓', 'Read-only label'],
                   ].map(([action, ...perms]) => (
                     <tr key={action}>
-                      <td className="py-2.5 pr-4 text-gray-300">{action}</td>
+                      <td className="py-2.5 pr-4 text-white/80">{action}</td>
                       {perms.map((p, i) => (
                         <td key={i} className={`py-2.5 pr-4 text-center font-medium ${p === '✓' ? 'text-green-400' : p === '—' ? 'text-gray-600' : 'text-amber-400 text-xs'}`}>{p}</td>
                       ))}
@@ -166,7 +166,7 @@ export default function RoleBasedPermissionsPage() {
               </table>
             </div>
 
-            <p className="text-sm text-gray-500 mt-3">
+            <p className="text-sm text-white/60 mt-3">
               Viewers see the pipeline board in full but all interactive controls (drag handles, stage
               selects, add-deal button, edit pencils) are hidden or replaced with read-only equivalents.
             </p>
@@ -186,8 +186,8 @@ export default function RoleBasedPermissionsPage() {
                     <th className="text-left py-3 pr-4 font-semibold text-white">Action</th>
                     <th className="py-3 pr-4 text-center font-semibold text-amber-400">Owner</th>
                     <th className="py-3 pr-4 text-center font-semibold text-brand-400">Admin</th>
-                    <th className="py-3 pr-4 text-center font-semibold text-gray-300">Member</th>
-                    <th className="py-3 text-center font-semibold text-gray-500">Viewer</th>
+                    <th className="py-3 pr-4 text-center font-semibold text-white/80">Member</th>
+                    <th className="py-3 text-center font-semibold text-white/60">Viewer</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.06] text-sm">
@@ -202,7 +202,7 @@ export default function RoleBasedPermissionsPage() {
                     ['Merge tickets', '✓', '✓', '✓', '—'],
                   ].map(([action, ...perms]) => (
                     <tr key={action}>
-                      <td className="py-2.5 pr-4 text-gray-300">{action}</td>
+                      <td className="py-2.5 pr-4 text-white/80">{action}</td>
                       {perms.map((p, i) => (
                         <td key={i} className={`py-2.5 pr-4 text-center font-medium ${p === '✓' ? 'text-green-400' : p === '—' ? 'text-gray-600' : 'text-amber-400 text-xs'}`}>{p}</td>
                       ))}
@@ -228,8 +228,8 @@ export default function RoleBasedPermissionsPage() {
                     <th className="text-left py-3 pr-4 font-semibold text-white">Nav item</th>
                     <th className="py-3 pr-4 text-center font-semibold text-amber-400">Owner</th>
                     <th className="py-3 pr-4 text-center font-semibold text-brand-400">Admin</th>
-                    <th className="py-3 pr-4 text-center font-semibold text-gray-300">Member</th>
-                    <th className="py-3 text-center font-semibold text-gray-500">Viewer</th>
+                    <th className="py-3 pr-4 text-center font-semibold text-white/80">Member</th>
+                    <th className="py-3 text-center font-semibold text-white/60">Viewer</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.06] text-sm">
@@ -245,7 +245,7 @@ export default function RoleBasedPermissionsPage() {
                     ['Settings', '✓', '✓', '✓', '✓'],
                   ].map(([item, ...perms]) => (
                     <tr key={item}>
-                      <td className="py-2.5 pr-4 text-gray-300">{item}</td>
+                      <td className="py-2.5 pr-4 text-white/80">{item}</td>
                       {perms.map((p, i) => (
                         <td key={i} className={`py-2.5 pr-4 text-center font-medium ${p === '✓' ? 'text-green-400' : 'text-gray-600'}`}>{p}</td>
                       ))}
@@ -255,7 +255,7 @@ export default function RoleBasedPermissionsPage() {
               </table>
             </div>
 
-            <p className="text-sm text-gray-500 mt-3">
+            <p className="text-sm text-white/60 mt-3">
               Viewers still see Settings so they can check billing info, their own role, and
               workspace details. All destructive settings (delete workspace, change roles, invite members)
               are enforced server-side regardless of what the UI shows.
@@ -271,7 +271,7 @@ export default function RoleBasedPermissionsPage() {
             <div className="space-y-3">
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
                 <p className="text-sm font-semibold text-white mb-2">1 — UI layer (client-side)</p>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-white/65">
                   Every page that receives data from the server also receives the caller&apos;s role. Client components
                   derive a <code className="text-brand-400">canWrite</code> boolean (<code className="text-brand-400">callerRole !== &apos;viewer&apos;</code>)
                   and conditionally render or hide buttons, inputs, and interactive controls. A viewer
@@ -281,7 +281,7 @@ export default function RoleBasedPermissionsPage() {
 
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
                 <p className="text-sm font-semibold text-white mb-2">2 — Server layer (server actions)</p>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-white/65">
                   Every mutating server action (create contact, delete pipeline, update ticket status, etc.)
                   re-fetches the caller&apos;s membership record from the database before executing.
                   Even if someone bypassed the UI and called an action directly, the server would check
@@ -304,7 +304,7 @@ export default function RoleBasedPermissionsPage() {
               restrict someone, demote them. Role changes in Settings take effect immediately and
               are enforced on the next page load (the role is read fresh on every server request).
             </p>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-white/65">
               Only the <strong className="text-white">Owner</strong> can change roles. See the
               <Link href="/resources/team-seats-roles" className="text-brand-400 hover:text-brand-300 mx-1">Team Seats &amp; Roles guide</Link>
               for full instructions.
@@ -314,7 +314,7 @@ export default function RoleBasedPermissionsPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">🔐</p>
             <h3 className="text-lg font-semibold text-white mb-2">Set up your team permissions</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Head to Settings → Team members to review each member&apos;s role and make sure
               the right people have the right access.
             </p>

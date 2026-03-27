@@ -17,7 +17,7 @@ export default function PrivacyPage() {
         <div className="mb-12">
           <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Legal</p>
           <h1 className="text-4xl font-bold text-white mb-3">Privacy Policy</h1>
-          <p className="text-sm text-gray-500">Last updated: {LAST_UPDATED}</p>
+          <p className="text-sm text-white/60">Last updated: {LAST_UPDATED}</p>
           <div className="mt-4">
             <Link href="/" className="text-sm text-brand-400 hover:text-brand-300 transition-colors">
               ← Back to home
@@ -25,7 +25,7 @@ export default function PrivacyPage() {
           </div>
         </div>
 
-        <div className="prose prose-invert prose-sm max-w-none space-y-10 text-gray-300 leading-relaxed">
+        <div className="prose prose-invert prose-sm max-w-none space-y-10 text-white/80 leading-relaxed">
 
           {/* Intro */}
           <section>
@@ -56,9 +56,9 @@ export default function PrivacyPage() {
                 Appalix offers an optional Gmail and Microsoft Outlook integration. When you connect
                 your email account, we request access to the following scopes:
               </p>
-              <ul className="mt-3 space-y-2 list-disc list-inside text-gray-400">
-                <li><strong className="text-gray-200">Gmail:</strong> <code className="text-brand-400 text-xs">https://www.googleapis.com/auth/gmail.modify</code> — read, compose, and send emails (does not include permanent deletion)</li>
-                <li><strong className="text-gray-200">Microsoft:</strong> <code className="text-brand-400 text-xs">IMAP.AccessAsUser.All</code> and <code className="text-brand-400 text-xs">SMTP.Send</code> — read and send email via Microsoft Graph API</li>
+              <ul className="mt-3 space-y-2 list-disc list-inside text-white/65">
+                <li><strong className="text-white/90">Gmail:</strong> <code className="text-brand-400 text-xs">https://www.googleapis.com/auth/gmail.modify</code> — read, compose, and send emails (does not include permanent deletion)</li>
+                <li><strong className="text-white/90">Microsoft:</strong> <code className="text-brand-400 text-xs">IMAP.AccessAsUser.All</code> and <code className="text-brand-400 text-xs">SMTP.Send</code> — read and send email via Microsoft Graph API</li>
               </ul>
               <p className="mt-4 p-4 rounded-xl bg-brand-600/10 border border-brand-600/20 text-sm">
                 <strong className="text-white">How we use your email data:</strong> Appalix reads
@@ -91,8 +91,8 @@ export default function PrivacyPage() {
                 Appalix offers an optional Google Drive integration that allows you to import
                 documents into your AI knowledge base. When you connect Google Drive, we request:
               </p>
-              <ul className="mt-3 space-y-2 list-disc list-inside text-gray-400">
-                <li><strong className="text-gray-200">Google Drive:</strong> <code className="text-brand-400 text-xs">https://www.googleapis.com/auth/drive.readonly</code> — read and download files you select</li>
+              <ul className="mt-3 space-y-2 list-disc list-inside text-white/65">
+                <li><strong className="text-white/90">Google Drive:</strong> <code className="text-brand-400 text-xs">https://www.googleapis.com/auth/drive.readonly</code> — read and download files you select</li>
               </ul>
               <p className="mt-4 p-4 rounded-xl bg-brand-600/10 border border-brand-600/20 text-sm">
                 <strong className="text-white">How we use your Drive data:</strong> Appalix reads
@@ -127,7 +127,7 @@ export default function PrivacyPage() {
 
           {/* 2. How we use your information */}
           <Section title="2. How we use your information">
-            <ul className="space-y-3 list-disc list-inside text-gray-400">
+            <ul className="space-y-3 list-disc list-inside text-white/65">
               <li>To operate and maintain your account and workspace</li>
               <li>To read, triage, and display emails in your Appalix inbox (only when you have connected an email account)</li>
               <li>To generate AI-powered email replies and lead prioritisation using your email content</li>
@@ -137,7 +137,7 @@ export default function PrivacyPage() {
               <li>To detect and prevent fraud and abuse</li>
               <li>To comply with legal obligations</li>
             </ul>
-            <p className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <p className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Google API Services User Data Policy:</strong> Appalix&apos;s
               use and transfer of information received from Google APIs to any other app will adhere
               to the{' '}
@@ -153,11 +153,11 @@ export default function PrivacyPage() {
           {/* 3. Data sharing */}
           <Section title="3. Data sharing and third parties">
             <p>We do not sell your personal data. We share data only with the following categories of service providers, strictly for operating the platform:</p>
-            <ul className="mt-4 space-y-3 list-disc list-inside text-gray-400">
-              <li><strong className="text-gray-200">Supabase</strong> — database and authentication infrastructure</li>
-              <li><strong className="text-gray-200">Anthropic (Claude)</strong> — AI model inference for email triage and reply suggestions. Email content sent to Claude is subject to Anthropic&apos;s data processing agreement and is not used to train models</li>
-              <li><strong className="text-gray-200">Resend</strong> — transactional email delivery (invite links, notifications)</li>
-              <li><strong className="text-gray-200">Vercel</strong> — hosting and edge infrastructure</li>
+            <ul className="mt-4 space-y-3 list-disc list-inside text-white/65">
+              <li><strong className="text-white/90">Supabase</strong> — database and authentication infrastructure</li>
+              <li><strong className="text-white/90">Anthropic (Claude)</strong> — AI model inference for email triage and reply suggestions. Email content sent to Claude is subject to Anthropic&apos;s data processing agreement and is not used to train models</li>
+              <li><strong className="text-white/90">Resend</strong> — transactional email delivery (invite links, notifications)</li>
+              <li><strong className="text-white/90">Vercel</strong> — hosting and edge infrastructure</li>
             </ul>
             <p className="mt-4">
               We do not share email content or personal data with any advertising networks,
@@ -173,7 +173,7 @@ export default function PrivacyPage() {
               We retain your account data for as long as your account is active or as needed to
               provide services. When you delete your account:
             </p>
-            <ul className="mt-3 space-y-2 list-disc list-inside text-gray-400">
+            <ul className="mt-3 space-y-2 list-disc list-inside text-white/65">
               <li>Your user profile, workspace data, and email records are permanently deleted within 30 days</li>
               <li>OAuth tokens are invalidated immediately upon account deletion or integration disconnection</li>
               <li>Backup copies may persist for up to 90 days before automated deletion</li>
@@ -216,13 +216,13 @@ export default function PrivacyPage() {
               If you are located in the European Economic Area (EEA) or UK, you have the following
               rights regarding your personal data:
             </p>
-            <ul className="mt-3 space-y-2 list-disc list-inside text-gray-400">
-              <li><strong className="text-gray-200">Access</strong> — request a copy of the data we hold about you</li>
-              <li><strong className="text-gray-200">Rectification</strong> — correct inaccurate data</li>
-              <li><strong className="text-gray-200">Erasure</strong> — request deletion of your data</li>
-              <li><strong className="text-gray-200">Portability</strong> — receive your data in a machine-readable format</li>
-              <li><strong className="text-gray-200">Objection</strong> — object to certain types of processing</li>
-              <li><strong className="text-gray-200">Restriction</strong> — request we restrict processing in certain circumstances</li>
+            <ul className="mt-3 space-y-2 list-disc list-inside text-white/65">
+              <li><strong className="text-white/90">Access</strong> — request a copy of the data we hold about you</li>
+              <li><strong className="text-white/90">Rectification</strong> — correct inaccurate data</li>
+              <li><strong className="text-white/90">Erasure</strong> — request deletion of your data</li>
+              <li><strong className="text-white/90">Portability</strong> — receive your data in a machine-readable format</li>
+              <li><strong className="text-white/90">Objection</strong> — object to certain types of processing</li>
+              <li><strong className="text-white/90">Restriction</strong> — request we restrict processing in certain circumstances</li>
             </ul>
             <p className="mt-4">
               To exercise any of these rights, email{' '}
@@ -291,7 +291,7 @@ function SubSection({ title, children }: { title: string; children: React.ReactN
   return (
     <div className="mt-5">
       <h3 className="text-base font-semibold text-white mb-2">{title}</h3>
-      <div className="text-gray-400 space-y-2 text-sm leading-relaxed">{children}</div>
+      <div className="text-white/65 space-y-2 text-sm leading-relaxed">{children}</div>
     </div>
   )
 }

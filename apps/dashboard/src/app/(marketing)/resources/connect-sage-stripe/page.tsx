@@ -48,29 +48,29 @@ export default function ConnectSageStripePage() {
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect Stripe to Sage</span>
+          <span className="text-white/65">Connect Stripe to Sage</span>
         </div>
 
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">6 min read · Pro+ plan</span>
+            <span className="text-xs text-white/60">6 min read · Pro+ plan</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Connect Stripe to Sage CRM
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Once Stripe is connected to Sage, you can create and send payment invoices directly from any deal record — without leaving your CRM. Stripe handles delivery, payment collection, and receipts, while the status syncs back to your deal&apos;s activity timeline.
           </p>
         </div>
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">What you&apos;ll need</h2>
@@ -142,15 +142,15 @@ export default function ConnectSageStripePage() {
             <div className="space-y-5">
               <div>
                 <p className="font-semibold text-white">Is my Stripe Secret Key stored securely?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes. All integration credentials are stored encrypted in your workspace database. They are never logged or exposed in the dashboard UI after saving.</p>
+                <p className="text-sm text-white/65 mt-1">Yes. All integration credentials are stored encrypted in your workspace database. They are never logged or exposed in the dashboard UI after saving.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">What currency does Sage use for invoices?</p>
-                <p className="text-sm text-gray-400 mt-1">Sage uses the currency set on the deal (USD by default). You can change the deal currency from the deal edit form before generating an invoice.</p>
+                <p className="text-sm text-white/65 mt-1">Sage uses the currency set on the deal (USD by default). You can change the deal currency from the deal edit form before generating an invoice.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">What Stripe plan do I need?</p>
-                <p className="text-sm text-gray-400 mt-1">The Stripe Invoicing API is available on all Stripe plans. Stripe charges a small fee per paid invoice — check stripe.com/pricing for current rates.</p>
+                <p className="text-sm text-white/65 mt-1">The Stripe Invoicing API is available on all Stripe plans. Stripe charges a small fee per paid invoice — check stripe.com/pricing for current rates.</p>
               </div>
             </div>
           </section>
@@ -158,7 +158,7 @@ export default function ConnectSageStripePage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">💳</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to connect Stripe?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Head to Sage Integrations and paste your Stripe key in under a minute.
             </p>
             <Link

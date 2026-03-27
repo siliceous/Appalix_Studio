@@ -21,8 +21,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing token or platform' }, { status: 400 })
   }
 
-  const appId     = process.env.META_APP_ID     || process.env.FACEBOOK_APP_ID     || ''
-  const appSecret = process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || ''
+  const isMessenger = platform === 'facebook_messenger'
+  const appId     = (isMessenger ? process.env.MESSENGER_APP_ID     : undefined) || process.env.META_APP_ID     || process.env.FACEBOOK_APP_ID     || ''
+  const appSecret = (isMessenger ? process.env.MESSENGER_APP_SECRET : undefined) || process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || ''
 
   // ── Auth check ────────────────────────────────────────────────────────────
   const supabase = await createClient()

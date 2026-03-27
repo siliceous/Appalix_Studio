@@ -260,20 +260,12 @@ export default function TestLandingPage() {
           </FadeUp>
 
           <FadeUp delay={0.1}>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.25] mb-4 text-white max-w-4xl mx-auto">
-              The CRM era is over. Welcome to ACM — Agentic Customer Management. Welcome to Appalix.
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.35] mb-8 text-white max-w-4xl mx-auto">
+              <span className="block">CRM is Dead... Introducing ACM.</span>
+              <span className="block text-[#15A4AE]">Agentic Customer Management.</span>
+              <span className="block text-3xl sm:text-4xl lg:text-5xl text-white/75 font-semibold mt-2">Chatbots · AI email analyzer · Lead forms · Support tickets · CRM.</span>
+              <span className="block text-3xl sm:text-4xl lg:text-5xl mt-1">One platform. All built in.</span>
             </h1>
-            <h2
-              className="text-2xl sm:text-3xl font-semibold text-white mb-8 inline-flex items-center gap-2 justify-center flex-wrap"
-              style={{
-                textShadow: '0 0 20px #15A4AE, 0 0 50px #15A4AE80',
-                WebkitTextStroke: '0.5px #15A4AE',
-              }}
-            >
-              <span className="text-yellow-300" style={{ textShadow: 'none', WebkitTextStroke: '0' }}>⚡</span>
-              Introducing Appalix Sage.
-              <span className="text-gray-300" style={{ textShadow: 'none', WebkitTextStroke: '0' }}>🔗</span>
-            </h2>
           </FadeUp>
 
           <FadeUp delay={0.2}>
@@ -286,13 +278,13 @@ export default function TestLandingPage() {
                 'integrates with Google Ads & Facebook',
                 'creates tickets automatically when needed',
               ].map(point => (
-                <span key={point} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#15A4AE]/30 bg-[#15A4AE]/8 text-gray-300 capitalize text-base">
+                <span key={point} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#15A4AE]/30 bg-[#15A4AE]/8 text-white/80 capitalize text-base">
                   <span className="w-2 h-2 rounded-full bg-[#15A4AE] shrink-0" />
                   {point}
                 </span>
               ))}
             </div>
-            <h2 className="text-xl sm:text-2xl text-gray-300 leading-relaxed max-w-3xl mx-auto mb-4">
+            <h2 className="text-xl sm:text-2xl text-white/80 leading-relaxed max-w-3xl mx-auto mb-4">
               Agentic Customer Management goes beyond traditional CRM by using AI agents to analyse conversations, create opportunities, trigger follow-ups, and move customer relationships forward automatically.
             </h2>
           </FadeUp>
@@ -303,9 +295,9 @@ export default function TestLandingPage() {
                 href="/login"
                 className="px-10 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white text-lg font-medium rounded-xl transition-colors"
               >
-                Start a 7 Day Free Trial
+                Start a 14-Day Free Trial
               </Link>
-              <BookDemoButton label="Book a demo →" className="px-10 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white text-lg font-medium rounded-xl transition-colors" />
+              <BookDemoButton label="Book a demo →" className="px-10 py-3.5 border border-white/10 hover:border-white/20 text-white/80 hover:text-white text-lg font-medium rounded-xl transition-colors" />
             </div>
           </FadeUp>
         </div>
@@ -321,7 +313,7 @@ export default function TestLandingPage() {
               Are leads scattered over many apps?<br />
               Do deals slip away through gaps?
             </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto text-2xl leading-relaxed">
+            <p className="text-white/65 max-w-2xl mx-auto text-2xl leading-relaxed">
               An inbox nobody checks on time. A bot that can&apos;t answer real questions. A CRM your team stopped updating. Sound familiar?
             </p>
           </ScrollReveal>
@@ -340,7 +332,7 @@ export default function TestLandingPage() {
                 <div className="h-full p-6 rounded-2xl bg-white/[0.03] border border-white/8 hover:border-[#15A4AE]/30 hover:bg-white/[0.05] transition-all duration-300">
                   <span className="text-3xl block mb-4">{item.icon}</span>
                   <h4 className="text-base font-semibold text-white mb-2 leading-snug">{item.title}</h4>
-                  <p className="text-sm text-gray-400 leading-relaxed">{item.desc}</p>
+                  <p className="text-sm text-white/65 leading-relaxed">{item.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -352,7 +344,7 @@ export default function TestLandingPage() {
               Chatbots · AI email analyzer · lead forms · support tickets · CRM.<br className="hidden sm:block" />
               <span className="text-white">One platform. All built in.</span>
             </p>
-            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed mt-6">
+            <p className="text-white/65 max-w-2xl mx-auto text-xl leading-relaxed mt-6">
               One dashboard. Manage every mail, bots, forms and tickets seamlessly.
             </p>
           </ScrollReveal>
@@ -389,7 +381,7 @@ export default function TestLandingPage() {
                   ['Availability',        'Business hours only',                                  '24 / 7 AI · never sleeps'],
                 ].map(([feature, before, after], i) => (
                   <tr key={feature} className={`border-b border-white/5 ${i % 2 !== 0 ? 'bg-white/[0.02]' : ''}`}>
-                    <td className="py-3.5 pr-4 text-gray-300 font-semibold">{feature}</td>
+                    <td className="py-3.5 pr-4 text-white/80 font-semibold">{feature}</td>
                     <td className="py-3.5 px-4 text-center text-amber-200">{before}</td>
                     <td className="py-3.5 px-4 text-center text-white font-medium bg-[#15A4AE]/[0.04]">
                       <span className="inline-flex items-center gap-1.5">
@@ -415,7 +407,7 @@ export default function TestLandingPage() {
             <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">
               Your command centre for AI-powered growth
             </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed">
+            <p className="text-white/65 max-w-2xl mx-auto text-xl leading-relaxed">
               Every bot, lead, and conversation in one place. Real-time visibility across all your emails, bots, forms, and tickets — with AI that scores and surfaces what matters before you have to ask.
             </p>
           </ScrollReveal>
@@ -442,7 +434,7 @@ export default function TestLandingPage() {
                     </div>
                     <span className="text-sm text-[#15A4AE] font-semibold uppercase tracking-widest mb-2">{item.tag}</span>
                     <h3 className="text-xl font-semibold text-white mb-3 leading-snug">{item.title}</h3>
-                    <p className="text-lg text-gray-400 leading-relaxed flex-1">{item.desc}</p>
+                    <p className="text-lg text-white/65 leading-relaxed flex-1">{item.desc}</p>
                   </div>
                 </ScrollReveal>
               ))}
@@ -460,7 +452,7 @@ export default function TestLandingPage() {
               ].map(stat => (
                 <div key={stat.label}>
                   <p className="text-3xl font-bold text-white mb-1">{stat.value}</p>
-                  <p className="text-sm text-gray-400">{stat.label}</p>
+                  <p className="text-sm text-white/65">{stat.label}</p>
                   <p className="text-xs text-gray-600">{stat.sub}</p>
                 </div>
               ))}
@@ -474,7 +466,7 @@ export default function TestLandingPage() {
               <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mb-5">
                 One dashboard.<br />Manage emails, bots, forms and tickets seamlessly.
               </h2>
-              <p className="text-gray-400 text-xl leading-relaxed">
+              <p className="text-white/65 text-xl leading-relaxed">
                 Whether you&apos;re running one bot or twenty, the Appalix dashboard gives you a single source of truth. Real-time metrics, AI priority scoring, and one-click access to every conversation.
               </p>
               <ul className="space-y-3">
@@ -488,15 +480,15 @@ export default function TestLandingPage() {
                     <svg className="w-4 h-4 text-[#15A4AE] shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="text-lg text-gray-300">{item}</span>
+                    <span className="text-lg text-white/80">{item}</span>
                   </li>
                 ))}
               </ul>
               <div className="flex flex-col sm:flex-row gap-4 pt-2">
                 <Link href="/login" className="px-10 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white text-lg font-medium rounded-xl transition-colors">
-                  Start a 7 Day Free Trial
+                  Start a 14-Day Free Trial
                 </Link>
-                <BookDemoButton label="Book a demo →" className="px-10 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white text-lg font-medium rounded-xl transition-colors" />
+                <BookDemoButton label="Book a demo →" className="px-10 py-3.5 border border-white/10 hover:border-white/20 text-white/80 hover:text-white text-lg font-medium rounded-xl transition-colors" />
               </div>
             </ScrollReveal>
 
@@ -513,7 +505,7 @@ export default function TestLandingPage() {
                   <p className="text-4xl font-black text-white/10 group-hover:text-[#15A4AE]/20 transition-colors leading-none select-none shrink-0">{s.step}</p>
                   <div>
                     <h3 className="text-xl font-semibold text-white mb-2">{s.title}</h3>
-                    <p className="text-lg text-gray-400 leading-relaxed">{s.desc}</p>
+                    <p className="text-lg text-white/65 leading-relaxed">{s.desc}</p>
                   </div>
                 </div>
               ))}
@@ -535,12 +527,12 @@ export default function TestLandingPage() {
               Deploy AI bots to<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#61c2ad] to-[#15A4AE]">every channel in minutes</span>
             </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed mb-8">
+            <p className="text-white/65 max-w-2xl mx-auto text-xl leading-relaxed mb-8">
               Build, train, and deploy AI chatbots that capture leads, answer questions, and resolve support queries — 24/7 across web, WhatsApp, FB messenger, Slack and more.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <a href="/login" className="px-7 py-3.5 bg-[#15A4AE] hover:bg-[#0e8f99] text-white font-medium rounded-xl transition-colors text-sm">Start a 7 Day Free Trial</a>
-              <a href="/bot" className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm">See it in action →</a>
+              <a href="/login" className="px-7 py-3.5 bg-[#15A4AE] hover:bg-[#0e8f99] text-white font-medium rounded-xl transition-colors text-sm">Start a 14-Day Free Trial</a>
+              <a href="/bot" className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-medium rounded-xl transition-colors text-sm">See it in action →</a>
             </div>
           </ScrollReveal>
 
@@ -555,7 +547,7 @@ export default function TestLandingPage() {
           <ScrollReveal className="text-center mt-20 mb-12">
             <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">Bot Intelligence</p>
             <h3 className="text-3xl sm:text-4xl font-bold leading-[1.5] max-w-3xl mx-auto mb-4">Your 24/7 AI sales &amp; support team</h3>
-            <p className="text-gray-400 max-w-xl mx-auto text-xl leading-relaxed">Deploy once, run everywhere. Your bots handle the conversations while you focus on closing deals.</p>
+            <p className="text-white/65 max-w-xl mx-auto text-xl leading-relaxed">Deploy once, run everywhere. Your bots handle the conversations while you focus on closing deals.</p>
           </ScrollReveal>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
             {[
@@ -569,7 +561,7 @@ export default function TestLandingPage() {
                   <span className="text-xs text-[#15A4AE] font-semibold uppercase tracking-widest mb-2 block">{f.tag}</span>
                   <p className="text-xl mb-1">{f.icon}</p>
                   <h4 className="text-base font-bold text-white mb-2">{f.title}</h4>
-                  <p className="text-sm text-gray-400 leading-relaxed flex-1">{f.desc}</p>
+                  <p className="text-sm text-white/65 leading-relaxed flex-1">{f.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -589,12 +581,12 @@ export default function TestLandingPage() {
               AI that reads your inbox<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#61c2ad] to-[#15A4AE]">so you don&apos;t have to</span>
             </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed mb-8">
+            <p className="text-white/65 max-w-2xl mx-auto text-xl leading-relaxed mb-8">
               Every inbound email is automatically analysed, prioritised, and turned into a lead, ticket, or reply draft — before you even open it.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <a href="/login" className="px-7 py-3.5 bg-[#15A4AE] hover:bg-[#0e8f99] text-white font-medium rounded-xl transition-colors text-sm">Get started free</a>
-              <a href="/email" className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm">See it in action →</a>
+              <a href="/email" className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-medium rounded-xl transition-colors text-sm">See it in action →</a>
             </div>
           </ScrollReveal>
           <ScrollReveal>
@@ -616,7 +608,7 @@ export default function TestLandingPage() {
               <ScrollReveal key={c.title} delay={i * 0.05} className="h-full">
                 <div className="h-full bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#15A4AE]/30 transition-colors flex flex-col">
                   <h4 className="text-base font-bold text-white mb-2">{c.title}</h4>
-                  <p className="text-sm text-gray-400 leading-relaxed flex-1">{c.desc}</p>
+                  <p className="text-sm text-white/65 leading-relaxed flex-1">{c.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -636,12 +628,12 @@ export default function TestLandingPage() {
               Every ad lead, captured<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#61c2ad] to-[#15A4AE]">and routed automatically</span>
             </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed mb-8">
+            <p className="text-white/65 max-w-2xl mx-auto text-xl leading-relaxed mb-8">
               Connect Meta Leads and Google Ads — every submission lands in your dashboard, enriched by AI and routed to the right person before you even open it.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <a href="/login" className="px-7 py-3.5 bg-[#15A4AE] hover:bg-[#0e8f99] text-white font-medium rounded-xl transition-colors text-sm">Start a 7 Day Free Trial</a>
-              <a href="/smart-forms" className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm">See it in action →</a>
+              <a href="/login" className="px-7 py-3.5 bg-[#15A4AE] hover:bg-[#0e8f99] text-white font-medium rounded-xl transition-colors text-sm">Start a 14-Day Free Trial</a>
+              <a href="/smart-forms" className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-medium rounded-xl transition-colors text-sm">See it in action →</a>
             </div>
           </ScrollReveal>
           <ScrollReveal>
@@ -666,7 +658,7 @@ export default function TestLandingPage() {
                   <span className="text-xs text-[#15A4AE] font-semibold uppercase tracking-widest mb-2 block">{f.tag}</span>
                   <p className="text-xl mb-1">{f.icon}</p>
                   <h4 className="text-base font-bold text-white mb-2">{f.title}</h4>
-                  <p className="text-sm text-gray-400 leading-relaxed flex-1">{f.desc}</p>
+                  <p className="text-sm text-white/65 leading-relaxed flex-1">{f.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -686,12 +678,12 @@ export default function TestLandingPage() {
               Every issue tracked,<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#61c2ad] to-[#15A4AE]">nothing falls through</span>
             </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed mb-8">
+            <p className="text-white/65 max-w-2xl mx-auto text-xl leading-relaxed mb-8">
               Prioritise, assign, and resolve customer tickets from every channel — all in one focused list.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <a href="/login" className="px-7 py-3.5 bg-[#15A4AE] hover:bg-[#0e8f99] text-white font-medium rounded-xl transition-colors text-sm">Get started free</a>
-              <a href="/tickets" className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors text-sm">See it in action →</a>
+              <a href="/tickets" className="px-7 py-3.5 border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-medium rounded-xl transition-colors text-sm">See it in action →</a>
             </div>
           </ScrollReveal>
           <ScrollReveal>
@@ -713,7 +705,7 @@ export default function TestLandingPage() {
               <ScrollReveal key={c.title} delay={i * 0.05} className="h-full">
                 <div className="h-full bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#15A4AE]/30 transition-colors flex flex-col">
                   <h4 className="text-base font-bold text-white mb-2">{c.title}</h4>
-                  <p className="text-sm text-gray-400 leading-relaxed flex-1">{c.desc}</p>
+                  <p className="text-sm text-white/65 leading-relaxed flex-1">{c.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -727,7 +719,7 @@ export default function TestLandingPage() {
           <ScrollReveal className="text-center mb-10">
             <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-4">Every source, one Dashboard</p>
             <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">Stop checking everywhere for leads</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed">
+            <p className="text-white/65 max-w-2xl mx-auto text-xl leading-relaxed">
               Whether a lead came from a paid ad, a chatbot conversation, or a cold email reply — Appalix sees it, scores it, and acts on it.
             </p>
           </ScrollReveal>
@@ -740,7 +732,7 @@ export default function TestLandingPage() {
                   </div>
                   <span className="text-sm text-[#15A4AE] font-semibold uppercase tracking-widest mb-2">{s.tag}</span>
                   <h3 className="text-xl font-semibold text-white mb-3 leading-snug">{s.title}</h3>
-                  <p className="text-lg text-gray-400 leading-relaxed flex-1">{s.desc}</p>
+                  <p className="text-lg text-white/65 leading-relaxed flex-1">{s.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -756,7 +748,7 @@ export default function TestLandingPage() {
             <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">
               One platform captures, qualifies, and routes every lead
             </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto text-xl leading-relaxed">
+            <p className="text-white/65 max-w-2xl mx-auto text-xl leading-relaxed">
               Every enquiry — email, form, chatbot, or paid ad — is automatically captured, scored, and dropped into your pipeline. No manual tagging. No missed follow-ups. No leads lost in inboxes.
             </p>
           </ScrollReveal>
@@ -776,7 +768,7 @@ export default function TestLandingPage() {
                   )}
                   <p className="text-5xl font-black text-white/10 group-hover:text-[#15A4AE]/20 transition-colors mb-5 leading-none select-none">{s.step}</p>
                   <h3 className="text-xl font-semibold text-white mb-3">{s.title}</h3>
-                  <p className="text-lg text-gray-400 leading-relaxed">{s.desc}</p>
+                  <p className="text-lg text-white/65 leading-relaxed">{s.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -798,7 +790,7 @@ export default function TestLandingPage() {
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-white">Appalix Sage</p>
-                  <p className="text-[10px] text-gray-500">3 new leads since yesterday</p>
+                  <p className="text-[10px] text-white/60">3 new leads since yesterday</p>
                 </div>
                 <div className="ml-auto flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-[#15A4AE] animate-pulse" />
@@ -816,11 +808,11 @@ export default function TestLandingPage() {
                     <div className={`w-2 h-2 rounded-full shrink-0 ${lead.dot}`} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-white">{lead.name}</p>
-                      <p className="text-[11px] text-gray-500">{lead.source}</p>
+                      <p className="text-[11px] text-white/60">{lead.source}</p>
                     </div>
                     <div className="text-right shrink-0">
                       <p className={`text-xs font-semibold ${lead.color}`}>{lead.score}%</p>
-                      <p className="text-[10px] text-gray-500">{lead.tag}</p>
+                      <p className="text-[10px] text-white/60">{lead.tag}</p>
                     </div>
                   </div>
                 ))}
@@ -845,7 +837,7 @@ export default function TestLandingPage() {
             <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mb-5">
               Your AI that never misses a lead — and always knows what to do next
             </h2>
-            <p className="text-gray-400 leading-relaxed">
+            <p className="text-white/65 leading-relaxed">
               Sage is Appalix&apos;s built-in AI assistant. It reads your emails, scores your form leads,
               tracks your pipeline, and tells your team exactly what to do next — all from inside your dashboard.
             </p>
@@ -861,7 +853,7 @@ export default function TestLandingPage() {
                   <svg className="w-4 h-4 text-[#15A4AE] shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-sm text-gray-300">{item}</span>
+                  <span className="text-sm text-white/80">{item}</span>
                 </li>
               ))}
             </ul>
@@ -885,7 +877,7 @@ export default function TestLandingPage() {
               ].map(stat => (
                 <div key={stat.label}>
                   <p className="text-3xl font-bold text-white mb-1">{stat.value}</p>
-                  <p className="text-xs text-gray-500">{stat.label}</p>
+                  <p className="text-xs text-white/60">{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -899,14 +891,14 @@ export default function TestLandingPage() {
           <ScrollReveal>
             <p className="text-xs text-[#15A4AE] uppercase tracking-widest font-semibold mb-3">Integrations</p>
             <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">Connects with the tools your leads already come from</h2>
-            <p className="text-gray-400 mb-10 text-sm max-w-lg mx-auto">
+            <p className="text-white/65 mb-10 text-sm max-w-lg mx-auto">
               Native connections to every major ad platform, email provider, CRM, and automation tool.
             </p>
           </ScrollReveal>
           <ScrollReveal delay={0.1}>
             <div className="flex flex-wrap justify-center gap-2.5 mb-8">
               {INTEGRATIONS.map(name => (
-                <span key={name} className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:border-[#15A4AE]/30 text-sm text-gray-300 font-medium transition-colors">
+                <span key={name} className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:border-[#15A4AE]/30 text-sm text-white/80 font-medium transition-colors">
                   {name}
                 </span>
               ))}
@@ -926,7 +918,7 @@ export default function TestLandingPage() {
           <ScrollReveal className="text-center mb-4">
             <p className="text-sm text-[#15A4AE] uppercase tracking-widest font-semibold mb-3">Pricing</p>
             <h2 className="text-4xl sm:text-5xl font-bold leading-[1.5] max-w-4xl mx-auto mb-5">Simple pricing that scales with your lead volume</h2>
-            <p className="text-gray-400 mb-2 text-base">7-day free trial on all plans. No credit card required.</p>
+            <p className="text-white/65 mb-2 text-base">14-day free trial on all plans. No credit card required.</p>
           </ScrollReveal>
           <PricingCards />
         </div>
@@ -943,7 +935,7 @@ export default function TestLandingPage() {
               <ScrollReveal key={faq.q} delay={i * 0.07}>
                 <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-white/15 transition-colors">
                   <h3 className="font-semibold text-white mb-2">{faq.q}</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed">{faq.a}</p>
+                  <p className="text-sm text-white/65 leading-relaxed">{faq.a}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -963,7 +955,7 @@ export default function TestLandingPage() {
                   Let AI handle it.
                 </span>
               </h2>
-              <p className="text-gray-400 mb-8 text-sm max-w-xl mx-auto">
+              <p className="text-white/65 mb-8 text-sm max-w-xl mx-auto">
                 Join 500+ teams using Appalix to capture, qualify, and convert leads from every channel — automatically.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -971,11 +963,11 @@ export default function TestLandingPage() {
                   href="/login"
                   className="px-8 py-3.5 bg-[#1a8c76] hover:bg-[#14705d] text-white font-medium rounded-xl transition-colors"
                 >
-                  Start a 7 Day Free Trial
+                  Start a 14-Day Free Trial
                 </Link>
-                <BookDemoButton label="Book a demo →" className="px-8 py-3.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-medium rounded-xl transition-colors" />
+                <BookDemoButton label="Book a demo →" className="px-8 py-3.5 border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-medium rounded-xl transition-colors" />
               </div>
-              <p className="text-xs text-gray-500 mt-5">7-day free trial · No credit card required · Cancel anytime</p>
+              <p className="text-xs text-white/60 mt-5">14-day free trial · No credit card required · Cancel anytime</p>
             </div>
           </div>
         </ScrollReveal>

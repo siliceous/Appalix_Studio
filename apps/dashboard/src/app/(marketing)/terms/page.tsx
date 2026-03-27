@@ -17,7 +17,7 @@ export default function TermsPage() {
         <div className="mb-12">
           <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Legal</p>
           <h1 className="text-4xl font-bold text-white mb-3">Terms of Service</h1>
-          <p className="text-sm text-gray-500">Last updated: {LAST_UPDATED}</p>
+          <p className="text-sm text-white/60">Last updated: {LAST_UPDATED}</p>
           <div className="mt-4">
             <Link href="/" className="text-sm text-brand-400 hover:text-brand-300 transition-colors">
               ← Back to home
@@ -25,7 +25,7 @@ export default function TermsPage() {
           </div>
         </div>
 
-        <div className="space-y-10 text-gray-300 leading-relaxed text-sm">
+        <div className="space-y-10 text-white/80 leading-relaxed text-sm">
 
           <section>
             <p>
@@ -73,7 +73,7 @@ export default function TermsPage() {
 
           <Section title="3. Acceptable use">
             <p>You agree not to use the Service to:</p>
-            <ul className="mt-3 space-y-2 list-disc list-inside text-gray-400">
+            <ul className="mt-3 space-y-2 list-disc list-inside text-white/65">
               <li>Send unsolicited bulk email (spam) or conduct phishing campaigns</li>
               <li>Violate any applicable law or regulation</li>
               <li>Infringe the intellectual property rights of others</li>

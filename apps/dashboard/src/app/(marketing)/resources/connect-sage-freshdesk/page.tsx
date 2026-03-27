@@ -47,28 +47,28 @@ export default function ConnectSageFreshdeskPage() {
       />
       <div className="max-w-3xl mx-auto">
 
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect Freshdesk to Sage</span>
+          <span className="text-white/65">Connect Freshdesk to Sage</span>
         </div>
 
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">5 min read · Pro+ plan</span>
+            <span className="text-xs text-white/60">5 min read · Pro+ plan</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Connect Freshdesk to Sage CRM
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Bridging your CRM and support desk means your sales and support teams always have the same context. Connect Freshdesk to Sage and create tickets directly from deal records — the ticket status syncs back to the activity timeline so you can track support alongside the sales process.
           </p>
         </div>
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">What you&apos;ll need</h2>
@@ -89,7 +89,7 @@ export default function ConnectSageFreshdeskPage() {
               <li>Scroll down to the <strong className="text-white">Your API Key</strong> section on the right side of the page.</li>
               <li>Click <strong className="text-white">Copy</strong> to copy the key.</li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Tip:</strong> If you can&apos;t see the API Key section, ask your Freshdesk admin to enable API access for your account under Admin → Agents → Edit agent.
             </div>
           </section>
@@ -124,19 +124,19 @@ export default function ConnectSageFreshdeskPage() {
             <div className="space-y-5">
               <div>
                 <p className="font-semibold text-white">Which Freshdesk plan do I need?</p>
-                <p className="text-sm text-gray-400 mt-1">Freshdesk&apos;s free tier (Sprout) supports API access, so you can use this integration at no extra cost on Freshdesk&apos;s side.</p>
+                <p className="text-sm text-white/65 mt-1">Freshdesk&apos;s free tier (Sprout) supports API access, so you can use this integration at no extra cost on Freshdesk&apos;s side.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Will tickets created in Freshdesk directly (not via Sage) also appear in the timeline?</p>
-                <p className="text-sm text-gray-400 mt-1">Only tickets created through Sage are linked to deals and logged to the timeline. Tickets created independently in Freshdesk are not automatically associated with a deal.</p>
+                <p className="text-sm text-white/65 mt-1">Only tickets created through Sage are linked to deals and logged to the timeline. Tickets created independently in Freshdesk are not automatically associated with a deal.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Can I link multiple tickets to the same deal?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes — you can create as many tickets as you need from a deal. Each one is logged as a separate activity item with a direct link to the Freshdesk ticket.</p>
+                <p className="text-sm text-white/65 mt-1">Yes — you can create as many tickets as you need from a deal. Each one is logged as a separate activity item with a direct link to the Freshdesk ticket.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">How do I disconnect?</p>
-                <p className="text-sm text-gray-400 mt-1">Click <strong className="text-white">Disconnect</strong> on the Freshdesk card in Sage Integrations. Existing ticket links in timelines remain visible but no new tickets can be created until reconnected.</p>
+                <p className="text-sm text-white/65 mt-1">Click <strong className="text-white">Disconnect</strong> on the Freshdesk card in Sage Integrations. Existing ticket links in timelines remain visible but no new tickets can be created until reconnected.</p>
               </div>
             </div>
           </section>
@@ -144,7 +144,7 @@ export default function ConnectSageFreshdeskPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">🎫</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to connect Freshdesk to Sage?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Grab your Freshdesk API key, paste it into Sage Integrations, and start creating support tickets directly from your CRM deals.
             </p>
             <Link

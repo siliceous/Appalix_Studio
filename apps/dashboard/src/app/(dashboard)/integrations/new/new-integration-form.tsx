@@ -116,11 +116,15 @@ function canUsePlatform(plan: string, platform: Platform): boolean {
 export function NewIntegrationForm({
   bots,
   defaultPlatform,
+  messengerAppId,
+  messengerConfigId,
   metaAppId,
   plan = 'individual',
 }: {
   bots: { id: string; name: string }[]
   defaultPlatform: Platform
+  messengerAppId?: string
+  messengerConfigId?: string
   metaAppId?: string
   plan?: 'individual' | 'pro' | 'team' | 'enterprise'
 }) {
@@ -303,7 +307,8 @@ export function NewIntegrationForm({
                 platform={platform}
                 name={integrationName}
                 botId={selectedBotId}
-                appId={metaAppId}
+                appId={platform === 'facebook_messenger' ? (process.env.NEXT_PUBLIC_MESSENGER_APP_ID || messengerAppId || metaAppId || '') : (metaAppId || '')}
+                configId={platform === 'facebook_messenger' ? messengerConfigId : undefined}
               />
             ) : (
               <p className="text-xs text-amber-500">

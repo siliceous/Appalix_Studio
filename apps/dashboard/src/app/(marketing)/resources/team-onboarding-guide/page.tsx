@@ -42,21 +42,21 @@ export default function TeamOnboardingGuidePage() {
       />
       <div className="max-w-3xl mx-auto">
 
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Team Onboarding Guide</span>
+          <span className="text-white/65">Team Onboarding Guide</span>
         </div>
 
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-[#15A4AE]/15 text-[#15A4AE] border border-[#15A4AE]/20 font-medium">Guide</span>
-            <span className="text-xs text-gray-500">15 min read · All plans</span>
+            <span className="text-xs text-white/60">15 min read · All plans</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Team Onboarding Guide
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             This guide takes you from a fresh workspace to a fully operational team in under 15 minutes.
             Follow the steps in order and your colleagues will have the right access, the right tools,
             and their first leads ready to work — before your first all-hands call.
@@ -67,8 +67,8 @@ export default function TeamOnboardingGuidePage() {
 
         {/* Progress checklist */}
         <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 mb-10">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">What you&apos;ll complete</p>
-          <div className="space-y-2 text-sm text-gray-300">
+          <p className="text-xs font-semibold text-white/65 uppercase tracking-wider mb-4">What you&apos;ll complete</p>
+          <div className="space-y-2 text-sm text-white/80">
             {[
               'Step 1 — Set up your business profile',
               'Step 2 — Invite team members with the right roles',
@@ -86,7 +86,7 @@ export default function TeamOnboardingGuidePage() {
           </div>
         </div>
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-12 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-12 text-white/80">
 
           {/* Step 1 */}
           <section>
@@ -106,7 +106,7 @@ export default function TeamOnboardingGuidePage() {
               <li>Describe your <strong className="text-white">product or service</strong> — what it does, the key value props, and what makes it different.</li>
               <li>Click <strong className="text-white">Save profile</strong>.</li>
             </ol>
-            <div className="mt-4 rounded-xl border border-brand-600/20 bg-brand-600/5 p-4 text-sm text-gray-300">
+            <div className="mt-4 rounded-xl border border-brand-600/20 bg-brand-600/5 p-4 text-sm text-white/80">
               <strong className="text-white">Tip:</strong> Be specific about target customers. &ldquo;B2B SaaS companies with 10–50 employees in the US looking to automate customer support&rdquo; gives the AI much more to work with than &ldquo;small businesses&rdquo;. The more context you provide here, the sharper your bot&apos;s lead qualification becomes.
             </div>
           </section>
@@ -133,14 +133,14 @@ export default function TeamOnboardingGuidePage() {
                 },
                 {
                   role: 'Member',
-                  color: 'border-white/10 bg-white/[0.03] text-gray-300',
+                  color: 'border-white/10 bg-white/[0.03] text-white/80',
                   who: 'Sales reps, support agents, account managers',
                   can: 'Full Sage CRM, pipelines, tickets, conversations, forms, analytics',
                   cannot: 'Configure bots or integrations, invite colleagues',
                 },
                 {
                   role: 'Viewer',
-                  color: 'border-white/10 bg-white/[0.03] text-gray-500',
+                  color: 'border-white/10 bg-white/[0.03] text-white/60',
                   who: 'Executives, external stakeholders, consultants',
                   can: 'View all data across the workspace — contacts, deals, tickets, analytics',
                   cannot: 'Create, edit, or delete anything',
@@ -149,23 +149,23 @@ export default function TeamOnboardingGuidePage() {
                 <div key={role} className={`rounded-xl border p-5 ${color}`}>
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-xs font-bold">{role}</span>
-                    <span className="text-xs text-gray-500">— {who}</span>
+                    <span className="text-xs text-white/60">— {who}</span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div>
-                      <p className="text-gray-500 mb-1 uppercase tracking-wider font-semibold text-[10px]">Can do</p>
-                      <p className="text-gray-300 leading-relaxed">{can}</p>
+                      <p className="text-white/60 mb-1 uppercase tracking-wider font-semibold text-[10px]">Can do</p>
+                      <p className="text-white/80 leading-relaxed">{can}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500 mb-1 uppercase tracking-wider font-semibold text-[10px]">Cannot do</p>
-                      <p className="text-gray-400 leading-relaxed">{cannot}</p>
+                      <p className="text-white/60 mb-1 uppercase tracking-wider font-semibold text-[10px]">Cannot do</p>
+                      <p className="text-white/65 leading-relaxed">{cannot}</p>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-white/65">
               Each invited person receives an email with a magic link. They must click it to join — their
               seat is only consumed once they accept. You can see pending invitations in the Team members
               section with an &ldquo;Invitation pending&rdquo; badge.
@@ -186,23 +186,23 @@ export default function TeamOnboardingGuidePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
                 <p className="text-sm font-semibold text-white mb-2">Manual assignment</p>
-                <p className="text-sm text-gray-400 mb-3">
+                <p className="text-sm text-white/65 mb-3">
                   New contacts arrive unassigned. Team leads review them and assign to reps as needed.
                 </p>
-                <p className="text-xs text-gray-500">Best for: small teams, territory-based sales, high-value named accounts.</p>
+                <p className="text-xs text-white/60">Best for: small teams, territory-based sales, high-value named accounts.</p>
               </div>
               <div className="rounded-xl border border-brand-600/20 bg-brand-600/5 p-5">
                 <p className="text-sm font-semibold text-white mb-2">Round-robin (recommended)</p>
-                <p className="text-sm text-gray-400 mb-3">
+                <p className="text-sm text-white/65 mb-3">
                   New contacts are automatically assigned to the next rep in rotation — no manual step.
                 </p>
-                <p className="text-xs text-gray-500">Best for: high-volume inbound, equal-share teams, reducing admin overhead.</p>
+                <p className="text-xs text-white/60">Best for: high-volume inbound, equal-share teams, reducing admin overhead.</p>
               </div>
             </div>
 
             <div className="mt-4 rounded-xl border border-brand-600/20 bg-brand-600/5 p-4 text-sm">
               <strong className="text-white">To enable round-robin:</strong>
-              <span className="text-gray-300"> Settings → Lead Distribution → flip the toggle to On. Done. Every future inbound lead is assigned automatically.</span>
+              <span className="text-white/80"> Settings → Lead Distribution → flip the toggle to On. Done. Every future inbound lead is assigned automatically.</span>
             </div>
           </section>
 
@@ -223,7 +223,7 @@ export default function TeamOnboardingGuidePage() {
               <li>Choose a template — <em>Sales</em>, <em>Agency</em>, <em>Consulting</em>, <em>Support</em>, or <em>Onboarding</em> — or start blank.</li>
               <li>Click <strong className="text-white">Create</strong>. The pipeline opens with its stages ready to go.</li>
             </ol>
-            <p className="mt-3 text-sm text-gray-400">
+            <p className="mt-3 text-sm text-white/65">
               You can customise stages from inside the board using <strong className="text-white">Manage Stages</strong>. Add, rename, reorder, or delete stages to match your exact process.
             </p>
           </section>
@@ -241,14 +241,14 @@ export default function TeamOnboardingGuidePage() {
             <div className="space-y-3">
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
                 <p className="text-sm font-semibold text-white mb-1">A — Manual entry</p>
-                <p className="text-sm text-gray-400">
-                  Go to Sage → Contacts → <strong className="text-gray-200">+ New Contact</strong>. Fill in the details and create.
+                <p className="text-sm text-white/65">
+                  Go to Sage → Contacts → <strong className="text-white/90">+ New Contact</strong>. Fill in the details and create.
                   Good for a handful of named accounts you want in the system right away.
                 </p>
               </div>
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
                 <p className="text-sm font-semibold text-white mb-1">B — Inbound from the bot</p>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-white/65">
                   Once your AI bot is live, every visitor who shares their contact details in a chat
                   conversation is automatically added as a Sage contact. Enable round-robin in step 3
                   and they&apos;ll be assigned to a rep instantly.
@@ -256,8 +256,8 @@ export default function TeamOnboardingGuidePage() {
               </div>
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
                 <p className="text-sm font-semibold text-white mb-1">C — Lead ads &amp; form submissions</p>
-                <p className="text-sm text-gray-400">
-                  Connect Meta Lead Ads or Google Ads Lead Forms in <strong className="text-gray-200">Forms → Sources</strong>.
+                <p className="text-sm text-white/65">
+                  Connect Meta Lead Ads or Google Ads Lead Forms in <strong className="text-white/90">Forms → Sources</strong>.
                   Every submission creates a scored Sage contact automatically. Email triage from connected
                   mailboxes works the same way.
                 </p>
@@ -282,7 +282,7 @@ export default function TeamOnboardingGuidePage() {
               <li>In the Settings section, pick a team member from the <strong className="text-white">Assigned to</strong> dropdown.</li>
               <li>Save. Repeat until the Unassigned view is empty.</li>
             </ol>
-            <div className="mt-4 rounded-xl border border-brand-600/20 bg-brand-600/5 p-4 text-sm text-gray-300">
+            <div className="mt-4 rounded-xl border border-brand-600/20 bg-brand-600/5 p-4 text-sm text-white/80">
               <strong className="text-white">Pro tip:</strong> Once contacts are assigned, each rep can filter the table to <em>their own name</em> to see only their leads. They&apos;ll see exactly the contacts they need to work — no noise from other reps&apos; pipelines.
             </div>
           </section>
@@ -301,30 +301,30 @@ export default function TeamOnboardingGuidePage() {
             <div className="space-y-4">
               <div className="rounded-xl border border-brand-600/20 bg-brand-600/5 p-5">
                 <p className="text-sm font-semibold text-brand-300 mb-3">For Admins — your first 10 minutes</p>
-                <ul className="list-disc pl-5 space-y-2 text-sm text-gray-400">
-                  <li><strong className="text-gray-200">Settings → Bots:</strong> Review bot configurations, knowledge base sources, and response style.</li>
-                  <li><strong className="text-gray-200">Settings → Integrations:</strong> Connect your email provider, CRM webhooks, and any Zapier automations.</li>
-                  <li><strong className="text-gray-200">Settings → Automation:</strong> Configure email sending (Resend) and approval routing.</li>
-                  <li><strong className="text-gray-200">Sage → Pipelines:</strong> Check the pipeline stages and customise them to match your sales process.</li>
+                <ul className="list-disc pl-5 space-y-2 text-sm text-white/65">
+                  <li><strong className="text-white/90">Settings → Bots:</strong> Review bot configurations, knowledge base sources, and response style.</li>
+                  <li><strong className="text-white/90">Settings → Integrations:</strong> Connect your email provider, CRM webhooks, and any Zapier automations.</li>
+                  <li><strong className="text-white/90">Settings → Automation:</strong> Configure email sending (Resend) and approval routing.</li>
+                  <li><strong className="text-white/90">Sage → Pipelines:</strong> Check the pipeline stages and customise them to match your sales process.</li>
                 </ul>
               </div>
 
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
                 <p className="text-sm font-semibold text-white mb-3">For Members (sales reps) — your first 10 minutes</p>
-                <ul className="list-disc pl-5 space-y-2 text-sm text-gray-400">
-                  <li><strong className="text-gray-200">Sage → Contacts → Filter → Assigned To → [your name]:</strong> See all leads assigned to you.</li>
-                  <li><strong className="text-gray-200">Sage → Pipelines → [pipeline name]:</strong> Open the board and review deals in your stages.</li>
-                  <li><strong className="text-gray-200">Dashboard → Conversations:</strong> Check any open chat conversations that need a response or handoff.</li>
-                  <li><strong className="text-gray-200">Dashboard → Tickets:</strong> Review any support tickets assigned to your queue.</li>
+                <ul className="list-disc pl-5 space-y-2 text-sm text-white/65">
+                  <li><strong className="text-white/90">Sage → Contacts → Filter → Assigned To → [your name]:</strong> See all leads assigned to you.</li>
+                  <li><strong className="text-white/90">Sage → Pipelines → [pipeline name]:</strong> Open the board and review deals in your stages.</li>
+                  <li><strong className="text-white/90">Dashboard → Conversations:</strong> Check any open chat conversations that need a response or handoff.</li>
+                  <li><strong className="text-white/90">Dashboard → Tickets:</strong> Review any support tickets assigned to your queue.</li>
                 </ul>
               </div>
 
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
-                <p className="text-sm font-semibold text-gray-400 mb-3">For Viewers — your first 5 minutes</p>
-                <ul className="list-disc pl-5 space-y-2 text-sm text-gray-400">
-                  <li><strong className="text-gray-200">Dashboard → Overview:</strong> High-level metrics — message volume, lead counts, conversion trends.</li>
-                  <li><strong className="text-gray-200">Analytics:</strong> Detailed charts across conversations, deals, and response performance.</li>
-                  <li><strong className="text-gray-200">Sage → Pipelines:</strong> Read-only view of active deals across all stages.</li>
+                <p className="text-sm font-semibold text-white/65 mb-3">For Viewers — your first 5 minutes</p>
+                <ul className="list-disc pl-5 space-y-2 text-sm text-white/65">
+                  <li><strong className="text-white/90">Dashboard → Overview:</strong> High-level metrics — message volume, lead counts, conversion trends.</li>
+                  <li><strong className="text-white/90">Analytics:</strong> Detailed charts across conversations, deals, and response performance.</li>
+                  <li><strong className="text-white/90">Sage → Pipelines:</strong> Read-only view of active deals across all stages.</li>
                 </ul>
               </div>
             </div>
@@ -341,8 +341,8 @@ export default function TeamOnboardingGuidePage() {
                     <th className="text-left py-3 pr-4 font-semibold text-white">Feature</th>
                     <th className="py-3 pr-4 text-center font-semibold text-amber-400">Owner</th>
                     <th className="py-3 pr-4 text-center font-semibold text-brand-400">Admin</th>
-                    <th className="py-3 pr-4 text-center font-semibold text-gray-300">Member</th>
-                    <th className="py-3 text-center font-semibold text-gray-500">Viewer</th>
+                    <th className="py-3 pr-4 text-center font-semibold text-white/80">Member</th>
+                    <th className="py-3 text-center font-semibold text-white/60">Viewer</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.06] text-sm">
@@ -360,7 +360,7 @@ export default function TeamOnboardingGuidePage() {
                     ['Delete workspace', '✓', '—', '—', '—'],
                   ].map(([feature, ...perms]) => (
                     <tr key={feature}>
-                      <td className="py-2.5 pr-4 text-gray-300">{feature}</td>
+                      <td className="py-2.5 pr-4 text-white/80">{feature}</td>
                       {perms.map((p, i) => (
                         <td key={i} className={`py-2.5 pr-4 text-center font-medium ${
                           p === '✓' ? 'text-green-400' :
@@ -403,7 +403,7 @@ export default function TeamOnboardingGuidePage() {
               ].map(({ q, a }) => (
                 <div key={q} className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
                   <p className="text-sm font-semibold text-white mb-2">{q}</p>
-                  <p className="text-sm text-gray-400">{a}</p>
+                  <p className="text-sm text-white/65">{a}</p>
                 </div>
               ))}
             </div>
@@ -412,7 +412,7 @@ export default function TeamOnboardingGuidePage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">🚀</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to invite your team?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Head to Settings → Team members and send your first invitation. The whole process takes
               under two minutes per person.
             </p>
@@ -444,7 +444,7 @@ export default function TeamOnboardingGuidePage() {
               ].map(({ href, title, desc }) => (
                 <Link key={href} href={href} className="rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] p-4 transition-colors group">
                   <p className="text-sm font-semibold text-white group-hover:text-brand-300 transition-colors mb-1">{title}</p>
-                  <p className="text-xs text-gray-500">{desc}</p>
+                  <p className="text-xs text-white/60">{desc}</p>
                 </Link>
               ))}
             </div>

@@ -49,28 +49,28 @@ export default function ConnectGoogleChatPage() {
       />
       <div className="max-w-3xl mx-auto">
 
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect Google Chat</span>
+          <span className="text-white/65">Connect Google Chat</span>
         </div>
 
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">9 min read · Core plan and above</span>
+            <span className="text-xs text-white/60">9 min read · Core plan and above</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             How to Connect Appalix to Google Chat
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Deploy your Appalix AI bot as a Google Chat app that answers questions in Spaces and direct messages. Ideal for internal teams on Google Workspace — train it on your internal docs and it becomes your team&apos;s always-available knowledge assistant.
           </p>
         </div>
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">What you&apos;ll need</h2>
@@ -142,7 +142,7 @@ export default function ConnectGoogleChatPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">💬</p>
             <h3 className="text-lg font-semibold text-white mb-2">Bring Appalix into Google Chat</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Create a Google Chat integration in Appalix and configure your Google Chat app to point at Appalix. Your AI assistant will be live in your workspace in minutes.
             </p>
             <Link

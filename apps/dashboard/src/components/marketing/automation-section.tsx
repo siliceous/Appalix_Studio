@@ -186,7 +186,7 @@ export function AutomationSection() {
               <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
                 Give your highest-paid people<br className="hidden sm:block" /> back their most valuable hours
               </h2>
-              <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-2xl">
+              <p className="text-white/65 text-base leading-relaxed mb-8 max-w-2xl">
                 AI drafts proposals, generates reports, processes documents, summarises meetings, routes approvals, and extracts data from forms, emails, and PDFs — eliminating the admin that drains your senior team.
               </p>
             </motion.div>
@@ -201,11 +201,11 @@ export function AutomationSection() {
               {METRICS.map((m) => (
                 <div key={m.label} className="text-center sm:text-left">
                   <p className="text-2xl font-bold text-white">{m.value}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{m.label}</p>
+                  <p className="text-xs text-white/60 mt-0.5">{m.label}</p>
                 </div>
               ))}
               <div className="hidden sm:block w-px self-stretch bg-white/10" />
-              <p className="text-xs text-gray-400 leading-relaxed flex-1 min-w-[180px]">
+              <p className="text-xs text-white/65 leading-relaxed flex-1 min-w-[180px]">
                 <span className="text-white font-medium">Business result:</span> Time reclaimed from high-salary staff doing low-value work — reinvested into strategy, growth, and the tasks only humans can do.
               </p>
             </motion.div>

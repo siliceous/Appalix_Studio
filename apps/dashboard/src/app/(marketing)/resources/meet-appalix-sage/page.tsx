@@ -46,23 +46,23 @@ export default function SageBlogPage() {
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Meet Appalix Sage</span>
+          <span className="text-white/65">Meet Appalix Sage</span>
         </div>
 
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Product</span>
-            <span className="text-xs text-gray-500">8 min read · Feb 26, 2026</span>
+            <span className="text-xs text-white/60">8 min read · Feb 26, 2026</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
 
             Meet Appalix Sage: Your Team&apos;s Internal AI Assistant
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             You already have an AI chatbot serving your customers. Now Appalix Sage puts that same intelligence to work <em>inside</em> your team — searching your knowledge base, drafting documents, and helping everyone move faster.
           </p>
         </div>
@@ -70,7 +70,7 @@ export default function SageBlogPage() {
         {/* Hero callout */}
         <div className="mb-10 p-6 rounded-2xl bg-gradient-to-br from-brand-600/15 to-transparent border border-brand-600/20">
           <p className="text-sm font-semibold text-brand-300 mb-2">✦ Available on Pro and above</p>
-          <p className="text-sm text-gray-400 leading-relaxed">
+          <p className="text-sm text-white/65 leading-relaxed">
             Appalix Sage is included with every <strong className="text-white">Pro, Scale, and Enterprise</strong> plan at no extra charge. Starter plan users can access it after upgrading.
           </p>
         </div>
@@ -79,7 +79,7 @@ export default function SageBlogPage() {
         <div className="border-t border-white/10 mb-10" />
 
         {/* Article body */}
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           {/* What is Sage */}
           <section>
@@ -98,11 +98,11 @@ export default function SageBlogPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
                 <div>
                   <p className="text-xs font-semibold text-brand-400 uppercase tracking-wide mb-1">Chat Agent</p>
-                  <p className="text-sm text-gray-400">Your customer-facing chatbot. Deployed on your website, Slack, WhatsApp, and more. Serves visitors and customers.</p>
+                  <p className="text-sm text-white/65">Your customer-facing chatbot. Deployed on your website, Slack, WhatsApp, and more. Serves visitors and customers.</p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-brand-400 uppercase tracking-wide mb-1">Sage</p>
-                  <p className="text-sm text-gray-400">Your internal AI assistant. Lives in the Appalix dashboard. Serves your authenticated team members only.</p>
+                  <p className="text-sm text-white/65">Your internal AI assistant. Lives in the Appalix dashboard. Serves your authenticated team members only.</p>
                 </div>
               </div>
             </div>
@@ -142,7 +142,7 @@ export default function SageBlogPage() {
                   <span className="text-2xl shrink-0">{f.icon}</span>
                   <div>
                     <p className="font-semibold text-white mb-1">{f.title}</p>
-                    <p className="text-sm text-gray-400 leading-relaxed">{f.desc}</p>
+                    <p className="text-sm text-white/65 leading-relaxed">{f.desc}</p>
                   </div>
                 </div>
               ))}
@@ -164,7 +164,7 @@ export default function SageBlogPage() {
               ].map((item) => (
                 <div key={item.role} className="p-4 rounded-xl bg-white/5 border border-white/10">
                   <p className="font-semibold text-white text-sm mb-2">{item.role}</p>
-                  <p className="text-xs text-gray-400 leading-relaxed">{item.use}</p>
+                  <p className="text-xs text-white/65 leading-relaxed">{item.use}</p>
                 </div>
               ))}
             </div>
@@ -181,7 +181,7 @@ export default function SageBlogPage() {
             </p>
             <div className="mt-5 p-5 rounded-xl bg-white/5 border border-white/10">
               <p className="text-sm font-semibold text-white mb-2">Example</p>
-              <p className="text-sm text-gray-400 leading-relaxed">
+              <p className="text-sm text-white/65 leading-relaxed">
                 You upload your company&apos;s 60-page product handbook to the knowledge base (for your customer chatbot). Your sales team can now ask Sage: <em>&quot;What are the key differentiators in our Enterprise tier?&quot;</em> — and get a concise, accurate answer drawn directly from the handbook. No hunting, no page numbers, no manual reading.
               </p>
             </div>
@@ -195,7 +195,7 @@ export default function SageBlogPage() {
                 {
                   step: '1',
                   title: 'Upgrade to a Pro plan',
-                  desc: 'Sage is available on Pro, Scale, and Enterprise plans. If you are on Starter, navigate to Settings → Upgrade in your dashboard. Pro plans start with a 7-day free trial — no card required at signup.',
+                  desc: 'Sage is available on Pro, Scale, and Enterprise plans. If you are on Starter, navigate to Settings → Upgrade in your dashboard. Pro plans start with a 14-day free trial — no card required at signup.',
                 },
                 {
                   step: '2',
@@ -224,7 +224,7 @@ export default function SageBlogPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-white mb-1">{item.title}</p>
-                    <p className="text-sm text-gray-400 leading-relaxed">{item.desc}</p>
+                    <p className="text-sm text-white/65 leading-relaxed">{item.desc}</p>
                   </div>
                 </li>
               ))}
@@ -255,7 +255,7 @@ export default function SageBlogPage() {
               ].map((ex, i) => (
                 <div key={i} className="p-5 rounded-xl bg-white/5 border border-white/10">
                   <p className="text-sm text-brand-300 font-medium mb-3 italic">{ex.prompt}</p>
-                  <p className="text-xs text-gray-400 leading-relaxed">{ex.response}</p>
+                  <p className="text-xs text-white/65 leading-relaxed">{ex.response}</p>
                 </div>
               ))}
             </div>
@@ -279,7 +279,7 @@ export default function SageBlogPage() {
                   <svg className="w-5 h-5 text-brand-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
-                  <p className="text-sm text-gray-300 leading-relaxed">{point}</p>
+                  <p className="text-sm text-white/80 leading-relaxed">{point}</p>
                 </li>
               ))}
             </ul>
@@ -302,7 +302,7 @@ export default function SageBlogPage() {
                   <span className="text-xl shrink-0">{item.icon}</span>
                   <div>
                     <p className="font-semibold text-white text-sm mb-1">{item.label}</p>
-                    <p className="text-xs text-gray-400 leading-relaxed">{item.desc}</p>
+                    <p className="text-xs text-white/65 leading-relaxed">{item.desc}</p>
                   </div>
                 </div>
               ))}
@@ -330,17 +330,17 @@ export default function SageBlogPage() {
 
         {/* CTA */}
         <div className="text-center">
-          <p className="text-gray-400 mb-5 text-sm">Ready to put AI to work for your internal team?</p>
+          <p className="text-white/65 mb-5 text-sm">Ready to put AI to work for your internal team?</p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link
               href="/signup"
               className="px-6 py-2.5 bg-[#1a8c76] hover:bg-[#14705d] text-white text-sm font-medium rounded-xl transition-colors"
             >
-              Start a 7 Day Free Trial →
+              Start a 14-Day Free Trial →
             </Link>
             <Link
               href="/pricing"
-              className="px-6 py-2.5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white text-sm font-medium rounded-xl transition-colors"
+              className="px-6 py-2.5 border border-white/10 hover:border-white/20 text-white/80 hover:text-white text-sm font-medium rounded-xl transition-colors"
             >
               View Pro plan features
             </Link>

@@ -298,7 +298,7 @@ function FacebookSetup({
 }) {
   const pageName = (cfg.page_name as string) || ''
   const pageId   = (cfg.page_id   as string) || ''
-  const appId    = process.env.META_APP_ID ?? ''
+  const appId    = process.env.MESSENGER_APP_ID || process.env.META_APP_ID || process.env.FACEBOOK_APP_ID || ''
 
   return (
     <div className="space-y-5">

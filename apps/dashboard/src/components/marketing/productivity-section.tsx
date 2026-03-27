@@ -220,7 +220,7 @@ export function ProductivitySection() {
               <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
                 AI doesn&apos;t replace teams —<br className="hidden sm:block" /> it increases output per person
               </h2>
-              <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-2xl ml-auto">
+              <p className="text-white/65 text-base leading-relaxed mb-8 max-w-2xl ml-auto">
                 Every role in your business produces more without adding headcount — content, proposals, documentation, and analysis delivered in seconds instead of hours.
               </p>
             </motion.div>
@@ -241,7 +241,7 @@ export function ProductivitySection() {
                   transition={{ delay: 0.35 + i * 0.07, duration: 0.4 }}
                 >
                   <p className="text-xs text-[#15A4AE] font-semibold uppercase tracking-wider mb-1">{s.role}</p>
-                  <p className="text-sm text-gray-300 leading-snug">{s.shift}</p>
+                  <p className="text-sm text-white/80 leading-snug">{s.shift}</p>
                 </motion.div>
               ))}
             </motion.div>
@@ -256,11 +256,11 @@ export function ProductivitySection() {
               {METRICS.map((m) => (
                 <div key={m.label} className="text-center sm:text-right">
                   <p className="text-2xl font-bold text-white">{m.value}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{m.label}</p>
+                  <p className="text-xs text-white/60 mt-0.5">{m.label}</p>
                 </div>
               ))}
               <div className="hidden sm:block w-px self-stretch bg-white/10" />
-              <p className="text-xs text-gray-400 leading-relaxed flex-1 min-w-[180px]">
+              <p className="text-xs text-white/65 leading-relaxed flex-1 min-w-[180px]">
                 <span className="text-white font-medium">Business result:</span> Same team → higher output → higher revenue per employee.
               </p>
             </motion.div>
@@ -278,7 +278,7 @@ export function ProductivitySection() {
               >
                 <span className="text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full bg-[#15A4AE]/15 border border-[#15A4AE]/25 text-[#15A4AE]">✦</span>
                 <span className="text-sm text-[#15A4AE] font-medium">Powered by Appalix Sage</span>
-                <span className="text-xs text-gray-500 group-hover:text-[#15A4AE] transition-colors">→</span>
+                <span className="text-xs text-white/60 group-hover:text-[#15A4AE] transition-colors">→</span>
               </Link>
             </motion.div>
 

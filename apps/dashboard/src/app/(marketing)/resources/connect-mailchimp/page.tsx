@@ -48,22 +48,22 @@ export default function ConnectMailchimpPage() {
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect Mailchimp</span>
+          <span className="text-white/65">Connect Mailchimp</span>
         </div>
 
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">6 min read · Pro+ plan</span>
+            <span className="text-xs text-white/60">6 min read · Pro+ plan</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Connect Mailchimp to Appalix
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Connecting Mailchimp gives you two things: contact sync into Sage CRM when you create or update contacts,
             and the ability to pull your entire Mailchimp audience into Appalix Forms for AI-assisted lead scoring
             and one-click CRM handoff. Setup takes under 3 minutes.
@@ -72,7 +72,7 @@ export default function ConnectMailchimpPage() {
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">What you&apos;ll need</h2>
@@ -158,15 +158,15 @@ export default function ConnectMailchimpPage() {
             <div className="space-y-5">
               <div>
                 <p className="font-semibold text-white">Does syncing write anything back to Mailchimp?</p>
-                <p className="text-sm text-gray-400 mt-1">No. The Forms sync is read-only — it pulls contacts from Mailchimp into Appalix. No data is written back to your Mailchimp audience during a sync.</p>
+                <p className="text-sm text-white/65 mt-1">No. The Forms sync is read-only — it pulls contacts from Mailchimp into Appalix. No data is written back to your Mailchimp audience during a sync.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Can I sync multiple Mailchimp audiences?</p>
-                <p className="text-sm text-gray-400 mt-1">One audience per workspace is supported. To sync a different audience, update the Audience ID in Sage → Integrations → Mailchimp and run Sync Now again.</p>
+                <p className="text-sm text-white/65 mt-1">One audience per workspace is supported. To sync a different audience, update the Audience ID in Sage → Integrations → Mailchimp and run Sync Now again.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">How do I move a Mailchimp contact into my CRM pipeline?</p>
-                <p className="text-sm text-gray-400 mt-1">In Forms → All Leads, click <strong>Pipeline</strong> on any Mailchimp lead. This creates a Sage Contact and Deal in the first stage of your first pipeline automatically.</p>
+                <p className="text-sm text-white/65 mt-1">In Forms → All Leads, click <strong>Pipeline</strong> on any Mailchimp lead. This creates a Sage Contact and Deal in the first stage of your first pipeline automatically.</p>
               </div>
             </div>
           </section>
@@ -174,7 +174,7 @@ export default function ConnectMailchimpPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center">
             <p className="text-2xl mb-3">🐒</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to connect Mailchimp?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Go to Sage → Integrations → Email Marketing to paste your API key and get started.
             </p>
             <Link

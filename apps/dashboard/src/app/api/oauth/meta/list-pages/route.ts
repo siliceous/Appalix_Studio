@@ -14,8 +14,8 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const appId     = process.env.META_APP_ID     || process.env.FACEBOOK_APP_ID     || ''
-  const appSecret = process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || ''
+  const appId     = process.env.MESSENGER_APP_ID     || process.env.META_APP_ID     || process.env.FACEBOOK_APP_ID     || ''
+  const appSecret = process.env.MESSENGER_APP_SECRET || process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || ''
 
   // Exchange short-lived → long-lived
   let longToken: string

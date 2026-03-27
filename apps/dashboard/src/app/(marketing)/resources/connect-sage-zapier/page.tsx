@@ -47,28 +47,28 @@ export default function ConnectSageZapierPage() {
       />
       <div className="max-w-3xl mx-auto">
 
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect Zapier to Sage</span>
+          <span className="text-white/65">Connect Zapier to Sage</span>
         </div>
 
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">7 min read · Pro+ plan</span>
+            <span className="text-xs text-white/60">7 min read · Pro+ plan</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Connect Zapier to Sage CRM
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Sage fires a webhook whenever a key CRM event occurs — a new lead is captured, a deal is created, or a stage changes. With Zapier connected, those events can trigger automations in over 6,000 apps: send a Slack alert, add a row to Google Sheets, start an email sequence — all without code.
           </p>
         </div>
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">What Sage events trigger the webhook</h2>
@@ -123,7 +123,7 @@ export default function ConnectSageZapierPage() {
               </li>
               <li>Click <strong className="text-white">Continue with selected record</strong>.</li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Tip:</strong> If Zapier doesn&apos;t receive a payload within 30 seconds, verify the webhook URL is saved correctly in Sage and try triggering another event.
             </div>
           </section>
@@ -146,15 +146,15 @@ export default function ConnectSageZapierPage() {
             <div className="space-y-5">
               <div>
                 <p className="font-semibold text-white">Can I use filters to only trigger on certain events?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes. Add a <em>Filter</em> step in Zapier after the Catch Hook, checking if <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">event_type</code> equals the event you want.</p>
+                <p className="text-sm text-white/65 mt-1">Yes. Add a <em>Filter</em> step in Zapier after the Catch Hook, checking if <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">event_type</code> equals the event you want.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Can I create multiple Zaps from the same webhook?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes — all Sage events post to the same URL. Use a Filter step in each Zap to route different events to different apps.</p>
+                <p className="text-sm text-white/65 mt-1">Yes — all Sage events post to the same URL. Use a Filter step in each Zap to route different events to different apps.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">What Zapier plan do I need?</p>
-                <p className="text-sm text-gray-400 mt-1">Webhooks by Zapier (Catch Hook) requires a Zapier Starter plan or above. The free tier does not support custom webhooks.</p>
+                <p className="text-sm text-white/65 mt-1">Webhooks by Zapier (Catch Hook) requires a Zapier Starter plan or above. The free tier does not support custom webhooks.</p>
               </div>
             </div>
           </section>
@@ -162,7 +162,7 @@ export default function ConnectSageZapierPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">⚡</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to automate Sage with Zapier?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Head to Sage Integrations, paste your Zapier webhook URL, and your first automation will be live in minutes.
             </p>
             <Link

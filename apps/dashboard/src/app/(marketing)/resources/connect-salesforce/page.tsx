@@ -50,29 +50,29 @@ export default function ConnectSalesforcePage() {
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect Salesforce to Appalix</span>
+          <span className="text-white/65">Connect Salesforce to Appalix</span>
         </div>
 
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">10 min read · Pro+ plan</span>
+            <span className="text-xs text-white/60">10 min read · Pro+ plan</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             How to Connect Salesforce to Appalix
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             With Appalix&apos;s native Salesforce integration, every lead your AI agent captures is automatically created as a <em>Lead</em> record in Salesforce. You&apos;ll need two things: a Salesforce OAuth access token and your Salesforce instance URL. This guide covers how to get both.
           </p>
         </div>
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           {/* What you'll need */}
           <section>
@@ -83,7 +83,7 @@ export default function ConnectSalesforcePage() {
               <li>A <strong className="text-white">Salesforce OAuth access token</strong> — you&apos;ll get this via a Connected App</li>
               <li>Your <strong className="text-white">Salesforce instance URL</strong> — e.g. <code className="bg-white/10 px-1.5 py-0.5 rounded text-brand-300">https://yourcompany.my.salesforce.com</code></li>
             </ul>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Salesforce editions:</strong> API access is available on Professional, Enterprise, Unlimited, Performance, and Developer editions. The Essentials and free Trial editions do not include API access.
             </div>
           </section>
@@ -232,7 +232,7 @@ export default function ConnectSalesforcePage() {
                 In Salesforce, go to <strong className="text-white">Leads</strong>. Sort by <em>Created Date</em> (descending) and check for the new record.
               </li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">If leads aren&apos;t appearing:</strong> check that the access token is still valid (session tokens from Workbench expire) and that your Salesforce edition includes API access. You can test the token directly: <code className="bg-white/10 px-1 py-0.5 rounded text-brand-300">curl https://INSTANCE_URL/services/data/v59.0/ -H &apos;Authorization: Bearer ACCESS_TOKEN&apos;</code> — you should get a JSON response.
             </div>
           </section>
@@ -256,15 +256,15 @@ export default function ConnectSalesforcePage() {
             <div className="space-y-5">
               <div>
                 <p className="font-semibold text-white">Can I use a Sandbox instead of Production?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes — use your Sandbox instance URL (e.g. <code className="bg-white/10 px-1 py-0.5 rounded text-brand-300">https://yourcompany--uat.sandbox.my.salesforce.com</code>) and generate a token from <code className="bg-white/10 px-1 py-0.5 rounded text-brand-300">test.salesforce.com</code> instead of <code className="bg-white/10 px-1 py-0.5 rounded text-brand-300">login.salesforce.com</code>.</p>
+                <p className="text-sm text-white/65 mt-1">Yes — use your Sandbox instance URL (e.g. <code className="bg-white/10 px-1 py-0.5 rounded text-brand-300">https://yourcompany--uat.sandbox.my.salesforce.com</code>) and generate a token from <code className="bg-white/10 px-1 py-0.5 rounded text-brand-300">test.salesforce.com</code> instead of <code className="bg-white/10 px-1 py-0.5 rounded text-brand-300">login.salesforce.com</code>.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">My access token expired. What do I do?</p>
-                <p className="text-sm text-gray-400 mt-1">Re-generate a fresh token using the same method and update it in Appalix (Integrations → Edit → CRM integration → Salesforce → update the token → Save). Native token refresh support is on the Appalix roadmap.</p>
+                <p className="text-sm text-white/65 mt-1">Re-generate a fresh token using the same method and update it in Appalix (Integrations → Edit → CRM integration → Salesforce → update the token → Save). Native token refresh support is on the Appalix roadmap.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Can I use Zapier with Salesforce instead?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes — select <em>Zapier</em> as the CRM provider (Core plan), add a Salesforce action in Zapier to create a Lead record, and map the fields from the Appalix payload.</p>
+                <p className="text-sm text-white/65 mt-1">Yes — select <em>Zapier</em> as the CRM provider (Core plan), add a Salesforce action in Zapier to create a Lead record, and map the fields from the Appalix payload.</p>
               </div>
             </div>
           </section>
@@ -273,7 +273,7 @@ export default function ConnectSalesforcePage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">☁️</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to connect Salesforce?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Add your Salesforce access token and instance URL in Appalix and leads will flow into your CRM automatically.
             </p>
             <Link

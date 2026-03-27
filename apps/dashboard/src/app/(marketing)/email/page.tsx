@@ -167,7 +167,7 @@ const PRIORITY_DOT: Record<Priority, string> = {
 const PRIORITY_BADGE: Record<Priority, string> = {
   high:   'bg-[#15A4AE]/10 text-[#3a9e8a] border-[#15A4AE]/30',
   medium: 'bg-amber-50 text-amber-600 border-amber-200',
-  low:    'bg-gray-100 text-gray-500 border-gray-200',
+  low:    'bg-gray-100 text-white/60 border-gray-200',
 }
 
 function categoryClass(cat: string): string {
@@ -175,7 +175,7 @@ function categoryClass(cat: string): string {
   if (cat === 'Support')     return 'bg-sky-50 text-sky-600 border-sky-200'
   if (cat === 'Invoice')     return 'bg-violet-50 text-violet-600 border-violet-200'
   if (cat === 'Partnership') return 'bg-cyan-50 text-cyan-600 border-cyan-200'
-  return 'bg-gray-100 text-gray-500 border-gray-200'
+  return 'bg-gray-100 text-white/60 border-gray-200'
 }
 
 function formatTime(iso: string) {
@@ -198,11 +198,11 @@ function DemoModal({ onClose }: { onClose: () => void }) {
           </svg>
         </div>
         <h3 className="text-lg font-bold text-gray-900 mb-2">Try Email Triage</h3>
-        <p className="text-sm text-gray-500 mb-6">Connect your inbox and let AI prioritise every email for you — automatically.</p>
+        <p className="text-sm text-white/60 mb-6">Connect your inbox and let AI prioritise every email for you — automatically.</p>
         <Link href="/login" className="block w-full py-2.5 bg-[#15A4AE] hover:bg-[#0f8a94] text-white text-sm font-semibold rounded-xl transition-colors">
           Get started free
         </Link>
-        <button onClick={onClose} className="mt-3 text-xs text-gray-400 hover:text-gray-600 transition-colors">Maybe later</button>
+        <button onClick={onClose} className="mt-3 text-xs text-white/65 hover:text-gray-600 transition-colors">Maybe later</button>
       </div>
     </div>
   )
@@ -240,11 +240,11 @@ function TriagePreview({ onOpenDemo }: { onOpenDemo: () => void }) {
                 <Tip label="Email Triage — AI-sorted inbox" dir="right">
                   <p className="text-xs font-bold text-gray-900 cursor-default">Triage</p>
                 </Tip>
-                <p className="text-[9px] text-gray-400 truncate">you@company.com</p>
+                <p className="text-[9px] text-white/65 truncate">you@company.com</p>
               </div>
             </div>
             <Tip label="Sync inbox to fetch latest emails" dir="bottom">
-              <button className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+              <button className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-md text-white/60 hover:text-gray-700 hover:bg-gray-100 transition-colors">
                 <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
@@ -297,12 +297,12 @@ function TriagePreview({ onOpenDemo }: { onOpenDemo: () => void }) {
                     <div className="flex items-start gap-1.5">
                       <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${PRIORITY_DOT[priority]}`} />
                       <div className="flex-1 min-w-0">
-                        <p className={`text-[11px] font-semibold truncate ${actioned[email.id] ? 'text-gray-400' : 'text-gray-800'}`}>
+                        <p className={`text-[11px] font-semibold truncate ${actioned[email.id] ? 'text-white/65' : 'text-gray-800'}`}>
                           {email.from_name}
                         </p>
-                        <p className="text-[10px] text-gray-400 truncate leading-snug">{email.subject}</p>
+                        <p className="text-[10px] text-white/65 truncate leading-snug">{email.subject}</p>
                       </div>
-                      <span className="text-[9px] text-gray-400 shrink-0 tabular-nums">{formatTime(email.received_at)}</span>
+                      <span className="text-[9px] text-white/65 shrink-0 tabular-nums">{formatTime(email.received_at)}</span>
                     </div>
                   </div>
                 </div>
@@ -330,10 +330,10 @@ function TriagePreview({ onOpenDemo }: { onOpenDemo: () => void }) {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-gray-900">{selectedEmail.from_name}</p>
-                      <p className="text-[10px] text-gray-400">{selectedEmail.from_address}</p>
+                      <p className="text-[10px] text-white/65">{selectedEmail.from_address}</p>
                     </div>
-                    <span className="text-gray-200 mx-0.5">·</span>
-                    <span className="text-[10px] text-gray-400">{formatTime(selectedEmail.received_at)}</span>
+                    <span className="text-white/90 mx-0.5">·</span>
+                    <span className="text-[10px] text-white/65">{formatTime(selectedEmail.received_at)}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
@@ -349,7 +349,7 @@ function TriagePreview({ onOpenDemo }: { onOpenDemo: () => void }) {
                     </span>
                   </Tip>
                   <Tip label="Delete this email from triage" dir="bottom">
-                    <button className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+                    <button className="p-1.5 rounded-lg text-white/65 hover:text-red-500 hover:bg-red-50 transition-colors">
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
@@ -388,7 +388,7 @@ function TriagePreview({ onOpenDemo }: { onOpenDemo: () => void }) {
                     {selectedEmail.entities.name && (
                       <Tip label="Contact name extracted by AI" dir="top">
                         <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-gray-100 border border-gray-200 text-gray-600 cursor-default">
-                          <svg className="w-2.5 h-2.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                          <svg className="w-2.5 h-2.5 text-white/65 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                           {selectedEmail.entities.name}
                         </span>
                       </Tip>
@@ -401,7 +401,7 @@ function TriagePreview({ onOpenDemo }: { onOpenDemo: () => void }) {
                     {selectedEmail.entities.phone && (
                       <Tip label="Phone number extracted by AI" dir="top">
                         <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-gray-100 border border-gray-200 text-gray-600 cursor-default">
-                          <svg className="w-2.5 h-2.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                          <svg className="w-2.5 h-2.5 text-white/65 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                           {selectedEmail.entities.phone}
                         </span>
                       </Tip>
@@ -432,7 +432,7 @@ function TriagePreview({ onOpenDemo }: { onOpenDemo: () => void }) {
               {!showReply && (
                 <div className="rounded-xl border border-gray-200 overflow-hidden">
                   <div className="px-3 py-2 bg-gray-50 border-b border-gray-100">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Email</span>
+                    <span className="text-[10px] font-bold text-white/65 uppercase tracking-wide">Email</span>
                   </div>
                   <div className="px-3 py-2.5">
                     <p className="text-xs text-gray-700 leading-relaxed font-mono">{selectedEmail.body_text}</p>
@@ -444,11 +444,11 @@ function TriagePreview({ onOpenDemo }: { onOpenDemo: () => void }) {
               {showReply && (
                 <div className="rounded-xl border border-gray-200 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-1.5 bg-gray-50 border-b border-gray-100">
-                    <span className="text-[10px] font-semibold text-gray-400 uppercase w-4 shrink-0">To</span>
+                    <span className="text-[10px] font-semibold text-white/65 uppercase w-4 shrink-0">To</span>
                     <span className="text-xs text-gray-700 truncate">{selectedEmail.from_name} &lt;{selectedEmail.from_address}&gt;</span>
                   </div>
                   <div className="flex items-center gap-2 px-4 py-1.5 bg-gray-50 border-b border-gray-100">
-                    <span className="text-[10px] font-semibold text-gray-400 uppercase w-4 shrink-0">Re</span>
+                    <span className="text-[10px] font-semibold text-white/65 uppercase w-4 shrink-0">Re</span>
                     <span className="text-xs text-gray-600 flex-1 truncate">Re: {selectedEmail.subject}</span>
                     <Tip label="Schedule a meeting with this sender" dir="left" clickable>
                       <button className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 font-medium hover:bg-emerald-100 transition-colors shrink-0">
@@ -467,11 +467,11 @@ function TriagePreview({ onOpenDemo }: { onOpenDemo: () => void }) {
                   </Tip>
                   <div className="flex items-center gap-1 px-3 py-1.5 border-t border-gray-100 bg-gray-50">
                     {['B','I','U'].map(f => (
-                      <button key={f} className="w-5 h-5 rounded text-[11px] font-bold text-gray-500 hover:bg-gray-200 transition-colors flex items-center justify-center">{f}</button>
+                      <button key={f} className="w-5 h-5 rounded text-[11px] font-bold text-white/60 hover:bg-gray-200 transition-colors flex items-center justify-center">{f}</button>
                     ))}
                     <span className="w-px h-4 bg-gray-200 mx-0.5" />
                     <Tip label="Attach a file" dir="top">
-                      <button className="w-5 h-5 rounded text-gray-400 hover:bg-gray-200 hover:text-gray-700 transition-colors flex items-center justify-center">
+                      <button className="w-5 h-5 rounded text-white/65 hover:bg-gray-200 hover:text-gray-700 transition-colors flex items-center justify-center">
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
                       </button>
                     </Tip>
@@ -534,7 +534,7 @@ function TriagePreview({ onOpenDemo }: { onOpenDemo: () => void }) {
                 <Tip label="Mark as done and remove from triage queue" dir="top">
                   <button
                     onClick={() => handleAction(selectedEmail.id, 'Ignored')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white text-white/60 border border-gray-200 hover:bg-gray-50 transition-colors"
                   >
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                     Ignore
@@ -549,7 +549,7 @@ function TriagePreview({ onOpenDemo }: { onOpenDemo: () => void }) {
                 <Tip label="Dismiss and go back to detail view" dir="top">
                   <button
                     onClick={() => setShowReply(false)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white text-white/60 border border-gray-200 hover:bg-gray-50 transition-colors"
                   >
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                     Ignore
@@ -570,7 +570,7 @@ function TriagePreview({ onOpenDemo }: { onOpenDemo: () => void }) {
 
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-sm text-gray-400">
+          <div className="flex-1 flex items-center justify-center text-sm text-white/65">
             Select an email to view details
           </div>
         )}
@@ -599,7 +599,7 @@ export default function EmailPage() {
             AI that reads your inbox<br />
             <span className="text-[#15A4AE]">so you don't have to</span>
           </h1>
-          <p className="text-gray-400 text-lg max-w-xl mx-auto mb-8">
+          <p className="text-white/65 text-lg max-w-xl mx-auto mb-8">
             Every inbound email is automatically analysed, prioritised, and turned into a lead, ticket, or reply draft — before you even open it.
           </p>
           <div className="flex items-center justify-center gap-3">
@@ -609,7 +609,7 @@ export default function EmailPage() {
             >
               Get started free
             </button>
-            <Link href="/pricing" className="px-6 py-2.5 border border-white/15 text-gray-300 hover:text-white text-sm font-medium rounded-xl transition-colors">
+            <Link href="/pricing" className="px-6 py-2.5 border border-white/15 text-white/80 hover:text-white text-sm font-medium rounded-xl transition-colors">
               View pricing
             </Link>
           </div>
@@ -624,7 +624,7 @@ export default function EmailPage() {
               <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
               <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
               <span className="w-3 h-3 rounded-full bg-[#28c840]" />
-              <div className="flex-1 mx-4 bg-[#2a2a2a] rounded-md px-3 py-1 text-[11px] text-gray-500">
+              <div className="flex-1 mx-4 bg-[#2a2a2a] rounded-md px-3 py-1 text-[11px] text-white/60">
                 app.appalix.ai/sage/triage
               </div>
             </div>
@@ -699,7 +699,7 @@ export default function EmailPage() {
                   {c.icon}
                 </div>
                 <h3 className="font-semibold text-white mb-2">{c.title}</h3>
-                <p className="text-sm text-gray-400 leading-relaxed">{c.desc}</p>
+                <p className="text-sm text-white/65 leading-relaxed">{c.desc}</p>
               </div>
             ))}
           </div>
@@ -710,7 +710,7 @@ export default function EmailPage() {
       <section className="max-w-2xl mx-auto px-6 pb-24 text-center">
         <ScrollReveal>
           <h2 className="text-3xl font-bold mb-4">Zero inbox, zero effort</h2>
-          <p className="text-gray-400 mb-8">Connect Gmail or Outlook and let AI handle the triage for you.</p>
+          <p className="text-white/65 mb-8">Connect Gmail or Outlook and let AI handle the triage for you.</p>
           <button
             onClick={() => setShowDemo(true)}
             className="px-8 py-3 bg-[#15A4AE] hover:bg-[#0f8a94] text-white font-semibold rounded-xl transition-colors"

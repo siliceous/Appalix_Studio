@@ -51,22 +51,22 @@ export default function ConnectMetaLeadsPage() {
       <div className="max-w-3xl mx-auto">
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect Meta Lead Ads</span>
+          <span className="text-white/65">Connect Meta Lead Ads</span>
         </div>
 
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">10 min read · Pro+ plan</span>
+            <span className="text-xs text-white/60">10 min read · Pro+ plan</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Connect Meta Lead Ads to Appalix
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Meta Lead Ads let people fill in your form without leaving Facebook or Instagram.
             With this integration, every submission is instantly delivered to Appalix — automatically scored,
             deduplicated, and ready to move into your CRM pipeline with one click.
@@ -76,7 +76,7 @@ export default function ConnectMetaLeadsPage() {
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           {/* What you need */}
           <section>
@@ -274,23 +274,23 @@ export default function ConnectMetaLeadsPage() {
             <div className="space-y-5">
               <div>
                 <p className="font-semibold text-white">Does this work for both Facebook and Instagram lead ads?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes. If your Instagram account is connected to your Facebook Page and your ad targets Instagram placements, the leads are delivered through the same Page webhook. No additional setup is needed for Instagram.</p>
+                <p className="text-sm text-white/65 mt-1">Yes. If your Instagram account is connected to your Facebook Page and your ad targets Instagram placements, the leads are delivered through the same Page webhook. No additional setup is needed for Instagram.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">What fields does Meta send?</p>
-                <p className="text-sm text-gray-400 mt-1">Meta sends a notification with the <code className="bg-white/10 px-1 rounded">leadgen_id</code>. Appalix then fetches the full lead details — full name, email, phone, city, state, country, job title, company, and any custom questions you configured on the form — using your Page Access Token.</p>
+                <p className="text-sm text-white/65 mt-1">Meta sends a notification with the <code className="bg-white/10 px-1 rounded">leadgen_id</code>. Appalix then fetches the full lead details — full name, email, phone, city, state, country, job title, company, and any custom questions you configured on the form — using your Page Access Token.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Can I connect multiple Facebook Pages?</p>
-                <p className="text-sm text-gray-400 mt-1">Currently one Meta source per workspace is supported. If you have multiple Pages, subscribe each Page to the same webhook in the Meta App Webhooks section — leads from all Pages will flow into Appalix and be attributed by campaign name in Forms → Analytics.</p>
+                <p className="text-sm text-white/65 mt-1">Currently one Meta source per workspace is supported. If you have multiple Pages, subscribe each Page to the same webhook in the Meta App Webhooks section — leads from all Pages will flow into Appalix and be attributed by campaign name in Forms → Analytics.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">What if my Page Access Token expires?</p>
-                <p className="text-sm text-gray-400 mt-1">Leads will stop arriving and the Meta card in Forms → Sources will show an error status. To fix it, go to Graph API Explorer, generate a new long-lived Page Access Token, and update it in Appalix Forms → Sources.</p>
+                <p className="text-sm text-white/65 mt-1">Leads will stop arriving and the Meta card in Forms → Sources will show an error status. To fix it, go to Graph API Explorer, generate a new long-lived Page Access Token, and update it in Appalix Forms → Sources.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Are my credentials stored securely?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes. The App Secret and Page Access Token are stored encrypted in your workspace database and are never shown in plain text after saving. You can update or rotate them at any time by reconnecting in Forms → Sources.</p>
+                <p className="text-sm text-white/65 mt-1">Yes. The App Secret and Page Access Token are stored encrypted in your workspace database and are never shown in plain text after saving. You can update or rotate them at any time by reconnecting in Forms → Sources.</p>
               </div>
             </div>
           </section>
@@ -299,7 +299,7 @@ export default function ConnectMetaLeadsPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">📊</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to connect Meta Lead Ads?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Go to Forms → Sources, copy your webhook URL, and you&apos;ll have Facebook and Instagram leads flowing into Appalix automatically.
             </p>
             <Link

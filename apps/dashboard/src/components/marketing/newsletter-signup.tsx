@@ -19,7 +19,7 @@ export function NewsletterSignup() {
       <div className="max-w-2xl mx-auto text-center">
         <div className="text-3xl mb-4">📬</div>
         <h2 className="text-2xl font-bold mb-3">Stay ahead of the curve</h2>
-        <p className="text-gray-400 mb-8 text-sm">
+        <p className="text-white/65 mb-8 text-sm">
           Get new guides, case studies, and product updates delivered to your inbox every two weeks.
         </p>
 
@@ -33,7 +33,7 @@ export function NewsletterSignup() {
               name="email"
               required
               placeholder="you@company.com"
-              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-300 placeholder-gray-600 outline-none focus:border-brand-600/50 transition-colors"
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white/80 placeholder-gray-600 outline-none focus:border-brand-600/50 transition-colors"
             />
             <button
               type="submit"

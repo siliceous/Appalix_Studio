@@ -42,21 +42,21 @@ export default function AssignLeadsManuallyPage() {
       />
       <div className="max-w-3xl mx-auto">
 
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Manual Lead Assignment</span>
+          <span className="text-white/65">Manual Lead Assignment</span>
         </div>
 
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-pink-500/15 text-pink-400 border border-pink-500/20 font-medium">Product</span>
-            <span className="text-xs text-gray-500">7 min read · Pro &amp; above</span>
+            <span className="text-xs text-white/60">7 min read · Pro &amp; above</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Manual Lead Assignment in Appalix Sage CRM
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Every contact in Sage CRM can be owned by a specific team member. Manual assignment puts
             you in full control — pick the right rep for the right lead, filter by owner at a glance,
             and eliminate the &ldquo;who&apos;s handling this?&rdquo; confusion that stalls deals.
@@ -65,7 +65,7 @@ export default function AssignLeadsManuallyPage() {
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">Why contact ownership matters</h2>
@@ -89,7 +89,7 @@ export default function AssignLeadsManuallyPage() {
             </p>
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5 text-sm space-y-2">
               <p className="font-semibold text-white">What gets stored</p>
-              <ul className="list-disc pl-5 space-y-1.5 text-gray-400">
+              <ul className="list-disc pl-5 space-y-1.5 text-white/65">
                 <li>The <code className="text-brand-400">assigned_to</code> column on <code className="text-brand-400">sage_contacts</code> stores the assignee&apos;s user ID (a UUID reference to <code className="text-brand-400">auth.users</code>).</li>
                 <li>If the assigned member leaves the workspace, the field is automatically set to <em>null</em> — the contact becomes unassigned rather than broken.</li>
                 <li>Every assignment change is logged to the contact&apos;s activity timeline so you always have an audit trail.</li>
@@ -103,21 +103,21 @@ export default function AssignLeadsManuallyPage() {
             <div className="space-y-4">
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
                 <p className="text-sm font-semibold text-white mb-1">Option 1 — From the New Contact modal</p>
-                <ol className="list-decimal pl-5 space-y-2 text-sm text-gray-400">
-                  <li>In Sage → Contacts, click <strong className="text-gray-200">+ New Contact</strong>.</li>
+                <ol className="list-decimal pl-5 space-y-2 text-sm text-white/65">
+                  <li>In Sage → Contacts, click <strong className="text-white/90">+ New Contact</strong>.</li>
                   <li>Fill in the contact details — name, email, company, and so on.</li>
-                  <li>Scroll to the <strong className="text-gray-200">Settings</strong> section at the bottom of the form.</li>
-                  <li>Open the <strong className="text-gray-200">Assigned to</strong> dropdown and pick any accepted workspace member.</li>
-                  <li>Click <strong className="text-gray-200">Create contact</strong>. The contact is created with that member as owner.</li>
+                  <li>Scroll to the <strong className="text-white/90">Settings</strong> section at the bottom of the form.</li>
+                  <li>Open the <strong className="text-white/90">Assigned to</strong> dropdown and pick any accepted workspace member.</li>
+                  <li>Click <strong className="text-white/90">Create contact</strong>. The contact is created with that member as owner.</li>
                 </ol>
               </div>
 
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
                 <p className="text-sm font-semibold text-white mb-1">Option 2 — From the Edit Contact modal</p>
-                <ol className="list-decimal pl-5 space-y-2 text-sm text-gray-400">
-                  <li>Find the contact in the Contacts table and click the <strong className="text-gray-200">pencil (edit) icon</strong> in the Actions column.</li>
-                  <li>In the Settings section, change the <strong className="text-gray-200">Assigned to</strong> dropdown to a new member (or clear it to unassigned).</li>
-                  <li>Click <strong className="text-gray-200">Save changes</strong>. The contacts table updates immediately.</li>
+                <ol className="list-decimal pl-5 space-y-2 text-sm text-white/65">
+                  <li>Find the contact in the Contacts table and click the <strong className="text-white/90">pencil (edit) icon</strong> in the Actions column.</li>
+                  <li>In the Settings section, change the <strong className="text-white/90">Assigned to</strong> dropdown to a new member (or clear it to unassigned).</li>
+                  <li>Click <strong className="text-white/90">Save changes</strong>. The contacts table updates immediately.</li>
                 </ol>
               </div>
             </div>
@@ -140,15 +140,15 @@ export default function AssignLeadsManuallyPage() {
 
             <div className="mt-5 rounded-xl border border-brand-600/20 bg-brand-600/5 p-5">
               <h3 className="text-sm font-semibold text-white mb-3">Filtering by assignee</h3>
-              <p className="text-sm text-gray-300 mb-3">
+              <p className="text-sm text-white/80 mb-3">
                 The Filter panel (funnel icon) includes an <strong className="text-white">Assigned To</strong> dropdown with three options:
               </p>
-              <ul className="list-disc pl-5 space-y-2 text-sm text-gray-400">
-                <li><strong className="text-gray-200">Anyone</strong> — show all contacts regardless of assignment (default).</li>
-                <li><strong className="text-gray-200">Unassigned</strong> — show only contacts with no owner. Useful for finding leads that need to be picked up.</li>
-                <li><strong className="text-gray-200">[Member name]</strong> — show only that rep&apos;s assigned contacts. Each accepted workspace member appears here.</li>
+              <ul className="list-disc pl-5 space-y-2 text-sm text-white/65">
+                <li><strong className="text-white/90">Anyone</strong> — show all contacts regardless of assignment (default).</li>
+                <li><strong className="text-white/90">Unassigned</strong> — show only contacts with no owner. Useful for finding leads that need to be picked up.</li>
+                <li><strong className="text-white/90">[Member name]</strong> — show only that rep&apos;s assigned contacts. Each accepted workspace member appears here.</li>
               </ul>
-              <p className="text-sm text-gray-400 mt-3">
+              <p className="text-sm text-white/65 mt-3">
                 Filters combine — you can filter by assignee <em>and</em> status <em>and</em> pipeline stage simultaneously
                 to build precisely targeted views for each sales rep.
               </p>
@@ -173,7 +173,7 @@ export default function AssignLeadsManuallyPage() {
             <p className="mb-4">
               Every time a contact&apos;s assignee changes, an activity entry is created on the contact record:
             </p>
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm font-mono text-gray-400">
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm font-mono text-white/65">
               Assigned to Sarah Chen — Mar 10, 2026 at 14:32
             </div>
             <p className="mt-4">
@@ -210,9 +210,9 @@ export default function AssignLeadsManuallyPage() {
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">What&apos;s coming next</h2>
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-              <ul className="list-disc pl-5 space-y-2 text-sm text-gray-400">
-                <li><strong className="text-gray-200">Scoped views</strong> — Members optionally see only their own assigned leads, keeping the contacts table clean on large teams.</li>
-                <li><strong className="text-gray-200">Assignment notifications</strong> — Get notified in-app or by email when a lead is assigned to you.</li>
+              <ul className="list-disc pl-5 space-y-2 text-sm text-white/65">
+                <li><strong className="text-white/90">Scoped views</strong> — Members optionally see only their own assigned leads, keeping the contacts table clean on large teams.</li>
+                <li><strong className="text-white/90">Assignment notifications</strong> — Get notified in-app or by email when a lead is assigned to you.</li>
               </ul>
             </div>
           </section>
@@ -220,7 +220,7 @@ export default function AssignLeadsManuallyPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">🎯</p>
             <h3 className="text-lg font-semibold text-white mb-2">Start assigning leads today</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Go to Sage → Contacts, open any contact, and try the Assigned To dropdown. Then head to
               Settings → Lead Distribution to automate the process with round-robin.
             </p>

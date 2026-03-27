@@ -50,28 +50,28 @@ export default function UploadZipKnowledgeBasePage() {
       />
       <div className="max-w-3xl mx-auto">
 
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Upload a ZIP File as a Knowledge Base Source</span>
+          <span className="text-white/65">Upload a ZIP File as a Knowledge Base Source</span>
         </div>
 
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">5 min read · Pro plan and above</span>
+            <span className="text-xs text-white/60">5 min read · Pro plan and above</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             How to Upload a ZIP File as a Knowledge Base Source
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             ZIP uploads let you bulk-import dozens of text files — markdown docs, CSVs, JSON configs, HTML pages — in a single step. Appalix unpacks the archive, reads every supported file, and embeds the content so your bot can answer from all of it instantly.
           </p>
         </div>
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">What you&apos;ll need</h2>
@@ -178,8 +178,8 @@ export default function UploadZipKnowledgeBasePage() {
                       <td className="py-2.5 pr-6">
                         <code className="text-brand-300 bg-white/5 px-1.5 py-0.5 rounded">{ext}</code>
                       </td>
-                      <td className="py-2.5 pr-6 text-gray-300">{format}</td>
-                      <td className="py-2.5 text-gray-400">{how}</td>
+                      <td className="py-2.5 pr-6 text-white/80">{format}</td>
+                      <td className="py-2.5 text-white/65">{how}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -203,8 +203,8 @@ export default function UploadZipKnowledgeBasePage() {
               ].map(({ label, exts, reason }) => (
                 <div key={label} className="bg-red-900/10 border border-red-900/20 rounded-xl p-4">
                   <p className="text-sm font-semibold text-red-400 mb-1">{label}</p>
-                  <p className="text-xs font-mono text-gray-400 mb-2">{exts}</p>
-                  <p className="text-xs text-gray-500">{reason}</p>
+                  <p className="text-xs font-mono text-white/65 mb-2">{exts}</p>
+                  <p className="text-xs text-white/60">{reason}</p>
                 </div>
               ))}
             </div>
@@ -249,7 +249,7 @@ export default function UploadZipKnowledgeBasePage() {
               ].map(({ q, a }) => (
                 <div key={q} className="border-b border-white/10 pb-5 last:border-0 last:pb-0">
                   <p className="text-sm font-semibold text-white mb-2">{q}</p>
-                  <p className="text-sm text-gray-400">{a}</p>
+                  <p className="text-sm text-white/65">{a}</p>
                 </div>
               ))}
             </div>

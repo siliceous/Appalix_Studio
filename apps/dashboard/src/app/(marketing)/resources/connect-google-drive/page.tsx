@@ -49,28 +49,28 @@ export default function ConnectGoogleDrivePage() {
       />
       <div className="max-w-3xl mx-auto">
 
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect Google Drive to Appalix</span>
+          <span className="text-white/65">Connect Google Drive to Appalix</span>
         </div>
 
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">8 min read · Pro plan and above</span>
+            <span className="text-xs text-white/60">8 min read · Pro plan and above</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             How to Connect Google Drive to Appalix
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Index Google Docs, Sheets, or any Drive file so your AI bot can answer questions from your team&apos;s documents. Appalix reads the file content via the Drive API — you supply the file URL and a read-only OAuth token.
           </p>
         </div>
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">What you&apos;ll need</h2>
@@ -90,14 +90,14 @@ export default function ConnectGoogleDrivePage() {
             <pre className="bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-brand-300 overflow-x-auto mt-3">
               {`https://docs.google.com/document/d/FILE_ID/edit`}
             </pre>
-            <p className="mt-3 text-sm text-gray-400">
+            <p className="mt-3 text-sm text-white/65">
               For other Drive files, use the shareable link from <strong className="text-white">Share → Copy link</strong>.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">Step 2 — Generate an OAuth access token</h2>
-            <p className="mb-3 text-sm text-gray-400">
+            <p className="mb-3 text-sm text-white/65">
               The quickest way to get a read-only token is via the Google OAuth Playground.
             </p>
             <ol className="list-decimal pl-5 space-y-3">
@@ -121,7 +121,7 @@ export default function ConnectGoogleDrivePage() {
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">Step 2b — Use a Service Account (permanent, recommended)</h2>
-            <p className="mb-3 text-sm text-gray-400">Service Account keys never expire. This is the best approach for production use.</p>
+            <p className="mb-3 text-sm text-white/65">Service Account keys never expire. This is the best approach for production use.</p>
             <ol className="list-decimal pl-5 space-y-3">
               <li>
                 Go to <a href="https://console.cloud.google.com/" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">Google Cloud Console</a> → select or create a project → <strong className="text-white">APIs &amp; Services → Enable APIs</strong> → enable <strong className="text-white">Google Drive API</strong>.
@@ -182,7 +182,7 @@ export default function ConnectGoogleDrivePage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">☁️</p>
             <h3 className="text-lg font-semibold text-white mb-2">Index your Google Docs instantly</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Get a read-only OAuth token from Google, paste it into Appalix alongside your file URL, and your bot will be answering from your Drive content in minutes.
             </p>
             <Link

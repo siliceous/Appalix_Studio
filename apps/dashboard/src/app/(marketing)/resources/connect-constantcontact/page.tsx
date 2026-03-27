@@ -47,21 +47,21 @@ export default function ConnectConstantContactPage() {
 
       <div className="max-w-3xl mx-auto">
 
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect Constant Contact</span>
+          <span className="text-white/65">Connect Constant Contact</span>
         </div>
 
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">7 min read · Pro+ plan</span>
+            <span className="text-xs text-white/60">7 min read · Pro+ plan</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Connect Constant Contact to Appalix
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Constant Contact is a popular email marketing platform for small businesses. Connecting it to Appalix
             Sage means contacts you add to your CRM are automatically added to your Constant Contact list —
             keeping your email marketing audience perfectly in sync with your sales pipeline.
@@ -70,7 +70,7 @@ export default function ConnectConstantContactPage() {
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">What you&apos;ll need</h2>
@@ -152,15 +152,15 @@ export default function ConnectConstantContactPage() {
             <div className="space-y-5">
               <div>
                 <p className="font-semibold text-white">Why do I need an API key AND an access token?</p>
-                <p className="text-sm text-gray-400 mt-1">Constant Contact&apos;s V3 API uses OAuth 2.0, which requires both: the API key identifies your registered application, and the access token authenticates your Constant Contact account. Both are needed together for API calls to succeed.</p>
+                <p className="text-sm text-white/65 mt-1">Constant Contact&apos;s V3 API uses OAuth 2.0, which requires both: the API key identifies your registered application, and the access token authenticates your Constant Contact account. Both are needed together for API calls to succeed.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">What happens if my access token expires?</p>
-                <p className="text-sm text-gray-400 mt-1">Syncing will stop. To fix it, go to the Constant Contact developer portal, generate a new access token, and update it in Sage → Integrations → Constant Contact by clicking Disconnect and then reconnecting with the new token.</p>
+                <p className="text-sm text-white/65 mt-1">Syncing will stop. To fix it, go to the Constant Contact developer portal, generate a new access token, and update it in Sage → Integrations → Constant Contact by clicking Disconnect and then reconnecting with the new token.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Are my credentials stored securely?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes. Your API key and access token are stored encrypted in your workspace database and never shown in plain text after saving.</p>
+                <p className="text-sm text-white/65 mt-1">Yes. Your API key and access token are stored encrypted in your workspace database and never shown in plain text after saving.</p>
               </div>
             </div>
           </section>
@@ -168,7 +168,7 @@ export default function ConnectConstantContactPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center">
             <p className="text-2xl mb-3">📬</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready to connect Constant Contact?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Go to Sage → Integrations → Email Marketing and paste your API key, access token, and list ID.
             </p>
             <Link

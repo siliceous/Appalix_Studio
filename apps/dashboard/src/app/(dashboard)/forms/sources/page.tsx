@@ -36,14 +36,16 @@ export default async function SourcesPage() {
     { data: emailIntegrationsRaw },
     { data: leadCountsRaw },
     { data: formIntegrationsRaw },
+    { data: profilesRaw },
+    { data: membersRaw },
   ] = await Promise.all([
     supabase
       .from('lead_ad_sources')
       .select('*')
       .eq('workspace_id', workspaceId),
-    supabase
+    a
       .from('sage_integrations')
-      .select('id, provider, status, updated_at, sync_enabled, last_synced_at, last_sync_count')
+      .select('id, provider, status, updated_at, sync_enabled, last_synced_at, last_sync_count, user_id')
       .eq('workspace_id', workspaceId)
       .eq('status', 'connected')
       .in('provider', EMAIL_PROVIDERS),
@@ -58,10 +60,37 @@ export default async function SourcesPage() {
       .eq('workspace_id', workspaceId)
       .eq('status', 'connected')
       .in('provider', FORM_PROVIDERS),
+    a.from('user_profiles').select('user_id, first_name, last_name'),
+    a.from('workspace_members').select('user_id, role').eq('workspace_id', workspaceId),
   ])
 
+  type EmailRow    = { id: string; provider: string; status: string; updated_at: string; sync_enabled: boolean; last_synced_at: string | null; last_sync_count: number; user_id: string | null }
+  type ProfileRow  = { user_id: string; first_name: string; last_name: string | null }
+  type MemberRow   = { user_id: string; role: string }
+
+  const profileMap = new Map(((profilesRaw ?? []) as ProfileRow[]).map(p => [p.user_id, p]))
+  const memberMap  = new Map(((membersRaw  ?? []) as MemberRow[]).map(m => [m.user_id, m]))
+
   const sources           = (sourcesRaw ?? []) as LeadAdSource[]
-  const emailIntegrations = (emailIntegrationsRaw ?? []) as Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at' | 'sync_enabled' | 'last_synced_at' | 'last_sync_count'>[]
+  const emailIntegrations = ((emailIntegrationsRaw ?? []) as EmailRow[]).map(row => {
+    const p    = row.user_id ? profileMap.get(row.user_id) : undefined
+    const m    = row.user_id ? memberMap.get(row.user_id)  : undefined
+    const name = p ? [p.first_name, p.last_name].filter(Boolean).join(' ') : ''
+    // Fall back to the current user's email for their own connections
+    const email = row.user_id === user.id ? (user.email ?? '') : ''
+    return {
+      id:                  row.id,
+      provider:            row.provider,
+      status:              row.status,
+      updated_at:          row.updated_at,
+      sync_enabled:        row.sync_enabled,
+      last_synced_at:      row.last_synced_at,
+      last_sync_count:     row.last_sync_count,
+      connected_by_name:   name  || undefined,
+      connected_by_email:  email || undefined,
+      connected_by_role:   m?.role || undefined,
+    }
+  }) as Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at' | 'sync_enabled' | 'last_synced_at' | 'last_sync_count'>[]
 
   type FormRow = { provider: string; status: string; config: Record<string, string> }
   const formRows      = (formIntegrationsRaw ?? []) as FormRow[]

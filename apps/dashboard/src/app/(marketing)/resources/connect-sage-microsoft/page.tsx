@@ -49,28 +49,28 @@ export default function ConnectSageMicrosoftPage() {
       />
       <div className="max-w-3xl mx-auto">
 
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-10">
+        <div className="flex items-center gap-2 text-sm text-white/60 mb-10">
           <Link href="/resources" className="hover:text-brand-400 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-gray-400">Connect Microsoft / Outlook to Sage</span>
+          <span className="text-white/65">Connect Microsoft / Outlook to Sage</span>
         </div>
 
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-400 border border-brand-600/20 font-medium">Tutorial</span>
-            <span className="text-xs text-gray-500">8 min read · Pro+ plan</span>
+            <span className="text-xs text-white/60">8 min read · Pro+ plan</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
             Connect Microsoft / Outlook to Sage CRM
           </h1>
-          <p className="text-gray-400 text-lg leading-relaxed">
+          <p className="text-white/65 text-lg leading-relaxed">
             Connecting your Microsoft or Office 365 account gives you a full AI-powered email inbox inside Sage. Sage reads your incoming emails via IMAP, scores each one for priority, surfaces key insights, and pre-writes three reply drafts. You can reply directly from Sage — with file attachments, Stripe invoice PDFs, or auto-generated proposal documents — and every email is logged to the contact&apos;s activity timeline.
           </p>
         </div>
 
         <div className="border-t border-white/10 mb-10" />
 
-        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-gray-300">
+        <div className="prose prose-invert prose-brand max-w-none space-y-10 text-white/80">
 
           {/* Supported accounts */}
           <section>
@@ -79,7 +79,7 @@ export default function ConnectSageMicrosoftPage() {
               <li><strong className="text-white">Outlook.com</strong> — personal Microsoft accounts (@outlook.com, @hotmail.com, @live.com)</li>
               <li><strong className="text-white">Microsoft 365</strong> — work or school accounts (Office 365, Exchange Online)</li>
             </ul>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">How it connects:</strong> Sage uses your App Password for both IMAP reading (outlook.office365.com port 993 SSL) and SMTP sending (smtp.office365.com port 587 STARTTLS). One App Password covers both directions.
             </div>
           </section>
@@ -127,7 +127,7 @@ export default function ConnectSageMicrosoftPage() {
               <li>Name it <strong className="text-white">Appalix Sage</strong>.</li>
               <li>Copy the generated password — it will only be shown once.</li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Microsoft 365 admin note:</strong> If your organisation manages Microsoft 365, your IT admin may need to enable &quot;Authenticated SMTP&quot; (SMTP AUTH) for your mailbox via the Exchange Admin Centre. They may also need to permit IMAP access.
             </div>
           </section>
@@ -154,7 +154,7 @@ export default function ConnectSageMicrosoftPage() {
               <li>Sage fetches your most recent emails from Outlook, runs AI analysis on each one, and displays them with priority badges (High / Medium / Low).</li>
               <li>Click any email to open it. You&apos;ll see the full email body, an <strong className="text-white">AI Insights panel</strong> (summary + key action points), and a compose area pre-loaded with three AI reply drafts.</li>
             </ol>
-            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-400">
+            <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white/65">
               <strong className="text-white">Filtering:</strong> Use the All / High / Medium / Low tabs at the top of the inbox to focus on emails that need your attention first.
             </div>
           </section>
@@ -195,27 +195,27 @@ export default function ConnectSageMicrosoftPage() {
             <div className="space-y-5">
               <div>
                 <p className="font-semibold text-white">Will inbound emails appear in Sage automatically?</p>
-                <p className="text-sm text-gray-400 mt-1">Sage syncs on demand — click <strong className="text-white">Sync</strong> whenever you want to pull new emails. There is no background polling in the current version, so new emails will not appear until you sync.</p>
+                <p className="text-sm text-white/65 mt-1">Sage syncs on demand — click <strong className="text-white">Sync</strong> whenever you want to pull new emails. There is no background polling in the current version, so new emails will not appear until you sync.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Does AI analysis cost me extra credits?</p>
-                <p className="text-sm text-gray-400 mt-1">AI analysis uses your workspace&apos;s Claude AI credits. Each email analysed costs a small number of credits for the priority scoring, insights, and three reply drafts. Credits are shared across all AI features in your workspace.</p>
+                <p className="text-sm text-white/65 mt-1">AI analysis uses your workspace&apos;s Claude AI credits. Each email analysed costs a small number of credits for the priority scoring, insights, and three reply drafts. Credits are shared across all AI features in your workspace.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Will emails I send from Sage appear in my Outlook Sent Items?</p>
-                <p className="text-sm text-gray-400 mt-1">Yes — emails sent via Sage appear in your Outlook Sent Items folder, just like emails sent directly from Outlook.</p>
+                <p className="text-sm text-white/65 mt-1">Yes — emails sent via Sage appear in your Outlook Sent Items folder, just like emails sent directly from Outlook.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">Can I use a shared mailbox?</p>
-                <p className="text-sm text-gray-400 mt-1">Shared mailboxes don&apos;t support App Passwords directly. Connect an individual account that has &quot;Send As&quot; permission on the shared mailbox and use that account&apos;s credentials instead.</p>
+                <p className="text-sm text-white/65 mt-1">Shared mailboxes don&apos;t support App Passwords directly. Connect an individual account that has &quot;Send As&quot; permission on the shared mailbox and use that account&apos;s credentials instead.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">My organisation uses conditional access — will it work?</p>
-                <p className="text-sm text-gray-400 mt-1">If your organisation enforces modern authentication (OAuth) only, App Passwords may be blocked. Contact your IT admin to confirm whether SMTP AUTH and IMAP with App Passwords are permitted for your mailbox.</p>
+                <p className="text-sm text-white/65 mt-1">If your organisation enforces modern authentication (OAuth) only, App Passwords may be blocked. Contact your IT admin to confirm whether SMTP AUTH and IMAP with App Passwords are permitted for your mailbox.</p>
               </div>
               <div>
                 <p className="font-semibold text-white">How do I disconnect?</p>
-                <p className="text-sm text-gray-400 mt-1">Click <strong className="text-white">Disconnect</strong> on the Microsoft / Outlook card in Sage Integrations. Then revoke the App Password in your Microsoft Account security settings to fully remove access.</p>
+                <p className="text-sm text-white/65 mt-1">Click <strong className="text-white">Disconnect</strong> on the Microsoft / Outlook card in Sage Integrations. Then revoke the App Password in your Microsoft Account security settings to fully remove access.</p>
               </div>
             </div>
           </section>
@@ -223,7 +223,7 @@ export default function ConnectSageMicrosoftPage() {
           <section className="rounded-2xl bg-brand-600/10 border border-brand-600/20 p-6 text-center mt-12">
             <p className="text-2xl mb-3">🤖</p>
             <h3 className="text-lg font-semibold text-white mb-2">Ready for your AI-powered inbox?</h3>
-            <p className="text-sm text-gray-400 mb-5">
+            <p className="text-sm text-white/65 mb-5">
               Connect Outlook in Sage Integrations, open Sage → Emails, click Sync, and let the AI handle the heavy lifting.
             </p>
             <Link
