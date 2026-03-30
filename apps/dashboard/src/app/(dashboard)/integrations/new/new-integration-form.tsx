@@ -297,20 +297,23 @@ export function NewIntegrationForm({
           </div>
         ) : null}
 
-        {/* Facebook Messenger — embedded popup with page picker */}
-        {platform === 'facebook_messenger' && !!messengerAppId ? (
+        {/* Meta platforms (Messenger + WhatsApp) — embedded popup, no redirect URI needed */}
+        {(platform === 'facebook_messenger' && !!(messengerAppId || metaAppId)) ||
+         (platform === 'whatsapp'           && !!(whatsappAppId  || metaAppId)) ? (
           <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5">
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Authorise access</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-              Click the button below to log in with Facebook and connect your Page — no tokens to copy.
+              Click the button below to log in with Meta and connect your {platform === 'facebook_messenger' ? 'Facebook Page' : 'WhatsApp Business account'}.
             </p>
             {integrationName && bots.length > 0 ? (
               <MetaEmbeddedSignup
-                platform="facebook_messenger"
+                platform={platform as 'facebook_messenger' | 'whatsapp'}
                 name={integrationName}
                 botId={selectedBotId}
-                appId={messengerAppId || metaAppId || ''}
-                configId={messengerConfigId}
+                appId={platform === 'facebook_messenger'
+                  ? (messengerAppId || metaAppId || '')
+                  : (whatsappAppId  || metaAppId || '')}
+                configId={platform === 'facebook_messenger' ? messengerConfigId : undefined}
               />
             ) : (
               <p className="text-xs text-amber-500">
