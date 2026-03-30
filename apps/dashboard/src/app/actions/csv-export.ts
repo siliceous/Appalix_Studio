@@ -252,3 +252,56 @@ export async function exportConversations(): Promise<{ csv: string; filename: st
     return { error: (e as Error).message }
   }
 }
+
+// ---------------------------------------------------------------------------
+// Projects (board)
+// ---------------------------------------------------------------------------
+
+export async function exportProjectsForBoard(boardId: string): Promise<{ csv: string; filename: string } | { error: string }> {
+  try {
+    const { workspaceId } = await getWorkspaceAndUser()
+    const supabase = await createClient()
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
+      .from('sage_projects')
+      .select('name, service_type, status, priority, value, currency, start_date, due_date, notes, contact:sage_contacts(name, email), company:sage_companies(name), stage:sage_project_board_stages(name), created_at')
+      .eq('workspace_id', workspaceId)
+      .eq('board_id', boardId)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+
+    if (error) return { error: error.message }
+
+    const columns = [
+      { key: 'name',          header: 'Project' },
+      { key: 'stage_name',    header: 'Stage' },
+      { key: 'status',        header: 'Status' },
+      { key: 'priority',      header: 'Priority' },
+      { key: 'service_type',  header: 'Service Type' },
+      { key: 'value',         header: 'Value' },
+      { key: 'currency',      header: 'Currency' },
+      { key: 'contact_name',  header: 'Contact' },
+      { key: 'contact_email', header: 'Contact Email' },
+      { key: 'company_name',  header: 'Company' },
+      { key: 'start_date',    header: 'Start Date' },
+      { key: 'due_date',      header: 'Due Date' },
+      { key: 'notes',         header: 'Notes' },
+      { key: 'created_at',    header: 'Created At' },
+    ]
+
+    type ProjRow = { contact?: { name?: string; email?: string }; company?: { name?: string }; stage?: { name?: string }; [k: string]: unknown }
+    const rows = (data ?? [] as ProjRow[]).map((r: ProjRow) => ({
+      ...r,
+      stage_name:    r.stage?.name    ?? '',
+      contact_name:  r.contact?.name  ?? '',
+      contact_email: r.contact?.email ?? '',
+      company_name:  r.company?.name  ?? '',
+    })) as Record<string, unknown>[]
+
+    return { csv: toCsv(rows, columns), filename: `projects-${new Date().toISOString().slice(0, 10)}.csv` }
+  } catch (e) {
+    return { error: (e as Error).message }
+  }
+}
+
