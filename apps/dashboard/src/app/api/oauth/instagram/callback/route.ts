@@ -80,32 +80,35 @@ export async function GET(req: NextRequest) {
   // ── 4. Get pages → find Instagram business account ────────────────────────
   let pageToken = '', pageId = '', igAccountId = '', igUsername = ''
   try {
-    const pagesRes  = await fetch(`https://graph.facebook.com/v18.0/me/accounts?access_token=${longToken}`)
+    // Fetch all pages with instagram_business_account inline
+    const pagesRes  = await fetch(
+      `https://graph.facebook.com/v18.0/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&access_token=${longToken}`
+    )
     const pagesData = await pagesRes.json() as {
-      data?: { access_token: string; id: string; name: string }[]
+      data?: { access_token: string; id: string; name: string; instagram_business_account?: { id: string; username?: string } }[]
+      error?: { message: string }
     }
     console.log('[oauth/instagram/callback] pages:', JSON.stringify(pagesData))
-    const firstPage = pagesData.data?.[0]
-    if (firstPage) {
-      pageToken = firstPage.access_token
-      pageId    = firstPage.id
 
-      // Fetch the Instagram account linked to this page
-      const igRes  = await fetch(
-        `https://graph.facebook.com/v18.0/${pageId}?fields=instagram_business_account&access_token=${pageToken}`,
-      )
-      const igData = await igRes.json() as {
-        instagram_business_account?: { id: string }
+    // Try each page until we find one with an Instagram account
+    for (const page of pagesData.data ?? []) {
+      if (page.instagram_business_account?.id) {
+        pageToken   = page.access_token
+        pageId      = page.id
+        igAccountId = page.instagram_business_account.id
+        igUsername  = page.instagram_business_account.username ?? ''
+        break
       }
-      console.log('[oauth/instagram/callback] ig data for page', pageId, ':', JSON.stringify(igData))
-      igAccountId = igData.instagram_business_account?.id ?? ''
+    }
 
-      if (igAccountId) {
-        const igProfileRes  = await fetch(
-          `https://graph.facebook.com/v18.0/${igAccountId}?fields=username&access_token=${pageToken}`,
-        )
-        const igProfile = await igProfileRes.json() as { username?: string }
-        igUsername = igProfile.username ?? ''
+    // Fallback: try fetching IG account directly from user token
+    if (!igAccountId) {
+      const meRes  = await fetch(`https://graph.facebook.com/v18.0/me?fields=instagram_business_account{id,username}&access_token=${longToken}`)
+      const meData = await meRes.json() as { instagram_business_account?: { id: string; username?: string } }
+      console.log('[oauth/instagram/callback] me direct:', JSON.stringify(meData))
+      if (meData.instagram_business_account?.id) {
+        igAccountId = meData.instagram_business_account.id
+        igUsername  = meData.instagram_business_account.username ?? ''
       }
     }
   } catch (err) {
