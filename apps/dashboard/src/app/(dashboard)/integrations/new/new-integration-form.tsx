@@ -119,6 +119,7 @@ export function NewIntegrationForm({
   messengerAppId,
   messengerConfigId,
   metaAppId,
+  whatsappAppId,
   plan = 'individual',
 }: {
   bots: { id: string; name: string }[]
@@ -126,6 +127,7 @@ export function NewIntegrationForm({
   messengerAppId?: string
   messengerConfigId?: string
   metaAppId?: string
+  whatsappAppId?: string
   plan?: 'individual' | 'pro' | 'team' | 'enterprise'
 }) {
   const router = useRouter()
@@ -296,7 +298,10 @@ export function NewIntegrationForm({
         ) : null}
 
         {/* OAuth platforms: show one-click connect instead of credential form */}
-        {platform !== 'shopify' && (platform === 'facebook_messenger' || platform === 'whatsapp') && metaAppId ? (
+        {platform !== 'shopify' && (
+          (platform === 'facebook_messenger' && !!messengerAppId) ||
+          (platform === 'whatsapp' && !!(whatsappAppId || metaAppId))
+        ) ? (
           <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5">
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Authorise access</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
@@ -307,7 +312,9 @@ export function NewIntegrationForm({
                 platform={platform}
                 name={integrationName}
                 botId={selectedBotId}
-                appId={platform === 'facebook_messenger' ? (process.env.NEXT_PUBLIC_MESSENGER_APP_ID || messengerAppId || metaAppId || '') : (metaAppId || '')}
+                appId={platform === 'facebook_messenger'
+                  ? (messengerAppId || metaAppId || '')
+                  : (whatsappAppId || metaAppId || '')}
                 configId={platform === 'facebook_messenger' ? messengerConfigId : undefined}
               />
             ) : (

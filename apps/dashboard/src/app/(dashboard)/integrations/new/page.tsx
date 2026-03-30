@@ -38,6 +38,7 @@ export default async function NewIntegrationPage({
       messengerAppId={process.env.MESSENGER_APP_ID || process.env.META_APP_ID}
       messengerConfigId={process.env.MESSENGER_CONFIG_ID}
       metaAppId={process.env.META_APP_ID}
+      whatsappAppId={process.env.WHATSAPP_APP_ID || process.env.META_APP_ID}
       plan={plan}
     />
   )

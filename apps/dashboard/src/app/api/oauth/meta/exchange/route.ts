@@ -22,8 +22,12 @@ export async function POST(req: NextRequest) {
   }
 
   const isMessenger = platform === 'facebook_messenger'
-  const appId     = (isMessenger ? process.env.MESSENGER_APP_ID     : undefined) || process.env.META_APP_ID     || process.env.FACEBOOK_APP_ID     || ''
-  const appSecret = (isMessenger ? process.env.MESSENGER_APP_SECRET : undefined) || process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || ''
+  const appId = isMessenger
+    ? (process.env.MESSENGER_APP_ID  || process.env.META_APP_ID || process.env.FACEBOOK_APP_ID || '')
+    : (process.env.WHATSAPP_APP_ID   || process.env.META_APP_ID || process.env.FACEBOOK_APP_ID || '')
+  const appSecret = isMessenger
+    ? (process.env.MESSENGER_APP_SECRET  || process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || '')
+    : (process.env.WHATSAPP_APP_SECRET   || process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || '')
 
   // ── Auth check ────────────────────────────────────────────────────────────
   const supabase = await createClient()
@@ -216,7 +220,42 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ integrationId: (inserted as { id: string }).id })
+
+    const integrationId = (inserted as { id: string }).id
+    const apiUrl        = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://ap.appalix.ai'
+    const appToken      = `${appId}|${appSecret}`
+
+    // ── Auto-register app-level WhatsApp webhook ──────────────────────────────
+    try {
+      await fetch(`https://graph.facebook.com/v18.0/${appId}/subscriptions`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          object:       'whatsapp_business_account',
+          callback_url: `${apiUrl}/webhooks/whatsapp/${integrationId}`,
+          fields:       'messages',
+          verify_token: verifyToken,
+          access_token: appToken,
+        }),
+      })
+    } catch (err) {
+      console.error('[meta/exchange] WhatsApp webhook registration failed:', err)
+    }
+
+    // ── Subscribe the WABA to receive events ─────────────────────────────────
+    if (wabaId && longToken) {
+      try {
+        await fetch(`https://graph.facebook.com/v18.0/${wabaId}/subscribed_apps`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ access_token: longToken }),
+        })
+      } catch (err) {
+        console.error('[meta/exchange] WhatsApp WABA subscription failed:', err)
+      }
+    }
+
+    return NextResponse.json({ integrationId })
   }
 
   return NextResponse.json({ error: 'Unknown platform' }, { status: 400 })
