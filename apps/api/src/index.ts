@@ -28,6 +28,8 @@ import { analyzeConversationsForWorkspace }         from './services/conversatio
 import { runMailchimpTwoWaySync }                   from './services/mailchimp-two-way-sync.js'
 import { notificationRoutes }                       from './routes/notifications/index.js'
 import { pollDueNotifications }                     from './services/sage-notifications.js'
+import { liveRoutes }                               from './routes/live/index.js'
+import { handleLiveWsConnection }                   from './live/session-manager.js'
 
 const server = Fastify({
   logger: {
@@ -118,6 +120,9 @@ await server.register(formRoutes, { prefix: '/forms' })
 // Notification push-token registration
 await server.register(notificationRoutes, { prefix: '/notifications' })
 
+// Sage Live Gateway — session creation (REST) + WebSocket bridge
+await server.register(liveRoutes, { prefix: '/live' })
+
 // ---------------------------------------------------------------
 // Error handler
 // ---------------------------------------------------------------
@@ -134,9 +139,52 @@ server.setErrorHandler((error: { statusCode?: number; message: string; code?: st
 // ---------------------------------------------------------------
 const port = parseInt(config.PORT, 10)
 
+// tsx --watch restarts the process before the OS releases the socket.
+// Retry once after a short wait to let the old process fully exit.
+async function listenWithRetry() {
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    try {
+      await server.listen({ port, host: '0.0.0.0' })
+      return
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code === 'EADDRINUSE' && attempt < 5) {
+        console.warn(`[startup] Port ${port} in use — retrying in ${attempt * 300}ms (attempt ${attempt}/5)…`)
+        await new Promise(r => setTimeout(r, attempt * 300))
+      } else {
+        throw err
+      }
+    }
+  }
+}
+
 try {
-  await server.listen({ port, host: '0.0.0.0' })
+  await listenWithRetry()
   console.log(`\n🚀  API server running on http://0.0.0.0:${port}`)
+
+  // ── Gemini Live WebSocket gateway ──────────────────────────────────────
+  // Fastify v5 doesn't use @fastify/websocket here — we hook the raw Node
+  // http.Server upgrade event so WS lives on the same port as the REST API.
+  // -----------------------------------------------------------------------
+  try {
+    const { WebSocketServer } = await import('ws')
+    const wss = new WebSocketServer({ noServer: true })
+
+    server.server.on('upgrade', (request: import('http').IncomingMessage, socket: import('net').Socket, head: Buffer) => {
+      const url = new URL(request.url ?? '/', `http://localhost:${port}`)
+      if (url.pathname === '/live/ws') {
+        wss.handleUpgrade(request, socket, head, (ws) => {
+          wss.emit('connection', ws, request)
+        })
+      } else {
+        socket.destroy()
+      }
+    })
+
+    wss.on('connection', handleLiveWsConnection)
+    console.log(`   WS   /live/ws               (Sage Voice gateway)`)
+  } catch {
+    console.warn('[live-gateway] ws package not found — voice disabled. Run: npm i ws @google/genai in apps/api')
+  }
   console.log(`   GET  /health`)
   console.log(`   POST /webhooks/slack/:id`)
   console.log(`   POST /webhooks/facebook/:id`)
@@ -273,10 +321,15 @@ try {
   void pollDueNotifications()
   setInterval(() => void pollDueNotifications(), 5 * 60 * 1000)
 
-  // Graceful shutdown — release IMAP connections before process exits
-  const shutdown = () => { stopIdleManager(); process.exit(0) }
-  process.once('SIGTERM', shutdown)
-  process.once('SIGINT',  shutdown)
+  // Graceful shutdown — close HTTP server first so port is released before
+  // the process exits. This prevents EADDRINUSE when tsx --watch restarts.
+  const shutdown = async () => {
+    stopIdleManager()
+    try { await server.close() } catch {}
+    process.exit(0)
+  }
+  process.once('SIGTERM', () => { void shutdown() })
+  process.once('SIGINT',  () => { void shutdown() })
 
 } catch (err) {
   server.log.error(err)

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Trash2, ArrowRight, Search, ChevronDown, Inbox, Loader2 } from 'lucide-react'
 import { deleteLead, deleteLeads, moveLeadToPipeline, updateLeadScore, updateLeadStatus } from '@/app/actions/leads'
@@ -65,6 +66,7 @@ interface LeadsClientProps {
 // ---------------------------------------------------------------------------
 
 export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNameMap }: LeadsClientProps) {
+  const router = useRouter()
   const [leads, setLeads]             = useState<Lead[]>(initial)
   const [search, setSearch]           = useState('')
   const [deleting, setDeleting]       = useState<string | null>(null)
@@ -75,6 +77,11 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
   const [bulkSaving,       setBulkSaving]       = useState(false)
   const [, startTransition]           = useTransition()
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    const interval = setInterval(() => router.refresh(), 60_000)
+    return () => clearInterval(interval)
+  }, [router])
 
   function toggleSelect(id: string) {
     setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })

@@ -262,7 +262,12 @@ export type SageIntegrationProvider =
   | 'gravity_forms' | 'google_forms' | 'typeform' | 'fluent_forms'
   | 'linkedin' | 'tiktok' | 'microsoft_ads' | 'calendly'
 export type SageIntegrationStatus   = 'connected' | 'disconnected' | 'error'
-export type SageActivityEntityType  = 'contact' | 'deal' | 'ticket' | 'company'
+export type SageActivityEntityType  = 'contact' | 'deal' | 'ticket' | 'company' | 'project'
+export type SageProjectStatus        = 'onboarding' | 'active' | 'on_hold' | 'completed' | 'cancelled'
+export type SageProjectTaskStatus    = 'pending' | 'in_progress' | 'completed'
+export type SageProjectType          = 'client_work' | 'internal' | 'support' | 'onboarding' | 'custom'
+export type SageProjectBillingStatus = 'not_invoiced' | 'invoiced' | 'partial' | 'paid'
+export type SageProjectSource        = 'email' | 'bot' | 'forms' | 'manual' | 'ads' | 'deal'
 
 export interface SageCompany {
   id:           string
@@ -409,6 +414,126 @@ export interface SageTicket {
   updated_at:        string
   // joined
   contact?:          Pick<SageContact, 'id' | 'name' | 'email'> | null
+}
+
+export interface SageProject {
+  id:               string
+  workspace_id:     string
+  deal_id:          string | null
+  contact_id:       string | null
+  company_id:       string | null
+  owner_id:         string | null
+  assigned_to:      string[]
+  name:             string
+  project_type:     SageProjectType
+  service_type:     string | null
+  template_id:      string | null
+  status:           SageProjectStatus
+  priority:         'low' | 'medium' | 'high'
+  progress_percent: number
+  billing_status:   SageProjectBillingStatus
+  is_recurring:     boolean
+  source:           SageProjectSource | null
+  next_action:      string | null
+  blocker_flag:     boolean
+  blocker_reason:   string | null
+  start_date:       string | null
+  due_date:         string | null
+  value:            number | null
+  currency:         string
+  notes:            string | null
+  deliverables:     string | null
+  deleted_at:       string | null
+  created_at:       string
+  updated_at:       string
+  board_id?:        string | null
+  stage_id?:        string | null
+  // joined
+  contact?:         Pick<SageContact, 'id' | 'name' | 'email'> | null
+  company?:         Pick<SageCompany, 'id' | 'name'> | null
+  deal?:            Pick<SageDeal, 'id' | 'title'> | null
+  board?:           { id: string; name: string } | null
+  stage?:           { id: string; name: string; color: string } | null
+  template?:        Pick<SageProjectTemplate, 'id' | 'name'> | null
+}
+
+export interface SageProjectTask {
+  id:           string
+  project_id:   string
+  workspace_id: string
+  title:        string
+  description:  string | null
+  assigned_to:  string | null
+  status:       SageProjectTaskStatus
+  priority:     'low' | 'medium' | 'high'
+  due_date:     string | null
+  order_index:  number
+  completed_at: string | null
+  created_at:   string
+  updated_at:   string
+}
+
+export interface SageProjectTaskTemplate {
+  id:           string
+  workspace_id: string | null
+  service_type: string
+  title:        string
+  description:  string | null
+  order_index:  number
+  created_at:   string
+}
+
+export interface SageProjectActivity {
+  id:           string
+  workspace_id: string
+  project_id:   string
+  type:         'note' | 'call' | 'meeting' | 'task'
+  title:        string | null
+  body:         string | null
+  due_at:       string | null
+  completed_at: string | null
+  created_by:   string | null
+  created_at:   string
+}
+
+export interface SageProjectTemplate {
+  id:           string
+  workspace_id: string | null   // null = global default
+  name:         string
+  project_type: SageProjectType
+  description:  string | null
+  is_default:   boolean
+  created_at:   string
+  tasks?:       SageTemplateTask[]
+}
+
+export interface SageTemplateTask {
+  id:                    string
+  template_id:           string
+  title:                 string
+  description:           string | null
+  default_assignee_role: 'owner' | 'team_member' | 'custom'
+  due_offset_days:       number
+  order_index:           number
+  created_at:            string
+}
+
+export interface SageProjectBoard {
+  id:           string
+  workspace_id: string
+  name:         string
+  description:  string | null
+  created_at:   string
+  stages?:      SageProjectBoardStage[]
+}
+
+export interface SageProjectBoardStage {
+  id:         string
+  board_id:   string
+  name:       string
+  color:      string
+  position:   number
+  created_at: string
 }
 
 export interface SageActivityLog {
@@ -604,4 +729,90 @@ export interface Database {
     }
     Enums: Record<string, never>
   }
+}
+
+// ── Documents (Quotes / Packing Lists / Invoices) ─────────────────────────────
+
+export type SageDocumentType    = 'quote' | 'packing_list' | 'invoice'
+export type SageDocumentStatus  = 'draft' | 'sent' | 'accepted' | 'declined' | 'invoiced' | 'paid' | 'partial' | 'overdue' | 'void'
+export type SageDiscountType    = 'percent' | 'fixed'
+
+export interface SageItem {
+  id:           string
+  workspace_id: string
+  item_code:    string
+  description:  string
+  category:     string | null
+  job:          string | null
+  tax_code:     string | null
+  unit:         string | null
+  unit_price:   number
+  deleted_at:   string | null
+  created_at:   string
+  updated_at:   string
+}
+
+export interface SageDocumentItem {
+  id:          string
+  document_id: string
+  item_code?:  string | null
+  description: string
+  category?:   string | null
+  job?:        string | null
+  tax_code?:   string | null
+  unit?:       string | null
+  quantity:    number
+  unit_price:  number
+  discount?:   number
+  amount:      number
+  order_index: number
+  created_at:  string
+}
+
+export interface SageDocument {
+  id:                  string
+  workspace_id:        string
+  doc_type:            SageDocumentType
+  doc_number:          string
+  project_id:          string | null
+  contact_id:          string | null
+  company_id:          string | null
+  quote_id:            string | null
+  status:              SageDocumentStatus
+  currency:            string
+  subtotal:            number
+  discount_type:       SageDiscountType
+  discount_value:      number
+  tax_rate:            number
+  tax_amount:          number
+  total:               number
+  issue_date:          string
+  due_date:            string | null
+  valid_until:         string | null
+  notes:               string | null
+  terms:               string | null
+  customer_po:         string | null
+  tax_inclusive:       boolean
+  amount_paid:         number
+  attachments:         { name: string; url: string; size: number; type: string }[]
+  from_name:           string | null
+  from_address:        string | null
+  accent_color:        string | null
+  logo_url:            string | null
+  stripe_customer_id:  string | null
+  stripe_invoice_id:   string | null
+  stripe_payment_link: string | null
+  sent_at:             string | null
+  accepted_at:         string | null
+  paid_at:             string | null
+  viewed_at:           string | null
+  created_by:          string | null
+  created_at:          string
+  updated_at:          string
+  deleted_at:          string | null
+  // Joined
+  items?:   SageDocumentItem[]
+  contact?: { id: string; name: string; email: string | null } | null
+  company?: { id: string; name: string } | null
+  project?: { id: string; name: string } | null
 }
