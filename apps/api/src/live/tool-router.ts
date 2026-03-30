@@ -1335,7 +1335,7 @@ type FormSubmission = {
   source_platform: string | null
 }
 
-async function resolveLeadId(args: Record<string, unknown>, ctx: ToolContext): Promise<{ lead: FormSubmission; error: null } | { lead: null; error: string }> {
+async function resolveLeadId(args: Record<string, unknown>, ctx: ToolContext): Promise<{ lead?: FormSubmission; error?: string }> {
   if (args.lead_id) {
     const { data } = await supabase
       .from('sage_form_submissions')
@@ -1344,12 +1344,12 @@ async function resolveLeadId(args: Record<string, unknown>, ctx: ToolContext): P
       .eq('id', String(args.lead_id))
       .limit(1)
     const row = data?.[0] as FormSubmission | undefined
-    if (row) return { lead: row, error: null }
-    return { lead: null, error: `No lead found with ID "${String(args.lead_id)}".` }
+    if (row) return { lead: row }
+    return { error: `No lead found with ID "${String(args.lead_id)}".` }
   }
 
   const query = String(args.lead_query ?? '').trim()
-  if (!query) return { lead: null, error: 'Please provide a lead ID or a name/email to search for.' }
+  if (!query) return { error: 'Please provide a lead ID or a name/email to search for.' }
 
   const { data } = await supabase
     .from('sage_form_submissions')
@@ -1360,8 +1360,8 @@ async function resolveLeadId(args: Record<string, unknown>, ctx: ToolContext): P
     .limit(1)
 
   const row = data?.[0] as FormSubmission | undefined
-  if (row) return { lead: row, error: null }
-  return { lead: null, error: `No lead found matching "${query}".` }
+  if (row) return { lead: row }
+  return { error: `No lead found matching "${query}".` }
 }
 
 // ── assign_lead ───────────────────────────────────────────────────────────────
@@ -1375,7 +1375,7 @@ async function assignLead(args: Record<string, unknown>, ctx: ToolContext): Prom
 
   const resolved = await resolveLeadId(args, ctx)
   if (resolved.error) return resolved.error
-  const lead = resolved.lead
+  const lead = resolved.lead!
 
   // Resolve team member
   type MemberRow = { user_id: string; user_profiles: { first_name: string | null; last_name: string | null } | null }
@@ -1424,7 +1424,7 @@ async function setLeadPriority(args: Record<string, unknown>, ctx: ToolContext):
 
   const resolved = await resolveLeadId(args, ctx)
   if (resolved.error) return resolved.error
-  const lead = resolved.lead
+  const lead = resolved.lead!
 
   const { error } = await supabase
     .from('sage_form_submissions')
@@ -1447,7 +1447,7 @@ async function setLeadPriority(args: Record<string, unknown>, ctx: ToolContext):
 async function createTicketFromLead(args: Record<string, unknown>, ctx: ToolContext): Promise<string> {
   const resolved = await resolveLeadId(args, ctx)
   if (resolved.error) return resolved.error
-  const lead = resolved.lead
+  const lead = resolved.lead!
 
   const f        = lead.fields
   const name     = f.name ?? f.full_name ?? f.first_name ?? 'Unknown'
@@ -1495,7 +1495,7 @@ async function createDealFromLead(args: Record<string, unknown>, ctx: ToolContex
 
   const resolved = await resolveLeadId(args, ctx)
   if (resolved.error) return resolved.error
-  const lead = resolved.lead
+  const lead = resolved.lead!
 
   const f       = lead.fields
   const name    = f.name ?? f.full_name ?? f.first_name ?? 'Unknown'
@@ -1578,7 +1578,7 @@ async function deleteLead(args: Record<string, unknown>, ctx: ToolContext): Prom
 
   const resolved = await resolveLeadId(args, ctx)
   if (resolved.error) return resolved.error
-  const lead = resolved.lead
+  const lead = resolved.lead!
 
   const leadName = lead.fields.name ?? lead.fields.full_name ?? lead.id
 
