@@ -3,8 +3,8 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { randomBytes } from 'crypto'
 
 /**
- * Instagram Business Login OAuth2 callback.
- * Uses instagram.com/oauth/authorize + api.instagram.com token exchange.
+ * Instagram OAuth2 callback via Facebook Login.
+ * Requires Instagram Business account linked to a Facebook Page.
  */
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
@@ -39,35 +39,29 @@ export async function GET(req: NextRequest) {
   const appSecret   = process.env.INSTAGRAM_APP_SECRET || process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || ''
   const redirectUri = `${appUrl}/api/oauth/instagram/callback`
 
-  // ── 2. Exchange code → short-lived token (Instagram endpoint) ────────────
-  let shortToken: string, igUserId: string
+  // ── 2. Exchange code → short-lived token ─────────────────────────────────
+  let shortToken: string
   try {
-    const body = new URLSearchParams({
-      client_id:     appId,
-      client_secret: appSecret,
-      grant_type:    'authorization_code',
-      redirect_uri:  redirectUri,
-      code,
-    })
-    const res  = await fetch('https://api.instagram.com/oauth/access_token', { method: 'POST', body })
-    const data = await res.json() as { access_token?: string; user_id?: number; error_message?: string; error_type?: string }
-    console.log('[oauth/instagram/callback] short token:', JSON.stringify(data))
-    if (!data.access_token) throw new Error(data.error_message ?? 'no token')
+    const res  = await fetch(
+      `https://graph.facebook.com/v18.0/oauth/access_token?` +
+      new URLSearchParams({ client_id: appId, client_secret: appSecret, redirect_uri: redirectUri, code }),
+    )
+    const data = await res.json() as { access_token?: string; error?: { message: string } }
+    if (!data.access_token) throw new Error(data.error?.message ?? 'no token')
     shortToken = data.access_token
-    igUserId   = String(data.user_id ?? '')
   } catch (err) {
     console.error('[oauth/instagram/callback] token exchange failed:', err)
     return NextResponse.redirect(`${appUrl}/integrations/new?platform=instagram&error=token_exchange_failed`)
   }
 
-  // ── 3. Exchange → long-lived token (Instagram endpoint) ──────────────────
+  // ── 3. Exchange → long-lived token ───────────────────────────────────────
   let longToken: string
   try {
     const res  = await fetch(
-      `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${appSecret}&access_token=${shortToken}`
+      `https://graph.facebook.com/v18.0/oauth/access_token?` +
+      new URLSearchParams({ grant_type: 'fb_exchange_token', client_id: appId, client_secret: appSecret, fb_exchange_token: shortToken }),
     )
     const data = await res.json() as { access_token?: string; error?: { message: string } }
-    console.log('[oauth/instagram/callback] long token:', JSON.stringify(data))
     if (!data.access_token) throw new Error(data.error?.message ?? 'no long-lived token')
     longToken = data.access_token
   } catch (err) {
@@ -75,16 +69,28 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${appUrl}/integrations/new?platform=instagram&error=token_exchange_failed`)
   }
 
-  // ── 4. Fetch Instagram username ───────────────────────────────────────────
-  let igUsername = ''
+  // ── 4. Find Instagram account via Facebook Pages ──────────────────────────
+  let accessToken = longToken, pageId = '', igAccountId = '', igUsername = '', pageName = ''
   try {
-    const res  = await fetch(`https://graph.instagram.com/v18.0/${igUserId}?fields=id,username&access_token=${longToken}`)
-    const data = await res.json() as { id?: string; username?: string }
-    console.log('[oauth/instagram/callback] profile:', JSON.stringify(data))
-    igUsername = data.username ?? ''
-    if (data.id) igUserId = data.id
+    const res  = await fetch(
+      `https://graph.facebook.com/v18.0/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&access_token=${longToken}`
+    )
+    const data = await res.json() as {
+      data?: { access_token: string; id: string; name: string; instagram_business_account?: { id: string; username?: string } }[]
+    }
+    console.log('[oauth/instagram/callback] pages:', JSON.stringify(data))
+    for (const page of data.data ?? []) {
+      if (page.instagram_business_account?.id) {
+        accessToken = page.access_token
+        pageId      = page.id
+        pageName    = page.name
+        igAccountId = page.instagram_business_account.id
+        igUsername  = page.instagram_business_account.username ?? ''
+        break
+      }
+    }
   } catch (err) {
-    console.error('[oauth/instagram/callback] profile fetch failed:', err)
+    console.error('[oauth/instagram/callback] pages fetch failed:', err)
   }
 
   const verifyToken = randomBytes(16).toString('hex')
@@ -92,8 +98,11 @@ export async function GET(req: NextRequest) {
   // ── 5. Create integration ─────────────────────────────────────────────────
   const admin  = createAdminClient()
   const config = {
-    access_token:         longToken,
-    instagram_account_id: igUserId,
+    access_token:         accessToken,
+    page_access_token:    accessToken,
+    page_id:              pageId,
+    page_name:            pageName,
+    instagram_account_id: igAccountId,
     instagram_username:   igUsername,
     app_secret:           appSecret,
     verify_token:         verifyToken,
@@ -124,7 +133,7 @@ export async function GET(req: NextRequest) {
 
   // ── 6. Register webhook ───────────────────────────────────────────────────
   try {
-    const res = await fetch(`https://graph.facebook.com/v18.0/${appId}/subscriptions`, {
+    await fetch(`https://graph.facebook.com/v18.0/${appId}/subscriptions`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -135,9 +144,21 @@ export async function GET(req: NextRequest) {
         access_token: appToken,
       }),
     })
-    console.log('[oauth/instagram/callback] webhook reg:', await res.text())
   } catch (err) {
     console.error('[oauth/instagram/callback] webhook registration failed:', err)
+  }
+
+  // ── 7. Subscribe page ─────────────────────────────────────────────────────
+  if (pageId && accessToken !== longToken) {
+    try {
+      await fetch(`https://graph.facebook.com/v18.0/${pageId}/subscribed_apps`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscribed_fields: 'messages', access_token: accessToken }),
+      })
+    } catch (err) {
+      console.error('[oauth/instagram/callback] page subscription failed:', err)
+    }
   }
 
   return NextResponse.redirect(`${appUrl}/integrations/${integrationId}?connected=instagram`)
