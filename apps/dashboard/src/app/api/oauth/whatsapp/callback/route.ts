@@ -40,8 +40,8 @@ export async function GET(req: NextRequest) {
   }
 
   // ── 2. Exchange code for user access token ───────────────────────────────
-  const appId       = process.env.META_APP_ID!
-  const appSecret   = process.env.META_APP_SECRET!
+  const appId       = (process.env.WHATSAPP_APP_ID   || process.env.META_APP_ID)!
+  const appSecret   = (process.env.WHATSAPP_APP_SECRET || process.env.META_APP_SECRET)!
   const redirectUri = `${appUrl}/api/oauth/whatsapp/callback`
 
   let userToken: string
