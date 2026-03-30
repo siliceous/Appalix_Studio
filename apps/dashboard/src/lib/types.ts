@@ -11,6 +11,7 @@ export type Platform =
   | 'google_chat'
   | 'facebook_messenger'
   | 'whatsapp'
+  | 'instagram'
   | 'wordpress'
   | 'web_widget'
   | 'custom_api'

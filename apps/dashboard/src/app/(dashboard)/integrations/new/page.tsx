@@ -28,7 +28,7 @@ export default async function NewIntegrationPage({
   const bots = (rawBots ?? []) as { id: string; name: string }[]
   const plan = ((wsRaw as { plan: string } | null)?.plan ?? 'individual') as 'individual' | 'pro' | 'team' | 'enterprise'
 
-  const validPlatforms = ['web_widget','custom_api','slack','wordpress','facebook_messenger','whatsapp','google_chat','telegram','shopify']
+  const validPlatforms = ['web_widget','custom_api','slack','wordpress','facebook_messenger','whatsapp','instagram','google_chat','telegram','shopify']
   const selected = (validPlatforms.includes(qp ?? '') ? qp : 'web_widget') as Platform
 
   return (

@@ -110,6 +110,9 @@ export default async function IntegrationSetupPage({
       {integration.platform === 'telegram' && (
         <TelegramSetup integrationId={id} cfg={cfg} apiUrl={API_URL} />
       )}
+      {integration.platform === 'instagram' && (
+        <InstagramSetup integrationId={id} cfg={cfg} apiUrl={API_URL} />
+      )}
       {integration.platform === 'shopify' && (
         <ShopifySetup integrationId={id} cfg={cfg} apiUrl={API_URL} />
       )}
@@ -481,6 +484,82 @@ function TelegramSetup({
           {botUsername ? `Open @${botUsername} →` : 'Open Telegram →'}
         </a>
       </div>
+    </div>
+  )
+}
+
+// ─── Instagram ────────────────────────────────────────────────────────────────
+
+function InstagramSetup({
+  cfg,
+}: {
+  integrationId: string
+  cfg: Record<string, unknown>
+  apiUrl: string
+}) {
+  const igUsername = (cfg.instagram_username as string) || ''
+  const igAccountId = (cfg.instagram_account_id as string) || ''
+  const pageName = (cfg.page_name as string) || ''
+
+  return (
+    <div className="space-y-5">
+      <SetupSection title="Connected Instagram Account">
+        <div className="flex items-center gap-3">
+          <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {igUsername ? `@${igUsername}` : 'Instagram Business Account'}
+            </p>
+            {igAccountId && (
+              <p className="text-xs text-gray-400 mt-0.5">Account ID: {igAccountId}</p>
+            )}
+            {pageName && (
+              <p className="text-xs text-gray-400 mt-0.5">Via Facebook Page: {pageName}</p>
+            )}
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
+          Your bot is live. Any direct message sent to your Instagram Business account will
+          receive an automatic reply from your bot.
+        </p>
+      </SetupSection>
+
+      <SetupSection title="Requirements">
+        <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+            Instagram account must be a <strong>Business</strong> or <strong>Creator</strong> account
+          </li>
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+            Instagram account must be linked to a Facebook Page
+          </li>
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+            Message Control must be enabled in Instagram Professional Settings
+          </li>
+        </ul>
+      </SetupSection>
+
+      <SetupSection title="Testing">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Send a DM to your Instagram account from another account. Your bot will reply within
+          a few seconds. Note: Instagram only delivers webhooks for messages from accounts that
+          have not been blocked, and your Meta app must be live or in developer mode with the
+          sender as a tester.
+        </p>
+        {igUsername && (
+          <a
+            href={`https://www.instagram.com/${igUsername}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg text-white transition-colors"
+            style={{ backgroundColor: '#E1306C' }}
+          >
+            Open @{igUsername} on Instagram →
+          </a>
+        )}
+      </SetupSection>
     </div>
   )
 }
