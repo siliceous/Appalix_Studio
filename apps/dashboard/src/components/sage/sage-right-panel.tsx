@@ -78,6 +78,49 @@ function getContextLabel(pathname: string): string {
   return 'Workspace'
 }
 
+/** Structured JSON context for Sage Voice — machine-readable for entity resolution */
+function buildStructuredContext(pathname: string): string {
+  const { entityType, entityId } = extractPageEntity(pathname)
+
+  const pageTypeMap: Record<string, string> = {
+    '/dashboard':          'main_dashboard',
+    '/dashboard/email':    'email_triage',
+    '/dashboard/bots':     'bot_conversations',
+    '/dashboard/forms':    'form_submissions',
+    '/dashboard/tickets':  'ticket_triage',
+    '/sage/contacts':      'contacts_list',
+    '/sage/pipelines':     'pipelines_kanban',
+    '/sage/tickets':       'tickets_list',
+    '/sage/emails':        'email_inbox',
+    '/sage/projects':      'projects_list',
+    '/sage/integrations':  'integrations',
+    '/sage/rules':         'automation_rules',
+    '/sage/roi':           'roi_analytics',
+    '/analytics':          'analytics',
+    '/conversations':      'conversations',
+    '/bots':               'bots',
+    '/forms':              'forms',
+  }
+  let pageType = pageTypeMap[pathname] ?? 'unknown'
+  if (pathname.includes('/sage/contacts/'))    pageType = 'contact_detail'
+  else if (pathname.includes('/sage/pipelines/')) pageType = 'pipeline_board'
+  else if (pathname.includes('/sage/tickets/'))   pageType = 'ticket_detail'
+  else if (pathname.includes('/conversations/'))  pageType = 'conversation_detail'
+  else if (pathname.includes('/dashboard/forms/')) pageType = 'form_submission_detail'
+  else if (pathname.startsWith('/settings'))       pageType = 'settings'
+
+  const ctx: Record<string, unknown> = { route: pathname, pageType }
+  if (entityType && entityId) ctx.focusedEntity = { type: entityType, id: entityId }
+
+  // Pages can publish live counts/entities via window.__sage_ctx__ for richer resolution
+  if (typeof window !== 'undefined') {
+    const dynamic = (window as unknown as Record<string, unknown>).__sage_ctx__
+    if (dynamic && typeof dynamic === 'object') Object.assign(ctx, dynamic)
+  }
+
+  return JSON.stringify(ctx)
+}
+
 function buildPageContext(pathname: string): string {
   // Detail pages
   if (pathname.includes('/sage/contacts/')) {
@@ -278,8 +321,24 @@ export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt }: S
   const bottomRef      = useRef<HTMLDivElement>(null)
   const textareaRef    = useRef<HTMLTextAreaElement>(null)
   const fileInputRef   = useRef<HTMLInputElement>(null)
+  // ── Gemini Live voice state ───────────────────────────────────────────────
+  type LiveVoiceState = 'off' | 'connecting' | 'listening' | 'thinking' | 'speaking'
+  const [liveVoice,      setLiveVoice]     = useState<LiveVoiceState>('off')
+  const [lastSageText,   setLastSageText]  = useState<string>('')
+  const [showTranscript, setShowTranscript] = useState(false)
+  const [wakeWordFired,  setWakeWordFired] = useState(false)
+  const liveWsRef          = useRef<WebSocket | null>(null)
+  const audioCtxRef        = useRef<AudioContext | null>(null)
+  const nextPlayRef        = useRef(0)
+  const micProcessorRef    = useRef<{ disconnect(): void } | null>(null)
+  const micStreamRef       = useRef<MediaStream | null>(null)
+  const transcriptTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recognitionRef = useRef<any>(null)
+  const wakeWordRef        = useRef<any>(null)
+  const wakeWordVersionRef = useRef(0)        // increment on each start; onend checks its own version
+  const liveVoiceRef       = useRef<LiveVoiceState>('off')
+  const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const INACTIVITY_MS      = 120_000 // 120 seconds
 
   function startResize(e: React.MouseEvent) {
     e.preventDefault()
@@ -311,8 +370,8 @@ export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt }: S
       if (panelState === 'closed') return
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
-      if (e.key === 'm' || e.key === 'M') toggleVoice()
-      if (e.key === 'Escape') setPanelState('closed')
+      if (e.key === 'm' || e.key === 'M') void toggleVoice()
+      if (e.key === 'Escape') { stopLiveVoice(); setPanelState('closed') }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
@@ -328,6 +387,34 @@ export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt }: S
     window.addEventListener('sage:open', onSageOpen)
     return () => window.removeEventListener('sage:open', onSageOpen)
   }, [])
+
+  // Keep a ref to liveVoice for stable closure access in wake word callbacks
+  useEffect(() => { liveVoiceRef.current = liveVoice }, [liveVoice])
+
+  // Clean up on unmount only — startWakeWord is called by the liveVoice effect below
+  useEffect(() => {
+    return () => stopWakeWord()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Stop while voice is active; start/restart when off (including on mount)
+  useEffect(() => {
+    if (liveVoice !== 'off') stopWakeWord()
+    else startWakeWord()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveVoice])
+
+  // Trigger voice start + open panel from wake word (avoids stale closure in SpeechRecognition callback)
+  useEffect(() => {
+    if (!wakeWordFired) return
+    setWakeWordFired(false)
+    if (liveVoiceRef.current === 'off') {
+      stopWakeWord()          // free the mic before Gemini Live takes it
+      setPanelState('open')
+      void toggleVoice()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wakeWordFired])
 
   const fetchAlerts = useCallback(async () => {
     if (alertsFetched || alertsLoading) return
@@ -481,28 +568,271 @@ export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt }: S
     }
   }
 
-  function toggleVoice() {
-    if (listening) { recognitionRef.current?.stop(); setListening(false); return }
+  function startWakeWord() {
+    if (typeof window === 'undefined') return
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const w = window as any
-    const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SR) return
-    const rec = new SR()
-    rec.lang = 'en-US'; rec.interimResults = false; rec.maxAlternatives = 1
+
+    // Bump version — any onend from a previous instance will see a stale version and not restart
+    const version = ++wakeWordVersionRef.current
+
+    try { wakeWordRef.current?.stop() } catch {}
+    wakeWordRef.current = null
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    rec.onresult = (e: any) => {
-      const t = e.results[0][0].transcript
-      setInput(prev => (prev ? prev + ' ' + t : t))
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto'
-        textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px'
+    const recognition = new SR() as any
+    recognition.continuous      = false  // more reliable detection than continuous=true
+    recognition.interimResults  = false
+    recognition.lang            = 'en-US'
+    recognition.maxAlternatives = 5
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
+      const result = event.results[0]
+      for (let a = 0; a < result.length; a++) {
+        const t = String(result[a].transcript).toLowerCase().trim()
+        if (
+          t.includes('hey sage') ||
+          t.includes('hey saj')  ||
+          t.includes('hey safe') ||
+          t.includes('hey say')  ||
+          t.includes('hi sage')  ||
+          t.includes('hi saj')   ||
+          t === 'sage'           ||
+          t === 'hey'            ||
+          t === 'hi'
+        ) {
+          setWakeWordFired(true)
+          return
+        }
       }
     }
-    rec.onend   = () => setListening(false)
-    rec.onerror = () => setListening(false)
-    recognitionRef.current = rec
-    rec.start()
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onerror = (e: any) => {
+      const err = e?.error ?? ''
+      if (err === 'not-allowed' || err === 'service-not-allowed' || err === 'audio-capture') {
+        wakeWordVersionRef.current++ // invalidate so onend doesn't restart
+        wakeWordRef.current = null
+        if (err !== 'audio-capture') {
+          window.addEventListener('click', () => {
+            if (liveVoiceRef.current === 'off') startWakeWord()
+          }, { once: true })
+        }
+      }
+      // no-speech / network / aborted → onend handles restart
+    }
+
+    recognition.onend = () => {
+      if (wakeWordRef.current === recognition) wakeWordRef.current = null
+      // Only restart if this instance is still the current version (guards against Strict Mode double-run)
+      if (wakeWordVersionRef.current === version && liveVoiceRef.current === 'off') {
+        setTimeout(startWakeWord, 500)
+      }
+    }
+
+    try { recognition.start(); wakeWordRef.current = recognition } catch { /* unsupported */ }
+  }
+
+  function stopWakeWord() {
+    wakeWordVersionRef.current++ // invalidate current version so onend won't restart
+    try { wakeWordRef.current?.stop() } catch {}
+    wakeWordRef.current = null
+  }
+
+  function showTranscriptMessage(text: string) {
+    setLastSageText(text)
+    setShowTranscript(true)
+    if (transcriptTimerRef.current) clearTimeout(transcriptTimerRef.current)
+    transcriptTimerRef.current = setTimeout(() => setShowTranscript(false), 6000)
+  }
+
+  function resetInactivityTimer() {
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current)
+    inactivityTimerRef.current = setTimeout(() => {
+      if (liveVoiceRef.current !== 'off') {
+        showTranscriptMessage('Sage went to sleep after 2 minutes of inactivity. Say "Hey Sage" to wake up.')
+        stopLiveVoice()
+        setTimeout(startWakeWord, 800)
+      }
+    }, INACTIVITY_MS)
+  }
+
+  function stopLiveVoice() {
+    if (transcriptTimerRef.current) { clearTimeout(transcriptTimerRef.current); transcriptTimerRef.current = null }
+    if (inactivityTimerRef.current) { clearTimeout(inactivityTimerRef.current); inactivityTimerRef.current = null }
+    try { micProcessorRef.current?.disconnect(); micProcessorRef.current = null } catch {}
+    try { micStreamRef.current?.getTracks().forEach(t => t.stop()); micStreamRef.current = null } catch {}
+    try { liveWsRef.current?.close(); liveWsRef.current = null } catch {}
+    nextPlayRef.current = 0
+    setLiveVoice('off')
+    setListening(false)
+    setShowTranscript(false)
+  }
+
+  function scheduleAudio(base64Data: string, mimeType: string) {
+    const rate = parseInt(mimeType.match(/rate=(\d+)/)?.[1] ?? '24000', 10)
+    if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
+      audioCtxRef.current = new AudioContext({ sampleRate: rate })
+      nextPlayRef.current = 0
+    }
+    const ctx    = audioCtxRef.current
+    const binary = atob(base64Data)
+    const bytes  = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+    const pcm    = new Int16Array(bytes.buffer)
+    const floats = new Float32Array(pcm.length)
+    for (let i = 0; i < pcm.length; i++) floats[i] = pcm[i] / 32768
+    const buf = ctx.createBuffer(1, floats.length, rate)
+    buf.copyToChannel(floats, 0)
+    const src = ctx.createBufferSource()
+    src.buffer = buf
+    src.connect(ctx.destination)
+    const startAt = Math.max(ctx.currentTime, nextPlayRef.current)
+    src.start(startAt)
+    nextPlayRef.current = startAt + buf.duration
+    setLiveVoice('speaking')
+    src.onended = () => {
+      if (nextPlayRef.current <= (audioCtxRef.current?.currentTime ?? 0) + 0.05) setLiveVoice('listening')
+    }
+  }
+
+  async function toggleVoice() {
+    // ── Stop if already running ───────────────────────────────────────────
+    if (liveVoice !== 'off') { stopLiveVoice(); return }
+
+    setLiveVoice('connecting')
     setListening(true)
+    setActiveTab('chat')
+
+    try {
+      const res = await fetch('/api/sage/live-session', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ workspace_id: workspaceId, page_context: buildStructuredContext(pathname) }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { error?: string }
+        const msg = err.error === 'upgrade_required'
+          ? 'Sage Voice requires a Pro plan.'
+          : (err.error ?? 'Failed to start voice session')
+        setMessages(prev => [...prev, { role: 'assistant', content: msg, timestamp: new Date().toISOString() }])
+        stopLiveVoice()
+        return
+      }
+
+      const { wsUrl } = await res.json() as { wsUrl: string }
+      const ws = new WebSocket(wsUrl)
+      liveWsRef.current = ws
+
+      ws.onopen = async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: { sampleRate: 16000, channelCount: 1, echoCancellation: true, noiseSuppression: true },
+          })
+          micStreamRef.current = stream
+          if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
+            audioCtxRef.current = new AudioContext({ sampleRate: 16000 })
+            nextPlayRef.current = 0
+          }
+          const ctx = audioCtxRef.current
+          const source = ctx.createMediaStreamSource(stream)
+          // eslint-disable-next-line @typescript-eslint/no-deprecated
+          const processor = ctx.createScriptProcessor(4096, 1, 1)
+          micProcessorRef.current = processor
+          source.connect(processor)
+          processor.connect(ctx.destination)
+          // eslint-disable-next-line @typescript-eslint/no-deprecated
+          processor.onaudioprocess = (e) => {
+            if (ws.readyState !== WebSocket.OPEN) return
+            const f32 = e.inputBuffer.getChannelData(0)
+            const i16 = new Int16Array(f32.length)
+            for (let i = 0; i < f32.length; i++) i16[i] = Math.max(-32768, Math.min(32767, Math.round(f32[i] * 32768)))
+            const bytes = new Uint8Array(i16.buffer)
+            let bin = ''
+            for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i])
+            ws.send(JSON.stringify({ type: 'audio', data: btoa(bin) }))
+          }
+          setLiveVoice('listening')
+          resetInactivityTimer()
+        } catch {
+          setMessages(prev => [...prev, { role: 'assistant', content: 'Microphone access denied.', timestamp: new Date().toISOString() }])
+          stopLiveVoice()
+        }
+      }
+
+      ws.onmessage = (ev) => {
+        try {
+          const msg = JSON.parse(ev.data as string) as Record<string, unknown>
+          switch (msg.type) {
+            case 'ready':
+              showTranscriptMessage('Sage is ready — say something')
+              break
+            case 'audio':
+              scheduleAudio(String(msg.data), String(msg.mimeType ?? 'audio/pcm;rate=24000'))
+              break
+            case 'text': {
+              const content = String(msg.content)
+              setMessages(prev => [...prev, { role: 'assistant', content, timestamp: new Date().toISOString() }])
+              showTranscriptMessage(content)
+              break
+            }
+            case 'tool_call':
+              setLiveVoice('thinking')
+              showTranscriptMessage(`Looking up ${String(msg.name ?? '').replace(/_/g, ' ')}…`)
+              break
+            case 'tool_result': {
+              const result = String(msg.result ?? '')
+              if (result) {
+                showTranscriptMessage(result.length > 140 ? result.slice(0, 137) + '…' : result)
+                // Add to chat so it's visible when panel is opened
+                setMessages(prev => [...prev, { role: 'assistant', content: result, timestamp: new Date().toISOString() }])
+              }
+              break
+            }
+            case 'turn_complete':
+              if (nextPlayRef.current <= (audioCtxRef.current?.currentTime ?? 0) + 0.05) setLiveVoice('listening')
+              resetInactivityTimer()
+              break
+            case 'navigate':
+              router.push(String(msg.url))
+              break
+            case 'open_dashboard_item':
+              window.dispatchEvent(new CustomEvent('sage:open_item', {
+                detail: { kind: msg.kind, id: msg.id, action: msg.action ?? null },
+              }))
+              break
+            case 'filter_activity_feed':
+              window.dispatchEvent(new CustomEvent('sage:filter_feed', {
+                detail: { filter: String(msg.filter ?? 'all') },
+              }))
+              break
+            case 'refresh':
+              router.refresh()
+              break
+            case 'interrupted':
+              nextPlayRef.current = 0
+              setLiveVoice('listening')
+              break
+            case 'error':
+              setMessages(prev => [...prev, { role: 'assistant', content: `Voice error: ${String(msg.message)}`, timestamp: new Date().toISOString() }])
+              stopLiveVoice()
+              break
+          }
+        } catch {}
+      }
+
+      ws.onclose = () => { stopLiveVoice() }
+      ws.onerror = () => {
+        setMessages(prev => [...prev, { role: 'assistant', content: 'Voice connection lost.', timestamp: new Date().toISOString() }])
+        stopLiveVoice()
+      }
+
+    } catch (err) {
+      setMessages(prev => [...prev, { role: 'assistant', content: err instanceof Error ? err.message : 'Voice failed.', timestamp: new Date().toISOString() }])
+      stopLiveVoice()
+    }
   }
 
   // ── Locked ────────────────────────────────────────────────────────────────
@@ -522,14 +852,57 @@ export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt }: S
 
   return (
     <>
-      {/* ── Launcher button (always visible) ─────────────────────────── */}
-      <button
-        onClick={() => setPanelState(s => s === 'closed' ? 'open' : 'closed')}
-        title="Open Sage AI"
-        className="fixed bottom-6 right-6 z-[101] w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-all duration-200 bg-gradient-to-br from-[#15A4AE] to-[#0d7a83] hover:scale-110"
-      >
-        <Sparkles className="w-5 h-5 text-white" />
-      </button>
+      {/* ── Floating transcript strip (voice active, panel closed) ────── */}
+      {liveVoice !== 'off' && panelState === 'closed' && lastSageText && (
+        <div
+          className={`fixed bottom-[88px] right-6 z-[100] max-w-[300px] transition-opacity duration-500 ${showTranscript ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        >
+          <div className="bg-[#141c2b]/95 backdrop-blur-sm rounded-2xl px-4 py-3 shadow-2xl border border-white/10">
+            <p className="text-[12px] text-white/90 leading-relaxed line-clamp-3">{lastSageText}</p>
+            <p className="text-[10px] text-white/35 mt-1.5">Tap Sage to open chat</p>
+          </div>
+          {/* Pointer caret */}
+          <div className="absolute bottom-[-6px] right-[22px] w-3 h-3 bg-[#141c2b]/95 border-r border-b border-white/10 rotate-45" />
+        </div>
+      )}
+
+      {/* ── Launcher button group ────────────────────────────────────── */}
+      <div className="fixed bottom-6 right-6 z-[101] flex items-center gap-2 group">
+
+        {/* Mic button — pops out to the left on hover, always visible when active */}
+        <button
+          onClick={() => void toggleVoice()}
+          title={
+            liveVoice === 'off'        ? 'Start Sage Voice' :
+            liveVoice === 'connecting' ? 'Connecting…' :
+            liveVoice === 'listening'  ? 'Listening — click to stop' :
+            liveVoice === 'thinking'   ? 'Working…' :
+                                         'Speaking — click to stop'
+          }
+          className={`w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 ${
+            liveVoice === 'off'
+              ? 'bg-white dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/10 text-gray-500 hover:text-[#15A4AE] hover:border-[#15A4AE]/40 opacity-0 scale-90 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto'
+            : liveVoice === 'listening'
+              ? 'bg-amber-500 text-white ring-4 ring-amber-400/30 animate-pulse opacity-100 scale-100'
+            : liveVoice === 'speaking'
+              ? 'bg-[#15A4AE] text-white ring-4 ring-[#15A4AE]/30 animate-pulse opacity-100 scale-100'
+            : /* connecting / thinking */
+              'bg-amber-500 text-white animate-pulse opacity-100 scale-100'
+          }`}
+        >
+          {liveVoice !== 'off' ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+        </button>
+
+        {/* Sage button — opens/closes chat panel */}
+        <button
+          onClick={() => setPanelState(s => s === 'closed' ? 'open' : 'closed')}
+          title="Open Sage AI"
+          className="w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-all duration-200 bg-gradient-to-br from-[#15A4AE] to-[#0d7a83] hover:scale-110"
+        >
+          <Sparkles className="w-5 h-5 text-white" />
+        </button>
+
+      </div>
 
       {/* ── Chat panel ───────────────────────────────────────────────── */}
       {panelState !== 'closed' && (
@@ -860,14 +1233,25 @@ export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt }: S
             <div className="flex items-end gap-2 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/8 px-3 py-2 focus-within:border-[#15A4AE]/50 focus-within:ring-2 focus-within:ring-[#15A4AE]/10 transition-all">
               <button
                 onClick={toggleVoice}
-                title={listening ? 'Stop listening' : 'Speak to Sage'}
+                title={
+                  liveVoice === 'off'        ? 'Start Sage Voice (Gemini Live)' :
+                  liveVoice === 'connecting' ? 'Connecting…' :
+                  liveVoice === 'listening'  ? 'Listening — click to stop' :
+                  liveVoice === 'thinking'   ? 'Working…' :
+                                               'Speaking — click to stop'
+                }
                 className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                  listening
-                    ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse'
-                    : 'text-gray-500 hover:text-[#15A4AE] hover:bg-gray-100 dark:hover:bg-white/10'
+                  liveVoice === 'off'
+                    ? 'text-gray-500 hover:text-[#15A4AE] hover:bg-gray-100 dark:hover:bg-white/10'
+                  : liveVoice === 'connecting' || liveVoice === 'thinking'
+                    ? 'bg-amber-500 text-white animate-pulse'
+                  : liveVoice === 'listening'
+                    ? 'bg-green-500 hover:bg-red-500 text-white animate-pulse'
+                  : /* speaking */
+                    'bg-[#15A4AE] hover:bg-red-500 text-white animate-pulse'
                 }`}
               >
-                {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                {liveVoice !== 'off' ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </button>
 
               <textarea
@@ -900,7 +1284,10 @@ export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt }: S
               </button>
             </div>
             <p className="text-[10px] text-gray-400 dark:text-gray-600 text-center mt-1.5">
-              Press <kbd className="font-mono bg-gray-200 dark:bg-white/10 px-0.5 rounded">M</kbd> for mic · Enter to send · Esc to close
+              {liveVoice !== 'off'
+                ? <span className="text-green-500 dark:text-green-400">● Voice active — speak to Sage · Esc to close</span>
+                : <>Press <kbd className="font-mono bg-gray-200 dark:bg-white/10 px-0.5 rounded">M</kbd> for voice · Enter to send · Esc to close</>
+              }
             </p>
           </div>
         </div>

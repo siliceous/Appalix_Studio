@@ -7,7 +7,7 @@ import { LayoutDashboard, Mail, Bot, Ticket, ClipboardList } from 'lucide-react'
 const TABS = [
   { id: 'overview', label: 'Overview',  icon: LayoutDashboard },
   { id: 'email',    label: 'Email',     icon: Mail },
-  { id: 'bots',     label: 'Bots',      icon: Bot },
+  { id: 'bots',     label: 'Conversations', icon: Bot },
   { id: 'forms',    label: 'Forms',     icon: ClipboardList },
   { id: 'tickets',  label: 'Tickets',   icon: Ticket },
 ] as const

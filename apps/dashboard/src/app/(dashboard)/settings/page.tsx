@@ -273,6 +273,24 @@ export default async function SettingsPage() {
         </div>
       </section>
 
+      {/* Sage Voice */}
+      <section className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10">
+        <div className="px-6 py-5 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Sage Voice</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Choose your voice, language, response style, and transcription preferences for the AI voice assistant.
+            </p>
+          </div>
+          <a
+            href="/settings/sage-voice"
+            className="shrink-0 px-4 py-2 text-sm font-medium border border-gray-300 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300 transition-colors"
+          >
+            Customise →
+          </a>
+        </div>
+      </section>
+
       {/* Team members */}
       <section className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10">
         <div className="px-6 py-5 border-b dark:border-white/10 flex items-center justify-between">

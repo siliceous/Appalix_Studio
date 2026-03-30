@@ -9,6 +9,7 @@ import {
   User, Lock, ChevronDown, Pencil, Bell,
 } from 'lucide-react'
 import { getDealDetail, addDealActivity, completeDealTask, addDealReminder, getDealReminders, updateDeal, deleteDeal, moveDeal } from '@/app/actions/sage'
+import { convertDealToProject } from '@/app/actions/sage-projects'
 import { WonLostModal } from './won-lost-modal'
 import { ContactEditModal } from './contact-edit-modal'
 import type { SageDealActivity } from '@/lib/types'
@@ -125,6 +126,7 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
   const [confirmDelete,    setConfirmDelete]    = useState(false)
   const [deleting,         setDeleting]         = useState(false)
   const [isPending,        startTransition]     = useTransition()
+  const [converting,       setConverting]       = useState(false)
   const slideRef = useRef<HTMLDivElement>(null)
 
   // Set Activity state (future-dated planned activity + notification)
@@ -196,7 +198,7 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
   function handleWonLostConfirm() {
     const newStatus = wonLostMode!  // capture before clearing
     setWonLostMode(null)
-    // Immediately notify parent — don't wait for async reload
+    // Notify parent board so the card disappears
     if (onDealUpdated && dealId) {
       onDealUpdated(dealId, {
         title:      dealTitle,
@@ -207,8 +209,31 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
         status:     newStatus,
       })
     }
-    // Navigate to projects — won/lost deals live there
-    router.push('/sage/projects')
+    // Reload the deal inside the slide-over so the Won banner + "Start project" button appear
+    if (dealId) {
+      setLoading(true)
+      getDealDetail(dealId).then(detail => {
+        setDeal(detail.deal)
+        setActivities(detail.activities)
+        setLoading(false)
+      })
+    }
+  }
+
+  async function handleConvertToProject() {
+    if (!dealId) return
+    setConverting(true)
+    const result = await convertDealToProject(dealId, {
+      name:       dealTitle,
+      contact_id: contactId  ?? undefined,
+      value:      dealValue  ?? undefined,
+      currency:   dealCurrency,
+    })
+    setConverting(false)
+    if (result.id) {
+      onClose()
+      router.push(`/sage/projects/${result.id}`)
+    }
   }
 
   async function handleSubmitReminder() {
@@ -530,10 +555,17 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                   {dealStatus === 'won' && dealWonAt && (
                     <div className="p-3 bg-green-50 dark:bg-green-500/10 rounded-xl border border-green-200 dark:border-green-500/20 flex items-center gap-2">
                       <Trophy className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" />
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-green-700 dark:text-green-300">Deal Won</p>
                         <p className="text-xs text-green-600/70 dark:text-green-400/70">{formatDate(dealWonAt)}</p>
                       </div>
+                      <button
+                        onClick={handleConvertToProject}
+                        disabled={converting}
+                        className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white transition-colors"
+                      >
+                        {converting ? 'Creating…' : '→ Start project'}
+                      </button>
                     </div>
                   )}
                   {dealStatus === 'lost' && (

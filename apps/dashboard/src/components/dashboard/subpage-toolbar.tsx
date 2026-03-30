@@ -112,7 +112,7 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
 
   const PAGES: { key: SubpageSource; label: string; Icon: React.ElementType }[] = [
     { key: 'email',   label: 'Email',   Icon: Mail          },
-    { key: 'bots',    label: 'Bots',    Icon: MessageSquare },
+    { key: 'bots',    label: 'Conversations', Icon: MessageSquare },
     { key: 'forms',   label: 'Forms',   Icon: FileText      },
     { key: 'tickets', label: 'Tickets', Icon: TicketIcon    },
   ]

@@ -165,7 +165,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
 }
 
 // ── AI Summary popup ──────────────────────────────────────────────────────────
-type PopupState = { kind: 'email' | 'bot' | 'form' | 'ticket'; id: string }
+type PopupState = { kind: 'email' | 'bot' | 'form' | 'ticket'; id: string; action?: string }
 
 function ItemPopup({
   popup, pipelines, contactMatch, onClose, onAction, onPriorityChanged,
@@ -207,7 +207,7 @@ function ItemPopup({
   const [outboundEmail, setOutboundEmail] = useState<{ to: string; toName?: string; subject: string; context: string } | null>(null)
 
   // Reply compose state (email only)
-  const [showReply, setShowReply]       = useState(false)
+  const [showReply, setShowReply]       = useState(popup.action === 'reply')
   const [replyBody, setReplyBody]       = useState('')
   const [isEnhancing, setIsEnhancing]   = useState(false)
   const [emailSignature, setEmailSignature] = useState<string | null>(null)
@@ -305,8 +305,13 @@ function ItemPopup({
   }, [onClose])
 
   // Fetch full item
+  // When action changes to 'reply' (e.g. voice says "reply to this" while popup is open)
   useEffect(() => {
-    setData(null); setLoading(true); setPostAction(null); setActionError(null); setShowReply(false); setSendResult(null); setShowPipelinePicker(false); setIgnoring(false); setAiCollapsed(false); setReplySummaryCollapsed(false); setPriorityValue(null); setPriorityOpen(false)
+    if (popup.action === 'reply') setShowReply(true)
+  }, [popup.action])
+
+  useEffect(() => {
+    setData(null); setLoading(true); setPostAction(null); setActionError(null); setShowReply(popup.action === 'reply'); setSendResult(null); setShowPipelinePicker(false); setIgnoring(false); setAiCollapsed(false); setReplySummaryCollapsed(false); setPriorityValue(null); setPriorityOpen(false)
     const supabase = createClient()
     const go = async () => {
       if (popup.kind === 'email') {
@@ -1455,6 +1460,37 @@ export function SageDashboardClient({
   // Clear donut loading state once navigation settles
   useEffect(() => { setLoadingDonut(null) }, [pathname])
 
+  // Sage voice: open a feed item popup without navigating away
+  useEffect(() => {
+    function handler(e: Event) {
+      const { kind, id, action } = (e as CustomEvent<{ kind: 'email' | 'bot' | 'form' | 'ticket'; id: string; action?: string }>).detail
+      if (kind && id) setPopup({ kind, id, action: action ?? undefined })
+    }
+    window.addEventListener('sage:open_item', handler)
+    return () => window.removeEventListener('sage:open_item', handler)
+  }, [])
+
+  // Sage voice: filter the activity feed to a specific type
+  useEffect(() => {
+    function handler(e: Event) {
+      const { filter } = (e as CustomEvent<{ filter: string }>).detail
+      const typeMap: Record<string, 'email' | 'bot' | 'form' | 'ticket' | null> = {
+        email: 'email', emails: 'email',
+        bot: 'bot', bots: 'bot', conversations: 'bot', conversation: 'bot',
+        form: 'form', forms: 'form',
+        ticket: 'ticket', tickets: 'ticket',
+        all: null,
+      }
+      if (filter in typeMap) {
+        setDonutsCollapsed(true)
+        setFeedView('grid')
+        setTopType(typeMap[filter])
+      }
+    }
+    window.addEventListener('sage:filter_feed', handler)
+    return () => window.removeEventListener('sage:filter_feed', handler)
+  }, [])
+
   // Sage activity-feed trigger: ?section=bots|emails|tickets|forms
   // Collapses the overview donuts and opens the relevant grid section.
   useEffect(() => {
@@ -1917,9 +1953,9 @@ export function SageDashboardClient({
           <div className="flex flex-wrap gap-3">
             {[
               { label: 'Emails',    Icon: Mail,          iconCls: 'text-blue-500',   total: visEmails.length,  href: viewAsUserId ? `/dashboard/email?viewAs=${viewAsUserId}`    : '/dashboard/email'    },
-              { label: 'Bot Chats', Icon: MessageSquare, iconCls: 'text-purple-500', total: visBots.length,    href: viewAsUserId ? `/dashboard/bots?viewAs=${viewAsUserId}`    : '/dashboard/bots'    },
-              { label: 'Forms',     Icon: FileText,      iconCls: 'text-green-500',  total: visForms.length,   href: viewAsUserId ? `/dashboard/forms?viewAs=${viewAsUserId}`   : '/dashboard/forms'   },
-              { label: 'Tickets',   Icon: TicketIcon,    iconCls: 'text-amber-500',  total: tickets.length,    href: viewAsUserId ? `/dashboard/tickets?viewAs=${viewAsUserId}` : '/dashboard/tickets' },
+              { label: 'Conversations', Icon: MessageSquare, iconCls: 'text-purple-500', total: visBots.length,    href: viewAsUserId ? `/dashboard/bots?viewAs=${viewAsUserId}`    : '/dashboard/bots'    },
+              { label: 'Forms',         Icon: FileText,      iconCls: 'text-green-500',  total: visForms.length,   href: viewAsUserId ? `/dashboard/forms?viewAs=${viewAsUserId}`   : '/dashboard/forms'   },
+              { label: 'Tickets',       Icon: TicketIcon,    iconCls: 'text-amber-500',  total: tickets.length,    href: viewAsUserId ? `/dashboard/tickets?viewAs=${viewAsUserId}` : '/dashboard/tickets' },
             ].map(card => {
               const isLoading = loadingDonut === card.label
               return (
@@ -1940,7 +1976,7 @@ export function SageDashboardClient({
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             {[
               { label: 'Emails',    sub: 'high & medium unread',  Icon: Mail,          iconCls: 'text-blue-500',   segs: emailSegs,  total: visEmails.length,  href: viewAsUserId ? `/dashboard/email?viewAs=${viewAsUserId}`    : '/dashboard/email'    },
-              { label: 'Bot Chats', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-500', segs: botSegs,    total: visBots.length,    href: viewAsUserId ? `/dashboard/bots?viewAs=${viewAsUserId}`    : '/dashboard/bots'    },
+              { label: 'Conversations', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-500', segs: botSegs,    total: visBots.length,    href: viewAsUserId ? `/dashboard/bots?viewAs=${viewAsUserId}`    : '/dashboard/bots'    },
               { label: 'Forms',     sub: 'all submissions',       Icon: FileText,      iconCls: 'text-green-500',  segs: formSegs,   total: visForms.length,   href: viewAsUserId ? `/dashboard/forms?viewAs=${viewAsUserId}`   : '/dashboard/forms'   },
               { label: 'Tickets',   sub: 'all tickets',           Icon: TicketIcon,    iconCls: 'text-amber-500',  segs: ticketSegs, total: tickets.length,    href: viewAsUserId ? `/dashboard/tickets?viewAs=${viewAsUserId}` : '/dashboard/tickets' },
             ].map(card => {
@@ -2263,14 +2299,14 @@ export function SageDashboardClient({
                 },
                 {
                   key: 'bot',
-                  label: 'Bot Chats',
+                  label: 'Conversations',
                   icon: <MessageSquare className="w-3.5 h-3.5" />,
                   accentClass: 'text-purple-700 dark:text-purple-300',
                   borderClass: 'border-purple-300 dark:border-purple-500/30',
                   bgClass: 'bg-purple-200 dark:bg-purple-500/25',
                   count: visBots.length,
                   rows: sortedBots.length === 0
-                    ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No bot chats this period.</p>
+                    ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No conversations this period.</p>
                     : sortedBots.map(b => (
                       <div key={b.id} onClick={() => setPopup({ kind: 'bot', id: b.id })}
                         className="group flex items-start gap-3 px-5 py-3 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-colors cursor-pointer border-b border-purple-100 dark:border-purple-500/15 last:border-0">

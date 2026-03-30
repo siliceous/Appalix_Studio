@@ -47,6 +47,8 @@ interface Props {
   autoSync?:      boolean
   readonly?:      boolean
   teamMembers?:   TeamMember[]
+  initialEmailId?: string
+  initialAction?:  string
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -268,9 +270,10 @@ interface DetailCardProps {
   emailProvider:      'gmail' | 'microsoft' | null
   teamMembers?:       TeamMember[]
   readonly?:          boolean
+  initialReply?:      boolean
 }
 
-function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, onAction, onAssign, onPriorityChanged, isDeleting, isAnalyzing, emailProvider, teamMembers = [], modalSize, onResize, readonly = false }: DetailCardProps) {
+function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, onAction, onAssign, onPriorityChanged, isDeleting, isAnalyzing, emailProvider, teamMembers = [], modalSize, onResize, readonly = false, initialReply = false }: DetailCardProps) {
   const { email, meeting } = t
   const entities  = email.ai_entities
   const drafts    = email.ai_reply_drafts ?? []
@@ -278,7 +281,19 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
   const editorRef = useRef<RichTextEditorRef>(null)
 
   // Lazy init so the editor and Send button are ready immediately on first render
-  const [showReply,      setShowReply]      = useState(false)
+  const [showReply,      setShowReply]      = useState(initialReply)
+
+  // Sage voice: open reply mode when action='reply' fires for this email
+  useEffect(() => {
+    function handler(e: Event) {
+      const { kind, id, action } = (e as CustomEvent<{ kind: string; id: string; action?: string }>).detail
+      if (kind === 'email' && id === email.id && action === 'reply') {
+        setShowReply(true)
+      }
+    }
+    window.addEventListener('sage:open_item', handler)
+    return () => window.removeEventListener('sage:open_item', handler)
+  }, [email.id])
   const [composeBody,    setComposeBody]    = useState(() => drafts[0]?.body ?? '')
   const [summaryCollapsed, setSummaryCollapsed] = useState(false)
   const [priorityValue,  setPriorityValue]  = useState<string | null>(null)
@@ -952,13 +967,13 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEmail, autoSync, readonly = false, teamMembers = [] }: Props) {
+export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEmail, autoSync, readonly = false, teamMembers = [], initialEmailId, initialAction }: Props) {
   const router = useRouter()
   const [dismissed,       setDismissed]       = useState<Set<string>>(new Set())
   const [actioned,        setActioned]        = useState<Map<string, string>>(new Map())
   const [modalMode,       setModalMode]       = useState<'lead' | 'ticket' | 'deal_note' | null>(null)
   const [modalEmail,      setModalEmail]      = useState<TriageEmail | null>(null)
-  const [selectedEmailId, setSelectedEmailId] = useState<string>('')
+  const [selectedEmailId, setSelectedEmailId] = useState<string>(initialEmailId ?? '')
   const [modalSize,       setModalSize]       = useState<ModalSize>('md')
   const [isPending,         startTransition]          = useTransition()
   const [isSyncing,         startSyncTransition]      = useTransition()
@@ -1044,6 +1059,16 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
     }, 60_000)
     return () => clearInterval(id)
   }, [router])
+
+  // Sage voice: open a specific email popup without navigating away
+  useEffect(() => {
+    function handler(e: Event) {
+      const { kind, id } = (e as CustomEvent<{ kind: string; id: string; action?: string }>).detail
+      if (kind === 'email' && id) setSelectedEmailId(id)
+    }
+    window.addEventListener('sage:open_item', handler)
+    return () => window.removeEventListener('sage:open_item', handler)
+  }, [])
 
   // Escape key to close the modal
   useEffect(() => {
@@ -1327,6 +1352,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
     modalSize,
     onResize:          () => setModalSize(s => s === 'sm' ? 'md' : s === 'md' ? 'lg' : 'sm'),
     onPriorityChanged: handlePriorityOverride,
+    initialReply:      initialAction === 'reply' && selectedTriageEmail?.email.id === initialEmailId,
     readonly,
   }
 

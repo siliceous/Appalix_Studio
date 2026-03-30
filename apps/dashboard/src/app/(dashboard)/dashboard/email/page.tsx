@@ -71,7 +71,7 @@ function deriveRecommendation(
   return 'create_lead'
 }
 
-export default async function EmailTriagePage({ searchParams }: { searchParams: Promise<{ preset?: string; from?: string; to?: string; viewAs?: string; syncing?: string; activityDate?: string }> }) {
+export default async function EmailTriagePage({ searchParams }: { searchParams: Promise<{ preset?: string; from?: string; to?: string; viewAs?: string; syncing?: string; activityDate?: string; emailId?: string; action?: string }> }) {
   const [params, autoSettings] = await Promise.all([searchParams, getAutoSettings()])
   const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as SubpagePreset
   const { from: dateFrom, to: dateTo } = getDateRange(preset, params.from, params.to)
@@ -121,16 +121,33 @@ export default async function EmailTriagePage({ searchParams }: { searchParams: 
   if (dateTo)   emailQuery = emailQuery.lt('received_at', dateTo)
   emailQuery = emailQuery.order('received_at', { ascending: false }).limit(200)
 
-  const [emailsRes, contactsRes] = await Promise.all([
+  // If a specific emailId is requested (e.g. from voice), also fetch it even if read
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const specificEmailQuery = params.emailId
+    ? (supabase as any)
+        .from('sage_emails')
+        .select('*, contact:sage_contacts(id, name, email)')
+        .eq('workspace_id', workspaceId)
+        .eq('id', params.emailId)
+        .limit(1)
+    : null
+
+  const [emailsRes, contactsRes, specificEmailRes] = await Promise.all([
     emailQuery,
     supabase
       .from('sage_contacts')
       .select('id, name, email')
       .eq('workspace_id', workspaceId)
       .not('email', 'is', null),
+    specificEmailQuery ?? Promise.resolve({ data: null }),
   ])
 
-  const rawEmails   = (emailsRes.data   ?? []) as SageEmail[]
+  const inboxEmails = (emailsRes.data ?? []) as SageEmail[]
+  // Merge the specific email in if it's not already in the unread inbox
+  const specificEmail = ((specificEmailRes as { data: SageEmail[] | null }).data?.[0]) ?? null
+  const rawEmails: SageEmail[] = specificEmail && !inboxEmails.some(e => e.id === specificEmail.id)
+    ? [specificEmail, ...inboxEmails]
+    : inboxEmails
   const rawContacts = (contactsRes.data ?? []) as { id: string; name: string; email: string | null }[]
 
   const contactByEmail  = new Map<string, { id: string; name: string; email: string | null }>()
@@ -224,7 +241,7 @@ export default async function EmailTriagePage({ searchParams }: { searchParams: 
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
       <SubpageToolbar sourceKey="email" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.email_auto_enabled} viewAsUserId={viewAsUserId} teamMembers={teamMembers} />
       <div className="flex flex-1 overflow-hidden min-h-0">
-        <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} connectedEmail={connectedEmail} autoSync={params.syncing === '1'} readonly={!!viewAsUserId} teamMembers={teamMembers} />
+        <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} connectedEmail={connectedEmail} autoSync={params.syncing === '1'} readonly={!!viewAsUserId} teamMembers={teamMembers} initialEmailId={params.emailId} initialAction={params.action} />
         <ActivitySidebar activity={activity} date={activityDate} currentPath="/dashboard/email" viewingAs={viewingAs} />
       </div>
     </div>

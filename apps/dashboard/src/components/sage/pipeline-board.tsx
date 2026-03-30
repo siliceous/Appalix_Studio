@@ -609,10 +609,8 @@ export function PipelineBoard({
             ? { ...d, ...changes, priority: changes.priority as 'low' | 'medium' | 'high' | null, stage_id: changes.stage_id ?? d.stage_id, status: (changes.status ?? d.status) as 'open' | 'won' | 'lost' }
             : d
           ))
-          // Close slide-over if deal was won/lost (it leaves the filtered board)
-          if (changes.status === 'won' || changes.status === 'lost') {
-            setSelectedDealId(null)
-          }
+          // Keep slide-over open on won so user can click "→ Start project"
+          // It will close itself via onClose after converting
         }}
       />
 

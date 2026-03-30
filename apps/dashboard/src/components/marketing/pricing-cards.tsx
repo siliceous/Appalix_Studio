@@ -152,7 +152,7 @@ const PLANS: Plan[] = [
     name:         'Team',
     annualPrice:  299,
     monthlyPrice: 469,
-    desc:         'High-volume operations for larger teams.',
+    desc:         'High-end analytics and post-deal project management for serious teams.',
     badge:        null,
     seats:        10,
     bots:         10,
@@ -161,7 +161,7 @@ const PLANS: Plan[] = [
     extraSeats:   'Unlimited extra seats',
     extraBots:    true,
     ecommerce:    'WooCommerce + Shopify',
-    highlights:   ['Sage AI CRM assistant', 'All platform integrations', 'Human handoff', 'AI task automation', 'Advanced analytics', 'White-label branding', 'API access', 'Dedicated account manager'],
+    highlights:   ['Sage AI CRM assistant', 'All platform integrations', 'Human handoff', 'AI task automation', 'High-end analytics & reporting', 'Post-deal project management', 'White-label branding', 'API access', 'Dedicated account manager'],
     knowledgeBase: ['Web URL', 'Plain text', 'CSV', 'Excel / XLS', 'PDF / Word / ZIP', 'Google Drive', 'OneDrive', 'Notion', 'GitBook', 'Dropbox', 'SharePoint', 'Intercom'],
     integrationGroups: [
       { label: 'Chat & Website',   items: ['Slack', 'FB Messenger', 'WhatsApp', 'Telegram', 'WordPress', 'Web widget'] },
