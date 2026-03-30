@@ -84,6 +84,7 @@ export async function GET(req: NextRequest) {
     const pagesData = await pagesRes.json() as {
       data?: { access_token: string; id: string; name: string }[]
     }
+    console.log('[oauth/instagram/callback] pages:', JSON.stringify(pagesData))
     const firstPage = pagesData.data?.[0]
     if (firstPage) {
       pageToken = firstPage.access_token
@@ -96,6 +97,7 @@ export async function GET(req: NextRequest) {
       const igData = await igRes.json() as {
         instagram_business_account?: { id: string }
       }
+      console.log('[oauth/instagram/callback] ig data for page', pageId, ':', JSON.stringify(igData))
       igAccountId = igData.instagram_business_account?.id ?? ''
 
       if (igAccountId) {
