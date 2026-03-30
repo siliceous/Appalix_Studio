@@ -67,7 +67,7 @@ export async function instagramRoutes(fastify: FastifyInstance) {
         setImmediate(async () => {
           try {
             const { reply: aiReply } = await processMessage(incoming)
-            await sendInstagramReply({ text: aiReply }, incoming.platformUserId!, cfg.page_access_token)
+            await sendInstagramReply({ text: aiReply }, incoming.platformUserId!, cfg.access_token || cfg.page_access_token)
           } catch (err) {
             console.error('[instagram global webhook] processing error:', err)
           }
@@ -128,7 +128,7 @@ export async function instagramRoutes(fastify: FastifyInstance) {
         setImmediate(async () => {
           try {
             const { reply: aiReply } = await processMessage(incoming)
-            await sendInstagramReply({ text: aiReply }, incoming.platformUserId!, cfg.page_access_token)
+            await sendInstagramReply({ text: aiReply }, incoming.platformUserId!, cfg.access_token || cfg.page_access_token)
           } catch (err) {
             console.error('[instagram webhook] processing error:', err)
           }
