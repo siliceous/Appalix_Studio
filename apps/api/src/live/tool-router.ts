@@ -1335,7 +1335,7 @@ type FormSubmission = {
   source_platform: string | null
 }
 
-async function resolveLeadId(args: Record<string, unknown>, ctx: ToolContext): Promise<{ lead: FormSubmission; error?: never } | { lead?: never; error: string }> {
+async function resolveLeadId(args: Record<string, unknown>, ctx: ToolContext): Promise<{ lead: FormSubmission; error: null } | { lead: null; error: string }> {
   if (args.lead_id) {
     const { data } = await supabase
       .from('sage_form_submissions')
@@ -1344,12 +1344,12 @@ async function resolveLeadId(args: Record<string, unknown>, ctx: ToolContext): P
       .eq('id', String(args.lead_id))
       .limit(1)
     const row = data?.[0] as FormSubmission | undefined
-    if (row) return { lead: row }
-    return { error: `No lead found with ID "${String(args.lead_id)}".` }
+    if (row) return { lead: row, error: null }
+    return { lead: null, error: `No lead found with ID "${String(args.lead_id)}".` }
   }
 
   const query = String(args.lead_query ?? '').trim()
-  if (!query) return { error: 'Please provide a lead ID or a name/email to search for.' }
+  if (!query) return { lead: null, error: 'Please provide a lead ID or a name/email to search for.' }
 
   const { data } = await supabase
     .from('sage_form_submissions')
@@ -1360,8 +1360,8 @@ async function resolveLeadId(args: Record<string, unknown>, ctx: ToolContext): P
     .limit(1)
 
   const row = data?.[0] as FormSubmission | undefined
-  if (row) return { lead: row }
-  return { error: `No lead found matching "${query}".` }
+  if (row) return { lead: row, error: null }
+  return { lead: null, error: `No lead found matching "${query}".` }
 }
 
 // ── assign_lead ───────────────────────────────────────────────────────────────
