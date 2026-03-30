@@ -47,10 +47,11 @@ export async function GET(req: NextRequest) {
   url.searchParams.set('state',        state)
   url.searchParams.set('auth_type',    'rerequest')
   url.searchParams.set('scope', [
-    'instagram_business_basic',
-    'instagram_business_manage_messages',
+    'instagram_basic',
+    'instagram_manage_messages',
     'pages_show_list',
     'pages_read_engagement',
+    'pages_messaging',
   ].join(','))
 
   return NextResponse.redirect(url.toString())

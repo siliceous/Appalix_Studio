@@ -40,6 +40,7 @@ const AVAILABLE_PLATFORMS: { platform: Platform; desc: string; guide: string }[]
   { platform: 'google_chat',        desc: 'Answer questions in Google Chat spaces',                 guide: '/resources/connect-google-chat' },
   { platform: 'facebook_messenger', desc: 'Handle Messenger conversations on your Facebook page',  guide: '/resources/connect-facebook-messenger' },
   { platform: 'whatsapp',           desc: 'Chat with customers on WhatsApp Business',              guide: '/resources/connect-whatsapp' },
+  { platform: 'instagram',          desc: 'Auto-reply to Instagram Direct Messages',               guide: '/resources/connect-instagram' },
   { platform: 'wordpress',          desc: 'Embed a widget on any WordPress site',                  guide: '/resources/add-wordpress-chatbot' },
   { platform: 'web_widget',         desc: 'Add a chat widget to any website via script tag',       guide: '/resources/embed-web-widget' },
   { platform: 'telegram',           desc: 'Deploy your bot on Telegram — DMs and group chats',     guide: '/resources/connect-telegram' },
@@ -217,7 +218,7 @@ export default async function IntegrationsPage({
         <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
           Available platforms
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {AVAILABLE_PLATFORMS.map(({ platform, desc, guide }) => {
             const connected = connectedPlatforms.has(platform)
             return (
