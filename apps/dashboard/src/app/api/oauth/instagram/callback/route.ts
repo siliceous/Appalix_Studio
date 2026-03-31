@@ -120,14 +120,33 @@ export async function GET(req: NextRequest) {
       console.log(`[oauth/instagram/callback] business ${biz.id} pages:`, JSON.stringify(pagesData))
 
       for (const page of pagesData.data ?? []) {
-        if (page.instagram_business_account?.id) {
-          const alreadyFound = candidates.some(c => c.igAccountId === page.instagram_business_account!.id)
+        let igBiz = page.instagram_business_account
+
+        // If instagram_business_account not in owned_pages response, query page node directly
+        if (!igBiz?.id) {
+          try {
+            const pageDetailRes  = await fetch(
+              `https://graph.facebook.com/v18.0/${page.id}?fields=instagram_business_account{id,username},connected_instagram_account{id,username}&access_token=${longToken}`
+            )
+            const pageDetail = await pageDetailRes.json() as {
+              instagram_business_account?: { id: string; username?: string }
+              connected_instagram_account?: { id: string; username?: string }
+            }
+            console.log(`[oauth/instagram/callback] page ${page.id} direct:`, JSON.stringify(pageDetail))
+            igBiz = pageDetail.instagram_business_account ?? pageDetail.connected_instagram_account
+          } catch (err) {
+            console.error(`[oauth/instagram/callback] page ${page.id} direct fetch failed:`, err)
+          }
+        }
+
+        if (igBiz?.id) {
+          const alreadyFound = candidates.some(c => c.igAccountId === igBiz!.id)
           if (!alreadyFound) {
             const patRes  = await fetch(`https://graph.facebook.com/v18.0/${page.id}?fields=access_token&access_token=${longToken}`)
             const patData = await patRes.json() as { access_token?: string }
             candidates.push({
-              igAccountId: page.instagram_business_account.id,
-              igUsername:  page.instagram_business_account.username ?? '',
+              igAccountId: igBiz.id,
+              igUsername:  igBiz.username ?? '',
               pageId:      page.id,
               pageName:    page.name,
               accessToken: patData.access_token ?? longToken,
