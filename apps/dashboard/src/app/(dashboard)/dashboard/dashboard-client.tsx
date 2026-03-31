@@ -485,9 +485,9 @@ function ItemPopup({
     if (result.ok) { onAction(); setTimeout(() => onClose(), 3000) }
   }
 
-const iconCls   = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-200 dark:bg-purple-500/30', form: 'bg-green-200 dark:bg-green-500/30', ticket: 'bg-amber-100 dark:bg-amber-500/25' }[popup.kind]
+const iconCls   = 'bg-gray-100 dark:bg-white/10'
   const Icon    = { email: Mail, bot: MessageSquare, form: FileText, ticket: TicketIcon }[popup.kind]
-  const iconCol = { email: 'text-blue-700 dark:text-blue-300', bot: 'text-purple-700 dark:text-purple-300', form: 'text-green-700 dark:text-green-300', ticket: 'text-amber-700 dark:text-amber-400' }[popup.kind]
+  const iconCol = { email: 'text-blue-500', bot: 'text-purple-500', form: 'text-green-500', ticket: 'text-amber-500' }[popup.kind]
   const label   = { email: 'Email Summary', bot: 'Chat Summary', form: 'Lead Details', ticket: 'Ticket Summary' }[popup.kind]
 
   const sizeClass = popupSize === 'sm' ? 'sm:max-w-lg' : popupSize === 'lg' ? 'sm:max-w-[95vw]' : 'sm:max-w-2xl'
@@ -501,15 +501,15 @@ const iconCls   = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-20
         onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 shrink-0 bg-[#141c2b] rounded-t-2xl sm:rounded-t-2xl">
+        <div className="flex items-center justify-between px-6 py-4 shrink-0 bg-white dark:bg-[#2a2a2a] border-b border-gray-100 dark:border-white/8 rounded-t-2xl sm:rounded-t-2xl">
           <div className="flex items-center gap-2.5">
             <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${iconCls}`}>
               <Icon className={`w-4 h-4 ${iconCol}`} />
             </div>
-            <h2 className="text-sm font-semibold text-white">{label}</h2>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{label}</h2>
             <Sparkles className="w-3.5 h-3.5 text-[#15A4AE]" />
             {!postAction && contactMatch !== null && contactMatch !== undefined && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/10 border border-white/20 text-[10px] font-semibold text-white/80 whitespace-nowrap">
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/15 text-[10px] font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">
                 Existing contact{contactMatch.dealId ? ' · has deal' : ''}
               </span>
             )}
@@ -519,7 +519,7 @@ const iconCls   = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-20
             {popup.kind === 'email' && !loading && data && showReply && (
               <button
                 onClick={() => setShowReply(false)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors border border-white/20"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-800 dark:hover:text-gray-200 transition-colors border border-gray-200 dark:border-white/15"
               >
                 <ArrowLeft className="w-3.5 h-3.5" /> Back
               </button>
@@ -527,12 +527,12 @@ const iconCls   = { email: 'bg-blue-200 dark:bg-blue-500/30', bot: 'bg-purple-20
             <button
               onClick={() => setPopupSize(s => s === 'sm' ? 'md' : s === 'md' ? 'lg' : 'sm')}
               title={popupSize === 'sm' ? 'Original size' : popupSize === 'md' ? 'Full width' : 'Small'}
-              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
             >
-              {popupSize === 'lg' ? <Minimize2 className="w-4 h-4 text-white/60" /> : <Maximize2 className="w-4 h-4 text-white/60" />}
+              {popupSize === 'lg' ? <Minimize2 className="w-4 h-4 text-gray-400 dark:text-gray-500" /> : <Maximize2 className="w-4 h-4 text-gray-400 dark:text-gray-500" />}
             </button>
-            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors">
-              <X className="w-4 h-4 text-white/60" />
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+              <X className="w-4 h-4 text-gray-400 dark:text-gray-500" />
             </button>
           </div>
         </div>
@@ -2394,15 +2394,11 @@ export function SageDashboardClient({
                     return (
                       <div
                         key={tablet.key}
-                        className={`rounded-xl border overflow-hidden transition-all duration-200 ${
-                          isActive
-                            ? tablet.borderClass
-                            : 'border-gray-100 dark:border-white/[0.06]'
-                        }`}
+                        className="rounded-xl border border-gray-100 dark:border-white/[0.06] overflow-hidden transition-all duration-200"
                       >
                         {/* Tablet header */}
                         <div
-                          className={`px-4 py-2.5 flex items-center justify-between cursor-pointer ${tablet.bgClass}`}
+                          className="px-4 py-2.5 flex items-center justify-between cursor-pointer bg-gray-50 dark:bg-white/[0.03]"
                           onClick={() => setTopType(isActive ? null : tablet.key)}
                         >
                           <div className={`flex items-center gap-2 text-xs font-semibold ${tablet.accentClass}`}>
@@ -2410,7 +2406,7 @@ export function SageDashboardClient({
                             {tablet.label}
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${tablet.bgClass} ${tablet.accentClass}`}>
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 ${tablet.accentClass}`}>
                               {tablet.count}
                             </span>
                             <ChevronDown className={`w-4 h-4 ${tablet.accentClass} transition-transform duration-200 ${isActive ? 'rotate-180' : ''}`} />

@@ -4,7 +4,7 @@ import { getDocument } from '@/app/actions/sage-documents'
 import { getItems } from '@/app/actions/sage-items'
 import { DocumentBuilder } from '@/components/sage/document-builder'
 import type { Metadata } from 'next'
-import type { SageContact, SageProject } from '@/lib/types'
+import type { SageProject } from '@/lib/types'
 
 export const metadata: Metadata = { title: 'Document' }
 
@@ -36,10 +36,11 @@ export default async function DocumentPage({
     getDocument(id),
     admin
       .from('sage_contacts')
-      .select('id,name,email,company_name')
+      .select('id,name,email,phone,company_name,street,city,state,zip,country')
       .eq('workspace_id', workspaceId)
       .is('deleted_at', null)
-      .order('name'),
+      .order('name')
+      .limit(20),
     admin
       .from('sage_projects')
       .select('id,name')
@@ -56,10 +57,19 @@ export default async function DocumentPage({
       mode="edit"
       document={doc}
       contacts={
-        (contactsRaw.data ?? []) as Pick<
-          SageContact,
-          'id' | 'name' | 'email' | 'company_name'
-        >[]
+        (contactsRaw.data ?? []).map((c: any) => ({
+          id:           c.id,
+          name:         c.name,
+          email:        c.email        ?? null,
+          phone:        c.phone        ?? null,
+          company_name: c.company_name ?? null,
+          street:       c.street       ?? null,
+          city:         c.city         ?? null,
+          state:        c.state        ?? null,
+          zip:          c.zip          ?? null,
+          country:      c.country      ?? null,
+          vat_number:   null,
+        }))
       }
       projects={(projectsRaw.data ?? []) as Pick<SageProject, 'id' | 'name'>[]}
       items={itemsCatalog}

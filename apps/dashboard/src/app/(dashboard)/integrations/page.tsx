@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { Header } from '@/components/layout/header'
 import { Plug, Plus } from 'lucide-react'
+import { CrmMigrationSection } from '@/components/settings/crm-migration-section'
+import { getCrmConnections, getImportHistory } from '@/app/actions/crm-import'
 import { PLATFORM_META, formatDate } from '@/lib/utils'
 import { IntegrationActions } from './integration-actions'
 import { IntegrationsClient } from '@/app/(dashboard)/sage/integrations/integrations-client'
@@ -51,9 +53,9 @@ const AVAILABLE_PLATFORMS: { platform: Platform; desc: string; guide: string }[]
 export default async function IntegrationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ provider?: string; onboarding?: string; hint?: string; connected?: string; error?: string }>
+  searchParams: Promise<{ provider?: string; onboarding?: string; hint?: string; connected?: string; error?: string; crm_connected?: string; crm_error?: string }>
 }) {
-  const { provider: initialProvider, onboarding, hint, connected, error } = await searchParams
+  const { provider: initialProvider, onboarding, hint, connected, error, crm_connected, crm_error } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -87,6 +89,8 @@ export default async function IntegrationsPage({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('sage_integrations').select('provider, user_id').eq('workspace_id', membership.workspace_id).eq('status', 'connected'),
   ])
+  const [crmConnections, crmHistory] = await Promise.all([getCrmConnections(), getImportHistory()])
+
   const integrations      = (rawIntegrations ?? []) as IntegrationRow[]
   const adSources         = (sourcesRaw ?? []) as LeadAdSource[]
   const emailIntegrationsRawTyped = (emailIntegrationsRaw ?? []) as Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at' | 'sync_enabled' | 'last_synced_at' | 'last_sync_count'>[]
@@ -260,6 +264,20 @@ export default async function IntegrationsPage({
         </div>
       </section>
 
+      {/* CRM OAuth feedback */}
+      {crm_connected && (
+        <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#15A4AE]/10 border border-[#15A4AE]/30 text-sm text-[#2a7d6e] dark:text-[#15A4AE]">
+          <span className="text-lg">✅</span>
+          <span><strong className="capitalize">{crm_connected}</strong> connected. You can now import your contacts and deals.</span>
+        </div>
+      )}
+      {crm_error && (
+        <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-sm text-red-700 dark:text-red-400">
+          <span className="text-lg">⚠️</span>
+          <span>CRM connection failed: {decodeURIComponent(crm_error)}. Please try again.</span>
+        </div>
+      )}
+
       {/* OAuth connection feedback */}
       {connected === '1' && initialProvider && (
         <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#15A4AE]/10 border border-[#15A4AE]/30 text-sm text-[#2a7d6e] dark:text-[#15A4AE]">
@@ -358,6 +376,23 @@ export default async function IntegrationsPage({
           columns={2}
           connectedProviderInfo={connectedProviderInfo}
         />
+      </section>
+
+      {/* CRM Migration */}
+      <section className="mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">CRM Migration</h2>
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[#15A4AE]/10 text-[#15A4AE]">Pro</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {crmConnections.map(conn => (
+            <CrmMigrationSection key={conn.provider} connections={[conn]} importHistory={crmHistory.filter(r => r.provider === conn.provider)} />
+          ))}
+        </div>
+        <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
+          <strong className="text-gray-500 dark:text-gray-400">What gets imported:</strong>{' '}
+          Contacts (name, email, phone, company, title, city, notes &amp; tags) and Deals (title, value, stage). Duplicates skipped by email. All records tagged with the source CRM.
+        </p>
       </section>
 
       {/* CRM & Lead Capture */}

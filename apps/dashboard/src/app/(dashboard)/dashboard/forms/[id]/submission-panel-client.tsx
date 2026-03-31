@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useTransition } from 'react'
+import React, { useTransition, useState as useLocalState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
-  Search, X, ArrowLeft, Download, Pencil, Trash2, Loader2,
+  Search, X, ArrowLeft, Download, Trash2, Loader2,
   UserPlus, Ticket, ClipboardList, Send, CheckCircle,
 } from 'lucide-react'
 import { EmailComposeModal } from '@/components/dashboard/email-compose-modal'
@@ -12,7 +12,7 @@ import { PipelinePickerModal } from '@/components/sage/pipeline-picker-modal'
 import { timeAgo, formatDate } from '@/lib/utils'
 import {
   updateSubmissionPriority, updateSubmissionAssignedTo,
-  updateSubmissionName, formSubmissionCreateTicket, deleteSubmission,
+  updateSubmissionField, formSubmissionCreateTicket, deleteSubmission,
   analyzeFormSubmissions,
 } from '@/app/actions/sage-forms'
 import type { SageFormSubmission, SageForm } from '@/app/actions/sage-forms'
@@ -59,6 +59,65 @@ const PRIORITY_CLS: Record<string, string> = {
   high:   'bg-[#15A4AE]/10 text-[#1f6157] dark:text-[#15A4AE] border border-[#15A4AE]/30',
   medium: 'bg-amber-50 text-amber-700 dark:text-amber-400 border border-amber-200/70',
   low:    'bg-gray-100 text-gray-500 border border-gray-200 dark:border-white/10',
+}
+
+// ── Inline editable field ─────────────────────────────────────────────────────
+function InlineEditField({ value, onSave, placeholder, multiline }: {
+  value: string
+  onSave: (val: string) => Promise<void>
+  placeholder?: string
+  multiline?: boolean
+}) {
+  const [editing, setEditing] = useLocalState(false)
+  const [draft,   setDraft]   = useLocalState(value)
+  const [saving,  setSaving]  = useLocalState(false)
+  const ref = useRef<HTMLInputElement & HTMLTextAreaElement>(null)
+
+  // Keep draft in sync with incoming value (e.g. after router.refresh())
+  useEffect(() => { if (!editing) setDraft(value) }, [value, editing])
+  useEffect(() => { if (editing) ref.current?.focus() }, [editing])
+
+  async function commit() {
+    if (draft.trim() === value) { setEditing(false); return }
+    setSaving(true)
+    await onSave(draft.trim())
+    setSaving(false)
+    setEditing(false)
+  }
+
+  if (editing) {
+    const shared = {
+      ref,
+      value: draft,
+      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setDraft(e.target.value),
+      onBlur: commit,
+      onKeyDown: (e: React.KeyboardEvent) => {
+        if (!multiline && e.key === 'Enter') { e.preventDefault(); commit() }
+        if (e.key === 'Escape') { setEditing(false) }
+      },
+      className: 'w-full text-sm text-gray-800 dark:text-gray-100 bg-white dark:bg-white/5 border border-[#15A4AE]/50 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40',
+      placeholder,
+    }
+    return (
+      <div className="flex items-start gap-1.5 flex-1">
+        {multiline
+          ? <textarea {...shared as React.TextareaHTMLAttributes<HTMLTextAreaElement>} rows={3} style={{ resize: 'none' }} className={shared.className + ' leading-snug'} />
+          : <input {...shared as React.InputHTMLAttributes<HTMLInputElement>} />
+        }
+        {saving && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#15A4AE] shrink-0 mt-1" />}
+      </div>
+    )
+  }
+
+  return (
+    <span
+      onClick={() => { setDraft(value); setEditing(true) }}
+      title="Click to edit"
+      className="text-sm text-gray-800 dark:text-gray-100 cursor-text break-all hover:text-[#15A4AE] transition-colors"
+    >
+      {value || <span className="italic text-gray-300 dark:text-gray-600">{placeholder ?? '—'}</span>}
+    </span>
+  )
 }
 
 // ── Props ──────────────────────────────────────────────────────────────────────
@@ -159,15 +218,6 @@ export function SubmissionPanelClient({
     await updateSubmissionAssignedTo(current.id, val || null)
     setSaving(null)
     router.refresh()
-  }
-
-  function handleRename() {
-    const newName = window.prompt('Rename contact:', contactName)
-    if (newName === null || newName === contactName) return
-    startTransition(async () => {
-      await updateSubmissionName(current.id, newName.trim())
-      router.refresh()
-    })
   }
 
   function handleDownload() {
@@ -368,10 +418,6 @@ export function SubmissionPanelClient({
                 className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors">
                 <Download className="w-3.5 h-3.5" />
               </button>
-              <button onClick={handleRename} title="Rename"
-                className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors">
-                <Pencil className="w-3.5 h-3.5" />
-              </button>
               <button onClick={handleDelete} title="Delete"
                 className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors">
                 <Trash2 className="w-3.5 h-3.5" />
@@ -385,25 +431,30 @@ export function SubmissionPanelClient({
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
 
           {/* Section 1 — Primary Contact */}
-          {(contactEmail || contactPhone || contactCompany || contactCity) && (
-            <div>
-              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Primary Contact</h2>
-              <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-gray-100 dark:border-white/8 overflow-hidden">
-                {[
-                  { label: 'Name',    value: contactName !== 'Anonymous' ? contactName : null },
-                  { label: 'Email',   value: contactEmail },
-                  { label: 'Phone',   value: contactPhone },
-                  { label: 'Company', value: contactCompany },
-                  { label: 'City',    value: contactCity },
-                ].filter(r => r.value).map((r, i, arr) => (
-                  <div key={r.label} className={`flex items-baseline gap-4 px-4 py-2.5 ${i < arr.length - 1 ? 'border-b border-gray-50 dark:border-white/5' : ''}`}>
-                    <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide w-20 shrink-0">{r.label}</span>
-                    <span className="text-sm text-gray-800 dark:text-gray-100 break-all">{r.value}</span>
-                  </div>
-                ))}
-              </div>
+          <div>
+            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Primary Contact</h2>
+            <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-gray-100 dark:border-white/8 overflow-hidden">
+              {[
+                { label: 'Name',    value: contactName !== 'Anonymous' ? contactName : '', fieldKey: 'name'    },
+                { label: 'Email',   value: contactEmail   ?? '',                            fieldKey: 'email'   },
+                { label: 'Phone',   value: contactPhone   ?? '',                            fieldKey: 'phone'   },
+                { label: 'Company', value: contactCompany,                                  fieldKey: 'company' },
+                { label: 'City',    value: contactCity,                                     fieldKey: 'city'    },
+              ].map((r, i, arr) => (
+                <div key={r.label} className={`flex items-baseline gap-4 px-4 py-2.5 ${i < arr.length - 1 ? 'border-b border-gray-50 dark:border-white/5' : ''}`}>
+                  <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide w-20 shrink-0">{r.label}</span>
+                  <InlineEditField
+                    value={r.value}
+                    placeholder={`Add ${r.label.toLowerCase()}…`}
+                    onSave={async (val) => {
+                      await updateSubmissionField(current.id, r.fieldKey, val)
+                      router.refresh()
+                    }}
+                  />
+                </div>
+              ))}
             </div>
-          )}
+          </div>
 
           {/* Section 2 — Submission Answers */}
           <div>
@@ -420,9 +471,15 @@ export function SubmissionPanelClient({
                     return (
                       <div key={k} className={`px-4 py-2.5 ${i > 0 ? 'border-t border-gray-50 dark:border-white/5' : ''} ${isLong ? 'flex flex-col gap-1' : 'flex items-baseline gap-4'}`}>
                         <span className={`text-[11px] font-semibold text-gray-400 uppercase tracking-wide shrink-0 ${isLong ? '' : 'w-28'}`}>{label}</span>
-                        <span className="text-sm text-gray-800 dark:text-gray-100 whitespace-pre-wrap break-words leading-snug">
-                          {String(v) || <span className="italic text-gray-300">—</span>}
-                        </span>
+                        <InlineEditField
+                          value={String(v ?? '')}
+                          multiline={isLong}
+                          placeholder="—"
+                          onSave={async (val) => {
+                            await updateSubmissionField(current.id, k, val)
+                            router.refresh()
+                          }}
+                        />
                       </div>
                     )
                   })}

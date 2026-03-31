@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ClipboardList, Search, ChevronDown, X,
-  UserPlus, Ticket, Download, Loader2, Trash2, Pencil, Sparkles, Columns3, RefreshCw,
+  UserPlus, Ticket, Download, Loader2, Trash2, Sparkles, Columns3, RefreshCw,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import {
@@ -16,6 +16,7 @@ import {
   updateSubmissionStatus,
   updateSubmissionAssignedTo,
   updateSubmissionName,
+  updateSubmissionField,
   analyzeFormSubmissions,
 } from '@/app/actions/sage-forms'
 import { syncAllConnectedSources } from '@/app/actions/leads'
@@ -79,6 +80,127 @@ const EMAIL_PLATFORM_META: Record<string, { name: string; logo?: string; pill: s
   fluent_forms:    { name: 'Fluent Forms',     pill: 'bg-teal-50 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-200 dark:border-teal-500/20' },
   google_ads:      { name: 'Google Ads',       pill: 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20' },
   meta:            { name: 'Meta Ads',         pill: 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20' },
+}
+
+// ── Click-once to navigate, double-click to edit inline ──────────────────────
+function ClickOrEditCell({ value, href, onSave, readonly, className }: {
+  value: string
+  href: string
+  onSave: (val: string) => Promise<void>
+  readonly?: boolean
+  className?: string
+}) {
+  const router = useRouter()
+  const [editing, setEditing]   = useState(false)
+  const [draft,   setDraft]     = useState(value)
+  const [saving,  setSaving]    = useState(false)
+  const inputRef  = useRef<HTMLInputElement>(null)
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => { if (editing) inputRef.current?.focus() }, [editing])
+
+  function handleClick() {
+    if (readonly || editing) return
+    clickTimer.current = setTimeout(() => { router.push(href) }, 250)
+  }
+
+  function handleDoubleClick() {
+    if (readonly) return
+    if (clickTimer.current) clearTimeout(clickTimer.current)
+    setDraft(value)
+    setEditing(true)
+  }
+
+  async function commit() {
+    if (draft.trim() === value) { setEditing(false); return }
+    setSaving(true)
+    await onSave(draft.trim())
+    setSaving(false)
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1">
+        <input
+          ref={inputRef}
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false) }}
+          className="flex-1 text-sm font-medium bg-white dark:bg-white/5 border border-[#15A4AE]/50 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 text-gray-900 dark:text-gray-100"
+        />
+        {saving && <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />}
+      </div>
+    )
+  }
+
+  return (
+    <span
+      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
+      title={readonly ? undefined : 'Click to open · Double-click to rename'}
+      className={`cursor-pointer text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-[#15A4AE] transition-colors truncate block select-none ${className ?? ''}`}
+    >
+      {value}
+    </span>
+  )
+}
+
+// ── Double-click to edit inline (no navigation) ───────────────────────────────
+function InlineEditCell({ value, onSave, readonly, placeholder, className }: {
+  value: string
+  onSave: (val: string) => Promise<void>
+  readonly?: boolean
+  placeholder?: string
+  className?: string
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft,   setDraft]   = useState(value)
+  const [saving,  setSaving]  = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => { if (editing) inputRef.current?.focus() }, [editing])
+
+  function handleDoubleClick() {
+    if (readonly) return
+    setDraft(value)
+    setEditing(true)
+  }
+
+  async function commit() {
+    if (draft.trim() === value) { setEditing(false); return }
+    setSaving(true)
+    await onSave(draft.trim())
+    setSaving(false)
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1">
+        <input
+          ref={inputRef}
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false) }}
+          className="flex-1 text-xs bg-white dark:bg-white/5 border border-[#15A4AE]/50 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 text-gray-900 dark:text-gray-100 min-w-[80px]"
+        />
+        {saving && <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />}
+      </div>
+    )
+  }
+
+  return (
+    <span
+      onDoubleClick={handleDoubleClick}
+      title={readonly ? undefined : 'Double-click to edit'}
+      className={`text-xs text-gray-500 dark:text-gray-400 truncate block select-none ${readonly ? '' : 'cursor-text hover:text-[#15A4AE] transition-colors'} ${className ?? ''}`}
+    >
+      {value || <span className="text-gray-300 dark:text-gray-600 italic">{placeholder ?? '—'}</span>}
+    </span>
+  )
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -411,13 +533,6 @@ export function FormsTable({
     const res = await formSubmissionCreateTicket(sub)
     setQuickAction(p => { const n = { ...p }; delete n[sub.id]; return n })
     if (!res.error) router.refresh()
-  }
-
-  function handleRename(sub: SageFormSubmission) {
-    const current = getName(sub) || ''
-    const newName = window.prompt('Rename contact:', current)
-    if (newName === null || newName === current) return
-    updateSubmissionName(sub.id, newName.trim()).then(() => router.refresh())
   }
 
   function handleDownload(sub: SageFormSubmission) {
@@ -755,7 +870,7 @@ export function FormsTable({
               <tbody className="divide-y dark:divide-white/5">
                 {paginated.map(sub => {
                   const name     = getName(sub) || 'Anonymous'
-                  const email    = getEmail(sub) || null
+                  const email    = getEmail(sub) ?? ''
                   const phone    = getPhone(sub)
                   const company  = getCompany(sub)
                   const form     = forms.find(f => f.id === sub.form_id)
@@ -809,66 +924,84 @@ export function FormsTable({
                       {/* Name */}
                       {show('name') && (
                         <td className="px-3 py-3 overflow-hidden">
-                          <Link
+                          <ClickOrEditCell
+                            value={name || '—'}
                             href={`/dashboard/forms/${sub.id}`}
-                            className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-[#15A4AE] truncate block"
-                            title={name}
-                          >
-                            {name}
-                          </Link>
+                            onSave={async val => { await updateSubmissionName(sub.id, val); router.refresh() }}
+                            readonly={readonly}
+                          />
                         </td>
                       )}
 
                       {/* Email */}
                       {show('email') && (
                         <td className="px-3 py-3 overflow-hidden">
-                          {email
-                            ? <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={email}>{email}</span>
-                            : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
-                          }
+                          <InlineEditCell
+                            value={email}
+                            onSave={async val => { await updateSubmissionField(sub.id, 'email', val); router.refresh() }}
+                            readonly={readonly}
+                            placeholder="—"
+                          />
                         </td>
                       )}
 
                       {/* Phone */}
                       {show('phone') && (
-                        <td className="px-3 py-3 whitespace-nowrap">
-                          {phone
-                            ? <span className="text-xs text-gray-500 dark:text-gray-400">{phone}</span>
-                            : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
-                          }
+                        <td className="px-3 py-3 overflow-hidden">
+                          <InlineEditCell
+                            value={phone}
+                            onSave={async val => { await updateSubmissionField(sub.id, 'phone', val); router.refresh() }}
+                            readonly={readonly}
+                            placeholder="—"
+                          />
                         </td>
                       )}
 
-                      {/* Company — max 25 chars */}
+                      {/* Company */}
                       {show('company') && (
                         <td className="px-3 py-3 overflow-hidden">
-                          {company
-                            ? <span className="text-xs text-gray-700 dark:text-gray-300 truncate block" title={company}>
-                                {company.length > 25 ? company.slice(0, 25) + '…' : company}
-                              </span>
-                            : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
-                          }
+                          <InlineEditCell
+                            value={company}
+                            onSave={async val => { await updateSubmissionField(sub.id, 'company', val); router.refresh() }}
+                            readonly={readonly}
+                            placeholder="—"
+                          />
                         </td>
                       )}
 
                       {/* Address */}
                       {show('address') && (
                         <td className="px-3 py-3 overflow-hidden">
-                          {(() => { const v = getAddress(sub); return v ? <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={v}>{v.length > 30 ? v.slice(0, 30) + '…' : v}</span> : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span> })()}
+                          <InlineEditCell
+                            value={getAddress(sub)}
+                            onSave={async val => { await updateSubmissionField(sub.id, 'address', val); router.refresh() }}
+                            readonly={readonly}
+                            placeholder="—"
+                          />
                         </td>
                       )}
 
                       {/* City */}
                       {show('city') && (
                         <td className="px-3 py-3 overflow-hidden">
-                          {(() => { const v = getCity(sub); return v ? <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={v}>{v.length > 15 ? v.slice(0, 15) + '…' : v}</span> : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span> })()}
+                          <InlineEditCell
+                            value={getCity(sub)}
+                            onSave={async val => { await updateSubmissionField(sub.id, 'city', val); router.refresh() }}
+                            readonly={readonly}
+                            placeholder="—"
+                          />
                         </td>
                       )}
 
                       {/* Message */}
                       {show('message') && (
                         <td className="px-3 py-3 overflow-hidden">
-                          {(() => { const v = getMessage(sub); return v ? <span className="text-xs text-gray-500 dark:text-gray-400 truncate block" title={v}>{v.length > 60 ? v.slice(0, 60) + '…' : v}</span> : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span> })()}
+                          <InlineEditCell
+                            value={getMessage(sub)}
+                            onSave={async val => { await updateSubmissionField(sub.id, 'message', val); router.refresh() }}
+                            readonly={readonly}
+                            placeholder="—"
+                          />
                         </td>
                       )}
 
@@ -976,15 +1109,6 @@ export function FormsTable({
                                 <Ticket className="w-3.5 h-3.5" />
                               </button>
                             )
-                          )}
-                          {!readonly && (
-                            <button
-                              onClick={() => handleRename(sub)}
-                              title="Rename contact"
-                              className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
                           )}
                           <button
                             onClick={() => handleDownload(sub)}

@@ -165,6 +165,19 @@ export async function updateContact(id: string, formData: FormData) {
   return data as SageContact
 }
 
+/** Patch a single field on a contact (for inline editing) */
+export async function patchContact(id: string, fields: Partial<Pick<SageContact, 'name' | 'email' | 'phone' | 'title' | 'company_name' | 'website_url' | 'notes' | 'city' | 'state' | 'country' | 'street'>>): Promise<void> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+  await admin
+    .from('sage_contacts')
+    .update({ ...fields, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('workspace_id', workspaceId)
+  revalidatePath('/sage/contacts')
+  revalidatePath(`/sage/contacts/${id}`)
+}
+
 export async function deleteContact(id: string) {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()

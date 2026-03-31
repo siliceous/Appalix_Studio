@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  UserPlus, Search, Mail, Phone, Globe, Trash2, Pencil,
-  Zap, ArrowUpDown, SlidersHorizontal, Columns3, Check,
+  UserPlus, Search, Mail, Phone, Globe, Trash2,
+  Zap, ArrowUpDown, SlidersHorizontal, Columns3, Check, Ticket,
 } from 'lucide-react'
 import { ContactModal } from '@/components/sage/contact-modal'
-import { deleteContact, deleteContacts, undoDeleteContact, assignContact } from '@/app/actions/sage'
+import { deleteContact, deleteContacts, undoDeleteContact, assignContact, patchContact } from '@/app/actions/sage'
+import { triageCreateLead, triageCreateTicket } from '@/app/actions/sage-triage'
 import { exportContacts } from '@/app/actions/csv-export'
 import { importContacts } from '@/app/actions/csv-import'
 import { CsvExportButton } from '@/components/ui/csv-export-button'
@@ -58,6 +59,123 @@ function AssignCell({ contactId, value, members, onAssigned }: {
         : <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
       }
     </div>
+  )
+}
+
+// ── Click-to-navigate / double-click-to-edit (name cell) ────────────────────
+function ClickOrEditCell({ value, href, onSave }: {
+  value: string
+  href: string
+  onSave: (val: string) => Promise<void>
+}) {
+  const router = useRouter()
+  const [editing, setEditing] = useState(false)
+  const [draft,   setDraft]   = useState(value)
+  const [saving,  setSaving]  = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => { if (editing) inputRef.current?.focus() }, [editing])
+  useEffect(() => { if (!editing) setDraft(value) }, [value, editing])
+
+  function handleClick(e: React.MouseEvent) {
+    e.stopPropagation()
+    timerRef.current = setTimeout(() => { router.push(href) }, 250)
+  }
+  function handleDoubleClick(e: React.MouseEvent) {
+    e.stopPropagation()
+    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null }
+    setDraft(value); setEditing(true)
+  }
+  async function commit() {
+    if (draft.trim() === value) { setEditing(false); return }
+    setSaving(true)
+    await onSave(draft.trim())
+    setSaving(false)
+    setEditing(false)
+  }
+
+  if (editing) return (
+    <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+      <input
+        ref={inputRef}
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false) }}
+        className="text-sm font-medium text-gray-900 dark:text-gray-100 bg-white dark:bg-white/5 border border-[#15A4AE]/50 rounded px-1.5 py-0.5 w-36 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40"
+      />
+      {saving && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#15A4AE] shrink-0" />}
+    </div>
+  )
+
+  return (
+    <span
+      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
+      title="Click to open · double-click to rename"
+      className="text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer hover:text-[#15A4AE] transition-colors select-none"
+    >
+      {value}
+    </span>
+  )
+}
+
+// ── Double-click-only inline edit (other cells) ──────────────────────────────
+function InlineEditCell({ value, onSave, placeholder, multiline }: {
+  value: string
+  onSave: (val: string) => Promise<void>
+  placeholder?: string
+  multiline?: boolean
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft,   setDraft]   = useState(value)
+  const [saving,  setSaving]  = useState(false)
+  const inputRef = useRef<HTMLInputElement & HTMLTextAreaElement>(null)
+
+  useEffect(() => { if (editing) inputRef.current?.focus() }, [editing])
+  useEffect(() => { if (!editing) setDraft(value) }, [value, editing])
+
+  async function commit() {
+    if (draft.trim() === value) { setEditing(false); return }
+    setSaving(true)
+    await onSave(draft.trim())
+    setSaving(false)
+    setEditing(false)
+  }
+
+  if (editing) {
+    const shared = {
+      ref: inputRef,
+      value: draft,
+      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setDraft(e.target.value),
+      onBlur: commit,
+      onKeyDown: (e: React.KeyboardEvent) => {
+        if (!multiline && e.key === 'Enter') commit()
+        if (e.key === 'Escape') setEditing(false)
+      },
+      onClick: (e: React.MouseEvent) => e.stopPropagation(),
+      className: 'text-xs text-gray-700 dark:text-gray-200 bg-white dark:bg-white/5 border border-[#15A4AE]/50 rounded px-1.5 py-0.5 w-full focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40',
+    }
+    return (
+      <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+        {multiline
+          ? <textarea {...shared as React.TextareaHTMLAttributes<HTMLTextAreaElement>} rows={2} style={{ resize: 'none' }} />
+          : <input {...shared as React.InputHTMLAttributes<HTMLInputElement>} />
+        }
+        {saving && <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />}
+      </div>
+    )
+  }
+
+  return (
+    <span
+      onDoubleClick={e => { e.stopPropagation(); setDraft(value); setEditing(true) }}
+      title="Double-click to edit"
+      className="text-xs text-gray-500 dark:text-gray-400 cursor-text hover:text-[#15A4AE] transition-colors select-none"
+    >
+      {value || <span className="italic text-gray-300 dark:text-gray-600">{placeholder ?? '—'}</span>}
+    </span>
   )
 }
 
@@ -141,6 +259,31 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
   const [showModal,      setShowModal]      = useState(false)
   const [editingContact, setEditingContact] = useState<SageContact | null>(null)
   const [deleting,       setDeleting]       = useState<string | null>(null)
+  const [actionLoading,  setActionLoading]  = useState<string | null>(null) // contactId + ':deal' | ':ticket'
+  const [notification,   setNotification]   = useState<string | null>(null)
+
+  function showNotification(msg: string) {
+    setNotification(msg)
+    setTimeout(() => setNotification(null), 5000)
+  }
+
+  async function handleCreateDeal(c: SageContact) {
+    const key = `${c.id}:deal`
+    setActionLoading(key)
+    const res = await triageCreateLead({ name: c.name, email: c.email ?? '', phone: c.phone ?? undefined, company: c.company_name ?? undefined, dealTitle: `${c.name} — Deal`, notes: c.notes ?? undefined })
+    setActionLoading(null)
+    if (res?.error) showNotification(`Error: ${res.error}`)
+    else { showNotification('Deal created'); router.refresh() }
+  }
+
+  async function handleCreateTicket(c: SageContact) {
+    const key = `${c.id}:ticket`
+    setActionLoading(key)
+    const res = await triageCreateTicket({ title: `Support: ${c.name}`, description: c.notes ?? 'No details', contactEmail: c.email ?? '', contactName: c.name, priority: 'medium' })
+    setActionLoading(null)
+    if (res?.error) showNotification(`Error: ${res.error}`)
+    else { showNotification('Ticket created'); router.refresh() }
+  }
   const [selectedIds,    setSelectedIds]    = useState<Set<string>>(new Set())
   const [bulkDeleting,   setBulkDeleting]   = useState(false)
   const [undoToasts,     setUndoToasts]     = useState<{ id: string; name: string; timer: ReturnType<typeof setTimeout> }[]>([])
@@ -275,14 +418,22 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
           <div className="w-7 h-7 rounded-full bg-brand-100 dark:bg-[#15A4AE]/15 flex items-center justify-center shrink-0">
             <span className="text-xs font-semibold text-brand-700 dark:text-[#15A4AE]">{c.name.charAt(0).toUpperCase()}</span>
           </div>
-          <span className="text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">{c.name}</span>
+          <ClickOrEditCell
+            value={c.name}
+            href={`/sage/contacts/${c.id}`}
+            onSave={async val => { await patchContact(c.id, { name: val }); setContacts(prev => prev.map(x => x.id === c.id ? { ...x, name: val } : x)) }}
+          />
         </div>
       )
-      case 'title':        return <span className="text-xs text-gray-500 dark:text-gray-400">{c.title ?? '—'}</span>
-      case 'company_name': return <span className="text-xs text-gray-600 dark:text-gray-300">{c.company_name ?? '—'}</span>
-      case 'email':        return c.email
-        ? <a href={`mailto:${c.email}`} className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-brand-600"><Mail className="w-3 h-3 shrink-0" /><span className="truncate max-w-40">{c.email}</span></a>
-        : <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
+      case 'title': return (
+        <InlineEditCell value={c.title ?? ''} placeholder="—" onSave={async val => { await patchContact(c.id, { title: val }); setContacts(prev => prev.map(x => x.id === c.id ? { ...x, title: val } : x)) }} />
+      )
+      case 'company_name': return (
+        <InlineEditCell value={c.company_name ?? ''} placeholder="—" onSave={async val => { await patchContact(c.id, { company_name: val }); setContacts(prev => prev.map(x => x.id === c.id ? { ...x, company_name: val } : x)) }} />
+      )
+      case 'email': return (
+        <InlineEditCell value={c.email ?? ''} placeholder="—" onSave={async val => { await patchContact(c.id, { email: val }); setContacts(prev => prev.map(x => x.id === c.id ? { ...x, email: val } : x)) }} />
+      )
       case 'contact_type': {
         const meta = CONTACT_TYPE_META[c.contact_type ?? 'other'] ?? CONTACT_TYPE_META.other
         return <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${meta.color}`}>{meta.label}</span>
@@ -297,19 +448,21 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
       case 'tags': return c.tags.length > 0
         ? <div className="flex gap-1 flex-wrap">{c.tags.slice(0, 2).map(t => <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 whitespace-nowrap">{t}</span>)}{c.tags.length > 2 && <span className="text-[10px] text-gray-400">+{c.tags.length - 2}</span>}</div>
         : <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
-      case 'city':    return <span className="text-xs text-gray-500 dark:text-gray-400">{c.city ?? '—'}</span>
-      case 'state':   return <span className="text-xs text-gray-500 dark:text-gray-400">{c.state ?? '—'}</span>
-      case 'country': return <span className="text-xs text-gray-500 dark:text-gray-400">{c.country ?? '—'}</span>
-      case 'street':  return <span className="text-xs text-gray-500 dark:text-gray-400">{c.street ?? '—'}</span>
+      case 'city':    return <InlineEditCell value={c.city    ?? ''} placeholder="—" onSave={async val => { await patchContact(c.id, { city:    val }); setContacts(prev => prev.map(x => x.id === c.id ? { ...x, city:    val } : x)) }} />
+      case 'state':   return <InlineEditCell value={c.state   ?? ''} placeholder="—" onSave={async val => { await patchContact(c.id, { state:   val }); setContacts(prev => prev.map(x => x.id === c.id ? { ...x, state:   val } : x)) }} />
+      case 'country': return <InlineEditCell value={c.country ?? ''} placeholder="—" onSave={async val => { await patchContact(c.id, { country: val }); setContacts(prev => prev.map(x => x.id === c.id ? { ...x, country: val } : x)) }} />
+      case 'street':  return <InlineEditCell value={c.street  ?? ''} placeholder="—" onSave={async val => { await patchContact(c.id, { street:  val }); setContacts(prev => prev.map(x => x.id === c.id ? { ...x, street:  val } : x)) }} />
       case 'created_at': return <span className="text-xs text-gray-400 whitespace-nowrap">{timeAgo(c.created_at)}</span>
       case 'updated_at': return <span className="text-xs text-gray-400 whitespace-nowrap">{timeAgo(c.updated_at)}</span>
-      case 'notes':   return <span className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 max-w-48">{c.notes ?? '—'}</span>
-      case 'phone':   return c.phone
-        ? <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400"><Phone className="w-3 h-3 shrink-0" />{c.phone}</span>
-        : <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
-      case 'website_url': return c.website_url
-        ? <a href={c.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-brand-600 dark:text-[#15A4AE] hover:underline"><Globe className="w-3 h-3 shrink-0" /><span className="truncate max-w-32">{c.website_url.replace(/^https?:\/\//, '')}</span></a>
-        : <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
+      case 'notes': return (
+        <InlineEditCell value={c.notes ?? ''} placeholder="—" multiline onSave={async val => { await patchContact(c.id, { notes: val }); setContacts(prev => prev.map(x => x.id === c.id ? { ...x, notes: val } : x)) }} />
+      )
+      case 'phone': return (
+        <InlineEditCell value={c.phone ?? ''} placeholder="—" onSave={async val => { await patchContact(c.id, { phone: val }); setContacts(prev => prev.map(x => x.id === c.id ? { ...x, phone: val } : x)) }} />
+      )
+      case 'website_url': return (
+        <InlineEditCell value={c.website_url ?? ''} placeholder="—" onSave={async val => { await patchContact(c.id, { website_url: val }); setContacts(prev => prev.map(x => x.id === c.id ? { ...x, website_url: val } : x)) }} />
+      )
       case 'deal_value': {
         const display = c.value ?? c.deal_value
         return display
@@ -366,6 +519,13 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
 
   return (
     <div className="p-8" onClick={() => setOpenPanel(null)}>
+
+      {/* Action notification */}
+      {notification && (
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-medium rounded-xl shadow-xl">
+          {notification}
+        </div>
+      )}
 
       {/* Undo delete toasts */}
       {undoToasts.length > 0 && (
@@ -657,8 +817,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
               {paginated.map(contact => (
                 <tr
                   key={contact.id}
-                  className={`transition-colors cursor-pointer ${selectedIds.has(contact.id) ? 'bg-brand-50 dark:bg-[#15A4AE]/8' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}
-                  onClick={() => router.push(`/sage/contacts/${contact.id}`)}
+                  className={`transition-colors ${selectedIds.has(contact.id) ? 'bg-brand-50 dark:bg-[#15A4AE]/8' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}
                 >
                   {canWrite && (
                     <td className="pl-4 pr-2 py-3" onClick={e => e.stopPropagation()}>
@@ -671,7 +830,11 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
                     </td>
                   )}
                   {visibleColDefs.map(col => (
-                    <td key={col.key} className="px-4 py-3">
+                    <td
+                      key={col.key}
+                      className="px-4 py-3"
+                      onClick={col.key === 'name' ? undefined : () => router.push(`/sage/contacts/${contact.id}`)}
+                    >
                       {renderCell(col.key, contact)}
                     </td>
                   ))}
@@ -679,11 +842,26 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-1 justify-end">
                         <button
-                          onClick={() => setEditingContact(contact)}
-                          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
-                          title="Edit"
+                          onClick={() => handleCreateDeal(contact)}
+                          disabled={actionLoading === `${contact.id}:deal`}
+                          title="Assign Deal"
+                          className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors disabled:opacity-50"
                         >
-                          <Pencil className="w-3.5 h-3.5 text-gray-400" />
+                          {actionLoading === `${contact.id}:deal`
+                            ? <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
+                            : <UserPlus className="w-3.5 h-3.5 text-gray-400 hover:text-blue-500" />
+                          }
+                        </button>
+                        <button
+                          onClick={() => handleCreateTicket(contact)}
+                          disabled={actionLoading === `${contact.id}:ticket`}
+                          title="Assign Ticket"
+                          className="p-1.5 rounded-lg hover:bg-yellow-50 dark:hover:bg-yellow-500/10 transition-colors disabled:opacity-50"
+                        >
+                          {actionLoading === `${contact.id}:ticket`
+                            ? <Loader2 className="w-3.5 h-3.5 animate-spin text-yellow-500" />
+                            : <Ticket className="w-3.5 h-3.5 text-gray-400 hover:text-yellow-500" />
+                          }
                         </button>
                         <button
                           onClick={() => handleDelete(contact.id)}

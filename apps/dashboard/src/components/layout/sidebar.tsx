@@ -99,12 +99,12 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Sage',
     pro: true,
     items: [
-      { href: '/sage/pipelines', label: 'Pipelines', icon: Kanban,     permissionKey: 'can_view_pipelines' },
-      { href: '/sage/projects',  label: 'Projects',         icon: FolderOpen, permissionKey: 'can_view_projects'  },
+      { href: '/sage/contacts',  label: 'Contacts',          icon: Users,      permissionKey: 'can_view_contacts'  },
+      { href: '/sage/pipelines', label: 'Pipelines',         icon: Kanban,     permissionKey: 'can_view_pipelines' },
+      { href: '/sage/projects',  label: 'Projects',          icon: FolderOpen, permissionKey: 'can_view_projects'  },
       { href: '/sage/quotes',    label: 'Quotes & Invoices', icon: Receipt,    permissionKey: 'can_view_projects'  },
-      { href: '/sage/contacts',  label: 'Contacts',         icon: Users,      permissionKey: 'can_view_contacts'  },
-      { href: '/sage/roi',       label: 'ROI',        icon: TrendingUp                                      },
-      { href: '/sage/rules',     label: 'Rules',      icon: ListFilter, adminOnly: true                    },
+      { href: '/sage/roi',       label: 'ROI',               icon: TrendingUp                                      },
+      { href: '/sage/rules',     label: 'Rules',             icon: ListFilter, adminOnly: true                     },
     ],
   },
   {

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useTransition, useState, useEffect } from 'react'
+import React, { useCallback, useTransition, useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -28,6 +28,72 @@ const SENTIMENT_COLOR: Record<string, string> = {
   positive: 'text-green-500',
   neutral:  'text-gray-400',
   negative: 'text-red-500',
+}
+
+// ── Click-once to navigate, double-click to edit inline ──────────────────────
+function ClickOrEditCell({ value, href, onSave, readonly, className }: {
+  value: string
+  href: string
+  onSave: (val: string) => Promise<void>
+  readonly?: boolean
+  className?: string
+}) {
+  const router = useRouter()
+  const [editing, setEditing]   = useState(false)
+  const [draft,   setDraft]     = useState(value)
+  const [saving,  setSaving]    = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => { if (editing) inputRef.current?.focus() }, [editing])
+
+  function handleClick() {
+    if (readonly || editing) return
+    // Start a short timer — if double-click fires, cancel navigation
+    clickTimer.current = setTimeout(() => { router.push(href) }, 250)
+  }
+
+  function handleDoubleClick() {
+    if (readonly) return
+    if (clickTimer.current) clearTimeout(clickTimer.current)
+    setDraft(value)
+    setEditing(true)
+  }
+
+  async function commit() {
+    if (draft.trim() === value) { setEditing(false); return }
+    setSaving(true)
+    await onSave(draft.trim())
+    setSaving(false)
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1">
+        <input
+          ref={inputRef}
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false) }}
+          className="flex-1 text-sm font-medium bg-white dark:bg-white/5 border border-[#15A4AE]/50 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 text-gray-900 dark:text-gray-100"
+        />
+        {saving && <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />}
+      </div>
+    )
+  }
+
+  return (
+    <span
+      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
+      title={readonly ? undefined : 'Click to open · Double-click to rename'}
+      className={`cursor-pointer text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-[#15A4AE] transition-colors truncate block select-none ${className ?? ''}`}
+    >
+      {value}
+    </span>
+  )
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -167,13 +233,9 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
     })
   }
 
-  function handleRename(id: string, currentTitle: string | null) {
-    const newTitle = window.prompt('Rename conversation:', currentTitle ?? '')
-    if (newTitle === null) return
-    startTransition(async () => {
-      await renameConversation(id, newTitle)
-      router.refresh()
-    })
+  async function handleRename(id: string, newTitle: string) {
+    await renameConversation(id, newTitle)
+    router.refresh()
   }
 
   const activePlatform = filters.platform ?? 'all'
@@ -440,10 +502,12 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
 
                     {/* Conversation title + contact name */}
                     <td className="px-5 py-3.5 max-w-[220px]">
-                      <Link href={`/conversations/${c.id}`}
-                        className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-[#15A4AE] transition-colors truncate block">
-                        {title}
-                      </Link>
+                      <ClickOrEditCell
+                        value={title}
+                        href={`/conversations/${c.id}`}
+                        onSave={val => handleRename(c.id, val)}
+                        readonly={readonly}
+                      />
                       {contactName && (
                         <p className="text-xs text-gray-400 mt-0.5 truncate">{contactName}</p>
                       )}
@@ -549,14 +613,6 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                               <Ticket className="w-3.5 h-3.5" />
                             </button>
                           )
-                        )}
-                        {!readonly && (
-                          <button
-                            onClick={() => handleRename(c.id, c.title)}
-                            title="Rename"
-                            className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors">
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
                         )}
                         {!readonly && (
                           <a href={`/api/conversations/${c.id}/export`} download

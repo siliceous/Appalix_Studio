@@ -280,6 +280,11 @@ export async function formSubmissionCreateLead(submission: SageFormSubmission): 
 
 /** Update the contact name on a form submission (patches fields.name) */
 export async function updateSubmissionName(id: string, name: string): Promise<void> {
+  return updateSubmissionField(id, 'name', name)
+}
+
+/** Generic: patch a single key in sage_form_submissions.fields */
+export async function updateSubmissionField(id: string, field: string, value: string): Promise<void> {
   const workspaceId = await getWorkspaceId()
   if (!workspaceId) return
   const admin = createAdminClient()
@@ -290,7 +295,7 @@ export async function updateSubmissionName(id: string, name: string): Promise<vo
     .eq('workspace_id', workspaceId)
     .single()
   if (!row) return
-  const fields = { ...(row as { fields: Record<string, string> }).fields, name }
+  const fields = { ...(row as { fields: Record<string, string> }).fields, [field]: value }
   await admin
     .from('sage_form_submissions')
     .update({ fields } as never)

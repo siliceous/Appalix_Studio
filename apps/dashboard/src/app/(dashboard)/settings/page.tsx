@@ -10,6 +10,8 @@ import { RoundRobinToggle } from '@/components/settings/round-robin-toggle'
 import { ReplayOnboardingButton } from '@/components/onboarding/replay-onboarding-button'
 import { ProfileForm } from './profile/profile-form'
 import { parseBusinessDescription } from '@/lib/business-profile'
+import { BusinessDetailsSection } from '@/components/settings/business-details-section'
+import { getBranding } from '@/app/actions/workspace-branding'
 import { STATUS_COLORS, formatDate } from '@/lib/utils'
 import type { Metadata } from 'next'
 import type { Workspace, WorkspaceMember, WorkspaceMemberRole } from '@/lib/types'
@@ -83,9 +85,10 @@ export default async function SettingsPage() {
     }
   })
 
-  const profileData = parseBusinessDescription(
+  const profileData  = parseBusinessDescription(
     (workspace as Workspace & { sage_business_description?: string | null }).sage_business_description ?? null
   )
+  const brandingData = await getBranding()
 
   // Fetch existing permissions for manageable members (only for admin+)
   const callerRank = ROLE_RANK[membership.role as WorkspaceMemberRole] ?? 0
@@ -119,6 +122,14 @@ export default async function SettingsPage() {
 
       {/* Business Profile */}
       <BusinessProfileSection workspaceId={workspace.id} initialData={profileData} />
+
+      {/* Business Details (invoice/quote from info) */}
+      <BusinessDetailsSection initialData={{
+        business_address: brandingData?.business_address ?? null,
+        business_phone:   brandingData?.business_phone   ?? null,
+        business_email:   brandingData?.business_email   ?? null,
+        abn_vat:          brandingData?.abn_vat          ?? null,
+      }} />
 
       {/* Workspace info */}
       <section className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 divide-y dark:divide-white/10">

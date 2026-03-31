@@ -3,22 +3,31 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 export interface WorkspaceBranding {
-  workspace_id:    string
-  brand_name:      string | null
-  logo_url:        string | null
-  favicon_url:     string | null
-  primary_color:   string
-  hide_powered_by: boolean
-  welcome_message: string | null
+  workspace_id:     string
+  brand_name:       string | null
+  logo_url:         string | null
+  favicon_url:      string | null
+  primary_color:    string
+  hide_powered_by:  boolean
+  welcome_message:  string | null
+  // Business / invoice details
+  business_address: string | null
+  business_phone:   string | null
+  business_email:   string | null
+  abn_vat:          string | null
 }
 
 const DEFAULTS: Omit<WorkspaceBranding, 'workspace_id'> = {
-  brand_name:      null,
-  logo_url:        null,
-  favicon_url:     null,
-  primary_color:   '#15A4AE',
-  hide_powered_by: false,
-  welcome_message: null,
+  brand_name:       null,
+  logo_url:         null,
+  favicon_url:      null,
+  primary_color:    '#15A4AE',
+  hide_powered_by:  false,
+  welcome_message:  null,
+  business_address: null,
+  business_phone:   null,
+  business_email:   null,
+  abn_vat:          null,
 }
 
 async function getWorkspaceId(): Promise<string | null> {

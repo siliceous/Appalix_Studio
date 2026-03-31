@@ -525,6 +525,31 @@ export async function markAsSent(documentId: string): Promise<{ error?: string }
   return { error: error?.message }
 }
 
+// Search contacts with full details for document builder
+export async function searchContacts(query: string): Promise<{
+  id: string; name: string; email: string | null; phone: string | null
+  company_name: string | null; street: string | null; city: string | null
+  state: string | null; zip: string | null; country: string | null
+  vat_number: string | null
+}[]> {
+  const { workspaceId } = await getAuthContext()
+  const admin = createAdminClient()
+  let q = admin
+    .from('sage_contacts')
+    .select('id,name,email,phone,company_name,street,city,state,zip,country')
+    .eq('workspace_id', workspaceId)
+    .is('deleted_at', null)
+    .order('name')
+    .limit(10)
+  if (query.trim()) {
+    q = q.or(
+      `name.ilike.%${query}%,email.ilike.%${query}%,company_name.ilike.%${query}%`
+    )
+  }
+  const { data } = await q
+  return ((data ?? []) as any[]).map(c => ({ ...c, vat_number: null }))
+}
+
 // Create a contact quickly from within the document builder
 export async function createQuickContact(fields: {
   name:         string
