@@ -110,6 +110,7 @@ export async function GET(req: NextRequest) {
     console.log('[oauth/instagram/callback] /me/businesses:', JSON.stringify(bizData))
 
     for (const biz of bizData.data ?? []) {
+      // Try owned_pages with instagram_business_account field
       const pagesRes  = await fetch(
         `https://graph.facebook.com/v18.0/${biz.id}/owned_pages?fields=id,name,instagram_business_account{id,username}&access_token=${longToken}`
       )
@@ -120,10 +121,8 @@ export async function GET(req: NextRequest) {
 
       for (const page of pagesData.data ?? []) {
         if (page.instagram_business_account?.id) {
-          // Avoid duplicates
           const alreadyFound = candidates.some(c => c.igAccountId === page.instagram_business_account!.id)
           if (!alreadyFound) {
-            // Fetch page access token
             const patRes  = await fetch(`https://graph.facebook.com/v18.0/${page.id}?fields=access_token&access_token=${longToken}`)
             const patData = await patRes.json() as { access_token?: string }
             candidates.push({
@@ -135,6 +134,38 @@ export async function GET(req: NextRequest) {
             })
           }
         }
+      }
+
+      // Also try /{biz}/instagram_accounts — catches accounts with partial access
+      try {
+        const igRes  = await fetch(
+          `https://graph.facebook.com/v18.0/${biz.id}/instagram_accounts?fields=id,username,connected_page{id,name}&access_token=${longToken}`
+        )
+        const igData = await igRes.json() as {
+          data?: { id: string; username?: string; connected_page?: { id: string; name: string } }[]
+        }
+        console.log(`[oauth/instagram/callback] business ${biz.id} instagram_accounts:`, JSON.stringify(igData))
+
+        for (const ig of igData.data ?? []) {
+          if (!ig.id) continue
+          const alreadyFound = candidates.some(c => c.igAccountId === ig.id)
+          if (!alreadyFound) {
+            const connPage = ig.connected_page
+            const patRes   = connPage
+              ? await fetch(`https://graph.facebook.com/v18.0/${connPage.id}?fields=access_token&access_token=${longToken}`)
+              : null
+            const patData  = patRes ? await patRes.json() as { access_token?: string } : {}
+            candidates.push({
+              igAccountId: ig.id,
+              igUsername:  ig.username ?? '',
+              pageId:      connPage?.id ?? '',
+              pageName:    connPage?.name ?? biz.name,
+              accessToken: (patData as { access_token?: string }).access_token ?? longToken,
+            })
+          }
+        }
+      } catch (igErr) {
+        console.error(`[oauth/instagram/callback] business ${biz.id} instagram_accounts failed:`, igErr)
       }
     }
   } catch (err) {
