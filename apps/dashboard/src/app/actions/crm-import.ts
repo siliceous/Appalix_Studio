@@ -150,7 +150,6 @@ async function importHubspotContacts(
           source:       'hubspot' as const,
           tags:         ['hubspot-import'],
           contact_type: 'potential_customer' as const,
-          created_by:   uid,
         }
       }).filter(r => r.name !== 'Unknown' || r.email)
 
@@ -225,7 +224,6 @@ async function importHubspotDeals(
           title:        r.properties.dealname!,
           value:        r.properties.amount ? parseFloat(r.properties.amount) : null,
           status:       'open' as const,
-          created_by:   uid,
           notes:        stageMap.get(r.properties.dealstage ?? '') ?? null,
         }))
 
@@ -288,7 +286,6 @@ async function importSalesforceContacts(
           source:       'salesforce' as const,
           tags:         ['salesforce-import'],
           contact_type: 'potential_customer' as const,
-          created_by:   uid,
         }
       }).filter(r => r.name !== 'Unknown' || r.email)
 
@@ -335,7 +332,6 @@ async function importSalesforceDeals(
         value:        r.Amount ? parseFloat(String(r.Amount)) : null,
         status:       'open' as const,
         notes:        r.StageName ? String(r.StageName) : null,
-        created_by:   uid,
       }))
 
     await admin.from('sage_deals').insert(rows)
@@ -404,7 +400,6 @@ async function importMondayContacts(
           source:       'manual',
           tags:         ['monday-import', board.name.toLowerCase().replace(/\s+/g, '-').slice(0, 30)],
           contact_type: 'potential_customer',
-          created_by:   uid,
           notes:        `Imported from Monday.com board: ${board.name}`,
         })
       }
@@ -471,7 +466,6 @@ async function importMondayDeals(
           value:        numericCol?.text ? parseFloat(numericCol.text) || null : null,
           status:       'open',
           notes:        `Imported from Monday.com board: ${board.name}`,
-          created_by:   uid,
         })
       }
     }
@@ -526,7 +520,6 @@ async function importZohoContacts(
           source:       'manual' as const,
           tags:         ['zoho-import'],
           contact_type: 'potential_customer' as const,
-          created_by:   uid,
         }
       }).filter(r => r.name !== 'Unknown' || r.email)
 
@@ -583,7 +576,6 @@ async function importZohoDeals(
           value:        r.Amount ? parseFloat(String(r.Amount)) : null,
           status:       'open' as const,
           notes:        r.Stage ? `Stage: ${r.Stage}` : null,
-          created_by:   uid,
         }))
 
       await admin.from('sage_deals').insert(rows)
