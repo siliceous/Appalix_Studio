@@ -37,9 +37,16 @@ export async function instagramRoutes(fastify: FastifyInstance) {
       const rawBody   = (request as never as { rawBody?: string }).rawBody ?? JSON.stringify(body)
       const appSecret = process.env.INSTAGRAM_APP_SECRET ?? process.env.META_APP_SECRET ?? ''
 
+      console.log('[instagram global webhook] body:', JSON.stringify(body))
+
       const entries = (body as never as { entry?: { id: string; messaging?: unknown[] }[] }).entry ?? []
       const igAccountId = entries[0]?.id
-      if (!igAccountId) return
+      if (!igAccountId) {
+        console.warn('[instagram global webhook] no igAccountId in payload')
+        return
+      }
+
+      console.log('[instagram global webhook] igAccountId:', igAccountId)
 
       const integration = await resolveIntegrationByConfig('instagram', 'instagram_account_id', igAccountId)
       if (!integration) {
