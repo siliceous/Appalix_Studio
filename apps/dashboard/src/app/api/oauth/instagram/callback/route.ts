@@ -269,7 +269,7 @@ async function registerWebhook(appId: string, appSecret: string, pageId: string,
   const webhookToken = process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN ?? process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN ?? ''
 
   try {
-    await fetch(`https://graph.facebook.com/v18.0/${appId}/subscriptions`, {
+    const subRes  = await fetch(`https://graph.facebook.com/v18.0/${appId}/subscriptions`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -280,17 +280,24 @@ async function registerWebhook(appId: string, appSecret: string, pageId: string,
         access_token: appToken,
       }),
     })
+    const subData = await subRes.json()
+    console.log('[oauth/instagram/callback] app subscription result:', JSON.stringify(subData))
   } catch (err) {
     console.error('[oauth/instagram/callback] webhook registration failed:', err)
   }
 
   if (pageId && pageAccessToken) {
     try {
-      await fetch(`https://graph.facebook.com/v18.0/${pageId}/subscribed_apps`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscribed_fields: 'messages', access_token: pageAccessToken }),
-      })
+      const pageSubRes  = await fetch(
+        `https://graph.facebook.com/v18.0/${pageId}/subscribed_apps`,
+        {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscribed_fields: ['messages'], access_token: pageAccessToken }),
+        }
+      )
+      const pageSubData = await pageSubRes.json()
+      console.log('[oauth/instagram/callback] page subscription result:', JSON.stringify(pageSubData))
     } catch (err) {
       console.error('[oauth/instagram/callback] page subscription failed:', err)
     }
