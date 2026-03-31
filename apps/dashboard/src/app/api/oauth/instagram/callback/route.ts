@@ -69,92 +69,133 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${appUrl}/integrations/new?platform=instagram&error=token_exchange_failed`)
   }
 
-  // ── 4. Find Instagram account via Facebook Pages ──────────────────────────
-  type PageEntry = { access_token: string; id: string; name: string; instagram_business_account?: { id: string; username?: string } }
-  let accessToken = longToken, pageId = '', igAccountId = '', igUsername = '', pageName = ''
-
-  const findIgInPages = (pages: PageEntry[]) => {
-    for (const page of pages) {
-      if (page.instagram_business_account?.id) {
-        accessToken = page.access_token
-        pageId      = page.id
-        pageName    = page.name
-        igAccountId = page.instagram_business_account.id
-        igUsername  = page.instagram_business_account.username ?? ''
-        return true
-      }
-    }
-    return false
+  // ── 4. Collect ALL Instagram accounts across all sources ─────────────────
+  type IgCandidate = {
+    igAccountId: string
+    igUsername:  string
+    pageId:      string
+    pageName:    string
+    accessToken: string
   }
+  const candidates: IgCandidate[] = []
 
-  // 4a. Try direct page access first (/me/accounts)
+  // 4a. Try direct page access (/me/accounts)
   try {
     const res  = await fetch(
       `https://graph.facebook.com/v18.0/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&access_token=${longToken}`
     )
-    const data = await res.json() as { data?: PageEntry[] }
+    const data = await res.json() as {
+      data?: { access_token: string; id: string; name: string; instagram_business_account?: { id: string; username?: string } }[]
+    }
     console.log('[oauth/instagram/callback] /me/accounts:', JSON.stringify(data))
-    findIgInPages(data.data ?? [])
+    for (const page of data.data ?? []) {
+      if (page.instagram_business_account?.id) {
+        candidates.push({
+          igAccountId: page.instagram_business_account.id,
+          igUsername:  page.instagram_business_account.username ?? '',
+          pageId:      page.id,
+          pageName:    page.name,
+          accessToken: page.access_token,
+        })
+      }
+    }
   } catch (err) {
     console.error('[oauth/instagram/callback] /me/accounts failed:', err)
   }
 
-  // 4b. Fall back to Business Manager API if no IG account found yet
-  if (!igAccountId) {
-    try {
-      const bizRes  = await fetch(`https://graph.facebook.com/v18.0/me/businesses?fields=id,name&access_token=${longToken}`)
-      const bizData = await bizRes.json() as { data?: { id: string; name: string }[] }
-      console.log('[oauth/instagram/callback] /me/businesses:', JSON.stringify(bizData))
+  // 4b. Try Business Manager API
+  try {
+    const bizRes  = await fetch(`https://graph.facebook.com/v18.0/me/businesses?fields=id,name&access_token=${longToken}`)
+    const bizData = await bizRes.json() as { data?: { id: string; name: string }[] }
+    console.log('[oauth/instagram/callback] /me/businesses:', JSON.stringify(bizData))
 
-      for (const biz of bizData.data ?? []) {
-        if (igAccountId) break
-        const pagesRes  = await fetch(
-          `https://graph.facebook.com/v18.0/${biz.id}/owned_pages?fields=id,name,instagram_business_account{id,username}&access_token=${longToken}`
-        )
-        const pagesData = await pagesRes.json() as { data?: { id: string; name: string; instagram_business_account?: { id: string; username?: string } }[] }
-        console.log(`[oauth/instagram/callback] business ${biz.id} pages:`, JSON.stringify(pagesData))
+    for (const biz of bizData.data ?? []) {
+      const pagesRes  = await fetch(
+        `https://graph.facebook.com/v18.0/${biz.id}/owned_pages?fields=id,name,instagram_business_account{id,username}&access_token=${longToken}`
+      )
+      const pagesData = await pagesRes.json() as {
+        data?: { id: string; name: string; instagram_business_account?: { id: string; username?: string } }[]
+      }
+      console.log(`[oauth/instagram/callback] business ${biz.id} pages:`, JSON.stringify(pagesData))
 
-        for (const page of pagesData.data ?? []) {
-          if (page.instagram_business_account?.id) {
-            igAccountId = page.instagram_business_account.id
-            igUsername  = page.instagram_business_account.username ?? ''
-            pageId      = page.id
-            pageName    = page.name
-            // Get the page access token
+      for (const page of pagesData.data ?? []) {
+        if (page.instagram_business_account?.id) {
+          // Avoid duplicates
+          const alreadyFound = candidates.some(c => c.igAccountId === page.instagram_business_account!.id)
+          if (!alreadyFound) {
+            // Fetch page access token
             const patRes  = await fetch(`https://graph.facebook.com/v18.0/${page.id}?fields=access_token&access_token=${longToken}`)
             const patData = await patRes.json() as { access_token?: string }
-            accessToken   = patData.access_token ?? longToken
-            break
+            candidates.push({
+              igAccountId: page.instagram_business_account.id,
+              igUsername:  page.instagram_business_account.username ?? '',
+              pageId:      page.id,
+              pageName:    page.name,
+              accessToken: patData.access_token ?? longToken,
+            })
           }
         }
       }
-    } catch (err) {
-      console.error('[oauth/instagram/callback] business manager fallback failed:', err)
     }
+  } catch (err) {
+    console.error('[oauth/instagram/callback] business manager fallback failed:', err)
   }
 
-  const verifyToken = randomBytes(16).toString('hex')
+  console.log('[oauth/instagram/callback] candidates:', JSON.stringify(candidates.map(c => ({ username: c.igUsername, pageId: c.pageId }))))
 
-  // ── 5. Create integration ─────────────────────────────────────────────────
-  const admin  = createAdminClient()
+  if (candidates.length === 0) {
+    return NextResponse.redirect(`${appUrl}/integrations/new?platform=instagram&error=no_instagram_account`)
+  }
+
+  // ── 5. If multiple candidates, store pending and redirect to picker ────────
+  if (candidates.length > 1) {
+    const admin = createAdminClient()
+    const { data: pending, error: pendingErr } = await admin
+      .from('integrations')
+      .insert({
+        workspace_id: wid,
+        bot_id:       botId || null,
+        platform:     'instagram',
+        name:         name || 'Instagram DM',
+        status:       'pending',
+        config: {
+          app_secret:       appSecret,
+          pending_accounts: candidates,
+        },
+      })
+      .select('id')
+      .single()
+
+    if (pendingErr || !pending) {
+      console.error('[oauth/instagram/callback] pending insert failed:', pendingErr?.message)
+      return NextResponse.redirect(`${appUrl}/integrations/new?platform=instagram&error=server_error`)
+    }
+
+    return NextResponse.redirect(`${appUrl}/integrations/instagram/select?session=${(pending as { id: string }).id}`)
+  }
+
+  // ── 6. Single candidate — create integration directly ─────────────────────
+  const pick        = candidates[0]
+  const verifyToken = randomBytes(16).toString('hex')
   const config = {
-    access_token:         accessToken,
-    page_access_token:    accessToken,
-    page_id:              pageId,
-    page_name:            pageName,
-    instagram_account_id: igAccountId,
-    instagram_username:   igUsername,
+    access_token:         pick.accessToken,
+    page_access_token:    pick.accessToken,
+    page_id:              pick.pageId,
+    page_name:            pick.pageName,
+    instagram_account_id: pick.igAccountId,
+    instagram_username:   pick.igUsername,
     app_secret:           appSecret,
     verify_token:         verifyToken,
   }
 
+  const admin = createAdminClient()
   const { data: inserted, error } = await admin
     .from('integrations')
     .insert({
       workspace_id: wid,
       bot_id:       botId || null,
       platform:     'instagram',
-      name:         name || `Instagram${igUsername ? ` — @${igUsername}` : ' DM'}`,
+      name:         name || `Instagram${pick.igUsername ? ` — @${pick.igUsername}` : ' DM'}`,
       status:       'active',
       config,
     })
@@ -167,11 +208,16 @@ export async function GET(req: NextRequest) {
   }
 
   const integrationId = (inserted as { id: string }).id
-  const apiUrl        = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.appalix.ai'
-  const appToken      = `${appId}|${appSecret}`
-  const webhookToken  = process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN ?? process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN ?? ''
+  await registerWebhook(appId, appSecret, pick.pageId, pick.accessToken)
 
-  // ── 6. Register webhook ───────────────────────────────────────────────────
+  return NextResponse.redirect(`${appUrl}/integrations/${integrationId}?connected=instagram`)
+}
+
+async function registerWebhook(appId: string, appSecret: string, pageId: string, pageAccessToken: string) {
+  const apiUrl       = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.appalix.ai'
+  const appToken     = `${appId}|${appSecret}`
+  const webhookToken = process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN ?? process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN ?? ''
+
   try {
     await fetch(`https://graph.facebook.com/v18.0/${appId}/subscriptions`, {
       method:  'POST',
@@ -188,18 +234,15 @@ export async function GET(req: NextRequest) {
     console.error('[oauth/instagram/callback] webhook registration failed:', err)
   }
 
-  // ── 7. Subscribe page ─────────────────────────────────────────────────────
-  if (pageId && accessToken !== longToken) {
+  if (pageId && pageAccessToken) {
     try {
       await fetch(`https://graph.facebook.com/v18.0/${pageId}/subscribed_apps`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscribed_fields: 'messages', access_token: accessToken }),
+        body: JSON.stringify({ subscribed_fields: 'messages', access_token: pageAccessToken }),
       })
     } catch (err) {
       console.error('[oauth/instagram/callback] page subscription failed:', err)
     }
   }
-
-  return NextResponse.redirect(`${appUrl}/integrations/${integrationId}?connected=instagram`)
 }
