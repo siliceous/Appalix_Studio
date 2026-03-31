@@ -4,6 +4,11 @@ import {
   parseFacebookEvents,
   sendFacebookReply,
 } from '../../adapters/facebook.js'
+import {
+  parseInstagramEvents,
+  sendInstagramReply,
+  verifyInstagramSignature,
+} from '../../adapters/instagram.js'
 import { processMessage, resolveIntegration, resolveIntegrationByConfig } from '../../services/processor.js'
 
 export async function facebookRoutes(fastify: FastifyInstance) {
@@ -46,19 +51,29 @@ export async function facebookRoutes(fastify: FastifyInstance) {
       console.log('[facebook global webhook] page_id from entry:', pageId, '— entry count:', entries.length)
       if (!pageId) return
 
-      const integration = await resolveIntegrationByConfig('facebook_messenger', 'page_id', pageId)
+      // Try Facebook Messenger integration first, then Instagram (IG DMs arrive as page events)
+      let integration = await resolveIntegrationByConfig('facebook_messenger', 'page_id', pageId)
+      const isInstagram = !integration
+
+      if (!integration) {
+        integration = await resolveIntegrationByConfig('instagram', 'page_id', pageId)
+      }
+
       if (!integration) {
         console.warn('[facebook global webhook] no integration found for page_id:', pageId)
         return
       }
-      console.log('[facebook global webhook] matched integration:', integration.id)
+      console.log('[facebook global webhook] matched integration:', integration.id, 'platform:', integration.platform)
 
       const cfg = integration.config as Record<string, string>
 
-      const sigHeader = request.headers['x-hub-signature-256'] as string
+      const sigHeader  = request.headers['x-hub-signature-256'] as string
       const secretUsed = cfg.app_secret || appSecret
       console.log('[facebook global webhook] verifying signature — has cfg.app_secret:', !!cfg.app_secret, 'has env META_APP_SECRET:', !!appSecret, 'has sig header:', !!sigHeader)
-      if (!verifyFacebookSignature(rawBody, sigHeader, secretUsed)) {
+      const sigValid = isInstagram
+        ? verifyInstagramSignature(rawBody, sigHeader, secretUsed)
+        : verifyFacebookSignature(rawBody, sigHeader, secretUsed)
+      if (!sigValid) {
         console.error('[facebook global webhook] invalid signature for page_id:', pageId)
         return
       }
@@ -68,8 +83,22 @@ export async function facebookRoutes(fastify: FastifyInstance) {
         integrationId: integration.id,
         workspaceId:   integration.workspace_id,
         botId:         integration.bot_id!,
-        platform:      'facebook_messenger' as const,
+        platform:      integration.platform as 'facebook_messenger' | 'instagram',
         config:        cfg,
+      }
+
+      if (isInstagram) {
+        for (const incoming of parseInstagramEvents(request.body as never, ctx)) {
+          setImmediate(async () => {
+            try {
+              const { reply: aiReply } = await processMessage(incoming)
+              await sendInstagramReply({ text: aiReply }, incoming.platformUserId!, cfg.access_token || cfg.page_access_token)
+            } catch (err) {
+              console.error('[facebook global webhook] instagram processing error:', err)
+            }
+          })
+        }
+        return
       }
 
       for (const incoming of parseFacebookEvents(request.body as never, ctx)) {
