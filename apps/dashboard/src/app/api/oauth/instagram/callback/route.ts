@@ -70,27 +70,67 @@ export async function GET(req: NextRequest) {
   }
 
   // ── 4. Find Instagram account via Facebook Pages ──────────────────────────
+  type PageEntry = { access_token: string; id: string; name: string; instagram_business_account?: { id: string; username?: string } }
   let accessToken = longToken, pageId = '', igAccountId = '', igUsername = '', pageName = ''
-  try {
-    const res  = await fetch(
-      `https://graph.facebook.com/v18.0/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&access_token=${longToken}`
-    )
-    const data = await res.json() as {
-      data?: { access_token: string; id: string; name: string; instagram_business_account?: { id: string; username?: string } }[]
-    }
-    console.log('[oauth/instagram/callback] pages:', JSON.stringify(data))
-    for (const page of data.data ?? []) {
+
+  const findIgInPages = (pages: PageEntry[]) => {
+    for (const page of pages) {
       if (page.instagram_business_account?.id) {
         accessToken = page.access_token
         pageId      = page.id
         pageName    = page.name
         igAccountId = page.instagram_business_account.id
         igUsername  = page.instagram_business_account.username ?? ''
-        break
+        return true
       }
     }
+    return false
+  }
+
+  // 4a. Try direct page access first (/me/accounts)
+  try {
+    const res  = await fetch(
+      `https://graph.facebook.com/v18.0/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&access_token=${longToken}`
+    )
+    const data = await res.json() as { data?: PageEntry[] }
+    console.log('[oauth/instagram/callback] /me/accounts:', JSON.stringify(data))
+    findIgInPages(data.data ?? [])
   } catch (err) {
-    console.error('[oauth/instagram/callback] pages fetch failed:', err)
+    console.error('[oauth/instagram/callback] /me/accounts failed:', err)
+  }
+
+  // 4b. Fall back to Business Manager API if no IG account found yet
+  if (!igAccountId) {
+    try {
+      const bizRes  = await fetch(`https://graph.facebook.com/v18.0/me/businesses?fields=id,name&access_token=${longToken}`)
+      const bizData = await bizRes.json() as { data?: { id: string; name: string }[] }
+      console.log('[oauth/instagram/callback] /me/businesses:', JSON.stringify(bizData))
+
+      for (const biz of bizData.data ?? []) {
+        if (igAccountId) break
+        const pagesRes  = await fetch(
+          `https://graph.facebook.com/v18.0/${biz.id}/owned_pages?fields=id,name,instagram_business_account{id,username}&access_token=${longToken}`
+        )
+        const pagesData = await pagesRes.json() as { data?: { id: string; name: string; instagram_business_account?: { id: string; username?: string } }[] }
+        console.log(`[oauth/instagram/callback] business ${biz.id} pages:`, JSON.stringify(pagesData))
+
+        for (const page of pagesData.data ?? []) {
+          if (page.instagram_business_account?.id) {
+            igAccountId = page.instagram_business_account.id
+            igUsername  = page.instagram_business_account.username ?? ''
+            pageId      = page.id
+            pageName    = page.name
+            // Get the page access token
+            const patRes  = await fetch(`https://graph.facebook.com/v18.0/${page.id}?fields=access_token&access_token=${longToken}`)
+            const patData = await patRes.json() as { access_token?: string }
+            accessToken   = patData.access_token ?? longToken
+            break
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[oauth/instagram/callback] business manager fallback failed:', err)
+    }
   }
 
   const verifyToken = randomBytes(16).toString('hex')

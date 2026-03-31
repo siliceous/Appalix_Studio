@@ -52,6 +52,7 @@ export async function GET(req: NextRequest) {
     'pages_show_list',
     'pages_read_engagement',
     'pages_messaging',
+    'business_management',
   ].join(','))
 
   return NextResponse.redirect(url.toString())
