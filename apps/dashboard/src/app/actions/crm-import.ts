@@ -24,13 +24,12 @@ async function getContext(): Promise<{ uid: string; wid: string } | null> {
   return { uid: user.id, wid }
 }
 
-async function getIntegrationConfig(wid: string, uid: string, provider: Provider): Promise<Record<string, string> | null> {
+async function getIntegrationConfig(wid: string, provider: Provider): Promise<Record<string, string> | null> {
   const admin = createAdminClient()
   const { data } = await admin
     .from('sage_integrations')
     .select('config, status')
     .eq('workspace_id', wid)
-    .eq('user_id', uid)
     .eq('provider', provider)
     .eq('status', 'connected')
     .single()
@@ -52,7 +51,6 @@ export async function getCrmConnections(): Promise<{
     .from('sage_integrations')
     .select('provider, status, updated_at, config')
     .eq('workspace_id', ctx.wid)
-    .eq('user_id', ctx.uid)
     .in('provider', ['hubspot', 'salesforce', 'monday', 'zoho'])
 
   type Row = { provider: string; status: string; updated_at: string; config: Record<string, string> }
@@ -102,9 +100,8 @@ export async function disconnectCrm(provider: Provider): Promise<{ error?: strin
     .from('sage_integrations')
     .update({ status: 'disconnected', updated_at: new Date().toISOString() })
     .eq('workspace_id', ctx.wid)
-    .eq('user_id', ctx.uid)
     .eq('provider', provider)
-  revalidatePath('/settings')
+  revalidatePath('/integrations')
   return {}
 }
 
@@ -612,7 +609,7 @@ export async function runCrmImport(
   const ctx = await getContext()
   if (!ctx) return { imported: 0, skipped: 0, error: 'Not authenticated' }
 
-  const config = await getIntegrationConfig(ctx.wid, ctx.uid, provider)
+  const config = await getIntegrationConfig(ctx.wid, provider)
   if (!config) return { imported: 0, skipped: 0, error: `${provider} is not connected` }
 
   const admin = createAdminClient()
