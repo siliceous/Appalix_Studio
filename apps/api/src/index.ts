@@ -95,6 +95,13 @@ server.get('/health', async () => ({
   env:    config.NODE_ENV,
 }))
 
+// Debug: log all incoming POST requests to /webhooks/*
+server.addHook('onRequest', async (request) => {
+  if (request.method === 'POST' && request.url?.startsWith('/webhooks')) {
+    console.log('[debug] incoming POST:', request.url, '| ip:', request.ip)
+  }
+})
+
 // Platform webhooks — all mounted under /webhooks
 await server.register(slackRoutes,      { prefix: '/webhooks' })
 await server.register(facebookRoutes,   { prefix: '/webhooks' })
