@@ -286,7 +286,7 @@ async function registerWebhook(appId: string, appSecret: string, pageId: string,
     console.error('[oauth/instagram/callback] webhook registration failed:', err)
   }
 
-  // Subscribe the Facebook Page (for Messenger)
+  // Subscribe the Facebook Page with both messenger + instagram fields
   if (pageId && pageAccessToken) {
     try {
       const pageSubRes  = await fetch(
@@ -294,7 +294,7 @@ async function registerWebhook(appId: string, appSecret: string, pageId: string,
         {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ subscribed_fields: ['messages'], access_token: pageAccessToken }),
+          body: JSON.stringify({ subscribed_fields: ['messages', 'instagram'], access_token: pageAccessToken }),
         }
       )
       const pageSubData = await pageSubRes.json()
