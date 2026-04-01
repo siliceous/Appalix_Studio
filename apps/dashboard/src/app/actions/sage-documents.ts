@@ -538,7 +538,6 @@ export async function searchContacts(query: string): Promise<{
     .from('sage_contacts')
     .select('id,name,email,phone,company_name,street,city,state,zip,country')
     .eq('workspace_id', workspaceId)
-    .is('deleted_at', null)
     .order('name')
     .limit(20)
   if (query.trim()) {
