@@ -563,6 +563,31 @@ export async function updateBoardStages(boardId: string, stages: { name: string;
   return {}
 }
 
+export async function assignProjectToBoard(projectId: string, boardId: string): Promise<{ error?: string }> {
+  const { workspaceId } = await getAuthContext()
+  const admin = createAdminClient()
+
+  const { data: stages } = await admin
+    .from('sage_project_board_stages')
+    .select('id')
+    .eq('board_id', boardId)
+    .order('position', { ascending: true })
+    .limit(1)
+
+  const firstStageId = stages?.[0]?.id ?? null
+
+  const { error } = await admin
+    .from('sage_projects')
+    .update({ board_id: boardId, stage_id: firstStageId })
+    .eq('id', projectId)
+    .eq('workspace_id', workspaceId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/sage/projects')
+  revalidatePath(`/sage/projects/board/${boardId}`)
+  return {}
+}
+
 export async function moveProjectToStage(projectId: string, boardId: string, stageId: string): Promise<{ error?: string }> {
   const { workspaceId } = await getAuthContext()
   const admin = createAdminClient()

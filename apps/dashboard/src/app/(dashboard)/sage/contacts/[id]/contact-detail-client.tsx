@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Mail, Phone, Building2, Briefcase, Globe, MapPin, Tag,
   ChevronLeft, PanelRight, Plus, Clock, Activity,
   DollarSign, Ticket as TicketIcon, CheckCircle2,
+  ChevronUp, ChevronDown as ChevronDownIcon,
 } from 'lucide-react'
 import Link from 'next/link'
 import { timeAgo } from '@/lib/utils'
@@ -12,6 +14,8 @@ import { ContactActionsClient } from '@/components/sage/contact-actions-client'
 import { ContactAiAnalysis } from '@/components/sage/contact-ai-analysis'
 import { DealSlideOver } from '@/components/sage/deal-slide-over'
 import { TicketSlideOver } from '@/components/dashboard/ticket-slide-over'
+import { TicketModal } from '@/components/sage/ticket-modal'
+import { EmailComposeModal } from '@/components/dashboard/email-compose-modal'
 import type {
   SageContact, SageActivityLog, SageDeal, SagePipelineStage,
   SagePipeline, WorkspaceMemberSummary, SageTicket,
@@ -35,6 +39,8 @@ interface Props {
   allPipelines:  Pick<SagePipeline, 'id' | 'name'>[]
   members:       WorkspaceMemberSummary[]
   ownerEmail:    string
+  prevId:        string | null
+  nextId:        string | null
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -78,10 +84,14 @@ function eventLabel(eventType: string) {
 export function ContactDetailClient({
   contact, activity, deals, tickets,
   firstPipeline, allPipelines, members, ownerEmail,
+  prevId, nextId,
 }: Props) {
+  const router = useRouter()
   const [activityOpen, setActivityOpen]         = useState(true)
   const [selectedDealId, setSelectedDealId]     = useState<string | null>(null)
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null)
+  const [emailOpen, setEmailOpen]               = useState(false)
+  const [newTicketOpen, setNewTicketOpen]       = useState(false)
 
   const firstStages = firstPipeline
     ? [...(firstPipeline.stages ?? [])].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
@@ -102,6 +112,14 @@ export function ContactDetailClient({
           >
             <ChevronLeft className="w-3.5 h-3.5" /> All Contacts
           </Link>
+        </div>
+
+        {/* Name + company summary */}
+        <div className="px-4 py-3 border-b dark:border-white/8">
+          <p className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-snug">{contact.name}</p>
+          {contact.company_name && (
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-0.5">{contact.company_name}</p>
+          )}
         </div>
 
         {/* Contact details list */}
@@ -220,17 +238,38 @@ export function ContactDetailClient({
             <span className="text-xs text-gray-300 dark:text-gray-600">/</span>
             <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{contact.name}</span>
           </div>
-          <button
-            onClick={() => setActivityOpen(v => !v)}
-            className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${
-              activityOpen
-                ? 'bg-[#15A4AE]/10 border-[#15A4AE]/30 text-[#15A4AE]'
-                : 'border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
-            }`}
-          >
-            <PanelRight className="w-3.5 h-3.5" />
-            Activity
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Prev / Next navigation */}
+            <div className="flex items-center border dark:border-white/10 rounded-lg overflow-hidden">
+              <button
+                onClick={() => prevId && router.push(`/sage/contacts/${prevId}`)}
+                disabled={!prevId}
+                title="Previous contact"
+                className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border-r dark:border-white/10"
+              >
+                <ChevronUp className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => nextId && router.push(`/sage/contacts/${nextId}`)}
+                disabled={!nextId}
+                title="Next contact"
+                className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronDownIcon className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <button
+              onClick={() => setActivityOpen(v => !v)}
+              className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${
+                activityOpen
+                  ? 'bg-[#15A4AE]/10 border-[#15A4AE]/30 text-[#15A4AE]'
+                  : 'border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
+              }`}
+            >
+              <PanelRight className="w-3.5 h-3.5" />
+              Activity
+            </button>
+          </div>
         </div>
 
         <div className="p-6 space-y-5">
@@ -258,12 +297,12 @@ export function ContactDetailClient({
               {/* Action buttons */}
               <div className="flex items-center gap-2 shrink-0">
                 {contact.email && (
-                  <a
-                    href={`mailto:${contact.email}`}
+                  <button
+                    onClick={() => setEmailOpen(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                   >
                     <Mail className="w-3.5 h-3.5" /> Email
-                  </a>
+                  </button>
                 )}
                 <ContactActionsClient
                   contact={contact}
@@ -314,16 +353,29 @@ export function ContactDetailClient({
                   <DollarSign className="w-3.5 h-3.5 text-gray-400" />
                   <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100">Deals ({deals.length})</h3>
                 </div>
-                <div className="flex items-center gap-2">
-                  {hasDeal && (
-                    <span className="flex items-center gap-1 text-[10px] text-green-600 dark:text-green-400 font-medium">
-                      <CheckCircle2 className="w-3 h-3" /> Deal created
-                    </span>
-                  )}
+                {hasDeal ? (
+                  <div className="flex items-center gap-2">
+                    {(() => {
+                      const d = deals[0]
+                      const pipeline = allPipelines.find(p => p.id === d.pipeline_id)
+                      return (
+                        <>
+                          <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[d.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                            {d.status === 'won' && <CheckCircle2 className="w-3 h-3" />}
+                            {d.status.charAt(0).toUpperCase() + d.status.slice(1)}
+                          </span>
+                          {pipeline && (
+                            <span className="text-[10px] text-gray-400 truncate max-w-[80px]">{pipeline.name}</span>
+                          )}
+                        </>
+                      )
+                    })()}
+                  </div>
+                ) : (
                   <button className="flex items-center gap-0.5 text-[10px] text-[#15A4AE] hover:text-[#129aa4] transition-colors font-medium">
                     <Plus className="w-3 h-3" /> Add
                   </button>
-                </div>
+                )}
               </div>
               <div className="divide-y dark:divide-white/8 flex-1">
                 {deals.length === 0 ? (
@@ -363,7 +415,10 @@ export function ContactDetailClient({
                   <TicketIcon className="w-3.5 h-3.5 text-gray-400" />
                   <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100">Tickets ({tickets.length})</h3>
                 </div>
-                <button className="flex items-center gap-0.5 text-[10px] text-[#15A4AE] hover:text-[#129aa4] transition-colors font-medium">
+                <button
+                  onClick={() => setNewTicketOpen(true)}
+                  className="flex items-center gap-0.5 text-[10px] text-[#15A4AE] hover:text-[#129aa4] transition-colors font-medium"
+                >
                   <Plus className="w-3 h-3" /> Add ticket
                 </button>
               </div>
@@ -445,6 +500,23 @@ export function ContactDetailClient({
         <TicketSlideOver
           ticket={selectedTicket}
           onClose={() => setSelectedTicketId(null)}
+        />
+      )}
+
+      {/* New ticket modal */}
+      {newTicketOpen && (
+        <TicketModal
+          contacts={[{ id: contact.id, name: contact.name }]}
+          onClose={() => setNewTicketOpen(false)}
+        />
+      )}
+
+      {/* Email compose modal */}
+      {emailOpen && contact.email && (
+        <EmailComposeModal
+          to={contact.email}
+          toName={contact.name}
+          onClose={() => setEmailOpen(false)}
         />
       )}
     </div>

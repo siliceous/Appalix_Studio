@@ -30,6 +30,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     { data: ticketsRaw },
     { data: pipelinesRaw },
     { data: membersRaw },
+    { data: allContactsRaw },
   ] = await Promise.all([
     supabase.from('sage_contacts').select('*').eq('id', id).eq('workspace_id', workspaceId).single(),
     supabase.from('sage_activity_log').select('*').eq('entity_id', id).order('created_at', { ascending: false }).limit(50),
@@ -43,6 +44,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       .select('id, name, stages:sage_pipeline_stages(id, name, color, position)')
       .eq('workspace_id', workspaceId).order('created_at', { ascending: true }),
     admin.from('workspace_members').select('user_id, role').eq('workspace_id', workspaceId).not('accepted_at', 'is', null),
+    supabase.from('sage_contacts').select('id').eq('workspace_id', workspaceId).order('created_at', { ascending: false }),
   ])
 
   if (!contactRaw) notFound()
@@ -51,6 +53,12 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
   const activity = (activityRaw ?? []) as SageActivityLog[]
   const deals    = (dealsRaw ?? []) as (SageDeal & { pipeline_id: string | null; stage: { name: string; color: string } | null })[]
   const tickets  = (ticketsRaw ?? []) as (SageTicket & { contact: Pick<SageContact, 'id' | 'name' | 'email'> | null })[]
+
+  // Prev / next navigation
+  const allIds   = (allContactsRaw ?? []).map((c: { id: string }) => c.id)
+  const idx      = allIds.indexOf(id)
+  const prevId   = idx > 0 ? allIds[idx - 1] : null
+  const nextId   = idx < allIds.length - 1 ? allIds[idx + 1] : null
 
   const firstPipeline = (pipelinesRaw?.[0] ?? null) as ({ id: string; name: string; stages: SagePipelineStage[] } | null)
   const allPipelines  = ((pipelinesRaw ?? []) as { id: string; name: string }[]).map(p => ({ id: p.id, name: p.name })) as Pick<SagePipeline, 'id' | 'name'>[]
@@ -83,6 +91,8 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       allPipelines={allPipelines}
       members={members}
       ownerEmail={user.email ?? ''}
+      prevId={prevId}
+      nextId={nextId}
     />
   )
 }

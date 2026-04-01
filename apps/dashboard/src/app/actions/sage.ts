@@ -543,6 +543,31 @@ export async function deletePipeline(id: string) {
 // Deals
 // ---------------------------------------------------------------
 
+export async function assignDealToPipeline(dealId: string, pipelineId: string): Promise<{ error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+
+  // Find the first stage of the target pipeline
+  const { data: stages } = await admin
+    .from('sage_pipeline_stages')
+    .select('id')
+    .eq('pipeline_id', pipelineId)
+    .order('position', { ascending: true })
+    .limit(1)
+
+  const firstStageId = stages?.[0]?.id ?? null
+
+  const { error } = await admin
+    .from('sage_deals')
+    .update({ pipeline_id: pipelineId, stage_id: firstStageId, updated_at: new Date().toISOString() })
+    .eq('id', dealId)
+    .eq('workspace_id', workspaceId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/sage/pipelines')
+  return {}
+}
+
 export async function createDeal(formData: FormData) {
   const supabase = await createClient()
   const { data: { user: dealUser } } = await supabase.auth.getUser()
