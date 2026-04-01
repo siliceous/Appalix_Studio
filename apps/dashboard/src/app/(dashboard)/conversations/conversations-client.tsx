@@ -335,18 +335,16 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
       </div>
 
       {/* ── Filter bar ── */}
-      <div className="bg-[#141c2b] rounded-xl border border-white/10 p-4 space-y-3">
-
-        {/* Row 1: Search + Bot dropdown + Status */}
+      <div className="bg-[#141c2b] rounded-xl border border-white/10 p-4">
         <div className="flex flex-wrap gap-3 items-center">
 
-          {/* Search */}
-          <div className="relative flex-1 min-w-[180px]">
+          {/* Search — fixed shorter width */}
+          <div className="relative w-48">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
             <input
               type="text"
               defaultValue={filters.q ?? ''}
-              placeholder="Search conversations…"
+              placeholder="Search…"
               onKeyDown={e => { if (e.key === 'Enter') pushFilter({ q: (e.target as HTMLInputElement).value || undefined }) }}
               onBlur={e => { if (e.target.value !== (filters.q ?? '')) pushFilter({ q: e.target.value || undefined }) }}
               className="w-full pl-8 pr-3 py-2 text-sm border border-white/20 rounded-lg !bg-[#f5f4f1] !text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
@@ -375,6 +373,21 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
               <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none" />
             </div>
           )}
+
+          {/* Platform filter — next to All bots */}
+          <div className="relative">
+            <select
+              value={activePlatform === 'all' ? '' : activePlatform}
+              onChange={e => pushFilter({ platform: e.target.value || undefined })}
+              className="dark-bar-select appearance-none pl-3 pr-8 py-2 text-sm border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer"
+            >
+              <option value="">All platforms</option>
+              {PLATFORMS.map(p => (
+                <option key={p} value={p}>{PLATFORM_META[p]?.label ?? p}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none" />
+          </div>
 
           {/* Status filter */}
           <div className="flex items-center gap-1">
@@ -406,30 +419,6 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
               Trash
             </button>
           </div>
-        </div>
-
-        {/* Row 2: Platform pills */}
-        <div className="flex items-center gap-1 flex-wrap">
-          <button
-            onClick={() => pushFilter({ platform: undefined })}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-              activePlatform === 'all'
-                ? 'bg-white/20 text-white border border-white/40'
-                : 'bg-white/8 text-white hover:bg-white/15'
-            }`}>
-            All platforms
-          </button>
-          {PLATFORMS.map(p => (
-            <button key={p}
-              onClick={() => pushFilter({ platform: p })}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                activePlatform === p
-                  ? 'bg-[#15A4AE] text-white'
-                  : 'bg-white/8 text-white hover:bg-white/15'
-              }`}>
-              {PLATFORM_META[p]?.label ?? p}
-            </button>
-          ))}
         </div>
       </div>
 
