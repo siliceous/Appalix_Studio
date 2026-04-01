@@ -208,24 +208,7 @@ export function ActivitySidebar({ activity, date, currentPath, viewingAs }: Prop
             {viewingAs ? viewingAs.name : 'Activity feed'}
           </span>
 
-          {/* Source labels — middle */}
-          <div className="flex items-center gap-1 flex-1 min-w-0 justify-center flex-wrap">
-            {SOURCE_BARS.map(s => {
-              const hasItems = past.some(e => getSource(e) === s.key)
-              return (
-                <span
-                  key={s.key}
-                  className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full transition-colors ${
-                    hasItems
-                      ? SOURCE_COLORS[s.key] ?? 'bg-gray-100 text-gray-500'
-                      : 'text-white/20'
-                  }`}
-                >
-                  {s.label}
-                </span>
-              )
-            })}
-          </div>
+          <div className="flex-1" />
 
           {/* Icons — right */}
           <div className="flex items-center gap-1 shrink-0">
