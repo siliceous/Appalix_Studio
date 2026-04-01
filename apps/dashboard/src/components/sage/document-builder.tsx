@@ -541,21 +541,68 @@ export function DocumentBuilder({ mode, docType: docTypeProp, document: doc, con
     setLineItems(p => p.map(i => i.id === id ? { ...i, [field]: value } : i))
   }, [])
 
-  const [contactResults, setContactResults] = useState<ContactSuggestion[]>(contacts.slice(0, 8))
+  const [contactResults, setContactResults] = useState<ContactSuggestion[]>(contacts)
   const [contactLoading, setContactLoading] = useState(false)
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Show dropdown immediately from local prop, then refine with server search
+  function openContactDropdown(field: 'company' | 'person', currentValue: string) {
+    setActiveSearchField(field)
+    setShowContacts(true)
+    // Immediately show filtered results from the pre-loaded contacts prop
+    if (currentValue.trim()) {
+      const q = currentValue.toLowerCase()
+      setContactResults(contacts.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        (c.company_name ?? '').toLowerCase().includes(q) ||
+        (c.email ?? '').toLowerCase().includes(q)
+      ))
+    } else {
+      setContactResults(contacts)
+    }
+    // Then refine with a server search (catches contacts beyond the initial 200)
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+    searchTimerRef.current = setTimeout(async () => {
+      setContactLoading(true)
+      try {
+        const results = await searchContacts(currentValue)
+        if (results.length > 0) setContactResults(results)
+      } catch {
+        // keep local results on error
+      } finally {
+        setContactLoading(false)
+      }
+    }, 300)
+  }
 
   function onContactSearchChange(q: string) {
     setContactSearch(q)
     setContactId('')
     setShowContacts(true)
+    // Immediately filter local contacts
+    if (q.trim()) {
+      const lower = q.toLowerCase()
+      setContactResults(contacts.filter(c =>
+        c.name.toLowerCase().includes(lower) ||
+        (c.company_name ?? '').toLowerCase().includes(lower) ||
+        (c.email ?? '').toLowerCase().includes(lower)
+      ))
+    } else {
+      setContactResults(contacts)
+    }
+    // Then refine with server search
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
     searchTimerRef.current = setTimeout(async () => {
       setContactLoading(true)
-      const results = await searchContacts(q)
-      setContactResults(results)
-      setContactLoading(false)
-    }, 250)
+      try {
+        const results = await searchContacts(q)
+        if (results.length > 0) setContactResults(results)
+      } catch {
+        // keep local filter results on error
+      } finally {
+        setContactLoading(false)
+      }
+    }, 300)
   }
 
   function selectContact(c: ContactSuggestion) {
@@ -888,14 +935,9 @@ export function DocumentBuilder({ mode, docType: docTypeProp, document: doc, con
                         autoComplete="off"
                         onChange={e => {
                           updateCustomer('company', e.target.value)
-                          setActiveSearchField('company')
                           onContactSearchChange(e.target.value)
                         }}
-                        onFocus={() => {
-                          setActiveSearchField('company')
-                          setShowContacts(true)
-                          onContactSearchChange(customer.company)
-                        }}
+                        onFocus={() => openContactDropdown('company', customer.company)}
                         onBlur={() => setTimeout(() => { setShowContacts(false); setActiveSearchField(null) }, 200)}
                         placeholder="Company name"
                         className={INPUT}
@@ -940,14 +982,9 @@ export function DocumentBuilder({ mode, docType: docTypeProp, document: doc, con
                         autoComplete="off"
                         onChange={e => {
                           updateCustomer('name', e.target.value)
-                          setActiveSearchField('person')
                           onContactSearchChange(e.target.value)
                         }}
-                        onFocus={() => {
-                          setActiveSearchField('person')
-                          setShowContacts(true)
-                          onContactSearchChange(customer.name)
-                        }}
+                        onFocus={() => openContactDropdown('person', customer.name)}
                         onBlur={() => setTimeout(() => { setShowContacts(false); setActiveSearchField(null) }, 200)}
                         placeholder="Contact name"
                         className={INPUT}
