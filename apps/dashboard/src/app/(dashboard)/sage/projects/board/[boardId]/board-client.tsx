@@ -435,15 +435,12 @@ export function BoardClient({ board, initialProjects, contacts, templates }: Pro
               const isUnassigned = stage.id === '__unassigned__'
               return (
                 <div key={stage.id} className="flex-shrink-0 w-72 flex flex-col h-full min-h-0">
-                  {/* Stage header — blue for project boards, grey for unassigned */}
-                  <div className={cn(
-                    'shrink-0 flex items-center justify-between px-3 py-2 rounded-lg mb-3',
-                    isUnassigned ? 'bg-gray-200 dark:bg-white/8' : 'bg-blue-600 dark:bg-blue-700',
-                  )}>
-                    <span className={cn('text-xs font-semibold truncate', isUnassigned ? 'text-gray-500 dark:text-gray-400' : 'text-white')}>
+                  {/* Stage header */}
+                  <div className="shrink-0 flex items-center justify-between px-3 py-2 rounded-lg mb-3 bg-[#141c2b]">
+                    <span className="text-xs font-semibold truncate text-white">
                       {stage.name}
                     </span>
-                    <span className={cn('text-xs font-bold ml-2 shrink-0', isUnassigned ? 'text-gray-500 dark:text-gray-400' : 'text-white/80')}>
+                    <span className="text-xs font-bold ml-2 shrink-0 text-white/70">
                       {col.length}
                     </span>
                   </div>

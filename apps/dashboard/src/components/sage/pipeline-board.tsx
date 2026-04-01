@@ -451,7 +451,7 @@ export function PipelineBoard({
               onDrop={e => handleDrop(e, stage.id)}
             >
               {/* Stage header */}
-              <div className="flex items-center justify-between px-3 py-2 rounded-lg mb-3 bg-[#15A4AE] dark:bg-[#0d8e9a]">
+              <div className="flex items-center justify-between px-3 py-2 rounded-lg mb-3 bg-[#141c2b]">
                 <span className="text-xs font-semibold text-white truncate">{stage.name}</span>
                 <div className="flex items-center gap-2 shrink-0 ml-2">
                   <span className="text-xs font-bold text-white tabular-nums">{stageDeals.length}</span>
