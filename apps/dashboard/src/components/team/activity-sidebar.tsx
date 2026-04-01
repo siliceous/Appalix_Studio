@@ -17,11 +17,11 @@ const SOURCE_FROM_ENTITY: Record<string, string> = {
 }
 
 const SOURCE_COLORS: Record<string, string> = {
-  email:  'bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300',
-  bot:    'bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300',
-  forms:  'bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300',
-  ticket: 'bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400',
-  manual: 'bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400',
+  email:  'bg-[#aeada9] text-gray-900',
+  bot:    'bg-[#aeada9] text-gray-900',
+  forms:  'bg-[#aeada9] text-gray-900',
+  ticket: 'bg-[#aeada9] text-gray-900',
+  manual: 'bg-[#aeada9] text-gray-900',
 }
 
 function getSource(entry: ActivityEntry): string {
