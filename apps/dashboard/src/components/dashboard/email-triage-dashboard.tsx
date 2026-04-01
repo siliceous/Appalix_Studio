@@ -1656,21 +1656,21 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
               <div className="flex-1" />
 
               {/* Search — queries entire mailbox */}
-              <div className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-transparent transition-colors', search ? 'border-[#15A4AE]/60' : 'border-white/20')}>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/20 transition-colors !bg-white">
                 {isSearching
                   ? <Loader2 className="w-3 h-3 text-[#15A4AE] shrink-0 animate-spin" />
-                  : <Search className="w-3 h-3 text-white/40 shrink-0" />}
+                  : <Search className="w-3 h-3 text-gray-400 shrink-0" />}
                 <input
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   placeholder="Search all emails…"
-                  className="w-40 bg-transparent text-[11px] text-white/80 placeholder-white/40 outline-none"
+                  className="w-40 !bg-white text-[11px] !text-gray-900 placeholder-gray-400 outline-none"
                 />
                 {search && !isSearching && searchResults && (
-                  <span className="text-[10px] text-white/40 shrink-0">{searchResults.length}</span>
+                  <span className="text-[10px] text-gray-400 shrink-0">{searchResults.length}</span>
                 )}
                 {search && (
-                  <button onClick={() => { setSearch(''); setSearchResults(null) }} className="text-white/40 hover:text-white/80 shrink-0">
+                  <button onClick={() => { setSearch(''); setSearchResults(null) }} className="text-gray-400 hover:text-gray-600 shrink-0">
                     <X className="w-2.5 h-2.5" />
                   </button>
                 )}

@@ -1984,24 +1984,25 @@ export function SageDashboardClient({
               return (
                 <button key={card.label}
                   onClick={() => { setLoadingDonut(card.label); router.push(card.href) }}
-                  className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-4 flex flex-col items-center hover:shadow-md hover:border-gray-300 dark:hover:border-white/15 transition-all cursor-pointer w-full">
-                  <div className="w-full flex items-center justify-between mb-2">
-                    <div>
-                      <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{card.label}</p>
-                      <p className="text-[10px] text-gray-400">{card.sub}</p>
-                    </div>
+                  className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-hidden flex flex-col items-center hover:shadow-md hover:border-gray-300 dark:hover:border-white/15 transition-all cursor-pointer w-full">
+                  {/* Dark top bar */}
+                  <div className="w-full flex items-center justify-between px-4 py-2.5 bg-[#141c2b]">
+                    <p className="text-sm font-semibold text-white">{card.label}</p>
                     {isLoading
                       ? <Loader2 className={`w-4 h-4 animate-spin ${card.iconCls}`} />
                       : <card.Icon className={`w-4 h-4 ${card.iconCls}`} />}
                   </div>
-                  <DonutChart segments={card.segs} total={card.total} />
-                  <div className="flex items-center gap-2.5 mt-2 text-[11px] flex-wrap justify-center">
-                    {card.segs.map(s => (
-                      <span key={s.name} className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full" style={{ background: s.fill }} />
-                        <span className="text-gray-500 dark:text-gray-400">{s.value} {s.name.toLowerCase()}</span>
-                      </span>
-                    ))}
+                  {/* Donut + legend */}
+                  <div className="p-4 flex flex-col items-center w-full">
+                    <DonutChart segments={card.segs} total={card.total} />
+                    <div className="flex items-center gap-2.5 mt-2 text-[11px] flex-wrap justify-center">
+                      {card.segs.map(s => (
+                        <span key={s.name} className="flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full" style={{ background: s.fill }} />
+                          <span className="text-gray-500 dark:text-gray-400">{s.value} {s.name.toLowerCase()}</span>
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </button>
               )
@@ -2041,11 +2042,7 @@ export function SageDashboardClient({
                 <button
                   onClick={() => setShowFeedCal(v => !v)}
                   title="Filter by date"
-                  className={`flex items-center gap-1.5 p-1.5 rounded-lg border transition-colors text-xs ${
-                    dateRange !== '7d'
-                      ? 'border-[#15A4AE]/40 text-[#15A4AE] bg-[#15A4AE]/5'
-                      : 'border-gray-200 dark:border-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
-                  }`}
+                  className="flex items-center gap-1.5 p-1.5 rounded-lg border transition-colors text-xs border-[#15A4AE]/40 text-[#15A4AE] bg-[#15A4AE]/5 hover:bg-[#15A4AE]/10"
                 >
                   <Calendar className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline font-medium">
@@ -2335,7 +2332,7 @@ export function SageDashboardClient({
                   accentClass: 'text-green-700 dark:text-green-300',
                   borderClass: 'border-green-300 dark:border-green-500/30',
                   bgClass: 'bg-green-200 dark:bg-green-500/25',
-                  headerBg: '#09cd1c',
+                  headerBg: '#16b425',
                   count: visForms.length,
                   rows: sortedForms.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No form submissions this period.</p>
@@ -2364,7 +2361,7 @@ export function SageDashboardClient({
                   accentClass: 'text-amber-700 dark:text-amber-400',
                   borderClass: 'border-amber-300 dark:border-amber-500/25',
                   bgClass: 'bg-amber-100 dark:bg-amber-500/15',
-                  headerBg: '#e1c340',
+                  headerBg: '#ddb405',
                   count: visTickets.length,
                   rows: sortedTickets.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No tickets this period.</p>

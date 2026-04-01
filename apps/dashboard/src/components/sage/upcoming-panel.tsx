@@ -170,7 +170,10 @@ export function UpcomingPanel({ workspaceId, userId }: { workspaceId: string; us
     return items
   }, [items, tab])
 
-  const totalCount = items.length
+  const totalCount    = items.length
+  const pendingCount  = items.filter(i => i.kind === 'activity' && isOverdue(i.due_at)).length
+  const upcomingCount = items.filter(i => i.kind === 'activity' && isTodayOrFuture(i.due_at)).length
+  const reminderCount = items.filter(i => i.kind === 'reminder').length
 
   return (
     <div className="bg-white dark:bg-[#232323] rounded-2xl border dark:border-white/8 overflow-hidden flex flex-col h-full">
@@ -186,18 +189,22 @@ export function UpcomingPanel({ workspaceId, userId }: { workspaceId: string; us
         <div className="flex items-center gap-1 ml-auto">
           {TABS.map(t => {
             const isActive = tab === t.key
+            const count = t.key === 'pending' ? pendingCount : t.key === 'upcoming' ? upcomingCount : t.key === 'reminders' ? reminderCount : null
             if (t.Icon) {
               return (
                 <button
                   key={t.key}
                   onClick={() => setTab(t.key)}
                   title={t.label}
-                  className={`p-1.5 rounded-lg transition-colors ${isActive ? 'bg-white/15' : 'hover:bg-white/10'}`}
+                  className={`flex items-center gap-1 px-1.5 py-1 rounded-lg transition-colors ${isActive ? 'bg-white/15' : 'hover:bg-white/10'}`}
                 >
                   <t.Icon
-                    className="w-4 h-4"
-                    style={{ color: isActive ? t.iconColor : 'rgba(255,255,255,0.4)' }}
+                    className="w-4 h-4 shrink-0"
+                    style={{ color: t.iconColor }}
                   />
+                  {count !== null && count > 0 && (
+                    <span className="text-[10px] font-bold tabular-nums" style={{ color: t.iconColor }}>{count}</span>
+                  )}
                 </button>
               )
             }
