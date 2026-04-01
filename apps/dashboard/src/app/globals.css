@@ -175,5 +175,74 @@
   .happy textarea:focus {
     outline-color: #3b82f6;
   }
+
+  /* ── Cool mode — deep navy + electric blue theme ── */
+  .cool body {
+    background-color: #050a30;
+    color: #f4f6fc;
+  }
+
+  .cool * {
+    border-color: rgba(104, 119, 237, 0.2);
+  }
+
+  /* Page & layout surfaces */
+  .cool .bg-gray-50  { background-color: #0a1040; }
+  .cool .bg-gray-100 { background-color: #0d1550; }
+  .cool .bg-white    { background-color: #0d1550; }
+
+  /* Sidebar & panel backgrounds */
+  .cool .bg-\[\#1c1c1c\] { background-color: #080d38; }
+  .cool .bg-\[\#1a1a1a\] { background-color: #070c35; }
+  .cool .bg-\[\#141414\] { background-color: #050a30; }
+  .cool .bg-\[\#232323\] { background-color: #0d1550; }
+  .cool .bg-\[\#2a2a2a\] { background-color: #101858; }
+
+  /* Card glow shadows */
+  .cool .rounded-xl.bg-white,
+  .cool .rounded-2xl.bg-white,
+  .cool .rounded-lg.bg-white {
+    box-shadow: 0 1px 3px rgba(4, 187, 255, 0.08), 0 4px 20px rgba(35, 61, 255, 0.15);
+  }
+
+  /* Hover backgrounds */
+  .cool .hover\:bg-gray-50:hover,
+  .cool .hover\:bg-gray-100:hover {
+    background-color: #0d1550;
+  }
+
+  /* Dividers */
+  .cool .divide-y > * + * {
+    border-color: rgba(104, 119, 237, 0.2);
+  }
+
+  /* Text */
+  .cool .text-gray-900 { color: #f4f6fc; }
+  .cool .text-gray-800 { color: #dce2f8; }
+  .cool .text-gray-700 { color: #b8c3eb; }
+  .cool .text-gray-600 { color: #a1a9c4; }
+  .cool .text-gray-500 { color: #8892b8; }
+  .cool .text-gray-400 { color: #6877ed; }
+
+  /* Form inputs */
+  .cool input:not([type="checkbox"]):not([type="radio"]),
+  .cool select,
+  .cool textarea {
+    background-color: #0a1040;
+    border-color: rgba(104, 119, 237, 0.3);
+    color: #f4f6fc;
+  }
+
+  /* Focus ring */
+  .cool input:focus,
+  .cool select:focus,
+  .cool textarea:focus {
+    outline-color: #04bbff;
+  }
+
+  /* Scrollbar styling */
+  .cool ::-webkit-scrollbar-track { background: #050a30; }
+  .cool ::-webkit-scrollbar-thumb { background: rgba(104, 119, 237, 0.4); border-radius: 4px; }
+  .cool ::-webkit-scrollbar-thumb:hover { background: rgba(4, 187, 255, 0.5); }
 }
 

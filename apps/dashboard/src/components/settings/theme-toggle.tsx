@@ -1,7 +1,7 @@
 'use client'
 
 import { useTheme } from 'next-themes'
-import { Sun, Moon, Smile } from 'lucide-react'
+import { Sun, Moon, Smile, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 export function ThemeToggle() {
@@ -28,6 +28,13 @@ export function ThemeToggle() {
       <button onClick={() => setTheme('happy')} className={`${base} ${theme === 'happy' ? activeClass : inactiveClass}`}>
         <Smile className="w-4 h-4" />
         Happy
+      </button>
+      <button
+        onClick={() => setTheme('cool')}
+        className={`${base} ${theme === 'cool' ? 'bg-[#233dff]/10 border-[#6877ed] text-[#04bbff]' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+      >
+        <Sparkles className="w-4 h-4" />
+        Cool
       </button>
     </div>
   )

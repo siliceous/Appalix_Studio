@@ -69,9 +69,6 @@ export function VoiceAssistant({ workspaceId, plan }: VoiceAssistantProps) {
   const processorRef   = useRef<{ disconnect(): void } | null>(null)
   const streamRef      = useRef<MediaStream | null>(null)
   const transcriptRef  = useRef<HTMLDivElement>(null)
-  const connectRef     = useRef<() => void>(() => {})
-  const wakeActiveRef  = useRef(false)       // prevents double-trigger on wake word
-  const [wakeReady,  setWakeReady]  = useState(false)  // mic permission granted for wake word
 
   // Auto-scroll transcript
   useEffect(() => {
@@ -80,62 +77,6 @@ export function VoiceAssistant({ workspaceId, plan }: VoiceAssistantProps) {
 
   // Cleanup on unmount
   useEffect(() => () => { disconnectVoice() }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Wake word detection — passive background listening for "Hey Sage" / "Hi Sage"
-  useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition
-    if (!SR) return
-    let stopped = false
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rec: any = new SR()
-    rec.continuous     = true
-    rec.interimResults = true
-    rec.lang           = 'en-US'
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    rec.onresult = (e: any) => {
-      if (wakeActiveRef.current) return
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const text: string = e.results[i][0].transcript.toLowerCase().replace(/[,!?.]/g, '')
-        if (
-          text.includes('hey sage') || text.includes('hi sage') ||
-          text.includes('okay sage') || text.includes('ok sage') ||
-          text.includes('hey saj') || text.includes('hey say')   // common mis-transcriptions
-        ) {
-          wakeActiveRef.current = true
-          setIsOpen(true)
-          connectRef.current()
-          break
-        }
-      }
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    rec.onerror = (e: any) => {
-      setWakeReady(false)
-      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-        stopped = true   // mic permission denied — don't retry
-        return
-      }
-      // transient error (network, aborted) — restart after a pause
-      setTimeout(() => { if (!stopped) try { rec.start() } catch {} }, 1000)
-    }
-
-    rec.onstart = () => setWakeReady(true)
-    rec.onend   = () => {
-      setWakeReady(false)
-      if (!stopped) setTimeout(() => { try { rec.start() } catch {} }, 200)
-    }
-
-    try { rec.start() } catch {}
-
-    return () => {
-      stopped = true
-      setWakeReady(false)
-      try { rec.stop() } catch {}
-    }
-  }, [])
 
   const addEntry = useCallback((type: TranscriptEntry['type'], content: string) => {
     setTranscript(prev => [...prev.slice(-50), { type, content, id: nextId() }])
@@ -330,7 +271,6 @@ export function VoiceAssistant({ workspaceId, plan }: VoiceAssistantProps) {
 
       ws.onclose  = () => {
         localStorage.setItem(LAST_SESSION_KEY, String(Date.now()))
-        wakeActiveRef.current = false
         stopMic()
         wsRef.current = null
         setVoiceState('idle')
@@ -343,13 +283,9 @@ export function VoiceAssistant({ workspaceId, plan }: VoiceAssistantProps) {
     }
   }, [workspaceId, pageContext, startMic, scheduleAudioChunk, addEntry])
 
-  // Keep connectRef current so the wake word handler always calls the latest version
-  useEffect(() => { connectRef.current = connect }, [connect])
-
   // ── Disconnect ────────────────────────────────────────────────────────────
 
   const disconnectVoice = useCallback(() => {
-    wakeActiveRef.current = false   // allow wake word to trigger again next time
     stopMic()
     nextPlayRef.current = 0
     if (wsRef.current) {
@@ -479,13 +415,9 @@ export function VoiceAssistant({ workspaceId, plan }: VoiceAssistantProps) {
 
       {/* ── Floating mic button ──────────────────────────────────────── */}
       <div className="relative">
-        {/* Wake word ready indicator — faint pulse ring when passively listening */}
-        {wakeReady && !isOpen && (
-          <span className="absolute inset-0 rounded-full animate-ping bg-[#15A4AE]/20 pointer-events-none" />
-        )}
         <button
           onClick={() => isOpen ? handleClose() : setIsOpen(true)}
-          title={wakeReady ? 'Sage Voice — say "Hey Sage" to wake' : 'Sage Voice'}
+          title="Sage Voice"
           className={cn(
             'relative w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all duration-200',
             isOpen

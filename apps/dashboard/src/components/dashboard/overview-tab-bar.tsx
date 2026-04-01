@@ -17,7 +17,7 @@ export function OverviewTabBar({ activeTab }: { activeTab: string }) {
   const [, startTransition] = useTransition()
 
   return (
-    <div className="flex items-end px-6 pt-3 gap-1 border-b border-gray-200 dark:border-white/8 bg-gray-50 dark:bg-[#1c1c1c] shrink-0">
+    <div className="flex items-end px-6 pt-3 gap-1 border-b border-gray-200 dark:border-white/8 bg-white dark:bg-[#1c1c1c] shrink-0">
       {TABS.map(({ id, label, icon: Icon }) => {
         const isActive = id === activeTab
         return (
