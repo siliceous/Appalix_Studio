@@ -102,11 +102,6 @@ function fmtDate(iso: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  owner: 'Owner', admin: 'Admin', manager: 'Manager',
-  employee: 'Employee', member: 'Member', viewer: 'Viewer',
-}
-
 
 function ActivityItem({ entry }: { entry: ActivityEntry }) {
   const source = entry.is_upcoming ? null : getSource(entry)
@@ -139,6 +134,14 @@ function ActivityItem({ entry }: { entry: ActivityEntry }) {
     </div>
   )
 }
+
+// ── Source bar config ─────────────────────────────────────────────────────────
+const SOURCE_BARS: { key: string; label: string; bar: string }[] = [
+  { key: 'email',  label: 'Email',  bar: 'bg-blue-500' },
+  { key: 'bot',    label: 'Convos', bar: 'bg-purple-500' },
+  { key: 'forms',  label: 'Forms',  bar: 'bg-green-500' },
+  { key: 'ticket', label: 'Tickets',bar: 'bg-amber-500' },
+]
 
 // ── Main component ────────────────────────────────────────────────────────────
 interface Props {
@@ -197,41 +200,59 @@ export function ActivitySidebar({ activity, date, currentPath, viewingAs }: Prop
       <div className="flex flex-col flex-1 overflow-hidden bg-white dark:bg-[#242424] rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_16px_rgba(0,0,0,0.4)] border border-gray-200/70 dark:border-white/8">
 
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2.5 bg-[#141c2b] border-b border-white/10 shrink-0">
-        {viewingAs ? (
-          <>
-            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
-              {viewingAs.initials}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-semibold text-white truncate leading-tight">{viewingAs.name}</p>
-              <p className="text-[10px] text-white/50">{ROLE_LABELS[viewingAs.role] ?? viewingAs.role}</p>
-            </div>
-            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/70 border border-white/20 font-medium shrink-0">
-              view only
-            </span>
-          </>
-        ) : (
-          <span className="text-xs font-semibold text-white flex-1">My Activity</span>
-        )}
+      <div className="shrink-0">
+        {/* Top row: title · source labels · icons */}
+        <div className="flex items-center gap-2 px-3 py-2.5 bg-[#141c2b] border-b border-white/10 rounded-t-xl">
+          {/* Title */}
+          <span className="text-xs font-semibold text-white shrink-0">
+            {viewingAs ? viewingAs.name : 'Activity feed'}
+          </span>
 
-        <div className="flex items-center gap-1 shrink-0">
-          {viewingAs && (
+          {/* Source labels — middle */}
+          <div className="flex items-center gap-1 flex-1 min-w-0 justify-center flex-wrap">
+            {SOURCE_BARS.map(s => {
+              const hasItems = past.some(e => getSource(e) === s.key)
+              return (
+                <span
+                  key={s.key}
+                  className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full transition-colors ${
+                    hasItems
+                      ? SOURCE_COLORS[s.key] ?? 'bg-gray-100 text-gray-500'
+                      : 'text-white/20'
+                  }`}
+                >
+                  {s.label}
+                </span>
+              )
+            })}
+          </div>
+
+          {/* Icons — right */}
+          <div className="flex items-center gap-1 shrink-0">
+            {viewingAs && (
+              <button
+                onClick={stopViewing}
+                title="Stop viewing"
+                className="p-1 rounded text-red-400 hover:text-red-300 hover:bg-white/10 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
             <button
-              onClick={stopViewing}
-              title="Stop viewing"
-              className="p-1 rounded text-red-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+              onClick={toggleCollapsed}
+              title="Collapse activity"
+              className="p-1 rounded text-white/50 hover:text-white hover:bg-white/10 transition-colors"
             >
-              <X className="w-3 h-3" />
+              <ChevronRight className="w-3 h-3" />
             </button>
-          )}
-          <button
-            onClick={toggleCollapsed}
-            title="Collapse activity"
-            className="p-1 rounded text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-          >
-            <ChevronRight className="w-3 h-3" />
-          </button>
+          </div>
+        </div>
+
+        {/* Colored bars — one per source that has items */}
+        <div className="flex h-1">
+          {SOURCE_BARS.filter(s => past.some(e => getSource(e) === s.key)).map(s => (
+            <div key={s.key} className={`flex-1 ${s.bar}`} title={s.label} />
+          ))}
         </div>
       </div>
 
