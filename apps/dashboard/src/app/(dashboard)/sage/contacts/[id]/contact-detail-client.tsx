@@ -4,7 +4,7 @@ import { useState } from 'react'
 import {
   Mail, Phone, Building2, Briefcase, Globe, MapPin, Tag,
   ChevronLeft, PanelRight, Plus, Clock, Activity,
-  DollarSign, Ticket as TicketIcon,
+  DollarSign, Ticket as TicketIcon, CheckCircle2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { timeAgo } from '@/lib/utils'
@@ -27,14 +27,14 @@ type TicketWithContact = SageTicket & {
 }
 
 interface Props {
-  contact:      SageContact
-  activity:     SageActivityLog[]
-  deals:        DealWithStage[]
-  tickets:      TicketWithContact[]
+  contact:       SageContact
+  activity:      SageActivityLog[]
+  deals:         DealWithStage[]
+  tickets:       TicketWithContact[]
   firstPipeline: { id: string; name: string; stages: SagePipelineStage[] } | null
-  allPipelines: Pick<SagePipeline, 'id' | 'name'>[]
-  members:      WorkspaceMemberSummary[]
-  ownerEmail:   string
+  allPipelines:  Pick<SagePipeline, 'id' | 'name'>[]
+  members:       WorkspaceMemberSummary[]
+  ownerEmail:    string
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -52,10 +52,10 @@ const TICKET_STATUS_COLOR: Record<string, string> = {
 }
 
 const TICKET_PRIORITY_COLOR: Record<string, string> = {
-  urgent: 'bg-red-50 text-red-700',
-  high:   'bg-orange-50 text-orange-700',
-  medium: 'bg-amber-50 text-amber-700',
-  low:    'bg-gray-100 text-gray-600',
+  urgent: 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400',
+  high:   'bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400',
+  medium: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
+  low:    'bg-gray-100 text-gray-600 dark:bg-white/8 dark:text-gray-400',
 }
 
 function formatCurrency(value: number | null, currency: string) {
@@ -79,7 +79,7 @@ export function ContactDetailClient({
   contact, activity, deals, tickets,
   firstPipeline, allPipelines, members, ownerEmail,
 }: Props) {
-  const [activityOpen, setActivityOpen]   = useState(false)
+  const [activityOpen, setActivityOpen]         = useState(true)
   const [selectedDealId, setSelectedDealId]     = useState<string | null>(null)
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null)
 
@@ -88,12 +88,13 @@ export function ContactDetailClient({
     : []
 
   const selectedTicket = tickets.find(t => t.id === selectedTicketId) ?? null
+  const hasDeal = deals.length > 0
 
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden">
-      {/* ── Left panel: Contact info ──────────────────────────────── */}
-      <aside className="w-72 shrink-0 border-r dark:border-white/8 bg-white dark:bg-[#1a1a1a] overflow-y-auto flex flex-col">
-        {/* Back */}
+    <div className="flex h-[calc(100vh-57px)] overflow-hidden bg-gray-50 dark:bg-[#141414]">
+
+      {/* ── Left info panel ─────────────────────────────────────── */}
+      <aside className="w-64 shrink-0 border-r dark:border-white/8 bg-white dark:bg-[#1a1a1a] overflow-y-auto flex flex-col">
         <div className="px-4 pt-4 pb-2">
           <Link
             href="/sage/contacts"
@@ -103,39 +104,8 @@ export function ContactDetailClient({
           </Link>
         </div>
 
-        {/* Avatar + name */}
-        <div className="px-4 py-4 border-b dark:border-white/8">
-          <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-xl bg-[#15A4AE]/15 flex items-center justify-center shrink-0">
-              <span className="text-lg font-bold text-[#15A4AE]">
-                {contact.name.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-tight">{contact.name}</h1>
-              {contact.title && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{contact.title}</p>}
-              {contact.company_name && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
-                  <Building2 className="w-3 h-3" /> {contact.company_name}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-3">
-            <ContactActionsClient
-              contact={contact}
-              pipelineId={firstPipeline?.id ?? null}
-              stages={firstStages}
-              allPipelines={allPipelines}
-              ownerName={ownerEmail}
-              members={members}
-            />
-          </div>
-        </div>
-
-        {/* Contact details */}
-        <div className="px-4 py-4 border-b dark:border-white/8 space-y-3">
+        {/* Contact details list */}
+        <div className="px-4 py-3 border-b dark:border-white/8 space-y-3">
           <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Contact Info</p>
           {contact.email && (
             <a href={`mailto:${contact.email}`} className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300 hover:text-[#15A4AE] transition-colors">
@@ -148,6 +118,12 @@ export function ContactDetailClient({
               <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
               <span>{contact.phone}</span>
             </a>
+          )}
+          {contact.company_name && (
+            <div className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+              <Building2 className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+              <span className="truncate">{contact.company_name}</span>
+            </div>
           )}
           {contact.title && (
             <div className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
@@ -170,7 +146,7 @@ export function ContactDetailClient({
         </div>
 
         {/* Key info */}
-        <div className="px-4 py-4 border-b dark:border-white/8 space-y-3">
+        <div className="px-4 py-3 border-b dark:border-white/8 space-y-3">
           <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Key Information</p>
           <div>
             <p className="text-[10px] text-gray-400 mb-0.5">Contact Type</p>
@@ -214,7 +190,7 @@ export function ContactDetailClient({
 
         {/* Tags */}
         {contact.tags.length > 0 && (
-          <div className="px-4 py-4 border-b dark:border-white/8">
+          <div className="px-4 py-3 border-b dark:border-white/8">
             <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Tags</p>
             <div className="flex flex-wrap gap-1.5">
               {contact.tags.map(tag => (
@@ -228,7 +204,7 @@ export function ContactDetailClient({
 
         {/* Notes */}
         {contact.notes && (
-          <div className="px-4 py-4">
+          <div className="px-4 py-3">
             <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Notes</p>
             <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{contact.notes}</p>
           </div>
@@ -236,103 +212,185 @@ export function ContactDetailClient({
       </aside>
 
       {/* ── Center: main content ──────────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-[#141414]">
+      <main className="flex-1 overflow-y-auto min-w-0">
         {/* Toolbar */}
-        <div className="sticky top-0 z-10 bg-white dark:bg-[#1a1a1a] border-b dark:border-white/8 px-6 py-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{contact.name}</h2>
+        <div className="sticky top-0 z-10 bg-white dark:bg-[#1a1a1a] border-b dark:border-white/8 px-6 py-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 dark:text-gray-400">Contacts</span>
+            <span className="text-xs text-gray-300 dark:text-gray-600">/</span>
+            <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{contact.name}</span>
+          </div>
           <button
             onClick={() => setActivityOpen(v => !v)}
-            className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${
+              activityOpen
+                ? 'bg-[#15A4AE]/10 border-[#15A4AE]/30 text-[#15A4AE]'
+                : 'border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
+            }`}
           >
-            <PanelRight className="w-4 h-4" />
-            {activityOpen ? 'Hide Activity' : 'Activity'}
+            <PanelRight className="w-3.5 h-3.5" />
+            Activity
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
-          {/* AI Analysis */}
+        <div className="p-6 space-y-5">
+          {/* ── Name / company hero card ── */}
+          <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-5">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-[#15A4AE]/15 flex items-center justify-center shrink-0">
+                <span className="text-lg font-bold text-[#15A4AE]">
+                  {contact.name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-base font-bold text-gray-900 dark:text-gray-100">{contact.name}</h1>
+                <div className="flex flex-wrap items-center gap-3 mt-1">
+                  {contact.title && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{contact.title}</span>
+                  )}
+                  {contact.company_name && (
+                    <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                      <Building2 className="w-3 h-3" /> {contact.company_name}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {/* Action buttons */}
+              <div className="flex items-center gap-2 shrink-0">
+                {contact.email && (
+                  <a
+                    href={`mailto:${contact.email}`}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                  >
+                    <Mail className="w-3.5 h-3.5" /> Email
+                  </a>
+                )}
+                <ContactActionsClient
+                  contact={contact}
+                  pipelineId={firstPipeline?.id ?? null}
+                  stages={firstStages}
+                  allPipelines={allPipelines}
+                  ownerName={ownerEmail}
+                  members={members}
+                />
+              </div>
+            </div>
+
+            {/* Source badge */}
+            <div className="flex items-center gap-2 mt-4 pt-3 border-t dark:border-white/8">
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                contact.source === 'mailchimp'      ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400' :
+                contact.source === 'activecampaign' ? 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400' :
+                contact.source === 'chat'           ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400' :
+                'bg-gray-100 text-gray-600 dark:bg-white/8 dark:text-gray-400'
+              }`}>
+                {contact.source === 'mailchimp' ? 'Mailchimp' :
+                 contact.source === 'activecampaign' ? 'ActiveCampaign' :
+                 contact.source === 'chat' ? 'Chat / Bot' :
+                 contact.source === 'import' ? 'CSV Import' : 'Manual'}
+              </span>
+              <span className="text-[10px] text-gray-400">Added {timeAgo(contact.created_at)}</span>
+              {contact.source_conversation_id && (
+                <a href={`/conversations/${contact.source_conversation_id}`} className="text-[10px] text-[#15A4AE] hover:underline ml-auto">
+                  View conversation →
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* ── AI Analysis ── */}
           <ContactAiAnalysis
             contactId={contact.id}
             initialSummary={contact.ai_summary ?? null}
             analyzedAt={contact.ai_analyzed_at ?? null}
           />
 
-          {/* Deals */}
-          <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8">
-            <div className="px-5 py-3.5 border-b dark:border-white/8 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-gray-400" />
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Deals ({deals.length})</h3>
+          {/* ── Deals + Tickets row ── */}
+          <div className="grid grid-cols-2 gap-5">
+            {/* Deals */}
+            <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col">
+              <div className="px-4 py-3 border-b dark:border-white/8 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-3.5 h-3.5 text-gray-400" />
+                  <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100">Deals ({deals.length})</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  {hasDeal && (
+                    <span className="flex items-center gap-1 text-[10px] text-green-600 dark:text-green-400 font-medium">
+                      <CheckCircle2 className="w-3 h-3" /> Deal created
+                    </span>
+                  )}
+                  <button className="flex items-center gap-0.5 text-[10px] text-[#15A4AE] hover:text-[#129aa4] transition-colors font-medium">
+                    <Plus className="w-3 h-3" /> Add
+                  </button>
+                </div>
               </div>
-              <button className="flex items-center gap-1 text-xs text-[#15A4AE] hover:text-[#129aa4] transition-colors">
-                <Plus className="w-3.5 h-3.5" /> Add
-              </button>
-            </div>
-            <div className="divide-y dark:divide-white/8">
-              {deals.length === 0 ? (
-                <p className="px-5 py-6 text-sm text-gray-400 text-center">No deals linked yet.</p>
-              ) : deals.map(deal => (
-                <button
-                  key={deal.id}
-                  onClick={() => setSelectedDealId(deal.id)}
-                  className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors text-left"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{deal.title}</p>
-                    {deal.stage && (
-                      <p className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
-                        <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: deal.stage.color }} />
-                        {deal.stage.name}
+              <div className="divide-y dark:divide-white/8 flex-1">
+                {deals.length === 0 ? (
+                  <p className="px-4 py-6 text-xs text-gray-400 text-center">No deals linked yet.</p>
+                ) : deals.map(deal => (
+                  <button
+                    key={deal.id}
+                    onClick={() => setSelectedDealId(deal.id)}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors text-left"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{deal.title}</p>
+                      {deal.stage && (
+                        <p className="flex items-center gap-1 text-[10px] text-gray-400 mt-0.5">
+                          <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: deal.stage.color }} />
+                          {deal.stage.name}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                        {formatCurrency(deal.value, deal.currency)}
                       </p>
-                    )}
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      {formatCurrency(deal.value, deal.currency)}
-                    </p>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STATUS_COLOR[deal.status] ?? ''}`}>
-                      {deal.status}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Tickets */}
-          <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8">
-            <div className="px-5 py-3.5 border-b dark:border-white/8 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <TicketIcon className="w-4 h-4 text-gray-400" />
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Tickets ({tickets.length})</h3>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STATUS_COLOR[deal.status] ?? ''}`}>
+                        {deal.status}
+                      </span>
+                    </div>
+                  </button>
+                ))}
               </div>
-              <button className="flex items-center gap-1 text-xs text-[#15A4AE] hover:text-[#129aa4] transition-colors">
-                <Plus className="w-3.5 h-3.5" /> Add
-              </button>
             </div>
-            <div className="divide-y dark:divide-white/8">
-              {tickets.length === 0 ? (
-                <p className="px-5 py-6 text-sm text-gray-400 text-center">No tickets linked yet.</p>
-              ) : tickets.map(ticket => (
-                <button
-                  key={ticket.id}
-                  onClick={() => setSelectedTicketId(ticket.id)}
-                  className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors text-left"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{ticket.title}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{timeAgo(ticket.created_at)}</p>
-                  </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${TICKET_STATUS_COLOR[ticket.status] ?? ''}`}>
-                      {ticket.status.replace('_', ' ')}
-                    </span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${TICKET_PRIORITY_COLOR[ticket.priority] ?? ''}`}>
-                      {ticket.priority}
-                    </span>
-                  </div>
+
+            {/* Tickets */}
+            <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col">
+              <div className="px-4 py-3 border-b dark:border-white/8 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TicketIcon className="w-3.5 h-3.5 text-gray-400" />
+                  <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100">Tickets ({tickets.length})</h3>
+                </div>
+                <button className="flex items-center gap-0.5 text-[10px] text-[#15A4AE] hover:text-[#129aa4] transition-colors font-medium">
+                  <Plus className="w-3 h-3" /> Add ticket
                 </button>
-              ))}
+              </div>
+              <div className="divide-y dark:divide-white/8 flex-1">
+                {tickets.length === 0 ? (
+                  <p className="px-4 py-6 text-xs text-gray-400 text-center">No tickets linked yet.</p>
+                ) : tickets.map(ticket => (
+                  <button
+                    key={ticket.id}
+                    onClick={() => setSelectedTicketId(ticket.id)}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors text-left"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{ticket.title}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{timeAgo(ticket.created_at)}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${TICKET_STATUS_COLOR[ticket.status] ?? ''}`}>
+                        {ticket.status.replace('_', ' ')}
+                      </span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${TICKET_PRIORITY_COLOR[ticket.priority] ?? ''}`}>
+                        {ticket.priority}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -340,21 +398,31 @@ export function ContactDetailClient({
 
       {/* ── Right panel: Activity feed ─────────────────────────────── */}
       {activityOpen && (
-        <aside className="w-80 shrink-0 border-l dark:border-white/8 bg-white dark:bg-[#1a1a1a] overflow-y-auto flex flex-col">
-          <div className="px-5 py-4 border-b dark:border-white/8 flex items-center gap-2">
-            <Activity className="w-4 h-4 text-gray-400" />
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Activity</h3>
+        <aside className="w-72 shrink-0 border-l dark:border-white/8 bg-white dark:bg-[#1a1a1a] overflow-y-auto flex flex-col">
+          <div className="px-4 py-3 border-b dark:border-white/8 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-gray-400" />
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Activity</h3>
+            </div>
+            <button
+              onClick={() => setActivityOpen(false)}
+              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              Hide
+            </button>
           </div>
-          <div className="divide-y dark:divide-white/8">
+          <div className="divide-y dark:divide-white/8 flex-1">
             {activity.length === 0 ? (
-              <p className="px-5 py-8 text-sm text-gray-400 text-center">No activity recorded yet.</p>
+              <p className="px-4 py-8 text-sm text-gray-400 text-center">No activity yet.</p>
             ) : activity.map(a => (
-              <div key={a.id} className="flex items-start gap-3 px-5 py-3">
+              <div key={a.id} className="flex items-start gap-3 px-4 py-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] mt-1.5 shrink-0" />
                 <div>
                   <p className="text-xs text-gray-700 dark:text-gray-300">{eventLabel(a.event_type)}</p>
                   {a.payload && typeof a.payload === 'object' && 'note' in a.payload && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{String((a.payload as Record<string, unknown>).note)}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      {String((a.payload as Record<string, unknown>).note)}
+                    </p>
                   )}
                   <p className="flex items-center gap-1 text-[10px] text-gray-400 mt-0.5">
                     <Clock className="w-2.5 h-2.5" /> {timeAgo(a.created_at)}
