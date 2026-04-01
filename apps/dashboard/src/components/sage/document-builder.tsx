@@ -6,7 +6,7 @@ import Link from 'next/link'
 import {
   ArrowLeft, Plus, Trash2, Save, Send, CreditCard, Copy, Check,
   Loader2, X, AlertTriangle, ExternalLink, Receipt,
-  FileText, Package, ChevronDown, Upload, Paperclip, Building2,
+  FileText, Package, Upload, Paperclip, Building2,
   Eye, RefreshCw, Edit3,
 } from 'lucide-react'
 import {
@@ -476,8 +476,9 @@ export function DocumentBuilder({ mode, docType: docTypeProp, document: doc, con
   const [contacts,       setContacts]    = useState(initialContacts)
   const [catalog,        setCatalog]     = useState<SageItem[]>(initialItems)
   const [contactId,      setContactId]   = useState(doc?.contact_id ?? '')
-  const [contactSearch,  setContactSearch] = useState(doc?.contact?.name ?? '')
+  const [_contactSearch, setContactSearch] = useState(doc?.contact?.name ?? '')
   const [showContacts,   setShowContacts]  = useState(false)
+  const [activeSearchField, setActiveSearchField] = useState<'company' | 'person' | null>(null)
   const [projectId,      setProjectId]   = useState(doc?.project_id ?? '')
   const [currency,       setCurrency]    = useState(doc?.currency ?? 'AUD')
   const [issueDate,      setIssueDate]   = useState(doc?.issue_date ?? today())
@@ -561,6 +562,7 @@ export function DocumentBuilder({ mode, docType: docTypeProp, document: doc, con
     setContactId(c.id)
     setContactSearch(c.name)
     setShowContacts(false)
+    setActiveSearchField(null)
     const addrParts = [c.street, c.city, c.state, c.zip, c.country].filter(Boolean)
     setCustomer({
       name:    c.name,
@@ -872,60 +874,111 @@ export function DocumentBuilder({ mode, docType: docTypeProp, document: doc, con
             {/* ── BILL TO + DOCUMENT META ── */}
             <div className="flex items-start gap-10 mb-10">
 
-              {/* Left: Customer / Bill To */}
+              {/* Left: Customer */}
               <div className="flex-1">
-                <p className={MINI_LABEL}>Bill To / Customer</p>
-
-                {/* Contact selector */}
-                <div className="relative mb-3">
-                  <input
-                    value={contactSearch}
-                    onChange={e => onContactSearchChange(e.target.value)}
-                    onFocus={() => { setShowContacts(true); if (!contactSearch) setContactResults(contacts.slice(0, 8)) }}
-                    onBlur={() => setTimeout(() => setShowContacts(false), 150)}
-                    placeholder="Search contacts…"
-                    className="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-400 placeholder:text-gray-400"
-                  />
-                  {contactLoading
-                    ? <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 animate-spin" />
-                    : <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-                  }
-                  {showContacts && (
-                    <div className="absolute top-full left-0 z-20 mt-1 w-full bg-white dark:bg-[#222] border border-gray-200 dark:border-white/10 rounded-xl shadow-lg overflow-hidden max-h-52 overflow-y-auto">
-                      {contactResults.map(c => (
-                        <button key={c.id} type="button" onMouseDown={() => selectContact(c)}
-                          className="w-full text-left px-3 py-2 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors flex items-center gap-2 border-b border-gray-50 dark:border-white/5 last:border-0">
-                          <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 text-xs font-semibold shrink-0">
-                            {c.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{c.name}</p>
-                            {(c.email || c.company_name) && <p className="text-xs text-gray-400 truncate">{c.company_name ?? c.email}</p>}
-                          </div>
-                        </button>
-                      ))}
-                      {contactResults.length === 0 && !contactLoading && (
-                        <p className="px-3 py-2 text-xs text-gray-400">No contacts found</p>
-                      )}
-                      <button type="button" onMouseDown={() => { setShowContacts(false); setShowNewContact(true) }}
-                        className="w-full text-left px-3 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 border-t border-gray-100 dark:border-white/8 flex items-center gap-1.5 font-medium">
-                        <Plus className="w-3.5 h-3.5" />Add new contact
-                      </button>
-                    </div>
-                  )}
-                </div>
-
                 {/* Editable customer fields */}
                 <div className="space-y-2">
-                  <div>
+
+                  {/* Company Name — live contact search */}
+                  <div className="relative">
                     <p className={MINI_LABEL}>Company Name</p>
-                    <input value={customer.company} onChange={e => updateCustomer('company', e.target.value)}
-                      placeholder="Company name" className={INPUT} />
+                    <div className="relative">
+                      <input
+                        value={customer.company}
+                        onChange={e => {
+                          updateCustomer('company', e.target.value)
+                          setActiveSearchField('company')
+                          onContactSearchChange(e.target.value)
+                        }}
+                        onFocus={() => {
+                          setActiveSearchField('company')
+                          setShowContacts(true)
+                          if (!customer.company) setContactResults(contacts.slice(0, 8))
+                        }}
+                        onBlur={() => setTimeout(() => { setShowContacts(false); setActiveSearchField(null) }, 150)}
+                        placeholder="Company name"
+                        className={INPUT}
+                      />
+                      {contactLoading && activeSearchField === 'company' && (
+                        <Loader2 className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 animate-spin" />
+                      )}
+                    </div>
+                    {showContacts && activeSearchField === 'company' && (
+                      <div className="absolute top-full left-0 z-20 mt-1 w-full bg-white dark:bg-[#222] border border-gray-200 dark:border-white/10 rounded-xl shadow-lg overflow-hidden max-h-52 overflow-y-auto">
+                        {contactResults.map(c => (
+                          <button key={c.id} type="button" onMouseDown={() => selectContact(c)}
+                            className="w-full text-left px-3 py-2 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors flex items-center gap-2 border-b border-gray-50 dark:border-white/5 last:border-0">
+                            <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 text-xs font-semibold shrink-0">
+                              {c.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{c.name}</p>
+                              {(c.company_name || c.email) && (
+                                <p className="text-xs text-gray-400 truncate">{c.company_name ?? c.email}</p>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                        {contactResults.length === 0 && !contactLoading && (
+                          <p className="px-3 py-2 text-xs text-gray-400">No contacts found</p>
+                        )}
+                        <button type="button" onMouseDown={() => { setShowContacts(false); setActiveSearchField(null); setShowNewContact(true) }}
+                          className="w-full text-left px-3 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 border-t border-gray-100 dark:border-white/8 flex items-center gap-1.5 font-medium">
+                          <Plus className="w-3.5 h-3.5" />Add new contact
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <div>
+
+                  {/* Person in Charge — live contact search */}
+                  <div className="relative">
                     <p className={MINI_LABEL}>Person in Charge</p>
-                    <input value={customer.name} onChange={e => updateCustomer('name', e.target.value)}
-                      placeholder="Contact name" className={INPUT} />
+                    <div className="relative">
+                      <input
+                        value={customer.name}
+                        onChange={e => {
+                          updateCustomer('name', e.target.value)
+                          setActiveSearchField('person')
+                          onContactSearchChange(e.target.value)
+                        }}
+                        onFocus={() => {
+                          setActiveSearchField('person')
+                          setShowContacts(true)
+                          if (!customer.name) setContactResults(contacts.slice(0, 8))
+                        }}
+                        onBlur={() => setTimeout(() => { setShowContacts(false); setActiveSearchField(null) }, 150)}
+                        placeholder="Contact name"
+                        className={INPUT}
+                      />
+                      {contactLoading && activeSearchField === 'person' && (
+                        <Loader2 className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 animate-spin" />
+                      )}
+                    </div>
+                    {showContacts && activeSearchField === 'person' && (
+                      <div className="absolute top-full left-0 z-20 mt-1 w-full bg-white dark:bg-[#222] border border-gray-200 dark:border-white/10 rounded-xl shadow-lg overflow-hidden max-h-52 overflow-y-auto">
+                        {contactResults.map(c => (
+                          <button key={c.id} type="button" onMouseDown={() => selectContact(c)}
+                            className="w-full text-left px-3 py-2 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors flex items-center gap-2 border-b border-gray-50 dark:border-white/5 last:border-0">
+                            <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 text-xs font-semibold shrink-0">
+                              {c.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{c.name}</p>
+                              {(c.company_name || c.email) && (
+                                <p className="text-xs text-gray-400 truncate">{c.company_name ?? c.email}</p>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                        {contactResults.length === 0 && !contactLoading && (
+                          <p className="px-3 py-2 text-xs text-gray-400">No contacts found</p>
+                        )}
+                        <button type="button" onMouseDown={() => { setShowContacts(false); setActiveSearchField(null); setShowNewContact(true) }}
+                          className="w-full text-left px-3 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 border-t border-gray-100 dark:border-white/8 flex items-center gap-1.5 font-medium">
+                          <Plus className="w-3.5 h-3.5" />Add new contact
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <p className={MINI_LABEL}>Address</p>
