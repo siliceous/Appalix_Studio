@@ -328,9 +328,9 @@ function PreviewModal({
             <div className="flex items-start justify-between mb-12">
               <div>
                 {logoUrl
-                  ? <img src={logoUrl} alt="Logo" className="h-14 max-w-[160px] object-contain mb-2" />
-                  : <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-2" style={{ backgroundColor: accentColor + '20' }}>
-                      <Building2 className="w-7 h-7" style={{ color: accentColor }} />
+                  ? <img src={logoUrl} alt="Logo" className="w-24 h-24 object-contain mb-3 rounded-lg" />
+                  : <div className="w-24 h-24 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: accentColor + '20' }}>
+                      <Building2 className="w-10 h-10" style={{ color: accentColor }} />
                     </div>
                 }
                 {fromName && <p className="text-sm font-semibold text-gray-800">{fromName}</p>}
@@ -795,12 +795,50 @@ export function DocumentBuilder({ mode, docType: docTypeProp, document: doc, con
           style={{ minHeight: '1123px' }}>
           <div className="px-14 py-12">
 
-            {/* ── HEADER: Doc type + accent left, logo + from info right ── */}
+            {/* ── HEADER: logo + company left, doc-type + colors right ── */}
             <div className="flex items-start justify-between mb-10">
 
-              {/* Left: doc type selector + colour picker */}
-              <div className="shrink-0">
-                <div className="flex items-center gap-1 mb-3">
+              {/* Left: logo (square) + company name + address */}
+              <div className="flex items-start gap-4">
+                {/* Logo upload — square 1200×1200 */}
+                <label className="cursor-pointer group block shrink-0">
+                  <input type="file" accept="image/*" className="sr-only"
+                    onChange={e => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      if (file.size > 500_000) { setError('Logo must be under 500 KB'); return }
+                      const reader = new FileReader()
+                      reader.onload = ev => setLogoUrl(ev.target?.result as string)
+                      reader.readAsDataURL(file)
+                    }} />
+                  {logoUrl
+                    ? <div className="relative">
+                        <img src={logoUrl} alt="Logo" className="w-28 h-28 object-contain rounded-xl border border-gray-100 dark:border-white/10" />
+                        <button type="button" onClick={e => { e.preventDefault(); setLogoUrl('') }}
+                          className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold">×</button>
+                      </div>
+                    : <div className="w-28 h-28 rounded-xl bg-gray-50 dark:bg-white/5 border-2 border-dashed border-gray-200 dark:border-white/15 flex flex-col items-center justify-center gap-1 hover:border-gray-400 transition-colors">
+                        <Upload className="w-5 h-5 text-gray-300 dark:text-gray-600" />
+                        <span className="text-[9px] text-gray-400 dark:text-gray-500 font-medium">Logo</span>
+                        <span className="text-[8px] text-gray-300 dark:text-gray-600">1200 × 1200 px</span>
+                      </div>
+                  }
+                </label>
+                {/* Company name + address — auto-filled from branding */}
+                <div className="pt-1">
+                  <input value={fromName} onChange={e => setFromName(e.target.value)}
+                    placeholder="Your company name"
+                    className="block text-base font-semibold text-gray-900 dark:text-gray-100 bg-transparent border-0 border-b border-transparent hover:border-gray-200 focus:border-blue-400 dark:focus:border-blue-500 focus:outline-none py-0.5 placeholder:text-gray-300 dark:placeholder:text-gray-600 transition-colors min-w-[220px]" />
+                  <textarea value={fromAddress} onChange={e => setFromAddress(e.target.value)}
+                    placeholder="Address · ABN/VAT · Phone · Email"
+                    rows={3} style={{ resize: 'none' }}
+                    className="block text-xs text-gray-500 dark:text-gray-400 bg-transparent border-0 border-b border-transparent hover:border-gray-200 focus:border-blue-400 dark:focus:border-blue-500 focus:outline-none mt-2 placeholder:text-gray-300 dark:placeholder:text-gray-600 transition-colors min-w-[220px]" />
+                </div>
+              </div>
+
+              {/* Right: doc type selector + doc number + colour picker */}
+              <div className="shrink-0 text-right">
+                <div className="flex items-center gap-1 mb-3 justify-end">
                   {([
                     { type: 'quote' as const, label: 'QUOTE' },
                     { type: 'packing_list' as const, label: 'PACKING LIST' },
@@ -821,7 +859,7 @@ export function DocumentBuilder({ mode, docType: docTypeProp, document: doc, con
                   <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">#{doc.doc_number}</p>
                 )}
                 {/* Colour picker */}
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 justify-end">
                   {['#1a1a1a','#2563eb','#6d28d9','#0891b2','#059669','#dc2626','#ea580c','#ca8a04'].map(c => (
                     <button key={c} onClick={() => setAccentColor(c)}
                       className={`w-4 h-4 rounded-full border-2 transition-all hover:scale-110 ${accentColor === c ? 'border-gray-900 dark:border-white' : 'border-transparent'}`}
@@ -829,44 +867,6 @@ export function DocumentBuilder({ mode, docType: docTypeProp, document: doc, con
                   ))}
                   <input type="color" value={accentColor} onChange={e => setAccentColor(e.target.value)}
                     className="w-5 h-5 rounded-full border border-gray-200 dark:border-white/10 cursor-pointer bg-transparent p-0 ml-1" />
-                </div>
-              </div>
-
-              {/* Right: logo + company name + address */}
-              <div className="text-right ml-8 flex-1 max-w-xs">
-                <div className="flex items-start gap-3 justify-end">
-                  <div className="flex-1 text-right">
-                    <input value={fromName} onChange={e => setFromName(e.target.value)}
-                      placeholder="Your company name"
-                      className="block w-full text-base font-semibold text-gray-900 dark:text-gray-100 bg-transparent border-0 border-b border-transparent hover:border-gray-200 focus:border-blue-400 dark:focus:border-blue-500 focus:outline-none py-0.5 text-right placeholder:text-gray-300 dark:placeholder:text-gray-600 transition-colors" />
-                    <textarea value={fromAddress} onChange={e => setFromAddress(e.target.value)}
-                      placeholder="Address · ABN/VAT · Phone · Email"
-                      rows={2} style={{ resize: 'none' }}
-                      className="block w-full text-xs text-gray-500 dark:text-gray-400 bg-transparent border-0 border-b border-transparent hover:border-gray-200 focus:border-blue-400 dark:focus:border-blue-500 focus:outline-none mt-1 text-right placeholder:text-gray-300 dark:placeholder:text-gray-600 transition-colors" />
-                  </div>
-                  {/* Logo upload */}
-                  <label className="cursor-pointer group block shrink-0">
-                    <input type="file" accept="image/*" className="sr-only"
-                      onChange={e => {
-                        const file = e.target.files?.[0]
-                        if (!file) return
-                        if (file.size > 500_000) { setError('Logo must be under 500 KB'); return }
-                        const reader = new FileReader()
-                        reader.onload = ev => setLogoUrl(ev.target?.result as string)
-                        reader.readAsDataURL(file)
-                      }} />
-                    {logoUrl
-                      ? <div className="relative">
-                          <img src={logoUrl} alt="Logo" className="h-12 max-w-[120px] object-contain rounded border border-gray-100 dark:border-white/10" />
-                          <button type="button" onClick={e => { e.preventDefault(); setLogoUrl('') }}
-                            className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold">×</button>
-                        </div>
-                      : <div className="w-14 h-12 rounded-lg bg-gray-50 dark:bg-white/5 border-2 border-dashed border-gray-200 dark:border-white/15 flex flex-col items-center justify-center hover:border-gray-400 transition-colors">
-                          <Building2 className="w-4 h-4 text-gray-300 dark:text-gray-600" />
-                          <span className="text-[9px] text-gray-300 dark:text-gray-600 mt-0.5">Logo</span>
-                        </div>
-                    }
-                  </label>
                 </div>
               </div>
             </div>
