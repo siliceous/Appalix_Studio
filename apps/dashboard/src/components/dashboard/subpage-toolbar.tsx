@@ -107,8 +107,8 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
     })
   }
 
-  const ACTIVE_CLS = 'bg-[#15A4AE]/15 text-[#1f6157] border-[#15A4AE]/30 dark:bg-[#15A4AE]/20 dark:text-[#15A4AE] dark:border-[#15A4AE]/40'
-  const HOVER_CLS  = 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/6 hover:text-[#15A4AE] dark:hover:text-[#15A4AE]'
+  const ACTIVE_CLS = 'bg-white/20 text-white border-white/40'
+  const HOVER_CLS  = 'text-white/50 border-transparent hover:bg-white/10 hover:text-white'
 
   const PAGES: { key: SubpageSource; label: string; Icon: React.ElementType }[] = [
     { key: 'email',   label: 'Email',   Icon: Mail          },
@@ -118,17 +118,17 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
   ]
 
   return (
-    <nav className="px-4 border-b dark:border-white/8 bg-white dark:bg-[#1c1c1c] grid grid-cols-[1fr_auto] items-end shrink-0 gap-x-4 min-h-[52px] pb-2">
+    <nav className="px-4 border-b border-white/10 bg-[#141c2b] grid grid-cols-[1fr_auto] items-end shrink-0 gap-x-4 min-h-[52px] pb-2">
       {/* Overview link + page pill buttons */}
       <div className="flex items-end gap-1.5 min-w-0 overflow-x-auto">
         <Link
           href={viewAsUserId ? `/dashboard?viewAs=${viewAsUserId}` : '/dashboard'}
-          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors shrink-0 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/6 mr-0.5"
+          className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors shrink-0 px-2 py-1.5 rounded-lg hover:bg-white/10 mr-0.5"
         >
           <LayoutDashboard className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Overview</span>
         </Link>
-        <div className="w-px h-5 bg-gray-200 dark:bg-white/10 self-center" />
+        <div className="w-px h-5 bg-white/15 self-center" />
         {/* Sibling page pill buttons — carry viewAs when set */}
         {PAGES.map(p => {
           const isActive  = sourceKey === p.key
@@ -166,8 +166,8 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
             title="Filter by date"
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
               preset !== 'all'
-                ? 'border-[#15A4AE]/40 text-[#3a9e8a] dark:text-[#15A4AE] bg-[#15A4AE]/5'
-                : 'border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-[#232323] hover:bg-gray-100 dark:hover:bg-white/8'
+                ? 'border-white/40 text-white bg-white/20'
+                : 'border-white/20 text-white/60 hover:bg-white/10 hover:text-white'
             }`}
           >
             <Calendar className="w-3.5 h-3.5" />
@@ -245,14 +245,14 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
                 else url.searchParams.delete('viewAs')
                 router.push(url.pathname + url.search)
               }}
-              className="appearance-none pl-2.5 pr-7 py-1.5 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/8 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE] transition-colors"
+              className="dark-bar-select appearance-none pl-2.5 pr-7 py-1.5 text-xs border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/30 transition-colors cursor-pointer"
             >
               <option value="">My view</option>
               {teamMembers.map(m => (
                 <option key={m.user_id} value={m.user_id}>{m.name || m.email}</option>
               ))}
             </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-white/40 pointer-events-none" />
           </div>
         )}
 
@@ -267,11 +267,11 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
           className={[
             'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all',
             localAuto
-              ? 'bg-[#15A4AE]/8 dark:bg-[#15A4AE]/10 border-[#15A4AE]/25 text-[#3a9e8a] dark:text-[#15A4AE]'
-              : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-500',
+              ? 'bg-white/20 border-white/40 text-white'
+              : 'bg-white/5 border-white/15 text-white/40',
           ].join(' ')}
         >
-          <Zap className={`w-3 h-3 ${localAuto ? 'text-[#15A4AE]' : 'text-gray-400'}`} />
+          <Zap className={`w-3 h-3 ${localAuto ? 'text-[#15A4AE]' : 'text-white/40'}`} />
           <span>Auto</span>
           <span className="font-bold">{localAuto ? 'ON' : 'OFF'}</span>
         </button>
