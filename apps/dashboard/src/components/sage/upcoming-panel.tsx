@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Bell, CheckCircle2, Calendar } from 'lucide-react'
+import { Bell, CheckCircle2, Calendar, Timer } from 'lucide-react'
 import Link from 'next/link'
 
 // ---------------------------------------------------------------------------
@@ -75,11 +75,11 @@ function isTodayOrFuture(due: string): boolean {
 // Component
 // ---------------------------------------------------------------------------
 
-const TABS: { key: FilterTab; label: string; color: string }[] = [
-  { key: 'all',       label: 'All',       color: 'bg-blue-500' },
-  { key: 'pending',   label: 'Pending',   color: 'bg-yellow-500' },
-  { key: 'upcoming',  label: 'Upcoming',  color: 'bg-green-500' },
-  { key: 'reminders', label: 'Reminders', color: 'bg-purple-500' },
+const TABS: { key: FilterTab; label: string; Icon?: React.ElementType; iconColor?: string; color: string }[] = [
+  { key: 'all',       label: 'All',  color: 'bg-blue-500' },
+  { key: 'pending',   label: 'Pending',   Icon: Timer,    iconColor: '#9a3bdd', color: 'bg-[#9a3bdd]' },
+  { key: 'upcoming',  label: 'Upcoming',  Icon: Calendar, iconColor: '#16b425', color: 'bg-[#16b425]' },
+  { key: 'reminders', label: 'Reminders', Icon: Bell,     iconColor: '#f1c816', color: 'bg-[#f1c816]' },
 ]
 
 export function UpcomingPanel({ workspaceId, userId }: { workspaceId: string; userId: string }) {
@@ -175,28 +175,46 @@ export function UpcomingPanel({ workspaceId, userId }: { workspaceId: string; us
   return (
     <div className="bg-white dark:bg-[#232323] rounded-2xl border dark:border-white/8 overflow-hidden flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b dark:border-white/8 flex-wrap">
-        <Calendar className="w-4 h-4 text-[#15A4AE] shrink-0" />
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 shrink-0">Tasks & Reminders</h2>
+      <div className="flex items-center gap-2 px-5 py-4 bg-[#141c2b] border-b border-white/10 rounded-t-2xl">
+        <Calendar className="w-4 h-4 text-white shrink-0" />
+        <h2 className="text-sm font-semibold text-white shrink-0">Tasks & Reminders</h2>
         {totalCount > 0 && (
-          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400 shrink-0">
+          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/10 text-white shrink-0">
             {totalCount}
           </span>
         )}
-        <div className="flex gap-1.5 ml-auto">
-          {TABS.map(t => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`text-[11px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
-                tab === t.key
-                  ? 'border-transparent text-white ' + t.color
-                  : 'border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-white/20'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-1 ml-auto">
+          {TABS.map(t => {
+            const isActive = tab === t.key
+            if (t.Icon) {
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  title={t.label}
+                  className={`p-1.5 rounded-lg transition-colors ${isActive ? 'bg-white/15' : 'hover:bg-white/10'}`}
+                >
+                  <t.Icon
+                    className="w-4 h-4"
+                    style={{ color: isActive ? t.iconColor : 'rgba(255,255,255,0.4)' }}
+                  />
+                </button>
+              )
+            }
+            return (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={`text-[11px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
+                  isActive
+                    ? 'border-transparent text-white bg-blue-500'
+                    : 'border-white/20 text-white/50 hover:border-white/40 hover:text-white/80'
+                }`}
+              >
+                {t.label}
+              </button>
+            )
+          })}
         </div>
       </div>
 

@@ -777,7 +777,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col">
+      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col overflow-hidden">
       <div className="overflow-x-auto">
         {filtered.length === 0 ? (
           <div className="py-20 text-center">
@@ -794,23 +794,23 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="border-b dark:border-white/8 bg-gray-50 dark:bg-white/3">
+              <tr className="bg-[#141c2b]">
                 {canWrite && (
                   <th className="pl-4 pr-2 py-3 w-8">
                     <input
                       type="checkbox"
                       checked={allSelected}
                       onChange={toggleSelectAll}
-                      className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-brand-600 cursor-pointer"
+                      className="w-4 h-4 rounded border-white/30 accent-brand-600 cursor-pointer"
                     />
                   </th>
                 )}
                 {visibleColDefs.map(col => (
-                  <th key={col.key} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                  <th key={col.key} className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
                     {col.label}
                   </th>
                 ))}
-                {canWrite && <th className="px-4 py-3 w-16" />}
+                {canWrite && <th className="px-4 py-3 w-16 bg-[#141c2b]" />}
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-white/8">

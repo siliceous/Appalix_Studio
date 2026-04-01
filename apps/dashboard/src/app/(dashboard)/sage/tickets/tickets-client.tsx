@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition, useEffect } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { Ticket, Plus, Trash2, Mail, Pencil, Merge, X, Loader2, Search, ChevronDown } from 'lucide-react'
 import { TicketModal } from '@/components/sage/ticket-modal'
@@ -276,33 +277,33 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
       </div>
 
       {/* Filter bar */}
-      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-4">
+      <div className="bg-[#141c2b] rounded-xl border border-white/10 p-4">
         <div className="flex flex-wrap gap-3 items-center">
           {/* Search */}
           <div className="relative flex-1 min-w-[180px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none" />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search tickets…"
-              className="w-full pl-8 pr-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
+              className="w-full pl-8 pr-3 py-2 text-sm border border-white/20 rounded-lg !bg-[#f5f4f1] !text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
             />
             {search && (
               <button onClick={() => setSearch('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
           {/* Select all */}
           {canWrite && filtered.length > 0 && (
-            <label className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 cursor-pointer select-none">
+            <label className="flex items-center gap-2 text-xs text-white/70 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={allSelected}
                 onChange={toggleSelectAll}
-                className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-[#15A4AE] cursor-pointer"
+                className="w-4 h-4 rounded border-white/30 accent-[#15A4AE] cursor-pointer"
               />
               All
             </label>
@@ -315,8 +316,8 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
                 onClick={() => setFilter(f.value)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                   filter === f.value
-                    ? 'bg-[#15A4AE]/15 dark:bg-[#15A4AE]/20 text-[#1f6157] dark:text-[#15A4AE] border border-[#15A4AE]/30'
-                    : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
+                    ? 'bg-white/20 text-white border border-white/40'
+                    : 'bg-white/8 text-white hover:bg-white/15'
                 }`}
               >
                 {f.label}
@@ -347,129 +348,120 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
             )}
           </div>
         ) : (
-          <div className="divide-y dark:divide-white/8">
-            {paginated.map(ticket => {
-              const sc = STATUS_CONFIG[ticket.status] ?? STATUS_CONFIG.open
-
-              const currentPriority = priorityMap[ticket.id] ?? ticket.priority ?? 'medium'
-              const cpConfig = PRIORITY_CONFIG[currentPriority] ?? PRIORITY_CONFIG.medium
-              const isSelected = selectedIds.has(ticket.id)
-              return (
-                <div key={ticket.id} onClick={() => setSlideTicket(ticket)} className={`flex items-start gap-4 px-5 py-4 transition-colors cursor-pointer ${isSelected ? 'bg-[#15A4AE]/10 ring-1 ring-inset ring-[#15A4AE]/30' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}>
-                  {/* Checkbox — only for users who can write (merge requires canWrite) */}
-                  {canWrite && (
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => toggleSelect(ticket.id)}
-                      onClick={e => e.stopPropagation()}
-                      className="mt-1 shrink-0 w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-[#15A4AE] cursor-pointer"
-                    />
-                  )}
-                  {/* Priority selector */}
-                  <div className="mt-0.5 shrink-0" onClick={e => e.stopPropagation()}>
-                    {canWrite ? (
-                      <select
-                        value={currentPriority}
-                        onChange={e => handlePriorityChange(ticket.id, e.target.value as SageTicketPriority)}
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-medium border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 ${cpConfig.color}`}
-                      >
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                        <option value="urgent">Urgent</option>
-                      </select>
-                    ) : (
-                      <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full font-medium ${cpConfig.color}`}>
-                        {cpConfig.label}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <Link
-                      href={`/sage/tickets/${ticket.id}`}
-                      onClick={e => e.stopPropagation()}
-                      className="text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-[#15A4AE] dark:hover:text-[#15A4AE] transition-colors truncate block"
-                    >
-                      {ticket.title}
-                    </Link>
-                    {ticket.description && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 leading-relaxed">{ticket.description}</p>
-                    )}
-                    <div className="flex items-center gap-2.5 mt-1.5">
-                      {(ticket.name || ticket.contact) && (
-                        <p className="flex items-center gap-1 text-[11px] text-gray-400">
-                          <Mail className="w-3 h-3 shrink-0" />
-                          <span className="truncate max-w-[160px]">{ticket.name ?? ticket.contact?.name}</span>
-                        </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-[#141c2b]">
+                  {canWrite && <th className="px-4 py-3 w-px"><input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="w-4 h-4 rounded border-white/30 accent-[#15A4AE] cursor-pointer" /></th>}
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Priority</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Name</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Source</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Submitted</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Status</th>
+                  {canAssign && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Assigned to</th>}
+                  <th className="text-right px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide w-px whitespace-nowrap">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y dark:divide-white/5">
+                {paginated.map(ticket => {
+                  const sc = STATUS_CONFIG[ticket.status] ?? STATUS_CONFIG.open
+                  const currentPriority = priorityMap[ticket.id] ?? ticket.priority ?? 'medium'
+                  const cpConfig = PRIORITY_CONFIG[currentPriority] ?? PRIORITY_CONFIG.medium
+                  const isSelected = selectedIds.has(ticket.id)
+                  const source = ticket.contact_method === 'email' ? 'email' : 'bot'
+                  return (
+                    <tr key={ticket.id} onClick={() => setSlideTicket(ticket)}
+                      className={`transition-colors cursor-pointer group ${isSelected ? 'bg-[#15A4AE]/10 ring-1 ring-inset ring-[#15A4AE]/30' : 'hover:bg-gray-50 dark:hover:bg-white/[0.03]'}`}>
+                      {canWrite && (
+                        <td className="px-4 py-3.5 w-px">
+                          <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(ticket.id)} onClick={e => e.stopPropagation()}
+                            className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-[#15A4AE] cursor-pointer" />
+                        </td>
                       )}
-                      <span className="text-[11px] text-gray-400">{timeAgo(ticket.created_at)}</span>
-                    </div>
-                  </div>
-
-                  {/* Status selector + actions */}
-                  <div className="shrink-0 flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                    {canWrite ? (
-                      <select
-                        value={ticket.status}
-                        onChange={e => handleStatusChange(ticket.id, e.target.value as SageTicketStatus)}
-                        className={`text-xs px-2.5 py-1 rounded-lg font-medium border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE] ${sc.color}`}
-                      >
-                        <option value="open">Open</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="pending">Pending</option>
-                        <option value="resolved">Resolved</option>
-                        <option value="closed">Closed</option>
-                      </select>
-                    ) : (
-                      <span className={`text-xs px-2.5 py-1 rounded-lg font-medium ${sc.color}`}>
-                        {sc.label}
-                      </span>
-                    )}
-
-                    {/* Assign dropdown — managers only */}
-                    {canAssign && (
-                      <div className="relative">
-                        <select
-                          value={assignedMap[ticket.id] ?? ''}
-                          onChange={e => handleAssign(ticket.id, e.target.value)}
-                          disabled={assigning}
-                          className="appearance-none pl-2 pr-6 py-1 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/8 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-[#15A4AE] transition-colors disabled:opacity-50 max-w-[120px]"
-                        >
-                          <option value="">Unassigned</option>
-                          {members.map(m => (
-                            <option key={m.user_id} value={m.user_id}>
-                              {m.name || m.email}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
-                      </div>
-                    )}
-
-                    <button
-                      onClick={() => setSlideTicket(ticket)}
-                      className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
-                      title="Open detail"
-                    >
-                      <Pencil className="w-3.5 h-3.5 text-gray-400" />
-                    </button>
-
-                    {canWrite && (
-                      <button
-                        onClick={() => handleDelete(ticket.id)}
-                        disabled={deleting === ticket.id}
-                        className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 hover:text-red-500" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
+                      <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
+                        {canWrite ? (
+                          <select value={currentPriority} onChange={e => handlePriorityChange(ticket.id, e.target.value as SageTicketPriority)}
+                            className={`text-[10px] px-2 py-0.5 rounded-full font-medium border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 ${cpConfig.color}`}>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                          </select>
+                        ) : (
+                          <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full font-medium ${cpConfig.color}`}>{cpConfig.label}</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <Link href={`/sage/tickets/${ticket.id}`} onClick={e => e.stopPropagation()}
+                          className="text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-[#15A4AE] dark:hover:text-[#15A4AE] transition-colors truncate block">
+                          {ticket.title}
+                        </Link>
+                        {(ticket.name || ticket.contact) && (
+                          <p className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
+                            <Mail className="w-3 h-3 shrink-0" />
+                            <span className="truncate max-w-[160px]">{ticket.name ?? ticket.contact?.name}</span>
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        {source === 'bot' ? (
+                          <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400">
+                            <Image src="/favicon.png" alt="Bot" width={10} height={10} className="w-2.5 h-2.5 object-contain" />
+                            Bot
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
+                            <Mail className="w-2.5 h-2.5" />
+                            Email
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5 text-xs text-gray-400 whitespace-nowrap">
+                        {timeAgo(ticket.created_at)}
+                      </td>
+                      <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
+                        {canWrite ? (
+                          <select value={ticket.status} onChange={e => handleStatusChange(ticket.id, e.target.value as SageTicketStatus)}
+                            className={`text-xs px-2.5 py-1 rounded-lg font-medium border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 ${sc.color}`}>
+                            <option value="open">Open</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="pending">Pending</option>
+                            <option value="resolved">Resolved</option>
+                            <option value="closed">Closed</option>
+                          </select>
+                        ) : (
+                          <span className={`text-xs px-2.5 py-1 rounded-lg font-medium ${sc.color}`}>{sc.label}</span>
+                        )}
+                      </td>
+                      {canAssign && (
+                        <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
+                          <div className="relative">
+                            <select value={assignedMap[ticket.id] ?? ''} onChange={e => handleAssign(ticket.id, e.target.value)} disabled={assigning}
+                              className="appearance-none pl-2 pr-6 py-1 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/8 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 transition-colors disabled:opacity-50 max-w-[120px]">
+                              <option value="">Unassigned</option>
+                              {members.map(m => <option key={m.user_id} value={m.user_id}>{m.name || m.email}</option>)}
+                            </select>
+                            <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                          </div>
+                        </td>
+                      )}
+                      <td className="px-4 py-3.5 text-right" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={() => setSlideTicket(ticket)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors" title="Open detail">
+                            <Pencil className="w-3.5 h-3.5 text-gray-400" />
+                          </button>
+                          {canWrite && (
+                            <button onClick={() => handleDelete(ticket.id)} disabled={deleting === ticket.id} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                              <Trash2 className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 hover:text-red-500" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
         )}
         {/* Pagination — always visible */}

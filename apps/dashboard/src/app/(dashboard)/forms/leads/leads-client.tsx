@@ -341,26 +341,26 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-white/8">
+              <tr className="bg-[#141c2b]">
                 <th className="px-5 py-3 w-8">
                   <input
                     type="checkbox"
                     checked={allSelected}
                     onChange={toggleSelectAll}
-                    className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-brand-600 cursor-pointer"
+                    className="w-4 h-4 rounded border-white/30 accent-brand-600 cursor-pointer"
                   />
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Priority</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Name</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Email</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Phone</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Company</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400">City</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Form</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Submitted</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Status</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Priority</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Name</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Email</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Phone</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Company</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">City</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Form</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Submitted</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Status</th>
                 {canAllocate && (
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Assigned to</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Assigned to</th>
                 )}
                 <th className="px-4 py-3" />
               </tr>

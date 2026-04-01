@@ -197,22 +197,22 @@ export function ActivitySidebar({ activity, date, currentPath, viewingAs }: Prop
       <div className="flex flex-col flex-1 overflow-hidden bg-white dark:bg-[#242424] rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_16px_rgba(0,0,0,0.4)] border border-gray-200/70 dark:border-white/8">
 
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2.5 border-b dark:border-white/8 shrink-0">
+      <div className="flex items-center gap-2 px-3 py-2.5 bg-[#141c2b] border-b border-white/10 shrink-0">
         {viewingAs ? (
           <>
-            <div className="w-6 h-6 rounded-full bg-brand-500/20 dark:bg-brand-500/25 flex items-center justify-center text-[10px] font-bold text-brand-700 dark:text-brand-300 shrink-0">
+            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
               {viewingAs.initials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-semibold text-gray-900 dark:text-gray-100 truncate leading-tight">{viewingAs.name}</p>
-              <p className="text-[10px] text-gray-400">{ROLE_LABELS[viewingAs.role] ?? viewingAs.role}</p>
+              <p className="text-[11px] font-semibold text-white truncate leading-tight">{viewingAs.name}</p>
+              <p className="text-[10px] text-white/50">{ROLE_LABELS[viewingAs.role] ?? viewingAs.role}</p>
             </div>
-            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 font-medium shrink-0">
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/70 border border-white/20 font-medium shrink-0">
               view only
             </span>
           </>
         ) : (
-          <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 flex-1">My Activity</span>
+          <span className="text-xs font-semibold text-white flex-1">My Activity</span>
         )}
 
         <div className="flex items-center gap-1 shrink-0">
@@ -220,7 +220,7 @@ export function ActivitySidebar({ activity, date, currentPath, viewingAs }: Prop
             <button
               onClick={stopViewing}
               title="Stop viewing"
-              className="p-1 rounded text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+              className="p-1 rounded text-red-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
             >
               <X className="w-3 h-3" />
             </button>
@@ -228,7 +228,7 @@ export function ActivitySidebar({ activity, date, currentPath, viewingAs }: Prop
           <button
             onClick={toggleCollapsed}
             title="Collapse activity"
-            className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-white/8 transition-colors"
+            className="p-1 rounded text-white/50 hover:text-white hover:bg-white/10 transition-colors"
           >
             <ChevronRight className="w-3 h-3" />
           </button>

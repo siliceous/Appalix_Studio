@@ -501,12 +501,12 @@ const iconCls   = 'bg-gray-100 dark:bg-white/10'
         onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 shrink-0 bg-white dark:bg-[#2a2a2a] border-b border-gray-100 dark:border-white/8 rounded-t-2xl sm:rounded-t-2xl">
+        <div className="flex items-center justify-between px-6 py-4 shrink-0 bg-[#141c2b] border-b border-white/10 rounded-t-2xl sm:rounded-t-2xl">
           <div className="flex items-center gap-2.5">
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${iconCls}`}>
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center bg-white/10`}>
               <Icon className={`w-4 h-4 ${iconCol}`} />
             </div>
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{label}</h2>
+            <h2 className="text-sm font-semibold text-white">{label}</h2>
             <Sparkles className="w-3.5 h-3.5 text-[#15A4AE]" />
             {!postAction && contactMatch !== null && contactMatch !== undefined && (
               <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/15 text-[10px] font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">
@@ -519,7 +519,7 @@ const iconCls   = 'bg-gray-100 dark:bg-white/10'
             {popup.kind === 'email' && !loading && data && showReply && (
               <button
                 onClick={() => setShowReply(false)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-800 dark:hover:text-gray-200 transition-colors border border-gray-200 dark:border-white/15"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors border border-white/20"
               >
                 <ArrowLeft className="w-3.5 h-3.5" /> Back
               </button>
@@ -527,12 +527,12 @@ const iconCls   = 'bg-gray-100 dark:bg-white/10'
             <button
               onClick={() => setPopupSize(s => s === 'sm' ? 'md' : s === 'md' ? 'lg' : 'sm')}
               title={popupSize === 'sm' ? 'Original size' : popupSize === 'md' ? 'Full width' : 'Small'}
-              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
             >
-              {popupSize === 'lg' ? <Minimize2 className="w-4 h-4 text-gray-400 dark:text-gray-500" /> : <Maximize2 className="w-4 h-4 text-gray-400 dark:text-gray-500" />}
+              {popupSize === 'lg' ? <Minimize2 className="w-4 h-4 text-white/60" /> : <Maximize2 className="w-4 h-4 text-white/60" />}
             </button>
-            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
-              <X className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-red-500/30 transition-colors">
+              <X className="w-4 h-4 text-white/60" />
             </button>
           </div>
         </div>
@@ -1177,7 +1177,7 @@ const iconCls   = 'bg-gray-100 dark:bg-white/10'
 
         {/* Footer actions */}
         {!loading && data && (
-          <div className="px-6 py-4 shrink-0 rounded-b-2xl sm:rounded-b-2xl" style={{ backgroundColor: popup.kind === 'email' ? '#84d2f6' : '#141c2b' }}>
+          <div className="px-6 py-4 shrink-0 rounded-b-2xl sm:rounded-b-2xl bg-[#141c2b]">
 
             {/* Pipeline picker */}
             {showPipelinePicker && (
@@ -2016,9 +2016,9 @@ export function SageDashboardClient({
         {/* Left: activity feed */}
         <div className="xl:col-span-2 bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col">
           {/* Header */}
-          <div className="px-5 py-4 border-b dark:border-white/8 flex items-center justify-between">
+          <div className="px-5 py-4 bg-[#141c2b] border-b border-white/10 flex items-center justify-between rounded-t-xl">
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Activity Feed</h2>
+              <h2 className="text-sm font-semibold text-white">Activity Feed</h2>
               {/* List / Grid toggle */}
               <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-white/6 rounded-lg p-0.5">
                 <button
@@ -2267,6 +2267,7 @@ export function SageDashboardClient({
                 accentClass: string
                 borderClass: string
                 bgClass: string
+                headerBg: string
                 count: number
                 rows: React.ReactNode
               }> = [
@@ -2277,6 +2278,7 @@ export function SageDashboardClient({
                   accentClass: 'text-blue-700 dark:text-blue-300',
                   borderClass: 'border-blue-300 dark:border-blue-500/30',
                   bgClass: 'bg-blue-200 dark:bg-blue-500/25',
+                  headerBg: '#6877ed',
                   count: visEmails.filter(e => e.ai_priority === 'high' || e.ai_priority === 'urgent' || e.ai_priority === 'medium').length,
                   rows: sortedEmails.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No emails this period.</p>
@@ -2304,6 +2306,7 @@ export function SageDashboardClient({
                   accentClass: 'text-purple-700 dark:text-purple-300',
                   borderClass: 'border-purple-300 dark:border-purple-500/30',
                   bgClass: 'bg-purple-200 dark:bg-purple-500/25',
+                  headerBg: '#9a3bdd',
                   count: visBots.length,
                   rows: sortedBots.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No conversations this period.</p>
@@ -2332,6 +2335,7 @@ export function SageDashboardClient({
                   accentClass: 'text-green-700 dark:text-green-300',
                   borderClass: 'border-green-300 dark:border-green-500/30',
                   bgClass: 'bg-green-200 dark:bg-green-500/25',
+                  headerBg: '#09cd1c',
                   count: visForms.length,
                   rows: sortedForms.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No form submissions this period.</p>
@@ -2360,6 +2364,7 @@ export function SageDashboardClient({
                   accentClass: 'text-amber-700 dark:text-amber-400',
                   borderClass: 'border-amber-300 dark:border-amber-500/25',
                   bgClass: 'bg-amber-100 dark:bg-amber-500/15',
+                  headerBg: '#e1c340',
                   count: visTickets.length,
                   rows: sortedTickets.length === 0
                     ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No tickets this period.</p>
@@ -2398,18 +2403,19 @@ export function SageDashboardClient({
                       >
                         {/* Tablet header */}
                         <div
-                          className="px-4 py-2.5 flex items-center justify-between cursor-pointer bg-gray-50 dark:bg-white/[0.03]"
+                          className="px-4 py-2.5 flex items-center justify-between cursor-pointer"
+                          style={{ backgroundColor: tablet.headerBg }}
                           onClick={() => setTopType(isActive ? null : tablet.key)}
                         >
-                          <div className={`flex items-center gap-2 text-xs font-semibold ${tablet.accentClass}`}>
+                          <div className="flex items-center gap-2 text-xs font-semibold text-white">
                             {tablet.icon}
                             {tablet.label}
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 ${tablet.accentClass}`}>
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/15 text-white">
                               {tablet.count}
                             </span>
-                            <ChevronDown className={`w-4 h-4 ${tablet.accentClass} transition-transform duration-200 ${isActive ? 'rotate-180' : ''}`} />
+                            <ChevronDown className={`w-4 h-4 text-white/60 transition-transform duration-200 ${isActive ? 'rotate-180' : ''}`} />
                           </div>
                         </div>
                         {/* Tablet rows */}

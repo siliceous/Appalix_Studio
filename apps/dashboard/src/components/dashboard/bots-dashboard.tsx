@@ -175,11 +175,11 @@ export function BotsDashboard({
 
       {/* ── Left: Bot triage list ──────────────────────────── */}
       <aside className="w-[280px] shrink-0 flex flex-col border-r border-gray-200 dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-200 dark:border-white/8 flex items-center justify-between shrink-0">
-          <h2 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">
+        <div className="px-4 py-3 bg-[#141c2b] border-b border-white/10 flex items-center justify-between shrink-0">
+          <h2 className="text-xs font-semibold text-white uppercase tracking-wide">
             Bots
           </h2>
-          <span className="text-xs bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-400 rounded-full px-2 py-0.5 font-medium">
+          <span className="text-xs bg-white/10 text-white rounded-full px-2 py-0.5 font-medium">
             {bots.length}
           </span>
         </div>
@@ -244,15 +244,15 @@ export function BotsDashboard({
         ) : (
           <>
             {/* Header */}
-            <div className="px-5 py-3 border-b border-gray-100 dark:border-white/8 shrink-0 flex items-center justify-between">
+            <div className="px-5 py-3 bg-[#141c2b] border-b border-white/10 shrink-0 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-md flex items-center justify-center bg-white dark:bg-white/5">
+                <div className="w-6 h-6 rounded-md flex items-center justify-center bg-white/10">
                   <Image src="/favicon.png" alt="Bot" width={12} height={12} className="w-3 h-3 object-contain" />
                 </div>
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                <span className="text-sm font-medium text-white">
                   {selectedBot.name}
                 </span>
-                <span className="text-xs text-gray-400">— {botConvs.length} leads</span>
+                <span className="text-xs text-white/60">— {botConvs.length} leads</span>
               </div>
               <a
                 href={`/bots/${selectedBot.id}`}

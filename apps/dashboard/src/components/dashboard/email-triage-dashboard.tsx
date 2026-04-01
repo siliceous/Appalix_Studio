@@ -1594,19 +1594,19 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
         ) : (
           <>
             {/* ── Select All + Assign + Delete + Search toolbar ── */}
-            <div className="flex items-center gap-3 px-5 py-2 border-b dark:border-white/8 bg-white dark:bg-[#1a1a1a] shrink-0">
+            <div className="flex items-center gap-3 px-5 py-2 bg-[#141c2b] border-b border-white/10 shrink-0 rounded-t-xl">
               <button
                 onClick={() => {
                   const allSel = visible.every(t => selectedIds.has(t.email.id))
                   setSelectedIds(allSel ? new Set() : new Set(visible.map(t => t.email.id)))
                 }}
-                className="flex items-center gap-2 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                className="flex items-center gap-2 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border border-white/20 text-white/80 hover:bg-white/10 transition-colors"
               >
                 <span className={cn(
                   'w-3.5 h-3.5 rounded border flex items-center justify-center transition-colors',
                   visible.every(t => selectedIds.has(t.email.id)) && visible.length > 0
                     ? 'bg-blue-600 border-blue-600'
-                    : 'border-gray-300 dark:border-white/20',
+                    : 'border-white/30',
                 )}>
                   {visible.every(t => selectedIds.has(t.email.id)) && visible.length > 0 && (
                     <Check className="w-2 h-2 text-white" strokeWidth={3} />
@@ -1623,7 +1623,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
                     onClick={() => { setShowBulkAssign(v => !v); setShowMiniAssign(false) }}
                     disabled={selectedIds.size === 0 || isAssigning}
                     title={selectedIds.size > 0 ? `Assign ${selectedIds.size} selected` : 'Select emails first'}
-                    className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:text-[#15A4AE] hover:border-[#15A4AE]/30 hover:bg-[#15A4AE]/10 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-gray-200 dark:disabled:hover:border-white/10 disabled:hover:text-gray-500 transition-colors"
+                    className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border border-white/20 text-white/70 hover:text-[#15A4AE] hover:border-[#15A4AE]/40 hover:bg-[#15A4AE]/10 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-white/20 disabled:hover:text-white/70 transition-colors"
                   >
                     {isAssigning ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserCheck className="w-3 h-3" />}
                     Assign to
@@ -1647,7 +1647,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
                 onClick={handleDeleteSelected}
                 disabled={selectedIds.size === 0 || isDeleting}
                 title={selectedIds.size > 0 ? `Delete ${selectedIds.size} selected` : 'Select emails first'}
-                className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:text-red-600 hover:border-red-200 dark:hover:border-red-500/30 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-gray-200 dark:disabled:hover:border-white/10 disabled:hover:text-gray-500 transition-colors"
+                className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border border-white/20 text-white/70 hover:text-red-400 hover:border-red-400/40 hover:bg-red-500/10 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-white/20 disabled:hover:text-white/70 transition-colors"
               >
                 {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                 Delete
@@ -1656,21 +1656,21 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
               <div className="flex-1" />
 
               {/* Search — queries entire mailbox */}
-              <div className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-transparent transition-colors', search ? 'border-[#15A4AE]/40 dark:border-[#15A4AE]/30' : 'border-gray-200 dark:border-white/10')}>
+              <div className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-transparent transition-colors', search ? 'border-[#15A4AE]/60' : 'border-white/20')}>
                 {isSearching
                   ? <Loader2 className="w-3 h-3 text-[#15A4AE] shrink-0 animate-spin" />
-                  : <Search className="w-3 h-3 text-gray-400 shrink-0" />}
+                  : <Search className="w-3 h-3 text-white/40 shrink-0" />}
                 <input
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   placeholder="Search all emails…"
-                  className="w-40 bg-transparent text-[11px] text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+                  className="w-40 bg-transparent text-[11px] text-white/80 placeholder-white/40 outline-none"
                 />
                 {search && !isSearching && searchResults && (
-                  <span className="text-[10px] text-gray-400 shrink-0">{searchResults.length}</span>
+                  <span className="text-[10px] text-white/40 shrink-0">{searchResults.length}</span>
                 )}
                 {search && (
-                  <button onClick={() => { setSearch(''); setSearchResults(null) }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 shrink-0">
+                  <button onClick={() => { setSearch(''); setSearchResults(null) }} className="text-white/40 hover:text-white/80 shrink-0">
                     <X className="w-2.5 h-2.5" />
                   </button>
                 )}

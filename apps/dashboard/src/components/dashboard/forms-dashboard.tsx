@@ -162,11 +162,11 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
 
       {/* ── Left panel — form list ─────────────────────────────── */}
       <aside className="w-[220px] shrink-0 flex flex-col border-r border-gray-200 dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-100 dark:border-white/8 flex items-center justify-between shrink-0">
-          <h2 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">Forms</h2>
+        <div className="px-4 py-3 bg-[#141c2b] border-b border-white/10 flex items-center justify-between shrink-0">
+          <h2 className="text-xs font-semibold text-white uppercase tracking-wide">Forms</h2>
           <button
             onClick={() => router.push('/forms/sources')}
-            className="w-5 h-5 rounded-md flex items-center justify-center bg-brand-600 hover:bg-brand-700 text-white transition-colors"
+            className="w-5 h-5 rounded-md flex items-center justify-center bg-white/15 hover:bg-white/25 text-white transition-colors"
           >
             <Plus className="w-3 h-3" />
           </button>
@@ -224,13 +224,13 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
 
       {/* ── Centre panel — submission list ──────────────────────── */}
       <div className="w-[240px] shrink-0 flex flex-col border-r border-gray-200 dark:border-white/8 bg-gray-50/40 dark:bg-[#191919] overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-100 dark:border-white/8 flex items-center justify-between shrink-0">
+        <div className="px-4 py-3 bg-[#141c2b] border-b border-white/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate max-w-[120px]">
+            <span className="text-xs font-medium text-white truncate max-w-[120px]">
               {forms.find(f => f.id === selectedFormId)?.name ?? 'Submissions'}
             </span>
             {formSubmissions.length > 0 && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-white/10 text-gray-500">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/70">
                 {formSubmissions.length}
               </span>
             )}

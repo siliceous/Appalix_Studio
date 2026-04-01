@@ -89,7 +89,7 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
   }
 
   return (
-    <div className="flex h-[calc(100vh-57px)] overflow-hidden bg-gray-50 dark:bg-[#141414]">
+    <div className="flex h-[calc(100vh-57px)] overflow-hidden bg-gray-50 dark:bg-[#141414] -mx-8 -my-8">
 
       {/* ── Left: Pipelines ─────────────────────────────── */}
       <aside className="w-72 shrink-0 border-r dark:border-white/8 bg-white dark:bg-[#1a1a1a] overflow-y-auto flex flex-col">
@@ -245,38 +245,40 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
 
       {/* ── Right: Activity ───────────────────────────────── */}
       {activityOpen && (
-        <aside className="w-72 shrink-0 border-l dark:border-white/8 bg-white dark:bg-[#1a1a1a] overflow-y-auto flex flex-col">
-          <div className="px-4 py-3 border-b dark:border-white/8 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-gray-400" />
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Activity</h3>
-            </div>
-            <button
-              onClick={() => setActivityOpen(false)}
-              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-            >
-              Hide
-            </button>
-          </div>
-          <div className="divide-y dark:divide-white/8 flex-1">
-            {activity.length === 0 ? (
-              <p className="px-4 py-8 text-sm text-gray-400 text-center">No activity yet.</p>
-            ) : activity.map(a => (
-              <div key={a.id} className="flex items-start gap-3 px-4 py-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] mt-1.5 shrink-0" />
-                <div>
-                  <p className="text-xs text-gray-700 dark:text-gray-300">{eventLabel(a.event_type)}</p>
-                  {a.payload && typeof a.payload === 'object' && 'title' in a.payload && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-                      {String((a.payload as Record<string, unknown>).title)}
-                    </p>
-                  )}
-                  <p className="flex items-center gap-1 text-[10px] text-gray-400 mt-0.5">
-                    <Clock className="w-2.5 h-2.5" /> {timeAgo(a.created_at)}
-                  </p>
-                </div>
+        <aside className="w-64 shrink-0 bg-[#f5f4f1] dark:bg-[#1c1c1c] flex flex-col overflow-hidden p-3 pr-4">
+          <div className="flex flex-col flex-1 overflow-hidden bg-white dark:bg-[#242424] rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_16px_rgba(0,0,0,0.4)] border border-gray-200/70 dark:border-white/8">
+            <div className="px-3 py-2.5 bg-[#141c2b] border-b border-white/10 flex items-center justify-between shrink-0 rounded-t-xl">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-white/70" />
+                <h3 className="text-xs font-semibold text-white">Activity</h3>
               </div>
-            ))}
+              <button
+                onClick={() => setActivityOpen(false)}
+                className="text-xs text-white/50 hover:text-white transition-colors"
+              >
+                Hide
+              </button>
+            </div>
+            <div className="divide-y dark:divide-white/8 flex-1 overflow-y-auto">
+              {activity.length === 0 ? (
+                <p className="px-4 py-8 text-sm text-gray-400 text-center">No activity yet.</p>
+              ) : activity.map(a => (
+                <div key={a.id} className="flex items-start gap-3 px-3 py-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] mt-1.5 shrink-0" />
+                  <div>
+                    <p className="text-[11px] text-gray-800 dark:text-gray-200 leading-snug">{eventLabel(a.event_type)}</p>
+                    {a.payload && typeof a.payload === 'object' && 'title' in a.payload && (
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                        {String((a.payload as Record<string, unknown>).title)}
+                      </p>
+                    )}
+                    <p className="flex items-center gap-1 text-[10px] text-gray-400 mt-0.5">
+                      <Clock className="w-2.5 h-2.5" /> {timeAgo(a.created_at)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </aside>
       )}

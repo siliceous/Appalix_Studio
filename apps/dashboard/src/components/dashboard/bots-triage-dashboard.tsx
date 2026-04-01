@@ -483,16 +483,16 @@ const [mDealTitle, setMDealTitle] = useState('')
 
       {/* ─── COLUMN 1: Bot list ───────────────────────────────────────────── */}
       <aside className="w-[168px] shrink-0 flex flex-col border-r dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
-        <div className="px-3 py-3 border-b dark:border-white/8 shrink-0 flex items-center justify-between">
+        <div className="px-3 py-3 bg-[#141c2b] border-b border-white/10 shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Image src="/favicon.png" alt="Bots" width={14} height={14} className="w-3.5 h-3.5 shrink-0 object-contain" />
-            <h2 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide">Bots</h2>
+            <h2 className="text-xs font-bold text-white uppercase tracking-wide">Bots</h2>
           </div>
           <button
             onClick={handleAnalyze}
             disabled={isAnalyzing}
             title={isAnalyzing ? 'Analysing…' : 'Analyse conversations'}
-            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-50 transition-colors"
+            className="p-1 rounded-lg text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-50 transition-colors"
           >
             {isAnalyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
           </button>
@@ -555,12 +555,12 @@ const [mDealTitle, setMDealTitle] = useState('')
 
       {/* ─── COLUMN 2: Conversation list ─────────────────────────────────── */}
       <aside className="w-[240px] shrink-0 flex flex-col border-r dark:border-white/8 bg-gray-50/50 dark:bg-[#191919] overflow-hidden">
-        <div className="px-3 py-2.5 border-b dark:border-white/8 shrink-0 flex items-center justify-between">
+        <div className="px-3 py-2.5 bg-[#141c2b] border-b border-white/10 shrink-0 flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate max-w-[140px]">
+            <p className="text-xs font-semibold text-white truncate max-w-[140px]">
               {selectedBotName ?? 'All Conversations'}
             </p>
-            <p className="text-[10px] text-gray-400">{convListVisible.length} conversation{convListVisible.length !== 1 ? 's' : ''}</p>
+            <p className="text-[10px] text-white/50">{convListVisible.length} conversation{convListVisible.length !== 1 ? 's' : ''}</p>
           </div>
           {checkedIds.size > 0 && (
             <button

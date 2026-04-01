@@ -219,7 +219,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
   async function handleBulkAssignChange(userId: string) {
     if (selectedIds.size === 0) return
     setBulkSaving(true)
-    await Promise.all([...selectedIds].map(id => assignConversation(id, userId || null)))
+    await Promise.all([...selectedIds].map(id => assignConversation(id, userId === '__unassign__' ? null : userId)))
     setBulkSaving(false)
     setSelectedIds(new Set())
     router.refresh()
@@ -270,14 +270,14 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                   defaultValue=""
                   disabled={bulkSaving}
                   onChange={e => { handleBulkPriorityChange(e.target.value); e.target.value = '' }}
-                  className="appearance-none pl-3 pr-7 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer disabled:opacity-50"
+                  className="dark-bar-select appearance-none pl-3 pr-7 py-2 text-sm border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer disabled:opacity-50"
                 >
                   <option value="" disabled>Priority</option>
                   <option value="high">High</option>
                   <option value="medium">Medium</option>
                   <option value="low">Low</option>
                 </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none" />
               </div>
 
               {/* Bulk status */}
@@ -286,14 +286,14 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                   defaultValue=""
                   disabled={bulkSaving}
                   onChange={e => { handleBulkStatusChange(e.target.value); e.target.value = '' }}
-                  className="appearance-none pl-3 pr-7 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer disabled:opacity-50"
+                  className="dark-bar-select appearance-none pl-3 pr-7 py-2 text-sm border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer disabled:opacity-50"
                 >
                   <option value="" disabled>Status</option>
                   <option value="active">Active</option>
                   <option value="completed">Completed</option>
                   <option value="archived">Archived</option>
                 </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none" />
               </div>
 
               {/* Bulk assign */}
@@ -302,16 +302,20 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                   <select
                     defaultValue=""
                     disabled={bulkSaving}
-                    onChange={e => { handleBulkAssignChange(e.target.value); e.target.value = '' }}
-                    className="appearance-none pl-3 pr-7 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer disabled:opacity-50"
+                    onChange={e => {
+                      const val = e.target.value
+                      e.target.value = ''
+                      handleBulkAssignChange(val)
+                    }}
+                    className="dark-bar-select appearance-none pl-3 pr-7 py-2 text-sm border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer disabled:opacity-50"
                   >
                     <option value="" disabled>Assign to</option>
-                    <option value="">Unassign</option>
+                    <option value="__unassign__">Unassign</option>
                     {teamMembers.map(m => (
                       <option key={m.user_id} value={m.user_id}>{m.name}</option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none" />
                 </div>
               )}
 
@@ -331,7 +335,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
       </div>
 
       {/* ── Filter bar ── */}
-      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-4 space-y-3">
+      <div className="bg-[#141c2b] rounded-xl border border-white/10 p-4 space-y-3">
 
         {/* Row 1: Search + Bot dropdown + Status */}
         <div className="flex flex-wrap gap-3 items-center">
@@ -345,11 +349,11 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
               placeholder="Search conversations…"
               onKeyDown={e => { if (e.key === 'Enter') pushFilter({ q: (e.target as HTMLInputElement).value || undefined }) }}
               onBlur={e => { if (e.target.value !== (filters.q ?? '')) pushFilter({ q: e.target.value || undefined }) }}
-              className="w-full pl-8 pr-3 py-2 text-sm border dark:border-white/10 rounded-lg bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
+              className="w-full pl-8 pr-3 py-2 text-sm border border-white/20 rounded-lg !bg-[#f5f4f1] !text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
             />
             {filters.q && (
               <button onClick={() => pushFilter({ q: undefined })}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
@@ -361,14 +365,14 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
               <select
                 value={activeBotId}
                 onChange={e => pushFilter({ bot: e.target.value || undefined })}
-                className="appearance-none pl-3 pr-8 py-2 text-sm border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer"
+                className="dark-bar-select appearance-none pl-3 pr-8 py-2 text-sm border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer"
               >
                 <option value="">All bots</option>
                 {bots.map(b => (
                   <option key={b.id} value={b.id}>{b.name}</option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none" />
             </div>
           )}
 
@@ -384,8 +388,8 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                   onClick={() => pushFilter({ status: s || undefined })}
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                     activeStatus === s
-                      ? 'bg-[#15A4AE]/15 dark:bg-[#15A4AE]/20 text-[#1f6157] dark:text-[#15A4AE] border border-[#15A4AE]/30'
-                      : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
+                      ? 'bg-white/20 text-white border border-white/40'
+                      : 'bg-white/8 text-white hover:bg-white/15'
                   }`}>
                   {s === '' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
                   {count !== null && <span className="ml-1 opacity-60">({count})</span>}
@@ -396,8 +400,8 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
               onClick={() => pushFilter({ status: 'trash' })}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                 activeStatus === 'trash'
-                  ? 'bg-[#15A4AE]/15 dark:bg-[#15A4AE]/20 text-[#1f6157] dark:text-[#15A4AE] border border-[#15A4AE]/30'
-                  : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
+                  ? 'bg-white/20 text-white border border-white/40'
+                  : 'bg-white/8 text-white hover:bg-white/15'
               }`}>
               Trash
             </button>
@@ -410,8 +414,8 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
             onClick={() => pushFilter({ platform: undefined })}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
               activePlatform === 'all'
-                ? 'bg-[#15A4AE]/15 dark:bg-[#15A4AE]/20 text-[#1f6157] dark:text-[#15A4AE] border border-[#15A4AE]/30'
-                : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
+                ? 'bg-white/20 text-white border border-white/40'
+                : 'bg-white/8 text-white hover:bg-white/15'
             }`}>
             All platforms
           </button>
@@ -421,7 +425,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                 activePlatform === p
                   ? 'bg-[#15A4AE] text-white'
-                  : 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12'
+                  : 'bg-white/8 text-white hover:bg-white/15'
               }`}>
               {PLATFORM_META[p]?.label ?? p}
             </button>
@@ -442,22 +446,22 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b dark:border-white/8 bg-gray-50 dark:bg-white/[0.03]">
+              <tr className="bg-[#141c2b]">
                 {!readonly && (
                   <th className="px-4 py-3 w-px">
                     <input type="checkbox" checked={allSelected} onChange={toggleSelectAll}
-                      className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-[#15A4AE] cursor-pointer" />
+                      className="w-4 h-4 rounded border-white/30 accent-[#15A4AE] cursor-pointer" />
                   </th>
                 )}
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Priority</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Conversation</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Bot</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Platform</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Msgs</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide w-[160px]">Last active</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</th>
-                {canAssign && <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Assigned to</th>}
-                <th className="text-right px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide w-px whitespace-nowrap">Actions</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Priority</th>
+                <th className="text-left px-5 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Conversation</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Bot</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Platform</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Msgs</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide w-[160px]">Last active</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Status</th>
+                {canAssign && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Assigned to</th>}
+                <th className="text-right px-5 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide w-px whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-white/5">

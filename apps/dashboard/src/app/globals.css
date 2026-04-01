@@ -4,11 +4,11 @@
 
 @layer utilities {
   /* ── Light mode: make grey text dark enough to read ── */
-  /* Scoped to dashboard pages only — marketing-site resets these below */
-  :not(.marketing-site) .text-gray-300 { color: #4b5563; }
-  :not(.marketing-site) .text-gray-400 { color: #374151; }
-  :not(.marketing-site) .text-gray-500 { color: #1f2937; }
-  :not(.marketing-site) .text-gray-600 { color: #111827; }
+  /* Scoped to dashboard pages only — marketing-site and cool theme reset these */
+  :not(.marketing-site):not(.cool):not(.dark) .text-gray-300 { color: #4b5563; }
+  :not(.marketing-site):not(.cool):not(.dark) .text-gray-400 { color: #374151; }
+  :not(.marketing-site):not(.cool):not(.dark) .text-gray-500 { color: #1f2937; }
+  :not(.marketing-site):not(.cool):not(.dark) .text-gray-600 { color: #111827; }
 
   /* ── Marketing pages — restore original Tailwind gray values ── */
   .marketing-site .text-gray-300 { color: rgb(209 213 219); }
@@ -72,14 +72,14 @@
     border-color: rgba(255, 255, 255, 0.08);
   }
 
-  /* Text — all grey shades mapped to clearly-readable light values */
-  .dark .text-gray-900 { color: #f8fafc; }
-  .dark .text-gray-800 { color: #f1f5f9; }
-  .dark .text-gray-700 { color: #e2e8f0; }
-  .dark .text-gray-600 { color: #cbd5e1; }
-  .dark .text-gray-500 { color: #94a3b8; }
-  .dark .text-gray-400 { color: #94a3b8; }
-  .dark .text-gray-300 { color: #cbd5e1; }
+  /* Text — primary white, muted shades → teal so nothing goes unreadable */
+  .dark .text-gray-900 { color: #f8fafc !important; }
+  .dark .text-gray-800 { color: #e2f7fb !important; }
+  .dark .text-gray-700 { color: #b2eef8 !important; }
+  .dark .text-gray-600 { color: #7ee8f8 !important; }
+  .dark .text-gray-500 { color: #3dd6f0 !important; }
+  .dark .text-gray-400 { color: #15A4AE !important; }
+  .dark .text-gray-300 { color: #15A4AE !important; }
 
   /* Coloured badge backgrounds — replace light tints with dark transparent versions */
   .dark .bg-orange-100  { background-color: rgba(251,146,60,0.12); }
@@ -106,6 +106,22 @@
     background-color: #252525;
     color: #f9fafb;
     border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Dark-bar selects (e.g. forms filter bar) — override global dark rule */
+  select.dark-bar-select {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+  }
+  select.dark-bar-select optgroup {
+    background-color: #1e2535;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  select.dark-bar-select option {
+    background-color: #1e2535;
+    color: #ffffff;
   }
 
   .dark input::placeholder,
@@ -177,59 +193,80 @@
   }
 
   /* ── Cool mode — deep navy + electric blue theme ── */
-  .cool body {
-    background-color: #050a30;
+  .cool body,
+  .cool main,
+  .cool #__next,
+  .cool [data-nextjs-scroll-focus-boundary] {
+    background-color: #050a30 !important;
     color: #f4f6fc;
   }
 
   .cool * {
-    border-color: rgba(104, 119, 237, 0.2);
+    border-color: rgba(255, 255, 255, 0.15);
   }
 
   /* Page & layout surfaces */
-  .cool .bg-gray-50  { background-color: #0a1040; }
-  .cool .bg-gray-100 { background-color: #0d1550; }
-  .cool .bg-white    { background-color: #0d1550; }
+  .cool .bg-gray-50  { background-color: #0d1550; }
+  .cool .bg-gray-100 { background-color: #0b4e66; }
+  .cool .bg-white    { background-color: #0b4e66; }
+
+  /* Layout wrappers — hardcoded bg-[#f5f4f1] and bg-[#1c1c1c] in layout.tsx */
+  .cool .bg-\[\#f5f4f1\],
+  .cool .bg-\[\#f5f5f5\],
+  .cool .bg-\[\#1c1c1c\] { background-color: #050a30 !important; }
 
   /* Sidebar & panel backgrounds */
-  .cool .bg-\[\#1c1c1c\] { background-color: #080d38; }
-  .cool .bg-\[\#1a1a1a\] { background-color: #070c35; }
+  .cool .bg-\[\#1a1a1a\] { background-color: #040924; }
   .cool .bg-\[\#141414\] { background-color: #050a30; }
-  .cool .bg-\[\#232323\] { background-color: #0d1550; }
-  .cool .bg-\[\#2a2a2a\] { background-color: #101858; }
+  .cool .bg-\[\#232323\] { background-color: #060c38; }
+  .cool .bg-\[\#2a2a2a\] { background-color: #070e40; }
 
-  /* Card glow shadows */
+  /* Cards */
   .cool .rounded-xl.bg-white,
   .cool .rounded-2xl.bg-white,
   .cool .rounded-lg.bg-white {
-    box-shadow: 0 1px 3px rgba(4, 187, 255, 0.08), 0 4px 20px rgba(35, 61, 255, 0.15);
+    background-color: #0b4e66 !important;
+    border-color: rgba(4, 187, 255, 0.2) !important;
+    box-shadow: 0 1px 3px rgba(4, 187, 255, 0.08), 0 4px 20px rgba(4, 187, 255, 0.12);
   }
 
   /* Hover backgrounds */
   .cool .hover\:bg-gray-50:hover,
-  .cool .hover\:bg-gray-100:hover {
-    background-color: #0d1550;
+  .cool .hover\:bg-gray-100:hover,
+  .cool .group-hover\:bg-gray-50,
+  .cool .group-hover\:hover\:bg-gray-100 {
+    background-color: #0d1550 !important;
   }
+
+  /* Hover text — keep white on the dark hover surface */
+  .cool .hover\:text-gray-900:hover { color: #ffffff !important; }
+  .cool .hover\:text-gray-700:hover { color: #e2f7fb !important; }
 
   /* Dividers */
   .cool .divide-y > * + * {
-    border-color: rgba(104, 119, 237, 0.2);
+    border-color: rgba(255, 255, 255, 0.12);
   }
 
-  /* Text */
-  .cool .text-gray-900 { color: #f4f6fc; }
-  .cool .text-gray-800 { color: #dce2f8; }
-  .cool .text-gray-700 { color: #b8c3eb; }
-  .cool .text-gray-600 { color: #a1a9c4; }
-  .cool .text-gray-500 { color: #8892b8; }
-  .cool .text-gray-400 { color: #6877ed; }
+  /* Text — primary white, muted → teal so nothing washes out on the periwinkle background */
+  .cool .text-gray-900 { color: #ffffff !important; }
+  .cool .text-gray-800 { color: #f4f6fc !important; }
+  .cool .text-gray-700 { color: #e2f7fb !important; }
+  .cool .text-gray-600 { color: #7ee8f8 !important; }
+  .cool .text-gray-500 { color: #3dd6f0 !important; }
+  .cool .text-gray-400 { color: #04bbff !important; }
+  .cool .text-gray-300 { color: #04bbff !important; }
+
+  /* Catch any remaining dark text */
+  .cool a, .cool button, .cool span, .cool p, .cool h1, .cool h2, .cool h3, .cool h4, .cool label {
+    color: inherit;
+  }
 
   /* Form inputs */
   .cool input:not([type="checkbox"]):not([type="radio"]),
   .cool select,
   .cool textarea {
-    background-color: #0a1040;
-    border-color: rgba(104, 119, 237, 0.3);
+    background-color: #040924;
+    border-color: rgba(255, 255, 255, 0.2);
     color: #f4f6fc;
   }
 
