@@ -71,10 +71,21 @@ export default async function PipelinesPage() {
     contact?: { name: string; email: string } | null
   }
 
+  type RawDeal = { id: string; title: string; value: number | null; currency: string | null; status: string; created_at: string; contact: { id: string; name: string; email: string }[] }
+  const unassignedDeals: DealRow[] = ((dealsRaw ?? []) as RawDeal[]).map(d => ({
+    id:         d.id,
+    title:      d.title,
+    value:      d.value,
+    currency:   d.currency ?? 'USD',
+    status:     d.status as import('@/lib/types').SageDealStatus,
+    created_at: d.created_at,
+    contact:    d.contact?.[0] ?? null,
+  }))
+
   return (
     <PipelinesClient
       pipelines={pipelines}
-      unassignedDeals={(dealsRaw ?? []) as DealRow[]}
+      unassignedDeals={unassignedDeals}
       activity={(activityRaw ?? []) as SageActivityLog[]}
       canWrite={canWrite}
     />
