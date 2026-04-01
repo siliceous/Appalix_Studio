@@ -116,15 +116,16 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
               <p className="text-[11px] text-gray-400 mt-1">Create one to start organising deals.</p>
             </div>
           ) : pipelines.map(pipeline => (
-            <div
+            <Link
               key={pipeline.id}
+              href={`/sage/pipelines/${pipeline.id}`}
               onDragOver={e => { e.preventDefault(); setDragOverId(pipeline.id) }}
               onDragLeave={() => setDragOverId(null)}
-              onDrop={() => handleDrop(pipeline.id)}
-              className={`group rounded-xl border transition-all ${
+              onDrop={e => { e.preventDefault(); handleDrop(pipeline.id) }}
+              className={`group block rounded-xl border transition-all duration-150 ${
                 dragOverId === pipeline.id
                   ? 'border-[#15A4AE] bg-[#15A4AE]/5 dark:bg-[#15A4AE]/10 shadow-sm'
-                  : 'border-gray-100 dark:border-white/8 bg-gray-50 dark:bg-white/3 hover:bg-white dark:hover:bg-white/5'
+                  : 'border-gray-100 dark:border-white/8 bg-white dark:bg-[#232323] shadow-[0_1px_4px_rgba(0,0,0,0.08),0_4px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.3)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.12),0_6px_20px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] hover:-translate-y-0.5'
               }`}
             >
               <div className="px-3 py-3">
@@ -135,7 +136,7 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
                   </div>
                   {canWrite && (
                     <button
-                      onClick={() => handleDelete(pipeline.id)}
+                      onClick={e => { e.preventDefault(); handleDelete(pipeline.id) }}
                       disabled={deleting === pipeline.id}
                       className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all shrink-0"
                     >
@@ -145,23 +146,14 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
                     </button>
                   )}
                 </div>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-[10px] text-gray-400">
-                    {pipeline.stages?.length ?? 0} stages · {pipeline.deal_count} deal{pipeline.deal_count !== 1 ? 's' : ''}
-                  </span>
-                  <Link
-                    href={`/sage/pipelines/${pipeline.id}`}
-                    className="flex items-center gap-0.5 text-[10px] text-[#15A4AE] hover:underline font-medium"
-                    onClick={e => e.stopPropagation()}
-                  >
-                    Open <ArrowRight className="w-2.5 h-2.5" />
-                  </Link>
-                </div>
+                <p className="text-[10px] text-gray-400 mt-2">
+                  {pipeline.stages?.length ?? 0} stages · {pipeline.deal_count} deal{pipeline.deal_count !== 1 ? 's' : ''}
+                </p>
                 {dragOverId === pipeline.id && (
                   <p className="text-[10px] text-[#15A4AE] mt-1.5 font-medium">Drop to assign →</p>
                 )}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </aside>

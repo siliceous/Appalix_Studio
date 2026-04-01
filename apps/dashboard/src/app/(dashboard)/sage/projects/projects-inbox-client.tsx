@@ -111,9 +111,10 @@ export function ProjectsInboxClient({ boards: initialBoards, activity }: Props) 
               <p className="text-[11px] text-gray-400 mt-1">Create one to organise projects.</p>
             </div>
           ) : boards.map(board => (
-            <div
+            <Link
               key={board.id}
-              className="group rounded-xl border border-gray-100 dark:border-white/8 bg-gray-50 dark:bg-white/3 hover:bg-white dark:hover:bg-white/5 transition-all"
+              href={`/sage/projects/board/${board.id}`}
+              className="group block rounded-xl border border-gray-100 dark:border-white/8 bg-white dark:bg-[#232323] shadow-[0_1px_4px_rgba(0,0,0,0.08),0_4px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.3)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.12),0_6px_20px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] hover:-translate-y-0.5 transition-all duration-150"
             >
               <div className="px-3 py-3">
                 <div className="flex items-start justify-between gap-2">
@@ -122,7 +123,7 @@ export function ProjectsInboxClient({ boards: initialBoards, activity }: Props) 
                     <span className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{board.name}</span>
                   </div>
                   <button
-                    onClick={() => handleDelete(board.id)}
+                    onClick={e => { e.preventDefault(); handleDelete(board.id) }}
                     disabled={deleting === board.id}
                     className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all shrink-0"
                   >
@@ -148,19 +149,11 @@ export function ProjectsInboxClient({ boards: initialBoards, activity }: Props) 
                     )}
                   </div>
                 )}
-                <div className="flex items-center justify-between mt-2 ml-5">
-                  <span className="text-[10px] text-gray-400">
-                    {board.project_count} project{board.project_count !== 1 ? 's' : ''}
-                  </span>
-                  <Link
-                    href={`/sage/projects/board/${board.id}`}
-                    className="flex items-center gap-0.5 text-[10px] text-[#15A4AE] hover:underline font-medium"
-                  >
-                    Open board <ArrowRight className="w-2.5 h-2.5" />
-                  </Link>
-                </div>
+                <p className="text-[10px] text-gray-400 mt-2 ml-5">
+                  {board.project_count} project{board.project_count !== 1 ? 's' : ''}
+                </p>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </aside>
