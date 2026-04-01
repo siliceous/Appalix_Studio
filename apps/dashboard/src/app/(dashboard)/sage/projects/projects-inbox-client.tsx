@@ -86,7 +86,7 @@ export function ProjectsInboxClient({ boards: initialBoards, activity }: Props) 
   }
 
   return (
-    <div className="flex h-[calc(100vh-57px)] overflow-hidden bg-gray-50 dark:bg-[#141414] -mx-8 -my-8">
+    <div className="flex h-full overflow-hidden bg-gray-50 dark:bg-[#141414]">
 
       {/* ── Left: Project Boards ─────────────────────────── */}
       <aside className="w-80 shrink-0 border-r dark:border-white/8 bg-white dark:bg-[#1a1a1a] overflow-y-auto flex flex-col">
