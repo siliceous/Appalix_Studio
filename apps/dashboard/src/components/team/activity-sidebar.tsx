@@ -104,24 +104,16 @@ function fmtDate(iso: string): string {
 
 
 function ActivityItem({ entry }: { entry: ActivityEntry }) {
-  const source = entry.is_upcoming ? null : getSource(entry)
-  const sourceCls = source ? (SOURCE_COLORS[source] ?? SOURCE_COLORS.manual) : ''
-
   return (
     <div className="flex items-start gap-2 py-2 border-b dark:border-white/6 last:border-0">
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {source && (
-            <span className={`shrink-0 text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${sourceCls}`}>
-              {source}
-            </span>
-          )}
-          {entry.is_upcoming && (
+        {entry.is_upcoming && (
+          <div className="flex items-center gap-1.5 mb-0.5">
             <span className="shrink-0 text-[9px] px-1 py-0.5 rounded-full bg-brand-100 dark:bg-brand-500/15 text-brand-600 dark:text-brand-400 font-medium border border-brand-200 dark:border-brand-500/20 leading-tight">
               soon
             </span>
-          )}
-        </div>
+          </div>
+        )}
         <p className="text-[11px] text-gray-800 dark:text-gray-200 leading-snug mt-0.5">
           {entry.is_upcoming
             ? (entry.entity_name ?? entry.event_type.replace(/_/g, ' '))
@@ -231,12 +223,6 @@ export function ActivitySidebar({ activity, date, currentPath, viewingAs }: Prop
           </div>
         </div>
 
-        {/* Colored bars — one per source that has items */}
-        <div className="flex h-1">
-          {SOURCE_BARS.filter(s => past.some(e => getSource(e) === s.key)).map(s => (
-            <div key={s.key} className={`flex-1 ${s.bar}`} title={s.label} />
-          ))}
-        </div>
       </div>
 
       {/* Date label row */}
