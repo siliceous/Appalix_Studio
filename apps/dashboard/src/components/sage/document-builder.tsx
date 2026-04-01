@@ -885,6 +885,7 @@ export function DocumentBuilder({ mode, docType: docTypeProp, document: doc, con
                     <div className="relative">
                       <input
                         value={customer.company}
+                        autoComplete="off"
                         onChange={e => {
                           updateCustomer('company', e.target.value)
                           setActiveSearchField('company')
@@ -893,9 +894,9 @@ export function DocumentBuilder({ mode, docType: docTypeProp, document: doc, con
                         onFocus={() => {
                           setActiveSearchField('company')
                           setShowContacts(true)
-                          if (!customer.company) setContactResults(contacts.slice(0, 8))
+                          onContactSearchChange(customer.company)
                         }}
-                        onBlur={() => setTimeout(() => { setShowContacts(false); setActiveSearchField(null) }, 150)}
+                        onBlur={() => setTimeout(() => { setShowContacts(false); setActiveSearchField(null) }, 200)}
                         placeholder="Company name"
                         className={INPUT}
                       />
@@ -904,7 +905,7 @@ export function DocumentBuilder({ mode, docType: docTypeProp, document: doc, con
                       )}
                     </div>
                     {showContacts && activeSearchField === 'company' && (
-                      <div className="absolute top-full left-0 z-20 mt-1 w-full bg-white dark:bg-[#222] border border-gray-200 dark:border-white/10 rounded-xl shadow-lg overflow-hidden max-h-52 overflow-y-auto">
+                      <div className="absolute top-full left-0 z-50 mt-1 w-full bg-white dark:bg-[#222] border border-gray-200 dark:border-white/10 rounded-xl shadow-lg overflow-hidden max-h-52 overflow-y-auto">
                         {contactResults.map(c => (
                           <button key={c.id} type="button" onMouseDown={() => selectContact(c)}
                             className="w-full text-left px-3 py-2 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors flex items-center gap-2 border-b border-gray-50 dark:border-white/5 last:border-0">
@@ -936,6 +937,7 @@ export function DocumentBuilder({ mode, docType: docTypeProp, document: doc, con
                     <div className="relative">
                       <input
                         value={customer.name}
+                        autoComplete="off"
                         onChange={e => {
                           updateCustomer('name', e.target.value)
                           setActiveSearchField('person')
@@ -944,9 +946,9 @@ export function DocumentBuilder({ mode, docType: docTypeProp, document: doc, con
                         onFocus={() => {
                           setActiveSearchField('person')
                           setShowContacts(true)
-                          if (!customer.name) setContactResults(contacts.slice(0, 8))
+                          onContactSearchChange(customer.name)
                         }}
-                        onBlur={() => setTimeout(() => { setShowContacts(false); setActiveSearchField(null) }, 150)}
+                        onBlur={() => setTimeout(() => { setShowContacts(false); setActiveSearchField(null) }, 200)}
                         placeholder="Contact name"
                         className={INPUT}
                       />
@@ -955,7 +957,7 @@ export function DocumentBuilder({ mode, docType: docTypeProp, document: doc, con
                       )}
                     </div>
                     {showContacts && activeSearchField === 'person' && (
-                      <div className="absolute top-full left-0 z-20 mt-1 w-full bg-white dark:bg-[#222] border border-gray-200 dark:border-white/10 rounded-xl shadow-lg overflow-hidden max-h-52 overflow-y-auto">
+                      <div className="absolute top-full left-0 z-50 mt-1 w-full bg-white dark:bg-[#222] border border-gray-200 dark:border-white/10 rounded-xl shadow-lg overflow-hidden max-h-52 overflow-y-auto">
                         {contactResults.map(c => (
                           <button key={c.id} type="button" onMouseDown={() => selectContact(c)}
                             className="w-full text-left px-3 py-2 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors flex items-center gap-2 border-b border-gray-50 dark:border-white/5 last:border-0">

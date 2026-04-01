@@ -43,7 +43,7 @@ export default async function NewDocumentPage({
       .eq('workspace_id', workspaceId)
       .is('deleted_at', null)
       .order('name')
-      .limit(20),
+      .limit(200),
     admin
       .from('sage_projects')
       .select('id,name')

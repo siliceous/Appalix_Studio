@@ -540,7 +540,7 @@ export async function searchContacts(query: string): Promise<{
     .eq('workspace_id', workspaceId)
     .is('deleted_at', null)
     .order('name')
-    .limit(10)
+    .limit(20)
   if (query.trim()) {
     q = q.or(
       `name.ilike.%${query}%,email.ilike.%${query}%,company_name.ilike.%${query}%`
