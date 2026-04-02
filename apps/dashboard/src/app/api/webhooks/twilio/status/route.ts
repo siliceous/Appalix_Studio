@@ -21,8 +21,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false }, { status: 500 })
   }
 
-  const appUrl     = process.env.NEXT_PUBLIC_APP_URL ?? ''
-  const webhookUrl = `${appUrl}/api/webhooks/twilio/status`
+  const webhookUrl = 'https://app.appalix.ai/api/webhooks/twilio/status'
 
   const isValid = twilio.validateRequest(authToken, signature, webhookUrl, formParams)
   if (!isValid) {

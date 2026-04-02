@@ -43,9 +43,9 @@ export async function POST(
     return new NextResponse('<Response/>', { status: 500, headers: { 'Content-Type': 'text/xml' } })
   }
 
-  // Build the full URL Twilio signed (must match exactly what you configured in the Twilio console)
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
-  const webhookUrl = `${appUrl}/api/webhooks/twilio/${integrationId}`
+  // Build the full URL Twilio signed — use the actual request URL so it always matches
+  // what was configured in the Twilio console, regardless of env var availability
+  const webhookUrl = `https://app.appalix.ai/api/webhooks/twilio/${integrationId}`
 
   // Parse form body into a plain object for signature validation
   const formParams: Record<string, string> = {}
