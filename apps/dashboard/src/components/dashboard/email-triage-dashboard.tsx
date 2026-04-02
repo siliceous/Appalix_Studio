@@ -263,17 +263,15 @@ interface DetailCardProps {
   onDelete:           (id: string) => void
   onClose:            () => void
   onAnalyze:          (id: string) => void
-  onAssign?:          (emailId: string, userId: string) => void
   onPriorityChanged?: (emailId: string, priority: string) => void
   isDeleting:         boolean
   isAnalyzing:        boolean
   emailProvider:      'gmail' | 'microsoft' | null
-  teamMembers?:       TeamMember[]
   readonly?:          boolean
   initialReply?:      boolean
 }
 
-function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, onAction, onAssign, onPriorityChanged, isDeleting, isAnalyzing, emailProvider, teamMembers = [], modalSize, onResize, readonly = false, initialReply = false }: DetailCardProps) {
+function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAnalyze, onAction, onPriorityChanged, isDeleting, isAnalyzing, emailProvider, modalSize, onResize, readonly = false, initialReply = false }: DetailCardProps) {
   const { email, meeting } = t
   const entities  = email.ai_entities
   const drafts    = email.ai_reply_drafts ?? []
@@ -298,7 +296,7 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
   const [summaryCollapsed, setSummaryCollapsed] = useState(false)
   const [priorityValue,  setPriorityValue]  = useState<string | null>(null)
   const [priorityOpen,   setPriorityOpen]   = useState(false)
-  const [assignMenuOpen, setAssignMenuOpen] = useState(false)
+
 
   const currentPriority = priorityValue ?? email.ai_priority ?? null
 
@@ -469,40 +467,6 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
               <span className={cn('text-[11px] px-2.5 py-0.5 rounded-full font-semibold border', categoryClass(email.ai_category))}>
                 {email.ai_category}
               </span>
-            )}
-            {/* Assign to — single email */}
-            {teamMembers.length > 0 && onAssign && (
-              <div className="relative">
-                <button
-                  onClick={e => { e.stopPropagation(); setAssignMenuOpen(v => !v) }}
-                  title="Assign to"
-                  className={cn(
-                    'flex items-center justify-center w-8 h-8 rounded-lg transition-colors border',
-                    assignMenuOpen
-                      ? 'bg-[#15A4AE]/10 border-[#15A4AE]/30 text-[#15A4AE]'
-                      : 'border-transparent text-gray-400 hover:text-[#15A4AE] hover:bg-[#15A4AE]/10 hover:border-[#15A4AE]/20',
-                  )}
-                >
-                  <UserCheck className="w-3.5 h-3.5" />
-                </button>
-                {assignMenuOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-[#2a2a2a] border dark:border-white/10 rounded-xl shadow-xl z-[200] overflow-hidden">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide px-3 pt-2.5 pb-1">Assign to</p>
-                    {teamMembers.map(m => (
-                      <button
-                        key={m.user_id}
-                        onClick={e => { e.stopPropagation(); onAssign(email.id, m.user_id); setAssignMenuOpen(false) }}
-                        className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2"
-                      >
-                        <span className="w-6 h-6 rounded-full bg-[#15A4AE]/15 text-[#15A4AE] flex items-center justify-center text-[10px] font-bold shrink-0">
-                          {m.name.charAt(0).toUpperCase()}
-                        </span>
-                        {m.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
             )}
             <button
               onClick={e => { e.stopPropagation(); onDelete(email.id) }}
@@ -694,15 +658,21 @@ function DetailCard({ t, allEmails, actioned, onDismiss, onDelete, onClose, onAn
         ))}
 
         {/* Original email body — shown in detail view (not in reply mode) */}
-        {!showReply && (email.body_text || email.body_html) && (
+        {!showReply && (
           <div className="rounded-xl border border-gray-200 dark:border-white/8 overflow-hidden">
             <div className="px-4 py-2.5 bg-gray-50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/8">
               <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Email</span>
             </div>
             <div className="px-4 py-3.5">
-              <p className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed font-mono">
-                {email.body_text ?? ''}
-              </p>
+              {email.body_text || email.body_html ? (
+                <p className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed font-mono">
+                  {email.body_text ?? ''}
+                </p>
+              ) : (
+                <p className="text-xs text-gray-400 dark:text-gray-500 italic">
+                  No message body — try syncing your inbox to reload this email.
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -1147,11 +1117,6 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
     })
   }
 
-  function handleAssignOne(emailId: string, userId: string) {
-    startAssignTransition(async () => {
-      await assignEmailsTo([emailId], userId)
-    })
-  }
 
   function toggleSelect(emailId: string) {
     setSelectedIds(prev => {
@@ -1342,7 +1307,7 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
     onAction:     openModal,
     onDismiss:    dismiss,
     onDelete:     handleDeleteOne,
-    onAssign:     teamMembers.length > 0 ? handleAssignOne : undefined,
+
     onClose:      () => setSelectedEmailId(''),
     onAnalyze:    handleAnalyzeOne,
     isDeleting,
@@ -1443,22 +1408,6 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
               <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-500/75 dark:text-amber-400/75 font-semibold border border-amber-200/70 dark:border-amber-500/18">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />{medCount} Medium
               </span>
-            )}
-            {visible.length > 0 && (
-              <button
-                onClick={handleReanalyze}
-                disabled={isReanalyzing || isSyncing}
-                className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/15 disabled:opacity-50 transition-colors"
-              >
-                {isReanalyzing ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Brain className="w-2.5 h-2.5" />}
-                {isReanalyzing
-                  ? 'Analysing…'
-                  : selectedIds.size > 0
-                    ? `Analyse ${selectedIds.size}`
-                    : unanalyzedCount > 0
-                      ? `Analyse ${unanalyzedCount}`
-                      : `Analyse ${visible.length}`}
-              </button>
             )}
           </div>
           {(syncMsg || (analyzeMsg && !isReanalyzing)) && (
@@ -1593,6 +1542,13 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
 
         ) : (
           <>
+            {/* ── Page heading ── */}
+            <div className="px-5 py-4 shrink-0">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Emails</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                Your inbox — {visible.length} email{visible.length !== 1 ? 's' : ''} shown
+              </p>
+            </div>
             {/* ── Select All + Assign + Delete + Search toolbar ── */}
             <div className="flex items-center gap-3 px-5 py-2 bg-[#141c2b] border-b border-white/10 shrink-0 rounded-t-xl">
               <button
@@ -1616,6 +1572,24 @@ export function EmailTriageDashboard({ triageEmails, emailProvider, connectedEma
                   ? `${selectedIds.size} selected`
                   : `Select all (${visible.length})`}
               </button>
+
+              {/* Analyse button */}
+              {visible.length > 0 && (
+                <button
+                  onClick={handleReanalyze}
+                  disabled={isReanalyzing || isSyncing}
+                  className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border border-white/20 text-white/70 hover:text-blue-300 hover:border-blue-400/40 hover:bg-blue-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isReanalyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Brain className="w-3 h-3" />}
+                  {isReanalyzing
+                    ? 'Analysing…'
+                    : selectedIds.size > 0
+                      ? `Analyse ${selectedIds.size}`
+                      : unanalyzedCount > 0
+                        ? `Analyse ${unanalyzedCount}`
+                        : `Analyse ${visible.length}`}
+                </button>
+              )}
 
               {teamMembers.length > 0 && (
                 <div className="relative">

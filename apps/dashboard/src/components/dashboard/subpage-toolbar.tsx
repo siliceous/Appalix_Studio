@@ -108,7 +108,7 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
   }
 
   const ACTIVE_CLS = 'bg-white/20 text-white border-white/40'
-  const HOVER_CLS  = 'text-white/50 border-transparent hover:bg-white/10 hover:text-white'
+  const HOVER_CLS  = 'text-white border-transparent hover:bg-white/10'
 
   const PAGES: { key: SubpageSource; label: string; Icon: React.ElementType }[] = [
     { key: 'email',   label: 'Email',   Icon: Mail          },
@@ -118,7 +118,7 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
   ]
 
   return (
-    <nav className="px-4 border-b border-white/10 bg-[#141c2b] grid grid-cols-[1fr_auto] items-end shrink-0 gap-x-4 min-h-[52px] pb-2">
+    <nav className="px-4 ml-3 mr-4 border-b border-white/10 bg-[#141c2b] rounded-b-2xl shadow-lg grid grid-cols-[1fr_auto] items-end shrink-0 gap-x-4 min-h-[52px] pb-2">
       {/* Overview link + page pill buttons */}
       <div className="flex items-end gap-1.5 min-w-0 overflow-x-auto">
         <Link

@@ -1975,18 +1975,18 @@ export function SageDashboardClient({
           /* Expanded: full donut cards */
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             {[
-              { label: 'Emails',    sub: 'high & medium unread',  Icon: Mail,          iconCls: 'text-blue-500',   segs: emailSegs,  total: visEmails.length,  href: viewAsUserId ? `/dashboard/email?viewAs=${viewAsUserId}`    : '/dashboard/email'    },
-              { label: 'Conversations', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-500', segs: botSegs,    total: visBots.length,    href: viewAsUserId ? `/dashboard/bots?viewAs=${viewAsUserId}`    : '/dashboard/bots'    },
-              { label: 'Forms',     sub: 'all submissions',       Icon: FileText,      iconCls: 'text-green-500',  segs: formSegs,   total: visForms.length,   href: viewAsUserId ? `/dashboard/forms?viewAs=${viewAsUserId}`   : '/dashboard/forms'   },
-              { label: 'Tickets',   sub: 'all tickets',           Icon: TicketIcon,    iconCls: 'text-amber-500',  segs: ticketSegs, total: tickets.length,    href: viewAsUserId ? `/dashboard/tickets?viewAs=${viewAsUserId}` : '/dashboard/tickets' },
+              { label: 'Emails',        sub: 'high & medium unread',  Icon: Mail,          iconCls: 'text-blue-200',   barCls: 'bg-blue-600',    segs: emailSegs,  total: visEmails.length,  href: viewAsUserId ? `/dashboard/email?viewAs=${viewAsUserId}`    : '/dashboard/email'    },
+              { label: 'Conversations', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-200', barCls: 'bg-purple-600',  segs: botSegs,    total: visBots.length,    href: viewAsUserId ? `/dashboard/bots?viewAs=${viewAsUserId}`    : '/dashboard/bots'    },
+              { label: 'Forms',         sub: 'all submissions',       Icon: FileText,      iconCls: 'text-green-200',  barCls: 'bg-green-600',   segs: formSegs,   total: visForms.length,   href: viewAsUserId ? `/dashboard/forms?viewAs=${viewAsUserId}`   : '/dashboard/forms'   },
+              { label: 'Tickets',       sub: 'all tickets',           Icon: TicketIcon,    iconCls: 'text-amber-200',  barCls: 'bg-amber-500',   segs: ticketSegs, total: tickets.length,    href: viewAsUserId ? `/dashboard/tickets?viewAs=${viewAsUserId}` : '/dashboard/tickets' },
             ].map(card => {
               const isLoading = loadingDonut === card.label
               return (
                 <button key={card.label}
                   onClick={() => { setLoadingDonut(card.label); router.push(card.href) }}
                   className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-hidden flex flex-col items-center hover:shadow-md hover:border-gray-300 dark:hover:border-white/15 transition-all cursor-pointer w-full">
-                  {/* Dark top bar */}
-                  <div className="w-full flex items-center justify-between px-4 py-2.5 bg-[#141c2b]">
+                  {/* Coloured top bar */}
+                  <div className={`w-full flex items-center justify-between px-4 py-2.5 ${card.barCls}`}>
                     <p className="text-sm font-semibold text-white">{card.label}</p>
                     {isLoading
                       ? <Loader2 className={`w-4 h-4 animate-spin ${card.iconCls}`} />
