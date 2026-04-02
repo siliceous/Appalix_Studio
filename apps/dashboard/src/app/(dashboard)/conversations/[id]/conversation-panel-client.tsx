@@ -617,58 +617,61 @@ export function ConversationPanelClient({
         )}
 
         {/* Messages */}
-        <div className={`flex-1 overflow-y-auto px-6 py-4 space-y-3 transition-opacity duration-700 ${isUserActive ? 'opacity-100' : 'opacity-50'}`}>
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
           {liveMessages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <MessageSquare className="w-8 h-8 text-gray-200 dark:text-gray-600 mb-2" />
               <p className="text-sm text-gray-400">No messages yet.</p>
             </div>
-          ) : (
-            <>
-              {renderMessages()}
-              {!isUserActive && (
-                <div className="flex items-center gap-3 my-2">
-                  <div className="flex-1 h-px bg-gray-200 dark:bg-white/8" />
-                  <span className="text-[10px] font-semibold text-gray-400 tracking-widest">USER LEFT</span>
-                  <div className="flex-1 h-px bg-gray-200 dark:bg-white/8" />
-                </div>
-              )}
-            </>
-          )}
+          ) : renderMessages()}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* SMS reply box — only visible for SMS threads */}
-        {isSmsThread && !readonly && (
-          <div className="shrink-0 border-t dark:border-white/8 bg-white dark:bg-[#232323] p-3 space-y-2">
-            {smsError && (
+        {/* Reply box — always visible; greyed out when user is inactive */}
+        {!readonly && (
+          <div className={`shrink-0 border-t dark:border-white/8 bg-white dark:bg-[#232323] p-3 space-y-2 transition-opacity duration-500 ${isUserActive ? 'opacity-100' : 'opacity-40'}`}>
+            {smsError && isSmsThread && (
               <p className="text-xs text-red-500 px-1">{smsError}</p>
             )}
             <div className="flex items-end gap-2">
               <textarea
                 value={smsDraft}
-                onChange={e => setSmsDraft(e.target.value)}
+                onChange={e => isSmsThread && setSmsDraft(e.target.value)}
                 onKeyDown={e => {
-                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSmsSend() }
+                  if (isSmsThread && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSmsSend() }
                 }}
-                placeholder="Reply via SMS… (Enter to send, Shift+Enter for new line)"
-                rows={2}
-                disabled={smsSending}
-                className="flex-1 resize-none text-sm border dark:border-white/10 rounded-xl px-3 py-2 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60"
-              />
-              <button
-                onClick={handleSmsSend}
-                disabled={smsSending || !smsDraft.trim()}
-                className="shrink-0 flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-[#15A4AE] text-white hover:bg-[#1290a0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {smsSending
-                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  : <Send className="w-3.5 h-3.5" />
+                placeholder={
+                  !isUserActive
+                    ? 'User is not active…'
+                    : isSmsThread
+                    ? 'Reply via SMS… (Enter to send, Shift+Enter for new line)'
+                    : `Conversation active via ${(PLATFORM_META as any)[current.platform]?.label ?? current.platform}…`
                 }
-                Send
-              </button>
+                rows={2}
+                disabled={smsSending || !isUserActive || !isSmsThread}
+                className="flex-1 resize-none text-sm border dark:border-white/10 rounded-xl px-3 py-2 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:cursor-not-allowed"
+              />
+              {isSmsThread && (
+                <button
+                  onClick={handleSmsSend}
+                  disabled={smsSending || !smsDraft.trim() || !isUserActive}
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-[#15A4AE] text-white hover:bg-[#1290a0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {smsSending
+                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    : <Send className="w-3.5 h-3.5" />
+                  }
+                  Send
+                </button>
+              )}
             </div>
-            <p className="text-[10px] text-gray-400 px-1">SMS · {(current as any).platform_thread_id}</p>
+            <p className="text-[10px] text-gray-400 px-1">
+              {isSmsThread
+                ? `SMS · ${(current as any).platform_thread_id}`
+                : isUserActive
+                ? 'Bot is handling this conversation'
+                : 'User inactive — reply box locked'}
+            </p>
           </div>
         )}
         </div>{/* end inner flex */}
