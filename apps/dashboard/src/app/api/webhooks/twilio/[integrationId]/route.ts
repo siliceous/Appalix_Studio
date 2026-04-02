@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import twilio from 'twilio'
 import { parsePhoneNumber, isValidPhoneNumber } from 'libphonenumber-js'
 import { createAdminClient } from '@/lib/supabase/server'
+import { lookupPhoneOwner, isRealName } from '@/lib/phone-lookup'
 
 // Never statically render — dynamic webhook
 export const dynamic = 'force-dynamic'
@@ -171,19 +172,42 @@ async function handleInbound({
   // ── 4. Find or create contact ──────────────────────────────────────────────
   const { data: existingContact } = await admin
     .from('sage_contacts')
-    .select('id')
+    .select('id, name, name_source')
     .eq('workspace_id', workspaceId)
     .eq('phone', fromE164)
     .maybeSingle()
 
+  let contactId: string | null = existingContact?.id ?? null
+
   if (!existingContact) {
-    await admin
+    const { data: newContact } = await admin
       .from('sage_contacts')
       .insert({
         workspace_id: workspaceId,
         phone:        fromE164,
-        name:         fromE164, // will be updated when we get more info
-      })
+        name:         fromE164,
+      } as never)
+      .select('id')
+      .single()
+    contactId = newContact?.id ?? null
+  }
+
+  // ── 4a. Internal phone lookup — suggest name if we don't have a real one ──
+  // Only runs when: contact is brand new, OR name is still just the phone number
+  const contactHasRealName =
+    existingContact &&
+    isRealName(existingContact.name) &&
+    existingContact.name_source !== 'sms_auto'
+
+  if (contactId && !contactHasRealName) {
+    const suggestedName = await lookupPhoneOwner(fromE164, workspaceId, contactId)
+    if (suggestedName) {
+      await admin
+        .from('sage_contacts')
+        .update({ name: suggestedName, name_source: 'sms_auto' } as never)
+        .eq('id', contactId)
+      console.info(`[twilio/inbound] Suggested name "${suggestedName}" for ${fromE164}`)
+    }
   }
 
   // ── 5. Find or create conversation ────────────────────────────────────────

@@ -158,3 +158,58 @@ export async function sendSms(
   console.info(`[sms/send] Sent to ${toNumber} from ${fromNumber} — SID ${messageSid}`)
   return {}
 }
+
+/**
+ * Confirm (or correct) an auto-suggested contact name.
+ * Clears name_source so the name is treated as user-verified going forward.
+ */
+export async function confirmSmsContactName(
+  contactId: string,
+  name: string,
+  conversationId?: string,
+): Promise<{ error?: string }> {
+  if (!name.trim()) return { error: 'Name cannot be empty' }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('sage_contacts')
+    .update({ name: name.trim(), name_source: null } as never)
+    .eq('id', contactId)
+
+  if (error) return { error: error.message }
+
+  // Also update the conversation title so the header reflects the confirmed name immediately
+  if (conversationId) {
+    await admin
+      .from('conversations')
+      .update({ title: name.trim() } as never)
+      .eq('id', conversationId)
+  }
+
+  return {}
+}
+
+/**
+ * Dismiss an auto-suggested name — keeps the phone number as the display name.
+ */
+export async function dismissSmsContactSuggestion(
+  contactId: string,
+  phone: string,
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('sage_contacts')
+    .update({ name: phone, name_source: null } as never)
+    .eq('id', contactId)
+
+  if (error) return { error: error.message }
+  return {}
+}
