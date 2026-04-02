@@ -17,6 +17,7 @@ export type Platform =
   | 'custom_api'
   | 'telegram'
   | 'shopify'
+  | 'sms'
 
 export type WorkspacePlan = 'individual' | 'pro' | 'team' | 'enterprise'
 export type SubscriptionStatus =

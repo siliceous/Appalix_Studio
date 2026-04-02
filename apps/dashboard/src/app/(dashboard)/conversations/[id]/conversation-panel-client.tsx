@@ -15,6 +15,7 @@ import {
   assignConversation, renameConversation, deleteConversation,
   conversationCreateTicket,
 } from '@/app/actions/conversation'
+import { sendSms } from '@/app/actions/sms'
 import type { ConvRow } from '@/app/(dashboard)/conversations/page'
 
 export type TeamMember = { user_id: string; name: string }
@@ -98,6 +99,26 @@ export function ConversationPanelClient({
   const [notification, setNotification] = React.useState<string | null>(null)
   const customerEmail = current.ai_entities?.email ?? null
   const customerName  = current.ai_entities?.name  ?? null
+  const isSmsThread   = current.platform === 'sms'
+
+  // SMS reply state
+  const [smsDraft,    setSmsDraft]    = React.useState('')
+  const [smsSending,  setSmsSending]  = React.useState(false)
+  const [smsError,    setSmsError]    = React.useState<string | null>(null)
+
+  async function handleSmsSend() {
+    if (!smsDraft.trim() || smsSending) return
+    setSmsSending(true)
+    setSmsError(null)
+    const result = await sendSms(current.id, smsDraft.trim())
+    if (result.error) {
+      setSmsError(result.error)
+    } else {
+      setSmsDraft('')
+      router.refresh()
+    }
+    setSmsSending(false)
+  }
 
   async function handlePriorityChange(val: string) {
     setLocalPriority(val)
@@ -194,7 +215,10 @@ export function ConversationPanelClient({
       nodes.push(
         <div key={msg.id} className={`flex flex-col gap-0.5 ${isBot ? 'items-end' : 'items-start'}`}>
           <span className="text-[10px] text-gray-400 px-1">
-            {isBot ? 'Bot' : (current.ai_entities?.name ?? 'User')}
+            {isBot
+              ? (isSmsThread ? 'You' : 'Bot')
+              : (current.ai_entities?.name ?? (isSmsThread ? (current as any).platform_thread_id : 'User'))
+            }
           </span>
           <div className={`max-w-[72%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
             isBot
@@ -323,9 +347,12 @@ export function ConversationPanelClient({
               <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate block leading-tight">
                 {current.ai_entities?.name ?? current.title ?? '(no title)'}
               </span>
-              {current.bots?.name && (
-                <p className="text-[10px] text-gray-400 leading-tight">via {current.bots.name}</p>
-              )}
+              {isSmsThread
+                ? <p className="text-[10px] text-gray-400 leading-tight">SMS · {(current as any).platform_thread_id}</p>
+                : current.bots?.name && (
+                  <p className="text-[10px] text-gray-400 leading-tight">via {current.bots.name}</p>
+                )
+              }
             </div>
 
             {/* Priority badge / dropdown */}
@@ -442,6 +469,40 @@ export function ConversationPanelClient({
           ) : renderMessages()}
           <div ref={messagesEndRef} />
         </div>
+
+        {/* SMS reply box — only visible for SMS threads */}
+        {isSmsThread && !readonly && (
+          <div className="shrink-0 border-t dark:border-white/8 bg-white dark:bg-[#232323] p-3 space-y-2">
+            {smsError && (
+              <p className="text-xs text-red-500 px-1">{smsError}</p>
+            )}
+            <div className="flex items-end gap-2">
+              <textarea
+                value={smsDraft}
+                onChange={e => setSmsDraft(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSmsSend() }
+                }}
+                placeholder="Reply via SMS… (Enter to send, Shift+Enter for new line)"
+                rows={2}
+                disabled={smsSending}
+                className="flex-1 resize-none text-sm border dark:border-white/10 rounded-xl px-3 py-2 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60"
+              />
+              <button
+                onClick={handleSmsSend}
+                disabled={smsSending || !smsDraft.trim()}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-[#15A4AE] text-white hover:bg-[#1290a0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {smsSending
+                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  : <Send className="w-3.5 h-3.5" />
+                }
+                Send
+              </button>
+            </div>
+            <p className="text-[10px] text-gray-400 px-1">SMS · {(current as any).platform_thread_id}</p>
+          </div>
+        )}
       </div>
 
       {/* ── Right panel: details ───────────────────────────────────────────── */}
@@ -498,6 +559,14 @@ export function ConversationPanelClient({
             >
               <Send className="w-3.5 h-3.5" /> Reply by Email
             </button>
+          )}
+
+          {/* SMS opt-out notice */}
+          {isSmsThread && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/20 text-xs text-teal-700 dark:text-teal-400">
+              <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+              Use the reply box below to send SMS
+            </div>
           )}
 
           <hr className="border-gray-100 dark:border-white/8" />

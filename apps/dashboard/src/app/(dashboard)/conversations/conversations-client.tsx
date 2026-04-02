@@ -16,7 +16,7 @@ import type { ConvRow, BotOption, ConvFilters, TeamMember } from './page'
 import { TrashTab } from '@/components/dashboard/trash-tab'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const PLATFORMS = ['slack', 'google_chat', 'facebook_messenger', 'whatsapp', 'wordpress', 'web_widget', 'shopify'] as const
+const PLATFORMS = ['slack', 'google_chat', 'facebook_messenger', 'whatsapp', 'wordpress', 'web_widget', 'shopify', 'sms'] as const
 
 const PRIORITY_BADGE: Record<string, string> = {
   high:   'bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/25',
@@ -338,8 +338,8 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
       <div className="bg-[#141c2b] rounded-xl border border-white/10 p-4">
         <div className="flex flex-wrap gap-3 items-center">
 
-          {/* Search — fixed shorter width */}
-          <div className="relative w-48">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[180px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
             <input
               type="text"

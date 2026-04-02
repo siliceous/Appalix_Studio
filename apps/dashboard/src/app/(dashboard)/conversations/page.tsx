@@ -8,6 +8,7 @@ export type ConvRow = {
   id: string
   title: string | null
   platform: string | null
+  platform_thread_id: string | null
   status: string | null
   sentiment: string | null
   message_count: number
