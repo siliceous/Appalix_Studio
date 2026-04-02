@@ -34,10 +34,12 @@ const PLATFORM_ACTION: Partial<Record<Platform, string>> = {
   facebook_messenger: 'Connect Facebook',
   whatsapp:           'Connect WhatsApp',
   custom_api:         'View API docs',
+  sms:                'View webhook URL',
 }
 
 // All supported platforms shown in the "add" grid
 const AVAILABLE_PLATFORMS: { platform: Platform; desc: string; guide: string }[] = [
+  { platform: 'sms',                desc: 'Send & receive SMS via Twilio — bot auto-replies included', guide: '/resources/connect-sms' },
   { platform: 'slack',              desc: 'Respond to messages in Slack channels and DMs',         guide: '/resources/connect-slack' },
   { platform: 'google_chat',        desc: 'Answer questions in Google Chat spaces',                 guide: '/resources/connect-google-chat' },
   { platform: 'facebook_messenger', desc: 'Handle Messenger conversations on your Facebook page',  guide: '/resources/connect-facebook-messenger' },

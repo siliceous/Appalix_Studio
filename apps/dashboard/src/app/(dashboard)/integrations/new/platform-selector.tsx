@@ -5,6 +5,7 @@ import { PLATFORM_META } from '@/lib/utils'
 import type { Platform } from '@/lib/types'
 
 const PLATFORMS: { platform: Platform; desc: string }[] = [
+  { platform: 'sms',                 desc: 'Send & receive SMS via Twilio' },
   { platform: 'web_widget',          desc: 'Embed a chat widget on any website' },
   { platform: 'custom_api',          desc: 'Connect via REST API with an API key' },
   { platform: 'slack',               desc: 'Respond to messages in Slack' },

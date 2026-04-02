@@ -14,7 +14,8 @@ import { ShopifyInjectButton } from './shopify-inject-button'
 
 export const metadata: Metadata = { title: 'Integration setup' }
 
-const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.appalix.ai'
+const API_URL  = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.appalix.ai'
+const APP_URL  = process.env.NEXT_PUBLIC_APP_URL      ?? 'https://app.appalix.ai'
 
 export default async function IntegrationSetupPage({
   params,
@@ -115,6 +116,9 @@ export default async function IntegrationSetupPage({
       )}
       {integration.platform === 'shopify' && (
         <ShopifySetup integrationId={id} cfg={cfg} apiUrl={API_URL} />
+      )}
+      {integration.platform === 'sms' && (
+        <SmsSetup integrationId={id} cfg={cfg} appUrl={APP_URL} />
       )}
     </div>
   )
@@ -559,6 +563,44 @@ function InstagramSetup({
             Open @{igUsername} on Instagram →
           </a>
         )}
+      </SetupSection>
+    </div>
+  )
+}
+
+// ─── SMS ─────────────────────────────────────────────────────────────────────
+
+function SmsSetup({ integrationId, cfg, appUrl }: { integrationId: string; cfg: Record<string, unknown>; appUrl: string }) {
+  const webhookUrl  = `${appUrl}/api/webhooks/twilio/${integrationId}`
+  const phoneNumber = (cfg.phone_number as string) || '(not set)'
+
+  return (
+    <div className="space-y-5">
+      <SetupSection title="Step 1 — Add your Twilio number">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Go to your <strong>Twilio Console → Phone Numbers → Manage → Active numbers</strong>
+          , select the number you want to use, and make sure it matches the one saved on this integration.
+        </p>
+        <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-white/5 rounded-lg border dark:border-white/10">
+          <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">Phone number</span>
+          <span className="text-sm font-mono font-medium text-gray-800 dark:text-gray-200">{phoneNumber}</span>
+        </div>
+      </SetupSection>
+
+      <SetupSection title="Step 2 — Point Twilio to this webhook">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          In the Twilio Console, go to your phone number → <strong>Messaging Configuration</strong>.
+          Set <strong>A message comes in</strong> → <strong>Webhook</strong> to the URL below (HTTP POST).
+        </p>
+        <CopyField label="Webhook URL" value={webhookUrl} />
+      </SetupSection>
+
+      <SetupSection title="Step 3 — Assign a bot (optional)">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          If you want the bot to auto-reply to every inbound SMS, go to{' '}
+          <a href={`/integrations/${integrationId}/edit`} className="text-brand-600 hover:underline">Edit this integration</a>{' '}
+          and select a bot from the dropdown. Leave it blank for manual-reply-only mode.
+        </p>
       </SetupSection>
     </div>
   )

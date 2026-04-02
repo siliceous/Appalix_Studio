@@ -10,16 +10,17 @@ import type { Platform } from '@/lib/types'
 import { MetaEmbeddedSignup } from './meta-embedded-signup'
 
 const PLATFORMS: { platform: Platform; desc: string; guide: string }[] = [
-  { platform: 'web_widget',         desc: 'Embed a chat widget on any website',       guide: '/resources/embed-web-widget' },
-  { platform: 'wordpress',          desc: 'Embed on a WordPress site via plugin',      guide: '/resources/add-wordpress-chatbot' },
-  { platform: 'slack',              desc: 'Respond to messages in Slack channels',     guide: '/resources/connect-slack' },
-  { platform: 'facebook_messenger', desc: 'Handle Messenger conversations',            guide: '/resources/connect-facebook-messenger' },
-  { platform: 'whatsapp',           desc: 'Chat on WhatsApp Business',                 guide: '/resources/connect-whatsapp' },
-  { platform: 'instagram',          desc: 'Reply to Instagram DMs automatically',       guide: '/resources/connect-instagram' },
-  { platform: 'google_chat',        desc: 'Answer questions in Google Chat spaces',    guide: '/resources/connect-google-chat' },
-  { platform: 'telegram',           desc: 'Chat with users on Telegram',               guide: '/resources/connect-telegram' },
+  { platform: 'sms',                desc: 'Send & receive SMS via Twilio',             guide: '/resources/connect-sms' },
+  { platform: 'web_widget',         desc: 'Embed a chat widget on any website',        guide: '/resources/embed-web-widget' },
+  { platform: 'wordpress',          desc: 'Embed on a WordPress site via plugin',       guide: '/resources/add-wordpress-chatbot' },
+  { platform: 'slack',              desc: 'Respond to messages in Slack channels',      guide: '/resources/connect-slack' },
+  { platform: 'facebook_messenger', desc: 'Handle Messenger conversations',             guide: '/resources/connect-facebook-messenger' },
+  { platform: 'whatsapp',           desc: 'Chat on WhatsApp Business',                  guide: '/resources/connect-whatsapp' },
+  { platform: 'instagram',          desc: 'Reply to Instagram DMs automatically',        guide: '/resources/connect-instagram' },
+  { platform: 'google_chat',        desc: 'Answer questions in Google Chat spaces',     guide: '/resources/connect-google-chat' },
+  { platform: 'telegram',           desc: 'Chat with users on Telegram',                guide: '/resources/connect-telegram' },
   { platform: 'shopify',            desc: 'Connect a Shopify store for order & shipping support', guide: '/resources/connect-shopify' },
-  { platform: 'custom_api',         desc: 'Connect via REST API with an API key',      guide: '/resources/custom-api-integration' },
+  { platform: 'custom_api',         desc: 'Connect via REST API with an API key',       guide: '/resources/custom-api-integration' },
 ]
 
 interface FieldConfig {
@@ -32,6 +33,9 @@ interface FieldConfig {
 }
 
 const PLATFORM_FIELDS: Partial<Record<Platform, FieldConfig[]>> = {
+  sms: [
+    { name: 'phone_number', label: 'Twilio phone number', placeholder: '+12182772549', hint: 'The Twilio number that will send and receive SMS (E.164 format).' },
+  ],
   web_widget: [
     { name: 'allowed_origins', label: 'Allowed origins', placeholder: '* or https://yourdomain.com', hint: 'Use * to allow all origins (fine for local dev). In production enter your domain.' },
   ],
