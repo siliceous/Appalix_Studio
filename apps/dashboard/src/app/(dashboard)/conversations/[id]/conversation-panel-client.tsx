@@ -645,7 +645,7 @@ export function ConversationPanelClient({
                     ? 'User is not active…'
                     : isSmsThread
                     ? 'Reply via SMS… (Enter to send, Shift+Enter for new line)'
-                    : `Conversation active via ${(PLATFORM_META as any)[current.platform]?.label ?? current.platform}…`
+                    : `Conversation active via ${current.platform ? ((PLATFORM_META as any)[current.platform]?.label ?? current.platform) : 'chat'}…`
                 }
                 rows={2}
                 disabled={smsSending || !isUserActive || !isSmsThread}
