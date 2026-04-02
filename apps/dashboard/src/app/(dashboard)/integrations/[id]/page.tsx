@@ -592,7 +592,7 @@ function SmsSetup({ integrationId, cfg, appUrl }: { integrationId: string; cfg: 
           In the Twilio Console, go to your phone number → <strong>Messaging Configuration</strong>.
           Set <strong>A message comes in</strong> → <strong>Webhook</strong> to the URL below (HTTP POST).
         </p>
-        <CopyField label="Webhook URL" value={webhookUrl} />
+        <CopyField value={webhookUrl} />
       </SetupSection>
 
       <SetupSection title="Step 3 — Assign a bot (optional)">
