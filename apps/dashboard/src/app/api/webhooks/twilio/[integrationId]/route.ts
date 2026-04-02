@@ -162,7 +162,6 @@ async function handleInbound({
   // HELP keywords: no opt-out change, carrier handles the reply
 
   // ── 4. Find or create contact ──────────────────────────────────────────────
-  let contactId: string | null = null
   const { data: existingContact } = await admin
     .from('sage_contacts')
     .select('id')
@@ -170,19 +169,14 @@ async function handleInbound({
     .eq('phone', fromE164)
     .maybeSingle()
 
-  if (existingContact) {
-    contactId = existingContact.id as string
-  } else {
-    const { data: newContact } = await admin
+  if (!existingContact) {
+    await admin
       .from('sage_contacts')
       .insert({
         workspace_id: workspaceId,
         phone:        fromE164,
         name:         fromE164, // will be updated when we get more info
       })
-      .select('id')
-      .single()
-    contactId = newContact?.id ?? null
   }
 
   // ── 5. Find or create conversation ────────────────────────────────────────
@@ -214,7 +208,6 @@ async function handleInbound({
         platform_thread_id: fromE164,
         title:              fromE164,
         status:             'active',
-        contact_id:         contactId,
       } as never)
       .select('id')
       .single()
