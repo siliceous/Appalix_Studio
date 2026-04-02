@@ -78,11 +78,15 @@ export async function POST(
     return new NextResponse('<Response/>', { status: 200, headers: { 'Content-Type': 'text/xml' } })
   }
 
-  // ── 4. Process asynchronously, return TwiML immediately ───────────────────
-  // Twilio requires a 200 within 15 seconds; processing is async to be safe
-  handleInbound({ integrationId, messageSid, fromE164, toRaw, body, numMedia, formParams }).catch(err =>
-    console.error('[twilio/inbound] handler error:', err),
-  )
+  // ── 4. Process synchronously before returning ─────────────────────────────
+  // Vercel serverless functions are killed immediately after the response is
+  // returned, so we must await all DB work before sending TwiML back.
+  // Twilio waits up to 15 seconds — we have plenty of time.
+  try {
+    await handleInbound({ integrationId, messageSid, fromE164, toRaw, body, numMedia, formParams })
+  } catch (err) {
+    console.error('[twilio/inbound] handler error:', err)
+  }
 
   // Empty TwiML — no auto-reply; humans/AI handle responses
   return new NextResponse('<Response/>', {
