@@ -104,9 +104,9 @@ export async function shopifyRoutes(fastify: FastifyInstance) {
       for (const incoming of messages) {
         setImmediate(async () => {
           try {
-            const { reply: aiReply } = await processMessage(incoming)
+            const { reply: aiReply, botPaused } = await processMessage(incoming)
             const conversationId     = incoming.platformThreadId
-            await sendShopifyReply(
+            if (!botPaused && aiReply) await sendShopifyReply(
               { text: aiReply },
               conversationId,
               cfg.shop_domain,

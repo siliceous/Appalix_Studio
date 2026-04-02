@@ -34,7 +34,8 @@ export async function wordpressRoutes(fastify: FastifyInstance) {
       if (!incoming) return reply.status(400).send({ error: 'Missing message' })
 
       try {
-        const { reply: aiReply, conversationId } = await processMessage(incoming)
+        const { reply: aiReply, conversationId, botPaused } = await processMessage(incoming)
+        if (botPaused) return reply.send(formatWordPressReply({ text: '' }, conversationId))
         return reply.send(formatWordPressReply({ text: aiReply }, conversationId))
       } catch (err) {
         console.error('[wordpress webhook] processing error:', err)

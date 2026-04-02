@@ -99,8 +99,8 @@ export async function facebookRoutes(fastify: FastifyInstance) {
         for (const incoming of parseInstagramEvents(request.body as never, ctx)) {
           setImmediate(async () => {
             try {
-              const { reply: aiReply } = await processMessage(incoming)
-              await sendInstagramReply({ text: aiReply }, incoming.platformUserId!, cfg.access_token || cfg.page_access_token)
+              const { reply: aiReply, botPaused } = await processMessage(incoming)
+              if (!botPaused && aiReply) await sendInstagramReply({ text: aiReply }, incoming.platformUserId!, cfg.access_token || cfg.page_access_token)
             } catch (err) {
               console.error('[facebook global webhook] instagram processing error:', err)
             }
@@ -112,8 +112,8 @@ export async function facebookRoutes(fastify: FastifyInstance) {
       for (const incoming of parseFacebookEvents(request.body as never, ctx)) {
         setImmediate(async () => {
           try {
-            const { reply: aiReply } = await processMessage(incoming)
-            await sendFacebookReply({ text: aiReply }, incoming.platformUserId!, cfg.page_access_token)
+            const { reply: aiReply, botPaused } = await processMessage(incoming)
+            if (!botPaused && aiReply) await sendFacebookReply({ text: aiReply }, incoming.platformUserId!, cfg.page_access_token)
           } catch (err) {
             console.error('[facebook global webhook] processing error:', err)
           }
@@ -176,8 +176,8 @@ export async function facebookRoutes(fastify: FastifyInstance) {
       for (const incoming of messages) {
         setImmediate(async () => {
           try {
-            const { reply: aiReply } = await processMessage(incoming)
-            await sendFacebookReply({ text: aiReply }, incoming.platformUserId!, cfg.page_access_token)
+            const { reply: aiReply, botPaused } = await processMessage(incoming)
+            if (!botPaused && aiReply) await sendFacebookReply({ text: aiReply }, incoming.platformUserId!, cfg.page_access_token)
           } catch (err) {
             console.error('[facebook webhook] processing error:', err)
           }

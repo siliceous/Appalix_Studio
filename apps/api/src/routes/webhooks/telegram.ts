@@ -63,10 +63,10 @@ export async function telegramRoutes(fastify: FastifyInstance) {
             fastify.log.error({ integrationId }, '[telegram] No bot_token configured')
             return
           }
-          const { reply: aiReply } = await processMessage(incoming)
+          const { reply: aiReply, botPaused } = await processMessage(incoming)
           const chatId     = (update.message ?? update.edited_message)!.chat.id
           const messageId  = (update.message ?? update.edited_message)!.message_id
-          await sendTelegramReply({ text: aiReply }, chatId, botToken, messageId)
+          if (!botPaused && aiReply) await sendTelegramReply({ text: aiReply }, chatId, botToken, messageId)
         } catch (err) {
           fastify.log.error({ err, integrationId }, '[telegram] processing error')
         }

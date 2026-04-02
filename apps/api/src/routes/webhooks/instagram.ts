@@ -73,8 +73,8 @@ export async function instagramRoutes(fastify: FastifyInstance) {
       for (const incoming of parseInstagramEvents(request.body as never, ctx)) {
         setImmediate(async () => {
           try {
-            const { reply: aiReply } = await processMessage(incoming)
-            await sendInstagramReply({ text: aiReply }, incoming.platformUserId!, cfg.access_token || cfg.page_access_token)
+            const { reply: aiReply, botPaused } = await processMessage(incoming)
+            if (!botPaused && aiReply) await sendInstagramReply({ text: aiReply }, incoming.platformUserId!, cfg.access_token || cfg.page_access_token)
           } catch (err) {
             console.error('[instagram global webhook] processing error:', err)
           }
@@ -134,8 +134,8 @@ export async function instagramRoutes(fastify: FastifyInstance) {
       for (const incoming of parseInstagramEvents(request.body as never, ctx)) {
         setImmediate(async () => {
           try {
-            const { reply: aiReply } = await processMessage(incoming)
-            await sendInstagramReply({ text: aiReply }, incoming.platformUserId!, cfg.access_token || cfg.page_access_token)
+            const { reply: aiReply, botPaused } = await processMessage(incoming)
+            if (!botPaused && aiReply) await sendInstagramReply({ text: aiReply }, incoming.platformUserId!, cfg.access_token || cfg.page_access_token)
           } catch (err) {
             console.error('[instagram webhook] processing error:', err)
           }

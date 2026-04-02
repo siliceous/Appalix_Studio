@@ -30,7 +30,8 @@ export async function googleChatRoutes(fastify: FastifyInstance) {
       }
 
       try {
-        const { reply: aiReply } = await processMessage(incoming)
+        const { reply: aiReply, botPaused } = await processMessage(incoming)
+        if (botPaused) return reply.send(formatGoogleChatReply({ text: '' }))
         return reply.send(formatGoogleChatReply({ text: aiReply }))
       } catch (err) {
         console.error('[google-chat webhook] processing error:', err)

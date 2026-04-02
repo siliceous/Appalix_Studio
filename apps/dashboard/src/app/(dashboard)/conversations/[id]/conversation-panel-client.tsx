@@ -14,7 +14,7 @@ import { PLATFORM_META, timeAgo, formatDate } from '@/lib/utils'
 import {
   updateConversationPriority, updateConversationStatus,
   assignConversation, renameConversation, deleteConversation,
-  conversationCreateTicket,
+  conversationCreateTicket, toggleBotPause, sendAgentReply,
 } from '@/app/actions/conversation'
 import { sendSms, confirmSmsContactName, dismissSmsContactSuggestion } from '@/app/actions/sms'
 import { createClient } from '@/lib/supabase/client'
@@ -116,13 +116,25 @@ export function ConversationPanelClient({
   // Clock ticker — refreshes "X min ago" label every 30 s
   const [now, setNow] = React.useState(() => Date.now())
 
-  // Reset live messages when navigating to a different conversation
+  // Human takeover state
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [isBotPaused,  setIsBotPaused]  = React.useState<boolean>(!!(current as any).bot_paused)
+  const [takingOver,   setTakingOver]   = React.useState(false)
+  const [agentDraft,   setAgentDraft]   = React.useState('')
+  const [agentSending, setAgentSending] = React.useState(false)
+  const [agentError,   setAgentError]   = React.useState<string | null>(null)
+
+  // Reset state when navigating to a different conversation
   useEffect(() => {
     setLiveMessages(messages)
     setLastActivity(current.last_activity_at ?? new Date().toISOString())
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    setIsBotPaused(!!(current as any).bot_paused)
+    setAgentDraft('')
+    setAgentError(null)
   }, [current.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Supabase Realtime — stream new messages and activity updates
+  // Supabase Realtime — stream new messages, activity, and bot_paused updates
   useEffect(() => {
     const supabase = createClient()
     const channel = supabase
@@ -140,8 +152,9 @@ export function ConversationPanelClient({
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'conversations', filter: `id=eq.${current.id}` },
         (payload) => {
-          const updated = payload.new as { last_activity_at?: string }
+          const updated = payload.new as { last_activity_at?: string; bot_paused?: boolean }
           if (updated.last_activity_at) setLastActivity(updated.last_activity_at)
+          if (typeof updated.bot_paused === 'boolean') setIsBotPaused(updated.bot_paused)
         },
       )
       .subscribe()
@@ -185,6 +198,34 @@ export function ConversationPanelClient({
     await dismissSmsContactSuggestion(suggestion.id, suggestion.phone)
     setSuggestion(null)
     setSuggestionWorking(false)
+  }
+
+  async function handleToggleTakeover() {
+    setTakingOver(true)
+    const next = !isBotPaused
+    const result = await toggleBotPause(current.id, next)
+    if (!result.error) {
+      setIsBotPaused(next)
+      setAgentDraft('')
+      setAgentError(null)
+    }
+    setTakingOver(false)
+  }
+
+  async function handleAgentSend() {
+    const text = agentDraft.trim()
+    if (!text || agentSending) return
+    setAgentSending(true)
+    setAgentError(null)
+    const result = isSmsThread
+      ? await sendSms(current.id, text)
+      : await sendAgentReply(current.id, text)
+    if (result.error) {
+      setAgentError(result.error)
+    } else {
+      setAgentDraft('')
+    }
+    setAgentSending(false)
   }
 
   async function handleSmsSend() {
@@ -521,6 +562,25 @@ export function ConversationPanelClient({
               </>
             )}
 
+            {/* Take Over / Return to Bot toggle */}
+            <button
+              onClick={handleToggleTakeover}
+              disabled={takingOver}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-semibold rounded-lg border transition-colors disabled:opacity-60 ${
+                isBotPaused
+                  ? 'bg-amber-500/20 border-amber-400/50 text-amber-300 hover:bg-amber-500/30'
+                  : 'bg-[#15A4AE]/20 border-[#15A4AE]/50 text-[#15A4AE] hover:bg-[#15A4AE]/30'
+              }`}
+            >
+              {takingOver
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : isBotPaused
+                ? <Bot className="w-3.5 h-3.5" />
+                : <UserCheck className="w-3.5 h-3.5" />
+              }
+              {isBotPaused ? 'Return to Bot' : 'Take Over'}
+            </button>
+
             {/* Action buttons */}
             <button
               onClick={handleCreateTicket}
@@ -627,52 +687,78 @@ export function ConversationPanelClient({
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Reply box — always visible; greyed out when user is inactive */}
+        {/* Reply box — always visible */}
         {!readonly && (
-          <div className={`shrink-0 border-t dark:border-white/8 bg-white dark:bg-[#232323] p-3 space-y-2 transition-opacity duration-500 ${isUserActive ? 'opacity-100' : 'opacity-40'}`}>
-            {smsError && isSmsThread && (
-              <p className="text-xs text-red-500 px-1">{smsError}</p>
-            )}
-            <div className="flex items-end gap-2">
-              <textarea
-                value={smsDraft}
-                onChange={e => isSmsThread && setSmsDraft(e.target.value)}
-                onKeyDown={e => {
-                  if (isSmsThread && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSmsSend() }
-                }}
-                placeholder={
-                  !isUserActive
-                    ? 'User is not active…'
-                    : isSmsThread
-                    ? 'Reply via SMS… (Enter to send, Shift+Enter for new line)'
-                    : `Conversation active via ${current.platform ? ((PLATFORM_META as any)[current.platform]?.label ?? current.platform) : 'chat'}…`
-                }
-                rows={2}
-                disabled={smsSending || !isUserActive || !isSmsThread}
-                className="flex-1 resize-none text-sm border dark:border-white/10 rounded-xl px-3 py-2 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:cursor-not-allowed"
-              />
-              {isSmsThread && (
+          isBotPaused ? (
+            /* ── Human takeover mode — fully active reply box ── */
+            <div className="shrink-0 border-t dark:border-white/8 bg-white dark:bg-[#232323] p-3 space-y-2">
+              {agentError && <p className="text-xs text-red-500 px-1">{agentError}</p>}
+              <div className="flex items-end gap-2">
+                <textarea
+                  value={agentDraft}
+                  onChange={e => setAgentDraft(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAgentSend() }
+                  }}
+                  placeholder="Type your reply… (Enter to send, Shift+Enter for new line)"
+                  rows={2}
+                  disabled={agentSending}
+                  className="flex-1 resize-none text-sm border border-amber-300/60 dark:border-amber-500/40 rounded-xl px-3 py-2 bg-amber-50/50 dark:bg-amber-500/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40 disabled:opacity-60"
+                />
                 <button
-                  onClick={handleSmsSend}
-                  disabled={smsSending || !smsDraft.trim() || !isUserActive}
-                  className="shrink-0 flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-[#15A4AE] text-white hover:bg-[#1290a0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleAgentSend}
+                  disabled={agentSending || !agentDraft.trim()}
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-amber-500 text-white hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {smsSending
-                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    : <Send className="w-3.5 h-3.5" />
-                  }
+                  {agentSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                   Send
                 </button>
-              )}
+              </div>
+              <p className="text-[10px] text-amber-600 dark:text-amber-400 px-1 font-medium">
+                You are handling this conversation — bot is paused
+              </p>
             </div>
-            <p className="text-[10px] text-gray-400 px-1">
-              {isSmsThread
-                ? `SMS · ${(current as any).platform_thread_id}`
-                : isUserActive
-                ? 'Bot is handling this conversation'
-                : 'User inactive — reply box locked'}
-            </p>
-          </div>
+          ) : (
+            /* ── Bot mode — reply box locked, greyed when user inactive ── */
+            <div className={`shrink-0 border-t dark:border-white/8 bg-white dark:bg-[#232323] p-3 space-y-2 transition-opacity duration-500 ${isUserActive ? 'opacity-100' : 'opacity-40'}`}>
+              {smsError && isSmsThread && <p className="text-xs text-red-500 px-1">{smsError}</p>}
+              <div className="flex items-end gap-2">
+                <textarea
+                  value={isSmsThread ? smsDraft : ''}
+                  onChange={e => isSmsThread && setSmsDraft(e.target.value)}
+                  onKeyDown={e => {
+                    if (isSmsThread && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSmsSend() }
+                  }}
+                  placeholder={
+                    !isUserActive
+                      ? 'User is not active…'
+                      : isSmsThread
+                      ? 'Reply via SMS… (Enter to send, Shift+Enter for new line)'
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      : `Bot is handling this via ${current.platform ? ((PLATFORM_META as any)[current.platform]?.label ?? current.platform) : 'chat'} — click Take Over to reply manually`
+                  }
+                  rows={2}
+                  disabled={smsSending || !isUserActive || !isSmsThread}
+                  className="flex-1 resize-none text-sm border dark:border-white/10 rounded-xl px-3 py-2 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:cursor-not-allowed"
+                />
+                {isSmsThread && (
+                  <button
+                    onClick={handleSmsSend}
+                    disabled={smsSending || !smsDraft.trim() || !isUserActive}
+                    className="shrink-0 flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-[#15A4AE] text-white hover:bg-[#1290a0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {smsSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                    Send
+                  </button>
+                )}
+              </div>
+              <p className="text-[10px] text-gray-400 px-1">
+                {isSmsThread
+                  ? `SMS · ${(current as any).platform_thread_id}`
+                  : isUserActive ? 'Bot is handling this conversation' : 'User inactive — reply box locked'}
+              </p>
+            </div>
+          )
         )}
         </div>{/* end inner flex */}
       </div>{/* end middle panel */}

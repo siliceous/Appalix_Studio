@@ -27,7 +27,7 @@ import type { IncomingMessage } from '../adapters/types.js'
  */
 export async function processMessage(
   msg: IncomingMessage,
-): Promise<{ reply: string; conversationId: string }> {
+): Promise<{ reply: string; conversationId: string; botPaused?: boolean }> {
   const {
     workspaceId,
     botId,
@@ -102,7 +102,22 @@ export async function processMessage(
   })
 
   // ---------------------------------------------------------------
-  // 2b. Load identity verification status for this conversation
+  // 2b. Check if a human agent has taken over (bot_paused flag)
+  // ---------------------------------------------------------------
+  const { data: convMeta } = await supabase
+    .from('conversations')
+    .select('bot_paused')
+    .eq('id', conversationId)
+    .single()
+  if (convMeta?.bot_paused) {
+    // Save the user message so the agent sees it in the dashboard, then stop.
+    await appendMessage({ conversationId, workspaceId, role: 'user', content: text })
+    console.log(`[processor] bot_paused — skipping AI for conversation=${conversationId}`)
+    return { reply: '', conversationId, botPaused: true }
+  }
+
+  // ---------------------------------------------------------------
+  // 2c. Load identity verification status for this conversation
   // ---------------------------------------------------------------
   const verification: ConversationVerification | null = await getConversationVerification(conversationId)
   const internalPlatform = isInternalPlatform(platform)

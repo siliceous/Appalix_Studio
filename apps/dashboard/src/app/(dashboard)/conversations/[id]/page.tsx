@@ -41,7 +41,7 @@ export default async function ConversationDetailPage({
   const [convRes, msgsRes, listRes, autoSettings, membersRes, profilesRes] = await Promise.all([
     supabase
       .from('conversations')
-      .select('id, title, platform, platform_thread_id, status, sentiment, message_count, last_activity_at, created_at, ai_priority, ai_summary, ai_entities, bot_id, assigned_to, bots(id, name)')
+      .select('id, title, platform, platform_thread_id, status, sentiment, message_count, last_activity_at, created_at, ai_priority, ai_summary, ai_entities, bot_id, assigned_to, bot_paused, bots(id, name)')
       .eq('id', id)
       .single(),
     supabase

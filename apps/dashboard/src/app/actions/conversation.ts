@@ -225,6 +225,143 @@ export async function conversationCreateDeal(conv: ConvRow): Promise<{ error?: s
   return result.error ? { error: result.error } : {}
 }
 
+/** Toggle bot_paused on a conversation. Returns the new value. */
+export async function toggleBotPause(
+  conversationId: string,
+  pause: boolean,
+): Promise<{ botPaused?: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const { data: membershipRaw } = await supabase
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single()
+  const membership = membershipRaw as { workspace_id: string } | null
+  if (!membership) return { error: 'Unauthorized' }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('conversations')
+    .update({ bot_paused: pause } as never)
+    .eq('id', conversationId)
+    .eq('workspace_id', membership.workspace_id)
+
+  if (error) return { error: error.message }
+
+  void logConversationActivity(membership.workspace_id, user.id, conversationId,
+    pause ? 'human_takeover' : 'bot_resumed')
+
+  return { botPaused: pause }
+}
+
+/** Send a reply as the human agent via the conversation's platform. */
+export async function sendAgentReply(
+  conversationId: string,
+  content: string,
+): Promise<{ error?: string }> {
+  if (!content.trim()) return { error: 'Message cannot be empty' }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const { data: membershipRaw } = await supabase
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single()
+  const membership = membershipRaw as { workspace_id: string } | null
+  if (!membership) return { error: 'Unauthorized' }
+
+  const admin = createAdminClient()
+
+  const { data: convRaw } = await admin
+    .from('conversations')
+    .select('id, platform, platform_user_id, platform_thread_id, integration_id, bot_paused')
+    .eq('id', conversationId)
+    .eq('workspace_id', membership.workspace_id)
+    .single()
+
+  if (!convRaw) return { error: 'Conversation not found' }
+  const conv = convRaw as {
+    id: string
+    platform: string
+    platform_user_id: string | null
+    platform_thread_id: string | null
+    integration_id: string | null
+    bot_paused: boolean
+  }
+
+  if (!conv.bot_paused) return { error: 'Take over the conversation before sending a manual reply' }
+
+  // ── Platform-specific send ─────────────────────────────────────────────────
+  if (conv.platform === 'facebook_messenger' || conv.platform === 'instagram') {
+    const recipientId = conv.platform_user_id
+    if (!recipientId) return { error: 'No recipient ID on this conversation' }
+    if (!conv.integration_id) return { error: 'No integration linked' }
+
+    const { data: integRaw } = await admin
+      .from('integrations')
+      .select('config')
+      .eq('id', conv.integration_id)
+      .single()
+
+    const cfg = (integRaw?.config ?? {}) as Record<string, string>
+    const pageAccessToken = cfg.page_access_token ?? cfg.access_token
+    if (!pageAccessToken) return { error: 'No page access token in integration config' }
+
+    const endpoint = conv.platform === 'instagram'
+      ? 'https://graph.facebook.com/v21.0/me/messages'
+      : 'https://graph.facebook.com/v21.0/me/messages'
+
+    const fbRes = await fetch(endpoint, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        recipient:    { id: recipientId },
+        message:      { text: content },
+        access_token: pageAccessToken,
+      }),
+    })
+
+    if (!fbRes.ok) {
+      const err = await fbRes.json() as { error?: { message: string } }
+      return { error: err.error?.message ?? 'Failed to send via Facebook' }
+    }
+  } else if (conv.platform === 'sms') {
+    // SMS is handled by the existing sendSms action in sms.ts
+    // Forward via that action's logic (reuse Twilio)
+    const { sendSms } = await import('./sms')
+    return sendSms(conversationId, content)
+  } else {
+    return { error: `Direct sending is not yet supported for ${conv.platform}` }
+  }
+
+  // ── Save agent message to DB ──────────────────────────────────────────────
+  await admin.from('messages').insert({
+    workspace_id:    membership.workspace_id,
+    conversation_id: conversationId,
+    role:            'assistant',
+    content,
+  } as never)
+
+  await admin
+    .from('conversations')
+    .update({ last_activity_at: new Date().toISOString() } as never)
+    .eq('id', conversationId)
+
+  void logConversationActivity(membership.workspace_id, user.id, conversationId, 'agent_reply_sent', { platform: conv.platform })
+
+  return {}
+}
+
 export async function conversationCreateTicket(conv: ConvRow): Promise<{ error?: string }> {
   const name  = conv.ai_entities?.name  ?? conv.title ?? 'Unknown'
   const email = conv.ai_entities?.email ?? ''

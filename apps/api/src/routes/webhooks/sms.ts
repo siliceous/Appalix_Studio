@@ -60,10 +60,11 @@ export async function smsRoutes(fastify: FastifyInstance) {
             metadata:         { messageSid, toNumber },
           }
 
-          const { reply: aiReply } = await processMessage(incoming)
+          const { reply: aiReply, botPaused } = await processMessage(incoming)
 
-          if (!aiReply) {
-            console.warn('[sms/bot-reply] processMessage returned empty reply')
+          if (botPaused || !aiReply) {
+            if (botPaused) console.log('[sms/bot-reply] bot_paused — skipping reply')
+            else console.warn('[sms/bot-reply] processMessage returned empty reply')
             return
           }
 

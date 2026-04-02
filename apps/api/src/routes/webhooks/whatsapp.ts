@@ -54,8 +54,8 @@ export async function whatsappRoutes(fastify: FastifyInstance) {
       for (const incoming of messages) {
         setImmediate(async () => {
           try {
-            const { reply: aiReply } = await processMessage(incoming)
-            await sendWhatsAppReply(
+            const { reply: aiReply, botPaused } = await processMessage(incoming)
+            if (!botPaused && aiReply) await sendWhatsAppReply(
               { text: aiReply },
               incoming.platformUserId!,
               cfg.phone_number_id,
