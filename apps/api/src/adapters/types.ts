@@ -15,6 +15,7 @@ export type Platform =
   | 'custom_api'
   | 'telegram'
   | 'shopify'
+  | 'sms'
 
 /** Normalised inbound message from any platform */
 export interface IncomingMessage {

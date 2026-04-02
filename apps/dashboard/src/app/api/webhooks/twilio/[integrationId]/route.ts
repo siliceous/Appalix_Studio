@@ -123,7 +123,7 @@ async function handleInbound({
   // ── 1. Look up the integration ─────────────────────────────────────────────
   const { data: integration } = await admin
     .from('integrations')
-    .select('id, workspace_id, config')
+    .select('id, workspace_id, config, bot_id')
     .eq('id', integrationId)
     .eq('platform', 'sms')
     .eq('status', 'active')
@@ -135,6 +135,7 @@ async function handleInbound({
   }
 
   const workspaceId = integration.workspace_id as string
+  const botId       = (integration as any).bot_id as string | null
 
   // ── 2. Idempotency — skip duplicate MessageSid ─────────────────────────────
   const { data: existing } = await admin
@@ -298,4 +299,30 @@ async function handleInbound({
   } as never)
 
   console.info(`[twilio/inbound] Saved SMS from ${fromE164} → conv=${conversationId}`)
+
+  // ── 10. Trigger bot auto-reply if integration has a bot assigned ───────────
+  if (botId && body && body !== '(no text)') {
+    const apiBase = process.env.API_BASE_URL
+    if (apiBase) {
+      // Fire-and-forget — don't await, Twilio already has its 200
+      fetch(`${apiBase}/webhooks/sms/bot-reply`, {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'X-Service-Key': process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
+        },
+        body: JSON.stringify({
+          integrationId,
+          workspaceId,
+          botId,
+          fromNumber: fromE164,
+          toNumber:   toRaw,
+          text:       body,
+          messageSid,
+        }),
+      }).catch(err => console.error('[twilio/inbound] Failed to trigger bot reply:', err))
+    } else {
+      console.warn('[twilio/inbound] API_BASE_URL not set — bot auto-reply skipped')
+    }
+  }
 }
