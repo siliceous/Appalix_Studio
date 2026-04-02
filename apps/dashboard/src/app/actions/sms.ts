@@ -43,7 +43,7 @@ export async function sendSms(
   // ── Load conversation (must be SMS, must belong to workspace) ──────────────
   const { data: convRaw } = await admin
     .from('conversations')
-    .select('id, platform, platform_thread_id, integration_id, contact_id')
+    .select('id, platform, platform_thread_id, integration_id')
     .eq('id', conversationId)
     .eq('workspace_id', workspaceId)
     .eq('platform', 'sms')
@@ -56,7 +56,6 @@ export async function sendSms(
     platform: string
     platform_thread_id: string  // E.164 recipient number
     integration_id: string | null
-    contact_id: string | null
   }
 
   const toNumber = conv.platform_thread_id
@@ -81,12 +80,13 @@ export async function sendSms(
   if (!fromNumber) return { error: 'Integration has no phone_number configured' }
 
   // ── Check opt-out before sending ──────────────────────────────────────────
-  if (conv.contact_id) {
+  if (toNumber) {
     const { data: contactRaw } = await admin
       .from('sage_contacts')
       .select('sms_opt_out')
-      .eq('id', conv.contact_id)
-      .single()
+      .eq('workspace_id', workspaceId)
+      .eq('phone', toNumber)
+      .maybeSingle()
 
     const contact = contactRaw as { sms_opt_out: boolean } | null
     if (contact?.sms_opt_out) {
@@ -119,11 +119,11 @@ export async function sendSms(
 
   // ── Save message to DB ────────────────────────────────────────────────────
   await admin.from('messages').insert({
+    workspace_id:        workspaceId,
     conversation_id:     conversationId,
     role:                'assistant',
     content,
     platform_message_id: messageSid,
-    metadata:            { delivery_status: 'queued' },
   } as never)
 
   // Touch conversation updated_at
