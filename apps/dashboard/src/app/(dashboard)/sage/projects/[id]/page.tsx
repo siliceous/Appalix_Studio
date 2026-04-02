@@ -55,6 +55,11 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     })) as WorkspaceMemberSummary[]
   }
 
+  const allIds = allProjects.map(p => p.id)
+  const idx = allIds.indexOf(id)
+  const prevId = idx > 0 ? allIds[idx - 1] : null
+  const nextId = idx < allIds.length - 1 ? allIds[idx + 1] : null
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-hidden">
@@ -65,6 +70,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           activities={activities}
           members={members}
           currentUserId={user.id}
+          prevId={prevId}
+          nextId={nextId}
         />
       </div>
     </div>

@@ -298,7 +298,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
           </div>
           {/* Select all */}
           {canWrite && filtered.length > 0 && (
-            <label className="flex items-center gap-2 text-xs text-white/70 cursor-pointer select-none">
+            <label className="flex items-center gap-2 text-sm text-white cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={allSelected}
@@ -314,7 +314,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
               <button
                 key={f.value}
                 onClick={() => setFilter(f.value)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                   filter === f.value
                     ? 'bg-white/20 text-white border border-white/40'
                     : 'bg-white/8 text-white hover:bg-white/15'
@@ -353,13 +353,13 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
               <thead>
                 <tr className="bg-[#141c2b]">
                   {canWrite && <th className="px-4 py-3 w-px"><input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="w-4 h-4 rounded border-white/30 accent-[#15A4AE] cursor-pointer" /></th>}
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Priority</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Name</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Source</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Submitted</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Status</th>
-                  {canAssign && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Assigned to</th>}
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide w-px whitespace-nowrap">Actions</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Priority</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Name</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Source</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Submitted</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Status</th>
+                  {canAssign && <th className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Assigned to</th>}
+                  <th className="text-right px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide w-px whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y dark:divide-white/5">

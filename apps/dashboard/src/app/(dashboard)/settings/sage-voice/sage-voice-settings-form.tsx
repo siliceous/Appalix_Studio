@@ -252,6 +252,13 @@ export function SageVoiceSettingsForm({
           onChange={v => update('enable_affective_dialog', v)}
           badge="Experimental"
         />
+
+        <ToggleRow
+          label='&quot;Hey Sage&quot; wake word'
+          description='Listen for "Hey Sage" in the background so you can start a voice session hands-free. Disable this to stop the microphone indicator showing on your device.'
+          checked={config.wake_word_enabled ?? true}
+          onChange={v => update('wake_word_enabled', v)}
+        />
       </section>
 
       {/* ── Save ────────────────────────────────────────────────────────── */}

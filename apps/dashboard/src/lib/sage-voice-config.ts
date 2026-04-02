@@ -5,6 +5,7 @@ export interface SageVoiceConfig {
   output_transcription:    boolean
   input_transcription:     boolean
   enable_affective_dialog: boolean
+  wake_word_enabled:       boolean
 }
 
 export const DEFAULT_VOICE_CONFIG: SageVoiceConfig = {
@@ -14,4 +15,5 @@ export const DEFAULT_VOICE_CONFIG: SageVoiceConfig = {
   output_transcription:    true,
   input_transcription:     false,
   enable_affective_dialog: false,
+  wake_word_enabled:       true,
 }

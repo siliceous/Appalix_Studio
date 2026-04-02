@@ -277,7 +277,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                   <option value="medium">Medium</option>
                   <option value="low">Low</option>
                 </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none" />
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white pointer-events-none" />
               </div>
 
               {/* Bulk status */}
@@ -293,7 +293,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                   <option value="completed">Completed</option>
                   <option value="archived">Archived</option>
                 </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none" />
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white pointer-events-none" />
               </div>
 
               {/* Bulk assign */}
@@ -315,7 +315,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                       <option key={m.user_id} value={m.user_id}>{m.name}</option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none" />
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white pointer-events-none" />
                 </div>
               )}
 
@@ -370,7 +370,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                   <option key={b.id} value={b.id}>{b.name}</option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none" />
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white pointer-events-none" />
             </div>
           )}
 
@@ -386,7 +386,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                 <option key={p} value={p}>{PLATFORM_META[p]?.label ?? p}</option>
               ))}
             </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none" />
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white pointer-events-none" />
           </div>
 
           {/* Status filter */}
@@ -399,7 +399,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
               return (
                 <button key={s}
                   onClick={() => pushFilter({ status: s || undefined })}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                     activeStatus === s
                       ? 'bg-white/20 text-white border border-white/40'
                       : 'bg-white/8 text-white hover:bg-white/15'
@@ -411,7 +411,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
             })}
             <button
               onClick={() => pushFilter({ status: 'trash' })}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                 activeStatus === 'trash'
                   ? 'bg-white/20 text-white border border-white/40'
                   : 'bg-white/8 text-white hover:bg-white/15'
@@ -442,15 +442,15 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                       className="w-4 h-4 rounded border-white/30 accent-[#15A4AE] cursor-pointer" />
                   </th>
                 )}
-                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Priority</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Conversation</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Bot</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Platform</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Msgs</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide w-[160px]">Last active</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Status</th>
-                {canAssign && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Assigned to</th>}
-                <th className="text-right px-5 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide w-px whitespace-nowrap">Actions</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Priority</th>
+                <th className="text-left px-5 py-3 text-xs font-semibold text-white uppercase tracking-wide">Conversation</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Bot</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Platform</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Msgs</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide w-[160px]">Last active</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Status</th>
+                {canAssign && <th className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Assigned to</th>}
+                <th className="text-right px-5 py-3 text-xs font-semibold text-white uppercase tracking-wide w-px whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-white/5">

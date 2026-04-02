@@ -37,9 +37,10 @@ type PanelTab = 'chat' | 'alerts' | 'today' | 'week'
 const PRO_PLANS = ['pro', 'team', 'enterprise']
 
 interface SageRightPanelProps {
-  workspaceId: string
-  plan?:        string
-  trialEndsAt?: string | null
+  workspaceId:      string
+  plan?:            string
+  trialEndsAt?:     string | null
+  wakeWordEnabled?: boolean
 }
 
 type PanelState = 'closed' | 'open' | 'expanded'
@@ -292,7 +293,7 @@ const PAGE_LABELS: Record<string, string> = {
   '/sage/rules':        'Rules',
 }
 
-export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt }: SageRightPanelProps) {
+export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt, wakeWordEnabled = true }: SageRightPanelProps) {
   const pathname = usePathname()
   const router   = useRouter()
 
@@ -570,6 +571,7 @@ export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt }: S
 
   function startWakeWord() {
     if (typeof window === 'undefined') return
+    if (!wakeWordEnabled) return
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SR) return

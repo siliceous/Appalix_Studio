@@ -163,7 +163,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
       {/* ── Left panel — form list ─────────────────────────────── */}
       <aside className="w-[220px] shrink-0 flex flex-col border-r border-gray-200 dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
         <div className="px-4 py-3 bg-[#141c2b] border-b border-white/10 flex items-center justify-between shrink-0">
-          <h2 className="text-xs font-semibold text-white uppercase tracking-wide">Forms</h2>
+          <h2 className="text-sm font-semibold text-white uppercase tracking-wide">Forms</h2>
           <button
             onClick={() => router.push('/forms/sources')}
             className="w-5 h-5 rounded-md flex items-center justify-center bg-white/15 hover:bg-white/25 text-white transition-colors"
@@ -226,11 +226,11 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
       <div className="w-[240px] shrink-0 flex flex-col border-r border-gray-200 dark:border-white/8 bg-gray-50/40 dark:bg-[#191919] overflow-hidden">
         <div className="px-4 py-3 bg-[#141c2b] border-b border-white/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-white truncate max-w-[120px]">
+            <span className="text-sm font-medium text-white truncate max-w-[120px]">
               {forms.find(f => f.id === selectedFormId)?.name ?? 'Submissions'}
             </span>
             {formSubmissions.length > 0 && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/70">
+              <span className="text-sm px-1.5 py-0.5 rounded-full bg-white/10 text-white">
                 {formSubmissions.length}
               </span>
             )}
@@ -238,7 +238,7 @@ export function FormsDashboard({ forms: initialForms, submissions: initialSubmis
           <button
             onClick={() => void runAnalyze()}
             disabled={isAnalyzing || !selectedFormId}
-            className="flex items-center gap-1 text-[10px] font-medium text-brand-600 dark:text-[#15A4AE] hover:opacity-80 disabled:opacity-40 transition-opacity"
+            className="flex items-center gap-1 text-sm font-medium text-brand-600 dark:text-[#15A4AE] hover:opacity-80 disabled:opacity-40 transition-opacity"
           >
             {isAnalyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
             Analyse

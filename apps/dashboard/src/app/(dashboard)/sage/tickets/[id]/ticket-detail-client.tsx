@@ -7,7 +7,7 @@ import {
   ArrowLeft, Search, Sparkles, RefreshCw, Loader2, User, Mail, Phone,
   Clock, Send, FileText, Users, CheckSquare, Check, Pencil,
   ChevronLeft, ChevronRight, Download, Trash2, Building2, Tag,
-  Bell, AlertCircle, ExternalLink, Lock, ChevronDown,
+  Bell, AlertCircle, ExternalLink, Lock, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import { EmailComposeModal } from '@/components/dashboard/email-compose-modal'
 import {
@@ -87,11 +87,13 @@ interface Props {
   activities: SageTicketActivity[]
   callerRole?: string
   members?:   WorkspaceMemberSummary[]
+  prevId?:    string | null
+  nextId?:    string | null
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function TicketDetailClient({ ticket, allTickets, activities: initialActivities, callerRole, members = [] }: Props) {
+export function TicketDetailClient({ ticket, allTickets, activities: initialActivities, callerRole, members = [], prevId = null, nextId = null }: Props) {
   const router   = useRouter()
   const readonly = callerRole === 'viewer'
 
@@ -315,11 +317,11 @@ export function TicketDetailClient({ ticket, allTickets, activities: initialActi
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-full overflow-hidden w-full">
+    <div className="flex h-full w-full gap-3 p-3 bg-[#f5f4f1] dark:bg-[#1c1c1c]">
 
         {/* ── LEFT PANEL — ticket list ──────────────────────────────────────── */}
         <div className={cn(
-          'flex flex-col bg-gray-50 dark:bg-[#181818] border-r border-gray-200 dark:border-white/8 shrink-0 transition-all duration-200 overflow-hidden',
+          'flex flex-col bg-white dark:bg-[#181818] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8 shrink-0 transition-all duration-200 overflow-hidden',
           leftCollapsed ? 'w-10' : 'w-64',
         )}>
           {leftCollapsed ? (
@@ -331,30 +333,33 @@ export function TicketDetailClient({ ticket, allTickets, activities: initialActi
             </button>
           ) : (
             <>
-              <div className="px-3 pt-3 pb-2 border-b border-gray-100 dark:border-white/8 shrink-0">
-                <div className="flex items-center justify-between mb-2">
-                  <Link href="/sage/tickets" className="text-xs text-gray-400 hover:text-[#15A4AE] transition-colors">← All Tickets</Link>
-                  <button onClick={() => setLeftCollapsed(true)} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/8 transition-colors">
-                    <ChevronLeft className="w-3 h-3 text-gray-400" />
-                  </button>
+              <div className="px-3 py-2.5 bg-[#141c2b] border-b border-white/10 shrink-0 space-y-2">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-white">Tickets</h2>
+                  <div className="flex items-center gap-2">
+                    <Link href="/sage/tickets" className="text-sm text-white hover:opacity-70 transition-opacity">← Back</Link>
+                    <button onClick={() => setLeftCollapsed(true)} className="p-1 rounded hover:bg-white/10 transition-colors">
+                      <ChevronLeft className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
                 </div>
-                <div className="relative mb-2">
+                <div className="relative">
                   <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
                   <input
                     type="text" placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)}
-                    className="w-full pl-6 pr-2.5 py-1.5 text-xs border border-gray-200 dark:border-white/10 rounded-lg bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40"
+                    className="w-full pl-6 pr-2.5 py-1.5 text-sm border border-white/20 rounded-lg !bg-[#f5f4f1] !text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40"
                   />
                 </div>
-                <div className="flex flex-wrap gap-1">
-                  {['all', 'open', 'in_progress', 'pending', 'resolved', 'closed'].map(f => (
-                    <button key={f} onClick={() => setLeftFilter(f)}
-                      className={cn('px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors',
-                        leftFilter === f ? 'bg-[#15A4AE] text-white' : 'bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12',
-                      )}>
-                      {f === 'all' ? 'All' : f === 'in_progress' ? 'In Progress' : f.charAt(0).toUpperCase() + f.slice(1)}
-                    </button>
-                  ))}
-                </div>
+              </div>
+              <div className="px-3 py-2 border-b border-gray-100 dark:border-white/8 flex flex-wrap gap-1 shrink-0">
+                {(['all', 'open', 'in_progress', 'pending', 'resolved', 'closed'] as const).map(f => (
+                  <button key={f} onClick={() => setLeftFilter(f)}
+                    className={cn('px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors',
+                      leftFilter === f ? 'bg-[#15A4AE] text-white' : 'bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12',
+                    )}>
+                    {f === 'all' ? 'All' : f === 'in_progress' ? 'In Progress' : f.charAt(0).toUpperCase() + f.slice(1)}
+                  </button>
+                ))}
               </div>
               <div className="flex-1 overflow-y-auto">
                 {filteredList.length === 0
@@ -387,56 +392,59 @@ export function TicketDetailClient({ ticket, allTickets, activities: initialActi
         </div>
 
         {/* ── CENTER PANEL ─────────────────────────────────────────────────── */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#f5f4f1] dark:bg-[#181818]">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white dark:bg-[#232323] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8">
 
           {/* Center header */}
-          <div className="shrink-0 bg-white dark:bg-[#1c1c1c] border-b border-gray-200 dark:border-white/8 px-4 py-2.5">
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="min-w-0 mr-2">
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate leading-tight">{ticket.title}</p>
-                {customerName && <p className="text-[10px] text-gray-400 leading-tight">{customerName}</p>}
-              </div>
+          <div className="shrink-0 bg-[#141c2b] border-b border-white/10 px-4 py-2.5 flex items-center gap-3">
+            {/* Left: title + customer name */}
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-white truncate leading-tight">{ticket.title}</p>
+              {customerName && <p className="text-sm text-white leading-tight">{customerName}</p>}
+            </div>
+
+            {/* Right: all controls */}
+            <div className="flex items-center gap-1 shrink-0">
               <select value={localPriority} onChange={e => handlePriorityChange(e.target.value)} disabled={readonly}
-                className={cn('text-[10px] font-semibold px-2.5 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:cursor-default shrink-0', priorityStyle.badge)}>
+                className="dark-bar-select text-sm border border-white/20 rounded-full px-2.5 py-0.5 focus:outline-none disabled:opacity-60 cursor-pointer shrink-0">
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
                 <option value="urgent">Urgent</option>
               </select>
               <select value={localStatus} onChange={e => handleStatusChange(e.target.value as SageTicketStatus)} disabled={readonly}
-                className={cn('text-[10px] font-semibold px-2.5 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:cursor-default shrink-0', statusStyle.badge)}>
+                className="dark-bar-select text-sm border border-white/20 rounded-full px-2.5 py-0.5 focus:outline-none disabled:opacity-60 cursor-pointer shrink-0">
                 {STATUS_FLOW.map(s => <option key={s} value={s}>{STATUS_STYLES[s].label}</option>)}
               </select>
               {!readonly && members.length > 0 && (
                 <select value={localAssignee} onChange={e => handleAssigneeChange(e.target.value)}
-                  className="text-[11px] border dark:border-white/10 rounded-full px-2.5 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer">
+                  className="dark-bar-select text-sm border border-white/20 rounded-full px-2.5 py-0.5 focus:outline-none cursor-pointer">
                   <option value="">Unassigned</option>
                   {members.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
                 </select>
               )}
-              <div className="flex-1" />
-              <div className="flex items-center gap-1 shrink-0 border-l border-gray-200 dark:border-white/8 pl-2 ml-1">
-                <Link href="/sage/tickets"
-                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg border border-gray-200 dark:border-white/10 transition-colors">
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  Back
-                </Link>
-                <button onClick={handleDownload} title="Download"
-                  className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 rounded-lg transition-colors">
-                  <Download className="w-3.5 h-3.5" />
+              <button onClick={handleDownload} title="Download"
+                className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+                <Download className="w-3.5 h-3.5" />
+              </button>
+              {!readonly && (
+                <button onClick={handleRename} title="Rename"
+                  className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+                  <Pencil className="w-3.5 h-3.5" />
                 </button>
-                {!readonly && (
-                  <button onClick={handleRename} title="Rename"
-                    className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 rounded-lg transition-colors">
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                )}
-                {!readonly && (
-                  <button onClick={() => void handleDelete()} title="Delete"
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
+              )}
+              {!readonly && (
+                <button onClick={() => void handleDelete()} title="Delete"
+                  className="p-1.5 text-white/60 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <div className="flex items-center border border-white/20 rounded-lg overflow-hidden">
+                <button onClick={() => prevId && router.push(`/sage/tickets/${prevId}`)} disabled={!prevId} title="Previous ticket" className="p-1.5 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border-r border-white/20">
+                  <ChevronUp className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => nextId && router.push(`/sage/tickets/${nextId}`)} disabled={!nextId} title="Next ticket" className="p-1.5 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
           </div>
@@ -513,26 +521,18 @@ export function TicketDetailClient({ ticket, allTickets, activities: initialActi
           </div>
         </div>
 
-        {/* ── RIGHT PANEL — deal slide-over style ──────────────────────── */}
-        <div className="w-80 shrink-0 flex flex-col border-l border-gray-200 dark:border-white/8 bg-white dark:bg-[#1e1e1e] overflow-hidden">
+        {/* ── RIGHT PANEL ──────────────────────────────────────────────────── */}
+        <div className="w-80 shrink-0 flex flex-col bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8 overflow-hidden">
 
-          {/* Header */}
-          <div className="px-4 pt-4 pb-0 border-b dark:border-white/8 shrink-0">
-            {/* Pills row — top */}
-            <div className="flex items-center gap-1.5 flex-wrap mb-3">
-              {source && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">{source}</span>
-              )}
-              <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-medium', priorityStyle.badge)}>{PRIORITY_STYLES[localPriority]?.label ?? localPriority}</span>
-              <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-medium', statusStyle.badge)}>{statusStyle.label}</span>
-            </div>
-            <div className="flex items-start gap-2.5 mb-3">
-              <div className="w-9 h-9 rounded-xl bg-[#15A4AE]/15 flex items-center justify-center shrink-0">
+          {/* Header — dark name bar */}
+          <div className="px-4 py-3 bg-[#141c2b] border-b border-white/10 shrink-0">
+            <div className="flex items-start gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-[#15A4AE]/20 flex items-center justify-center shrink-0">
                 <span className="text-sm font-bold text-[#15A4AE]">{ticket.title.charAt(0).toUpperCase()}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 leading-snug line-clamp-2">{ticket.title}</p>
-                {customerName && <p className="text-[10px] text-gray-400 mt-0.5 truncate">{customerName}</p>}
+                <p className="text-sm font-semibold text-white leading-snug line-clamp-2">{ticket.title}</p>
+                {customerName && <p className="text-sm text-white mt-0.5 truncate">{customerName}</p>}
               </div>
               {!readonly && (
                 <button
@@ -540,21 +540,30 @@ export function TicketDetailClient({ ticket, allTickets, activities: initialActi
                   title="Edit ticket"
                   className={cn('p-1.5 rounded-lg transition-colors shrink-0',
                     showEditForm
-                      ? 'bg-[#15A4AE]/10 text-[#15A4AE]'
-                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8'
+                      ? 'bg-[#15A4AE]/20 text-[#15A4AE]'
+                      : 'text-white hover:bg-white/10'
                   )}
                 >
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
-            {/* Tabs */}
-            <div className="flex">
+          </div>
+          {/* Badges + tabs — cream background */}
+          <div className="shrink-0 border-b border-gray-100 dark:border-white/8">
+            <div className="flex items-center gap-1.5 flex-wrap px-4 pt-2.5 pb-2">
+              {source && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">{source}</span>
+              )}
+              <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-medium', priorityStyle.badge)}>{PRIORITY_STYLES[localPriority]?.label ?? localPriority}</span>
+              <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-medium', statusStyle.badge)}>{statusStyle.label}</span>
+            </div>
+            <div className="flex px-1">
               {(['overview', 'activity'] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setRightTab(tab)}
-                  className={cn('px-3.5 py-2 text-xs font-semibold capitalize transition-colors border-b-2',
+                  className={cn('px-3.5 py-2 text-sm font-semibold capitalize transition-colors border-b-2',
                     rightTab === tab
                       ? 'border-[#15A4AE] text-[#15A4AE]'
                       : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'

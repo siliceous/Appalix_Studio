@@ -2,7 +2,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, ChevronUp, ChevronDown } from 'lucide-react'
 import { PipelineBoard } from '@/components/sage/pipeline-board'
 import { PipelineViewAsPicker } from '@/components/sage/pipeline-view-as-picker'
 import type { WorkspaceMember, WorkspaceMemberSummary, WorkspaceMemberRole, SagePipeline, SagePipelineStage, SageDeal, SageContact } from '@/lib/types'
@@ -123,6 +123,11 @@ export default async function PipelineBoardPage({
     }
   }
 
+  const allPipelineIds = allPipelines.map(p => p.id)
+  const pipelineIdx = allPipelineIds.indexOf(id)
+  const prevId = pipelineIdx > 0 ? allPipelineIds[pipelineIdx - 1] : null
+  const nextId = pipelineIdx < allPipelineIds.length - 1 ? allPipelineIds[pipelineIdx + 1] : null
+
   return (
     <div className="flex flex-col h-full">
       {/* Board header */}
@@ -142,6 +147,22 @@ export default async function PipelineBoardPage({
           teamMembers={teamMembers}
           viewAsUserId={viewAsUserId}
         />
+        <div className="ml-auto flex items-center border dark:border-white/20 rounded-lg overflow-hidden">
+          {prevId ? (
+            <Link href={`/sage/pipelines/${prevId}`} title="Previous pipeline" className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors border-r dark:border-white/10">
+              <ChevronUp className="w-3.5 h-3.5" />
+            </Link>
+          ) : (
+            <span className="p-1.5 text-gray-300 dark:text-gray-600 border-r dark:border-white/10 cursor-not-allowed"><ChevronUp className="w-3.5 h-3.5" /></span>
+          )}
+          {nextId ? (
+            <Link href={`/sage/pipelines/${nextId}`} title="Next pipeline" className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+              <ChevronDown className="w-3.5 h-3.5" />
+            </Link>
+          ) : (
+            <span className="p-1.5 text-gray-300 dark:text-gray-600 cursor-not-allowed"><ChevronDown className="w-3.5 h-3.5" /></span>
+          )}
+        </div>
       </div>
 
       {/* Board */}

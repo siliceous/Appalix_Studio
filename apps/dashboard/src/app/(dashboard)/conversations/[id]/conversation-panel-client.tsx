@@ -4,8 +4,9 @@ import React, { useEffect, useRef, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
-  MessageSquare, Download, Search, X, Pencil, Trash2, ArrowLeft, Loader2,
+  MessageSquare, Download, Search, X, Pencil, Trash2, Loader2,
   UserPlus, Ticket, Send, CheckCircle, UserCheck, Bot, Phone,
+  ChevronUp, ChevronDown,
 } from 'lucide-react'
 import { EmailComposeModal } from '@/components/dashboard/email-compose-modal'
 import { PipelinePickerModal } from '@/components/sage/pipeline-picker-modal'
@@ -81,6 +82,8 @@ interface Props {
   canAssign?:           boolean
   readonly?:            boolean
   smsSuggestedContact?: SmsContact | null
+  prevId?:              string | null
+  nextId?:              string | null
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -88,6 +91,7 @@ export function ConversationPanelClient({
   conversations, current, messages,
   teamMembers = [], canAssign = false, readonly = false,
   smsSuggestedContact = null,
+  prevId = null, nextId = null,
 }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
@@ -275,16 +279,17 @@ export function ConversationPanelClient({
   }
 
   return (
-    <div className="flex h-full overflow-hidden w-full">
+    <div className="flex h-full w-full gap-3 p-3 bg-[#f5f4f1] dark:bg-[#1c1c1c]">
 
-      {/* ── Left panel: conversation list ─────────────────────────────────── */}
-      <div className="w-[240px] shrink-0 border-r dark:border-white/8 flex flex-col bg-gray-50 dark:bg-[#181818]">
+      {/* ── Left panel: conversation list — floating ───────────────────────── */}
+      <div className="w-[240px] shrink-0 flex flex-col bg-white dark:bg-[#181818] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8 overflow-hidden">
 
-        {/* Back link + Search + Bot filter */}
-        <div className="p-3 border-b dark:border-white/8 space-y-2">
-          <Link href="/dashboard/bots" className="flex items-center gap-1 text-xs text-gray-400 hover:text-[#15A4AE] transition-colors">
-            ← All conversations
-          </Link>
+        {/* Header */}
+        <div className="px-3 py-2.5 bg-[#141c2b] border-b border-white/10 shrink-0 space-y-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-white">Conversations</h2>
+            <Link href="/dashboard/bots" className="text-sm text-white hover:opacity-70 transition-opacity">← Back</Link>
+          </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
             <input
@@ -292,7 +297,7 @@ export function ConversationPanelClient({
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search…"
-              className="w-full pl-8 pr-7 py-1.5 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
+              className="w-full pl-8 pr-7 py-1.5 text-sm border border-white/20 rounded-lg !bg-[#f5f4f1] !text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
             />
             {search && (
               <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -304,7 +309,7 @@ export function ConversationPanelClient({
             <select
               value={botFilter}
               onChange={e => setBotFilter(e.target.value)}
-              className="w-full text-xs border dark:border-white/10 rounded-lg px-2.5 py-1.5 bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
+              className="dark-bar-select w-full text-sm border border-white/20 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
             >
               <option value="">All bots</option>
               {bots.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -333,16 +338,21 @@ export function ConversationPanelClient({
                     : 'hover:bg-white dark:hover:bg-white/5'
                 }`}
               >
-                <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${getAvatarColor(c.id)}`}>
-                  {getInitials(c.ai_entities?.name ?? c.title)}
-                </div>
+                {c.platform === 'sms'
+                  ? <div className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center bg-green-500">
+                      <Phone className="w-5 h-5 text-white" />
+                    </div>
+                  : c.bot_id
+                  ? <div className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center bg-purple-500">
+                      <Bot className="w-5 h-5 text-white" />
+                    </div>
+                  : <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${getAvatarColor(c.id)}`}>
+                      {getInitials(c.ai_entities?.name ?? c.title)}
+                    </div>
+                }
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1">
                     <div className="flex items-center gap-1 min-w-0">
-                      {c.platform === 'sms'
-                        ? <Phone className="w-3 h-3 text-teal-500 shrink-0" />
-                        : c.bot_id && <Bot className="w-3 h-3 text-purple-400 shrink-0" />
-                      }
                       <span className={`text-sm font-semibold truncate ${isActive ? 'text-[#1f6157] dark:text-[#15A4AE]' : 'text-gray-900 dark:text-gray-100'}`}>
                         {name}
                       </span>
@@ -370,38 +380,47 @@ export function ConversationPanelClient({
       </div>
 
       {/* ── Middle panel: chat ─────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-[#f5f4f1] dark:bg-[#1c1c1c]">
-        {/* Header: single row — avatar + name + dropdowns + action icons */}
-        <div className="shrink-0 bg-white dark:bg-[#232323] border-b dark:border-white/8 px-4 py-2.5">
-          <div className="flex items-center gap-2">
-            {/* Avatar + name */}
-            <div className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${getAvatarColor(current.id)}`}>
-              {getInitials(current.ai_entities?.name ?? current.title)}
-            </div>
-            <div className="min-w-0 mr-2">
+      <div className="flex-1 flex flex-col bg-white dark:bg-[#232323] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8 overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header: single row — avatar + name | all controls */}
+        <div className="shrink-0 bg-[#141c2b] border-b border-white/10 px-4 py-2.5 flex items-center gap-3">
+          {/* Left: avatar + name */}
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            {isSmsThread
+              ? <div className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center bg-green-500">
+                  <Phone className="w-4 h-4 text-white" />
+                </div>
+              : current.bots?.name
+              ? <div className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center bg-purple-500">
+                  <Bot className="w-4 h-4 text-white" />
+                </div>
+              : <div className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-xs font-bold text-white ${getAvatarColor(current.id)}`}>
+                  {getInitials(current.ai_entities?.name ?? current.title)}
+                </div>
+            }
+            <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                {isSmsThread
-                  ? <Phone className="w-3 h-3 text-teal-500 shrink-0" />
-                  : current.bots?.name && <Bot className="w-3 h-3 text-purple-400 shrink-0" />
-                }
-                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate leading-tight">
+                <span className="text-sm font-semibold text-white truncate leading-tight">
                   {current.ai_entities?.name ?? current.title ?? '(no title)'}
                 </span>
               </div>
               {isSmsThread && (
-                <p className="text-[10px] text-gray-400 leading-tight">{(current as any).platform_thread_id}</p>
+                <p className="text-sm text-white leading-tight">{(current as any).platform_thread_id}</p>
               )}
               {!isSmsThread && current.bots?.name && (
-                <p className="text-[10px] text-gray-400 leading-tight">via {current.bots.name}</p>
+                <p className="text-sm text-white leading-tight">via {current.bots.name}</p>
               )}
             </div>
+          </div>
 
-            {/* Priority badge / dropdown */}
+          {/* Right: all controls */}
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Priority dropdown */}
             <select
               value={localPriority}
               onChange={e => handlePriorityChange(e.target.value)}
               disabled={readonly || saving === 'priority'}
-              className="text-[11px] border dark:border-white/10 rounded-full px-2.5 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60 cursor-pointer"
+              className="dark-bar-select text-sm border border-white/20 rounded-full px-2.5 py-0.5 focus:outline-none disabled:opacity-60 cursor-pointer"
             >
               <option value="">Priority</option>
               <option value="low">⚪ Low</option>
@@ -415,7 +434,7 @@ export function ConversationPanelClient({
               value={localStatus}
               onChange={e => handleStatusChange(e.target.value)}
               disabled={readonly || saving === 'status'}
-              className="text-[11px] border dark:border-white/10 rounded-full px-2.5 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60 cursor-pointer"
+              className="dark-bar-select text-sm border border-white/20 rounded-full px-2.5 py-0.5 focus:outline-none disabled:opacity-60 cursor-pointer"
             >
               <option value="active">Active</option>
               <option value="completed">Completed</option>
@@ -430,7 +449,7 @@ export function ConversationPanelClient({
                   value={localAssign ?? ''}
                   disabled={saving === 'assign' || readonly}
                   onChange={e => handleAssign(e.target.value || null)}
-                  className="text-[11px] border dark:border-white/10 rounded-full px-2.5 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60 cursor-pointer"
+                  className="dark-bar-select text-sm border border-white/20 rounded-full px-2.5 py-0.5 focus:outline-none disabled:opacity-60 cursor-pointer"
                 >
                   <option value="">Assign to…</option>
                   {teamMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
@@ -439,54 +458,50 @@ export function ConversationPanelClient({
               </>
             )}
 
-            {/* Spacer */}
-            <div className="flex-1" />
+            {/* Action buttons */}
+            <button
+              onClick={handleCreateTicket}
+              disabled={actionLoading === 'ticket'}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-sm font-medium text-white hover:bg-white/10 rounded-lg border border-white/20 transition-colors disabled:opacity-60"
+            >
+              {actionLoading === 'ticket' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Ticket className="w-3.5 h-3.5" />}
+              Add Ticket
+            </button>
+            <button
+              onClick={() => setShowDealPicker(true)}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-sm font-medium text-white hover:bg-white/10 rounded-lg border border-white/20 transition-colors"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              Add a Deal
+            </button>
+            <a
+              href={`/api/conversations/${current.id}/export`}
+              download title="Download transcript"
+              className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+            </a>
+            {!readonly && (
+              <>
+                <button onClick={handleRename} title="Rename"
+                  className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={handleDelete} title="Delete conversation"
+                  className="p-1.5 text-white/60 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
 
-            {/* Tab action buttons */}
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                onClick={handleCreateTicket}
-                disabled={actionLoading === 'ticket'}
-                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 rounded-lg border border-yellow-200 dark:border-yellow-500/20 transition-colors disabled:opacity-60"
-              >
-                {actionLoading === 'ticket' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Ticket className="w-3.5 h-3.5" />}
-                Add Ticket
+            {/* Prev / Next navigation */}
+            <div className="flex items-center border border-white/20 rounded-lg overflow-hidden">
+              <button onClick={() => prevId && router.push(`/conversations/${prevId}`)} disabled={!prevId} title="Previous conversation" className="p-1.5 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border-r border-white/20">
+                <ChevronUp className="w-3.5 h-3.5" />
               </button>
-              <button
-                onClick={() => setShowDealPicker(true)}
-                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg border border-blue-200 dark:border-blue-500/20 transition-colors"
-              >
-                <UserPlus className="w-3.5 h-3.5" />
-                Add a Deal
+              <button onClick={() => nextId && router.push(`/conversations/${nextId}`)} disabled={!nextId} title="Next conversation" className="p-1.5 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                <ChevronDown className="w-3.5 h-3.5" />
               </button>
-            </div>
-
-            {/* Action icons */}
-            <div className="flex items-center gap-1 shrink-0">
-              <Link href="/dashboard/bots"
-                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg border border-gray-200 dark:border-white/10 transition-colors">
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Back
-              </Link>
-              <a
-                href={`/api/conversations/${current.id}/export`}
-                download title="Download transcript"
-                className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" />
-              </a>
-              {!readonly && (
-                <>
-                  <button onClick={handleRename} title="Rename"
-                    className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors">
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={handleDelete} title="Delete conversation"
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </>
-              )}
             </div>
           </div>
         </div>
@@ -582,11 +597,15 @@ export function ConversationPanelClient({
             <p className="text-[10px] text-gray-400 px-1">SMS · {(current as any).platform_thread_id}</p>
           </div>
         )}
-      </div>
+        </div>{/* end inner flex */}
+      </div>{/* end middle panel */}
 
-      {/* ── Right panel: details ───────────────────────────────────────────── */}
-      <div className="w-[320px] shrink-0 overflow-y-auto bg-white dark:bg-[#232323]">
-        <div className="p-4 space-y-5">
+      {/* ── Right panel: details — floating ────────────────────────────────── */}
+      <div className="w-[320px] shrink-0 flex flex-col bg-white dark:bg-[#232323] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8 overflow-hidden">
+        <div className="px-4 py-2.5 bg-[#141c2b] border-b border-white/10 shrink-0">
+          <h2 className="text-sm font-semibold text-white">Details</h2>
+        </div>
+        <div className="p-4 space-y-5 overflow-y-auto flex-1">
 
           {/* Status pills */}
           <div className="flex flex-wrap gap-1.5">

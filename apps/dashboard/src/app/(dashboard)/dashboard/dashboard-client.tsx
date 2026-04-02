@@ -1989,8 +1989,8 @@ export function SageDashboardClient({
                   <div className={`w-full flex items-center justify-between px-4 py-2.5 ${card.barCls}`}>
                     <p className="text-sm font-semibold text-white">{card.label}</p>
                     {isLoading
-                      ? <Loader2 className={`w-4 h-4 animate-spin ${card.iconCls}`} />
-                      : <card.Icon className={`w-4 h-4 ${card.iconCls}`} />}
+                      ? <Loader2 className={`w-3.5 h-3.5 animate-spin ${card.iconCls}`} />
+                      : <card.Icon className={`w-3.5 h-3.5 ${card.iconCls}`} />}
                   </div>
                   {/* Donut + legend */}
                   <div className="p-4 flex flex-col items-center w-full">

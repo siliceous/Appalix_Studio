@@ -64,6 +64,12 @@ export default async function SubmissionDetailPage({
   const submissions = (listData ?? []) as SageFormSubmission[]
   const forms       = (formsData ?? []) as SageForm[]
 
+  // Prev / next navigation
+  const allIds = submissions.map(s => s.id)
+  const idx    = allIds.indexOf(id)
+  const prevId = idx > 0 ? allIds[idx - 1] : null
+  const nextId = idx < allIds.length - 1 ? allIds[idx + 1] : null
+
   // Team members for assign dropdown
   let teamMembers: TeamMember[] = []
   if (canAssign) {
@@ -141,6 +147,8 @@ export default async function SubmissionDetailPage({
           teamMembers={teamMembers}
           canAssign={canAssign}
           dealOwnerName={dealOwnerName}
+          prevId={prevId}
+          nextId={nextId}
         />
       </div>
     </div>

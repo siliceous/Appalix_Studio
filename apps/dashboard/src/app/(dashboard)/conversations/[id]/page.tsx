@@ -66,6 +66,12 @@ export default async function ConversationDetailPage({
   const messages = (msgsRes.data ?? []) as PanelMessage[]
   const convList = (listRes.data ?? []) as ConvRow[]
 
+  // Prev / next navigation
+  const allIds = convList.map(c => c.id)
+  const idx    = allIds.indexOf(id)
+  const prevId = idx > 0 ? allIds[idx - 1] : null
+  const nextId = idx < allIds.length - 1 ? allIds[idx + 1] : null
+
   // For SMS threads: fetch the contact to check for an auto-suggested name
   type SmsContact = { id: string; name: string; phone: string } | null
   let smsSuggestedContact: SmsContact = null
@@ -107,6 +113,8 @@ export default async function ConversationDetailPage({
           teamMembers={teamMembers}
           canAssign={canAssign}
           smsSuggestedContact={smsSuggestedContact}
+          prevId={prevId}
+          nextId={nextId}
         />
       </div>
     </div>

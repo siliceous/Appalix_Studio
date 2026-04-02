@@ -486,13 +486,13 @@ const [mDealTitle, setMDealTitle] = useState('')
         <div className="px-3 py-3 bg-[#141c2b] border-b border-white/10 shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Image src="/favicon.png" alt="Bots" width={14} height={14} className="w-3.5 h-3.5 shrink-0 object-contain" />
-            <h2 className="text-xs font-bold text-white uppercase tracking-wide">Bots</h2>
+            <h2 className="text-sm font-bold text-white uppercase tracking-wide">Bots</h2>
           </div>
           <button
             onClick={handleAnalyze}
             disabled={isAnalyzing}
             title={isAnalyzing ? 'Analysing…' : 'Analyse conversations'}
-            className="p-1 rounded-lg text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-50 transition-colors"
+            className="p-1 rounded-lg text-white hover:bg-white/10 disabled:opacity-50 transition-colors"
           >
             {isAnalyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
           </button>
@@ -557,16 +557,16 @@ const [mDealTitle, setMDealTitle] = useState('')
       <aside className="w-[240px] shrink-0 flex flex-col border-r dark:border-white/8 bg-gray-50/50 dark:bg-[#191919] overflow-hidden">
         <div className="px-3 py-2.5 bg-[#141c2b] border-b border-white/10 shrink-0 flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-white truncate max-w-[140px]">
+            <p className="text-sm font-semibold text-white truncate max-w-[140px]">
               {selectedBotName ?? 'All Conversations'}
             </p>
-            <p className="text-[10px] text-white/50">{convListVisible.length} conversation{convListVisible.length !== 1 ? 's' : ''}</p>
+            <p className="text-sm text-white">{convListVisible.length} conversation{convListVisible.length !== 1 ? 's' : ''}</p>
           </div>
           {checkedIds.size > 0 && (
             <button
               onClick={handleDeleteSelected}
               disabled={isDeleting}
-              className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 border border-red-200 dark:border-red-500/20 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1 text-sm px-2 py-1 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 border border-red-200 dark:border-red-500/20 disabled:opacity-50 transition-colors"
             >
               {isDeleting ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Trash2 className="w-2.5 h-2.5" />}
               {isDeleting ? '…' : `Del ${checkedIds.size}`}

@@ -292,7 +292,7 @@ export function TicketsTable({
           <div className="flex items-center gap-1">
             {[{ value: '', label: 'All' }, ...STATUS_OPTIONS.map(s => ({ value: s, label: STATUS_LABEL[s] })), { value: 'trash', label: 'Trash' }].map(s => (
               <button key={s.value} onClick={() => setActiveStatus(s.value)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                   activeStatus === s.value
                     ? 'bg-white/20 text-white border border-white/40'
                     : 'bg-white/8 text-white hover:bg-white/15'

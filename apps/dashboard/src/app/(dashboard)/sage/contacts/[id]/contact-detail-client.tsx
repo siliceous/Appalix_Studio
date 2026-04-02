@@ -101,24 +101,17 @@ export function ContactDetailClient({
   const hasDeal = deals.length > 0
 
   return (
-    <div className="flex h-[calc(100vh-57px)] overflow-hidden bg-gray-50 dark:bg-[#141414]">
+    <div className="flex h-[calc(100vh-57px)] w-full gap-3 p-3 bg-[#f5f4f1] dark:bg-[#1c1c1c]">
 
       {/* ── Left info panel ─────────────────────────────────────── */}
-      <aside className="w-64 shrink-0 border-r dark:border-white/8 bg-white dark:bg-[#1a1a1a] overflow-y-auto flex flex-col">
-        <div className="px-4 pt-4 pb-2">
-          <Link
-            href="/sage/contacts"
-            className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-          >
-            <ChevronLeft className="w-3.5 h-3.5" /> All Contacts
-          </Link>
-        </div>
-
-        {/* Name + company summary */}
-        <div className="px-4 py-3 border-b dark:border-white/8">
-          <p className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-snug">{contact.name}</p>
+      <div className="w-64 shrink-0 flex flex-col bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8 overflow-hidden">
+        <div className="px-4 py-2.5 bg-[#141c2b] border-b border-white/10 shrink-0">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-white">{contact.name}</h2>
+            <Link href="/sage/contacts" className="text-sm text-white hover:opacity-70 transition-opacity">← Back</Link>
+          </div>
           {contact.company_name && (
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-0.5">{contact.company_name}</p>
+            <p className="text-sm text-white mt-0.5">{contact.company_name}</p>
           )}
         </div>
 
@@ -227,25 +220,25 @@ export function ContactDetailClient({
             <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{contact.notes}</p>
           </div>
         )}
-      </aside>
+      </div>
 
       {/* ── Center: main content ──────────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto min-w-0">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white dark:bg-[#232323] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8">
         {/* Toolbar */}
-        <div className="sticky top-0 z-10 bg-white dark:bg-[#1a1a1a] border-b dark:border-white/8 px-6 py-2.5 flex items-center justify-between">
+        <div className="shrink-0 bg-[#141c2b] border-b border-white/10 px-6 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500 dark:text-gray-400">Contacts</span>
-            <span className="text-xs text-gray-300 dark:text-gray-600">/</span>
-            <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{contact.name}</span>
+            <span className="text-sm text-white">Contacts</span>
+            <span className="text-sm text-white/50">/</span>
+            <span className="text-sm font-medium text-white">{contact.name}</span>
           </div>
           <div className="flex items-center gap-2">
             {/* Prev / Next navigation */}
-            <div className="flex items-center border dark:border-white/10 rounded-lg overflow-hidden">
+            <div className="flex items-center border border-white/20 rounded-lg overflow-hidden">
               <button
                 onClick={() => prevId && router.push(`/sage/contacts/${prevId}`)}
                 disabled={!prevId}
                 title="Previous contact"
-                className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border-r dark:border-white/10"
+                className="p-1.5 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border-r border-white/20"
               >
                 <ChevronUp className="w-3.5 h-3.5" />
               </button>
@@ -253,7 +246,7 @@ export function ContactDetailClient({
                 onClick={() => nextId && router.push(`/sage/contacts/${nextId}`)}
                 disabled={!nextId}
                 title="Next contact"
-                className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="p-1.5 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronDownIcon className="w-3.5 h-3.5" />
               </button>
@@ -261,7 +254,7 @@ export function ContactDetailClient({
           </div>
         </div>
 
-        <div className="p-6 space-y-5">
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* ── Name / company hero card ── */}
           <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-5">
             <div className="flex items-start gap-4">
@@ -442,15 +435,14 @@ export function ContactDetailClient({
 
       {/* ── Right panel: Activity feed ─────────────────────────────── */}
       {activityOpen ? (
-        <div className="w-64 shrink-0 bg-[#f5f4f1] dark:bg-[#1c1c1c] flex flex-col overflow-hidden p-3">
-          <div className="flex flex-col flex-1 overflow-hidden bg-white dark:bg-[#242424] rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_16px_rgba(0,0,0,0.4)] border border-gray-200/70 dark:border-white/8">
+        <div className="w-64 shrink-0 flex flex-col overflow-hidden bg-white dark:bg-[#242424] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8">
             {/* Header */}
-            <div className="flex items-center justify-between px-3 py-2.5 border-b dark:border-white/8 shrink-0">
-              <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Activity</span>
+            <div className="flex items-center justify-between px-3 py-2.5 bg-[#141c2b] border-b border-white/10 shrink-0">
+              <span className="text-sm font-semibold text-white">Activity</span>
               <button
                 onClick={() => setActivityOpen(false)}
                 title="Collapse activity"
-                className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+                className="p-1 rounded text-white hover:bg-white/10 transition-colors"
               >
                 <ChevronRight className="w-3 h-3" />
               </button>
@@ -490,11 +482,10 @@ export function ContactDetailClient({
                 )
               })}
             </div>
-          </div>
         </div>
       ) : (
         <div
-          className="w-8 shrink-0 bg-[#f5f4f1] dark:bg-[#1c1c1c] flex flex-col items-center py-4 gap-3 cursor-pointer hover:bg-[#ede9e2] dark:hover:bg-white/4 transition-colors"
+          className="w-8 shrink-0 flex flex-col items-center py-4 gap-3 cursor-pointer hover:bg-[#ede9e2] dark:hover:bg-white/4 transition-colors rounded-2xl bg-white dark:bg-[#242424] border border-gray-200/60 dark:border-white/8 shadow-xl"
           onClick={() => setActivityOpen(true)}
           title="Show activity"
         >

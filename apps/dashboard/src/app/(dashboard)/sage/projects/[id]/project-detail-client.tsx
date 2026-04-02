@@ -6,7 +6,7 @@ import Link from 'next/link'
 import {
   Search, ChevronLeft, ChevronRight, Plus, Circle, CheckCircle2,
   CheckSquare, Trash2, User, Building2, Link2, CalendarDays,
-  Pencil, Lock, X, Check, ArrowLeft, Bell, Phone, FileText, Users, Clock, ChevronDown,
+  Pencil, Lock, X, Check, ArrowLeft, Bell, Phone, FileText, Users, Clock, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import { cn, timeAgo } from '@/lib/utils'
 import type { SageProject, SageProjectTask, SageProjectActivity, WorkspaceMemberSummary } from '@/lib/types'
@@ -81,9 +81,11 @@ interface Props {
   activities:    SageProjectActivity[]
   members:       WorkspaceMemberSummary[]
   currentUserId: string
+  prevId?:       string | null
+  nextId?:       string | null
 }
 
-export function ProjectDetailClient({ project: initial, allProjects, tasks: initialTasks, activities: initialActivities, members }: Props) {
+export function ProjectDetailClient({ project: initial, allProjects, tasks: initialTasks, activities: initialActivities, members, prevId = null, nextId = null }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
@@ -279,11 +281,11 @@ export function ProjectDetailClient({ project: initial, allProjects, tasks: init
   const isOverdue     = project.due_date ? new Date(project.due_date) < new Date() && project.status !== 'completed' : false
 
   return (
-    <div className="flex h-full overflow-hidden w-full">
+    <div className="flex h-full w-full gap-3 p-3 bg-[#f5f4f1] dark:bg-[#1c1c1c]">
 
       {/* ── LEFT PANEL ──────────────────────────────────────────────────────── */}
       <div className={cn(
-        'flex flex-col bg-gray-50 dark:bg-[#181818] border-r border-gray-200 dark:border-white/8 shrink-0 transition-all duration-200 overflow-hidden',
+        'flex flex-col bg-white dark:bg-[#181818] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8 shrink-0 transition-all duration-200 overflow-hidden',
         leftCollapsed ? 'w-10' : 'w-64',
       )}>
         {leftCollapsed ? (
@@ -295,20 +297,25 @@ export function ProjectDetailClient({ project: initial, allProjects, tasks: init
           </button>
         ) : (
           <>
-            <div className="px-3 pt-3 pb-2 border-b border-gray-100 dark:border-white/8 shrink-0">
-              <div className="flex items-center justify-between mb-2">
-                <Link href="/sage/projects" className="text-xs text-gray-400 hover:text-[#15A4AE] transition-colors">← All Projects</Link>
-                <button onClick={() => setLeftCollapsed(true)} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/8 transition-colors">
-                  <ChevronLeft className="w-3 h-3 text-gray-400" />
-                </button>
+            <div className="px-3 py-2.5 bg-[#141c2b] border-b border-white/10 shrink-0 space-y-2">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-white">Projects</h2>
+                <div className="flex items-center gap-2">
+                  <Link href="/sage/projects" className="text-sm text-white hover:opacity-70 transition-opacity">← Back</Link>
+                  <button onClick={() => setLeftCollapsed(true)} className="p-1 rounded hover:bg-white/10 transition-colors">
+                    <ChevronLeft className="w-3 h-3 text-white" />
+                  </button>
+                </div>
               </div>
-              <div className="relative mb-2">
+              <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
                 <input
                   type="text" placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-6 pr-2.5 py-1.5 text-xs border border-gray-200 dark:border-white/10 rounded-lg bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40"
+                  className="w-full pl-6 pr-2.5 py-1.5 text-sm border border-white/20 rounded-lg !bg-[#f5f4f1] !text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40"
                 />
               </div>
+            </div>
+            <div className="px-3 py-2 border-b border-gray-100 dark:border-white/8 shrink-0">
               <div className="flex flex-wrap gap-1">
                 {(['all', 'onboarding', 'active', 'on_hold', 'completed', 'cancelled'] as const).map(f => (
                   <button key={f} onClick={() => setLeftFilter(f)}
@@ -351,19 +358,22 @@ export function ProjectDetailClient({ project: initial, allProjects, tasks: init
       </div>
 
       {/* ── CENTER PANEL ────────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#f5f4f1] dark:bg-[#181818]">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white dark:bg-[#232323] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8">
 
         {/* Center header */}
-        <div className="shrink-0 bg-white dark:bg-[#1c1c1c] border-b border-gray-200 dark:border-white/8 px-4 py-2.5">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="min-w-0 mr-2">
-              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate leading-tight">{project.name}</p>
-              {project.contact?.name && <p className="text-[10px] text-gray-400 leading-tight">{project.contact.name}</p>}
-            </div>
+        <div className="shrink-0 bg-[#141c2b] border-b border-white/10 px-4 py-2.5 flex items-center gap-3">
+          {/* Left: project name + contact name */}
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-white truncate leading-tight">{project.name}</p>
+            {project.contact?.name && <p className="text-sm text-white leading-tight">{project.contact.name}</p>}
+          </div>
+
+          {/* Right: all controls */}
+          <div className="flex items-center gap-1 shrink-0">
             <select
               value={project.status}
               onChange={e => saveField({ status: e.target.value as SageProject['status'] })}
-              className={cn('text-[10px] font-semibold px-2.5 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 shrink-0', statusStyle.badge)}
+              className="dark-bar-select text-sm border border-white/20 rounded-full px-2.5 py-0.5 focus:outline-none cursor-pointer shrink-0"
             >
               {Object.entries(STATUS_STYLES).map(([val, cfg]) => (
                 <option key={val} value={val}>{cfg.label}</option>
@@ -372,22 +382,22 @@ export function ProjectDetailClient({ project: initial, allProjects, tasks: init
             <select
               value={project.priority}
               onChange={e => saveField({ priority: e.target.value as 'low' | 'medium' | 'high' })}
-              className={cn('text-[10px] font-semibold px-2.5 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 shrink-0', priorityStyle)}
+              className="dark-bar-select text-sm border border-white/20 rounded-full px-2.5 py-0.5 focus:outline-none cursor-pointer shrink-0"
             >
               <option value="low">Low</option>
               <option value="medium">Medium</option>
               <option value="high">High</option>
             </select>
-            <div className="flex-1" />
-            <div className="flex items-center gap-1 shrink-0 border-l border-gray-200 dark:border-white/8 pl-2 ml-1">
-              <Link href="/sage/projects"
-                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg border border-gray-200 dark:border-white/10 transition-colors">
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Back
-              </Link>
-              <button onClick={handleDeleteProject} disabled={isPending} title="Delete project"
-                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors">
-                <Trash2 className="w-3.5 h-3.5" />
+            <button onClick={handleDeleteProject} disabled={isPending} title="Delete project"
+              className="p-1.5 text-white/60 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+            <div className="flex items-center border border-white/20 rounded-lg overflow-hidden">
+              <button onClick={() => prevId && router.push(`/sage/projects/${prevId}`)} disabled={!prevId} title="Previous project" className="p-1.5 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border-r border-white/20">
+                <ChevronUp className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => nextId && router.push(`/sage/projects/${nextId}`)} disabled={!nextId} title="Next project" className="p-1.5 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                <ChevronDown className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -504,11 +514,34 @@ export function ProjectDetailClient({ project: initial, allProjects, tasks: init
       </div>
 
       {/* ── RIGHT PANEL ─────────────────────────────────────────────────────── */}
-      <div className="w-80 shrink-0 flex flex-col border-l border-gray-200 dark:border-white/8 bg-white dark:bg-[#1e1e1e] overflow-hidden">
+      <div className="w-80 shrink-0 flex flex-col bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8 overflow-hidden">
 
-        {/* Header */}
-        <div className="px-4 pt-4 pb-0 border-b dark:border-white/8 shrink-0">
-          <div className="flex items-center gap-1.5 flex-wrap mb-3">
+        {/* Header — dark name bar */}
+        <div className="px-4 py-3 bg-[#141c2b] border-b border-white/10 shrink-0">
+          <div className="flex items-start gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-[#15A4AE]/20 flex items-center justify-center shrink-0">
+              <span className="text-sm font-bold text-[#15A4AE]">{project.name.charAt(0).toUpperCase()}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white leading-snug line-clamp-2">{project.name}</p>
+              {project.contact?.name && <p className="text-sm text-white mt-0.5 truncate">{project.contact.name}</p>}
+            </div>
+            <button
+              onClick={() => { setShowEditForm(v => !v); setConfirmDelete(false) }}
+              title="Edit project"
+              className={cn('p-1.5 rounded-lg transition-colors shrink-0',
+                showEditForm
+                  ? 'bg-[#15A4AE]/20 text-[#15A4AE]'
+                  : 'text-white hover:bg-white/10'
+              )}
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+        {/* Badges + tabs — cream background */}
+        <div className="shrink-0 border-b border-gray-100 dark:border-white/8">
+          <div className="flex items-center gap-1.5 flex-wrap px-4 pt-2.5 pb-2">
             <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-medium', statusStyle.badge)}>{statusStyle.label}</span>
             <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-medium', priorityStyle)}>{project.priority}</span>
             {serviceLabel && (
@@ -517,32 +550,12 @@ export function ProjectDetailClient({ project: initial, allProjects, tasks: init
               </span>
             )}
           </div>
-          <div className="flex items-start gap-2.5 mb-3">
-            <div className="w-9 h-9 rounded-xl bg-[#15A4AE]/15 flex items-center justify-center shrink-0">
-              <span className="text-sm font-bold text-[#15A4AE]">{project.name.charAt(0).toUpperCase()}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 leading-snug line-clamp-2">{project.name}</p>
-              {project.contact?.name && <p className="text-[10px] text-gray-400 mt-0.5 truncate">{project.contact.name}</p>}
-            </div>
-            <button
-              onClick={() => { setShowEditForm(v => !v); setConfirmDelete(false) }}
-              title="Edit project"
-              className={cn('p-1.5 rounded-lg transition-colors shrink-0',
-                showEditForm
-                  ? 'bg-[#15A4AE]/10 text-[#15A4AE]'
-                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8'
-              )}
-            >
-              <Pencil className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          <div className="flex">
+          <div className="flex px-1">
             {(['overview', 'activity'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setRightTab(tab as 'overview' | 'activity')}
-                className={cn('px-3.5 py-2 text-xs font-semibold capitalize transition-colors border-b-2',
+                className={cn('px-3.5 py-2 text-sm font-semibold capitalize transition-colors border-b-2',
                   rightTab === tab
                     ? 'border-[#15A4AE] text-[#15A4AE]'
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'

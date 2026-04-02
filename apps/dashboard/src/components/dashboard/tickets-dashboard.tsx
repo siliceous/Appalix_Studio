@@ -71,10 +71,10 @@ export function TicketsDashboard({ tickets: initialTickets }: { tickets: TicketR
         <aside className="w-[280px] shrink-0 flex flex-col border-r border-gray-200 dark:border-white/8 bg-gray-50/80 dark:bg-[#161616] overflow-hidden">
           {/* Header */}
           <div className="px-4 py-3 bg-[#141c2b] border-b border-white/10 flex items-center justify-between shrink-0">
-            <h2 className="text-xs font-semibold text-white uppercase tracking-wide">
+            <h2 className="text-sm font-semibold text-white uppercase tracking-wide">
               Tickets
             </h2>
-            <span className="text-xs bg-white/10 text-white rounded-full px-2 py-0.5 font-medium">
+            <span className="text-sm bg-white/10 text-white rounded-full px-2 py-0.5 font-medium">
               {tickets.length}
             </span>
           </div>

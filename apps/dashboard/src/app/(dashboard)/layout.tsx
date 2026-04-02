@@ -43,14 +43,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Fetch user's display name + avatar for the sidebar account identity
   const { data: profileRaw } = await supabase
     .from('user_profiles')
-    .select('first_name, last_name, avatar_url')
+    .select('first_name, last_name, avatar_url, sage_voice_config')
     .eq('user_id', user.id)
     .maybeSingle()
-  type ProfileRow = { first_name: string; last_name: string | null; avatar_url: string | null }
+  type ProfileRow = { first_name: string; last_name: string | null; avatar_url: string | null; sage_voice_config: Record<string, unknown> | null }
   const profile = profileRaw as ProfileRow | null
-  const userName   = profile ? [profile.first_name, profile.last_name].filter(Boolean).join(' ') : null
-  const userEmail  = user.email ?? null
-  const userAvatar = profile?.avatar_url ?? null
+  const userName        = profile ? [profile.first_name, profile.last_name].filter(Boolean).join(' ') : null
+  const userEmail       = user.email ?? null
+  const userAvatar      = profile?.avatar_url ?? null
+  const wakeWordEnabled = profile?.sage_voice_config?.wake_word_enabled !== false
 
   if (!workspace) {
     return (
@@ -122,6 +123,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         workspaceId={workspace.id}
         plan={workspace.plan}
         trialEndsAt={workspace.trial_ends_at}
+        wakeWordEnabled={wakeWordEnabled}
       />
       <WelcomeModal
         userName={userName}

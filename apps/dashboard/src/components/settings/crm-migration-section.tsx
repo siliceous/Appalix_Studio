@@ -248,7 +248,7 @@ function ProviderCard({ conn, history }: { conn: CrmConnection; history: ImportR
                 {run.skipped > 0 && <><span>·</span><span>{run.skipped} skipped</span></>}
                 {run.error && <span className="text-red-400 truncate max-w-32">{run.error}</span>}
                 <span className="ml-auto shrink-0 text-[10px]">
-                  {new Date(run.started_at).toLocaleDateString()}
+                  {new Date(run.started_at).toLocaleDateString('en-GB')}
                 </span>
               </div>
             ))}

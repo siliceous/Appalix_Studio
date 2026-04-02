@@ -123,7 +123,7 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
       <div className="flex items-end gap-1.5 min-w-0 overflow-x-auto">
         <Link
           href={viewAsUserId ? `/dashboard?viewAs=${viewAsUserId}` : '/dashboard'}
-          className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors shrink-0 px-2 py-1.5 rounded-lg hover:bg-white/10 mr-0.5"
+          className="flex items-center gap-1.5 text-sm text-white hover:text-white transition-colors shrink-0 px-2 py-1.5 rounded-lg hover:bg-white/10 mr-0.5"
         >
           <LayoutDashboard className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Overview</span>
@@ -142,7 +142,7 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
                 router.push(viewAsUserId ? `${BASE_HREFS[p.key]}?viewAs=${viewAsUserId}` : BASE_HREFS[p.key])
               }}
               className={[
-                'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl border transition-colors whitespace-nowrap',
+                'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border transition-colors whitespace-nowrap',
                 isActive
                   ? ACTIVE_CLS
                   : `border-transparent ${HOVER_CLS}`,
@@ -164,10 +164,10 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
           <button
             onClick={() => setShowCal(v => !v)}
             title="Filter by date"
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
               preset !== 'all'
                 ? 'border-white/40 text-white bg-white/20'
-                : 'border-white/20 text-white/60 hover:bg-white/10 hover:text-white'
+                : 'border-white/20 text-white hover:bg-white/10'
             }`}
           >
             <Calendar className="w-3.5 h-3.5" />
@@ -245,7 +245,7 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
                 else url.searchParams.delete('viewAs')
                 router.push(url.pathname + url.search)
               }}
-              className="dark-bar-select appearance-none pl-2.5 pr-7 py-1.5 text-xs border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/30 transition-colors cursor-pointer"
+              className="dark-bar-select appearance-none pl-2.5 pr-7 py-1.5 text-sm border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/30 transition-colors cursor-pointer"
             >
               <option value="">My view</option>
               {teamMembers.map(m => (
@@ -265,13 +265,13 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
               : `Auto OFF — ${SOURCE_LABEL[sourceKey]} require manual review before creating contacts or deals. Click to enable automation.`
           }
           className={[
-            'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all',
+            'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium border transition-all',
             localAuto
               ? 'bg-white/20 border-white/40 text-white'
-              : 'bg-white/5 border-white/15 text-white/40',
+              : 'bg-white/5 border-white/15 text-white',
           ].join(' ')}
         >
-          <Zap className={`w-3 h-3 ${localAuto ? 'text-[#15A4AE]' : 'text-white/40'}`} />
+          <Zap className={`w-3 h-3 ${localAuto ? 'text-[#15A4AE]' : 'text-white'}`} />
           <span>Auto</span>
           <span className="font-bold">{localAuto ? 'ON' : 'OFF'}</span>
         </button>

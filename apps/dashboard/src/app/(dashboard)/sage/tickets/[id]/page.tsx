@@ -87,6 +87,11 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
   type TicketWithContact = SageTicket & { contact: Pick<SageContact, 'id' | 'name' | 'email'> | null }
 
+  const allIds = (allTicketsRaw ?? []).map(t => t.id)
+  const idx = allIds.indexOf(id)
+  const prevId = idx > 0 ? allIds[idx - 1] : null
+  const nextId = idx < allIds.length - 1 ? allIds[idx + 1] : null
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <SubpageToolbar sourceKey="tickets" preset="all" autoEnabled={autoSettings.tickets_auto_enabled} />
@@ -97,6 +102,8 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
           activities={activities}
           callerRole={membership.role as WorkspaceMember['role']}
           members={assignableMembers}
+          prevId={prevId}
+          nextId={nextId}
         />
       </div>
     </div>

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import {
   Search, X, ArrowLeft, Download, Trash2, Loader2,
   UserPlus, Ticket, ClipboardList, Send, CheckCircle,
+  ChevronUp, ChevronDown,
 } from 'lucide-react'
 import { EmailComposeModal } from '@/components/dashboard/email-compose-modal'
 import { PipelinePickerModal } from '@/components/sage/pipeline-picker-modal'
@@ -128,12 +129,15 @@ interface Props {
   teamMembers?:   TeamMember[]
   canAssign?:     boolean
   dealOwnerName?: string | null
+  prevId?:        string | null
+  nextId?:        string | null
 }
 
 export function SubmissionPanelClient({
   submissions, current, forms,
   teamMembers = [], canAssign = false,
   dealOwnerName,
+  prevId = null, nextId = null,
 }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
@@ -269,14 +273,15 @@ export function SubmissionPanelClient({
   })
 
   return (
-    <div className="flex h-full overflow-hidden w-full">
+    <div className="flex h-full w-full gap-3 p-3 bg-[#f5f4f1] dark:bg-[#1c1c1c]">
 
       {/* ── Left panel ─────────────────────────────────────────────────────── */}
-      <div className="w-[240px] shrink-0 border-r dark:border-white/8 flex flex-col bg-gray-50 dark:bg-[#181818]">
-        <div className="p-3 border-b dark:border-white/8 space-y-2">
-          <Link href="/dashboard/forms" className="flex items-center gap-1 text-xs text-gray-400 hover:text-[#15A4AE] transition-colors">
-            ← All submissions
-          </Link>
+      <div className="w-[240px] shrink-0 flex flex-col bg-white dark:bg-[#181818] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8 overflow-hidden">
+        <div className="px-3 py-2.5 bg-[#141c2b] border-b border-white/10 shrink-0 space-y-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-white">Submissions</h2>
+            <Link href="/dashboard/forms" className="text-sm text-white hover:opacity-70 transition-opacity">← Back</Link>
+          </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
             <input
@@ -284,7 +289,7 @@ export function SubmissionPanelClient({
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search…"
-              className="w-full pl-8 pr-7 py-1.5 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
+              className="w-full pl-8 pr-7 py-1.5 text-sm border border-white/20 rounded-lg !bg-[#f5f4f1] !text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
             />
             {search && (
               <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -345,83 +350,83 @@ export function SubmissionPanelClient({
       </div>
 
       {/* ── Center panel: form fields ──────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-[#f5f4f1] dark:bg-[#1c1c1c]">
+      <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#232323] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8">
 
         {/* Header */}
-        <div className="shrink-0 bg-white dark:bg-[#232323] border-b dark:border-white/8 px-4 py-2.5">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${getAvatarColor(current.id)}`}>
-              {getInitials(contactName)}
+        <div className="shrink-0 bg-[#141c2b] border-b border-white/10 px-4 py-2.5">
+          <div className="flex items-center gap-3">
+            {/* Left: avatar + name */}
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <div className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-xs font-bold text-white ${getAvatarColor(current.id)}`}>
+                {getInitials(contactName)}
+              </div>
+              <div className="min-w-0">
+                <span className="text-sm font-semibold text-white truncate block leading-tight">{contactName}</span>
+                {currentForm && <p className="text-sm text-white leading-tight">via {currentForm.name}</p>}
+              </div>
             </div>
-            <div className="min-w-0 mr-2">
-              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate block leading-tight">{contactName}</span>
-              {currentForm && <p className="text-[10px] text-gray-400 leading-tight">via {currentForm.name}</p>}
-            </div>
 
-            <select
-              value={localPriority}
-              onChange={e => handlePriorityChange(e.target.value)}
-              disabled={saving === 'priority'}
-              className="text-[11px] border dark:border-white/10 rounded-full px-2.5 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60 cursor-pointer"
-            >
-              <option value="">Priority</option>
-              <option value="low">⚪ Low</option>
-              <option value="medium">🟡 Medium</option>
-              <option value="high">🟢 High</option>
-            </select>
-            {saving === 'priority' && <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />}
-
-            {canAssign && teamMembers.length > 0 && (
-              <>
-                <select
-                  value={localAssign}
-                  disabled={saving === 'assign'}
-                  onChange={e => handleAssign(e.target.value)}
-                  className="text-[11px] border dark:border-white/10 rounded-full px-2.5 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:opacity-60 cursor-pointer"
-                >
-                  <option value="">Assign to…</option>
-                  {teamMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
-                </select>
-                {saving === 'assign' && <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />}
-              </>
-            )}
-
-            <div className="flex-1" />
-
-            {/* Action tab buttons */}
+            {/* Right: all controls */}
             <div className="flex items-center gap-1 shrink-0">
+              <select
+                value={localPriority}
+                onChange={e => handlePriorityChange(e.target.value)}
+                disabled={saving === 'priority'}
+                className="dark-bar-select text-sm border border-white/20 rounded-full px-2.5 py-0.5 focus:outline-none disabled:opacity-60 cursor-pointer"
+              >
+                <option value="">Priority</option>
+                <option value="low">⚪ Low</option>
+                <option value="medium">🟡 Medium</option>
+                <option value="high">🟢 High</option>
+              </select>
+              {saving === 'priority' && <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />}
+
+              {canAssign && teamMembers.length > 0 && (
+                <>
+                  <select
+                    value={localAssign}
+                    disabled={saving === 'assign'}
+                    onChange={e => handleAssign(e.target.value)}
+                    className="dark-bar-select text-sm border border-white/20 rounded-full px-2.5 py-0.5 focus:outline-none disabled:opacity-60 cursor-pointer"
+                  >
+                    <option value="">Assign to…</option>
+                    {teamMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
+                  </select>
+                  {saving === 'assign' && <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />}
+                </>
+              )}
+
               <button onClick={handleAnalyse} disabled={actionLoading === 'analyse'}
-                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-lg border border-purple-200 dark:border-purple-500/20 transition-colors disabled:opacity-60">
-                {actionLoading === 'analyse' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span className="text-[#15A4AE]">✦</span>}
+                className="flex items-center gap-1 px-2.5 py-1.5 text-sm font-medium text-white hover:bg-white/10 rounded-lg border border-white/20 transition-colors disabled:opacity-60">
+                {actionLoading === 'analyse' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>✦</span>}
                 AI Analyse
               </button>
               <button onClick={handleCreateTicket} disabled={actionLoading === 'ticket'}
-                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 rounded-lg border border-yellow-200 dark:border-yellow-500/20 transition-colors disabled:opacity-60">
+                className="flex items-center gap-1 px-2.5 py-1.5 text-sm font-medium text-white hover:bg-white/10 rounded-lg border border-white/20 transition-colors disabled:opacity-60">
                 {actionLoading === 'ticket' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Ticket className="w-3.5 h-3.5" />}
                 Add Ticket
               </button>
               <button onClick={() => setShowDealPicker(true)}
-                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg border border-blue-200 dark:border-blue-500/20 transition-colors">
+                className="flex items-center gap-1 px-2.5 py-1.5 text-sm font-medium text-white hover:bg-white/10 rounded-lg border border-white/20 transition-colors">
                 <UserPlus className="w-3.5 h-3.5" />
                 Add a Deal
               </button>
-            </div>
-
-            {/* Icon actions */}
-            <div className="flex items-center gap-1 shrink-0 border-l dark:border-white/8 pl-2 ml-1">
-              <Link href="/dashboard/forms"
-                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg border border-gray-200 dark:border-white/10 transition-colors">
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Back
-              </Link>
               <button onClick={handleDownload} title="Download"
-                className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors">
+                className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
                 <Download className="w-3.5 h-3.5" />
               </button>
               <button onClick={handleDelete} title="Delete"
-                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors">
+                className="p-1.5 text-white/60 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
+              <div className="flex items-center border border-white/20 rounded-lg overflow-hidden">
+                <button onClick={() => prevId && router.push(`/dashboard/forms/${prevId}`)} disabled={!prevId} title="Previous" className="p-1.5 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border-r border-white/20">
+                  <ChevronUp className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => nextId && router.push(`/dashboard/forms/${nextId}`)} disabled={!nextId} title="Next" className="p-1.5 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
           {analyseMsg && <p className="mt-1.5 text-xs text-purple-600 dark:text-purple-400">{analyseMsg}</p>}
@@ -492,7 +497,7 @@ export function SubmissionPanelClient({
       </div>
 
       {/* ── Right panel ────────────────────────────────────────────────────── */}
-      <div className="w-[320px] shrink-0 overflow-y-auto bg-white dark:bg-[#232323] border-l dark:border-white/8">
+      <div className="w-[320px] shrink-0 overflow-y-auto bg-white dark:bg-[#232323] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8">
         <div className="p-4 space-y-5">
 
           {/* Status pills */}
