@@ -17,6 +17,7 @@ import {
   conversationCreateTicket,
 } from '@/app/actions/conversation'
 import { sendSms, confirmSmsContactName, dismissSmsContactSuggestion } from '@/app/actions/sms'
+import { createClient } from '@/lib/supabase/client'
 import type { ConvRow } from '@/app/(dashboard)/conversations/page'
 
 export type TeamMember = { user_id: string; name: string }
@@ -108,6 +109,53 @@ export function ConversationPanelClient({
   const customerEmail = current.ai_entities?.email ?? null
   const customerName  = current.ai_entities?.name  ?? null
   const isSmsThread   = current.platform === 'sms'
+
+  // Live messages (seeded from server-rendered props, extended by Realtime)
+  const [liveMessages,  setLiveMessages]  = React.useState<PanelMessage[]>(messages)
+  const [lastActivity,  setLastActivity]  = React.useState(current.last_activity_at ?? new Date().toISOString())
+  // Clock ticker — refreshes "X min ago" label every 30 s
+  const [now, setNow] = React.useState(() => Date.now())
+
+  // Reset live messages when navigating to a different conversation
+  useEffect(() => {
+    setLiveMessages(messages)
+    setLastActivity(current.last_activity_at ?? new Date().toISOString())
+  }, [current.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Supabase Realtime — stream new messages and activity updates
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`conv-${current.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${current.id}` },
+        (payload) => {
+          const msg = payload.new as PanelMessage
+          setLiveMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg])
+          setLastActivity(new Date().toISOString())
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'conversations', filter: `id=eq.${current.id}` },
+        (payload) => {
+          const updated = payload.new as { last_activity_at?: string }
+          if (updated.last_activity_at) setLastActivity(updated.last_activity_at)
+        },
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [current.id])
+
+  // Ticker — keeps "X min ago" label fresh without a page reload
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000)
+    return () => clearInterval(id)
+  }, [])
+
+  const minutesSinceActivity = Math.floor((now - new Date(lastActivity).getTime()) / 60_000)
+  const isUserActive = minutesSinceActivity < 5
 
   // SMS reply state
   const [smsDraft,    setSmsDraft]    = React.useState('')
@@ -215,6 +263,10 @@ export function ConversationPanelClient({
     messagesEndRef.current?.scrollIntoView({ behavior: 'instant' })
   }, [current.id])
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [liveMessages])
+
   const filtered = conversations.filter(c => {
     if (botFilter && c.bots?.id !== botFilter) return false
     if (search) {
@@ -231,7 +283,7 @@ export function ConversationPanelClient({
   function renderMessages() {
     const nodes: React.ReactNode[] = []
     let lastDay = ''
-    for (const msg of messages) {
+    for (const msg of liveMessages) {
       const day = new Date(msg.created_at).toDateString()
       if (day !== lastDay) {
         lastDay = day
@@ -410,6 +462,17 @@ export function ConversationPanelClient({
               {!isSmsThread && current.bots?.name && (
                 <p className="text-sm text-white leading-tight">via {current.bots.name}</p>
               )}
+              {/* Online / inactive indicator */}
+              <div className="flex items-center gap-1 mt-0.5">
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isUserActive ? 'bg-green-400' : 'bg-gray-500'}`} />
+                <span className={`text-[10px] leading-none ${isUserActive ? 'text-green-400' : 'text-gray-500'}`}>
+                  {isUserActive
+                    ? 'Active now'
+                    : minutesSinceActivity < 60
+                    ? `Inactive · ${minutesSinceActivity}m ago`
+                    : 'Inactive'}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -554,13 +617,24 @@ export function ConversationPanelClient({
         )}
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-          {messages.length === 0 ? (
+        <div className={`flex-1 overflow-y-auto px-6 py-4 space-y-3 transition-opacity duration-700 ${isUserActive ? 'opacity-100' : 'opacity-50'}`}>
+          {liveMessages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <MessageSquare className="w-8 h-8 text-gray-200 dark:text-gray-600 mb-2" />
               <p className="text-sm text-gray-400">No messages yet.</p>
             </div>
-          ) : renderMessages()}
+          ) : (
+            <>
+              {renderMessages()}
+              {!isUserActive && (
+                <div className="flex items-center gap-3 my-2">
+                  <div className="flex-1 h-px bg-gray-200 dark:bg-white/8" />
+                  <span className="text-[10px] font-semibold text-gray-400 tracking-widest">USER LEFT</span>
+                  <div className="flex-1 h-px bg-gray-200 dark:bg-white/8" />
+                </div>
+              )}
+            </>
+          )}
           <div ref={messagesEndRef} />
         </div>
 
