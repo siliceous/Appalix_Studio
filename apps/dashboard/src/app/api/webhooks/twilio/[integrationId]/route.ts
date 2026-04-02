@@ -33,6 +33,8 @@ export async function POST(
   // ── 1. Read raw body for signature validation ──────────────────────────────
   // IMPORTANT: must read as text before parsing — same pattern as Stripe webhook
   const rawBody = await req.text()
+  console.log('[twilio/inbound] rawBody length:', rawBody.length, '| content-type:', req.headers.get('content-type'))
+  console.log('[twilio/inbound] rawBody (first 500):', rawBody.slice(0, 500))
 
   // ── 2. Validate Twilio signature ───────────────────────────────────────────
   const signature  = req.headers.get('x-twilio-signature') ?? ''
@@ -65,6 +67,7 @@ export async function POST(
   const toRaw       = formParams['To']           ?? ''
   const body        = formParams['Body']         ?? ''
   const numMedia    = parseInt(formParams['NumMedia'] ?? '0', 10)
+  console.log('[twilio/inbound] parsed fields — From:', fromRaw, '| Body:', JSON.stringify(body), '| MessageSid:', messageSid)
 
   if (!messageSid || !fromRaw || !toRaw) {
     console.error('[twilio/inbound] Missing required Twilio fields')
@@ -237,13 +240,16 @@ async function handleInbound({
   }
 
   // ── 7. Insert message ──────────────────────────────────────────────────────
-  await admin.from('messages').insert({
-    conversation_id:   conversationId,
-    role:              'user',
-    content:           body,
+  const { error: msgError } = await admin.from('messages').insert({
+    workspace_id:        workspaceId,
+    conversation_id:     conversationId,
+    role:                'user',
+    content:             body || '(no text)',
     platform_message_id: messageSid,
-    metadata,
   } as never)
+  if (msgError) {
+    console.error('[twilio/inbound] Failed to insert message:', msgError)
+  }
 
   // ── 8. Activity log ────────────────────────────────────────────────────────
   await admin.from('sage_activity_log').insert({
