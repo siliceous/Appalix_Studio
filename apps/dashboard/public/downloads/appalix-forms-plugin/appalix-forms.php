@@ -171,8 +171,14 @@ function appalix_forms_send( array $fields, string $form_title = '' ): bool {
 }
 
 // ── Contact Form 7 ────────────────────────────────────────────────────────────
+// Use wpcf7_submit (fires on every valid submission) instead of wpcf7_mail_sent
+// (which only fires when CF7 successfully sends its confirmation email — fails
+// silently on sites with broken SMTP/mail config).
 
-add_action( 'wpcf7_mail_sent', function ( $contact_form ) {
+add_action( 'wpcf7_submit', function ( $contact_form, $result ) {
+    // Only proceed on valid submissions (not spam, not validation failures)
+    if ( empty( $result['status'] ) || ! in_array( $result['status'], [ 'mail_sent', 'mail_failed', 'demo_mode' ], true ) ) return;
+
     $submission = WPCF7_Submission::get_instance();
     if ( ! $submission ) return;
 
@@ -183,7 +189,7 @@ add_action( 'wpcf7_mail_sent', function ( $contact_form ) {
         $fields[ $key ] = is_array( $value ) ? implode( ', ', $value ) : (string) $value;
     }
     appalix_forms_send( $fields, $contact_form->title() );
-} );
+}, 10, 2 );
 
 // ── Elementor Forms ───────────────────────────────────────────────────────────
 
