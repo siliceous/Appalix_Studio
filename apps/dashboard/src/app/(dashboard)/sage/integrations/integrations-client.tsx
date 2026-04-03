@@ -182,13 +182,11 @@ const INTEGRATIONS: IntegrationCard[] = [
   {
     provider:    'wordpress_forms',
     name:        'WordPress Forms',
-    description: 'Universal webhook for any WordPress form plugin — Contact Form 7, Elementor Forms, WPForms, Formidable Forms, and Ninja Forms.',
+    description: 'Works with Contact Form 7, Elementor Forms, WPForms, Gravity Forms, Ninja Forms, and Formidable Forms. Install the Appalix plugin — no webhook config needed.',
     logo:        '/integrations/wordpress.png',
     category:    'forms',
-    fields: [
-      { name: 'webhook_secret', label: 'Webhook Secret', type: 'password', placeholder: 'Optional — leave blank to skip verification', hint: 'Add ?secret=… to your webhook URL and enter the same token here to block unauthorised requests.', optional: true },
-    ],
-    docsUrl:     'https://contactform7.com/docs/',
+    fields:      [],
+    docsUrl:     'https://appalix.ai/resources/connect-wordpress-forms',
     webhookPath: '/api/webhooks/wordpress-forms',
   },
   // ── Email Marketing ───────────────────────────────────────────────────────
