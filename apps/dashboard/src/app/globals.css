@@ -192,6 +192,11 @@
     outline-color: #3b82f6;
   }
 
+  /* Top bars (subpage toolbar + overview tab bar) */
+  .happy .bg-\[\#141c2b\] {
+    background-color: #6310db !important;
+  }
+
   /* ── Cool mode — deep navy + electric blue theme ── */
   .cool body,
   .cool main,

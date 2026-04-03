@@ -2017,11 +2017,11 @@ export function SageDashboardClient({
         {/* Left: activity feed */}
         <div className="xl:col-span-2 bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col">
           {/* Header */}
-          <div className="px-5 py-4 bg-[#6310db] border-b border-white/10 flex items-center justify-between rounded-t-xl">
+          <div className="px-5 py-4 bg-[#141c2b] dark:bg-[#6310db] border-b border-white/10 flex items-center justify-between rounded-t-xl">
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-bold text-white">Activity Feed</h2>
               {/* List / Grid toggle */}
-              <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-white/6 rounded-lg p-0.5">
+              <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-white/6 rounded-lg px-0.5 py-0">
                 <button
                   onClick={() => setFeedView('list')}
                   className={`p-1 rounded-md transition-colors ${feedView === 'list' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
@@ -2042,7 +2042,7 @@ export function SageDashboardClient({
                 <button
                   onClick={() => setShowFeedCal(v => !v)}
                   title="Filter by date"
-                  className="flex items-center gap-1.5 p-1.5 rounded-lg border transition-colors text-xs border-[#ccd7ff]/40 text-[#ccd7ff] bg-[#ccd7ff]/5 hover:bg-[#ccd7ff]/10"
+                  className="flex items-center gap-1.5 py-1 px-1.5 rounded-lg border transition-colors text-xs border-[#ccd7ff]/40 text-[#ccd7ff] bg-[#ccd7ff]/5 hover:bg-[#ccd7ff]/10"
                 >
                   <Calendar className="w-[18px] h-[18px]" />
                   <span className="hidden sm:inline font-medium">
