@@ -27,6 +27,9 @@ const EVENT_LABELS: Record<string, string> = {
   conversation_renamed:  'Renamed conversation',
   conversation_assigned: 'Assigned conversation',
   lead_moved:            'Moved lead to pipeline',
+  form_lead_received:    '(forms) Lead received',
+  sms_received:          'SMS received',
+  sms_sent:              'SMS sent',
 }
 
 const ENTITY_TYPE_LABEL: Record<string, string> = {

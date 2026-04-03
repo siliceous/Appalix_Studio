@@ -27,6 +27,9 @@ export type SourcePlatform =
   | 'typeform'
   | 'google_forms'
   | 'fluent_forms'
+  | 'clickfunnels'
+  | 'webflow'
+  | 'wordpress_forms'
   | 'csv_upload'
   | 'manual'
 

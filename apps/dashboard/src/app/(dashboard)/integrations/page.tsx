@@ -84,9 +84,9 @@ export default async function IntegrationsPage({
     (admin as any).from('user_profiles').select('user_id, first_name, last_name'),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('workspace_members').select('user_id, role').eq('workspace_id', membership.workspace_id),
-    // Form plugin configs — to build webhook URLs with secrets for GF/WPForms/Fluent Forms
+    // Form plugin configs — to build webhook URLs with secrets for GF/WPForms/Fluent Forms/CF/Webflow/WP
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (admin as any).from('sage_integrations').select('provider, config').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', ['gravity_forms', 'google_forms', 'fluent_forms']),
+    (admin as any).from('sage_integrations').select('provider, config').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', ['gravity_forms', 'google_forms', 'fluent_forms', 'clickfunnels', 'webflow', 'wordpress_forms']),
     // All connected sage integrations — for connector name/role display
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('sage_integrations').select('provider, user_id').eq('workspace_id', membership.workspace_id).eq('status', 'connected'),
@@ -103,7 +103,7 @@ export default async function IntegrationsPage({
   const baseUrl     = `${proto}://${host}`
 
   // Build webhook URLs with secrets for GF / WPForms / Fluent Forms
-  const SLUG_MAP: Record<string, string> = { gravity_forms: 'gravity-forms', fluent_forms: 'fluent-forms' }
+  const SLUG_MAP: Record<string, string> = { gravity_forms: 'gravity-forms', fluent_forms: 'fluent-forms', wordpress_forms: 'wordpress-forms' }
   type FormCfgRow = { provider: string; config: Record<string, string> }
   const formWebhookUrls: Record<string, string> = {}
   for (const row of (formIntegConfigsRaw ?? []) as FormCfgRow[]) {
@@ -348,7 +348,7 @@ export default async function IntegrationsPage({
           <IntegrationsClient
             connected={sageConnected}
             standalone={false}
-            providers={['gravity_forms', 'google_forms', 'typeform', 'fluent_forms']}
+            providers={['gravity_forms', 'google_forms', 'typeform', 'fluent_forms', 'clickfunnels', 'webflow', 'wordpress_forms']}
             workspaceId={membership.workspace_id}
             formWebhookUrls={formWebhookUrls}
             connectedProviderInfo={connectedProviderInfo}

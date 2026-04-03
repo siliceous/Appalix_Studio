@@ -1151,7 +1151,7 @@ export async function saveSageIntegration(provider: string, config: Record<strin
  * Bypasses the HTTP webhook layer — no network self-call needed.
  */
 export async function sendTestFormWebhook(
-  provider: 'gravity_forms' | 'google_forms' | 'typeform' | 'fluent_forms',
+  provider: 'gravity_forms' | 'google_forms' | 'typeform' | 'fluent_forms' | 'clickfunnels' | 'webflow' | 'wordpress_forms',
 ): Promise<{ ok?: boolean; error?: string }> {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
@@ -1179,16 +1179,22 @@ export async function sendTestFormWebhook(
   const createdBy: string | null = ownerRow?.user_id ?? null
 
   const FORM_TITLE: Record<string, string> = {
-    gravity_forms: 'Test Form (Gravity Forms)',
-    google_forms:  'Test Form (Google Forms)',
-    typeform:      'Test Form (Typeform)',
-    fluent_forms:  'Test Form (Fluent Forms)',
+    gravity_forms:   'Test Form (Gravity Forms)',
+    google_forms:    'Test Form (Google Forms)',
+    typeform:        'Test Form (Typeform)',
+    fluent_forms:    'Test Form (Fluent Forms)',
+    clickfunnels:    'Test Form (ClickFunnels)',
+    webflow:         'Test Form (Webflow)',
+    wordpress_forms: 'Test Form (WordPress Forms)',
   }
   const TEST_FIELDS: Record<string, Record<string, string>> = {
-    gravity_forms: { name: 'Jane Smith', email: 'jane@example.com', phone: '+1 555-0100', company: 'Acme Corp', message: 'Interested in your product' },
-    google_forms:  { name: 'Jane Smith', email: 'jane@example.com', phone: '+1 555-0100', company: 'Acme Corp', message: 'Interested in your product' },
-    typeform:      { name: 'Jane Smith', email: 'jane@example.com', phone: '+1 555-0100', company: 'Acme Corp', message: 'Interested in your product' },
-    fluent_forms:  { name: 'Jane Smith', email: 'jane@example.com', phone: '+1 555-0100', company: 'Acme Corp', message: 'Interested in your product' },
+    gravity_forms:   { name: 'Jane Smith', email: 'jane@example.com', phone: '+1 555-0100', company: 'Acme Corp', message: 'Interested in your product' },
+    google_forms:    { name: 'Jane Smith', email: 'jane@example.com', phone: '+1 555-0100', company: 'Acme Corp', message: 'Interested in your product' },
+    typeform:        { name: 'Jane Smith', email: 'jane@example.com', phone: '+1 555-0100', company: 'Acme Corp', message: 'Interested in your product' },
+    fluent_forms:    { name: 'Jane Smith', email: 'jane@example.com', phone: '+1 555-0100', company: 'Acme Corp', message: 'Interested in your product' },
+    clickfunnels:    { name: 'Jane Smith', email: 'jane@example.com', phone: '+1 555-0100', company: 'Acme Corp', message: 'Interested in your product' },
+    webflow:         { name: 'Jane Smith', email: 'jane@example.com', phone: '+1 555-0100', company: 'Acme Corp', message: 'Interested in your product' },
+    wordpress_forms: { name: 'Jane Smith', email: 'jane@example.com', phone: '+1 555-0100', company: 'Acme Corp', message: 'Interested in your product' },
   }
 
   const formTitle = FORM_TITLE[provider]
@@ -1230,7 +1236,7 @@ export async function sendTestFormWebhook(
  * Returns { webhookUrl } so the client can display it for manual webhook setup (GF / WPForms).
  */
 export async function connectFormIntegration(
-  provider: 'gravity_forms' | 'google_forms' | 'typeform' | 'fluent_forms',
+  provider: 'gravity_forms' | 'google_forms' | 'typeform' | 'fluent_forms' | 'clickfunnels' | 'webflow' | 'wordpress_forms',
   config: Record<string, string>,
 ): Promise<{ webhookUrl?: string; formsRegistered?: number; error?: string }> {
   const supabase = await createClient()
@@ -1249,11 +1255,11 @@ export async function connectFormIntegration(
   if (saveError) return { error: saveError.message }
 
   const appUrl    = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.appalix.ai'
-  const SLUG: Record<string, string> = { gravity_forms: 'gravity-forms', fluent_forms: 'fluent-forms', google_forms: 'google-forms' }
+  const SLUG: Record<string, string> = { gravity_forms: 'gravity-forms', fluent_forms: 'fluent-forms', google_forms: 'google-forms', wordpress_forms: 'wordpress-forms' }
   const basePath  = `${appUrl}/api/webhooks/${SLUG[provider] ?? provider}/${workspaceId}`
   // For GF/WPForms/Fluent Forms: embed the secret in the URL so no custom header is needed
   const secret     = config.webhook_secret ?? ''
-  const embedSecret = provider === 'gravity_forms' || provider === 'google_forms' || provider === 'fluent_forms'
+  const embedSecret = provider === 'gravity_forms' || provider === 'google_forms' || provider === 'fluent_forms' || provider === 'clickfunnels' || provider === 'webflow' || provider === 'wordpress_forms'
   const webhookUrl = embedSecret && secret
     ? `${basePath}?secret=${encodeURIComponent(secret)}`
     : basePath
@@ -1378,7 +1384,7 @@ export async function connectFormIntegration(
  * Disconnect a form integration and clean up remote webhooks (Typeform only).
  */
 export async function disconnectFormIntegration(
-  provider: 'gravity_forms' | 'google_forms' | 'typeform' | 'fluent_forms',
+  provider: 'gravity_forms' | 'google_forms' | 'typeform' | 'fluent_forms' | 'clickfunnels' | 'webflow' | 'wordpress_forms',
 ): Promise<void> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

@@ -155,6 +155,42 @@ const INTEGRATIONS: IntegrationCard[] = [
     docsUrl:     'https://fluentforms.com/docs/webhooks/',
     webhookPath: '/api/webhooks/fluent-forms',
   },
+  {
+    provider:    'clickfunnels',
+    name:        'ClickFunnels',
+    description: 'Capture opt-in and purchase leads from ClickFunnels funnels. Supports CF1 and CF2 webhook payloads.',
+    logo:        '/integrations/clickfunnels.png',
+    category:    'forms',
+    fields: [
+      { name: 'webhook_secret', label: 'Webhook Secret', type: 'password', placeholder: 'Optional — leave blank to skip verification', hint: 'Set a secret in ClickFunnels webhook settings and enter the same value here to enable signature verification.', optional: true },
+    ],
+    docsUrl:     'https://help.clickfunnels.com/hc/en-us/articles/360015067852',
+    webhookPath: '/api/webhooks/clickfunnels',
+  },
+  {
+    provider:    'webflow',
+    name:        'Webflow',
+    description: 'Receive form submissions from any Webflow site in real time. Configure the webhook in Webflow → Project Settings → Integrations.',
+    logo:        '/integrations/webflow.png',
+    category:    'forms',
+    fields: [
+      { name: 'webhook_secret', label: 'Webhook Secret', type: 'password', placeholder: 'Optional — paste your Webflow signing secret', hint: 'Found in Webflow → Project Settings → Integrations → Webhooks. Used to verify HMAC-SHA256 signatures.', optional: true },
+    ],
+    docsUrl:     'https://developers.webflow.com/data/docs/webhooks',
+    webhookPath: '/api/webhooks/webflow',
+  },
+  {
+    provider:    'wordpress_forms',
+    name:        'WordPress Forms',
+    description: 'Universal webhook for any WordPress form plugin — Contact Form 7, Elementor Forms, WPForms, Formidable Forms, and Ninja Forms.',
+    logo:        '/integrations/wordpress.png',
+    category:    'forms',
+    fields: [
+      { name: 'webhook_secret', label: 'Webhook Secret', type: 'password', placeholder: 'Optional — leave blank to skip verification', hint: 'Add ?secret=… to your webhook URL and enter the same token here to block unauthorised requests.', optional: true },
+    ],
+    docsUrl:     'https://contactform7.com/docs/',
+    webhookPath: '/api/webhooks/wordpress-forms',
+  },
   // ── Email Marketing ───────────────────────────────────────────────────────
   {
     provider:    'mailchimp',
@@ -338,14 +374,14 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
     }))
   }
 
-  const FORM_PROVIDERS = new Set(['gravity_forms', 'google_forms', 'typeform', 'fluent_forms'])
+  const FORM_PROVIDERS = new Set(['gravity_forms', 'google_forms', 'typeform', 'fluent_forms', 'clickfunnels', 'webflow', 'wordpress_forms'])
 
   function handleConnect(provider: SageIntegrationProvider) {
     const config = formValues[provider] ?? {}
     setSaving(provider)
     startTransition(async () => {
       if (FORM_PROVIDERS.has(provider)) {
-        const result = await connectFormIntegration(provider as 'gravity_forms' | 'google_forms' | 'typeform' | 'fluent_forms', config)
+        const result = await connectFormIntegration(provider as 'gravity_forms' | 'google_forms' | 'typeform' | 'fluent_forms' | 'clickfunnels' | 'webflow' | 'wordpress_forms', config)
         setConnectResult(prev => ({ ...prev, [provider]: result }))
         setWebhookPanelOpen(prev => ({ ...prev, [provider]: true }))
       } else {
@@ -365,7 +401,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
     setSaving(provider)
     startTransition(async () => {
       if (FORM_PROVIDERS.has(provider)) {
-        await disconnectFormIntegration(provider as 'gravity_forms' | 'google_forms' | 'typeform' | 'fluent_forms')
+        await disconnectFormIntegration(provider as 'gravity_forms' | 'google_forms' | 'typeform' | 'fluent_forms' | 'clickfunnels' | 'webflow' | 'wordpress_forms')
       } else {
         await disconnectSageIntegration(provider)
       }
@@ -407,7 +443,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
   function handleTest(provider: SageIntegrationProvider) {
     setTestResult(prev => ({ ...prev, [provider]: { loading: true } }))
     startTransition(async () => {
-      const result = await sendTestFormWebhook(provider as 'gravity_forms' | 'google_forms' | 'typeform' | 'fluent_forms')
+      const result = await sendTestFormWebhook(provider as 'gravity_forms' | 'google_forms' | 'typeform' | 'fluent_forms' | 'clickfunnels' | 'webflow' | 'wordpress_forms')
       setTestResult(prev => ({ ...prev, [provider]: { ok: result.ok, error: result.error } }))
     })
   }

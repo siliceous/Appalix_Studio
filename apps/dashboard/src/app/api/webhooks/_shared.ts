@@ -2,6 +2,7 @@
  * Shared utilities for form webhook handlers.
  */
 import { ingestLead, type SourcePlatform } from '@/lib/ingest-lead'
+import { createAdminClient } from '@/lib/supabase/server'
 
 // Map normalised label keys → standard field names used throughout the app
 const FIELD_ALIASES: Record<string, string> = {
@@ -141,8 +142,9 @@ export async function insertFormSubmission(
   const STANDARD = new Set(['name', 'email', 'phone', 'company', 'job_title', 'website'])
   const extra = Object.fromEntries(Object.entries(normalizedFields).filter(([k]) => !STANDARD.has(k)))
 
+  let submissionId: string | undefined
   try {
-    await ingestLead(
+    const result = await ingestLead(
       {
         name:          normalizedFields['name'] || 'Unknown',
         email:         normalizedFields['email'] || null,
@@ -163,8 +165,32 @@ export async function insertFormSubmission(
         dedup:  false, // form submissions are events — same person can submit twice
       },
     )
+    submissionId = result.submissionId
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'ingestLead failed' }
+  }
+
+  // Log to activity feed (fire-and-forget — non-fatal)
+  try {
+    const admin = createAdminClient()
+    const name  = normalizedFields['name'] || 'Unknown'
+    const sourceLabel = source.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    await admin.from('sage_activity_log').insert({
+      workspace_id: workspaceId,
+      entity_type:  'lead',
+      entity_id:    submissionId ?? null,
+      event_type:   'form_lead_received',
+      payload:      {
+        name,
+        source:     sourceLabel,
+        email:      normalizedFields['email'] ?? null,
+        phone:      normalizedFields['phone'] ?? null,
+        form_name:  formName,
+      },
+      user_id:      null,
+    })
+  } catch {
+    // Non-fatal — activity log failure should never block the webhook response
   }
 
   return { formId: form.id }

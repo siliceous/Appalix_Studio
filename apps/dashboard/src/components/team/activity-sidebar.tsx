@@ -78,6 +78,12 @@ function renderMessage(entry: ActivityEntry): string {
       return n ? `Assigned form ${n}${to}` : `Assigned form${to}`
     }
     case 'lead_moved':            return n ? `Moved lead ${n} to pipeline` : 'Moved lead to pipeline'
+    case 'form_lead_received': {
+      const src = entry.source ? ` from ${entry.source}` : ''
+      return n ? `(forms) Lead received${src} for "${entry.entity_name}"` : `(forms) Lead received${src}`
+    }
+    case 'sms_received':          return n ? `SMS received from ${entry.entity_name}` : 'SMS received'
+    case 'sms_sent':              return n ? `SMS sent to ${entry.entity_name}` : 'SMS sent'
     default: {
       const label = entry.event_type.replace(/_/g, ' ')
       return n ? `${label}: ${n}` : label

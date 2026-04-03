@@ -262,6 +262,7 @@ export type SageIntegrationProvider =
   | 'stripe' | 'gmail' | 'microsoft' | 'zapier' | 'make' | 'freshdesk' | 'zendesk'
   | 'mailchimp' | 'activecampaign' | 'convertkit' | 'klaviyo' | 'constantcontact'
   | 'gravity_forms' | 'google_forms' | 'typeform' | 'fluent_forms'
+  | 'clickfunnels' | 'webflow' | 'wordpress_forms'
   | 'linkedin' | 'tiktok' | 'microsoft_ads' | 'calendly'
 export type SageIntegrationStatus   = 'connected' | 'disconnected' | 'error'
 export type SageActivityEntityType  = 'contact' | 'deal' | 'ticket' | 'company' | 'project'
