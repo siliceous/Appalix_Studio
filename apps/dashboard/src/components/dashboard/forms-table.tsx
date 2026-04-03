@@ -78,6 +78,9 @@ const EMAIL_PLATFORM_META: Record<string, { name: string; logo?: string; pill: s
   google_forms:    { name: 'Google Forms',      pill: 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/20' },
   typeform:        { name: 'Typeform',         pill: 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20' },
   fluent_forms:    { name: 'Fluent Forms',     pill: 'bg-teal-50 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-200 dark:border-teal-500/20' },
+  wordpress_forms: { name: 'WordPress Forms',  pill: 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20' },
+  clickfunnels:    { name: 'ClickFunnels',     pill: 'bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-500/20' },
+  webflow:         { name: 'Webflow',          pill: 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20' },
   google_ads:      { name: 'Google Ads',       pill: 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20' },
   meta:            { name: 'Meta Ads',         pill: 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20' },
 }
@@ -374,6 +377,12 @@ export function FormsTable({
       setTimeout(() => setRefreshResult(null), 4000)
     }
   }
+
+  // Auto-refresh every 60 seconds so new form submissions appear without manual reload
+  useEffect(() => {
+    const id = setInterval(() => router.refresh(), 60_000)
+    return () => clearInterval(id)
+  }, [router])
 
   // Source platform filter (client-side — Mailchimp, ActiveCampaign, etc.)
   const [localSource, setLocalSource] = useState('')

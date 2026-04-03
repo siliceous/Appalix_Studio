@@ -39,6 +39,10 @@ const SOURCE_PLATFORM_LABELS: Record<string, string> = {
   gravity_forms:   'Gravity Forms',
   google_forms:    'Google Forms',
   typeform:        'Typeform',
+  fluent_forms:    'Fluent Forms',
+  wordpress_forms: 'WordPress Forms',
+  clickfunnels:    'ClickFunnels',
+  webflow:         'Webflow',
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
