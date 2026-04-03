@@ -77,7 +77,7 @@ function isTodayOrFuture(due: string): boolean {
 
 const TABS: { key: FilterTab; label: string; Icon?: React.ElementType; iconColor?: string; color: string }[] = [
   { key: 'all',       label: 'All',  color: 'bg-blue-500' },
-  { key: 'pending',   label: 'Pending',   Icon: Timer,    iconColor: '#9a3bdd', color: 'bg-[#9a3bdd]' },
+  { key: 'pending',   label: 'Pending',   Icon: Timer,    iconColor: '#cf9cf4', color: 'bg-[#cf9cf4]' },
   { key: 'upcoming',  label: 'Upcoming',  Icon: Calendar, iconColor: '#16b425', color: 'bg-[#16b425]' },
   { key: 'reminders', label: 'Reminders', Icon: Bell,     iconColor: '#f1c816', color: 'bg-[#f1c816]' },
 ]
@@ -178,11 +178,11 @@ export function UpcomingPanel({ workspaceId, userId }: { workspaceId: string; us
   return (
     <div className="bg-white dark:bg-[#232323] rounded-2xl border dark:border-white/8 overflow-hidden flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-2 px-5 py-4 bg-[#50039d] border-b border-white/10 rounded-t-2xl">
-        <Calendar className="w-4 h-4 text-white shrink-0" />
-        <h2 className="text-sm font-semibold text-white shrink-0">Tasks & Reminders</h2>
+      <div className="flex items-center gap-2 px-5 py-4 bg-[#6310db] border-b border-white/10 rounded-t-2xl">
+        <Calendar className="w-[18px] h-[18px] text-[#6d8eff] shrink-0" />
+        <h2 className="text-sm font-bold text-white shrink-0">Tasks & Reminders</h2>
         {totalCount > 0 && (
-          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/10 text-white shrink-0">
+          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/10 text-[#6d8eff] shrink-0">
             {totalCount}
           </span>
         )}
@@ -199,7 +199,7 @@ export function UpcomingPanel({ workspaceId, userId }: { workspaceId: string; us
                   className={`flex items-center gap-1 px-1.5 py-1 rounded-lg transition-colors ${isActive ? 'bg-white/15' : 'hover:bg-white/10'}`}
                 >
                   <t.Icon
-                    className="w-4 h-4 shrink-0"
+                    className="w-[18px] h-[18px] shrink-0"
                     style={{ color: t.iconColor }}
                   />
                   {count !== null && count > 0 && (
@@ -212,9 +212,9 @@ export function UpcomingPanel({ workspaceId, userId }: { workspaceId: string; us
               <button
                 key={t.key}
                 onClick={() => setTab(t.key)}
-                className={`text-[11px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
+                className={`text-[11px] font-bold px-2.5 py-1 rounded-full border transition-colors ${
                   isActive
-                    ? 'border-transparent text-white bg-blue-500'
+                    ? 'border-transparent text-white bg-[#6d8eff]'
                     : 'border-white/20 text-white/50 hover:border-white/40 hover:text-white/80'
                 }`}
               >

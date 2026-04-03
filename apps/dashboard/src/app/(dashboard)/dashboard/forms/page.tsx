@@ -224,6 +224,7 @@ export default async function FormsPage({
             forms={forms}
             filters={params}
             readonly={!!viewAsUserId}
+            workspaceId={workspaceId}
             connectedEmailProviders={connectedEmailProviders}
             connectedFormProviders={connectedFormProviders}
             connectedLeadAdProviders={connectedLeadAdProviders}

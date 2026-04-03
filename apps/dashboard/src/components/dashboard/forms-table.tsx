@@ -3,6 +3,7 @@
 import React, { useCallback, useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 import {
   ClipboardList, Search, ChevronDown, X,
   UserPlus, Ticket, Download, Loader2, Trash2, Sparkles, Columns3, RefreshCw,
@@ -61,6 +62,7 @@ interface Props {
   forms:                     SageForm[]
   filters:                   FormFilters
   readonly?:                 boolean
+  workspaceId?:              string
   connectedEmailProviders?:  string[]
   connectedFormProviders?:   string[]
   connectedLeadAdProviders?: string[]
@@ -336,6 +338,7 @@ const DEFAULT_COLS = new Set<ColKey>(['name', 'email', 'phone', 'company', 'sour
 // ── Main component ────────────────────────────────────────────────────────────
 export function FormsTable({
   submissions, forms, filters, readonly = false,
+  workspaceId,
   connectedEmailProviders = [],
   connectedFormProviders = [],
   connectedLeadAdProviders = [],
@@ -378,11 +381,16 @@ export function FormsTable({
     }
   }
 
-  // Auto-refresh every 60 seconds so new form submissions appear without manual reload
+  // Realtime: refresh instantly when a new form submission arrives
   useEffect(() => {
-    const id = setInterval(() => router.refresh(), 60_000)
-    return () => clearInterval(id)
-  }, [router])
+    if (!workspaceId) return
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`forms-table-${workspaceId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'sage_form_submissions', filter: `workspace_id=eq.${workspaceId}` }, () => router.refresh())
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [workspaceId, router])
 
   // Source platform filter (client-side — Mailchimp, ActiveCampaign, etc.)
   const [localSource, setLocalSource] = useState('')

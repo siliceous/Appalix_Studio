@@ -170,12 +170,10 @@ const INTEGRATIONS: IntegrationCard[] = [
   {
     provider:    'webflow',
     name:        'Webflow',
-    description: 'Receive form submissions from any Webflow site in real time. Configure the webhook in Webflow → Project Settings → Integrations.',
+    description: 'Receive form submissions from any Webflow site in real time. Configure the webhook in Webflow → Site Settings → Apps & Integrations.',
     logo:        '/integrations/webflow.png',
     category:    'forms',
-    fields: [
-      { name: 'webhook_secret', label: 'Webhook Secret', type: 'password', placeholder: 'Optional — paste your Webflow signing secret', hint: 'Found in Webflow → Project Settings → Integrations → Webhooks. Used to verify HMAC-SHA256 signatures.', optional: true },
-    ],
+    fields:      [],
     docsUrl:     'https://developers.webflow.com/data/docs/webhooks',
     webhookPath: '/api/webhooks/webflow',
   },
@@ -358,6 +356,8 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
   const [syncResult,        setSyncResult]       = useState<Record<string, { synced: number; skipped: number; error?: string } | null>>({})
   const [autoSyncEnabled,   setAutoSyncEnabled]  = useState<Record<string, boolean>>(syncEnabledByProvider ?? {})
   const [togglingSync,      setTogglingSync]     = useState<string | null>(null)
+  const [inlineSecret,      setInlineSecret]     = useState<Record<string, string>>({})
+  const [inlineSecretSaved, setInlineSecretSaved] = useState<string | null>(null)
   const sigRef              = useRef<HTMLDivElement>(null)
   const sigImgRef           = useRef<HTMLInputElement>(null)
 
@@ -526,8 +526,8 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                     }`}
                   >
                     {/* Card header */}
-                    <div className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${isConnected ? 'hover:bg-gray-50 dark:hover:bg-white/[0.03]' : ''}`}>
-                      <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-white/5 border dark:border-white/8 shrink-0 overflow-hidden flex items-center justify-center text-xl p-1.5">
+                    <div className={`flex items-center gap-5 px-5 py-4 rounded-xl transition-colors ${isConnected ? 'hover:bg-gray-50 dark:hover:bg-white/[0.03]' : ''}`}>
+                      <div className="w-16 h-16 rounded-2xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 shadow-sm shrink-0 overflow-hidden flex items-center justify-center p-2.5">
                         {integration.logo === '__stripe__' ? (
                           <svg viewBox="0 0 40 40" className="w-full h-full">
                             <rect width="40" height="40" rx="8" fill="#635BFF"/>
@@ -611,11 +611,11 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                           <Link
                             href={integration.tutorialUrl}
                             target="_blank"
-                            className="flex items-center gap-1 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors text-gray-400 hover:text-brand-600 dark:hover:text-[#15A4AE]"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-[#15A4AE] text-xs font-medium"
                             title="Setup guide"
                           >
                             <BookOpen className="w-3.5 h-3.5" />
-                            <span className="text-[10px] font-medium hidden sm:inline">Setup guide</span>
+                            <span className="hidden sm:inline">Guide</span>
                           </Link>
                         )}
                         {integration.docsUrl && (
@@ -623,10 +623,11 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                             href={integration.docsUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-gray-500 dark:text-gray-400 text-xs font-medium"
                             title="Documentation"
                           >
-                            <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Docs</span>
                           </a>
                         )}
 
@@ -674,7 +675,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                           <button
                             onClick={() => handleDisconnect(integration.provider)}
                             disabled={isSaving}
-                            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors disabled:opacity-60"
+                            className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-lg border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors disabled:opacity-60"
                           >
                             {isSaving && <Loader2 className="w-3 h-3 animate-spin" />}
                             Disconnect
@@ -692,7 +693,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                           ) : (
                             <a
                               href={`${integration.oauthPath}?${onboarding ? 'state=onboarding' : 'state=default'}${loginHint ? `&hint=${encodeURIComponent(loginHint)}` : ''}`}
-                              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium transition-colors"
+                              className="flex items-center gap-1.5 text-xs px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-sm transition-colors"
                             >
                               Connect
                             </a>
@@ -702,7 +703,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                           <button
                             onClick={() => handleConnect(integration.provider)}
                             disabled={isSaving}
-                            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium transition-colors disabled:opacity-60"
+                            className="flex items-center gap-1.5 text-xs px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-sm transition-colors disabled:opacity-60"
                           >
                             {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                             {isSaving ? 'Connecting…' : 'Connect'}
@@ -710,7 +711,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                         ) : (
                           <button
                             onClick={() => toggleExpand(integration.provider)}
-                            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium transition-colors"
+                            className="flex items-center gap-1.5 text-xs px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-sm transition-colors"
                           >
                             Connect
                             {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -817,6 +818,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                       const isTypeform        = integration.provider === 'typeform'
                       const isGoogleForms     = integration.provider === 'google_forms'
                       const isWordPressForms  = integration.provider === 'wordpress_forms'
+                      const isWebflow         = integration.provider === 'webflow'
 
                       const appsScript = `function sendToAppalix(e) {
   var form = FormApp.getActiveForm();
@@ -885,6 +887,55 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                             </div>
                           )}
 
+                          {/* Webflow: URL + optional inline signing secret */}
+                          {isWebflow && (
+                            <div className="px-4 py-4 bg-gray-50 dark:bg-white/3 space-y-3">
+                              <div>
+                                <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1.5">Your webhook URL</p>
+                                <p className="text-[11px] text-gray-400 mb-2">In Webflow, go to <strong>Site Settings → Apps & Integrations → Webhooks</strong> → Add Webhook. In the Trigger dropdown select <strong>Form submission</strong>, paste this URL, then copy the signing secret Webflow displays and save it below.</p>
+                                <div className="flex items-center gap-2">
+                                  <code className="flex-1 px-3 py-2 text-xs rounded-lg bg-white dark:bg-[#232323] border dark:border-white/10 text-gray-700 dark:text-gray-300 font-mono truncate select-all">
+                                    {hookUrl}
+                                  </code>
+                                  <button
+                                    onClick={() => { navigator.clipboard.writeText(hookUrl); setCopiedProvider(integration.provider); setTimeout(() => setCopiedProvider(null), 2000) }}
+                                    className="shrink-0 px-2.5 py-2 text-xs rounded-lg border dark:border-white/10 bg-white dark:bg-[#232323] text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+                                  >
+                                    {copiedProvider === integration.provider ? 'Copied!' : 'Copy'}
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="border-t dark:border-white/8 pt-3">
+                                <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">Signing secret <span className="text-gray-400 font-normal">(optional)</span></p>
+                                <p className="text-[11px] text-gray-400 mb-2">After adding the webhook in Webflow, they'll show you a signing secret. Paste it here to enable HMAC-SHA256 verification.</p>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="password"
+                                    value={inlineSecret[integration.provider] ?? ''}
+                                    onChange={e => setInlineSecret(prev => ({ ...prev, [integration.provider]: e.target.value }))}
+                                    placeholder="Paste Webflow signing secret…"
+                                    className="flex-1 px-3 py-2 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-[#232323] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                                  />
+                                  <button
+                                    disabled={!inlineSecret[integration.provider]?.trim() || pending}
+                                    onClick={() => {
+                                      const secret = inlineSecret[integration.provider]?.trim()
+                                      if (!secret) return
+                                      startTransition(async () => {
+                                        await saveSageIntegration(integration.provider, { webhook_secret: secret })
+                                        setInlineSecretSaved(integration.provider)
+                                        setTimeout(() => setInlineSecretSaved(null), 3000)
+                                      })
+                                    }}
+                                    className="shrink-0 px-3 py-2 text-xs font-medium rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition-colors disabled:opacity-40"
+                                  >
+                                    {inlineSecretSaved === integration.provider ? 'Saved!' : 'Save'}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
                           {/* Typeform: registration result banner */}
                           {isTypeform && result && (
                             <div className={`px-4 py-2.5 flex items-center gap-2 text-xs ${result.error ? 'bg-amber-50 dark:bg-amber-500/8 text-amber-700 dark:text-amber-400' : 'bg-emerald-50 dark:bg-emerald-500/8 text-emerald-700 dark:text-emerald-400'}`}>
@@ -930,8 +981,8 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                             </div>
                           )}
 
-                          {/* Webhook URL row — GF/Fluent/Gravity; Typeform fallback. Not shown for WP (uses plugin) */}
-                          {!isGoogleForms && !isWordPressForms && (!isTypeform || !result || result.error) && (
+                          {/* Webhook URL row — shown for all except Google Forms, WordPress Forms, and Webflow (has its own panel) */}
+                          {!isGoogleForms && !isWordPressForms && !isWebflow && (!isTypeform || !result || result.error) && (
                             <div className="px-4 py-3 bg-gray-50 dark:bg-white/3">
                               <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
                                 {isTypeform ? 'Or register the webhook manually in Typeform' : 'Paste this URL into your form plugin'}
@@ -966,8 +1017,8 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                               </div>
                             </div>
                           )}
-                          {/* Test submission row — hidden for WP Forms (plugin has its own test button) */}
-                          {!isWordPressForms && (() => {
+                          {/* Test submission row — hidden for WordPress Forms and Webflow */}
+                          {!isWordPressForms && !isWebflow && (() => {
                             const tr = testResult[integration.provider]
                             return (
                               <div className="px-4 py-3 border-t dark:border-white/8 flex items-center justify-between gap-3 bg-gray-50 dark:bg-white/3">

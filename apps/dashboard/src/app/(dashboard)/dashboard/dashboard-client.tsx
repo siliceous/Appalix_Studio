@@ -867,7 +867,7 @@ const iconCls   = 'bg-gray-100 dark:bg-white/10'
                               if (result.ok) window.open(result.calendarUrl, '_blank')
                             }}
                               className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                              <Calendar className="w-3.5 h-3.5" />
+                              <Calendar className="w-[18px] h-[18px]" />
                             </button>
 
                           </div>
@@ -2017,9 +2017,9 @@ export function SageDashboardClient({
         {/* Left: activity feed */}
         <div className="xl:col-span-2 bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col">
           {/* Header */}
-          <div className="px-5 py-4 bg-[#50039d] border-b border-white/10 flex items-center justify-between rounded-t-xl">
+          <div className="px-5 py-4 bg-[#6310db] border-b border-white/10 flex items-center justify-between rounded-t-xl">
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold text-white">Activity Feed</h2>
+              <h2 className="text-sm font-bold text-white">Activity Feed</h2>
               {/* List / Grid toggle */}
               <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-white/6 rounded-lg p-0.5">
                 <button
@@ -2027,14 +2027,14 @@ export function SageDashboardClient({
                   className={`p-1 rounded-md transition-colors ${feedView === 'list' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
                   title="List view"
                 >
-                  <LayoutList className="w-3.5 h-3.5" />
+                  <LayoutList className="w-[18px] h-[18px]" />
                 </button>
                 <button
                   onClick={() => setFeedView('grid')}
                   className={`p-1 rounded-md transition-colors ${feedView === 'grid' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
                   title="Grid view"
                 >
-                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <LayoutGrid className="w-[18px] h-[18px]" />
                 </button>
               </div>
               {/* Date filter */}
@@ -2042,9 +2042,9 @@ export function SageDashboardClient({
                 <button
                   onClick={() => setShowFeedCal(v => !v)}
                   title="Filter by date"
-                  className="flex items-center gap-1.5 p-1.5 rounded-lg border transition-colors text-xs border-[#15A4AE]/40 text-[#15A4AE] bg-[#15A4AE]/5 hover:bg-[#15A4AE]/10"
+                  className="flex items-center gap-1.5 p-1.5 rounded-lg border transition-colors text-xs border-[#ccd7ff]/40 text-[#ccd7ff] bg-[#ccd7ff]/5 hover:bg-[#ccd7ff]/10"
                 >
-                  <Calendar className="w-3.5 h-3.5" />
+                  <Calendar className="w-[18px] h-[18px]" />
                   <span className="hidden sm:inline font-medium">
                     {dateRange === 'today' ? 'Today' : dateRange === 'yesterday' ? 'Yesterday' : dateRange === '7d' ? '7d' : dateRange === '30d' ? '30d' : 'Custom'}
                   </span>
@@ -2103,34 +2103,34 @@ export function SageDashboardClient({
               </div>
             </div>
             {/* Type icon counts — clickable in both views; in grid view also brings that tablet to top */}
-            <div className="flex items-center gap-3 text-xs">
+            <div className="flex items-center gap-3 text-xs font-bold">
               <button
                 onClick={() => { setFeedView('grid'); setTopType('email') }}
-                className={`flex items-center gap-1 text-blue-500 hover:text-blue-600 transition-colors ${topType === 'email' && feedView === 'grid' ? 'font-semibold' : ''}`}
+                className={`flex items-center gap-1 text-[#ccd7ff] hover:opacity-80 transition-colors ${topType === 'email' && feedView === 'grid' ? 'font-bold' : ''}`}
                 title="Emails"
               >
-                <Mail className="w-3.5 h-3.5" />{visEmails.length}
+                <Mail className="w-[18px] h-[18px]" />{visEmails.length}
               </button>
               <button
                 onClick={() => { setFeedView('grid'); setTopType('bot') }}
-                className={`flex items-center gap-1 text-purple-500 hover:text-purple-600 transition-colors ${topType === 'bot' && feedView === 'grid' ? 'font-semibold' : ''}`}
+                className={`flex items-center gap-1 text-[#cf9cf4] hover:opacity-80 transition-colors ${topType === 'bot' && feedView === 'grid' ? 'font-bold' : ''}`}
                 title="Bot chats"
               >
-                <MessageSquare className="w-3.5 h-3.5" />{visBots.length}
+                <MessageSquare className="w-[18px] h-[18px]" />{visBots.length}
               </button>
               <button
                 onClick={() => { setFeedView('grid'); setTopType('form') }}
-                className={`flex items-center gap-1 text-green-500 hover:text-green-600 transition-colors ${topType === 'form' && feedView === 'grid' ? 'font-semibold' : ''}`}
+                className={`flex items-center gap-1 text-green-500 hover:text-green-600 transition-colors ${topType === 'form' && feedView === 'grid' ? 'font-bold' : ''}`}
                 title="Form submissions"
               >
-                <FileText className="w-3.5 h-3.5" />{visForms.length}
+                <FileText className="w-[18px] h-[18px]" />{visForms.length}
               </button>
               <button
                 onClick={() => { setFeedView('grid'); setTopType('ticket') }}
-                className={`flex items-center gap-1 text-amber-500 hover:text-amber-600 transition-colors ${topType === 'ticket' && feedView === 'grid' ? 'font-semibold' : ''}`}
+                className={`flex items-center gap-1 text-amber-500 hover:text-amber-600 transition-colors ${topType === 'ticket' && feedView === 'grid' ? 'font-bold' : ''}`}
                 title="Tickets"
               >
-                <TicketIcon className="w-3.5 h-3.5" />{visTickets.length}
+                <TicketIcon className="w-[18px] h-[18px]" />{visTickets.length}
               </button>
             </div>
           </div>

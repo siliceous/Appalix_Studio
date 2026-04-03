@@ -250,7 +250,7 @@ export default async function IntegrationsPage({
                   ) : (
                     <a
                       href={`/integrations/new?platform=${platform}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg shadow-sm transition-colors"
                     >
                       <Plug className="w-3 h-3" />
                       Connect
@@ -404,7 +404,7 @@ export default async function IntegrationsPage({
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {CRM_PROVIDERS.map((crm) => (
             <div key={crm.name} className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-[#15A4AE]/30 p-4 flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center shrink-0 overflow-hidden p-1">
+              <div className="w-16 h-16 rounded-2xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 shadow-sm flex items-center justify-center shrink-0 overflow-hidden p-2.5">
                 {crm.logo === '__monday__' ? (
                   <svg viewBox="0 0 40 40" className="w-full h-full">
                     <rect width="40" height="40" rx="8" fill="white" stroke="#E5E7EB"/>
