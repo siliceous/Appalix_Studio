@@ -192,9 +192,26 @@
     outline-color: #3b82f6;
   }
 
+  /* Activity feed card tab headers — mute vivid colors without dimming white text */
+  .happy .tablet-header {
+    position: relative;
+  }
+  .happy .tablet-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.28);
+    pointer-events: none;
+  }
+  .happy .tablet-header > * {
+    position: relative;
+    z-index: 1;
+  }
+
   /* Top bars (subpage toolbar + overview tab bar) */
-  .happy .bg-\[\#141c2b\] {
-    background-color: #6310db !important;
+  .happy .bg-\[\#141c2b\],
+  .happy .bg-\[\#9a3bdd\] {
+    background-color: #6b4aad !important;
   }
 
   /* ── Cool mode — deep navy + electric blue theme ── */
