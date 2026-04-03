@@ -806,8 +806,9 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                       const hookUrl         = result?.webhookUrl
                         ?? formWebhookUrls?.[integration.provider]
                         ?? `${typeof window !== 'undefined' ? window.location.origin : ''}${integration.webhookPath}/${workspaceId}`
-                      const isTypeform      = integration.provider === 'typeform'
-                      const isGoogleForms   = integration.provider === 'google_forms'
+                      const isTypeform        = integration.provider === 'typeform'
+                      const isGoogleForms     = integration.provider === 'google_forms'
+                      const isWordPressForms  = integration.provider === 'wordpress_forms'
 
                       const appsScript = `function sendToAppalix(e) {
   var form = FormApp.getActiveForm();
@@ -825,6 +826,57 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
 
                       return (
                         <div className="border-t dark:border-white/8 rounded-b-xl overflow-hidden">
+
+                          {/* WordPress Forms: plugin-based one-click setup */}
+                          {isWordPressForms && (
+                            <div className="px-4 py-4 bg-gray-50 dark:bg-white/3 space-y-4">
+                              <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">3 steps — no webhook config needed</p>
+                              <ol className="space-y-3">
+                                <li className="flex gap-3 items-start">
+                                  <span className="shrink-0 w-5 h-5 rounded-full bg-brand-600 text-white text-[10px] font-bold flex items-center justify-center mt-0.5">1</span>
+                                  <div>
+                                    <p className="text-xs text-gray-700 dark:text-gray-200 font-medium mb-1">Download and install the Appalix Forms plugin</p>
+                                    <a
+                                      href="/downloads/appalix-forms.zip"
+                                      download
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition-colors"
+                                    >
+                                      Download appalix-forms.zip
+                                    </a>
+                                    <p className="text-[11px] text-gray-400 mt-1.5">WordPress Admin → Plugins → Add New → Upload Plugin → choose the zip → Install → Activate</p>
+                                  </div>
+                                </li>
+                                <li className="flex gap-3 items-start">
+                                  <span className="shrink-0 w-5 h-5 rounded-full bg-brand-600 text-white text-[10px] font-bold flex items-center justify-center mt-0.5">2</span>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs text-gray-700 dark:text-gray-200 font-medium mb-1.5">Go to Settings → Appalix Forms and paste your connection key</p>
+                                    <div className="flex items-center gap-2">
+                                      <code className="flex-1 px-3 py-2 text-xs rounded-lg bg-white dark:bg-[#232323] border dark:border-white/10 text-gray-700 dark:text-gray-300 font-mono truncate select-all">
+                                        {workspaceId}
+                                      </code>
+                                      <button
+                                        onClick={() => { navigator.clipboard.writeText(workspaceId ?? ''); setCopiedProvider(integration.provider + '_key'); setTimeout(() => setCopiedProvider(null), 2000) }}
+                                        className="shrink-0 px-2.5 py-2 text-xs rounded-lg border dark:border-white/10 bg-white dark:bg-[#232323] text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+                                      >
+                                        {copiedProvider === integration.provider + '_key' ? 'Copied!' : 'Copy'}
+                                      </button>
+                                    </div>
+                                    <p className="text-[11px] text-gray-400 mt-1">This is your workspace connection key. The plugin uses it to send to the right account.</p>
+                                  </div>
+                                </li>
+                                <li className="flex gap-3 items-start">
+                                  <span className="shrink-0 w-5 h-5 rounded-full bg-brand-600 text-white text-[10px] font-bold flex items-center justify-center mt-0.5">3</span>
+                                  <div>
+                                    <p className="text-xs text-gray-700 dark:text-gray-200 font-medium">Done — no further configuration needed</p>
+                                    <p className="text-[11px] text-gray-400 mt-0.5">
+                                      Works automatically with Contact Form 7, Elementor Forms, WPForms, Gravity Forms, Ninja Forms, and Formidable Forms.
+                                    </p>
+                                  </div>
+                                </li>
+                              </ol>
+                            </div>
+                          )}
+
                           {/* Typeform: registration result banner */}
                           {isTypeform && result && (
                             <div className={`px-4 py-2.5 flex items-center gap-2 text-xs ${result.error ? 'bg-amber-50 dark:bg-amber-500/8 text-amber-700 dark:text-amber-400' : 'bg-emerald-50 dark:bg-emerald-500/8 text-emerald-700 dark:text-emerald-400'}`}>
@@ -870,8 +922,8 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                             </div>
                           )}
 
-                          {/* Webhook URL row — GF/Fluent/Gravity; Typeform fallback */}
-                          {!isGoogleForms && (!isTypeform || !result || result.error) && (
+                          {/* Webhook URL row — GF/Fluent/Gravity; Typeform fallback. Not shown for WP (uses plugin) */}
+                          {!isGoogleForms && !isWordPressForms && (!isTypeform || !result || result.error) && (
                             <div className="px-4 py-3 bg-gray-50 dark:bg-white/3">
                               <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
                                 {isTypeform ? 'Or register the webhook manually in Typeform' : 'Paste this URL into your form plugin'}
@@ -906,8 +958,8 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                               </div>
                             </div>
                           )}
-                          {/* Test submission row */}
-                          {(() => {
+                          {/* Test submission row — hidden for WP Forms (plugin has its own test button) */}
+                          {!isWordPressForms && (() => {
                             const tr = testResult[integration.provider]
                             return (
                               <div className="px-4 py-3 border-t dark:border-white/8 flex items-center justify-between gap-3 bg-gray-50 dark:bg-white/3">
