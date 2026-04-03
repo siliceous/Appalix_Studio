@@ -697,6 +697,16 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                               Connect
                             </a>
                           )
+                        ) : integration.fields.length === 0 ? (
+                          /* Zero-field providers — connect immediately, no form needed */
+                          <button
+                            onClick={() => handleConnect(integration.provider)}
+                            disabled={isSaving}
+                            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium transition-colors disabled:opacity-60"
+                          >
+                            {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                            {isSaving ? 'Connecting…' : 'Connect'}
+                          </button>
                         ) : (
                           <button
                             onClick={() => toggleExpand(integration.provider)}
