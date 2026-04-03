@@ -517,18 +517,18 @@ export function ConversationPanelClient({
             </div>
           </div>
 
-          {/* Right: all controls */}
+          {/* Right: all controls — keep tight, icon-only where possible */}
           <div className="flex items-center gap-1 shrink-0">
             {/* Priority dropdown */}
             <select
               value={localPriority}
               onChange={e => handlePriorityChange(e.target.value)}
               disabled={readonly || saving === 'priority'}
-              className="dark-bar-select text-sm border border-white/20 rounded-full px-2.5 py-0.5 focus:outline-none disabled:opacity-60 cursor-pointer"
+              className="dark-bar-select text-xs border border-white/20 rounded-full px-2 py-0.5 focus:outline-none disabled:opacity-60 cursor-pointer"
             >
-              <option value="">Priority</option>
+              <option value="">Pri</option>
               <option value="low">⚪ Low</option>
-              <option value="medium">🟡 Medium</option>
+              <option value="medium">🟡 Med</option>
               <option value="high">🟢 High</option>
             </select>
             {saving === 'priority' && <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />}
@@ -538,11 +538,11 @@ export function ConversationPanelClient({
               value={localStatus}
               onChange={e => handleStatusChange(e.target.value)}
               disabled={readonly || saving === 'status'}
-              className="dark-bar-select text-sm border border-white/20 rounded-full px-2.5 py-0.5 focus:outline-none disabled:opacity-60 cursor-pointer"
+              className="dark-bar-select text-xs border border-white/20 rounded-full px-2 py-0.5 focus:outline-none disabled:opacity-60 cursor-pointer"
             >
               <option value="active">Active</option>
-              <option value="completed">Completed</option>
-              <option value="archived">Archived</option>
+              <option value="completed">Done</option>
+              <option value="archived">Arch</option>
             </select>
             {saving === 'status' && <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />}
 
@@ -553,55 +553,29 @@ export function ConversationPanelClient({
                   value={localAssign ?? ''}
                   disabled={saving === 'assign' || readonly}
                   onChange={e => handleAssign(e.target.value || null)}
-                  className="dark-bar-select text-sm border border-white/20 rounded-full px-2.5 py-0.5 focus:outline-none disabled:opacity-60 cursor-pointer"
+                  className="dark-bar-select text-xs border border-white/20 rounded-full px-2 py-0.5 focus:outline-none disabled:opacity-60 cursor-pointer max-w-[90px]"
                 >
-                  <option value="">Assign to…</option>
+                  <option value="">Assign…</option>
                   {teamMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
                 </select>
                 {saving === 'assign' && <Loader2 className="w-3 h-3 animate-spin text-[#15A4AE] shrink-0" />}
               </>
             )}
 
-            {/* Take Over / Return to Bot toggle */}
-            <button
-              onClick={handleToggleTakeover}
-              disabled={takingOver}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-semibold rounded-lg border transition-colors disabled:opacity-60 ${
-                isBotPaused
-                  ? 'bg-amber-500/20 border-amber-400/50 text-amber-300 hover:bg-amber-500/30'
-                  : 'bg-[#15A4AE]/20 border-[#15A4AE]/50 text-[#15A4AE] hover:bg-[#15A4AE]/30'
-              }`}
-            >
-              {takingOver
-                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                : isBotPaused
-                ? <Bot className="w-3.5 h-3.5" />
-                : <UserCheck className="w-3.5 h-3.5" />
-              }
-              {isBotPaused ? 'Return to Bot' : 'Take Over'}
-            </button>
+            {/* ── separator ── */}
+            <div className="w-px h-5 bg-white/20 mx-0.5 shrink-0" />
 
-            {/* Action buttons */}
-            <button
-              onClick={handleCreateTicket}
-              disabled={actionLoading === 'ticket'}
-              className="flex items-center gap-1 px-2.5 py-1.5 text-sm font-medium text-white hover:bg-white/10 rounded-lg border border-white/20 transition-colors disabled:opacity-60"
-            >
+            {/* Icon-only action buttons */}
+            <button onClick={handleCreateTicket} disabled={actionLoading === 'ticket'} title="Add Ticket"
+              className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-60">
               {actionLoading === 'ticket' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Ticket className="w-3.5 h-3.5" />}
-              Add Ticket
             </button>
-            <button
-              onClick={() => setShowDealPicker(true)}
-              className="flex items-center gap-1 px-2.5 py-1.5 text-sm font-medium text-white hover:bg-white/10 rounded-lg border border-white/20 transition-colors"
-            >
+            <button onClick={() => setShowDealPicker(true)} title="Add a Deal"
+              className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
               <UserPlus className="w-3.5 h-3.5" />
-              Add a Deal
             </button>
-            <a
-              href={`/api/conversations/${current.id}/export`}
-              download title="Download transcript"
-              className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-            >
+            <a href={`/api/conversations/${current.id}/export`} download title="Download transcript"
+              className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
               <Download className="w-3.5 h-3.5" />
             </a>
             {!readonly && (
@@ -618,7 +592,7 @@ export function ConversationPanelClient({
             )}
 
             {/* Prev / Next navigation */}
-            <div className="flex items-center border border-white/20 rounded-lg overflow-hidden">
+            <div className="flex items-center border border-white/20 rounded-lg overflow-hidden ml-0.5">
               <button onClick={() => prevId && router.push(`/conversations/${prevId}`)} disabled={!prevId} title="Previous conversation" className="p-1.5 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border-r border-white/20">
                 <ChevronUp className="w-3.5 h-3.5" />
               </button>
@@ -694,6 +668,15 @@ export function ConversationPanelClient({
             <div className="shrink-0 border-t dark:border-white/8 bg-white dark:bg-[#232323] p-3 space-y-2">
               {agentError && <p className="text-xs text-red-500 px-1">{agentError}</p>}
               <div className="flex items-end gap-2">
+                <button
+                  onClick={handleToggleTakeover}
+                  disabled={takingOver}
+                  title="Return to Bot"
+                  className="shrink-0 flex items-center gap-1.5 px-2.5 py-2 text-xs font-semibold rounded-xl border transition-colors disabled:opacity-60 whitespace-nowrap bg-amber-500/20 border-amber-400/50 text-amber-600 dark:text-amber-300 hover:bg-amber-500/30"
+                >
+                  {takingOver ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />}
+                  Return to Bot
+                </button>
                 <textarea
                   value={agentDraft}
                   onChange={e => setAgentDraft(e.target.value)}
@@ -723,6 +706,15 @@ export function ConversationPanelClient({
             <div className={`shrink-0 border-t dark:border-white/8 bg-white dark:bg-[#232323] p-3 space-y-2 transition-opacity duration-500 ${isUserActive ? 'opacity-100' : 'opacity-40'}`}>
               {smsError && isSmsThread && <p className="text-xs text-red-500 px-1">{smsError}</p>}
               <div className="flex items-end gap-2">
+                <button
+                  onClick={handleToggleTakeover}
+                  disabled={takingOver}
+                  title="Take Over from Bot"
+                  className="shrink-0 flex items-center gap-1.5 px-2.5 py-2 text-xs font-semibold rounded-xl border transition-colors disabled:opacity-60 whitespace-nowrap bg-[#15A4AE]/20 border-[#15A4AE]/50 text-[#15A4AE] hover:bg-[#15A4AE]/30"
+                >
+                  {takingOver ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />}
+                  Take Over
+                </button>
                 <textarea
                   value={isSmsThread ? smsDraft : ''}
                   onChange={e => isSmsThread && setSmsDraft(e.target.value)}

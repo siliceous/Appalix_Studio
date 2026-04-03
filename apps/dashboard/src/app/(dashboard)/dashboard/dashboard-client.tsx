@@ -501,7 +501,7 @@ const iconCls   = 'bg-gray-100 dark:bg-white/10'
         onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 shrink-0 bg-[#141c2b] border-b border-white/10 rounded-t-2xl sm:rounded-t-2xl">
+        <div className="flex items-center justify-between px-6 py-4 shrink-0 bg-[#50039d] border-b border-white/10 rounded-t-2xl sm:rounded-t-2xl">
           <div className="flex items-center gap-2.5">
             <div className={`w-7 h-7 rounded-lg flex items-center justify-center bg-white/10`}>
               <Icon className={`w-4 h-4 ${iconCol}`} />
@@ -1177,7 +1177,7 @@ const iconCls   = 'bg-gray-100 dark:bg-white/10'
 
         {/* Footer actions */}
         {!loading && data && (
-          <div className="px-6 py-4 shrink-0 rounded-b-2xl sm:rounded-b-2xl bg-[#141c2b]">
+          <div className="px-6 py-4 shrink-0 rounded-b-2xl sm:rounded-b-2xl bg-[#50039d]">
 
             {/* Pipeline picker */}
             {showPipelinePicker && (
@@ -2017,7 +2017,7 @@ export function SageDashboardClient({
         {/* Left: activity feed */}
         <div className="xl:col-span-2 bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col">
           {/* Header */}
-          <div className="px-5 py-4 bg-[#141c2b] border-b border-white/10 flex items-center justify-between rounded-t-xl">
+          <div className="px-5 py-4 bg-[#50039d] border-b border-white/10 flex items-center justify-between rounded-t-xl">
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-semibold text-white">Activity Feed</h2>
               {/* List / Grid toggle */}

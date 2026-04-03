@@ -178,7 +178,7 @@ export function UpcomingPanel({ workspaceId, userId }: { workspaceId: string; us
   return (
     <div className="bg-white dark:bg-[#232323] rounded-2xl border dark:border-white/8 overflow-hidden flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-2 px-5 py-4 bg-[#141c2b] border-b border-white/10 rounded-t-2xl">
+      <div className="flex items-center gap-2 px-5 py-4 bg-[#50039d] border-b border-white/10 rounded-t-2xl">
         <Calendar className="w-4 h-4 text-white shrink-0" />
         <h2 className="text-sm font-semibold text-white shrink-0">Tasks & Reminders</h2>
         {totalCount > 0 && (
