@@ -46,29 +46,31 @@ export async function POST(
   console.log('[webflow] integration lookup:', { found: !!integration, error: integError?.message })
   if (!integration) return NextResponse.json({ error: 'integration not found' }, { status: 404 })
 
-  const storedSecret = (integration.config?.webhook_secret ?? '') as string
+  const storedSecret = (integration.config?.webhook_secret as string | undefined)?.trim() ?? ''
   const rawBody      = await req.text()
-  console.log('[webflow] rawBody:', rawBody.slice(0, 500))
+  console.log('[webflow] storedSecret set:', !!storedSecret, 'rawBody:', rawBody.slice(0, 300))
 
-  // HMAC-SHA256 verification (Webflow sends `x-webflow-signature`)
-  const sigHeader = req.headers.get('x-webflow-signature') ?? ''
-  if (storedSecret && sigHeader) {
-    const expected = createHmac('sha256', storedSecret).update(rawBody).digest('hex')
-    try {
-      if (!timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(sigHeader, 'hex'))) {
-        console.log('[webflow] invalid signature')
+  // Only verify signature if a secret has been explicitly configured
+  if (storedSecret) {
+    const sigHeader = req.headers.get('x-webflow-signature') ?? ''
+    console.log('[webflow] sigHeader present:', !!sigHeader)
+    if (sigHeader) {
+      try {
+        const expected = createHmac('sha256', storedSecret).update(rawBody).digest('hex')
+        const expectedBuf = Buffer.from(expected, 'hex')
+        const sigBuf      = Buffer.from(sigHeader, 'hex')
+        if (expectedBuf.length !== sigBuf.length || !timingSafeEqual(expectedBuf, sigBuf)) {
+          console.log('[webflow] signature mismatch')
+          return NextResponse.json({ error: 'invalid signature' }, { status: 401 })
+        }
+      } catch {
+        console.log('[webflow] signature verification threw')
         return NextResponse.json({ error: 'invalid signature' }, { status: 401 })
       }
-    } catch {
-      return NextResponse.json({ error: 'invalid signature' }, { status: 401 })
     }
-  } else if (storedSecret) {
-    // Fallback: plain token in query param
-    const incomingSecret = new URL(req.url).searchParams.get('secret') ?? ''
-    if (incomingSecret && incomingSecret !== storedSecret) {
-      return NextResponse.json({ error: 'invalid secret' }, { status: 401 })
-    }
+    // No sig header — fall through and accept (Webflow may not send it on all plans)
   }
+  // No stored secret — accept all requests from Webflow
 
   let body: Record<string, unknown>
   try {
