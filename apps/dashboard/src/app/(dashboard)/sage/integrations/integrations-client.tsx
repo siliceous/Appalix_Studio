@@ -161,9 +161,7 @@ const INTEGRATIONS: IntegrationCard[] = [
     description: 'Capture opt-in and purchase leads from ClickFunnels funnels. Supports CF1 and CF2 webhook payloads.',
     logo:        '/integrations/clickfunnels.png',
     category:    'forms',
-    fields: [
-      { name: 'webhook_secret', label: 'Webhook Secret', type: 'password', placeholder: 'Optional — leave blank to skip verification', hint: 'Set a secret in ClickFunnels webhook settings and enter the same value here to enable signature verification.', optional: true },
-    ],
+    fields:      [],
     docsUrl:     'https://help.clickfunnels.com/hc/en-us/articles/360015067852',
     webhookPath: '/api/webhooks/clickfunnels',
   },
@@ -819,6 +817,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                       const isGoogleForms     = integration.provider === 'google_forms'
                       const isWordPressForms  = integration.provider === 'wordpress_forms'
                       const isWebflow         = integration.provider === 'webflow'
+                      const isClickFunnels    = integration.provider === 'clickfunnels'
 
                       const appsScript = `function sendToAppalix(e) {
   var form = FormApp.getActiveForm();
@@ -936,6 +935,55 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                             </div>
                           )}
 
+                          {/* ClickFunnels: URL + optional inline webhook secret */}
+                          {isClickFunnels && (
+                            <div className="px-4 py-4 bg-gray-50 dark:bg-white/3 space-y-3">
+                              <div>
+                                <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1.5">Your webhook URL</p>
+                                <p className="text-[11px] text-gray-400 mb-2">In ClickFunnels, open your funnel → <strong>Settings → Integrations → Webhooks</strong> → Add New Webhook. Paste this URL and select the events you want (e.g. <strong>Contact Created</strong>).</p>
+                                <div className="flex items-center gap-2">
+                                  <code className="flex-1 px-3 py-2 text-xs rounded-lg bg-white dark:bg-[#232323] border dark:border-white/10 text-gray-700 dark:text-gray-300 font-mono truncate select-all">
+                                    {hookUrl}
+                                  </code>
+                                  <button
+                                    onClick={() => { navigator.clipboard.writeText(hookUrl); setCopiedProvider(integration.provider); setTimeout(() => setCopiedProvider(null), 2000) }}
+                                    className="shrink-0 px-2.5 py-2 text-xs rounded-lg border dark:border-white/10 bg-white dark:bg-[#232323] text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+                                  >
+                                    {copiedProvider === integration.provider ? 'Copied!' : 'Copy'}
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="border-t dark:border-white/8 pt-3">
+                                <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">Webhook secret <span className="text-gray-400 font-normal">(optional)</span></p>
+                                <p className="text-[11px] text-gray-400 mb-2">If you set a secret in ClickFunnels, paste the same value here to enable HMAC-SHA256 signature verification.</p>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="password"
+                                    value={inlineSecret[integration.provider] ?? ''}
+                                    onChange={e => setInlineSecret(prev => ({ ...prev, [integration.provider]: e.target.value }))}
+                                    placeholder="Paste ClickFunnels webhook secret…"
+                                    className="flex-1 px-3 py-2 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-[#232323] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                                  />
+                                  <button
+                                    disabled={!inlineSecret[integration.provider]?.trim() || pending}
+                                    onClick={() => {
+                                      const secret = inlineSecret[integration.provider]?.trim()
+                                      if (!secret) return
+                                      startTransition(async () => {
+                                        await saveSageIntegration(integration.provider, { webhook_secret: secret })
+                                        setInlineSecretSaved(integration.provider)
+                                        setTimeout(() => setInlineSecretSaved(null), 3000)
+                                      })
+                                    }}
+                                    className="shrink-0 px-3 py-2 text-xs font-medium rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition-colors disabled:opacity-40"
+                                  >
+                                    {inlineSecretSaved === integration.provider ? 'Saved!' : 'Save'}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
                           {/* Typeform: registration result banner */}
                           {isTypeform && result && (
                             <div className={`px-4 py-2.5 flex items-center gap-2 text-xs ${result.error ? 'bg-amber-50 dark:bg-amber-500/8 text-amber-700 dark:text-amber-400' : 'bg-emerald-50 dark:bg-emerald-500/8 text-emerald-700 dark:text-emerald-400'}`}>
@@ -981,8 +1029,8 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                             </div>
                           )}
 
-                          {/* Webhook URL row — shown for all except Google Forms, WordPress Forms, and Webflow (has its own panel) */}
-                          {!isGoogleForms && !isWordPressForms && !isWebflow && (!isTypeform || !result || result.error) && (
+                          {/* Webhook URL row — shown for all except Google Forms, WordPress Forms, Webflow, and ClickFunnels (have their own panels) */}
+                          {!isGoogleForms && !isWordPressForms && !isWebflow && !isClickFunnels && (!isTypeform || !result || result.error) && (
                             <div className="px-4 py-3 bg-gray-50 dark:bg-white/3">
                               <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
                                 {isTypeform ? 'Or register the webhook manually in Typeform' : 'Paste this URL into your form plugin'}
