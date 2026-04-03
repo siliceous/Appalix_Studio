@@ -922,7 +922,7 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                                       const secret = inlineSecret[integration.provider]?.trim()
                                       if (!secret) return
                                       startTransition(async () => {
-                                        await saveSageIntegration(integration.provider, { webhook_secret: secret })
+                                        await saveSageIntegration(integration.provider, { webflow_signing_secret: secret })
                                         setInlineSecretSaved(integration.provider)
                                         setTimeout(() => setInlineSecretSaved(null), 3000)
                                       })

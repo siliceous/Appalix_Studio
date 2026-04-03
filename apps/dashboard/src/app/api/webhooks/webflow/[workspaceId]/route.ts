@@ -46,7 +46,7 @@ export async function POST(
   console.log('[webflow] integration lookup:', { found: !!integration, error: integError?.message })
   if (!integration) return NextResponse.json({ error: 'integration not found' }, { status: 404 })
 
-  const storedSecret = (integration.config?.webhook_secret as string | undefined)?.trim() ?? ''
+  const storedSecret = (integration.config?.webflow_signing_secret as string | undefined)?.trim() ?? ''
   const rawBody      = await req.text()
   console.log('[webflow] storedSecret set:', !!storedSecret, 'rawBody:', rawBody.slice(0, 300))
 
