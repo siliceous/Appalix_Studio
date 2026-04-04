@@ -161,12 +161,14 @@ export async function runProspectPipeline(
       } catch { /* non-critical */ }
 
       // Extract (use snippet as fallback if crawl failed)
+      const stripHtml = (s: string) => s.replace(/<[^>]+>/g, '').replace(/&[a-z#0-9]+;/g, ' ').replace(/\s+/g, ' ').trim()
+
       const extracted = crawl
         ? await extractCompanyData(result.domain, crawl.markdown, crawl.title, gmbContext)
         : {
             company_name: result.title ?? result.domain,
             contact_name: null,
-            description:  result.description,
+            description:  stripHtml(result.description),
             services:     [],
             pricing_hint: null,
             city:         null,

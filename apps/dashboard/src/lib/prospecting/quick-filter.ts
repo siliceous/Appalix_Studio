@@ -1,7 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk'
 import type { BraveResult } from './brave-search'
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export interface FilteredResult extends BraveResult {
   is_relevant:    boolean
@@ -20,26 +17,52 @@ interface IcpForFilter {
 const BLOCKLIST_PATTERNS = [
   // Governments & public services
   /\.gov(\.|$)/, /\.gov\.\w+/, /\.edu(\.|$)/, /\.edu\.\w+/,
-  // Directories, aggregators, maps
-  /yellowpages/, /whitepages/, /yelp\.com/, /truelocal/, /hotfrog/,
+
+  // Generic directories & aggregators
+  /yellowpages/, /whitepages/, /truelocal/, /hotfrog/, /localsearch\.com/,
+  /yelp\.com/, /tripadvisor/, /zomato/, /ubereats/, /doordash/,
+
+  // Australian trade / home services directories
+  /oneflare\.com/, /hipages\.com/, /airtasker\.com/, /serviceseeking\.com/,
+  /tradesman\.com/, /servicecentral\.com/, /quotify\.com/,
+
+  // Solar / energy specific directories
+  /solarquotes\.com/, /solardirectory\.com/, /enfsolar\.com/,
+  /solarchoice\.net/, /cleanenergyreviews\.com/, /solarcalculator/,
+  /yourenergyanswers\.com/, /energymatters\.com/, /solarmarket\.com/,
+
+  // Maps & location
   /whereis\.com/, /google\.com/, /maps\.google/, /bing\.com/,
-  /tripadvisor/, /zomato/, /ubereats/, /doordash/,
+  /microburbs\.com/, /nearmap\.com/,
+
   // Reference / encyclopedias
   /wikipedia\.org/, /wikidata/, /wikimedia/,
+
   // Social / job boards
-  /linkedin\.com/, /facebook\.com/, /instagram\.com/, /twitter\.com/,
-  /seek\.com/, /indeed\.com/, /glassdoor\.com/,
+  /linkedin\.com/, /facebook\.com/, /instagram\.com/, /twitter\.com/, /x\.com/,
+  /seek\.com/, /indeed\.com/, /glassdoor\.com/, /jora\.com/,
+
   // News / media
   /news\.com\.au/, /smh\.com\.au/, /theaustralian\.com/, /abc\.net\.au/,
-  /herald\.com/, /dailymail/, /theguardian/,
+  /herald\.com/, /dailymail/, /theguardian/, /nine\.com\.au/,
+
   // Classifieds / marketplaces
-  /gumtree\.com/, /ebay\.com/, /amazon\.com/, /etsy\.com/, /realestate\.com/,
+  /gumtree\.com/, /ebay\.com/, /amazon\.com/, /etsy\.com/,
+  /realestate\.com/, /domain\.com\.au/,
+
   // Document / file hosts
   /scribd\.com/, /slideshare\.net/, /issuu\.com/, /docplayer/,
+
   // Post / logistics
-  /auspost\.com\.au/, /australiapost/, /royalmail/,
-  // General info / suburb pages
-  /microburbs\.com/, /suburb/, /postcode/, /cancersearch/, /healthdirect/,
+  /auspost\.com\.au/, /royalmail/,
+
+  // Health / government info portals
+  /cancersearch/, /healthdirect/, /myhealth/, /ndisfinder/,
+  /service\.nsw/, /nsw\.gov/, /vic\.gov/, /qld\.gov/,
+
+  // Comparison / review sites
+  /canstar/, /finder\.com/, /comparethemarket/, /iselect/,
+  /productreview\.com/, /trustpilot/, /reviews\.com/,
 ]
 
 function isBlocked(domain: string): boolean {
