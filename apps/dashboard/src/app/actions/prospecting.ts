@@ -5,6 +5,7 @@ import { after } from 'next/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { runProspectPipeline } from '@/lib/prospecting/pipeline'
+import { runLocalProspectPipeline } from '@/lib/prospecting/local-pipeline'
 import { pushProspectToSage } from '@/lib/prospecting/push-to-sage'
 
 // ── Auth helper ───────────────────────────────────────────────────────────────
@@ -176,6 +177,7 @@ export async function startProspectSearch(
   icpId:       string,
   searchQuery: string,
   location:    string,
+  leadCount:   number = 20,
 ): Promise<{ jobId: string; error?: string }> {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
@@ -221,7 +223,62 @@ export async function startProspectSearch(
       },
       searchQuery,
       location,
+      Math.min(Math.max(leadCount, 1), 25),
     ).catch(err => console.error('[prospect] pipeline error:', err))
+  })
+
+  return { jobId }
+}
+
+export async function startLocalSearch(
+  icpId:       string,
+  searchQuery: string,
+  location:    string,
+  leadCount:   number = 20,
+): Promise<{ jobId: string; error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+
+  const { data: icp } = await admin
+    .from('workspace_icp_profiles')
+    .select('*')
+    .eq('id', icpId)
+    .eq('workspace_id', workspaceId)
+    .single()
+
+  if (!icp) return { jobId: '', error: 'ICP not found' }
+
+  const { data: job, error } = await admin
+    .from('prospect_crawl_jobs')
+    .insert({
+      workspace_id: workspaceId,
+      icp_id:       icpId,
+      search_query: searchQuery,
+      location:     location || null,
+      status:       'pending',
+    })
+    .select('id')
+    .single()
+
+  if (error || !job) return { jobId: '', error: error?.message ?? 'Failed to create job' }
+
+  const jobId = (job as { id: string }).id
+
+  after(async () => {
+    await runLocalProspectPipeline(
+      jobId,
+      workspaceId,
+      icp as {
+        id: string; name: string; industry: string
+        market_segment?: 'b2b' | 'b2c' | 'both'; target_country?: string
+        target_state?: string; target_postcode?: string
+        target_keywords: string[]; locations: string[]
+        exclude_keywords: string[]; services_of_interest: string[]
+      },
+      searchQuery,
+      location,
+      Math.min(Math.max(leadCount, 1), 20),
+    ).catch(err => console.error('[local-prospect] pipeline error:', err))
   })
 
   return { jobId }

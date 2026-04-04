@@ -11,7 +11,7 @@ import { cn, timeAgo } from '@/lib/utils'
 import type { SageActivityLog } from '@/lib/types'
 import {
   getIcpProfiles, createIcpProfile, updateIcpProfile, deleteIcpProfile,
-  startProspectSearch, getProspectJob, getProspectResults,
+  startProspectSearch, startLocalSearch, getProspectJob, getProspectResults,
   addProspectToPipeline, ignoreProspect, getRecentJobs, getWorkspacePipelines,
   type IcpProfile, type ProspectCompany, type ProspectJob,
 } from '@/app/actions/prospecting'
@@ -19,6 +19,30 @@ import {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const SERVICES = ['Website', 'SEO', 'Google Ads', 'Social Media', 'AI Chatbot', 'Branding', 'Email Marketing', 'Video']
+
+const ALL_COUNTRIES = [
+  'Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia','Australia',
+  'Austria','Azerbaijan','Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin',
+  'Bhutan','Bolivia','Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi',
+  'Cabo Verde','Cambodia','Cameroon','Canada','Central African Republic','Chad','Chile','China','Colombia',
+  'Comoros','Congo','Costa Rica','Croatia','Cuba','Cyprus','Czech Republic','Denmark','Djibouti','Dominica',
+  'Dominican Republic','Ecuador','Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini',
+  'Ethiopia','Fiji','Finland','France','Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada',
+  'Guatemala','Guinea','Guinea-Bissau','Guyana','Haiti','Honduras','Hungary','Iceland','India','Indonesia',
+  'Iran','Iraq','Ireland','Israel','Italy','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kiribati',
+  'Kuwait','Kyrgyzstan','Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania',
+  'Luxembourg','Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Mauritania',
+  'Mauritius','Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique',
+  'Myanmar','Namibia','Nauru','Nepal','Netherlands','New Zealand','Nicaragua','Niger','Nigeria','North Korea',
+  'North Macedonia','Norway','Oman','Pakistan','Palau','Palestine','Panama','Papua New Guinea','Paraguay',
+  'Peru','Philippines','Poland','Portugal','Qatar','Romania','Russia','Rwanda','Saint Kitts and Nevis',
+  'Saint Lucia','Saint Vincent and the Grenadines','Samoa','San Marino','Saudi Arabia','Senegal','Serbia',
+  'Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia','Solomon Islands','Somalia','South Africa',
+  'South Korea','South Sudan','Spain','Sri Lanka','Sudan','Suriname','Sweden','Switzerland','Syria',
+  'Taiwan','Tajikistan','Tanzania','Thailand','Timor-Leste','Togo','Tonga','Trinidad and Tobago','Tunisia',
+  'Turkey','Turkmenistan','Tuvalu','Uganda','Ukraine','United Arab Emirates','United Kingdom',
+  'United States','Uruguay','Uzbekistan','Vanuatu','Vatican City','Venezuela','Vietnam','Yemen','Zambia','Zimbabwe',
+]
 
 const INDUSTRY_PRESETS = [
   // Healthcare
@@ -269,7 +293,7 @@ function IcpFormModal({ initial, onSave, onClose }: {
               className="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 focus:border-[#15A4AE]"
             />
             <datalist id="country-presets">
-              {['Australia','United Kingdom','United States','Canada','New Zealand','India','Singapore','South Africa','UAE','Ireland'].map(c => <option key={c} value={c} />)}
+              {ALL_COUNTRIES.map(c => <option key={c} value={c} />)}
             </datalist>
             <p className="text-xs text-gray-400 mt-1">Ensures searches target the right country</p>
           </div>
@@ -324,7 +348,7 @@ function IcpFormModal({ initial, onSave, onClose }: {
           </div>
           <div>
             <label className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Services You Offer</label>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5 mb-2">
               {SERVICES.map(svc => (
                 <button key={svc} type="button" onClick={() => toggle(svc)}
                   className={cn('px-2.5 py-1 text-[11px] font-medium rounded-full border transition-colors',
@@ -336,6 +360,12 @@ function IcpFormModal({ initial, onSave, onClose }: {
                 </button>
               ))}
             </div>
+            <TagInput
+              value={services.filter(s => !SERVICES.includes(s))}
+              onChange={custom => setServices([...services.filter(s => SERVICES.includes(s)), ...custom])}
+              placeholder="Custom service…"
+            />
+            <p className="text-xs text-gray-400 mt-1">Add custom services not listed above</p>
           </div>
 
           <div className="flex gap-2 pt-2 border-t border-gray-100 dark:border-white/8">
@@ -709,6 +739,8 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
   const [searchQuery, setSearchQuery] = useState('')
   const [location,    setLocation]    = useState(initialProfiles[0]?.locations[0] ?? '')
   const [running,     setRunning]     = useState(false)
+  const [leadCount,   setLeadCount]   = useState(20)
+  const [searchMode,  setSearchMode]  = useState<'web' | 'local'>('local')
   const [activeJob,   setActiveJob]   = useState<ProspectJob | null>(null)
   const [results,     setResults]     = useState<ProspectCompany[]>([])
   const [recentJobs,  setRecentJobs]  = useState<ProspectJob[]>(initialRecentJobs)
@@ -840,6 +872,15 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
     setIcpModal(null)
   }
 
+  async function inlineSaveIcp(field: string, value: string[]) {
+    if (!selectedIcp) return
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await updateIcpProfile(selectedIcp.id, { [field]: value } as any)
+    const updated = { ...selectedIcp, [field]: value }
+    setSelectedIcp(updated)
+    setProfiles(prev => prev.map(p => p.id === selectedIcp.id ? updated : p))
+  }
+
   async function handleDeleteIcp(id: string) {
     if (!confirm('Delete this ICP profile? This cannot be undone.')) return
     await deleteIcpProfile(id)
@@ -856,7 +897,9 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
     setActiveJob(null)
     setTierFilter('all')
     setTableSearch('')
-    const { jobId, error } = await startProspectSearch(selectedIcp.id, searchQuery, location)
+    const { jobId, error } = searchMode === 'local'
+      ? await startLocalSearch(selectedIcp.id, searchQuery, location, leadCount)
+      : await startProspectSearch(selectedIcp.id, searchQuery, location, leadCount)
     if (error || !jobId) { setRunning(false); return }
     const job = await getProspectJob(jobId)
     if (job) setActiveJob(job)
@@ -1170,55 +1213,113 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
                   </div>
                 </FilterSection>
 
-                <FilterSection label="Keywords" count={selectedIcp.target_keywords.length}>
-                  {selectedIcp.target_keywords.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {selectedIcp.target_keywords.map(k => (
-                        <span key={k} className="px-2 py-0.5 text-xs rounded-full bg-[#15A4AE]/10 text-[#15A4AE] font-medium">{k}</span>
-                      ))}
+                <FilterSection label="Filter Results" count={tableSearch || activeFieldFilters ? 1 : 0}>
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                      <input value={tableSearch} onChange={e => setTableSearch(e.target.value)}
+                        placeholder="Company, city, email…"
+                        className="w-full pl-9 pr-8 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/60"
+                      />
+                      {tableSearch && (
+                        <button onClick={() => setTableSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
                     </div>
-                  ) : (
-                    <button onClick={() => { setEditingIcp(selectedIcp); setIcpModal('edit') }}
-                      className="text-sm text-[#15A4AE] hover:underline">+ Add keywords</button>
-                  )}
+                    <button onClick={() => setFilterHasEmail(f => !f)}
+                      className={cn('w-full flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border font-medium transition-colors',
+                        filterHasEmail ? 'bg-[#15A4AE] text-white border-[#15A4AE]' : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-[#15A4AE]/50',
+                      )}>
+                      <Mail className="w-3 h-3" /> Has Email
+                    </button>
+                    <button onClick={() => setFilterHasPhone(f => !f)}
+                      className={cn('w-full flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border font-medium transition-colors',
+                        filterHasPhone ? 'bg-[#15A4AE] text-white border-[#15A4AE]' : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-[#15A4AE]/50',
+                      )}>
+                      <Phone className="w-3 h-3" /> Has Phone
+                    </button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="relative">
+                        <MapPin className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                        <input value={filterCity} onChange={e => setFilterCity(e.target.value)} placeholder="City…"
+                          className="w-full pl-6 pr-2 py-1.5 text-xs border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50" />
+                      </div>
+                      <div className="relative">
+                        <Globe className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                        <input value={filterCountry} onChange={e => setFilterCountry(e.target.value)} placeholder="Country…"
+                          className="w-full pl-6 pr-2 py-1.5 text-xs border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">Score ≥</span>
+                      <input type="number" min={0} max={100} value={filterScoreMin || ''} onChange={e => setFilterScoreMin(Number(e.target.value) || 0)}
+                        placeholder="0"
+                        className="flex-1 px-2 py-1.5 text-xs border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50" />
+                    </div>
+                    {(tableSearch || activeFieldFilters) && (
+                      <button onClick={() => { setTableSearch(''); setFilterHasEmail(false); setFilterHasPhone(false); setFilterCity(''); setFilterCountry(''); setFilterScoreMin(0) }}
+                        className="flex items-center gap-1 px-2 py-1 text-xs rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors font-medium">
+                        <X className="w-3 h-3" /> Clear filters
+                      </button>
+                    )}
+                  </div>
                 </FilterSection>
 
-                <FilterSection label="Locations" count={selectedIcp.locations.length}>
-                  {selectedIcp.locations.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {selectedIcp.locations.map(l => (
-                        <span key={l} className="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400">{l}</span>
-                      ))}
-                    </div>
-                  ) : (
-                    <button onClick={() => { setEditingIcp(selectedIcp); setIcpModal('edit') }}
-                      className="text-sm text-[#15A4AE] hover:underline">+ Add locations</button>
-                  )}
+                <FilterSection label="Keywords" defaultOpen count={selectedIcp.target_keywords.length}>
+                  <TagInput
+                    value={selectedIcp.target_keywords}
+                    onChange={v => inlineSaveIcp('target_keywords', v)}
+                    placeholder="cosmetic dentist, implants…"
+                  />
                 </FilterSection>
 
-                <FilterSection label="Services" count={selectedIcp.services_of_interest.length}>
-                  {selectedIcp.services_of_interest.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {selectedIcp.services_of_interest.map(s => (
-                        <span key={s} className="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400">{s}</span>
-                      ))}
-                    </div>
-                  ) : (
-                    <button onClick={() => { setEditingIcp(selectedIcp); setIcpModal('edit') }}
-                      className="text-sm text-[#15A4AE] hover:underline">+ Add services</button>
-                  )}
+                <FilterSection label="Locations" defaultOpen count={selectedIcp.locations.length}>
+                  <TagInput
+                    value={selectedIcp.locations}
+                    onChange={v => inlineSaveIcp('locations', v)}
+                    placeholder="Sydney, Melbourne…"
+                  />
+                </FilterSection>
+
+                <FilterSection label="Services" defaultOpen count={selectedIcp.services_of_interest.length}>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {SERVICES.map(svc => (
+                      <button
+                        key={svc}
+                        type="button"
+                        onClick={() => {
+                          const current = selectedIcp.services_of_interest
+                          inlineSaveIcp('services_of_interest',
+                            current.includes(svc) ? current.filter(s => s !== svc) : [...current, svc],
+                          )
+                        }}
+                        className={cn('px-2 py-0.5 text-[11px] font-medium rounded-full border transition-colors',
+                          selectedIcp.services_of_interest.includes(svc)
+                            ? 'bg-[#15A4AE] text-white border-[#15A4AE]'
+                            : 'bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10 hover:border-[#15A4AE]/50',
+                        )}
+                      >
+                        {svc}
+                      </button>
+                    ))}
+                  </div>
+                  <TagInput
+                    value={selectedIcp.services_of_interest.filter(s => !SERVICES.includes(s))}
+                    onChange={custom => inlineSaveIcp('services_of_interest', [
+                      ...selectedIcp.services_of_interest.filter(s => SERVICES.includes(s)),
+                      ...custom,
+                    ])}
+                    placeholder="Custom service…"
+                  />
                 </FilterSection>
 
                 <FilterSection label="Exclude" count={selectedIcp.exclude_keywords.length}>
-                  {selectedIcp.exclude_keywords.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {selectedIcp.exclude_keywords.map(ex => (
-                        <span key={ex} className="px-2 py-0.5 text-xs rounded-full bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400">{ex}</span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-400">None set</p>
-                  )}
+                  <TagInput
+                    value={selectedIcp.exclude_keywords}
+                    onChange={v => inlineSaveIcp('exclude_keywords', v)}
+                    placeholder="courses, jobs, directory…"
+                  />
                 </FilterSection>
 
                 <FilterSection label="Recent Searches" count={recentJobs.length}>
@@ -1268,7 +1369,53 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
 
           {/* Find Prospects CTA */}
           {selectedIcp && (
-            <div className="px-3 py-3 border-t border-gray-100 dark:border-white/8 shrink-0">
+            <div className="px-3 py-3 border-t border-gray-100 dark:border-white/8 shrink-0 space-y-3">
+              {/* Search mode toggle */}
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5 block">Search Mode</span>
+                <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => setSearchMode('local')}
+                    className={cn('flex-1 py-2 transition-colors', searchMode === 'local'
+                      ? 'bg-[#15A4AE] text-white'
+                      : 'bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8')}
+                  >
+                    📍 Map Pack
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSearchMode('web')}
+                    className={cn('flex-1 py-2 transition-colors', searchMode === 'web'
+                      ? 'bg-[#15A4AE] text-white'
+                      : 'bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8')}
+                  >
+                    🌐 Web
+                  </button>
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1">
+                  {searchMode === 'local' ? 'GMB listings — real businesses with phone & address' : 'Web search — broader reach, may include directories'}
+                </p>
+              </div>
+              {/* Lead count slider */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Leads to find</span>
+                  <span className="text-xs font-bold text-[#15A4AE] tabular-nums">{leadCount}</span>
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={25}
+                  value={leadCount}
+                  onChange={e => setLeadCount(Number(e.target.value))}
+                  className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-[#15A4AE] bg-gray-200 dark:bg-white/10"
+                />
+                <div className="flex justify-between mt-0.5">
+                  <span className="text-[10px] text-gray-400">1</span>
+                  <span className="text-[10px] text-gray-400">25</span>
+                </div>
+              </div>
               <button
                 onClick={handleStartSearch}
                 disabled={!!running || !searchQuery.trim()}
@@ -1277,9 +1424,6 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
                 {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
                 {running ? 'Running…' : 'Find Prospects'}
               </button>
-              <p className="text-[10px] text-gray-400 text-center mt-1.5">
-                ~20 companies · ~$2–4 per run
-              </p>
             </div>
           )}
         </div>
@@ -1287,8 +1431,8 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
         {/* ── CENTER: Results ──────────────────────────────────────────────────── */}
         <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#232323] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8 overflow-hidden">
 
-          {/* Toolbar */}
-          <div className="shrink-0 px-4 py-2.5 border-b border-gray-100 dark:border-white/8 flex items-center gap-3 flex-wrap">
+          {/* ── Toolbar bar 1: dark navy ── */}
+          <div className="shrink-0 px-4 py-2.5 bg-[#141c2b] border-b border-white/10 flex items-center gap-3 flex-wrap">
 
             {/* Tier filter pills */}
             <div className="flex items-center gap-1">
@@ -1296,52 +1440,22 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
                 { key: 'all',  label: 'All',  count: total,     dot: '' },
                 { key: 'hot',  label: 'Hot',  count: hotCount,  dot: 'bg-emerald-400' },
                 { key: 'warm', label: 'Warm', count: warmCount, dot: 'bg-amber-400'   },
-                { key: 'cold', label: 'Cold', count: coldCount, dot: 'bg-slate-300'   },
+                { key: 'cold', label: 'Cold', count: coldCount, dot: 'bg-slate-400'   },
               ] as const).map(({ key, label, count, dot }) => (
                 <button key={key} onClick={() => setTierFilter(key)}
                   className={cn('flex items-center gap-1.5 px-2.5 py-1 text-[11px] rounded-full font-medium transition-colors',
-                    tierFilter === key ? 'bg-[#15A4AE] text-white' : 'bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/12',
+                    tierFilter === key ? 'bg-[#15A4AE] text-white' : 'bg-white/10 text-white hover:bg-white/15',
                   )}>
                   {dot && <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', dot)} />}
                   {label}
                   {results.length > 0 && (
                     <span className={cn('text-[9px] px-1.5 py-0.5 rounded-full tabular-nums font-bold',
-                      tierFilter === key ? 'bg-white/25' : 'bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400',
+                      tierFilter === key ? 'bg-white/25 text-white' : 'bg-white/10 text-white',
                     )}>{count}</span>
                   )}
                 </button>
               ))}
             </div>
-
-            <div className="w-px h-4 bg-gray-200 dark:bg-white/10" />
-
-            {/* Table search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              <input value={tableSearch} onChange={e => setTableSearch(e.target.value)}
-                placeholder="Search company, city, email…"
-                className="pl-9 pr-8 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50 w-52"
-              />
-              {tableSearch && (
-                <button onClick={() => setTableSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-
-            {/* Field filter toggle */}
-            <button
-              onClick={() => setShowFieldFilter(f => !f)}
-              title="Field filters"
-              className={cn('flex items-center gap-1.5 px-2.5 py-2 text-[11px] rounded-lg font-medium border transition-colors',
-                showFieldFilter || activeFieldFilters
-                  ? 'bg-[#15A4AE]/10 border-[#15A4AE]/30 text-[#15A4AE]'
-                  : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-gray-300',
-              )}>
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              Filters
-              {activeFieldFilters && <span className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] shrink-0" />}
-            </button>
 
             <div className="flex-1" />
 
@@ -1356,7 +1470,7 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
                 ] as { key: SortKey; label: string }[]).map(({ key, label }) => (
                   <button key={key} onClick={() => toggleSort(key)}
                     className={cn('flex items-center gap-1 px-2 py-1 text-[11px] rounded-lg font-medium transition-colors',
-                      sortKey === key ? 'text-[#15A4AE] bg-[#15A4AE]/8' : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8',
+                      sortKey === key ? 'text-[#15A4AE] bg-[#15A4AE]/15' : 'text-white hover:bg-white/10',
                     )}>
                     <ArrowUpDown className="w-3 h-3" />
                     {label}
@@ -1366,18 +1480,12 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
               </div>
             )}
 
-            {/* CSV export */}
-            {visible.length > 0 && (
-              <button onClick={exportCsv} title="Export to CSV"
-                className="p-2 rounded-lg text-gray-400 hover:text-[#15A4AE] hover:bg-[#15A4AE]/8 border border-gray-200 dark:border-white/10 transition-colors">
-                <Download className="w-3.5 h-3.5" />
-              </button>
-            )}
-
             {/* Column visibility */}
             <div className="relative">
               <button onClick={() => setShowColPicker(o => !o)} title="Show/hide columns"
-                className="p-2 rounded-lg text-gray-400 hover:text-[#15A4AE] hover:bg-[#15A4AE]/8 border border-gray-200 dark:border-white/10 transition-colors">
+                className={cn('p-2 rounded-lg border transition-colors',
+                  showColPicker ? 'bg-[#15A4AE]/15 border-[#15A4AE]/40 text-white' : 'text-white hover:bg-white/10 border-white/20',
+                )}>
                 <Building2 className="w-3.5 h-3.5" />
               </button>
               {showColPicker && (
@@ -1395,52 +1503,6 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
             </div>
           </div>
 
-          {/* Field filter bar */}
-          {showFieldFilter && (
-            <div className="shrink-0 px-4 py-3 border-b border-gray-100 dark:border-white/8 flex items-center gap-3 flex-wrap bg-gray-50/60 dark:bg-white/[0.015]">
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Filter by field:</span>
-
-              <button onClick={() => setFilterHasEmail(f => !f)}
-                className={cn('flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] rounded-lg border font-medium transition-colors',
-                  filterHasEmail ? 'bg-[#15A4AE] text-white border-[#15A4AE]' : 'bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-[#15A4AE]/50',
-                )}>
-                <Mail className="w-3 h-3" /> Has Email
-              </button>
-
-              <button onClick={() => setFilterHasPhone(f => !f)}
-                className={cn('flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] rounded-lg border font-medium transition-colors',
-                  filterHasPhone ? 'bg-[#15A4AE] text-white border-[#15A4AE]' : 'bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-[#15A4AE]/50',
-                )}>
-                <Phone className="w-3 h-3" /> Has Phone
-              </button>
-
-              <div className="relative">
-                <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
-                <input value={filterCity} onChange={e => setFilterCity(e.target.value)} placeholder="City…"
-                  className="pl-7 pr-3 py-1.5 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50 w-32" />
-              </div>
-
-              <div className="relative">
-                <Globe className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
-                <input value={filterCountry} onChange={e => setFilterCountry(e.target.value)} placeholder="Country…"
-                  className="pl-7 pr-3 py-1.5 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50 w-32" />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] text-gray-500">Score ≥</span>
-                <input type="number" min={0} max={100} value={filterScoreMin || ''} onChange={e => setFilterScoreMin(Number(e.target.value) || 0)}
-                  placeholder="0"
-                  className="w-16 px-2 py-1.5 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50" />
-              </div>
-
-              {activeFieldFilters && (
-                <button onClick={() => { setFilterHasEmail(false); setFilterHasPhone(false); setFilterCity(''); setFilterCountry(''); setFilterScoreMin(0) }}
-                  className="flex items-center gap-1 px-2 py-1.5 text-[11px] rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors font-medium">
-                  <X className="w-3 h-3" /> Clear all
-                </button>
-              )}
-            </div>
-          )}
 
           {/* Quick filters row */}
           {hasActiveFilters && (
@@ -1479,37 +1541,37 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
                     {/* Company — always */}
                     <th className="px-3 py-2.5 text-left">
                       <button onClick={() => toggleSort('company')}
-                        className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-white/70 hover:text-white transition-colors">
+                        className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-white hover:text-white transition-colors">
                         Company {sortKey === 'company' && <span>{sortDir === 'desc' ? '↓' : '↑'}</span>}
                       </button>
                     </th>
                     {cols.has('score') && (
                       <th className="px-3 py-2.5 text-left">
                         <button onClick={() => toggleSort('score')}
-                          className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-white/70 hover:text-white transition-colors">
+                          className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-white hover:text-white transition-colors">
                           Score {sortKey === 'score' && <span>{sortDir === 'desc' ? '↓' : '↑'}</span>}
                         </button>
                       </th>
                     )}
                     {cols.has('email') && (
-                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70">Email</th>
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-white">Email</th>
                     )}
                     {cols.has('phone') && (
-                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70">Phone</th>
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-white">Phone</th>
                     )}
                     {cols.has('contact_name') && (
-                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70">Contact</th>
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-white">Contact</th>
                     )}
                     {cols.has('description') && (
-                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70">About</th>
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-white">About</th>
                     )}
                     {cols.has('pricing_hint') && (
-                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70">Pricing</th>
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-white">Pricing</th>
                     )}
                     {cols.has('city') && (
                       <th className="px-3 py-2.5 text-left">
                         <button onClick={() => toggleSort('city')}
-                          className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-white/70 hover:text-white transition-colors">
+                          className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-white hover:text-white transition-colors">
                           City {sortKey === 'city' && <span>{sortDir === 'desc' ? '↓' : '↑'}</span>}
                         </button>
                       </th>
@@ -1517,12 +1579,12 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
                     {cols.has('country') && (
                       <th className="px-3 py-2.5 text-left">
                         <button onClick={() => toggleSort('country')}
-                          className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-white/70 hover:text-white transition-colors">
+                          className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-white hover:text-white transition-colors">
                           Country {sortKey === 'country' && <span>{sortDir === 'desc' ? '↓' : '↑'}</span>}
                         </button>
                       </th>
                     )}
-                    <th className="px-4 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wide text-white/70">Action</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-white">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1594,51 +1656,7 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
           </div>
         </div>
 
-        {/* ── RIGHT: Activity sidebar ──────────────────────────────────────────── */}
-        {activityOpen ? (
-          <aside className="w-64 shrink-0 flex flex-col overflow-hidden bg-white dark:bg-[#242424] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8">
-            <div className="px-3 py-2.5 bg-[#141c2b] border-b border-white/10 flex items-center justify-between shrink-0 rounded-t-2xl">
-              <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-white/70" />
-                <span className="text-xs font-semibold text-white">Activity</span>
-              </div>
-              <button onClick={() => setActivityOpen(false)} className="p-1 rounded text-white/50 hover:text-white hover:bg-white/10 transition-colors">
-                <ChevronRight className="w-3 h-3" />
-              </button>
-            </div>
-            <div className="divide-y dark:divide-white/8 flex-1 overflow-y-auto">
-              {activity.length === 0 ? (
-                <p className="px-4 py-8 text-sm text-gray-400 text-center">No activity yet.</p>
-              ) : activity.map(a => (
-                <div key={a.id} className="flex items-start gap-3 px-3 py-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] mt-1.5 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-[11px] text-gray-800 dark:text-gray-200 leading-snug">{a.event_type.replace(/_/g, ' ')}</p>
-                    {a.payload && typeof a.payload === 'object' && 'name' in a.payload && (
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">{String((a.payload as Record<string, unknown>).name)}</p>
-                    )}
-                    <p className="flex items-center gap-1 text-[10px] text-gray-400 mt-0.5">
-                      <Clock className="w-2.5 h-2.5" /> {timeAgo(a.created_at)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </aside>
-        ) : (
-          <div
-            className="w-8 shrink-0 flex flex-col items-center py-4 gap-3 cursor-pointer hover:bg-[#ede9e2] dark:hover:bg-white/4 transition-colors rounded-2xl bg-white dark:bg-[#242424] border border-gray-200/60 dark:border-white/8 shadow-xl"
-            onClick={() => setActivityOpen(true)}
-            title="Show activity"
-          >
-            <ChevronRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-            <span className="text-[10px] text-gray-400 font-medium select-none" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', letterSpacing: '0.05em' }}>
-              Activity
-            </span>
-          </div>
-        )}
-
-      </div>
+        </div>
       </div>
     </>
   )
