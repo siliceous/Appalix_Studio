@@ -21,7 +21,7 @@ async function scrapeSingle(url: string): Promise<{ markdown: string; title: str
       body: JSON.stringify({
         url,
         formats:         ['markdown'],
-        onlyMainContent: true,
+        onlyMainContent: false,  // include headers/footers where phone & email typically live
         timeout:         12000,
       }),
       signal: AbortSignal.timeout(15000),
