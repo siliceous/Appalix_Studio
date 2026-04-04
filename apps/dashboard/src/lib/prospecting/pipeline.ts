@@ -66,6 +66,7 @@ export async function runProspectPipeline(
   icp:         IcpProfile,
   searchQuery: string,
   location:    string,
+  leadCount:   number = 20,
 ): Promise<void> {
   const admin = createAdminClient()
 
@@ -78,7 +79,7 @@ export async function runProspectPipeline(
     const postcodeHint = icp.target_postcode?.trim() ?? ''
     const braveQuery = [searchQuery, location, stateHint, postcodeHint, countryHint].filter(Boolean).join(' ')
 
-    const searchResults = await searchBrave(braveQuery, 20)
+    const searchResults = await searchBrave(braveQuery, leadCount)
 
     if (searchResults.length === 0) {
       await updateJob(jobId, 'done', { found: 0, relevant: 0, crawled: 0, scored: 0, pushed: 0 })
@@ -151,8 +152,10 @@ export async function runProspectPipeline(
       try {
         const gmbResults = await searchBrave(`"${result.domain}" phone email address contact`, 5)
         if (gmbResults.length > 0) {
+          // Strip HTML tags from Brave snippets before passing to LLM
+          const stripHtml = (s: string) => s.replace(/<[^>]+>/g, '').replace(/&[a-z]+;/g, ' ').replace(/\s+/g, ' ').trim()
           gmbContext = gmbResults
-            .map(r => `${r.title}: ${r.description}`)
+            .map(r => `${r.title}: ${stripHtml(r.description)}`)
             .join('\n')
         }
       } catch { /* non-critical */ }

@@ -16,10 +16,40 @@ interface IcpForFilter {
   exclude_keywords: string[]
 }
 
+// Hard-block domains that are never real business prospects
+const BLOCKLIST_PATTERNS = [
+  // Governments & public services
+  /\.gov(\.|$)/, /\.gov\.\w+/, /\.edu(\.|$)/, /\.edu\.\w+/,
+  // Directories, aggregators, maps
+  /yellowpages/, /whitepages/, /yelp\.com/, /truelocal/, /hotfrog/,
+  /whereis\.com/, /google\.com/, /maps\.google/, /bing\.com/,
+  /tripadvisor/, /zomato/, /ubereats/, /doordash/,
+  // Reference / encyclopedias
+  /wikipedia\.org/, /wikidata/, /wikimedia/,
+  // Social / job boards
+  /linkedin\.com/, /facebook\.com/, /instagram\.com/, /twitter\.com/,
+  /seek\.com/, /indeed\.com/, /glassdoor\.com/,
+  // News / media
+  /news\.com\.au/, /smh\.com\.au/, /theaustralian\.com/, /abc\.net\.au/,
+  /herald\.com/, /dailymail/, /theguardian/,
+  // Classifieds / marketplaces
+  /gumtree\.com/, /ebay\.com/, /amazon\.com/, /etsy\.com/, /realestate\.com/,
+  // Document / file hosts
+  /scribd\.com/, /slideshare\.net/, /issuu\.com/, /docplayer/,
+  // Post / logistics
+  /auspost\.com\.au/, /australiapost/, /royalmail/,
+  // General info / suburb pages
+  /microburbs\.com/, /suburb/, /postcode/, /cancersearch/, /healthdirect/,
+]
+
+function isBlocked(domain: string): boolean {
+  return BLOCKLIST_PATTERNS.some(p => p.test(domain))
+}
+
 /**
- * Batch-filters all search results in a single Claude call.
- * Uses Haiku (cheap + fast) since this is a classification task.
- * Returns only relevant results.
+ * Batch-filters search results:
+ * 1. Hard-block known non-business domains instantly (no LLM cost)
+ * 2. Pass remainder to Claude Haiku for ICP matching
  */
 export async function batchQuickFilter(
   results: BraveResult[],
@@ -27,55 +57,70 @@ export async function batchQuickFilter(
 ): Promise<FilteredResult[]> {
   if (results.length === 0) return []
 
-  const items = results.map((r, i) => `[${i}] Title: "${r.title}" | Domain: ${r.domain} | Snippet: "${r.description}"`)
+  // ── 1. Hard blocklist (free) ──────────────────────────────────────────────
+  const candidates = results.filter(r => !isBlocked(r.domain))
+  if (candidates.length === 0) return []
+
+  // ── 2. LLM filter ─────────────────────────────────────────────────────────
+  const items = candidates.map((r, i) =>
+    `[${i}] Domain: ${r.domain} | Title: "${r.title}" | Snippet: "${r.description.slice(0, 200)}"`
+  )
 
   const segmentHint =
-    icp.market_segment === 'b2b' ? 'Prefer businesses that sell to other businesses (wholesalers, B2B services, trade suppliers). Exclude businesses that only sell direct to consumers.' :
-    icp.market_segment === 'b2c' ? 'Prefer businesses that sell directly to consumers (retail, local services, consumer-facing). Exclude pure B2B/wholesale-only businesses.' :
-    'Accept both B2B and B2C businesses.'
+    icp.market_segment === 'b2b' ? 'Only businesses that sell to other businesses. Exclude consumer-facing services.' :
+    icp.market_segment === 'b2c' ? 'Only businesses that sell directly to consumers. Exclude pure B2B/wholesale.' :
+    'Accept B2B and B2C businesses.'
 
-  const prompt = `You are a lead qualification filter. Evaluate each company snippet and decide if it matches the target profile.
+  const prompt = `You are a B2B lead qualification filter. Decide if each result is a real business matching the target profile.
 
-Target profile:
+Target:
 - Industry: ${icp.industry}
-- Market segment: ${icp.market_segment ?? 'both'} — ${segmentHint}
-- Target keywords: ${icp.target_keywords.join(', ') || 'none'}
-- Exclude keywords: ${icp.exclude_keywords.join(', ') || 'none'}
+- Segment: ${segmentHint}
+- Must-have keywords: ${icp.target_keywords.join(', ') || 'any'}
+- Exclude if contains: ${icp.exclude_keywords.join(', ') || 'none'}
 
-Rules:
-- Mark as relevant if it looks like a real business matching the industry/keywords and market segment
-- Mark as NOT relevant if: it's a directory, aggregator, news site, job board, education provider, or matches any exclude keyword
-- business_type should be a short description (e.g. "dental clinic", "marketing agency")
+Hard rules — mark NOT relevant if:
+- It is a directory, listing site, aggregator, or marketplace (even if relevant industry)
+- It is a government, council, or public institution website
+- It is a map, suburb info, postcode, or demographic data site
+- It is a news article, blog post, or media site
+- It is a review/ratings platform
+- It is a job board or recruitment site
+- It is a social media profile
+- The domain clearly sells products unrelated to the target industry
 
-Results to evaluate:
+Mark RELEVANT only if it appears to be a real private business operating in the target industry.
+
+Results:
 ${items.join('\n')}
 
-Respond ONLY with a JSON array (no markdown), one object per result, in order:
+Respond ONLY with a JSON array, one entry per result, in order:
 [{"index":0,"is_relevant":true,"business_type":"dental clinic","confidence":0.9},...]`
 
-  const msg = await anthropic.messages.create({
-    model:      'claude-haiku-4-5-20251001',
-    max_tokens: 1000,
-    messages:   [{ role: 'user', content: prompt }],
-  })
-
-  const raw = (msg.content[0] as { type: string; text: string }).text.trim()
-
-  let parsed: Array<{ index: number; is_relevant: boolean; business_type: string; confidence: number }>
   try {
-    parsed = JSON.parse(raw)
-  } catch {
-    // If Claude returns something unexpected, be conservative and pass everything through
-    return results.map(r => ({ ...r, is_relevant: true, business_type: icp.industry, confidence: 0.5 }))
-  }
+    const msg = await anthropic.messages.create({
+      model:      'claude-haiku-4-5-20251001',
+      max_tokens: 1000,
+      messages:   [{ role: 'user', content: prompt }],
+    })
 
-  return results.map((r, i) => {
-    const judgment = parsed.find(p => p.index === i)
-    return {
-      ...r,
-      is_relevant:   judgment?.is_relevant   ?? true,
-      business_type: judgment?.business_type ?? icp.industry,
-      confidence:    judgment?.confidence    ?? 0.5,
-    }
-  }).filter(r => r.is_relevant)
+    const raw = (msg.content[0] as { type: string; text: string }).text.trim()
+    const parsed = JSON.parse(raw) as Array<{
+      index: number; is_relevant: boolean; business_type: string; confidence: number
+    }>
+
+    return candidates.map((r, i) => {
+      const j = parsed.find(p => p.index === i)
+      return {
+        ...r,
+        is_relevant:   j?.is_relevant   ?? false,   // fail-safe: exclude if uncertain
+        business_type: j?.business_type ?? icp.industry,
+        confidence:    j?.confidence    ?? 0,
+      }
+    }).filter(r => r.is_relevant)
+
+  } catch {
+    // On parse error, exclude everything rather than pass junk through
+    return []
+  }
 }
