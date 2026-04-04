@@ -120,7 +120,7 @@ Respond ONLY with a JSON array, one entry per result, in order:
     }).filter(r => r.is_relevant)
 
   } catch {
-    // On parse error, exclude everything rather than pass junk through
-    return []
+    // On parse error, pass blocklist survivors through so the pipeline isn't empty
+    return candidates.map(r => ({ ...r, is_relevant: true, business_type: icp.industry, confidence: 0.5 }))
   }
 }
