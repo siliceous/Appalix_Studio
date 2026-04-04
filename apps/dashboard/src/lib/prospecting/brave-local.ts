@@ -65,6 +65,7 @@ export async function searchLocalBusinesses(
   }
 
   const locationResults = searchData.locations?.results ?? []
+  console.log(`[brave-local] query="${query}" → ${locationResults.length} location IDs returned`)
   if (locationResults.length === 0) return []
 
   const ids = locationResults.map(r => r.id).join(',')

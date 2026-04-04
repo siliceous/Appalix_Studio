@@ -65,7 +65,7 @@ const BLOCKLIST_PATTERNS = [
   /productreview\.com/, /trustpilot/, /reviews\.com/,
 ]
 
-function isBlocked(domain: string): boolean {
+export function isBlockedDomain(domain: string): boolean {
   return BLOCKLIST_PATTERNS.some(p => p.test(domain))
 }
 
@@ -80,6 +80,6 @@ export async function batchQuickFilter(
   _icp: IcpForFilter,
 ): Promise<FilteredResult[]> {
   return results
-    .filter(r => !isBlocked(r.domain))
+    .filter(r => !isBlockedDomain(r.domain))
     .map(r => ({ ...r, is_relevant: true, business_type: '', confidence: 0.5 }))
 }

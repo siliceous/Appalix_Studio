@@ -1,9 +1,11 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { searchLocalBusinesses } from './brave-local'
+import { searchBrave } from './brave-search'
 import { crawlDeep } from './firecrawl'
 import { extractCompanyData } from './extract'
 import { scoreProspect } from './score'
 import { pushProspectToSage } from './push-to-sage'
+import { isBlockedDomain } from './quick-filter'
 
 interface IcpProfile {
   id:                   string
@@ -62,7 +64,32 @@ export async function runLocalProspectPipeline(
       .filter(Boolean).join(' ')
     const braveQuery = [searchQuery, locationHint].filter(Boolean).join(' ')
 
-    const businesses = await searchLocalBusinesses(braveQuery, leadCount)
+    let businesses = await searchLocalBusinesses(braveQuery, leadCount)
+
+    // ── Fallback: if Brave Local has no coverage (e.g. AU regions), use web search ──
+    if (businesses.length === 0) {
+      console.log('[local-pipeline] Brave Local returned 0 — falling back to web search with blocklist')
+      const webResults = await searchBrave(braveQuery, leadCount)
+      const filtered   = webResults.filter(r => !isBlockedDomain(r.domain))
+
+      // Convert web results to LocalBusiness shape
+      businesses = filtered.map(r => ({
+        id:           r.domain,
+        name:         r.title,
+        phone:        null,
+        website:      r.url,
+        domain:       r.domain,
+        address:      null,
+        city:         null,
+        state:        null,
+        postcode:     null,
+        country:      null,
+        categories:   [],
+        rating:       null,
+        review_count: null,
+        description:  r.description,
+      }))
+    }
 
     if (businesses.length === 0) {
       await updateJob(jobId, 'done', { found: 0, relevant: 0, crawled: 0, scored: 0, pushed: 0 })
