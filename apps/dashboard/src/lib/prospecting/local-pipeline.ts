@@ -76,29 +76,38 @@ export async function runLocalProspectPipeline(
       // Strip HTML from Brave snippets
       const stripHtml = (s: string) => s.replace(/<[^>]+>/g, '').replace(/&[a-z#0-9]+;/g, ' ').replace(/\s+/g, ' ').trim()
 
-      // Extract phone numbers directly from Brave title/snippet (e.g. "Call 1300 319 866")
+      // Extract phone/email directly from Brave title+snippet
       const extractPhone = (text: string): string | null => {
-        const m = text.match(/(?:call\s+)?(\+?(?:61\s*)?(?:1[38]\d{2}[\s-]?\d{3}[\s-]?\d{3}|\(?0\d\)?[\s-]?\d{4}[\s-]?\d{4}|\d{4}[\s-]?\d{3}[\s-]?\d{3}))/i)
+        const m = text.match(/(?:call\s+)?(\+?(?:61[-\s]?)?(?:1[38]\d{2}[\s-]?\d{3}[\s-]?\d{3}|\(?0\d\)?[\s-]?\d{4}[\s-]?\d{4}|\d{4}[\s-]?\d{3}[\s-]?\d{3}))/i)
         return m ? m[1].replace(/\s+/g, ' ').trim() : null
+      }
+      const extractEmail = (text: string): string | null => {
+        const m = text.match(/([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/)
+        return m ? m[1] : null
       }
 
       // Convert web results to LocalBusiness shape
-      businesses = filtered.map(r => ({
-        id:           r.domain,
-        name:         r.title,
-        phone:        extractPhone(`${r.title} ${r.description}`),
-        website:      r.url,
-        domain:       r.domain,
-        address:      null,
-        city:         null,
-        state:        null,
-        postcode:     null,
-        country:      null,
-        categories:   [],
-        rating:       null,
-        review_count: null,
-        description:  stripHtml(r.description),
-      }))
+      businesses = filtered.map(r => {
+        const cleanSnippet = stripHtml(r.description)
+        return {
+          id:           r.domain,
+          name:         r.title,
+          phone:        extractPhone(`${r.title} ${r.description}`),
+          email:        extractEmail(`${r.title} ${r.description}`),
+          website:      r.url,
+          domain:       r.domain,
+          address:      null,
+          city:         null,
+          state:        null,
+          postcode:     null,
+          country:      null,
+          categories:   [],
+          rating:       null,
+          review_count: null,
+          description:  cleanSnippet,
+          snippet:      cleanSnippet,
+        }
+      })
     }
 
     if (businesses.length === 0) {
@@ -135,8 +144,8 @@ export async function runLocalProspectPipeline(
         location_text: locationText,
         phone_1:       b.phone,
         phones:        b.phone ? [b.phone] : [],
-        email_1:       null,
-        emails:        [],
+        email_1:       b.email,
+        emails:        b.email ? [b.email] : [],
         source:        'local_search',
         status:        'found',
         updated_at:    new Date().toISOString(),
@@ -158,8 +167,12 @@ export async function runLocalProspectPipeline(
 
       if (b.domain) {
         const crawl = await crawlDeep(b.domain)
-        // Pass the original Brave title as extra context — it often contains phone numbers
-        const extraContext = b.name !== b.domain ? `Original listing title: ${b.name}` : undefined
+        // Build extra context from Brave title + snippet — contains phone/email directly
+        const contextParts = [
+          b.name !== b.domain ? `Listing title: ${b.name}` : null,
+          b.snippet ? `Search snippet: ${b.snippet}` : null,
+        ].filter(Boolean)
+        const extraContext = contextParts.length ? contextParts.join('\n') : undefined
         extracted = crawl
           ? await extractCompanyData(b.domain, crawl.markdown, crawl.title, extraContext)
           : {
@@ -171,7 +184,7 @@ export async function runLocalProspectPipeline(
               city:         b.city,
               state:        b.state,
               country:      b.country,
-              emails:       [],
+              emails:       b.email ? [b.email] : [],
               phones:       b.phone ? [b.phone] : [],
             }
       } else {
@@ -192,7 +205,7 @@ export async function runLocalProspectPipeline(
 
       // Merge GMB phone with any extracted phones
       const allPhones = [...new Set([...(b.phone ? [b.phone] : []), ...extracted.phones])]
-      const allEmails = extracted.emails
+      const allEmails = [...new Set([...(b.email ? [b.email] : []), ...extracted.emails])]
 
       // Score
       const scoreResult = scoreProspect(

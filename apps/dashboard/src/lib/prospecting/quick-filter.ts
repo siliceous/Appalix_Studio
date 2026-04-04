@@ -25,6 +25,7 @@ const BLOCKLIST_PATTERNS = [
   // Australian trade / home services directories
   /oneflare\.com/, /hipages\.com/, /airtasker\.com/, /serviceseeking\.com/,
   /tradesman\.com/, /servicecentral\.com/, /quotify\.com/,
+  /wheree\.com/, /localbusinessguide/, /startlocal\.com/, /cylex\.com/,
 
   // Solar / energy specific directories
   /solarquotes\.com/, /solardirectory\.com/, /enfsolar\.com/,

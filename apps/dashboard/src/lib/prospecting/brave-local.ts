@@ -10,6 +10,7 @@ export interface LocalBusiness {
   id:           string
   name:         string
   phone:        string | null
+  email:        string | null
   website:      string | null
   domain:       string | null
   address:      string | null
@@ -21,6 +22,7 @@ export interface LocalBusiness {
   rating:       number | null
   review_count: number | null
   description:  string | null
+  snippet:      string | null   // original search snippet for context
 }
 
 /**
@@ -113,6 +115,7 @@ export async function searchLocalBusinesses(
       id:           poi.id,
       name:         poi.name ?? '',
       phone:        poi.phone ?? null,
+      email:        null,
       website,
       domain,
       address:      addr?.streetAddress ?? null,
@@ -124,6 +127,7 @@ export async function searchLocalBusinesses(
       rating:       poi.rating?.ratingValue ?? null,
       review_count: poi.rating?.ratingCount ?? null,
       description:  descMap.get(poi.id) ?? null,
+      snippet:      null,
     }
   }).filter(b => b.name)
 }
