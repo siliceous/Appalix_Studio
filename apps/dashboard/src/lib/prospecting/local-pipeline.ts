@@ -60,7 +60,8 @@ export async function runLocalProspectPipeline(
     // ── 1. Brave Local Search ─────────────────────────────────────────────────
     await updateJob(jobId, 'searching')
 
-    const locationHint = [location, icp.target_state, icp.target_postcode, icp.target_country]
+    // Keep query focused — too many suburb terms dilutes Brave results
+    const locationHint = [location || icp.locations[0], icp.target_state, icp.target_country]
       .filter(Boolean).join(' ')
     const braveQuery = [searchQuery, locationHint].filter(Boolean).join(' ')
 
@@ -71,6 +72,9 @@ export async function runLocalProspectPipeline(
       console.log('[local-pipeline] Brave Local returned 0 — falling back to web search with blocklist')
       const webResults = await searchBrave(braveQuery, leadCount)
       const filtered   = webResults.filter(r => !isBlockedDomain(r.domain))
+
+      // Strip HTML from Brave snippets
+      const stripHtml = (s: string) => s.replace(/<[^>]+>/g, '').replace(/&[a-z#0-9]+;/g, ' ').replace(/\s+/g, ' ').trim()
 
       // Convert web results to LocalBusiness shape
       businesses = filtered.map(r => ({
@@ -87,7 +91,7 @@ export async function runLocalProspectPipeline(
         categories:   [],
         rating:       null,
         review_count: null,
-        description:  r.description,
+        description:  stripHtml(r.description),
       }))
     }
 

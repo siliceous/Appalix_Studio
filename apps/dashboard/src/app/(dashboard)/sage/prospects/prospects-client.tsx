@@ -5,10 +5,9 @@ import {
   Plus, Search, Target, Trash2, ChevronDown, ChevronUp,
   Sparkles, MapPin, Globe, Mail, Phone, Check, X,
   Loader2, AlertCircle, Zap, Edit2, ArrowUpDown, Clock,
-  Download, SlidersHorizontal, Building2, Upload, Activity, ChevronRight,
+  Download, Building2, Upload,
 } from 'lucide-react'
-import { cn, timeAgo } from '@/lib/utils'
-import type { SageActivityLog } from '@/lib/types'
+import { cn } from '@/lib/utils'
 import {
   getIcpProfiles, createIcpProfile, updateIcpProfile, deleteIcpProfile,
   startProspectSearch, startLocalSearch, getProspectJob, getProspectResults,
@@ -78,7 +77,6 @@ const TIER: Record<string, { dot: string; bar: string; badge: string; label: str
   discarded: { dot: 'bg-gray-200',    bar: 'bg-gray-200',    badge: 'bg-gray-50 text-gray-400 border border-gray-100',                                                                                   label: 'Low fit' },
 }
 
-const JOB_STEPS   = ['searching', 'filtering', 'crawling', 'scoring', 'done'] as const
 const JOB_LABELS: Record<string, string> = {
   pending:   'Starting…',
   searching: 'Searching web…',
@@ -166,7 +164,7 @@ function TagInput({ value, onChange, placeholder }: {
         onChange={e => setInput(e.target.value)}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add() } }}
         onBlur={add}
-        placeholder={value.length === 0 ? placeholder : '+ add'}
+        placeholder={value.length === 0 ? placeholder : ''}
         className="flex-1 min-w-[80px] text-[11px] bg-transparent outline-none placeholder-gray-400 text-gray-800 dark:text-gray-200"
       />
     </div>
@@ -563,56 +561,42 @@ function ProspectRow({ prospect, cols, isPushed, onAddClick, onIgnore }: {
 
 // ── Job progress strip ────────────────────────────────────────────────────────
 
-function JobProgressStrip({ job }: { job: ProspectJob }) {
-  const idx      = JOB_STEPS.indexOf(job.status as typeof JOB_STEPS[number])
+function Dot() {
+  return <span className="text-gray-300 dark:text-white/20 mx-0.5">·</span>
+}
+
+function JobProgressStrip({ job, profileName }: { job: ProspectJob; profileName?: string }) {
   const isDone   = job.status === 'done'
   const isFailed = job.status === 'failed'
+  const isRunning = !isDone && !isFailed
 
   return (
     <div className={cn(
-      'flex items-center gap-4 px-5 py-2.5 border-b text-xs shrink-0',
+      'flex items-center gap-1.5 px-4 py-1.5 border-b text-[11px] shrink-0 flex-wrap',
       isFailed ? 'bg-red-50 dark:bg-red-500/5 border-red-100 dark:border-red-500/10' :
       isDone   ? 'bg-emerald-50/60 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/10' :
                  'bg-[#15A4AE]/4 border-[#15A4AE]/15',
     )}>
-      <div className="flex items-center gap-1.5 shrink-0">
-        {!isDone && !isFailed && <Loader2 className="w-3.5 h-3.5 text-[#15A4AE] animate-spin" />}
-        {isDone   && <Check className="w-3.5 h-3.5 text-emerald-500" />}
-        {isFailed && <AlertCircle className="w-3.5 h-3.5 text-red-500" />}
-        <span className={cn('font-medium',
-          isFailed ? 'text-red-600 dark:text-red-400' :
-          isDone   ? 'text-emerald-700 dark:text-emerald-400' :
-                     'text-gray-700 dark:text-gray-300',
-        )}>
-          {JOB_LABELS[job.status] ?? job.status}
-        </span>
-      </div>
-
-      <div className="flex items-center gap-0.5 flex-1 max-w-[160px]">
-        {JOB_STEPS.slice(0, -1).map((step, i) => (
-          <div key={step} className="flex items-center gap-0.5 flex-1">
-            <div className={cn('w-1.5 h-1.5 rounded-full shrink-0 transition-colors',
-              i < idx  ? 'bg-[#15A4AE]' :
-              i === idx ? 'bg-[#15A4AE] animate-pulse' :
-              'bg-gray-200 dark:bg-white/10',
-            )} />
-            {i < JOB_STEPS.length - 2 && (
-              <div className={cn('flex-1 h-px', i < idx ? 'bg-[#15A4AE]/50' : 'bg-gray-200 dark:bg-white/10')} />
-            )}
-          </div>
-        ))}
-      </div>
-
-      <div className="flex items-center gap-3 text-[11px] text-gray-500 dark:text-gray-400">
-        {job.stats.found    > 0 && <span>Found <strong className="text-gray-700 dark:text-gray-200 font-semibold">{job.stats.found}</strong></span>}
-        {job.stats.relevant > 0 && <span>Relevant <strong className="text-gray-700 dark:text-gray-200 font-semibold">{job.stats.relevant}</strong></span>}
-        {job.stats.crawled  > 0 && <span>Crawled <strong className="text-gray-700 dark:text-gray-200 font-semibold">{job.stats.crawled}</strong></span>}
-        {job.stats.pushed   > 0 && <span>Pushed <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">{job.stats.pushed}</strong></span>}
-      </div>
-
-      {isFailed && job.error && (
-        <span className="text-red-500 dark:text-red-400 truncate max-w-[240px]">{job.error}</span>
-      )}
+      {isRunning && <Loader2 className="w-3 h-3 text-[#15A4AE] animate-spin shrink-0" />}
+      {isDone    && <Check   className="w-3 h-3 text-emerald-500 shrink-0" />}
+      {isFailed  && <AlertCircle className="w-3 h-3 text-red-500 shrink-0" />}
+      <span className="font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide text-[10px]">Search</span>
+      {profileName && <><Dot /><span className="text-gray-600 dark:text-gray-300 font-medium">{profileName}</span></>}
+      {job.search_query && <><Dot /><span className="text-gray-600 dark:text-gray-300">{job.search_query}</span></>}
+      {job.location     && <><Dot /><span className="text-gray-400">{job.location}</span></>}
+      <Dot />
+      <span className={cn('font-medium',
+        isFailed ? 'text-red-600 dark:text-red-400' :
+        isDone   ? 'text-emerald-700 dark:text-emerald-400' :
+                   'text-[#15A4AE]',
+      )}>
+        {JOB_LABELS[job.status] ?? job.status}
+      </span>
+      {job.stats.found    > 0 && <><Dot /><span className="text-gray-500 dark:text-gray-400">Found <strong className="text-gray-700 dark:text-gray-200">{job.stats.found}</strong></span></>}
+      {job.stats.relevant > 0 && <><Dot /><span className="text-gray-500 dark:text-gray-400">Relevant <strong className="text-gray-700 dark:text-gray-200">{job.stats.relevant}</strong></span></>}
+      {job.stats.crawled  > 0 && <><Dot /><span className="text-gray-500 dark:text-gray-400">Crawled <strong className="text-gray-700 dark:text-gray-200">{job.stats.crawled}</strong></span></>}
+      {job.stats.pushed   > 0 && <><Dot /><span className="text-gray-500 dark:text-gray-400">Pushed <strong className="text-emerald-600 dark:text-emerald-400">{job.stats.pushed}</strong></span></>}
+      {isFailed && job.error  && <><Dot /><span className="text-red-500 dark:text-red-400 truncate max-w-[240px]">{job.error}</span></>}
     </div>
   )
 }
@@ -723,10 +707,10 @@ function PipelinePickerModal({ onConfirm, onClose }: {
 interface Props {
   initialProfiles:   IcpProfile[]
   initialRecentJobs: ProspectJob[]
-  activity?:         SageActivityLog[]
+  activity?:         unknown[]
 }
 
-export function ProspectsClient({ initialProfiles, initialRecentJobs, activity = [] }: Props) {
+export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
   const [profiles,      setProfiles]      = useState<IcpProfile[]>(initialProfiles)
   const [selectedIcp,   setSelectedIcp]   = useState<IcpProfile | null>(initialProfiles[0] ?? null)
   const [icpModal,      setIcpModal]      = useState<'create' | 'edit' | null>(
@@ -754,15 +738,11 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
     () => new Set(COLUMNS.filter(c => c.defaultOn).map(c => c.key))
   )
   const [showColPicker, setShowColPicker] = useState(false)
-  const [filterHasEmail,  setFilterHasEmail]  = useState(false)
-  const [filterHasPhone,  setFilterHasPhone]  = useState(false)
   const [filterCity,      setFilterCity]      = useState('')
   const [filterCountry,   setFilterCountry]   = useState('')
   const [filterScoreMin,  setFilterScoreMin]  = useState(0)
-  const [showFieldFilter,    setShowFieldFilter]    = useState(false)
   const [pickerProspectId,   setPickerProspectId]   = useState<string | null>(null)
   const [pushedIds,          setPushedIds]           = useState<Set<string>>(new Set())
-  const [activityOpen,    setActivityOpen]    = useState(true)
   const importRef = useRef<HTMLInputElement>(null)
 
   function handleImportCsv(e: React.ChangeEvent<HTMLInputElement>) {
@@ -956,7 +936,7 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
     URL.revokeObjectURL(url)
   }
 
-  const activeFieldFilters = filterHasEmail || filterHasPhone || filterCity.trim() || filterCountry.trim() || filterScoreMin > 0
+  const activeFieldFilters = filterCity.trim() || filterCountry.trim() || filterScoreMin > 0
 
   // ── Derived ──────────────────────────────────────────────────────────────────
   const visible = results
@@ -979,8 +959,6 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
         (r.email_1 ?? '').toLowerCase().includes(q)
       )
     })
-    .filter(r => !filterHasEmail  || !!(r.email_1 ?? r.emails?.[0]))
-    .filter(r => !filterHasPhone  || !!(r.phone_1 ?? r.phones?.[0]))
     .filter(r => !filterCity.trim()    || (r.city ?? '').toLowerCase().includes(filterCity.toLowerCase()))
     .filter(r => !filterCountry.trim() || (r.country ?? '').toLowerCase().includes(filterCountry.toLowerCase()))
     .filter(r => filterScoreMin === 0  || (r.score ?? 0) >= filterScoreMin)
@@ -997,8 +975,6 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
   const warmCount = results.filter(r => r.score_tier === 'warm' && r.status !== 'ignored').length
   const coldCount = results.filter(r => (r.score_tier === 'cold' || r.score_tier === 'discarded') && r.status !== 'ignored').length
   const total     = hotCount + warmCount + coldCount
-
-  const hasActiveFilters = !!(searchQuery.trim() || location.trim())
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
@@ -1200,15 +1176,52 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
                         className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/60 focus:border-[#15A4AE]/50"
                       />
                     </div>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                      <input
-                        value={location}
-                        onChange={e => setLocation(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter' && !running) handleStartSearch() }}
-                        placeholder="City or suburb…"
-                        className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/60 focus:border-[#15A4AE]/50"
-                      />
+                    <div>
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        <input
+                          value={location}
+                          onChange={e => setLocation(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              const v = location.trim()
+                              if (v && selectedIcp && !selectedIcp.locations.includes(v)) {
+                                inlineSaveIcp('locations', [...selectedIcp.locations, v])
+                              }
+                              if (!running) handleStartSearch()
+                            }
+                          }}
+                          placeholder="City or suburb…"
+                          className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/60 focus:border-[#15A4AE]/50"
+                        />
+                      </div>
+                      {selectedIcp.locations.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {selectedIcp.locations.map(loc => (
+                            <button
+                              key={loc}
+                              type="button"
+                              onClick={() => setLocation(loc)}
+                              className={cn(
+                                'flex items-center gap-1 pl-2 pr-1 py-0.5 text-[11px] rounded-full border font-medium transition-colors',
+                                location === loc
+                                  ? 'bg-[#15A4AE] text-white border-[#15A4AE]'
+                                  : 'bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10 hover:border-[#15A4AE]/50',
+                              )}
+                            >
+                              {loc}
+                              <span
+                                role="button"
+                                onClick={e => { e.stopPropagation(); inlineSaveIcp('locations', selectedIcp.locations.filter(l => l !== loc)) }}
+                                className="p-0.5 rounded-full hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-500/20 transition-colors"
+                              >
+                                <X className="w-2.5 h-2.5" />
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </FilterSection>
@@ -1227,18 +1240,6 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
                         </button>
                       )}
                     </div>
-                    <button onClick={() => setFilterHasEmail(f => !f)}
-                      className={cn('w-full flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border font-medium transition-colors',
-                        filterHasEmail ? 'bg-[#15A4AE] text-white border-[#15A4AE]' : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-[#15A4AE]/50',
-                      )}>
-                      <Mail className="w-3 h-3" /> Has Email
-                    </button>
-                    <button onClick={() => setFilterHasPhone(f => !f)}
-                      className={cn('w-full flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border font-medium transition-colors',
-                        filterHasPhone ? 'bg-[#15A4AE] text-white border-[#15A4AE]' : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-[#15A4AE]/50',
-                      )}>
-                      <Phone className="w-3 h-3" /> Has Phone
-                    </button>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="relative">
                         <MapPin className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
@@ -1258,7 +1259,7 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
                         className="flex-1 px-2 py-1.5 text-xs border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50" />
                     </div>
                     {(tableSearch || activeFieldFilters) && (
-                      <button onClick={() => { setTableSearch(''); setFilterHasEmail(false); setFilterHasPhone(false); setFilterCity(''); setFilterCountry(''); setFilterScoreMin(0) }}
+                      <button onClick={() => { setTableSearch(''); setFilterCity(''); setFilterCountry(''); setFilterScoreMin(0) }}
                         className="flex items-center gap-1 px-2 py-1 text-xs rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors font-medium">
                         <X className="w-3 h-3" /> Clear filters
                       </button>
@@ -1274,43 +1275,11 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
                   />
                 </FilterSection>
 
-                <FilterSection label="Locations" defaultOpen count={selectedIcp.locations.length}>
-                  <TagInput
-                    value={selectedIcp.locations}
-                    onChange={v => inlineSaveIcp('locations', v)}
-                    placeholder="Sydney, Melbourne…"
-                  />
-                </FilterSection>
-
                 <FilterSection label="Services" defaultOpen count={selectedIcp.services_of_interest.length}>
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    {SERVICES.map(svc => (
-                      <button
-                        key={svc}
-                        type="button"
-                        onClick={() => {
-                          const current = selectedIcp.services_of_interest
-                          inlineSaveIcp('services_of_interest',
-                            current.includes(svc) ? current.filter(s => s !== svc) : [...current, svc],
-                          )
-                        }}
-                        className={cn('px-2 py-0.5 text-[11px] font-medium rounded-full border transition-colors',
-                          selectedIcp.services_of_interest.includes(svc)
-                            ? 'bg-[#15A4AE] text-white border-[#15A4AE]'
-                            : 'bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10 hover:border-[#15A4AE]/50',
-                        )}
-                      >
-                        {svc}
-                      </button>
-                    ))}
-                  </div>
                   <TagInput
-                    value={selectedIcp.services_of_interest.filter(s => !SERVICES.includes(s))}
-                    onChange={custom => inlineSaveIcp('services_of_interest', [
-                      ...selectedIcp.services_of_interest.filter(s => SERVICES.includes(s)),
-                      ...custom,
-                    ])}
-                    placeholder="Custom service…"
+                    value={selectedIcp.services_of_interest}
+                    onChange={v => inlineSaveIcp('services_of_interest', v)}
+                    placeholder="Website, SEO, Google Ads…"
                   />
                 </FilterSection>
 
@@ -1504,32 +1473,8 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
           </div>
 
 
-          {/* Quick filters row */}
-          {hasActiveFilters && (
-            <div className="shrink-0 px-4 py-2 border-b border-gray-50 dark:border-white/[0.05] flex items-center gap-2 flex-wrap bg-gray-50/50 dark:bg-white/[0.01]">
-              <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Search:</span>
-              {selectedIcp && (
-                <span className="flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-[#15A4AE]/10 text-[#15A4AE] border border-[#15A4AE]/20 font-medium">
-                  Profile: {selectedIcp.name}
-                </span>
-              )}
-              {searchQuery.trim() && (
-                <button onClick={() => setSearchQuery('')}
-                  className="flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-full bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-white/10 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 transition-colors font-medium">
-                  "{searchQuery}" <X className="w-2.5 h-2.5" />
-                </button>
-              )}
-              {location.trim() && (
-                <button onClick={() => setLocation('')}
-                  className="flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-full bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-white/10 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 transition-colors font-medium">
-                  <MapPin className="w-2.5 h-2.5" />{location} <X className="w-2.5 h-2.5" />
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Job progress */}
-          {activeJob && <JobProgressStrip job={activeJob} />}
+          {/* Job progress — single line */}
+          {activeJob && <JobProgressStrip job={activeJob} profileName={selectedIcp?.name} />}
 
           {/* Results table */}
           <div className="flex-1 overflow-auto" onClick={() => setShowColPicker(false)}>
