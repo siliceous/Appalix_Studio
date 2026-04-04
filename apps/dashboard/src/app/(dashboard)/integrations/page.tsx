@@ -11,6 +11,7 @@ import { IntegrationsClient } from '@/app/(dashboard)/sage/integrations/integrat
 import { SourcesClient } from '@/app/(dashboard)/forms/sources/sources-client'
 import type { Metadata } from 'next'
 import type { Platform, Integration, LeadAdSource, SageIntegration } from '@/lib/types'
+import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 
 type IntegrationRow = Integration & { bots?: { name: string } | null }
 
@@ -167,7 +168,10 @@ export default async function IntegrationsPage({
   })
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="-m-8">
+      <SageToolbar pageKey="integrations" />
+      <div className="p-8">
+      <div className="max-w-5xl mx-auto">
       <Header
         title="Integrations"
         description="Connect your bot to a channel — Slack, WhatsApp, your website, and more"
@@ -431,5 +435,7 @@ export default async function IntegrationsPage({
         </div>
       </section>
     </div>
+    </div>
+  </div>
   )
 }

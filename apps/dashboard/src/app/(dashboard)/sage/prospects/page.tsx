@@ -9,7 +9,7 @@ export default async function ProspectsPage() {
   ])
 
   return (
-    <div className="-m-8 flex flex-col">
+    <div className="flex flex-col">
       <SageToolbar pageKey="prospects" />
       <div>
         <ProspectsClient

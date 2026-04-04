@@ -5,6 +5,7 @@ import { getUserPermissions } from '@/lib/permissions'
 import type { Metadata } from 'next'
 import type { WorkspaceMember, SageContact, WorkspaceMemberSummary, WorkspaceMemberRole } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
+import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 
 export const metadata: Metadata = { title: 'Contacts · Sage' }
 
@@ -116,8 +117,9 @@ export default async function ContactsPage({
   }))
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-hidden">
+    <div className="flex flex-col">
+      <SageToolbar pageKey="contacts" />
+      <div>
         <ContactsClient
           contacts={contacts}
           members={members}

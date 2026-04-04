@@ -3,6 +3,7 @@ import { redirect }     from 'next/navigation'
 import type { Metadata } from 'next'
 import type { SageActivityLog, SageProjectBoard, SageProjectBoardStage } from '@/lib/types'
 import { ProjectsInboxClient } from './projects-inbox-client'
+import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 
 export const metadata: Metadata = { title: 'Projects' }
 
@@ -62,9 +63,14 @@ export default async function ProjectsPage() {
   }))
 
   return (
-    <ProjectsInboxClient
+    <div className="flex flex-col">
+      <SageToolbar pageKey="projects" />
+      <div>
+        <ProjectsInboxClient
       boards={boards}
       activity={(activityRaw ?? []) as SageActivityLog[]}
-    />
+        />
+      </div>
+    </div>
   )
 }

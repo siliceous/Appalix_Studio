@@ -8,6 +8,7 @@ import { SourcesPoller } from './sources-poller'
 import { IconSubmitButton } from '@/components/ui/submit-button'
 import type { Metadata } from 'next'
 import type { Source } from '@/lib/types'
+import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 
 export const metadata: Metadata = { title: 'Knowledge Base' }
 
@@ -53,7 +54,10 @@ export default async function SourcesPage() {
   const hasActiveJobs = sources.some((s) => s.status === 'pending' || s.status === 'processing')
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="-m-8">
+      <SageToolbar pageKey="sources" />
+      <div className="p-8">
+      <div className="max-w-6xl mx-auto">
       {hasActiveJobs && <SourcesPoller />}
       <Header
         title="Knowledge Base"
@@ -153,5 +157,7 @@ export default async function SourcesPage() {
         </div>
       )}
     </div>
+    </div>
+  </div>
   )
 }

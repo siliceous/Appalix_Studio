@@ -1,4 +1,4 @@
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { notFound } from 'next/navigation'
 import { getDealDetail, getDealReminders } from '@/app/actions/sage'
@@ -37,14 +37,17 @@ export default async function DealDetailPage({
     detailResult,
     remindersResult,
   ] = await Promise.all([
-    supabase.from('sage_pipelines').select('id, name').eq('id', pipelineId).eq('workspace_id', workspaceId).single(),
-    supabase.from('sage_pipeline_stages').select('*').eq('pipeline_id', pipelineId).order('position'),
-    supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any).from('sage_pipelines').select('id, name').eq('id', pipelineId).eq('workspace_id', workspaceId).single() as Promise<{ data: { id: string; name: string } | null; error: unknown }>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any).from('sage_pipeline_stages').select('*').eq('pipeline_id', pipelineId).order('position') as Promise<{ data: SagePipelineStage[] | null; error: unknown }>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
       .from('sage_deals')
       .select('id, title, value, currency, status, stage_id, close_date, priority, company_name, created_at, contact:sage_contacts(id, name)')
       .eq('pipeline_id', pipelineId)
       .eq('workspace_id', workspaceId)
-      .order('created_at'),
+      .order('created_at') as Promise<{ data: unknown[] | null; error: unknown }>,
     getDealDetail(dealId),
     getDealReminders(dealId),
   ])

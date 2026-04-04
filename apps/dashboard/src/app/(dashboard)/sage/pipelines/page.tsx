@@ -84,7 +84,7 @@ export default async function PipelinesPage() {
   }))
 
   return (
-    <div className="-m-8 flex flex-col">
+    <div className="flex flex-col">
       <SageToolbar pageKey="pipelines" />
       <div>
         <PipelinesClient

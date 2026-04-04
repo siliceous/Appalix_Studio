@@ -3,6 +3,7 @@ import { redirect }      from 'next/navigation'
 import type { Metadata } from 'next'
 import { getRules }      from '@/app/actions/sage-rules'
 import { RulesManager }  from '@/components/dashboard/rules-manager'
+import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 
 export const metadata: Metadata = { title: 'Automation Rules' }
 
@@ -34,5 +35,12 @@ export default async function RulesPage() {
   type Pipeline = { id: string; name: string }
   const pipelines = (pipelinesRes.data ?? []) as Pipeline[]
 
-  return <RulesManager initialRules={rules} pipelines={pipelines} />
+  return (
+    <div className="flex flex-col">
+      <SageToolbar pageKey="rules" />
+      <div>
+        <RulesManager initialRules={rules} pipelines={pipelines} />
+      </div>
+    </div>
+  )
 }

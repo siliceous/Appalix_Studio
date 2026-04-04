@@ -99,7 +99,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   ]
 
   return (
-    <UserAvatarProvider initialUrl={userAvatar}>
+    <UserAvatarProvider
+      initialUrl={userAvatar}
+      userName={userName}
+      plan={workspace.plan}
+      brandColor={branding?.primary_color ?? '#15A4AE'}
+    >
     <div className="flex h-screen overflow-hidden bg-[#f5f4f1] dark:bg-[#1c1c1c] relative">
       {/* Subtle green ambient glow in dark mode */}
       <div className="pointer-events-none fixed top-0 left-[204px] right-0 h-[300px] dark:bg-[#15A4AE]/[0.03] blur-[80px] hidden dark:block" />

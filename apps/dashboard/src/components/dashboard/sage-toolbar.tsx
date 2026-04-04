@@ -37,7 +37,7 @@ const STANDALONE_PAGES: PageDef[] = [
   { key: 'my-activity', label: 'My Activity', href: '/my-activity', icon: Clock },
 ]
 
-const ALL_SECTIONS = [AGENT_PAGES, SAGE_PAGES, STANDALONE_PAGES]
+const ALL_PAGES: PageDef[] = [...AGENT_PAGES, ...SAGE_PAGES, ...STANDALONE_PAGES]
 
 const PROFILE_LINKS = [
   { href: '/settings',         label: 'Settings',       Icon: Settings   },
@@ -81,8 +81,6 @@ export function SageToolbar({ pageKey }: { pageKey: SagePageKey }) {
     plan === 'pro'        ? 'bg-[#15A4AE]/20 text-[#15A4AE]'  :
                             'bg-white/10 text-white/60'
 
-  const sectionPages = ALL_SECTIONS.find(s => s.some(p => p.key === pageKey)) ?? []
-
   useEffect(() => {
     if (!showProfile) return
     const handler = (e: MouseEvent) => {
@@ -96,9 +94,9 @@ export function SageToolbar({ pageKey }: { pageKey: SagePageKey }) {
   const HOVER_CLS  = 'text-white border-transparent hover:bg-white/10'
 
   return (
-    <nav className="px-4 ml-3 mr-4 border-b border-white/10 bg-[#141c2b] rounded-b-2xl shadow-lg grid grid-cols-[1fr_auto] items-end shrink-0 gap-x-4 min-h-[52px] pb-2">
+    <nav className="px-4 ml-3 mr-4 border-b border-white/10 bg-[#141c2b] rounded-b-2xl shadow-lg flex items-end shrink-0 gap-x-2 min-h-[52px] pb-2">
       {/* Overview + sibling page pills */}
-      <div className="flex items-end gap-1.5 min-w-0 overflow-x-auto">
+      <div className="flex flex-1 items-end justify-center gap-1.5 overflow-x-auto">
         <Link
           href="/dashboard"
           className="flex items-center gap-1.5 text-sm text-white hover:text-white transition-colors shrink-0 px-2 py-1.5 rounded-lg hover:bg-white/10 mr-0.5"
@@ -106,10 +104,9 @@ export function SageToolbar({ pageKey }: { pageKey: SagePageKey }) {
           <LayoutDashboard className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Overview</span>
         </Link>
-        {sectionPages.length > 1 && (
-          <>
+        <>
             <div className="w-px h-5 bg-white/15 self-center" />
-            {sectionPages.map(p => {
+            {ALL_PAGES.map(p => {
               const isActive = p.key === pageKey
               return (
                 <button
@@ -126,7 +123,6 @@ export function SageToolbar({ pageKey }: { pageKey: SagePageKey }) {
               )
             })}
           </>
-        )}
       </div>
 
       {/* Profile avatar + dropdown */}

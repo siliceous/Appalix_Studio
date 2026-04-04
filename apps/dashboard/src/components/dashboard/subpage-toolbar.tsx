@@ -3,8 +3,13 @@
 import React, { useState, useEffect, useTransition, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
-import { LayoutDashboard, ChevronDown, Zap, Mail, MessageSquare, FileText, Ticket as TicketIcon, Calendar, Loader2 } from 'lucide-react'
+import {
+  LayoutDashboard, ChevronDown, Zap, Mail, MessageSquare,
+  FileText, Ticket as TicketIcon, Calendar, Loader2,
+  Settings, TrendingUp, BarChart2, CreditCard,
+} from 'lucide-react'
 import { updateAutoSetting, type AutoSettings } from '@/app/actions/sage-auto-settings'
+import { useUserAvatar } from '@/contexts/user-avatar-context'
 
 export type SubpagePreset = 'all' | 'today' | 'yesterday' | '7d' | '30d' | 'custom'
 export type SubpageSource = 'email' | 'bots' | 'forms' | 'tickets'
@@ -43,16 +48,49 @@ const BASE_HREFS: Record<SubpageSource, string> = {
   tickets: '/sage/tickets',
 }
 
+// ── Tiny avatar rendered inside the toolbar ───────────────────────────────────
+function ToolbarAvatar({ src, initials, brandColor }: { src: string | null; initials: string; brandColor: string }) {
+  return (
+    <div
+      className="relative w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-white text-[10px] font-bold uppercase select-none overflow-hidden"
+      style={{ backgroundColor: brandColor }}
+    >
+      {initials}
+      {src && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover z-10"
+          onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+        />
+      )}
+    </div>
+  )
+}
+
 export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, customTo, viewAsUserId, teamMembers }: Props) {
   const router   = useRouter()
   const pathname = usePathname()
   const [, startTransition] = useTransition()
-  const [localAuto,   setLocalAuto]   = useState(autoEnabled)
-  const [fromDate,    setFromDate]    = useState(customFrom ?? '')
-  const [toDate,      setToDate]      = useState(customTo   ?? '')
-  const [showCal,     setShowCal]     = useState(false)
-  const [loadingKey,  setLoadingKey]  = useState<SubpageSource | null>(null)
-  const calRef = useRef<HTMLDivElement>(null)
+  const [localAuto,    setLocalAuto]    = useState(autoEnabled)
+  const [fromDate,     setFromDate]     = useState(customFrom ?? '')
+  const [toDate,       setToDate]       = useState(customTo   ?? '')
+  const [showCal,      setShowCal]      = useState(false)
+  const [showProfile,  setShowProfile]  = useState(false)
+  const [loadingKey,   setLoadingKey]   = useState<SubpageSource | null>(null)
+  const calRef     = useRef<HTMLDivElement>(null)
+  const profileRef = useRef<HTMLDivElement>(null)
+
+  const { avatarUrl, userName, plan, brandColor } = useUserAvatar()
+  const initials = userName
+    ? userName.split(' ').map((w: string) => w[0]).slice(0, 2).join('')
+    : '?'
+
+  const planBadgeCls =
+    plan === 'enterprise' ? 'bg-purple-500/20 text-purple-300' :
+    plan === 'pro'        ? 'bg-[#15A4AE]/20 text-[#15A4AE]'  :
+                            'bg-white/10 text-white/60'
 
   // Clear loading state once navigation settles
   useEffect(() => { setLoadingKey(null) }, [pathname])
@@ -74,6 +112,16 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [showCal])
+
+  // Close profile dropdown on outside click
+  useEffect(() => {
+    if (!showProfile) return
+    const handler = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setShowProfile(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showProfile])
 
   // Build URL preserving viewAs
   const buildUrl = (base: string, extra?: Record<string, string>) => {
@@ -111,10 +159,17 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
   const HOVER_CLS  = 'text-white border-transparent hover:bg-white/10'
 
   const PAGES: { key: SubpageSource; label: string; Icon: React.ElementType }[] = [
-    { key: 'email',   label: 'Email',   Icon: Mail          },
+    { key: 'email',   label: 'Email',         Icon: Mail          },
     { key: 'bots',    label: 'Conversations', Icon: MessageSquare },
-    { key: 'forms',   label: 'Forms',   Icon: FileText      },
-    { key: 'tickets', label: 'Tickets', Icon: TicketIcon    },
+    { key: 'forms',   label: 'Forms',         Icon: FileText      },
+    { key: 'tickets', label: 'Tickets',       Icon: TicketIcon    },
+  ]
+
+  const PROFILE_LINKS = [
+    { href: '/settings',         label: 'Settings',       Icon: Settings   },
+    { href: '/sage/roi',         label: 'ROI',            Icon: TrendingUp },
+    { href: '/analytics',        label: 'Analytics',      Icon: BarChart2  },
+    { href: '/settings/upgrade', label: 'Plan (Upgrade)', Icon: CreditCard },
   ]
 
   return (
@@ -171,12 +226,12 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
             }`}
           >
             <Calendar className="w-3.5 h-3.5" />
-            {preset === 'all'       ? 'All time'
-            : preset === 'today'    ? 'Today'
-            : preset === 'yesterday'? 'Yesterday'
-            : preset === '7d'       ? 'Last 7 days'
-            : preset === '30d'      ? 'Last 30 days'
-            : fromDate && toDate    ? `${fromDate} → ${toDate}`
+            {preset === 'all'        ? 'All time'
+            : preset === 'today'     ? 'Today'
+            : preset === 'yesterday' ? 'Yesterday'
+            : preset === '7d'        ? 'Last 7 days'
+            : preset === '30d'       ? 'Last 30 days'
+            : fromDate && toDate     ? `${fromDate} → ${toDate}`
             : 'Custom'}
             <ChevronDown className="w-3 h-3 opacity-60" />
           </button>
@@ -275,6 +330,51 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
           <span>Auto</span>
           <span className="font-bold">{localAuto ? 'ON' : 'OFF'}</span>
         </button>
+
+        {/* Profile avatar + dropdown */}
+        <div className="relative ml-2" ref={profileRef}>
+          <button
+            onClick={() => setShowProfile(v => !v)}
+            title="Account"
+            className={`flex items-center gap-1.5 rounded-full border transition-all ${
+              showProfile ? 'border-white/40 ring-2 ring-white/20' : 'border-white/20 hover:border-white/40'
+            }`}
+          >
+            <ToolbarAvatar src={avatarUrl} initials={initials} brandColor={brandColor} />
+          </button>
+
+          {showProfile && (
+            <div className="absolute right-0 top-full mt-2 z-50 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/12 rounded-2xl shadow-xl w-52 overflow-hidden">
+              {/* User identity header */}
+              <div className="px-4 py-3 border-b border-gray-100 dark:border-white/8 flex items-center gap-2.5">
+                <ToolbarAvatar src={avatarUrl} initials={initials} brandColor={brandColor} />
+                <div className="min-w-0 flex-1">
+                  {userName && (
+                    <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">{userName}</p>
+                  )}
+                  <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none mt-0.5 ${planBadgeCls} bg-opacity-20`}>
+                    {plan}
+                  </span>
+                </div>
+              </div>
+
+              {/* Nav links */}
+              <div className="py-1.5">
+                {PROFILE_LINKS.map(({ href, label, Icon }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setShowProfile(false)}
+                    className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-colors"
+                  >
+                    <Icon className="w-4 h-4 shrink-0 text-gray-400 dark:text-gray-500" />
+                    {label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </nav>
   )

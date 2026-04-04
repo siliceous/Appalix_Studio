@@ -6,6 +6,7 @@ import { Bot, Plus, Plug, MessageSquare, TrendingUp } from 'lucide-react'
 import { formatDate, formatTokens, formatCost, timeAgo, PLATFORM_META } from '@/lib/utils'
 import type { Metadata } from 'next'
 import type { Bot as BotRow, Conversation, UsageEvent } from '@/lib/types'
+import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 
 type RecentConversation = Pick<Conversation, 'id' | 'title' | 'platform' | 'status' | 'message_count' | 'last_activity_at'>
 type UsageSummaryRow    = Pick<UsageEvent, 'tokens_input' | 'tokens_output' | 'cost_usd'>
@@ -79,7 +80,10 @@ export default async function BotsPage() {
   ]
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="-m-8">
+      <SageToolbar pageKey="bots" />
+      <div className="p-8">
+      <div className="max-w-5xl mx-auto">
       <Header
         title="Bots"
         description="Configure AI agents and connect them to platforms"
@@ -226,5 +230,7 @@ export default async function BotsPage() {
         </div>
       </div>
     </div>
+    </div>
+  </div>
   )
 }

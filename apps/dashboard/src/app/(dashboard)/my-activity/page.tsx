@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import type { WorkspaceMember, WorkspaceMemberRole } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
 import { MyActivityClient } from './my-activity-client'
+import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 
 export const metadata: Metadata = { title: 'My Activity' }
 
@@ -180,5 +181,12 @@ export default async function MyActivityPage({
   })
 
   const viewAsUserId = targetUserId !== user.id ? targetUserId : null
-  return <MyActivityClient rows={rows} viewAsName={viewAsName} viewAsUserId={viewAsUserId} canExport={callerRank >= ROLE_RANK.manager} teamMembers={teamMembers} />
+  return (
+    <div className="-m-8 flex flex-col">
+      <SageToolbar pageKey="my-activity" />
+      <div>
+        <MyActivityClient rows={rows} viewAsName={viewAsName} viewAsUserId={viewAsUserId} canExport={callerRank >= ROLE_RANK.manager} teamMembers={teamMembers} />
+      </div>
+    </div>
+  )
 }
