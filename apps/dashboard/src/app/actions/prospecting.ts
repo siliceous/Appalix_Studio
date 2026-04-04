@@ -33,6 +33,8 @@ export interface IcpProfile {
   industry:             string
   market_segment:       'b2b' | 'b2c' | 'both'
   target_country:       string
+  target_state:         string
+  target_postcode:      string
   target_keywords:      string[]
   locations:            string[]
   exclude_keywords:     string[]
@@ -107,6 +109,8 @@ export async function createIcpProfile(input: {
   industry:             string
   market_segment:       'b2b' | 'b2c' | 'both'
   target_country:       string
+  target_state:         string
+  target_postcode:      string
   target_keywords:      string[]
   locations:            string[]
   exclude_keywords:     string[]
@@ -131,6 +135,8 @@ export async function updateIcpProfile(
     industry:             string
     market_segment:       'b2b' | 'b2c' | 'both'
     target_country:       string
+    target_state:         string
+    target_postcode:      string
     target_keywords:      string[]
     locations:            string[]
     exclude_keywords:     string[]
@@ -207,6 +213,7 @@ export async function startProspectSearch(
       icp as {
         id: string; name: string; industry: string
         market_segment?: 'b2b' | 'b2c' | 'both'; target_country?: string
+        target_state?: string; target_postcode?: string
         target_keywords: string[]; locations: string[]
         exclude_keywords: string[]; services_of_interest: string[]
       },

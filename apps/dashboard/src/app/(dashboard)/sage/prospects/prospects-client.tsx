@@ -185,6 +185,8 @@ function IcpFormModal({ initial, onSave, onClose }: {
   const [name,      setName]      = useState(initial?.name ?? '')
   const [industry,  setIndustry]  = useState(initial?.industry ?? '')
   const [country,   setCountry]   = useState(initial?.target_country ?? '')
+  const [state,     setState]     = useState(initial?.target_state    ?? '')
+  const [postcode,  setPostcode]  = useState(initial?.target_postcode ?? '')
   const [segment,   setSegment]   = useState<'b2b' | 'b2c' | 'both'>(initial?.market_segment ?? 'both')
   const [keywords,  setKeywords]  = useState<string[]>(initial?.target_keywords ?? [])
   const [locations, setLocations] = useState<string[]>(initial?.locations ?? [])
@@ -205,6 +207,8 @@ function IcpFormModal({ initial, onSave, onClose }: {
       industry:             industry.trim(),
       market_segment:       segment,
       target_country:       country.trim(),
+      target_state:         state.trim(),
+      target_postcode:      postcode.trim(),
       target_keywords:      keywords,
       locations,
       exclude_keywords:     excludes,
@@ -266,6 +270,19 @@ function IcpFormModal({ initial, onSave, onClose }: {
               {['Australia','United Kingdom','United States','Canada','New Zealand','India','Singapore','South Africa','UAE','Ireland'].map(c => <option key={c} value={c} />)}
             </datalist>
             <p className="text-xs text-gray-400 mt-1">Ensures searches target the right country</p>
+          </div>
+
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5">State / Region</label>
+              <input value={state} onChange={e => setState(e.target.value)} placeholder="e.g. NSW, California…"
+                className="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 focus:border-[#15A4AE]" />
+            </div>
+            <div className="w-32">
+              <label className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Postcode / ZIP</label>
+              <input value={postcode} onChange={e => setPostcode(e.target.value)} placeholder="2000…"
+                className="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 focus:border-[#15A4AE]" />
+            </div>
           </div>
 
           <div>
