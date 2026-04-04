@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react'
 import {
   Kanban, Plus, Trash2, ArrowRight, Loader2, Activity,
-  DollarSign, Clock, CheckCircle2, AlertCircle, ChevronRight,
+  DollarSign, Clock, CheckCircle2, AlertCircle, ChevronRight, Download,
 } from 'lucide-react'
 import Link from 'next/link'
 import { CreatePipelineModal } from '@/components/sage/create-pipeline-modal'
@@ -88,8 +88,33 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
     }
   }
 
+  function exportCsv() {
+    const headers = ['Pipeline', 'Stages', 'Deals']
+    const rows = pipelines.map(p => [p.name, p.stages.map(s => s.name).join(' → '), p.deal_count])
+    const csv = [headers, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    Object.assign(document.createElement('a'), { href: url, download: 'pipelines.csv' }).click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
-    <div className="flex h-full w-full gap-3 p-3 bg-[#f5f4f1] dark:bg-[#1c1c1c]">
+    <div className="flex flex-col h-full">
+      {/* ── Page heading ───────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between px-5 py-3 bg-[#f5f4f1] dark:bg-[#1c1c1c] border-b border-gray-200/60 dark:border-white/8 shrink-0">
+        <div>
+          <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">Pipelines</h1>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Manage your sales pipelines and track deals through every stage</p>
+        </div>
+        <button
+          onClick={exportCsv}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/15 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+        >
+          <Download className="w-3.5 h-3.5" />
+          Export CSV
+        </button>
+      </div>
+
+    <div className="flex flex-1 overflow-hidden min-h-0 gap-3 p-3 bg-[#f5f4f1] dark:bg-[#1c1c1c]">
 
       {/* ── Left: Pipelines ─────────────────────────────── */}
       <div className="w-72 shrink-0 flex flex-col bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8 overflow-hidden">
@@ -278,6 +303,7 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
       )}
 
       {showModal && <CreatePipelineModal onClose={() => { setShowModal(false) }} />}
+    </div>
     </div>
   )
 }

@@ -761,7 +761,34 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
         <IcpFormModal initial={editingIcp} onSave={handleUpdateIcp} onClose={() => { setIcpModal(null); setEditingIcp(null) }} />
       )}
 
-      <div className="flex h-full w-full gap-3 p-3 bg-[#f5f4f1] dark:bg-[#1c1c1c]">
+      <div className="flex flex-col h-full">
+        {/* ── Page heading ─────────────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between px-5 py-3 bg-[#f5f4f1] dark:bg-[#1c1c1c] border-b border-gray-200/60 dark:border-white/8 shrink-0">
+          <div>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">Prospects</h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">AI Lead Intelligence — enrich and score your best leads automatically</p>
+          </div>
+          <button
+            onClick={() => {
+              if (!results.length) return
+              const headers = ['Company', 'Website', 'Location', 'Score', 'Employees', 'Revenue']
+              const rows = results.map(r => [
+                r.company_name, r.website ?? '', r.location ?? '',
+                r.score ?? '', r.employee_count ?? '', r.annual_revenue ?? '',
+              ])
+              const csv = [headers, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
+              const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+              Object.assign(document.createElement('a'), { href: url, download: 'prospects.csv' }).click()
+              URL.revokeObjectURL(url)
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/15 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export CSV
+          </button>
+        </div>
+
+        <div className="flex flex-1 overflow-hidden min-h-0 gap-3 p-3 bg-[#f5f4f1] dark:bg-[#1c1c1c]">
 
         {/* ── LEFT: Filter sidebar ─────────────────────────────────────────────── */}
         <div className="w-64 shrink-0 flex flex-col bg-white dark:bg-[#181818] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8 overflow-hidden">
@@ -1338,6 +1365,7 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
             )}
           </div>
         </div>
+      </div>
       </div>
     </>
   )

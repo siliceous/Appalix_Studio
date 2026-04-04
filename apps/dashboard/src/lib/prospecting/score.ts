@@ -62,7 +62,8 @@ export function scoreProspect(
 
   // ── 2. Location match (0–30) ──────────────────────────────────────────────
   let locationScore = 0
-  const locText = `${extracted.location_text ?? ''} ${searchText}`.toLowerCase()
+  const extractedLoc = [extracted.city, extracted.state, extracted.country].filter(Boolean).join(' ')
+  const locText = `${extractedLoc} ${searchText}`.toLowerCase()
   for (const loc of icp.locations) {
     if (textContains(locText, loc)) {
       locationScore = 30
