@@ -63,6 +63,10 @@ const BLOCKLIST_PATTERNS = [
   // Comparison / review sites
   /canstar/, /finder\.com/, /comparethemarket/, /iselect/,
   /productreview\.com/, /trustpilot/, /reviews\.com/,
+  /cleanenergyreviews/, /choice\.com\.au/,
+
+  // General community / forums
+  /reddit\.com/, /quora\.com/, /whirlpool\.net/,
 ]
 
 export function isBlockedDomain(domain: string): boolean {

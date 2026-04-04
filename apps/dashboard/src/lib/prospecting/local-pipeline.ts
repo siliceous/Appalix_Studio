@@ -76,11 +76,17 @@ export async function runLocalProspectPipeline(
       // Strip HTML from Brave snippets
       const stripHtml = (s: string) => s.replace(/<[^>]+>/g, '').replace(/&[a-z#0-9]+;/g, ' ').replace(/\s+/g, ' ').trim()
 
+      // Extract phone numbers directly from Brave title/snippet (e.g. "Call 1300 319 866")
+      const extractPhone = (text: string): string | null => {
+        const m = text.match(/(?:call\s+)?(\+?(?:61\s*)?(?:1[38]\d{2}[\s-]?\d{3}[\s-]?\d{3}|\(?0\d\)?[\s-]?\d{4}[\s-]?\d{4}|\d{4}[\s-]?\d{3}[\s-]?\d{3}))/i)
+        return m ? m[1].replace(/\s+/g, ' ').trim() : null
+      }
+
       // Convert web results to LocalBusiness shape
       businesses = filtered.map(r => ({
         id:           r.domain,
         name:         r.title,
-        phone:        null,
+        phone:        extractPhone(`${r.title} ${r.description}`),
         website:      r.url,
         domain:       r.domain,
         address:      null,
@@ -152,8 +158,10 @@ export async function runLocalProspectPipeline(
 
       if (b.domain) {
         const crawl = await crawlDeep(b.domain)
+        // Pass the original Brave title as extra context — it often contains phone numbers
+        const extraContext = b.name !== b.domain ? `Original listing title: ${b.name}` : undefined
         extracted = crawl
-          ? await extractCompanyData(b.domain, crawl.markdown, crawl.title)
+          ? await extractCompanyData(b.domain, crawl.markdown, crawl.title, extraContext)
           : {
               company_name: b.name,
               contact_name: null,
