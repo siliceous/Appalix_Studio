@@ -95,23 +95,25 @@ export function ProjectsInboxClient({ boards: initialBoards, activity }: Props) 
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col">
       {/* ── Page heading ───────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-5 py-3 bg-gray-50 dark:bg-[#141414] border-b border-gray-200/60 dark:border-white/8 shrink-0">
-        <div>
-          <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">Projects</h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Organise work across boards and track progress through every stage</p>
+      <div className="px-8 pt-6 pb-2">
+        <div className="max-w-5xl mx-auto flex items-start justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Projects</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Organise work across boards and track progress through every stage</p>
+          </div>
+          <button
+            onClick={exportCsv}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 dark:border-white/15 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/8 rounded-xl transition-colors font-medium"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export CSV
+          </button>
         </div>
-        <button
-          onClick={exportCsv}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/15 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
-        >
-          <Download className="w-3.5 h-3.5" />
-          Export CSV
-        </button>
       </div>
 
-    <div className="flex flex-1 overflow-hidden bg-gray-50 dark:bg-[#141414]">
+    <div className="flex h-full overflow-hidden bg-gray-50 dark:bg-[#141414]">
 
       {/* ── Left: Project Boards ─────────────────────────── */}
       <aside className="w-80 shrink-0 border-r dark:border-white/8 bg-white dark:bg-[#1a1a1a] overflow-y-auto flex flex-col">

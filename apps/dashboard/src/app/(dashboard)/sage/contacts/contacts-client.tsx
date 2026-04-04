@@ -546,7 +546,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
       {/* Header */}
       <div className="flex items-start justify-between mb-5">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Contacts</h1>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Contacts</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{contacts.length} total</p>
         </div>
         <div className="flex items-center gap-2">
