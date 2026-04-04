@@ -69,12 +69,14 @@ type SortKey    = 'score' | 'company' | 'city' | 'country'
 type TierFilter = 'all'   | 'hot'     | 'warm' | 'cold'
 
 const COLUMNS = [
-  { key: 'score',       label: 'Score',   defaultOn: true  },
-  { key: 'city',        label: 'City',    defaultOn: true  },
-  { key: 'country',     label: 'Country', defaultOn: true  },
-  { key: 'description', label: 'About',   defaultOn: true  },
-  { key: 'email',       label: 'Email',   defaultOn: true  },
-  { key: 'phone',       label: 'Phone',   defaultOn: true  },
+  { key: 'score',        label: 'Score',   defaultOn: true  },
+  { key: 'email',        label: 'Email',   defaultOn: true  },
+  { key: 'phone',        label: 'Phone',   defaultOn: true  },
+  { key: 'contact_name', label: 'Contact', defaultOn: true  },
+  { key: 'description',  label: 'About',   defaultOn: true  },
+  { key: 'pricing_hint', label: 'Pricing', defaultOn: false },
+  { key: 'city',         label: 'City',    defaultOn: true  },
+  { key: 'country',      label: 'Country', defaultOn: true  },
 ] as const
 
 type ColKey = typeof COLUMNS[number]['key']
@@ -429,6 +431,57 @@ function ProspectRow({ prospect, cols, isPushed, onAddClick, onIgnore }: {
         </td>
       )}
 
+      {/* Email */}
+      {cols.has('email') && (
+        <td className="px-3 py-3.5 w-10 shrink-0">
+          {email
+            ? <CopyButton value={email} icon={Mail} />
+            : <span className="text-xs text-gray-300 dark:text-gray-600 pl-1">—</span>}
+        </td>
+      )}
+
+      {/* Phone */}
+      {cols.has('phone') && (
+        <td className="px-3 py-3.5 w-10 shrink-0">
+          {phone
+            ? <CopyButton value={phone} icon={Phone} />
+            : <span className="text-xs text-gray-300 dark:text-gray-600 pl-1">—</span>}
+        </td>
+      )}
+
+      {/* Contact name */}
+      {cols.has('contact_name') && (
+        <td className="px-3 py-3.5 w-36 shrink-0">
+          {prospect.contact_name ? (
+            <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{prospect.contact_name}</span>
+          ) : (
+            <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
+          )}
+        </td>
+      )}
+
+      {/* About / description */}
+      {cols.has('description') && (
+        <td className="px-3 py-3.5" style={{ maxWidth: 260 }}>
+          {desc ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">{desc}</p>
+          ) : (
+            <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
+          )}
+        </td>
+      )}
+
+      {/* Pricing hint */}
+      {cols.has('pricing_hint') && (
+        <td className="px-3 py-3.5" style={{ maxWidth: 200 }}>
+          {prospect.pricing_hint ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">{prospect.pricing_hint}</p>
+          ) : (
+            <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
+          )}
+        </td>
+      )}
+
       {/* City */}
       {cols.has('city') && (
         <td className="px-3 py-3.5 w-28 shrink-0">
@@ -451,35 +504,6 @@ function ProspectRow({ prospect, cols, isPushed, onAddClick, onIgnore }: {
           ) : (
             <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
           )}
-        </td>
-      )}
-
-      {/* Description */}
-      {cols.has('description') && (
-        <td className="px-3 py-3.5" style={{ maxWidth: 240 }}>
-          {desc ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">{desc}</p>
-          ) : (
-            <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
-          )}
-        </td>
-      )}
-
-      {/* Email */}
-      {cols.has('email') && (
-        <td className="px-3 py-3.5 w-10 shrink-0">
-          {email
-            ? <CopyButton value={email} icon={Mail} />
-            : <span className="text-xs text-gray-300 dark:text-gray-600 pl-1">—</span>}
-        </td>
-      )}
-
-      {/* Phone */}
-      {cols.has('phone') && (
-        <td className="px-3 py-3.5 w-10 shrink-0">
-          {phone
-            ? <CopyButton value={phone} icon={Phone} />
-            : <span className="text-xs text-gray-300 dark:text-gray-600 pl-1">—</span>}
         </td>
       )}
 
@@ -1467,6 +1491,21 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
                         </button>
                       </th>
                     )}
+                    {cols.has('email') && (
+                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70">Email</th>
+                    )}
+                    {cols.has('phone') && (
+                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70">Phone</th>
+                    )}
+                    {cols.has('contact_name') && (
+                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70">Contact</th>
+                    )}
+                    {cols.has('description') && (
+                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70">About</th>
+                    )}
+                    {cols.has('pricing_hint') && (
+                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70">Pricing</th>
+                    )}
                     {cols.has('city') && (
                       <th className="px-3 py-2.5 text-left">
                         <button onClick={() => toggleSort('city')}
@@ -1482,15 +1521,6 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
                           Country {sortKey === 'country' && <span>{sortDir === 'desc' ? '↓' : '↑'}</span>}
                         </button>
                       </th>
-                    )}
-                    {cols.has('description') && (
-                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70">About</th>
-                    )}
-                    {cols.has('email') && (
-                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70">Email</th>
-                    )}
-                    {cols.has('phone') && (
-                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70">Phone</th>
                     )}
                     <th className="px-4 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wide text-white/70">Action</th>
                   </tr>

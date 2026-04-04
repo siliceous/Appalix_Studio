@@ -130,12 +130,12 @@ export async function runProspectPipeline(
       return
     }
 
-    // ── 4. Crawl homepages ─────────────────────────────────────────────────
+    // ── 4. Deep-crawl (homepage + contact + about + services + pricing) ───────
     await updateJob(jobId, 'crawling')
 
-    // Cap at 10 crawls to control cost
+    // Cap at 10 deep-crawls to control cost
     const toCrawl = filtered.slice(0, 10)
-    const crawlResults = await crawlBatch(toCrawl.map(r => r.domain), 4)
+    const crawlResults = await crawlBatch(toCrawl.map(r => r.domain), 3)
 
     await updateJob(jobId, 'scoring', { crawled: crawlResults.size })
 
@@ -146,13 +146,26 @@ export async function runProspectPipeline(
     for (const result of toCrawl) {
       const crawl = crawlResults.get(result.domain)
 
+      // GMB / directory enrichment via targeted Brave search (non-blocking if it fails)
+      let gmbContext: string | undefined
+      try {
+        const gmbResults = await searchBrave(`"${result.domain}" phone email address contact`, 5)
+        if (gmbResults.length > 0) {
+          gmbContext = gmbResults
+            .map(r => `${r.title}: ${r.description}`)
+            .join('\n')
+        }
+      } catch { /* non-critical */ }
+
       // Extract (use snippet as fallback if crawl failed)
       const extracted = crawl
-        ? await extractCompanyData(result.domain, crawl.markdown, crawl.title)
+        ? await extractCompanyData(result.domain, crawl.markdown, crawl.title, gmbContext)
         : {
             company_name: result.title ?? result.domain,
+            contact_name: null,
             description:  result.description,
             services:     [],
+            pricing_hint: null,
             city:         null,
             state:        null,
             country:      null,
@@ -172,8 +185,10 @@ export async function runProspectPipeline(
         .from('prospect_companies')
         .update({
           company_name:    extracted.company_name,
+          contact_name:    extracted.contact_name,
           description:     extracted.description,
           services:        extracted.services,
+          pricing_hint:    extracted.pricing_hint,
           city:            extracted.city,
           state:           extracted.state,
           country:         extracted.country,

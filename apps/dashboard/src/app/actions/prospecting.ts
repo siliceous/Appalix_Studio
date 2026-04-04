@@ -53,8 +53,10 @@ export interface ProspectCompany {
   title:           string | null
   snippet:         string | null
   company_name:    string | null
+  contact_name:    string | null
   description:     string | null
   services:        string[]
+  pricing_hint:    string | null
   city:            string | null
   state:           string | null
   country:         string | null
