@@ -539,10 +539,10 @@ function JobProgressStrip({ job }: { job: ProspectJob }) {
 interface Props {
   initialProfiles:   IcpProfile[]
   initialRecentJobs: ProspectJob[]
-  activity:          SageActivityLog[]
+  activity?:         SageActivityLog[]
 }
 
-export function ProspectsClient({ initialProfiles, initialRecentJobs, activity }: Props) {
+export function ProspectsClient({ initialProfiles, initialRecentJobs, activity = [] }: Props) {
   const [profiles,      setProfiles]      = useState<IcpProfile[]>(initialProfiles)
   const [selectedIcp,   setSelectedIcp]   = useState<IcpProfile | null>(initialProfiles[0] ?? null)
   const [icpModal,      setIcpModal]      = useState<'create' | 'edit' | null>(
@@ -574,6 +574,48 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity }
   const [filterCountry,   setFilterCountry]   = useState('')
   const [filterScoreMin,  setFilterScoreMin]  = useState(0)
   const [showFieldFilter, setShowFieldFilter] = useState(false)
+  const [activityOpen,    setActivityOpen]    = useState(true)
+  const importRef = useRef<HTMLInputElement>(null)
+
+  function handleImportCsv(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const text = ev.target?.result as string
+      const lines = text.split('\n').filter(l => l.trim())
+      if (lines.length < 2) return
+      const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim())
+      const get = (vals: string[], key: string) => vals[headers.indexOf(key)]?.replace(/^"|"$/g, '').trim() ?? ''
+      const imported: ProspectCompany[] = lines.slice(1).map((line, i) => {
+        const vals = line.match(/"[^"]*"|[^,]*/g) ?? []
+        return {
+          id:           `imported-${Date.now()}-${i}`,
+          job_id:       'imported',
+          domain:       get(vals, 'domain') || get(vals, 'website') || '',
+          company_name: get(vals, 'company_name') || null,
+          city:         get(vals, 'city') || null,
+          state:        get(vals, 'state') || null,
+          country:      get(vals, 'country') || null,
+          email_1:      get(vals, 'email_1') || null,
+          phone_1:      get(vals, 'phone_1') || null,
+          score:        Number(get(vals, 'score')) || null,
+          score_tier:   (get(vals, 'score_tier') as ProspectCompany['score_tier']) || null,
+          description:  get(vals, 'description') || null,
+          status:       'pending',
+          emails:       [],
+          phones:       [],
+          website:      null,
+          location:     null,
+          annual_revenue: null,
+          employee_count: null,
+        } as unknown as ProspectCompany
+      })
+      setResults(prev => [...imported, ...prev])
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
 
   // ── Effects ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -763,27 +805,37 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity }
         <IcpFormModal initial={editingIcp} onSave={handleUpdateIcp} onClose={() => { setIcpModal(null); setEditingIcp(null) }} />
       )}
 
-      <div className="flex flex-col">
+      <div className="flex flex-col flex-1 overflow-hidden">
         {/* ── Page heading ─────────────────────────────────────────────────────── */}
-        <div className="px-8 pt-6 pb-2">
+        <div className="px-8 pt-6 pb-2 shrink-0">
           <div className="max-w-5xl mx-auto flex items-start justify-between">
             <div>
               <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Prospects</h1>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">AI Lead Intelligence — enrich and score your best leads automatically</p>
             </div>
-            {visible.length > 0 && (
+            <div className="flex items-center gap-2">
+              <input ref={importRef} type="file" accept=".csv" className="hidden" onChange={handleImportCsv} />
               <button
-                onClick={exportCsv}
+                onClick={() => importRef.current?.click()}
                 className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 dark:border-white/15 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/8 rounded-xl transition-colors font-medium"
               >
-                <Download className="w-3.5 h-3.5" />
-                Export CSV
+                <Upload className="w-3.5 h-3.5" />
+                Import CSV
               </button>
-            )}
+              {visible.length > 0 && (
+                <button
+                  onClick={exportCsv}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 dark:border-white/15 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/8 rounded-xl transition-colors font-medium"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Export CSV
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="flex h-full w-full gap-3 p-3 bg-[#f5f4f1] dark:bg-[#1c1c1c]">
+        <div className="flex flex-1 overflow-hidden gap-3 p-3 bg-[#f5f4f1] dark:bg-[#1c1c1c]">
 
         {/* ── LEFT: Filter sidebar ─────────────────────────────────────────────── */}
         <div className="w-64 shrink-0 flex flex-col bg-white dark:bg-[#181818] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8 overflow-hidden">
@@ -1248,19 +1300,19 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity }
             {visible.length > 0 && (
               <table className="w-full border-collapse">
                 <thead>
-                  <tr className="border-b border-gray-100 dark:border-white/8 bg-gray-50/80 dark:bg-white/[0.02] sticky top-0 z-10">
+                  <tr className="border-b border-white/10 bg-[#141c2b] sticky top-0 z-10">
                     <th className="pl-5 pr-2 py-2.5 w-4" />
                     {/* Company — always */}
                     <th className="px-3 py-2.5 text-left">
                       <button onClick={() => toggleSort('company')}
-                        className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                        className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-white/70 hover:text-white transition-colors">
                         Company {sortKey === 'company' && <span>{sortDir === 'desc' ? '↓' : '↑'}</span>}
                       </button>
                     </th>
                     {cols.has('score') && (
                       <th className="px-3 py-2.5 text-left">
                         <button onClick={() => toggleSort('score')}
-                          className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                          className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-white/70 hover:text-white transition-colors">
                           Score {sortKey === 'score' && <span>{sortDir === 'desc' ? '↓' : '↑'}</span>}
                         </button>
                       </th>
@@ -1268,7 +1320,7 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity }
                     {cols.has('city') && (
                       <th className="px-3 py-2.5 text-left">
                         <button onClick={() => toggleSort('city')}
-                          className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                          className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-white/70 hover:text-white transition-colors">
                           City {sortKey === 'city' && <span>{sortDir === 'desc' ? '↓' : '↑'}</span>}
                         </button>
                       </th>
@@ -1276,21 +1328,21 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity }
                     {cols.has('country') && (
                       <th className="px-3 py-2.5 text-left">
                         <button onClick={() => toggleSort('country')}
-                          className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                          className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-white/70 hover:text-white transition-colors">
                           Country {sortKey === 'country' && <span>{sortDir === 'desc' ? '↓' : '↑'}</span>}
                         </button>
                       </th>
                     )}
                     {cols.has('description') && (
-                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-gray-400">About</th>
+                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70">About</th>
                     )}
                     {cols.has('email') && (
-                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-gray-400">Email</th>
+                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70">Email</th>
                     )}
                     {cols.has('phone') && (
-                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-gray-400">Phone</th>
+                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70">Phone</th>
                     )}
-                    <th className="px-4 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-400">Action</th>
+                    <th className="px-4 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wide text-white/70">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1360,6 +1412,53 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity }
             )}
           </div>
         </div>
+
+        {/* ── RIGHT: Activity sidebar ──────────────────────────────────────────── */}
+        {activityOpen ? (
+          <aside className="w-64 shrink-0 flex flex-col overflow-hidden bg-[#f5f4f1] dark:bg-[#1c1c1c] p-3 pr-4">
+            <div className="flex flex-col flex-1 overflow-hidden bg-white dark:bg-[#242424] rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_16px_rgba(0,0,0,0.4)] border border-gray-200/70 dark:border-white/8">
+              <div className="px-3 py-2.5 bg-[#141c2b] border-b border-white/10 flex items-center justify-between shrink-0 rounded-t-xl">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-white/70" />
+                  <span className="text-xs font-semibold text-white">Activity</span>
+                </div>
+                <button onClick={() => setActivityOpen(false)} className="p-1 rounded text-white/50 hover:text-white hover:bg-white/10 transition-colors">
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+              </div>
+              <div className="divide-y dark:divide-white/8 flex-1 overflow-y-auto">
+                {activity.length === 0 ? (
+                  <p className="px-4 py-8 text-sm text-gray-400 text-center">No activity yet.</p>
+                ) : activity.map(a => (
+                  <div key={a.id} className="flex items-start gap-3 px-3 py-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] mt-1.5 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[11px] text-gray-800 dark:text-gray-200 leading-snug">{a.event_type.replace(/_/g, ' ')}</p>
+                      {a.payload && typeof a.payload === 'object' && 'name' in a.payload && (
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">{String((a.payload as Record<string, unknown>).name)}</p>
+                      )}
+                      <p className="flex items-center gap-1 text-[10px] text-gray-400 mt-0.5">
+                        <Clock className="w-2.5 h-2.5" /> {timeAgo(a.created_at)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </aside>
+        ) : (
+          <div
+            className="w-8 shrink-0 bg-[#f5f4f1] dark:bg-[#1c1c1c] flex flex-col items-center py-4 gap-3 cursor-pointer hover:bg-[#ede9e2] dark:hover:bg-white/4 transition-colors"
+            onClick={() => setActivityOpen(true)}
+            title="Show activity"
+          >
+            <ChevronRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+            <span className="text-[10px] text-gray-400 font-medium select-none" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', letterSpacing: '0.05em' }}>
+              Activity
+            </span>
+          </div>
+        )}
+
       </div>
       </div>
     </>
