@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import type { Conversation } from '@/lib/types'
 import type { ConvRow } from '@/app/(dashboard)/conversations/page'
 import { ConversationPanelClient, type PanelMessage, type TeamMember } from './conversation-panel-client'
-import { SubpageToolbar } from '@/components/dashboard/subpage-toolbar'
+import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 import { ROLE_RANK } from '@/lib/types'
 import type { WorkspaceMemberRole } from '@/lib/types'
@@ -99,8 +99,8 @@ export default async function ConversationDetailPage({
 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
-      <SubpageToolbar
-        sourceKey="bots"
+      <SageToolbar
+        pageKey="conversations"
         preset="all"
         autoEnabled={autoSettings.bots_auto_enabled}
       />

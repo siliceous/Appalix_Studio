@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect }     from 'next/navigation'
 import type { Metadata } from 'next'
 import { ConversationsClient } from '@/app/(dashboard)/conversations/conversations-client'
-import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
+import { SageToolbar, type TriagePreset } from '@/components/dashboard/sage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 import type { ConvRow, BotOption, ConvFilters, TeamMember } from '@/app/(dashboard)/conversations/page'
 import { ROLE_RANK } from '@/lib/types'
@@ -14,7 +14,7 @@ import { ActivitySidebar } from '@/components/team/activity-sidebar'
 
 export const metadata: Metadata = { title: 'Bot Conversations' }
 
-function getDateRange(preset: SubpagePreset, customFrom?: string, customTo?: string) {
+function getDateRange(preset: TriagePreset, customFrom?: string, customTo?: string) {
   const now = new Date()
   switch (preset) {
     case 'today': {
@@ -50,7 +50,7 @@ export default async function BotsPage({
   searchParams: Promise<ConvFilters & { activityDate?: string }>
 }) {
   const [params, autoSettings] = await Promise.all([searchParams, getAutoSettings()])
-  const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as SubpagePreset
+  const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as TriagePreset
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -172,8 +172,8 @@ export default async function BotsPage({
 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
-      <SubpageToolbar
-        sourceKey="bots"
+      <SageToolbar
+        pageKey="conversations"
         preset={preset}
         customFrom={params.from}
         customTo={params.to}

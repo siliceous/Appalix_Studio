@@ -11,6 +11,7 @@ interface IcpProfile {
   name:                 string
   industry:             string
   market_segment?:      'b2b' | 'b2c' | 'both'
+  target_country?:      string
   target_keywords:      string[]
   locations:            string[]
   exclude_keywords:     string[]
@@ -70,9 +71,8 @@ export async function runProspectPipeline(
     // ── 1. Search ──────────────────────────────────────────────────────────
     await updateJob(jobId, 'searching')
 
-    const braveQuery = location
-      ? `${searchQuery} ${location}`
-      : searchQuery
+    const countryHint = icp.target_country?.trim() ?? ''
+    const braveQuery = [searchQuery, location, countryHint].filter(Boolean).join(' ')
 
     const searchResults = await searchBrave(braveQuery, 20)
 

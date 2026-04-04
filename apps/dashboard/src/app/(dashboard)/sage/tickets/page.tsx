@@ -1,7 +1,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { TicketsClient } from './tickets-client'
-import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
+import { SageToolbar, type TriagePreset } from '@/components/dashboard/sage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
 import { ActivitySidebar } from '@/components/team/activity-sidebar'
@@ -10,7 +10,7 @@ import type { Metadata } from 'next'
 import type { WorkspaceMember, WorkspaceMemberSummary, WorkspaceMemberRole, SageTicket, SageContact } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
 
-function getDateRange(preset: SubpagePreset, customFrom?: string, customTo?: string): { from: string | null; to: string | null } {
+function getDateRange(preset: TriagePreset, customFrom?: string, customTo?: string): { from: string | null; to: string | null } {
   if (preset === 'custom') {
     return {
       from: customFrom ? new Date(customFrom).toISOString() : null,
@@ -29,7 +29,7 @@ export const metadata: Metadata = { title: 'Tickets · Sage' }
 
 export default async function TicketsPage({ searchParams }: { searchParams: Promise<{ preset?: string; from?: string; to?: string; activityDate?: string }> }) {
   const [params, autoSettings] = await Promise.all([searchParams, getAutoSettings()])
-  const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as SubpagePreset
+  const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as TriagePreset
   const { from: dateFrom, to: dateTo } = getDateRange(preset, params.from, params.to)
 
   const supabase = await createClient()
@@ -102,7 +102,7 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <SubpageToolbar sourceKey="tickets" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.tickets_auto_enabled} />
+      <SageToolbar pageKey="tickets" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.tickets_auto_enabled} />
       <div className="flex flex-1 overflow-hidden min-h-0">
         <div className="flex-1 overflow-y-auto">
           <TicketsClient

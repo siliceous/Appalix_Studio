@@ -5,7 +5,7 @@ import type { WorkspaceMember, WorkspaceMemberRole } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
 import type { SageForm, SageFormSubmission } from '@/app/actions/sage-forms'
 import { FormsTable, type FormFilters } from '@/components/dashboard/forms-table'
-import { SubpageToolbar, type SubpagePreset } from '@/components/dashboard/subpage-toolbar'
+import { SageToolbar, type TriagePreset } from '@/components/dashboard/sage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
 import { ActivitySidebar } from '@/components/team/activity-sidebar'
@@ -13,7 +13,7 @@ import { ActivitySidebar } from '@/components/team/activity-sidebar'
 
 export const metadata: Metadata = { title: 'Forms' }
 
-function getDateRange(preset: SubpagePreset, customFrom?: string, customTo?: string): { from: string | null; to: string | null } {
+function getDateRange(preset: TriagePreset, customFrom?: string, customTo?: string): { from: string | null; to: string | null } {
   if (preset === 'custom') {
     return {
       from: customFrom ? new Date(customFrom).toISOString() : null,
@@ -47,7 +47,7 @@ export default async function FormsPage({
   searchParams: Promise<FormFilters & { activityDate?: string }>
 }) {
   const [params, autoSettings] = await Promise.all([searchParams, getAutoSettings()])
-  const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as SubpagePreset
+  const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as TriagePreset
   const { from: dateFrom, to: dateTo } = getDateRange(preset, params.from, params.to)
 
   const supabase = await createClient()
@@ -208,8 +208,8 @@ export default async function FormsPage({
 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
-      <SubpageToolbar
-        sourceKey="forms"
+      <SageToolbar
+        pageKey="forms"
         preset={preset}
         customFrom={params.from}
         customTo={params.to}

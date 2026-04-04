@@ -12,7 +12,7 @@ import type { SageActivityLog } from '@/lib/types'
 import {
   getIcpProfiles, createIcpProfile, updateIcpProfile, deleteIcpProfile,
   startProspectSearch, getProspectJob, getProspectResults,
-  addProspectToPipeline, ignoreProspect, getRecentJobs,
+  addProspectToPipeline, ignoreProspect, getRecentJobs, getWorkspacePipelines,
   type IcpProfile, type ProspectCompany, type ProspectJob,
 } from '@/app/actions/prospecting'
 
@@ -184,6 +184,7 @@ function IcpFormModal({ initial, onSave, onClose }: {
 }) {
   const [name,      setName]      = useState(initial?.name ?? '')
   const [industry,  setIndustry]  = useState(initial?.industry ?? '')
+  const [country,   setCountry]   = useState(initial?.target_country ?? '')
   const [segment,   setSegment]   = useState<'b2b' | 'b2c' | 'both'>(initial?.market_segment ?? 'both')
   const [keywords,  setKeywords]  = useState<string[]>(initial?.target_keywords ?? [])
   const [locations, setLocations] = useState<string[]>(initial?.locations ?? [])
@@ -197,12 +198,13 @@ function IcpFormModal({ initial, onSave, onClose }: {
 
   async function submit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (!name.trim() || !industry.trim()) return
+    if (!name.trim() || !industry.trim() || !country.trim()) return
     setSaving(true)
     await onSave({
       name:                 name.trim(),
       industry:             industry.trim(),
       market_segment:       segment,
+      target_country:       country.trim(),
       target_keywords:      keywords,
       locations,
       exclude_keywords:     excludes,
@@ -248,6 +250,22 @@ function IcpFormModal({ initial, onSave, onClose }: {
               {INDUSTRY_PRESETS.map(i => <option key={i} value={i} />)}
             </datalist>
             <p className="text-xs text-gray-400 mt-1">Choose from the list or type your own</p>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Country *</label>
+            <input
+              list="country-presets"
+              value={country}
+              onChange={e => setCountry(e.target.value)}
+              required
+              placeholder="e.g. Australia, United Kingdom, United States…"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 focus:border-[#15A4AE]"
+            />
+            <datalist id="country-presets">
+              {['Australia','United Kingdom','United States','Canada','New Zealand','India','Singapore','South Africa','UAE','Ireland'].map(c => <option key={c} value={c} />)}
+            </datalist>
+            <p className="text-xs text-gray-400 mt-1">Ensures searches target the right country</p>
           </div>
 
           <div>
@@ -306,7 +324,7 @@ function IcpFormModal({ initial, onSave, onClose }: {
               className="flex-1 px-4 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors font-medium">
               Cancel
             </button>
-            <button type="submit" disabled={saving || !name.trim() || !industry.trim()}
+            <button type="submit" disabled={saving || !name.trim() || !industry.trim() || !country.trim()}
               className="flex-1 px-4 py-2 text-sm font-semibold bg-[#15A4AE] hover:bg-[#0e8b94] text-white rounded-xl transition-colors disabled:opacity-50">
               {saving ? 'Saving…' : initial?.id ? 'Save Changes' : 'Create Profile'}
             </button>
@@ -319,15 +337,16 @@ function IcpFormModal({ initial, onSave, onClose }: {
 
 // ── Prospect table row ────────────────────────────────────────────────────────
 
-function ProspectRow({ prospect, cols, onAdd, onIgnore }: {
-  prospect: ProspectCompany
-  cols:     Set<ColKey>
-  onAdd:    (id: string) => Promise<unknown>
-  onIgnore: (id: string) => Promise<unknown>
+function ProspectRow({ prospect, cols, isPushed, onAddClick, onIgnore }: {
+  prospect:   ProspectCompany
+  cols:       Set<ColKey>
+  isPushed?:  boolean
+  onAddClick: (id: string) => void
+  onIgnore:   (id: string) => Promise<unknown>
 }) {
   const [busy,    setBusy]    = useState(false)
-  const [pushed,  setPushed]  = useState(!!prospect.deal_id)
   const [ignored, setIgnored] = useState(prospect.status === 'ignored')
+  const pushed = isPushed ?? !!prospect.deal_id
 
   if (ignored) return null
 
@@ -337,13 +356,6 @@ function ProspectRow({ prospect, cols, onAdd, onIgnore }: {
   const desc = prospect.description ?? prospect.snippet
   const email = prospect.email_1 ?? prospect.emails?.[0] ?? null
   const phone = prospect.phone_1 ?? prospect.phones?.[0] ?? null
-
-  async function handleAdd() {
-    setBusy(true)
-    await onAdd(prospect.id)
-    setPushed(true)
-    setBusy(false)
-  }
 
   async function handleIgnore() {
     setBusy(true)
@@ -466,9 +478,9 @@ function ProspectRow({ prospect, cols, onAdd, onIgnore }: {
               className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
               <X className="w-3.5 h-3.5" />
             </button>
-            <button onClick={handleAdd} disabled={busy}
+            <button onClick={() => onAddClick(prospect.id)} disabled={busy}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold bg-[#15A4AE] hover:bg-[#0e8b94] text-white rounded-lg transition-colors disabled:opacity-50">
-              {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+              <Plus className="w-3 h-3" />
               Add
             </button>
           </div>
@@ -534,6 +546,107 @@ function JobProgressStrip({ job }: { job: ProspectJob }) {
   )
 }
 
+// ── Pipeline picker modal ─────────────────────────────────────────────────────
+
+function PipelinePickerModal({ onConfirm, onClose }: {
+  onConfirm: (pipelineId: string, stageId: string) => Promise<void>
+  onClose:   () => void
+}) {
+  type Pipeline = { id: string; name: string; stages: { id: string; name: string; position: number }[] }
+  const [pipelines,   setPipelines]   = useState<Pipeline[]>([])
+  const [loading,     setLoading]     = useState(true)
+  const [selPipeline, setSelPipeline] = useState<Pipeline | null>(null)
+  const [selStage,    setSelStage]    = useState<string>('')
+  const [saving,      setSaving]      = useState(false)
+
+  useEffect(() => {
+    getWorkspacePipelines().then(data => {
+      setPipelines(data)
+      if (data[0]) { setSelPipeline(data[0]); setSelStage(data[0].stages[0]?.id ?? '') }
+      setLoading(false)
+    })
+  }, [])
+
+  useEffect(() => {
+    if (selPipeline) setSelStage(selPipeline.stages[0]?.id ?? '')
+  }, [selPipeline?.id])
+
+  async function confirm() {
+    if (!selPipeline || !selStage) return
+    setSaving(true)
+    await onConfirm(selPipeline.id, selStage)
+    setSaving(false)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white dark:bg-[#232323] rounded-2xl shadow-2xl border border-gray-200/60 dark:border-white/8 w-full max-w-sm">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/8">
+          <div>
+            <h2 className="text-sm font-bold text-gray-900 dark:text-white">Add to Pipeline</h2>
+            <p className="text-sm text-gray-400 mt-0.5">Choose where this prospect should go</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-5 h-5 text-[#15A4AE] animate-spin" />
+            </div>
+          ) : pipelines.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-4">No pipelines found. Create one in Pipelines first.</p>
+          ) : (
+            <>
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-2">Pipeline</label>
+                <div className="space-y-1">
+                  {pipelines.map(p => (
+                    <button key={p.id} type="button" onClick={() => setSelPipeline(p)}
+                      className={cn('w-full text-left px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors',
+                        selPipeline?.id === p.id
+                          ? 'bg-[#15A4AE]/8 border-[#15A4AE]/40 text-[#15A4AE]'
+                          : 'border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5',
+                      )}>
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {selPipeline && selPipeline.stages.length > 0 && (
+                <div>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-2">Stage</label>
+                  <select value={selStage} onChange={e => setSelStage(e.target.value)}
+                    className="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40">
+                    {selPipeline.stages.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="flex gap-2 px-5 pb-5">
+          <button type="button" onClick={onClose}
+            className="flex-1 px-4 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors font-medium">
+            Cancel
+          </button>
+          <button type="button" onClick={confirm} disabled={saving || !selPipeline || !selStage || loading}
+            className="flex-1 px-4 py-2 text-sm font-semibold bg-[#15A4AE] hover:bg-[#0e8b94] text-white rounded-xl transition-colors disabled:opacity-50">
+            {saving ? 'Adding…' : 'Add to Pipeline'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface Props {
@@ -573,7 +686,9 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
   const [filterCity,      setFilterCity]      = useState('')
   const [filterCountry,   setFilterCountry]   = useState('')
   const [filterScoreMin,  setFilterScoreMin]  = useState(0)
-  const [showFieldFilter, setShowFieldFilter] = useState(false)
+  const [showFieldFilter,    setShowFieldFilter]    = useState(false)
+  const [pickerProspectId,   setPickerProspectId]   = useState<string | null>(null)
+  const [pushedIds,          setPushedIds]           = useState<Set<string>>(new Set())
   const [activityOpen,    setActivityOpen]    = useState(true)
   const importRef = useRef<HTMLInputElement>(null)
 
@@ -620,6 +735,12 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
   // ── Effects ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (selectedIcp?.locations[0]) setLocation(selectedIcp.locations[0])
+    // Auto-load most recent completed job for this profile (persistence)
+    if (selectedIcp && results.length === 0) {
+      const lastDone = recentJobs.find(j => j.icp_id === selectedIcp.id && j.status === 'done')
+      if (lastDone) loadRecentJob(lastDone)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedIcp?.id])
 
   useEffect(() => {
@@ -803,6 +924,18 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
       )}
       {icpModal === 'edit' && editingIcp && (
         <IcpFormModal initial={editingIcp} onSave={handleUpdateIcp} onClose={() => { setIcpModal(null); setEditingIcp(null) }} />
+      )}
+      {pickerProspectId && (
+        <PipelinePickerModal
+          onConfirm={async (pipelineId, stageId) => {
+            const result = await addProspectToPipeline(pickerProspectId, pipelineId, stageId)
+            if (!result.error) {
+              setPushedIds(prev => new Set([...prev, pickerProspectId]))
+            }
+            setPickerProspectId(null)
+          }}
+          onClose={() => setPickerProspectId(null)}
+        />
       )}
 
       <div className="flex flex-col flex-1 overflow-hidden">
@@ -1351,7 +1484,8 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
                       key={p.id}
                       prospect={p}
                       cols={cols}
-                      onAdd={addProspectToPipeline}
+                      isPushed={pushedIds.has(p.id)}
+                      onAddClick={id => setPickerProspectId(id)}
                       onIgnore={async (id) => { await ignoreProspect(id) }}
                     />
                   ))}
@@ -1415,40 +1549,38 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity =
 
         {/* ── RIGHT: Activity sidebar ──────────────────────────────────────────── */}
         {activityOpen ? (
-          <aside className="w-64 shrink-0 flex flex-col overflow-hidden bg-[#f5f4f1] dark:bg-[#1c1c1c] p-3 pr-4">
-            <div className="flex flex-col flex-1 overflow-hidden bg-white dark:bg-[#242424] rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_16px_rgba(0,0,0,0.4)] border border-gray-200/70 dark:border-white/8">
-              <div className="px-3 py-2.5 bg-[#141c2b] border-b border-white/10 flex items-center justify-between shrink-0 rounded-t-xl">
-                <div className="flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-white/70" />
-                  <span className="text-xs font-semibold text-white">Activity</span>
-                </div>
-                <button onClick={() => setActivityOpen(false)} className="p-1 rounded text-white/50 hover:text-white hover:bg-white/10 transition-colors">
-                  <ChevronRight className="w-3 h-3" />
-                </button>
+          <aside className="w-64 shrink-0 flex flex-col overflow-hidden bg-white dark:bg-[#242424] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8">
+            <div className="px-3 py-2.5 bg-[#141c2b] border-b border-white/10 flex items-center justify-between shrink-0 rounded-t-2xl">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-white/70" />
+                <span className="text-xs font-semibold text-white">Activity</span>
               </div>
-              <div className="divide-y dark:divide-white/8 flex-1 overflow-y-auto">
-                {activity.length === 0 ? (
-                  <p className="px-4 py-8 text-sm text-gray-400 text-center">No activity yet.</p>
-                ) : activity.map(a => (
-                  <div key={a.id} className="flex items-start gap-3 px-3 py-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] mt-1.5 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-[11px] text-gray-800 dark:text-gray-200 leading-snug">{a.event_type.replace(/_/g, ' ')}</p>
-                      {a.payload && typeof a.payload === 'object' && 'name' in a.payload && (
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">{String((a.payload as Record<string, unknown>).name)}</p>
-                      )}
-                      <p className="flex items-center gap-1 text-[10px] text-gray-400 mt-0.5">
-                        <Clock className="w-2.5 h-2.5" /> {timeAgo(a.created_at)}
-                      </p>
-                    </div>
+              <button onClick={() => setActivityOpen(false)} className="p-1 rounded text-white/50 hover:text-white hover:bg-white/10 transition-colors">
+                <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
+            <div className="divide-y dark:divide-white/8 flex-1 overflow-y-auto">
+              {activity.length === 0 ? (
+                <p className="px-4 py-8 text-sm text-gray-400 text-center">No activity yet.</p>
+              ) : activity.map(a => (
+                <div key={a.id} className="flex items-start gap-3 px-3 py-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] mt-1.5 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-gray-800 dark:text-gray-200 leading-snug">{a.event_type.replace(/_/g, ' ')}</p>
+                    {a.payload && typeof a.payload === 'object' && 'name' in a.payload && (
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">{String((a.payload as Record<string, unknown>).name)}</p>
+                    )}
+                    <p className="flex items-center gap-1 text-[10px] text-gray-400 mt-0.5">
+                      <Clock className="w-2.5 h-2.5" /> {timeAgo(a.created_at)}
+                    </p>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           </aside>
         ) : (
           <div
-            className="w-8 shrink-0 bg-[#f5f4f1] dark:bg-[#1c1c1c] flex flex-col items-center py-4 gap-3 cursor-pointer hover:bg-[#ede9e2] dark:hover:bg-white/4 transition-colors"
+            className="w-8 shrink-0 flex flex-col items-center py-4 gap-3 cursor-pointer hover:bg-[#ede9e2] dark:hover:bg-white/4 transition-colors rounded-2xl bg-white dark:bg-[#242424] border border-gray-200/60 dark:border-white/8 shadow-xl"
             onClick={() => setActivityOpen(true)}
             title="Show activity"
           >

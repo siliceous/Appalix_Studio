@@ -32,6 +32,7 @@ export interface IcpProfile {
   name:                 string
   industry:             string
   market_segment:       'b2b' | 'b2c' | 'both'
+  target_country:       string
   target_keywords:      string[]
   locations:            string[]
   exclude_keywords:     string[]
@@ -105,6 +106,7 @@ export async function createIcpProfile(input: {
   name:                 string
   industry:             string
   market_segment:       'b2b' | 'b2c' | 'both'
+  target_country:       string
   target_keywords:      string[]
   locations:            string[]
   exclude_keywords:     string[]
@@ -128,6 +130,7 @@ export async function updateIcpProfile(
     name:                 string
     industry:             string
     market_segment:       'b2b' | 'b2c' | 'both'
+    target_country:       string
     target_keywords:      string[]
     locations:            string[]
     exclude_keywords:     string[]
@@ -202,7 +205,8 @@ export async function startProspectSearch(
       jobId,
       workspaceId,
       icp as {
-        id: string; name: string; industry: string; market_segment?: 'b2b' | 'b2c' | 'both'
+        id: string; name: string; industry: string
+        market_segment?: 'b2b' | 'b2c' | 'both'; target_country?: string
         target_keywords: string[]; locations: string[]
         exclude_keywords: string[]; services_of_interest: string[]
       },
@@ -255,8 +259,37 @@ export async function getRecentJobs(icpId?: string): Promise<ProspectJob[]> {
 
 // ── Prospect actions ──────────────────────────────────────────────────────────
 
+export async function getWorkspacePipelines(): Promise<{
+  id: string
+  name: string
+  stages: { id: string; name: string; position: number }[]
+}[]> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+  const { data: pipelines } = await admin
+    .from('sage_pipelines')
+    .select('id, name')
+    .eq('workspace_id', workspaceId)
+    .order('created_at', { ascending: true })
+  if (!pipelines?.length) return []
+  const { data: stages } = await admin
+    .from('sage_pipeline_stages')
+    .select('id, name, position, pipeline_id')
+    .in('pipeline_id', pipelines.map(p => p.id))
+    .order('position', { ascending: true })
+  return (pipelines as { id: string; name: string }[]).map(p => ({
+    id:     p.id,
+    name:   p.name,
+    stages: ((stages ?? []) as { id: string; name: string; position: number; pipeline_id: string }[])
+      .filter(s => s.pipeline_id === p.id)
+      .map(s => ({ id: s.id, name: s.name, position: s.position })),
+  }))
+}
+
 export async function addProspectToPipeline(
   prospectId: string,
+  pipelineId?: string,
+  stageId?:   string,
 ): Promise<{ dealId: string; error?: string }> {
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
@@ -287,6 +320,7 @@ export async function addProspectToPipeline(
         location_text: p.location_text,
       },
       p.icp?.name ?? 'Manual',
+      { pipelineId, stageId },
     )
 
     await admin

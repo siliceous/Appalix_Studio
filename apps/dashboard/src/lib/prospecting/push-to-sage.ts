@@ -21,35 +21,43 @@ interface PushResult {
  * Creates a contact + deal in Sage from a qualified prospect,
  * then triggers an AI review so it appears in the guidance panel.
  *
- * Pipeline selection: uses the first pipeline in the workspace.
- * Stage selection: uses the first stage (leftmost / earliest).
+ * If pipelineId/stageId are provided they are used directly.
+ * Otherwise falls back to the first pipeline + first stage.
  */
 export async function pushProspectToSage(
-  prospect:   ProspectToPush,
-  icpName:    string,
+  prospect:  ProspectToPush,
+  icpName:   string,
+  options?:  { pipelineId?: string; stageId?: string },
 ): Promise<PushResult> {
   const admin = createAdminClient()
 
-  // ── Get a pipeline + stage to push into ───────────────────────────────────
-  const { data: pipeline } = await admin
-    .from('sage_pipelines')
-    .select('id')
-    .eq('workspace_id', prospect.workspace_id)
-    .order('created_at', { ascending: true })
-    .limit(1)
-    .single()
+  // ── Resolve pipeline ──────────────────────────────────────────────────────
+  let pipelineId = options?.pipelineId
+  if (!pipelineId) {
+    const { data: p } = await admin
+      .from('sage_pipelines')
+      .select('id')
+      .eq('workspace_id', prospect.workspace_id)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .single()
+    if (!p) throw new Error('No pipeline found in workspace')
+    pipelineId = (p as { id: string }).id
+  }
 
-  if (!pipeline) throw new Error('No pipeline found in workspace')
-
-  const { data: stage } = await admin
-    .from('sage_pipeline_stages')
-    .select('id')
-    .eq('pipeline_id', pipeline.id)
-    .order('position', { ascending: true })
-    .limit(1)
-    .single()
-
-  if (!stage) throw new Error('No stage found in pipeline')
+  // ── Resolve stage ─────────────────────────────────────────────────────────
+  let stageId = options?.stageId
+  if (!stageId) {
+    const { data: s } = await admin
+      .from('sage_pipeline_stages')
+      .select('id')
+      .eq('pipeline_id', pipelineId)
+      .order('position', { ascending: true })
+      .limit(1)
+      .single()
+    if (!s) throw new Error('No stage found in pipeline')
+    stageId = (s as { id: string }).id
+  }
 
   // ── Create contact (if email available) ───────────────────────────────────
   let contactId: string | null = null
@@ -83,8 +91,8 @@ export async function pushProspectToSage(
     .from('sage_deals')
     .insert({
       workspace_id: prospect.workspace_id,
-      pipeline_id:  pipeline.id,
-      stage_id:     stage.id,
+      pipeline_id:  pipelineId,
+      stage_id:     stageId,
       title:        dealTitle,
       contact_id:   contactId,
       source:       'prospecting_engine',

@@ -3,7 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import { getTicketActivities } from '@/app/actions/sage-tickets'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 import { TicketDetailClient } from './ticket-detail-client'
-import { SubpageToolbar } from '@/components/dashboard/subpage-toolbar'
+import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 import type { WorkspaceMember, WorkspaceMemberRole, WorkspaceMemberSummary, SageTicket, SageContact } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
 import type { Metadata } from 'next'
@@ -94,7 +94,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <SubpageToolbar sourceKey="tickets" preset="all" autoEnabled={autoSettings.tickets_auto_enabled} />
+      <SageToolbar pageKey="tickets" preset="all" autoEnabled={autoSettings.tickets_auto_enabled} />
       <div className="flex-1 overflow-hidden">
         <TicketDetailClient
           ticket={ticketRaw as unknown as TicketWithContact}
