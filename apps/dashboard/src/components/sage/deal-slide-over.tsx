@@ -12,6 +12,7 @@ import { getDealDetail, addDealActivity, completeDealTask, addDealReminder, getD
 import { convertDealToProject } from '@/app/actions/sage-projects'
 import { WonLostModal } from './won-lost-modal'
 import { ContactEditModal } from './contact-edit-modal'
+import { AIGuidancePanel } from '@/components/ai/AIGuidancePanel'
 import type { SageDealActivity } from '@/lib/types'
 
 type DealReminder = { id: string; title: string; note: string | null; due_at: string }
@@ -576,6 +577,11 @@ export function DealSlideOver({ dealId, onClose, openEditForm, stages, onDealUpd
                         {dealLostReason && <p className="text-xs text-red-500/70 dark:text-red-400/70">Reason: {dealLostReason}</p>}
                       </div>
                     </div>
+                  )}
+
+                  {/* AI Guidance */}
+                  {dealId && (
+                    <AIGuidancePanel entityType="deal" entityId={dealId} mode="full" />
                   )}
 
                   {/* Lead created timestamp (locked) */}

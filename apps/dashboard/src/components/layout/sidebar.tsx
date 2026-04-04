@@ -9,7 +9,6 @@ import {
   Bot,
   MessageSquare,
   Plug,
-  BarChart2,
   LogOut,
   BookOpen,
   Kanban,
@@ -17,13 +16,11 @@ import {
   Ticket,
   Mail,
   FileText,
-  Inbox,
   FolderOpen,
-  TrendingUp,
   ListFilter,
   Receipt,
   Clock,
-  Settings,
+  Target,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -31,35 +28,6 @@ import { useRouter } from 'next/navigation'
 import type { Workspace, UserPermissions, WorkspaceMemberRole } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
 import type { WorkspaceBranding } from '@/app/actions/workspace-branding'
-import { useUserAvatar } from '@/contexts/user-avatar-context'
-
-function SidebarAvatar({ src, userName, userEmail, brandColor }: {
-  src: string | null
-  userName?: string | null
-  userEmail?: string | null
-  brandColor: string
-}) {
-  const initials = userName
-    ? userName.split(' ').map((w: string) => w[0]).slice(0, 2).join('')
-    : (userEmail?.[0] ?? '?')
-  return (
-    <div
-      className="relative w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-white text-[10px] font-bold uppercase select-none overflow-hidden"
-      style={{ backgroundColor: brandColor }}
-    >
-      {initials}
-      {src && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={src}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover z-10"
-          onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
-        />
-      )}
-    </div>
-  )
-}
 
 interface NavItem {
   href:            string
@@ -99,19 +67,17 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Sage',
     pro: true,
     items: [
-      { href: '/sage/contacts',  label: 'Contacts',          icon: Users,      permissionKey: 'can_view_contacts'  },
-      { href: '/sage/pipelines', label: 'Pipelines',         icon: Kanban,     permissionKey: 'can_view_pipelines' },
-      { href: '/sage/projects',  label: 'Projects',          icon: FolderOpen, permissionKey: 'can_view_projects'  },
+      { href: '/sage/prospects',  label: 'Prospects',         icon: Target,     permissionKey: 'can_view_pipelines' },
+      { href: '/sage/contacts',   label: 'Contacts',          icon: Users,      permissionKey: 'can_view_contacts'  },
+      { href: '/sage/pipelines',  label: 'Pipelines',         icon: Kanban,     permissionKey: 'can_view_pipelines' },
+      { href: '/sage/projects',   label: 'Projects',          icon: FolderOpen, permissionKey: 'can_view_projects'  },
       { href: '/sage/quotes',    label: 'Quotes & Invoices', icon: Receipt,    permissionKey: 'can_view_projects'  },
-      { href: '/sage/roi',       label: 'ROI',               icon: TrendingUp                                      },
       { href: '/sage/rules',     label: 'Rules',             icon: ListFilter, adminOnly: true                     },
     ],
   },
   {
     items: [
-      { href: '/analytics',    label: 'Analytics',   icon: BarChart2 },
-      { href: '/my-activity',  label: 'My Activity', icon: Clock     },
-      { href: '/settings',     label: 'Settings',    icon: Settings  },
+      { href: '/my-activity',  label: 'My Activity', icon: Clock },
     ],
   },
 ]
@@ -131,8 +97,7 @@ const VIEW_AS_ROUTES = new Set([
   '/sage/pipelines', '/sage/contacts', '/sage/roi', '/my-activity',
 ])
 
-export function Sidebar({ workspace, callerRole, userPermissions, userName, userEmail, branding }: SidebarProps) {
-  const { avatarUrl: userAvatar } = useUserAvatar()
+export function Sidebar({ workspace, callerRole, userPermissions, branding }: SidebarProps) {
   const pathname    = usePathname()
   const searchParams = useSearchParams()
   const router      = useRouter()
@@ -151,13 +116,6 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
     if (href === '/dashboard') return pathname === '/dashboard'
     return pathname.startsWith(href)
   }
-
-  const planBadgeCls =
-    workspace.plan === 'enterprise' ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300' :
-    workspace.plan === 'pro'        ? 'bg-brand-100 text-brand-700 dark:bg-[#15A4AE]/10 dark:text-[#15A4AE]' :
-                                      'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
-
-  const settingsActive = pathname.startsWith('/settings')
 
   return (
     <div className="fixed top-0 left-0 h-full w-[80px] group hover:w-[228px] z-30 transition-[width] duration-200 ease-in-out">
@@ -234,37 +192,6 @@ export function Sidebar({ workspace, callerRole, userPermissions, userName, user
             </div>
           </div>
 
-          {/* Account identity — clicking goes to Profile */}
-          <Link
-            href="/settings"
-            title="Edit profile"
-            className={cn(
-              'flex items-center gap-2.5 rounded-lg py-1.5 min-w-0 transition-colors',
-              settingsActive
-                ? 'group-hover:bg-brand-50 dark:group-hover:bg-[#15A4AE]/10 group-hover:ring-1 group-hover:ring-brand-200 dark:group-hover:ring-[#15A4AE]/20 group-hover:px-2'
-                : 'group-hover:bg-gray-50 dark:group-hover:bg-white/5 group-hover:hover:bg-gray-100 dark:group-hover:hover:bg-white/8 group-hover:px-2',
-            )}
-          >
-            {/* Avatar — w-8 to align exactly under brand mark */}
-            <SidebarAvatar
-              src={userAvatar}
-              userName={userName}
-              userEmail={userEmail}
-              brandColor={branding?.primary_color ?? '#15A4AE'}
-            />
-            {/* Name + email + plan — fades in on hover */}
-            <div className="overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-75 min-w-0 flex-1">
-              <p className="text-xs font-bold text-gray-900 dark:text-white truncate leading-tight">
-                {userName ?? 'My Account'}
-              </p>
-              {userEmail && (
-                <p className="text-[10px] text-gray-400 truncate leading-tight mt-0.5">{userEmail}</p>
-              )}
-              <span className={cn('inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none', planBadgeCls)}>
-                {workspace.plan}
-              </span>
-            </div>
-          </Link>
         </div>
 
         {/* ── Navigation ───────────────────────────────────────── */}

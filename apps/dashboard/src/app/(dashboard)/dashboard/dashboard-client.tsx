@@ -748,17 +748,17 @@ export function SageDashboardClient({
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-bold text-white">Activity Feed</h2>
               {/* List / Grid toggle */}
-              <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-white/6 rounded-lg px-0.5 py-0">
+              <div className="flex items-center gap-0.5 bg-white/10 rounded-lg px-0.5 py-0">
                 <button
                   onClick={() => setFeedView('list')}
-                  className={`p-1 rounded-md transition-colors ${feedView === 'list' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+                  className={`p-1 rounded-md transition-colors ${feedView === 'list' ? 'bg-white/25 text-white shadow-sm' : 'text-white/40 hover:text-white/70'}`}
                   title="List view"
                 >
                   <LayoutList className="w-[18px] h-[18px]" />
                 </button>
                 <button
                   onClick={() => setFeedView('grid')}
-                  className={`p-1 rounded-md transition-colors ${feedView === 'grid' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+                  className={`p-1 rounded-md transition-colors ${feedView === 'grid' ? 'bg-white/25 text-white shadow-sm' : 'text-white/40 hover:text-white/70'}`}
                   title="Grid view"
                 >
                   <LayoutGrid className="w-[18px] h-[18px]" />
@@ -833,28 +833,28 @@ export function SageDashboardClient({
             <div className="flex items-center gap-3 text-xs font-bold">
               <button
                 onClick={() => { setFeedView('grid'); setTopType('email') }}
-                className={`flex items-center gap-1 text-[#ccd7ff] hover:opacity-80 transition-colors ${topType === 'email' && feedView === 'grid' ? 'font-bold' : ''}`}
+                className={`flex items-center gap-1 text-white/80 hover:text-white transition-colors ${topType === 'email' && feedView === 'grid' ? 'font-bold text-white' : ''}`}
                 title="Emails"
               >
                 <Mail className="w-[18px] h-[18px]" />{visEmails.length}
               </button>
               <button
                 onClick={() => { setFeedView('grid'); setTopType('bot') }}
-                className={`flex items-center gap-1 text-[#cf9cf4] hover:opacity-80 transition-colors ${topType === 'bot' && feedView === 'grid' ? 'font-bold' : ''}`}
+                className={`flex items-center gap-1 text-white/80 hover:text-white transition-colors ${topType === 'bot' && feedView === 'grid' ? 'font-bold text-white' : ''}`}
                 title="Bot chats"
               >
                 <MessageSquare className="w-[18px] h-[18px]" />{visBots.length}
               </button>
               <button
                 onClick={() => { setFeedView('grid'); setTopType('form') }}
-                className={`flex items-center gap-1 text-green-500 hover:text-green-600 transition-colors ${topType === 'form' && feedView === 'grid' ? 'font-bold' : ''}`}
+                className={`flex items-center gap-1 text-white/80 hover:text-white transition-colors ${topType === 'form' && feedView === 'grid' ? 'font-bold text-white' : ''}`}
                 title="Form submissions"
               >
                 <FileText className="w-[18px] h-[18px]" />{visForms.length}
               </button>
               <button
                 onClick={() => { setFeedView('grid'); setTopType('ticket') }}
-                className={`flex items-center gap-1 text-amber-500 hover:text-amber-600 transition-colors ${topType === 'ticket' && feedView === 'grid' ? 'font-bold' : ''}`}
+                className={`flex items-center gap-1 text-white/80 hover:text-white transition-colors ${topType === 'ticket' && feedView === 'grid' ? 'font-bold text-white' : ''}`}
                 title="Tickets"
               >
                 <TicketIcon className="w-[18px] h-[18px]" />{visTickets.length}

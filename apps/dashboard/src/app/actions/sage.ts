@@ -157,6 +157,27 @@ export async function updateContact(id: string, formData: FormData) {
   if (error) throw new Error(error.message)
 
   await logActivity(workspaceId, 'contact', id, 'contact_updated', { name })
+
+  // Double-write contact notes into sage_deal_activities so the AI timeline
+  // has a structured, queryable source for all notes.
+  // The free-text sage_contacts.notes field is preserved for UI compatibility.
+  if (notes) {
+    const { data: { user } } = await (await createClient()).auth.getUser()
+    void admin
+      .from('sage_deal_activities')
+      .insert({
+        workspace_id:   workspaceId,
+        contact_id:     id,
+        type:           'note',
+        body:           notes,
+        source_channel: 'text',
+        created_by:     user?.id ?? null,
+      })
+      .then(({ error: noteErr }) => {
+        if (noteErr) console.warn('[sage] contact note double-write failed:', noteErr.message)
+      })
+  }
+
   void syncContactOutbound(workspaceId, { email: (data as SageContact).email, name: (data as SageContact).name, phone: (data as SageContact).phone, company: (data as SageContact).company_name })
   void upsertEntityEmbedding(workspaceId, 'contact', id, buildContactEmbedContent(data as SageContact)).catch(() => {})
   void generateRecordSummary(workspaceId, 'contact', id).catch(() => {})

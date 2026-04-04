@@ -11,7 +11,6 @@ import { CsvExportButton } from '@/components/ui/csv-export-button'
 import { CsvImportButton } from '@/components/ui/csv-import-button'
 import { DealModal } from './deal-modal'
 import { ManageStagesModal } from './manage-stages-modal'
-import { DealSlideOver } from './deal-slide-over'
 import type { SageDeal, SagePipelineStage, SageContact, SagePipeline } from '@/lib/types'
 
 type DealWithContact = SageDeal & {
@@ -65,9 +64,15 @@ export function PipelineBoard({
   const [showDealModal,      setShowDealModal]      = useState(false)
   const [showManageStages,   setShowManageStages]   = useState(false)
 
-  const [defaultStage,       setDefaultStage]       = useState<string | undefined>()
-  const [selectedDealId,     setSelectedDealId]     = useState<string | null>(initialDealId ?? null)
-  const [openEditOnDealId,   setOpenEditOnDealId]   = useState<string | null>(null)
+  const [defaultStage, setDefaultStage] = useState<string | undefined>()
+
+  // Redirect legacy ?deal= links to full deal page
+  useEffect(() => {
+    if (initialDealId) {
+      router.replace(`/sage/pipelines/${pipelineId}/deals/${initialDealId}`)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Header controls
   const [searchQuery,      setSearchQuery]      = useState('')
@@ -357,7 +362,7 @@ export function PipelineBoard({
                   return (
                     <tr
                       key={deal.id}
-                      onClick={() => setSelectedDealId(deal.id)}
+                      onClick={() => router.push(`/sage/pipelines/${pipelineId}/deals/${deal.id}`)}
                       className="border-b dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/[0.03] cursor-pointer transition-colors group/row"
                     >
                       <td className="py-3 pr-4">
@@ -415,7 +420,7 @@ export function PipelineBoard({
                       <td className="py-3">
                         {canWrite && (
                           <button
-                            onClick={e => { e.stopPropagation(); setOpenEditOnDealId(deal.id); setSelectedDealId(deal.id) }}
+                            onClick={e => { e.stopPropagation(); router.push(`/sage/pipelines/${pipelineId}/deals/${deal.id}?edit=1`) }}
                             className="opacity-0 group-hover/row:opacity-100 p-1 text-gray-400 hover:text-brand-600 dark:hover:text-[#15A4AE] rounded transition-all"
                             title="Edit deal"
                           >
@@ -475,7 +480,7 @@ export function PipelineBoard({
                     draggable={canWrite}
                     onDragStart={canWrite ? e => handleDragStart(e, deal.id) : undefined}
                     onDragEnd={canWrite ? handleDragEnd : undefined}
-                    onClick={() => { if (!dragId) setSelectedDealId(deal.id) }}
+                    onClick={() => { if (!dragId) router.push(`/sage/pipelines/${pipelineId}/deals/${deal.id}`) }}
                     className={`bg-white dark:bg-[#2a2a2a] rounded-xl p-3.5 border dark:border-white/8 cursor-pointer active:cursor-grabbing select-none transition-all ${
                       dragId === deal.id ? 'opacity-40 scale-95 rotate-1' : 'hover:shadow-sm hover:border-gray-200 dark:hover:border-white/15'
                     }`}
@@ -502,7 +507,7 @@ export function PipelineBoard({
                               </p>
                               {canWrite && (
                                 <button
-                                  onClick={e => { e.stopPropagation(); setOpenEditOnDealId(deal.id); setSelectedDealId(deal.id) }}
+                                  onClick={e => { e.stopPropagation(); router.push(`/sage/pipelines/${pipelineId}/deals/${deal.id}?edit=1`) }}
                                   className="opacity-0 group-hover/title:opacity-100 p-0.5 text-gray-400 hover:text-brand-600 dark:hover:text-[#15A4AE] rounded transition-all shrink-0"
                                   title="Edit deal"
                                 >
@@ -595,24 +600,6 @@ export function PipelineBoard({
         />
       )}
 
-      <DealSlideOver
-        dealId={selectedDealId}
-        stages={stages}
-        openEditForm={openEditOnDealId === selectedDealId && openEditOnDealId !== null}
-        onClose={() => { setSelectedDealId(null); setOpenEditOnDealId(null) }}
-        onDealDeleted={id => {
-          setDeals(prev => prev.filter(d => d.id !== id))
-          setSelectedDealId(null)
-        }}
-        onDealUpdated={(id, changes) => {
-          setDeals(prev => prev.map(d => d.id === id
-            ? { ...d, ...changes, priority: changes.priority as 'low' | 'medium' | 'high' | null, stage_id: changes.stage_id ?? d.stage_id, status: (changes.status ?? d.status) as 'open' | 'won' | 'lost' }
-            : d
-          ))
-          // Keep slide-over open on won so user can click "→ Start project"
-          // It will close itself via onClose after converting
-        }}
-      />
 
 
     </>

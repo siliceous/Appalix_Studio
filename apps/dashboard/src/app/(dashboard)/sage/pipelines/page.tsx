@@ -2,6 +2,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import type { SagePipeline, SagePipelineStage, SageDeal, SageActivityLog } from '@/lib/types'
 import { PipelinesClient } from './pipelines-client'
+import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 
 export default async function PipelinesPage() {
   const supabase = await createClient()
@@ -83,11 +84,16 @@ export default async function PipelinesPage() {
   }))
 
   return (
-    <PipelinesClient
+    <div className="-m-8 flex flex-col">
+      <SageToolbar pageKey="pipelines" />
+      <div>
+        <PipelinesClient
       pipelines={pipelines}
       unassignedDeals={unassignedDeals}
       activity={(activityRaw ?? []) as SageActivityLog[]}
       canWrite={canWrite}
-    />
+        />
+      </div>
+    </div>
   )
 }

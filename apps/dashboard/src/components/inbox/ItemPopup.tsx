@@ -28,7 +28,7 @@ import {
   dashboardAddTicket,
   batchMatchContacts,
 } from '@/app/actions/sage-triage'
-import { sendFormWelcomeSms, sendTicketAckSms } from '@/app/actions/auto-welcome'
+import { sendFormWelcomeSms, sendTicketAckSms, sendEmailContactSms, sendConversationSms } from '@/app/actions/auto-welcome'
 import type { ContactMatch } from '@/app/actions/sage-triage'
 import type { SageEmail, Conversation, Lead, SageTicket } from '@/lib/types'
 
@@ -97,30 +97,14 @@ export function ItemPopup({
   const [replySummaryCollapsed, setReplySummaryCollapsed] = useState(false)
   const [contactDetailsCollapsed, setContactDetailsCollapsed] = useState(true)
   const [copiedField, setCopiedField]                     = useState<string | null>(null)
-  const [smsBusy, setSmsBusy] = useState(false)
+  const [footerSmsOpen, setFooterSmsOpen] = useState(false)
+  const [footerSmsBody, setFooterSmsBody] = useState('')
+  const [footerSmsBusy, setFooterSmsBusy] = useState(false)
 
   function copyField(value: string, key: string) {
     navigator.clipboard.writeText(value).catch(() => {})
     setCopiedField(key)
     setTimeout(() => setCopiedField(null), 1500)
-  }
-
-  async function handleFormSms() {
-    setSmsBusy(true)
-    const res = await sendFormWelcomeSms(popup.id)
-    setSmsBusy(false)
-    if (res.ok && res.sentTo) {
-      setData((prev: any) => prev ? { ...prev, auto_sms_sent_at: new Date().toISOString(), auto_sms_to: res.sentTo } : prev)
-    }
-  }
-
-  async function handleTicketSms() {
-    setSmsBusy(true)
-    const res = await sendTicketAckSms(popup.id)
-    setSmsBusy(false)
-    if (res.ok && res.sentTo) {
-      setData((prev: any) => prev ? { ...prev, auto_sms_sent_at: new Date().toISOString(), auto_sms_to: res.sentTo } : prev)
-    }
   }
 
   function nextStepFor(aiAction: string | null | undefined, category: string | null | undefined, priority: string | null | undefined, kind: string): string | null {
@@ -268,14 +252,14 @@ export function ItemPopup({
     const go = async () => {
       if (popup.kind === 'email') {
         const { data: d } = await supabase.from('sage_emails')
-          .select('id, from_name, from_address, subject, body_text, received_at, ai_priority, ai_summary, ai_insights, ai_category, ai_action, ai_entities, ai_reply_drafts')
+          .select('id, from_name, from_address, subject, body_text, received_at, ai_priority, ai_summary, ai_insights, ai_category, ai_action, ai_entities, ai_reply_drafts, auto_sms_sent_at, auto_sms_to')
           .eq('id', popup.id).single()
         setData(d)
         const draft = (d as SageEmail | null)?.ai_reply_drafts?.[0]?.body ?? ''
         setReplyBody(draft)
       } else if (popup.kind === 'bot') {
         const { data: d } = await supabase.from('conversations')
-          .select('id, title, platform, message_count, last_activity_at, ai_priority, ai_summary, ai_insights, ai_action, ai_entities, bot:bots(name)')
+          .select('id, title, platform, message_count, last_activity_at, ai_priority, ai_summary, ai_insights, ai_action, ai_entities, bot:bots(name), auto_sms_sent_at, auto_sms_to')
           .eq('id', popup.id).single()
         setData(d)
       } else if (popup.kind === 'form') {
@@ -445,6 +429,40 @@ export function ItemPopup({
   const label    = { email: 'Email Summary', bot: 'Chat Summary', form: 'Lead Details', ticket: 'Ticket Summary' }[popup.kind]
 
   const sizeClass = popupSize === 'sm' ? 'sm:max-w-lg' : popupSize === 'lg' ? 'sm:max-w-[95vw]' : 'sm:max-w-2xl'
+
+  // ── Footer SMS helpers ────────────────────────────────────────────────────
+  const footerPhone: string | null = !data ? null
+    : popup.kind === 'email'  ? (data as any).ai_entities?.phone ?? null
+    : popup.kind === 'bot'    ? (data as any).ai_entities?.phone ?? null
+    : popup.kind === 'form'   ? (data as any).phone ?? null
+    :                           (data as any).contact?.phone ?? (data as any).phone ?? null
+
+  const footerSmsSentAt: string | null = (data as any)?.auto_sms_sent_at ?? null
+
+  const footerDefaultSmsBody = !data ? ''
+    : popup.kind === 'form'
+      ? `${(data as any).name && (data as any).name !== '(unknown)' ? `Hi ${(data as any).name}` : 'Hi there'} — thanks for getting in touch! We've received your message and will be in touch shortly.`
+    : popup.kind === 'ticket'
+      ? `${(data as any).contact?.name ?? (data as any).name ? `Hi ${(data as any).contact?.name ?? (data as any).name}` : 'Hi there'} — we've received your support request and our team is on it. We'll be in touch shortly.`
+    : popup.kind === 'email'
+      ? `${(data as any).ai_entities?.name ?? (data as any).from_name ? `Hi ${(data as any).ai_entities?.name ?? (data as any).from_name}` : 'Hi there'} — thanks for your email. We've got it and will be in touch shortly.`
+    :   `${(data as any).ai_entities?.name ? `Hi ${(data as any).ai_entities?.name}` : 'Hi there'} — thanks for chatting with us. We'll be in touch shortly.`
+
+  async function handleFooterSmsSend() {
+    if (!footerPhone) return
+    setFooterSmsBusy(true)
+    const res =
+      popup.kind === 'form'   ? await sendFormWelcomeSms(popup.id, footerSmsBody)
+      : popup.kind === 'ticket' ? await sendTicketAckSms(popup.id, footerSmsBody)
+      : popup.kind === 'email'  ? await sendEmailContactSms(popup.id, footerSmsBody)
+      :                           await sendConversationSms(popup.id, footerSmsBody)
+    setFooterSmsBusy(false)
+    if (res.ok && res.sentTo) {
+      setData((prev: any) => prev ? { ...prev, auto_sms_sent_at: new Date().toISOString(), auto_sms_to: res.sentTo } : prev)
+      setFooterSmsOpen(false)
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:px-6 sm:py-8 bg-black/55 dark:bg-black/70"
@@ -641,6 +659,22 @@ export function ItemPopup({
                         </div>
                       )
                     })()}
+
+                    {/* SMS follow-up */}
+                    {!showReply && (
+                      <AutoSentBlock
+                        emailSentAt={null}
+                        emailSentTo={null}
+                        smsSentAt={(data as any)?.auto_sms_sent_at ?? null}
+                        smsSentTo={(data as any)?.auto_sms_to ?? null}
+                        label="Follow-up"
+                        phone={e.ai_entities?.phone ?? null}
+                        submissionId={e.id}
+                        kind="email"
+                        contactName={e.ai_entities?.name ?? e.from_name ?? null}
+                        onSmsSent={(sentTo) => setData((prev: any) => prev ? { ...prev, auto_sms_sent_at: new Date().toISOString(), auto_sms_to: sentTo } : prev)}
+                      />
+                    )}
 
                     {/* Contact Details — separate collapsible, collapsed by default, one-click copy */}
                     {!showReply && (
@@ -942,10 +976,10 @@ export function ItemPopup({
                     </div>
 
                     {c.ai_summary && (
-                      <div className="bg-purple-50 dark:bg-purple-500/20 border border-purple-200 dark:border-purple-500/30 rounded-xl p-4">
+                      <div className="bg-blue-50 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 rounded-xl p-4">
                         <div className="flex items-center gap-1.5 mb-2">
-                          <Sparkles className="w-3 h-3 text-purple-500 dark:text-purple-400" />
-                          <p className="text-[11px] text-purple-700 dark:text-purple-300 font-bold uppercase tracking-wide">AI Summary</p>
+                          <Sparkles className="w-3 h-3 text-blue-500 dark:text-blue-400" />
+                          <p className="text-[11px] text-blue-700 dark:text-blue-300 font-bold uppercase tracking-wide">AI Summary</p>
                         </div>
                         <p className="text-[14px] text-gray-800 dark:text-gray-100 leading-relaxed">{c.ai_summary}</p>
                       </div>
@@ -975,6 +1009,20 @@ export function ItemPopup({
                         </div>
                       )
                     })()}
+                    {/* SMS follow-up */}
+                    <AutoSentBlock
+                      emailSentAt={null}
+                      emailSentTo={null}
+                      smsSentAt={(c as any).auto_sms_sent_at ?? null}
+                      smsSentTo={(c as any).auto_sms_to ?? null}
+                      label="Follow-up"
+                      phone={c.ai_entities?.phone ?? null}
+                      submissionId={c.id}
+                      kind="bot"
+                      contactName={c.ai_entities?.name ?? null}
+                      onSmsSent={(sentTo) => setData((prev: any) => prev ? { ...prev, auto_sms_sent_at: new Date().toISOString(), auto_sms_to: sentTo } : prev)}
+                    />
+
                     {c.ai_entities && (Object.values(c.ai_entities) as (string | string[] | undefined)[]).some(Boolean) && (
                       <div>
                         <button
@@ -1065,10 +1113,10 @@ export function ItemPopup({
                     </div>
 
                     {displaySummary && (
-                      <div className="bg-green-50 dark:bg-green-500/20 border border-green-200 dark:border-green-500/30 rounded-xl p-4">
+                      <div className="bg-blue-50 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 rounded-xl p-4">
                         <div className="flex items-center gap-1.5 mb-2">
-                          <Sparkles className="w-3 h-3 text-green-500 dark:text-green-400" />
-                          <p className="text-[11px] text-green-700 dark:text-green-300 font-bold uppercase tracking-wide">AI Summary</p>
+                          <Sparkles className="w-3 h-3 text-blue-500 dark:text-blue-400" />
+                          <p className="text-[11px] text-blue-700 dark:text-blue-300 font-bold uppercase tracking-wide">AI Summary</p>
                           {!formAiSummary && <span className="text-[10px] text-gray-400 ml-auto">auto-generated</span>}
                         </div>
                         <p className="text-[14px] text-gray-800 dark:text-gray-100 leading-relaxed">{displaySummary}</p>
@@ -1109,6 +1157,11 @@ export function ItemPopup({
                       smsSentAt={row.auto_sms_sent_at as string | null}
                       smsSentTo={row.auto_sms_to as string | null}
                       label="Welcome"
+                      phone={(l as any).phone ?? null}
+                      submissionId={l.id}
+                      kind="form"
+                      contactName={l.name !== '(unknown)' ? l.name : null}
+                      onSmsSent={(sentTo) => setData((prev: any) => prev ? { ...prev, auto_sms_sent_at: new Date().toISOString(), auto_sms_to: sentTo } : prev)}
                     />
 
                     <div>
@@ -1225,6 +1278,11 @@ export function ItemPopup({
                       smsSentAt={(t as any).auto_sms_sent_at ?? null}
                       smsSentTo={(t as any).auto_sms_to ?? null}
                       label="Acknowledgement"
+                      phone={displayPhone}
+                      submissionId={t.id}
+                      kind="ticket"
+                      contactName={displayName}
+                      onSmsSent={(sentTo) => setData((prev: any) => prev ? { ...prev, auto_sms_sent_at: new Date().toISOString(), auto_sms_to: sentTo } : prev)}
                     />
 
                     {(displayName || displayEmail || displayPhone) && (
@@ -1289,8 +1347,34 @@ export function ItemPopup({
 
         {/* Footer actions */}
         {!loading && data && (
-          <div className="px-6 py-4 shrink-0 rounded-b-2xl sm:rounded-b-2xl bg-[#e8e0cc]">
+          <div className="px-6 py-4 shrink-0 rounded-b-2xl sm:rounded-b-2xl bg-white dark:bg-[#2a2a2a]">
+            {/* SMS compose row — shown when footerSmsOpen */}
+            {footerSmsOpen && (
+              <div className="mb-3 flex flex-col gap-2 p-3 bg-white/60 dark:bg-white/8 rounded-xl border border-gray-200 dark:border-white/12">
+                <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  Send SMS to <span className="text-gray-700 dark:text-gray-200 normal-case font-semibold">{footerPhone}</span>
+                </p>
+                <textarea
+                  value={footerSmsBody}
+                  onChange={e => setFooterSmsBody(e.target.value)}
+                  rows={3}
+                  className="w-full text-[13px] text-gray-800 dark:text-gray-100 bg-white dark:bg-white/8 border border-gray-200 dark:border-white/15 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-[#2a7d6e]"
+                />
+                <div className="flex gap-2">
+                  <button onClick={() => setFooterSmsOpen(false)}
+                    className="flex-1 px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-white/8 border border-gray-200 dark:border-white/15 rounded-lg hover:bg-gray-50 dark:hover:bg-white/12 transition-colors">
+                    Cancel
+                  </button>
+                  <button onClick={handleFooterSmsSend} disabled={footerSmsBusy || !footerSmsBody.trim()}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-lg transition-colors disabled:opacity-50">
+                    {footerSmsBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Phone className="w-3 h-3" />}
+                    {footerSmsBusy ? 'Sending…' : 'Send'}
+                  </button>
+                </div>
+              </div>
+            )}
 
+            {/* Pipeline picker */}
             {showPipelinePicker && (
               <div className="mb-3">
                 <p className="text-xs text-gray-400 mb-2">Choose a pipeline:</p>
@@ -1349,56 +1433,12 @@ export function ItemPopup({
 
               /* Post-deal or post-ticket */
               ) : postAction ? (
-                <>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-xs font-semibold ${popup.kind === 'email' ? 'text-[#0a5a70]' : 'text-[#15A4AE]'}`}>
-                      {postAction === 'deal_added' ? 'Deal added to pipeline.' : 'Ticket created.'}
-                    </p>
-                    {ignoring && <p className={`text-[11px] mt-0.5 ${popup.kind === 'email' ? 'text-[#0a5a70]/70' : 'text-gray-400'}`}>Closing…</p>}
-                  </div>
-                  {!ignoring && popup.kind === 'email' && (
-                    <button onClick={() => setShowReply(true)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
-                      <Reply className="w-3.5 h-3.5" /> Reply
-                    </button>
-                  )}
-                  {!ignoring && popup.kind === 'bot' && (data as Conversation)?.ai_entities?.email && (
-                    <button onClick={() => setOutboundEmail({ to: (data as Conversation).ai_entities!.email!, toName: (data as Conversation).ai_entities?.name ?? undefined, subject: `Following up — ${(data as Conversation).title ?? 'your conversation'}`, context: [(data as Conversation).title ? `Conversation: ${(data as Conversation).title}` : '', (data as Conversation).ai_summary ? `Summary: ${(data as Conversation).ai_summary}` : ''].filter(Boolean).join('\n') })}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
-                      <Mail className="w-3.5 h-3.5" /> Reply via Email
-                    </button>
-                  )}
-                  {!ignoring && popup.kind === 'form' && (data as Lead)?.email && (
-                    <button onClick={() => setOutboundEmail({ to: (data as Lead).email!, toName: (data as Lead).name ?? undefined, subject: `Following up — ${(data as Lead).form_name ?? 'your enquiry'}`, context: [(data as Lead).name ? `Name: ${(data as Lead).name}` : '', (data as Lead).campaign_name ? `Campaign: ${(data as Lead).campaign_name}` : ''].filter(Boolean).join('\n') })}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
-                      <Mail className="w-3.5 h-3.5" /> Reply via Email
-                    </button>
-                  )}
-                  {!ignoring && popup.kind === 'form' && (data as any)?.phone && !(data as any)?.auto_sms_sent_at && (
-                    <button onClick={handleFormSms} disabled={smsBusy}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50">
-                      {smsBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Phone className="w-3.5 h-3.5" />} Send SMS
-                    </button>
-                  )}
-                  {!ignoring && popup.kind === 'ticket' && ((data as {email?:string|null})?.email ?? (data as {contact?:{email?:string|null}|null})?.contact?.email) && (
-                    <button onClick={() => { const t = data as {title?:string;description?:string;email?:string|null;name?:string|null;contact?:{email?:string|null;name?:string|null}|null}; const toEmail = t.contact?.email ?? t.email ?? ''; const toName = t.contact?.name ?? t.name ?? undefined; setOutboundEmail({ to: toEmail, toName: toName ?? undefined, subject: `Re: ${t.title ?? 'your ticket'}`, context: [t.title ? `Ticket: ${t.title}` : '', t.description ? `Details: ${t.description}` : ''].filter(Boolean).join('\n') }) }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
-                      <Mail className="w-3.5 h-3.5" /> Reply via Email
-                    </button>
-                  )}
-                  {!ignoring && popup.kind === 'ticket' && ((data as any)?.phone ?? (data as any)?.contact?.phone) && !(data as any)?.auto_sms_sent_at && (
-                    <button onClick={handleTicketSms} disabled={smsBusy}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50">
-                      {smsBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Phone className="w-3.5 h-3.5" />} Send SMS
-                    </button>
-                  )}
-                  {!ignoring && (
-                    <button onClick={handleIgnore}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white/80 bg-white/10 hover:bg-white/20 rounded-xl transition-colors">
-                      <X className="w-3.5 h-3.5" /> Ignore
-                    </button>
-                  )}
-                </>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-xs font-semibold ${popup.kind === 'email' ? 'text-[#0a5a70]' : 'text-[#15A4AE]'}`}>
+                    {postAction === 'deal_added' ? 'Deal added to pipeline.' : 'Ticket created.'}
+                  </p>
+                  {ignoring && <p className={`text-[11px] mt-0.5 ${popup.kind === 'email' ? 'text-[#0a5a70]/70' : 'text-gray-400'}`}>Closing…</p>}
+                </div>
 
               /* Known contact */
               ) : contactMatch !== null && contactMatch !== undefined ? (
@@ -1409,7 +1449,7 @@ export function ItemPopup({
                   </Link>
                   {contactMatch.dealId ? (
                     <Link href={contactMatch.dealPipelineId ? `/sage/pipelines/${contactMatch.dealPipelineId}` : '/sage/pipelines'} onClick={onClose}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#2a7d6e] bg-[#2a7d6e]/10 hover:bg-[#2a7d6e]/20 rounded-xl transition-colors border border-[#2a7d6e]/25">
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/15 hover:bg-blue-100 dark:hover:bg-blue-500/25 rounded-xl transition-colors border border-blue-200/70 dark:border-blue-500/25">
                       <Kanban className="w-3.5 h-3.5" /> View Deal
                     </Link>
                   ) : !showPipelinePicker && (
@@ -1419,47 +1459,6 @@ export function ItemPopup({
                       Add Deal
                     </button>
                   )}
-                  <div className="flex-1" />
-                  {popup.kind === 'email' && (
-                    <button onClick={() => setShowReply(true)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
-                      <Reply className="w-3.5 h-3.5" /> Reply
-                    </button>
-                  )}
-                  {popup.kind === 'bot' && (data as Conversation)?.ai_entities?.email && (
-                    <button onClick={() => setOutboundEmail({ to: (data as Conversation).ai_entities!.email!, toName: (data as Conversation).ai_entities?.name ?? undefined, subject: `Following up — ${(data as Conversation).title ?? 'your conversation'}`, context: [(data as Conversation).title ? `Conversation: ${(data as Conversation).title}` : '', (data as Conversation).ai_summary ? `Summary: ${(data as Conversation).ai_summary}` : ''].filter(Boolean).join('\n') })}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
-                      <Mail className="w-3.5 h-3.5" /> Reply via Email
-                    </button>
-                  )}
-                  {popup.kind === 'form' && (data as Lead)?.email && (
-                    <button onClick={() => setOutboundEmail({ to: (data as Lead).email!, toName: (data as Lead).name ?? undefined, subject: `Following up — ${(data as Lead).form_name ?? 'your enquiry'}`, context: [(data as Lead).name ? `Name: ${(data as Lead).name}` : '', (data as Lead).campaign_name ? `Campaign: ${(data as Lead).campaign_name}` : ''].filter(Boolean).join('\n') })}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
-                      <Mail className="w-3.5 h-3.5" /> Reply via Email
-                    </button>
-                  )}
-                  {popup.kind === 'form' && (data as any)?.phone && !(data as any)?.auto_sms_sent_at && (
-                    <button onClick={handleFormSms} disabled={smsBusy}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50">
-                      {smsBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Phone className="w-3.5 h-3.5" />} Send SMS
-                    </button>
-                  )}
-                  {popup.kind === 'ticket' && ((data as {email?:string|null})?.email ?? (data as {contact?:{email?:string|null}|null})?.contact?.email) && (
-                    <button onClick={() => { const t = data as {title?:string;description?:string;email?:string|null;name?:string|null;contact?:{email?:string|null;name?:string|null}|null}; const toEmail = t.contact?.email ?? t.email ?? ''; const toName = t.contact?.name ?? t.name ?? undefined; setOutboundEmail({ to: toEmail, toName: toName ?? undefined, subject: `Re: ${t.title ?? 'your ticket'}`, context: [t.title ? `Ticket: ${t.title}` : '', t.description ? `Details: ${t.description}` : ''].filter(Boolean).join('\n') }) }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
-                      <Mail className="w-3.5 h-3.5" /> Reply via Email
-                    </button>
-                  )}
-                  {popup.kind === 'ticket' && ((data as any)?.phone ?? (data as any)?.contact?.phone) && !(data as any)?.auto_sms_sent_at && (
-                    <button onClick={handleTicketSms} disabled={smsBusy}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50">
-                      {smsBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Phone className="w-3.5 h-3.5" />} Send SMS
-                    </button>
-                  )}
-                  <button onClick={handleIgnore}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white/80 bg-white/10 hover:bg-white/20 rounded-xl transition-colors">
-                    <X className="w-3.5 h-3.5" /> Ignore
-                  </button>
                 </>
 
               /* Unknown contact OR still checking */
@@ -1487,48 +1486,50 @@ export function ItemPopup({
                       )}
                     </>
                   )}
-                  <div className="flex-1" />
-                  {popup.kind === 'email' && (
-                    <button onClick={() => setShowReply(true)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
-                      <Reply className="w-3.5 h-3.5" /> Reply
-                    </button>
-                  )}
-                  {popup.kind === 'bot' && (data as Conversation)?.ai_entities?.email && (
-                    <button onClick={() => setOutboundEmail({ to: (data as Conversation).ai_entities!.email!, toName: (data as Conversation).ai_entities?.name ?? undefined, subject: `Following up — ${(data as Conversation).title ?? 'your conversation'}`, context: [(data as Conversation).title ? `Conversation: ${(data as Conversation).title}` : '', (data as Conversation).ai_summary ? `Summary: ${(data as Conversation).ai_summary}` : ''].filter(Boolean).join('\n') })}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
-                      <Mail className="w-3.5 h-3.5" /> Reply via Email
-                    </button>
-                  )}
-                  {popup.kind === 'form' && (data as Lead)?.email && (
-                    <button onClick={() => setOutboundEmail({ to: (data as Lead).email!, toName: (data as Lead).name ?? undefined, subject: `Following up — ${(data as Lead).form_name ?? 'your enquiry'}`, context: [(data as Lead).name ? `Name: ${(data as Lead).name}` : '', (data as Lead).campaign_name ? `Campaign: ${(data as Lead).campaign_name}` : ''].filter(Boolean).join('\n') })}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
-                      <Mail className="w-3.5 h-3.5" /> Reply via Email
-                    </button>
-                  )}
-                  {popup.kind === 'form' && (data as any)?.phone && !(data as any)?.auto_sms_sent_at && (
-                    <button onClick={handleFormSms} disabled={smsBusy}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50">
-                      {smsBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Phone className="w-3.5 h-3.5" />} Send SMS
-                    </button>
-                  )}
-                  {popup.kind === 'ticket' && ((data as {email?:string|null})?.email ?? (data as {contact?:{email?:string|null}|null})?.contact?.email) && (
-                    <button onClick={() => { const t = data as {title?:string;description?:string;email?:string|null;name?:string|null;contact?:{email?:string|null;name?:string|null}|null}; const toEmail = t.contact?.email ?? t.email ?? ''; const toName = t.contact?.name ?? t.name ?? undefined; setOutboundEmail({ to: toEmail, toName: toName ?? undefined, subject: `Re: ${t.title ?? 'your ticket'}`, context: [t.title ? `Ticket: ${t.title}` : '', t.description ? `Details: ${t.description}` : ''].filter(Boolean).join('\n') }) }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
-                      <Mail className="w-3.5 h-3.5" /> Reply via Email
-                    </button>
-                  )}
-                  {popup.kind === 'ticket' && ((data as any)?.phone ?? (data as any)?.contact?.phone) && !(data as any)?.auto_sms_sent_at && (
-                    <button onClick={handleTicketSms} disabled={smsBusy}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-50">
-                      {smsBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Phone className="w-3.5 h-3.5" />} Send SMS
-                    </button>
-                  )}
-                  <button onClick={handleIgnore}
-                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-xl transition-colors">
-                    <X className="w-3.5 h-3.5" /> Ignore
-                  </button>
                 </>
+              )}
+
+              {/* ── Permanent right-corner buttons — always visible ── */}
+              <div className="flex-1" />
+
+              {/* SMS button — muted/disabled when no phone */}
+              {!showReply && !footerSmsSentAt && (
+                <button
+                  disabled={!footerPhone}
+                  onClick={() => { setFooterSmsBody(footerDefaultSmsBody); setFooterSmsOpen(o => !o) }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#2a7d6e]">
+                  <Phone className="w-3.5 h-3.5" /> SMS
+                </button>
+              )}
+              {!showReply && footerSmsSentAt && (
+                <span className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#2a7d6e] opacity-60">
+                  <Phone className="w-3.5 h-3.5" /> SMS sent
+                </span>
+              )}
+
+              {!showReply && popup.kind === 'email' && (
+                <button onClick={() => setShowReply(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
+                  <Reply className="w-3.5 h-3.5" /> Reply
+                </button>
+              )}
+              {!showReply && popup.kind === 'bot' && (
+                <button onClick={() => { const c = data as Conversation; setOutboundEmail({ to: c.ai_entities?.email ?? '', toName: c.ai_entities?.name ?? undefined, subject: `Following up — ${c.title ?? 'your conversation'}`, context: [c.title ? `Conversation: ${c.title}` : '', c.ai_summary ? `Summary: ${c.ai_summary}` : ''].filter(Boolean).join('\n') }) }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
+                  <Mail className="w-3.5 h-3.5" /> Reply via Email
+                </button>
+              )}
+              {!showReply && popup.kind === 'form' && (
+                <button onClick={() => { const l = data as Lead; setOutboundEmail({ to: l.email ?? '', toName: l.name ?? undefined, subject: `Following up — ${l.form_name ?? 'your enquiry'}`, context: [l.name ? `Name: ${l.name}` : '', l.campaign_name ? `Campaign: ${l.campaign_name}` : ''].filter(Boolean).join('\n') }) }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
+                  <Mail className="w-3.5 h-3.5" /> Reply via Email
+                </button>
+              )}
+              {!showReply && popup.kind === 'ticket' && (
+                <button onClick={() => { const t = data as {title?:string;description?:string;email?:string|null;name?:string|null;contact?:{email?:string|null;name?:string|null}|null}; setOutboundEmail({ to: t.contact?.email ?? t.email ?? '', toName: t.contact?.name ?? t.name ?? undefined, subject: `Re: ${t.title ?? 'your ticket'}`, context: [t.title ? `Ticket: ${t.title}` : '', t.description ? `Details: ${t.description}` : ''].filter(Boolean).join('\n') }) }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-xl transition-colors">
+                  <Mail className="w-3.5 h-3.5" /> Reply via Email
+                </button>
               )}
 
             </div>
@@ -1557,47 +1558,144 @@ function AutoSentBlock({
   smsSentAt,
   smsSentTo,
   label,
+  phone,
+  submissionId,
+  kind,
+  contactName,
+  onSmsSent,
 }: {
-  emailSentAt: string | null
-  emailSentTo: string | null
-  smsSentAt:   string | null
-  smsSentTo:   string | null
-  label:       string
+  emailSentAt:  string | null
+  emailSentTo:  string | null
+  smsSentAt:    string | null
+  smsSentTo:    string | null
+  label:        string
+  phone:        string | null
+  submissionId: string
+  kind:         'form' | 'ticket' | 'email' | 'bot'
+  contactName:  string | null
+  onSmsSent:    (sentTo: string) => void
 }) {
+  const [smsStep, setSmsStep] = useState<'idle' | 'preview' | 'sending' | 'error'>('idle')
+  const [smsBody, setSmsBody] = useState('')
+  const [smsError, setSmsError] = useState<string | null>(null)
+
   const emailSent = !!emailSentAt
   const smsSent   = !!smsSentAt
-  const anySent   = emailSent || smsSent
 
-  if (anySent) {
+  const defaultSmsBody =
+    kind === 'form'   ? `${contactName ? `Hi ${contactName}` : 'Hi there'} — thanks for getting in touch! We've received your message and will be in touch shortly.`
+    : kind === 'ticket' ? `${contactName ? `Hi ${contactName}` : 'Hi there'} — we've received your support request and our team is on it. We'll be in touch shortly.`
+    : kind === 'email'  ? `${contactName ? `Hi ${contactName}` : 'Hi there'} — thanks for your email. We've got it and will be in touch shortly.`
+    : /* bot */           `${contactName ? `Hi ${contactName}` : 'Hi there'} — thanks for chatting with us. We'll be in touch shortly.`
+
+  function openPreview() {
+    setSmsBody(defaultSmsBody)
+    setSmsStep('preview')
+  }
+
+  async function confirmSend() {
+    setSmsStep('sending')
+    const res =
+      kind === 'form'   ? await sendFormWelcomeSms(submissionId, smsBody)
+      : kind === 'ticket' ? await sendTicketAckSms(submissionId, smsBody)
+      : kind === 'email'  ? await sendEmailContactSms(submissionId, smsBody)
+      :                     await sendConversationSms(submissionId, smsBody)
+    if (res.ok && res.sentTo) {
+      onSmsSent(res.sentTo)
+    } else {
+      setSmsError(res.error ?? 'Send failed')
+      setSmsStep('error')
+    }
+  }
+
+  // SMS preview / sending / error overlay — shown in place of the not-sent block
+  if (!smsSent && smsStep !== 'idle') {
     return (
-      <div className="flex items-start gap-3 px-4 py-3 bg-green-50 dark:bg-green-500/10 border border-green-200/70 dark:border-green-500/25 rounded-xl">
-        <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
-        <div className="flex flex-col gap-0.5">
-          <p className="text-[10px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wide">{label} sent automatically</p>
-          {emailSent && (
-            <p className="text-[13px] text-gray-700 dark:text-gray-300">
-              Email → <span className="font-medium">{emailSentTo}</span>
-              {emailSentAt && <span className="text-gray-400"> · {timeAgo(emailSentAt)}</span>}
-            </p>
-          )}
-          {smsSent && (
-            <p className="text-[13px] text-gray-700 dark:text-gray-300">
-              SMS → <span className="font-medium">{smsSentTo}</span>
-              {smsSentAt && <span className="text-gray-400"> · {timeAgo(smsSentAt)}</span>}
-            </p>
-          )}
-        </div>
+      <div className="flex flex-col gap-3 px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl">
+        <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+          {smsStep === 'sending' ? 'Sending SMS…' : smsStep === 'error' ? 'SMS failed' : 'Preview SMS'}
+        </p>
+        {smsStep === 'preview' && (
+          <>
+            <p className="text-[12px] text-gray-500 dark:text-gray-400">To: <span className="font-medium text-gray-700 dark:text-gray-200">{phone}</span></p>
+            <textarea
+              value={smsBody}
+              onChange={e => setSmsBody(e.target.value)}
+              rows={3}
+              className="w-full text-[13px] text-gray-800 dark:text-gray-100 bg-white dark:bg-white/8 border border-gray-200 dark:border-white/15 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-[#2a7d6e]"
+            />
+            <div className="flex gap-2">
+              <button onClick={() => setSmsStep('idle')}
+                className="flex-1 px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-white/8 border border-gray-200 dark:border-white/15 rounded-lg hover:bg-gray-50 dark:hover:bg-white/12 transition-colors">
+                Cancel
+              </button>
+              <button onClick={confirmSend} disabled={!smsBody.trim()}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-lg transition-colors disabled:opacity-50">
+                <Phone className="w-3 h-3" /> Send
+              </button>
+            </div>
+          </>
+        )}
+        {smsStep === 'sending' && (
+          <div className="flex items-center gap-2 text-[13px] text-gray-500 dark:text-gray-400">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Sending to {phone}…
+          </div>
+        )}
+        {smsStep === 'error' && (
+          <>
+            <p className="text-[13px] text-red-600 dark:text-red-400">{smsError}</p>
+            <button onClick={() => setSmsStep('idle')}
+              className="self-start px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-white/15 rounded-lg hover:bg-gray-50 dark:hover:bg-white/8 transition-colors">
+              Try again
+            </button>
+          </>
+        )}
       </div>
     )
   }
 
-  return (
-    <div className="flex items-start gap-3 px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl">
-      <SendHorizontal className="w-3.5 h-3.5 text-gray-400 mt-0.5 shrink-0" />
-      <div className="flex-1">
-        <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5">{label} not yet sent</p>
-        <p className="text-[13px] text-gray-500 dark:text-gray-400">Use the reply button to send a {label.toLowerCase()} email, or the SMS button to send a text.</p>
+  // Green block when anything has been sent
+  if (emailSent || smsSent) {
+    return (
+      <div className="flex flex-col gap-1.5 px-4 py-3 bg-green-50 dark:bg-green-500/10 border border-green-200/70 dark:border-green-500/25 rounded-xl">
+        <p className="text-[10px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wide">{label} sent automatically</p>
+        {emailSent && (
+          <p className="text-[13px] text-gray-700 dark:text-gray-300">
+            <Check className="w-3 h-3 text-green-500 inline mr-1" />
+            Email → <span className="font-medium">{emailSentTo}</span>
+            {emailSentAt && <span className="text-gray-400"> · {timeAgo(emailSentAt)}</span>}
+          </p>
+        )}
+        {smsSent && (
+          <p className="text-[13px] text-gray-700 dark:text-gray-300">
+            <Check className="w-3 h-3 text-green-500 inline mr-1" />
+            SMS → <span className="font-medium">{smsSentTo}</span>
+            {smsSentAt && <span className="text-gray-400"> · {timeAgo(smsSentAt)}</span>}
+          </p>
+        )}
+        {!smsSent && phone && (
+          <button onClick={openPreview}
+            className="self-start mt-1 flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold text-[#2a7d6e] dark:text-[#4db8a4] border border-[#2a7d6e]/30 dark:border-[#4db8a4]/30 rounded-lg hover:bg-[#2a7d6e]/8 dark:hover:bg-[#4db8a4]/10 transition-colors">
+            <Phone className="w-3 h-3" /> Send SMS too
+          </button>
+        )}
       </div>
+    )
+  }
+
+  // Grey "not sent" block — only render if there's a phone to send to
+  if (!phone) return null
+
+  return (
+    <div className="flex flex-col gap-2 px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl">
+      <div className="flex items-center gap-2">
+        <SendHorizontal className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+        <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{label} SMS not sent</p>
+      </div>
+      <button onClick={openPreview}
+        className="self-start flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#2a7d6e] hover:bg-[#1f6157] text-white rounded-lg transition-colors">
+        <Phone className="w-3 h-3" /> Send SMS
+      </button>
     </div>
   )
 }
