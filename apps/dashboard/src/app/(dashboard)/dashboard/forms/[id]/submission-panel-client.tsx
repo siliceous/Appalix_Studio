@@ -331,7 +331,7 @@ export function SubmissionPanelClient({
                     <span className={`text-sm font-semibold truncate ${isActive ? 'text-[#1f6157] dark:text-[#15A4AE]' : 'text-gray-900 dark:text-gray-100'}`}>
                       {name}
                     </span>
-                    <span className="text-xs text-gray-400 shrink-0">{timeAgo(s.created_at)}</span>
+                    <span className="text-xs text-gray-400 shrink-0" suppressHydrationWarning>{timeAgo(s.created_at)}</span>
                   </div>
                   {email && <p className="text-xs text-gray-400 truncate mt-0.5">{email}</p>}
                   {form  && <p className="text-[10px] text-gray-400 truncate mt-0.5">{form.name}</p>}
