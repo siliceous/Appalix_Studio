@@ -108,6 +108,7 @@ export async function insertFormSubmission(
   normalizedFields: Record<string, string>,
   source: string,
   formTitle: string | null,
+  dedup = false,
 ): Promise<{ error: string } | { formId: string }> {
   const formName = formTitle ?? `${source.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} Submissions`
 
@@ -162,7 +163,7 @@ export async function insertFormSubmission(
         sourcePlatform: source as SourcePlatform,
         rawPayload,
         formId: form.id,
-        dedup:  false, // form submissions are events — same person can submit twice
+        dedup,
       },
     )
     submissionId = result.submissionId

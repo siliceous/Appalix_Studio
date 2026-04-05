@@ -28,6 +28,8 @@ export const dynamic = 'force-dynamic'
 const SKIP_EVENTS = new Set([
   'contact.deleted',
   'contact.unsubscribed',
+  'contact.updated',     // updates to existing contacts — deduplicated on ingest anyway
+  'contact.identified',  // fires alongside contact.created — causes duplicates
   'communities/post.created',
   'communities/posts/comment.created',
   'course.created', 'course.updated', 'course.deleted', 'course.published',
@@ -224,7 +226,7 @@ export async function POST(
     return NextResponse.json({ ok: true })
   }
 
-  const result = await insertFormSubmission(a, workspaceId, raw, normalizedFields, 'clickfunnels', formName)
+  const result = await insertFormSubmission(a, workspaceId, raw, normalizedFields, 'clickfunnels', formName, true)
   if ('error' in result) {
     console.error('[clickfunnels webhook] insertFormSubmission error:', result.error)
     return NextResponse.json({ error: result.error }, { status: 500 })
