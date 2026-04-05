@@ -65,9 +65,12 @@ function extractContactFields(contact: Record<string, unknown>): Record<string, 
   if (firstName || lastName) raw['name'] = [firstName, lastName].filter(Boolean).join(' ')
   if (contact['email'])   raw['email']   = String(contact['email'])
   if (contact['phone'])   raw['phone']   = String(contact['phone'])
-  if (contact['company']) raw['company'] = String(contact['company'])
+  const companyVal = contact['company'] ? String(contact['company']) : ''
+  const HEX32 = /^[0-9a-f]{32}$/i
+  const HYPHEN_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (companyVal && !HEX32.test(companyVal) && !HYPHEN_UUID.test(companyVal)) raw['company'] = companyVal
   if (contact['website']) raw['website'] = String(contact['website'])
-  const SKIP = new Set(['first_name', 'last_name', 'email', 'phone', 'company', 'website', 'id', 'created_at', 'updated_at', 'workspace_id'])
+  const SKIP = new Set(['first_name', 'last_name', 'email', 'phone', 'company', 'website', 'id', 'uuid', 'public_id', 'created_at', 'updated_at', 'workspace_id', 'unsubscribed_at', 'email_suppression_reason', 'anonymous', 'time_zone'])
   for (const [k, v] of Object.entries(contact)) {
     if (!SKIP.has(k) && (typeof v === 'string' || typeof v === 'number')) {
       raw[k] = String(v)
@@ -197,7 +200,7 @@ export async function POST(
   // Normalise first so we can check for real contact fields
   const normalizedFields = normalizeFields(raw)
 
-  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  const UUID_RE = /^[0-9a-f]{32}$|^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   const NUMERIC_ID_RE = /^\d{1,12}$/ // bare numeric IDs like "63960261"
 
   // Strip UUIDs and numeric IDs that crept in as company/phone
