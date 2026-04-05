@@ -168,6 +168,7 @@ export function SageDashboardClient({
   const [backfilling,      setBackfilling]      = useState(false)
   const [backfillResults,  setBackfillResults]  = useState<BackfillResultItem[]>([])
   const [loading,    setLoading]    = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
   const [emails,     setEmails]     = useState<RawEmail[]>([])
   const [bots,       setBots]       = useState<RawBot[]>([])
   const [forms,      setForms]      = useState<RawLead[]>([])
@@ -314,7 +315,7 @@ export function SageDashboardClient({
   useEffect(() => {
     if (dateRange === 'custom' && (!customFrom || !customTo)) return
     let cancelled = false
-    setLoading(true)
+    if (refreshKey === 0) setLoading(true) // only show spinner on initial load
     const { from, to } = getRange(dateRange, customFrom, customTo)
     const supabase = createClient()
 
@@ -430,56 +431,28 @@ export function SageDashboardClient({
     })
 
     return () => { cancelled = true }
-  }, [dateRange, customFrom, customTo, workspaceId, viewAsUserId])
+  }, [dateRange, customFrom, customTo, workspaceId, viewAsUserId, refreshKey])
 
-  // ── Live forms: realtime + 15s polling fallback ──────────────────────────
+  // ── Realtime: instant updates when Supabase replication is enabled ────────
   useEffect(() => {
     if (!workspaceId) return
     const supabase = createClient()
-
-    function applyNewSubmission(f: { id: string; fields: Record<string, string> | null; ai_priority: string | null; source_platform: string; created_at: string }) {
-      const newLead: RawLead = {
-        id:              f.id,
-        name:            f.fields?.name ?? f.fields?.full_name ?? f.fields?.first_name ?? '(unknown)',
-        email:           f.fields?.email ?? null,
-        phone:           f.fields?.phone ?? null,
-        company:         f.fields?.company ?? f.fields?.company_name ?? null,
-        lead_score:      f.ai_priority,
-        source_platform: f.source_platform,
-        created_at:      f.created_at,
-      }
-      setForms(prev => prev.some(x => x.id === newLead.id) ? prev : [newLead, ...prev])
-    }
-
-    // Realtime (works when Supabase replication is enabled for the table)
     const channel = supabase
       .channel(`dashboard-forms-${workspaceId}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'sage_form_submissions', filter: `workspace_id=eq.${workspaceId}` },
-        (payload) => applyNewSubmission(payload.new as Parameters<typeof applyNewSubmission>[0]),
+        () => setRefreshKey(k => k + 1),
       )
       .subscribe()
-
-    // Polling fallback — fetches submissions created in the last 60s every 15s
-    const poll = setInterval(async () => {
-      const since = new Date(Date.now() - 60_000).toISOString()
-      const { data } = await supabase
-        .from('sage_form_submissions')
-        .select('id, fields, ai_priority, source_platform, created_at')
-        .eq('workspace_id', workspaceId)
-        .is('deleted_at', null)
-        .gte('created_at', since)
-        .order('created_at', { ascending: false })
-        .limit(10)
-      for (const f of data ?? []) applyNewSubmission(f as Parameters<typeof applyNewSubmission>[0])
-    }, 15_000)
-
-    return () => {
-      supabase.removeChannel(channel)
-      clearInterval(poll)
-    }
+    return () => { supabase.removeChannel(channel) }
   }, [workspaceId])
+
+  // ── Silent 30s poll — re-triggers the main fetch without a loading spinner ─
+  useEffect(() => {
+    const interval = setInterval(() => setRefreshKey(k => k + 1), 30_000)
+    return () => clearInterval(interval)
+  }, [])
 
   // ── Visible (non-dismissed) subsets — used by both donuts and timeline ───
   const visEmails  = useMemo(() => emails.filter(e  => !dismissedIds.has(`email-${e.id}`)),   [emails,   dismissedIds])
