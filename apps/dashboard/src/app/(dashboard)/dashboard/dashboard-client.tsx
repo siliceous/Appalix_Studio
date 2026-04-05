@@ -448,10 +448,12 @@ export function SageDashboardClient({
     return () => { supabase.removeChannel(channel) }
   }, [workspaceId])
 
-  // ── Silent 30s poll — re-triggers the main fetch without a loading spinner ─
+  // ── Silent 10s poll + tab-focus refresh ──────────────────────────────────
   useEffect(() => {
-    const interval = setInterval(() => setRefreshKey(k => k + 1), 30_000)
-    return () => clearInterval(interval)
+    const interval = setInterval(() => setRefreshKey(k => k + 1), 10_000)
+    const onVisible = () => { if (document.visibilityState === 'visible') setRefreshKey(k => k + 1) }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => { clearInterval(interval); document.removeEventListener('visibilitychange', onVisible) }
   }, [])
 
   // ── Visible (non-dismissed) subsets — used by both donuts and timeline ───
