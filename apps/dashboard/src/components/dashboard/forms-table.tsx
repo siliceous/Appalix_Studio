@@ -332,8 +332,8 @@ const ALL_COLS: { key: ColKey; label: string; required?: boolean }[] = [
   { key: 'assigned',  label: 'Assigned to' },
 ]
 
-// Visible by default; priority/city/address/message/status are hidden until user enables them
-const DEFAULT_COLS = new Set<ColKey>(['name', 'email', 'phone', 'company', 'source', 'submitted', 'assigned'])
+// Visible by default; priority/city/address/status are hidden until user enables them
+const DEFAULT_COLS = new Set<ColKey>(['name', 'email', 'phone', 'company', 'message', 'source', 'submitted', 'assigned'])
 
 // ── Main component ────────────────────────────────────────────────────────────
 export function FormsTable({
