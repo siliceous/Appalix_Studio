@@ -86,7 +86,7 @@ const AD_PLATFORMS = new Set<SourcePlatform>([
 export function scoreLead(lead: Pick<UniversalLead, 'email' | 'phone' | 'company' | 'job_title'>): 'high' | 'medium' | 'low' {
   const count = [lead.email, lead.phone, lead.company, lead.job_title].filter(Boolean).length
   if (count >= 3) return 'high'
-  if (count >= 2) return 'medium'
+  if (count >= 1) return 'medium'  // Any contactable lead (email or phone) is at least medium
   return 'low'
 }
 
