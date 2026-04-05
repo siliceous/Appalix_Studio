@@ -28,8 +28,10 @@ export const dynamic = 'force-dynamic'
 const SKIP_EVENTS = new Set([
   'contact.deleted',
   'contact.unsubscribed',
-  'contact.updated',     // updates to existing contacts — deduplicated on ingest anyway
-  'contact.identified',  // fires alongside contact.created — causes duplicates
+  'contact.updated',               // updates to existing contacts
+  'contact.identified',            // fires alongside contact.created — causes duplicates
+  'contacts/applied_tag.created',  // fires alongside contact.created — causes duplicates
+  'contacts/applied_tag.deleted',
   'communities/post.created',
   'communities/posts/comment.created',
   'course.created', 'course.updated', 'course.deleted', 'course.published',
