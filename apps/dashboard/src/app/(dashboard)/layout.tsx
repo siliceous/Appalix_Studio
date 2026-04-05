@@ -9,6 +9,7 @@ import { getUserPermissions } from '@/lib/permissions'
 import { getBranding } from '@/app/actions/workspace-branding'
 import { WelcomeModal } from '@/components/onboarding/welcome-modal'
 import { TrialBanner } from '@/components/layout/trial-banner'
+import { BodyScrollLock } from '@/components/layout/body-scroll-lock'
 import type { Workspace, WorkspaceMemberRole } from '@/lib/types'
 
 // All dashboard pages are user-specific and require live DB access — never statically render.
@@ -137,6 +138,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         serverCompleted={serverCompleted}
       />
       <ReminderWatcher />
+      <BodyScrollLock />
     </div>
     </UserAvatarProvider>
   )
