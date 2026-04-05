@@ -23,6 +23,14 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* Lock document-level scroll on dashboard/auth pages.
+     Marketing pages use .marketing-site wrapper which re-enables scroll. */
+  html:not(:has(.marketing-site)),
+  html:not(:has(.marketing-site)) body {
+    overflow: hidden;
+    height: 100%;
+  }
+
   body {
     background-color: #f5f4f1;
     @apply text-gray-900;
