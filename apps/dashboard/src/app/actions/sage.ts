@@ -1397,92 +1397,6 @@ export async function connectFormIntegration(
     }
   }
 
-  // ClickFunnels: auto-register webhook subscription via CF2 API
-  if (provider === 'clickfunnels') {
-    const subdomain = (config.cf_subdomain ?? '').replace(/[^\x20-\x7E]/g, '').trim().replace(/\.myclickfunnels\.com.*/, '')
-    const apiKey    = (config.api_key ?? '').replace(/[^\x20-\x7E]/g, '').trim()
-
-    if (subdomain && apiKey) {
-      const cfBase    = `https://${subdomain}.myclickfunnels.com/api/v2`
-      const cfHeaders = { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
-
-      const CF_EVENTS = [
-        'contact.created', 'contact.updated', 'contact.identified',
-        'contacts/applied_tag.created',
-        'form_submission.created',
-        'order.created', 'order.completed',
-        'one-time-order.completed',
-        'subscription.activated', 'subscription.first_payment_received',
-        'appointments/scheduled_event.created',
-        'courses/enrollment.created',
-        'sales/opportunity.created', 'sales/opportunity.updated',
-      ]
-
-      try {
-        // Resolve CF workspace ID
-        const wsRes = await fetch(`${cfBase}/workspaces`, { headers: cfHeaders })
-        if (!wsRes.ok) {
-          const errText = await wsRes.text().catch(() => wsRes.statusText)
-          revalidatePath('/sage/integrations')
-          return { webhookUrl, error: `ClickFunnels API error (${wsRes.status}): ${errText}. Check your subdomain and API key.` }
-        }
-        const wsData = await wsRes.json() as { workspaces?: Array<{ id: number | string }> }
-        const cfWorkspaceId = wsData.workspaces?.[0]?.id
-        if (!cfWorkspaceId) {
-          revalidatePath('/sage/integrations')
-          return { webhookUrl, error: 'No ClickFunnels workspace found for this API key.' }
-        }
-
-        // Delete any existing Appalix webhook subscription to avoid duplicates
-        const listRes = await fetch(`${cfBase}/workspaces/${cfWorkspaceId}/webhook_subscriptions`, { headers: cfHeaders })
-        if (listRes.ok) {
-          const listData = await listRes.json() as { webhook_subscriptions?: Array<{ id: number | string; name?: string }> }
-          for (const sub of listData.webhook_subscriptions ?? []) {
-            if (sub.name === 'Appalix') {
-              await fetch(`${cfBase}/workspaces/${cfWorkspaceId}/webhook_subscriptions/${sub.id}`, {
-                method: 'DELETE', headers: cfHeaders,
-              })
-            }
-          }
-        }
-
-        // Create new subscription
-        const createRes = await fetch(`${cfBase}/workspaces/${cfWorkspaceId}/webhook_subscriptions`, {
-          method:  'POST',
-          headers: cfHeaders,
-          body:    JSON.stringify({
-            webhook_subscription: {
-              name:   'Appalix',
-              url:    webhookUrl,
-              event_type_ids: CF_EVENTS,
-            },
-          }),
-        })
-
-        if (!createRes.ok) {
-          const errText = await createRes.text().catch(() => createRes.statusText)
-          revalidatePath('/sage/integrations')
-          return { webhookUrl, error: `Failed to register webhook in ClickFunnels (${createRes.status}): ${errText}` }
-        }
-
-        // Store subscription ID for cleanup on disconnect
-        const createData = await createRes.json() as { webhook_subscription?: { id: number | string } }
-        const subscriptionId = createData.webhook_subscription?.id
-        if (subscriptionId) {
-          await admin.from('sage_integrations').update({
-            config: { ...config, cf_workspace_id: String(cfWorkspaceId), cf_subscription_id: String(subscriptionId) },
-            updated_at: new Date().toISOString(),
-          })
-          .eq('workspace_id', workspaceId)
-          .eq('provider', 'clickfunnels')
-        }
-      } catch (err) {
-        revalidatePath('/sage/integrations')
-        return { webhookUrl, error: `ClickFunnels connection failed: ${err instanceof Error ? err.message : 'unknown error'}` }
-      }
-    }
-  }
-
   revalidatePath('/sage/integrations')
   return { webhookUrl }
 }
@@ -1498,31 +1412,6 @@ export async function disconnectFormIntegration(
   if (!user) return
   const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
-
-  // ClickFunnels: delete the webhook subscription via CF2 API
-  if (provider === 'clickfunnels') {
-    const { data: integ } = await admin
-      .from('sage_integrations')
-      .select('config')
-      .eq('workspace_id', workspaceId)
-      .eq('provider', 'clickfunnels')
-      .maybeSingle()
-
-    const cfg = (integ as { config?: Record<string, string> } | null)?.config ?? {}
-    const subdomain      = cfg.cf_subdomain?.replace(/\.myclickfunnels\.com.*/, '') ?? ''
-    const apiKey         = cfg.api_key ?? ''
-    const cfWorkspaceId  = cfg.cf_workspace_id ?? ''
-    const subscriptionId = cfg.cf_subscription_id ?? ''
-
-    if (subdomain && apiKey && cfWorkspaceId && subscriptionId) {
-      try {
-        await fetch(
-          `https://${subdomain}.myclickfunnels.com/api/v2/workspaces/${cfWorkspaceId}/webhook_subscriptions/${subscriptionId}`,
-          { method: 'DELETE', headers: { Authorization: `Bearer ${apiKey}` } },
-        )
-      } catch { /* best-effort cleanup */ }
-    }
-  }
 
   // For Typeform: de-register our webhook before clearing config
   if (provider === 'typeform') {

@@ -158,12 +158,11 @@ const INTEGRATIONS: IntegrationCard[] = [
   {
     provider:    'clickfunnels',
     name:        'ClickFunnels',
-    description: 'Capture opt-in and purchase leads from ClickFunnels funnels. Provide your API key to auto-register the webhook.',
+    description: 'Capture opt-in and purchase leads from ClickFunnels funnels.',
     logo:        '/integrations/clickfunnels.png',
     category:    'forms',
     fields:      [
-      { name: 'cf_subdomain', label: 'Workspace subdomain', placeholder: 'myworkspace  (from myworkspace.myclickfunnels.com)', type: 'text' as const },
-      { name: 'api_key',      label: 'API key',             placeholder: 'Paste your ClickFunnels Personal Access Token', type: 'password' as const },
+      { name: 'webhook_secret', label: 'Webhook Secret', type: 'password' as const, placeholder: 'Optional — paste after creating the endpoint in CF', hint: 'After creating the endpoint in ClickFunnels you can copy the secret shown there and paste it here to enable signature verification.', optional: true },
     ],
     docsUrl:     'https://help.clickfunnels.com/hc/en-us/articles/360015067852',
     webhookPath: '/api/webhooks/clickfunnels',
@@ -938,15 +937,22 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                             </div>
                           )}
 
-                          {/* ClickFunnels: auto-registered confirmation */}
+                          {/* ClickFunnels: manual setup guide */}
                           {isClickFunnels && (
                             <div className="px-4 py-4 bg-gray-50 dark:bg-white/3 space-y-3">
-                              <div className="flex items-start gap-2 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-500/8 border border-emerald-100 dark:border-emerald-500/15">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                                <p className="text-[11px] text-emerald-700 dark:text-emerald-400 leading-relaxed">
-                                  Webhook automatically registered in ClickFunnels. Contact, form submission, order, subscription, and appointment events are all connected.
-                                </p>
-                              </div>
+                              <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">Set up in 3 steps</p>
+                              <ol className="space-y-2.5">
+                                {[
+                                  { n: '1', text: 'In ClickFunnels go to Settings → Webhooks → New Endpoint' },
+                                  { n: '2', text: 'Paste the URL below as the Endpoint URL, then select the events: contact.created, contact.identified, form_submission.created, order.created, subscription.created, appointments/appointment.created' },
+                                  { n: '3', text: 'Save the endpoint. Optionally copy the secret shown and paste it into the Webhook Secret field on the Connect card.' },
+                                ].map(step => (
+                                  <li key={step.n} className="flex gap-2.5">
+                                    <span className="shrink-0 w-5 h-5 rounded-full bg-brand-600 text-white text-[10px] font-bold flex items-center justify-center">{step.n}</span>
+                                    <span className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">{step.text}</span>
+                                  </li>
+                                ))}
+                              </ol>
                               <div>
                                 <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1.5">Webhook URL</p>
                                 <div className="flex items-center gap-2">
@@ -958,34 +964,6 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                                     className="shrink-0 px-2.5 py-2 text-xs rounded-lg border dark:border-white/10 bg-white dark:bg-[#232323] text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
                                   >
                                     {copiedProvider === integration.provider ? 'Copied!' : 'Copy'}
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="border-t dark:border-white/8 pt-3">
-                                <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">Webhook secret <span className="text-gray-400 font-normal">(optional)</span></p>
-                                <p className="text-[11px] text-gray-400 mb-2">Paste the secret shown in ClickFunnels → your endpoint settings to enable signature verification.</p>
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    type="password"
-                                    value={inlineSecret[integration.provider] ?? ''}
-                                    onChange={e => setInlineSecret(prev => ({ ...prev, [integration.provider]: e.target.value }))}
-                                    placeholder="Paste ClickFunnels webhook secret…"
-                                    className="flex-1 px-3 py-2 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-[#232323] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                                  />
-                                  <button
-                                    disabled={!inlineSecret[integration.provider]?.trim() || pending}
-                                    onClick={() => {
-                                      const secret = inlineSecret[integration.provider]?.trim()
-                                      if (!secret) return
-                                      startTransition(async () => {
-                                        await saveSageIntegration(integration.provider, { webhook_secret: secret })
-                                        setInlineSecretSaved(integration.provider)
-                                        setTimeout(() => setInlineSecretSaved(null), 3000)
-                                      })
-                                    }}
-                                    className="shrink-0 px-3 py-2 text-xs font-medium rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition-colors disabled:opacity-40"
-                                  >
-                                    {inlineSecretSaved === integration.provider ? 'Saved!' : 'Save'}
                                   </button>
                                 </div>
                               </div>
