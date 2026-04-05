@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   UserPlus, Search, Mail, Phone, Globe, Trash2,
-  Zap, ArrowUpDown, SlidersHorizontal, Columns3, Check, Ticket,
+  Zap, ArrowUpDown, SlidersHorizontal, Columns3, Check, Ticket, DollarSign,
 } from 'lucide-react'
 import { ContactModal } from '@/components/sage/contact-modal'
 import { deleteContact, deleteContacts, undoDeleteContact, assignContact, patchContact } from '@/app/actions/sage'
@@ -518,7 +518,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
     }`
 
   return (
-    <div className="p-8" onClick={() => setOpenPanel(null)}>
+    <div className="min-w-0" onClick={() => setOpenPanel(null)}>
 
       {/* Action notification */}
       {notification && (
@@ -544,7 +544,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
         </div>
       )}
       {/* Header */}
-      <div className="flex items-start justify-between mb-5">
+      <div className="pl-9 pt-5 pb-3 pr-4 flex items-start justify-between">
         <div>
           <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Contacts</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{contacts.length} total</p>
@@ -777,8 +777,8 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col overflow-hidden min-w-0">
+      <div className="overflow-x-auto min-w-0">
         {filtered.length === 0 ? (
           <div className="py-20 text-center">
             <UserPlus className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
@@ -839,23 +839,23 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
                     </td>
                   ))}
                   {canWrite && (
-                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                    <td className="sticky right-0 px-4 py-3 bg-white dark:bg-[#1e1e1e] group-hover:bg-gray-50 dark:group-hover:bg-[#1e1e1e] z-10 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)]" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-1 justify-end">
                         <button
                           onClick={() => handleCreateDeal(contact)}
                           disabled={actionLoading === `${contact.id}:deal`}
-                          title="Assign Deal"
-                          className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors disabled:opacity-50"
+                          title="Create deal"
+                          className="p-1.5 rounded-lg text-[#15A4AE] hover:bg-[#15A4AE]/10 transition-colors disabled:opacity-50"
                         >
                           {actionLoading === `${contact.id}:deal`
-                            ? <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
-                            : <UserPlus className="w-3.5 h-3.5 text-gray-400 hover:text-blue-500" />
+                            ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[#15A4AE]" />
+                            : <DollarSign className="w-3.5 h-3.5" />
                           }
                         </button>
                         <button
                           onClick={() => handleCreateTicket(contact)}
                           disabled={actionLoading === `${contact.id}:ticket`}
-                          title="Assign Ticket"
+                          title="Create ticket"
                           className="p-1.5 rounded-lg hover:bg-yellow-50 dark:hover:bg-yellow-500/10 transition-colors disabled:opacity-50"
                         >
                           {actionLoading === `${contact.id}:ticket`
@@ -866,6 +866,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
                         <button
                           onClick={() => handleDelete(contact.id)}
                           disabled={deleting === contact.id}
+                          title="Delete"
                           className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />

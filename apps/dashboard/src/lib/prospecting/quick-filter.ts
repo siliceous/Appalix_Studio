@@ -68,6 +68,32 @@ const BLOCKLIST_PATTERNS = [
 
   // General community / forums
   /reddit\.com/, /quora\.com/, /whirlpool\.net/,
+
+  // B2B data / lead databases (not real business websites)
+  /zoominfo\.com/, /dnb\.com/, /crunchbase\.com/, /apollo\.io/,
+  /lusha\.com/, /clearbit\.com/, /hunter\.io/,
+
+  // Australian general directories
+  /dlook\.com/, /brownbook\.net/, /australianbusiness\.com\.au/,
+  /bloo\.com\.au/, /localbd\.com/, /aussieweb\.com\.au/,
+
+  // Industry bodies / associations / advocacy (not installers)
+  /gbca\.org/, /cleanenergycouncil/, /energynetworks\.com/, /aemo\.com\.au/,
+  /accc\.gov/, /aemc\.gov/, /arena\.gov/, /cefc\.com\.au/,
+
+  // Trade media / industry news (not businesses)
+  /ecogeneration\.com/, /renewnews\.com/, /pv-magazine/, /solarpowerworldonline/,
+  /businessgreen\.com/, /reneweconomy\.com/, /theenergist\.com\.au/,
+  /solarbuildermag\.com/, /solarindustrymag\.com/,
+
+  // Venue / venue-authority / hospitality chains (not installers)
+  /olympicpark/, /sydneyolympicpark/, /novotel/, /mercure\.com/,
+  /accor\.com/, /hilton\.com/, /marriott\.com/, /ihg\.com/,
+  /hyatt\.com/, /wyndham\.com/, /bestwestern\.com/,
+
+  // Software / SaaS tools / calculators (not installers)
+  /profilesolar\.com/, /pvwatts/, /solaredge\.com\/blog/,
+  /globalsolaratlas/, /solargis\.com/,
 ]
 
 export function isBlockedDomain(domain: string): boolean {

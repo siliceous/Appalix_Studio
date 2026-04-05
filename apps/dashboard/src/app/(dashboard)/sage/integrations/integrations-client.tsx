@@ -158,10 +158,13 @@ const INTEGRATIONS: IntegrationCard[] = [
   {
     provider:    'clickfunnels',
     name:        'ClickFunnels',
-    description: 'Capture opt-in and purchase leads from ClickFunnels funnels. Supports CF1 and CF2 webhook payloads.',
+    description: 'Capture opt-in and purchase leads from ClickFunnels funnels. Provide your API key to auto-register the webhook.',
     logo:        '/integrations/clickfunnels.png',
     category:    'forms',
-    fields:      [],
+    fields:      [
+      { name: 'cf_subdomain', label: 'Workspace subdomain', placeholder: 'myworkspace  (from myworkspace.myclickfunnels.com)', type: 'text' as const },
+      { name: 'api_key',      label: 'API key',             placeholder: 'Paste your ClickFunnels Personal Access Token', type: 'password' as const },
+    ],
     docsUrl:     'https://help.clickfunnels.com/hc/en-us/articles/360015067852',
     webhookPath: '/api/webhooks/clickfunnels',
   },
@@ -935,12 +938,17 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                             </div>
                           )}
 
-                          {/* ClickFunnels: URL + optional inline webhook secret */}
+                          {/* ClickFunnels: auto-registered confirmation */}
                           {isClickFunnels && (
                             <div className="px-4 py-4 bg-gray-50 dark:bg-white/3 space-y-3">
+                              <div className="flex items-start gap-2 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-500/8 border border-emerald-100 dark:border-emerald-500/15">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                                <p className="text-[11px] text-emerald-700 dark:text-emerald-400 leading-relaxed">
+                                  Webhook automatically registered in ClickFunnels. Contact, form submission, order, subscription, and appointment events are all connected.
+                                </p>
+                              </div>
                               <div>
-                                <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1.5">Your webhook URL</p>
-                                <p className="text-[11px] text-gray-400 mb-2">In ClickFunnels, open your funnel → <strong>Settings → Integrations → Webhooks</strong> → Add New Webhook. Paste this URL and select the events you want (e.g. <strong>Contact Created</strong>).</p>
+                                <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1.5">Webhook URL</p>
                                 <div className="flex items-center gap-2">
                                   <code className="flex-1 px-3 py-2 text-xs rounded-lg bg-white dark:bg-[#232323] border dark:border-white/10 text-gray-700 dark:text-gray-300 font-mono truncate select-all">
                                     {hookUrl}
@@ -950,34 +958,6 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                                     className="shrink-0 px-2.5 py-2 text-xs rounded-lg border dark:border-white/10 bg-white dark:bg-[#232323] text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
                                   >
                                     {copiedProvider === integration.provider ? 'Copied!' : 'Copy'}
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="border-t dark:border-white/8 pt-3">
-                                <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">Webhook secret <span className="text-gray-400 font-normal">(optional)</span></p>
-                                <p className="text-[11px] text-gray-400 mb-2">If you set a secret in ClickFunnels, paste the same value here to enable HMAC-SHA256 signature verification.</p>
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    type="password"
-                                    value={inlineSecret[integration.provider] ?? ''}
-                                    onChange={e => setInlineSecret(prev => ({ ...prev, [integration.provider]: e.target.value }))}
-                                    placeholder="Paste ClickFunnels webhook secret…"
-                                    className="flex-1 px-3 py-2 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-[#232323] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                                  />
-                                  <button
-                                    disabled={!inlineSecret[integration.provider]?.trim() || pending}
-                                    onClick={() => {
-                                      const secret = inlineSecret[integration.provider]?.trim()
-                                      if (!secret) return
-                                      startTransition(async () => {
-                                        await saveSageIntegration(integration.provider, { webhook_secret: secret })
-                                        setInlineSecretSaved(integration.provider)
-                                        setTimeout(() => setInlineSecretSaved(null), 3000)
-                                      })
-                                    }}
-                                    className="shrink-0 px-3 py-2 text-xs font-medium rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition-colors disabled:opacity-40"
-                                  >
-                                    {inlineSecretSaved === integration.provider ? 'Saved!' : 'Save'}
                                   </button>
                                 </div>
                               </div>

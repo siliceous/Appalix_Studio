@@ -6,6 +6,9 @@ import { extractCompanyData } from './extract'
 import { scoreProspect } from './score'
 import { pushProspectToSage } from './push-to-sage'
 import { isBlockedDomain } from './quick-filter'
+import { enrichFromPlaces } from './google-places'
+import { enrichEmailsFromHunter } from './hunter'
+import { deductProspectCredit } from './credits'
 
 interface IcpProfile {
   id:                   string
@@ -167,39 +170,57 @@ export async function runLocalProspectPipeline(
 
       if (b.domain) {
         const crawl = await crawlDeep(b.domain)
-        // Build extra context from Brave title + snippet — contains phone/email directly
+        // Build extra context — include GMB phone/email + Brave snippet
         const contextParts = [
           b.name !== b.domain ? `Listing title: ${b.name}` : null,
+          b.phone ? `GMB phone: ${b.phone}` : null,
+          b.email ? `GMB email: ${b.email}` : null,
           b.snippet ? `Search snippet: ${b.snippet}` : null,
         ].filter(Boolean)
         const extraContext = contextParts.length ? contextParts.join('\n') : undefined
         extracted = crawl
           ? await extractCompanyData(b.domain, crawl.markdown, crawl.title, extraContext)
-          : {
-              company_name: b.name,
-              contact_name: null,
-              description:  b.description,
-              services:     b.categories,
-              pricing_hint: null,
-              city:         b.city,
-              state:        b.state,
-              country:      b.country,
-              emails:       b.email ? [b.email] : [],
-              phones:       b.phone ? [b.phone] : [],
-            }
+          : (() => {
+              // Crawl failed — regex sweep on snippet + extraContext to salvage contact info
+              const fallbackText = `${b.name} ${b.description ?? ''} ${b.snippet ?? ''} ${extraContext ?? ''}`
+              const emailRe = /([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/g
+              const phoneRe = /(?:\+?61[-\s]?)?(?:1[38]\d{2}[\s-]?\d{3}[\s-]?\d{3}|\(?0\d\)?[\s-]?\d{4}[\s-]?\d{4}|\+\d{1,3}[\s-]?\d[\s\d\-]{6,14}\d)/g
+              const fallbackEmails = [...new Set([
+                ...(b.email ? [b.email] : []),
+                ...(fallbackText.match(emailRe) ?? []).filter(e => !e.includes('example') && !e.includes('sentry') && !e.includes('@2x')),
+              ])]
+              const fallbackPhones = [...new Set([
+                ...(b.phone ? [b.phone] : []),
+                ...(fallbackText.match(phoneRe) ?? []).map(p => p.trim()),
+              ])]
+              return {
+                company_name:    b.name,
+                contact_name:    null,
+                description:     b.description,
+                services:        b.categories,
+                pricing_hint:    null,
+                city:            b.city,
+                state:           b.state,
+                country:         b.country,
+                emails:          fallbackEmails,
+                phones:          fallbackPhones,
+                decision_makers: [],
+              }
+            })()
       } else {
         // No website — use GMB data directly
         extracted = {
-          company_name: b.name,
-          contact_name: null,
-          description:  b.description,
-          services:     b.categories,
-          pricing_hint: null,
-          city:         b.city,
-          state:        b.state,
-          country:      b.country,
-          emails:       [],
-          phones:       b.phone ? [b.phone] : [],
+          company_name:    b.name,
+          contact_name:    null,
+          description:     b.description,
+          services:        b.categories,
+          pricing_hint:    null,
+          city:            b.city,
+          state:           b.state,
+          country:         b.country,
+          emails:          [],
+          phones:          b.phone ? [b.phone] : [],
+          decision_makers: [],
         }
       }
 
@@ -207,36 +228,84 @@ export async function runLocalProspectPipeline(
       const allPhones = [...new Set([...(b.phone ? [b.phone] : []), ...extracted.phones])]
       const allEmails = [...new Set([...(b.email ? [b.email] : []), ...extracted.emails])]
 
+      // Google Places enrichment — phone wins over scraped (non-blocking)
+      let placesPhone:   string | null = null
+      let placesCity:    string | null = null
+      let placesCountry: string | null = null
+      try {
+        const places = await enrichFromPlaces(
+          extracted.company_name ?? b.name,
+          [b.city, b.state, b.country].filter(Boolean).join(' ') || location,
+          b.domain ?? undefined,
+        )
+        if (places) {
+          placesPhone   = places.phone
+          placesCity    = places.city
+          placesCountry = places.country
+        }
+      } catch { /* non-critical */ }
+
+      // Hunter.io email enrichment (non-blocking)
+      let hunterEmails: string[] = []
+      try {
+        if (b.domain) {
+          const hunter = await enrichEmailsFromHunter(b.domain)
+          if (hunter) hunterEmails = hunter.emails
+        }
+      } catch { /* non-critical */ }
+
+      const finalPhones  = [...new Set([...(placesPhone ? [placesPhone] : []), ...allPhones])]
+      const finalEmails  = [...new Set([...hunterEmails, ...allEmails])]
+      const finalCity    = extracted.city    ?? b.city    ?? placesCity
+      const finalCountry = extracted.country ?? b.country ?? placesCountry
+
       // Score
       const scoreResult = scoreProspect(
-        { ...extracted, phones: allPhones },
+        { ...extracted, phones: finalPhones },
         icp,
         b.name,
         b.description ?? '',
       )
       scored++
 
-      const locationText = [extracted.city ?? b.city, extracted.state ?? b.state, extracted.country ?? b.country].filter(Boolean).join(', ') || null
+      // Deduct 1 credit — stop pipeline if exhausted
+      const { data: prospectRow } = await admin
+        .from('prospect_companies')
+        .select('id')
+        .eq('workspace_id', workspaceId)
+        .eq('domain', domain)
+        .single()
+
+      if (prospectRow) {
+        const credited = await deductProspectCredit(workspaceId, prospectRow.id, jobId)
+        if (!credited) {
+          await updateJob(jobId, 'done', { scored, pushed })
+          return
+        }
+      }
+
+      const locationText = [finalCity, extracted.state ?? b.state, finalCountry].filter(Boolean).join(', ') || null
 
       await admin.from('prospect_companies').update({
-        company_name:    extracted.company_name ?? b.name,
-        contact_name:    extracted.contact_name,
-        description:     extracted.description ?? b.description,
-        services:        extracted.services.length ? extracted.services : b.categories,
-        pricing_hint:    extracted.pricing_hint,
-        city:            extracted.city ?? b.city,
-        state:           extracted.state ?? b.state,
-        country:         extracted.country ?? b.country,
-        location_text:   locationText,
-        emails:          allEmails,
-        phones:          allPhones,
-        email_1:         allEmails[0] ?? null,
-        phone_1:         allPhones[0] ?? null,
-        score:           scoreResult.score,
-        score_tier:      scoreResult.tier,
-        score_breakdown: scoreResult.breakdown,
-        status:          scoreResult.tier === 'discarded' ? 'found' : 'scored',
-        updated_at:      new Date().toISOString(),
+        company_name:     extracted.company_name ?? b.name,
+        contact_name:     extracted.contact_name,
+        description:      extracted.description ?? b.description,
+        services:         extracted.services.length ? extracted.services : b.categories,
+        pricing_hint:     extracted.pricing_hint,
+        city:             finalCity,
+        state:            extracted.state ?? b.state,
+        country:          finalCountry,
+        location_text:    locationText,
+        emails:           finalEmails,
+        phones:           finalPhones,
+        email_1:          finalEmails[0] ?? null,
+        phone_1:          finalPhones[0] ?? null,
+        decision_makers:  extracted.decision_makers,
+        score:            scoreResult.score,
+        score_tier:       scoreResult.tier,
+        score_breakdown:  scoreResult.breakdown,
+        status:           scoreResult.tier === 'discarded' ? 'found' : 'scored',
+        updated_at:       new Date().toISOString(),
       })
         .eq('workspace_id', workspaceId)
         .eq('domain', domain)

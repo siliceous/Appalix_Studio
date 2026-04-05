@@ -1,8 +1,10 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import type { SagePipeline, SagePipelineStage, SageDeal, SageActivityLog } from '@/lib/types'
+import type { SagePipeline, SagePipelineStage, SageDeal } from '@/lib/types'
 import { PipelinesClient } from './pipelines-client'
 import { SageToolbar } from '@/components/dashboard/sage-toolbar'
+import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
+import { ActivitySidebar } from '@/components/team/activity-sidebar'
 
 export default async function PipelinesPage() {
   const supabase = await createClient()
@@ -27,7 +29,6 @@ export default async function PipelinesPage() {
     { data: pipelinesRaw },
     { data: dealsRaw },
     { data: dealCountsRaw },
-    { data: activityRaw },
   ] = await Promise.all([
     admin
       .from('sage_pipelines')
@@ -46,13 +47,6 @@ export default async function PipelinesPage() {
       .select('pipeline_id')
       .eq('workspace_id', workspaceId)
       .not('pipeline_id', 'is', null),
-    admin
-      .from('sage_activity_log')
-      .select('*')
-      .eq('workspace_id', workspaceId)
-      .eq('entity_type', 'deal')
-      .order('created_at', { ascending: false })
-      .limit(40),
   ])
 
   // Count deals per pipeline
@@ -83,15 +77,28 @@ export default async function PipelinesPage() {
     contact:    d.contact?.[0] ?? null,
   }))
 
+  const activityDate = new Date().toISOString().slice(0, 10)
+  const [activity, viewingAs] = await Promise.all([
+    getActivityFeed(user.id, workspaceId, activityDate),
+    resolveViewingAs(undefined, workspaceId),
+  ])
+
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full overflow-hidden">
       <SageToolbar pageKey="pipelines" />
-      <div>
-        <PipelinesClient
-      pipelines={pipelines}
-      unassignedDeals={unassignedDeals}
-      activity={(activityRaw ?? []) as SageActivityLog[]}
-      canWrite={canWrite}
+      <div className="flex flex-1 overflow-hidden min-h-0">
+        <div className="flex-1 min-w-0 overflow-y-auto">
+          <PipelinesClient
+            pipelines={pipelines}
+            unassignedDeals={unassignedDeals}
+            canWrite={canWrite}
+          />
+        </div>
+        <ActivitySidebar
+          activity={activity}
+          date={activityDate}
+          currentPath="/sage/pipelines"
+          viewingAs={viewingAs}
         />
       </div>
     </div>

@@ -3,8 +3,11 @@ export interface CrawlResult {
   title:    string | null
 }
 
-// Contact page candidates — tried sequentially, stop at first hit
+// Contact page candidates
 const CONTACT_PATHS = ['/contact', '/contact-us', '/contact_us', '/get-in-touch', '/reach-us', '/find-us']
+
+// About/team page candidates — crawled for owner/contact name
+const ABOUT_PATHS = ['/about', '/about-us', '/about_us', '/our-team', '/team', '/meet-the-team', '/who-we-are']
 
 /** Scrape a single URL; returns null on any error or near-empty content. */
 async function scrapeSingle(url: string): Promise<{ markdown: string; title: string | null } | null> {
@@ -49,32 +52,36 @@ async function scrapeSingle(url: string): Promise<{ markdown: string; title: str
 }
 
 /**
- * Crawl a domain: homepage + first working contact page (sequential probe).
- * ~3 Firecrawl credits per domain max.
- * GMB enrichment is handled separately via Brave search in the pipeline.
+ * Crawl a domain: homepage + first working contact page + first working about/team page.
+ * Up to 3 credits per domain (homepage + 1 contact + 1 about — all 404s return null for free).
  */
 export async function crawlDeep(domain: string): Promise<CrawlResult | null> {
   const base = domain.startsWith('http') ? domain : `https://${domain}`
 
-  // 1. Homepage + all contact candidates in parallel (homepage always needed;
-  //    contact candidates are cheap to fire together — we pick the first hit)
-  const [homepageResult, ...contactResults] = await Promise.all([
+  // Fire homepage + all contact + all about candidates in parallel
+  const [homepageResult, ...secondaryResults] = await Promise.all([
     scrapeSingle(base),
     ...CONTACT_PATHS.map(p => scrapeSingle(`${base}${p}`)),
+    ...ABOUT_PATHS.map(p => scrapeSingle(`${base}${p}`)),
   ])
 
-  const contactResult = contactResults.find(r => r !== null) ?? null
+  const contactResult = secondaryResults.slice(0, CONTACT_PATHS.length).find(r => r !== null) ?? null
+  const aboutResult   = secondaryResults.slice(CONTACT_PATHS.length).find(r => r !== null) ?? null
 
   const sections: string[] = []
   let   title: string | null = null
 
   if (homepageResult) {
     title = homepageResult.title
-    sections.push(`## Homepage\n\n${homepageResult.markdown.slice(0, 7000)}`)
+    sections.push(`## Homepage\n\n${homepageResult.markdown.slice(0, 6000)}`)
+  }
+
+  if (aboutResult) {
+    sections.push(`## About / Team\n\n${aboutResult.markdown.slice(0, 4000)}`)
   }
 
   if (contactResult) {
-    sections.push(`## Contact\n\n${contactResult.markdown.slice(0, 5000)}`)
+    sections.push(`## Contact\n\n${contactResult.markdown.slice(0, 4000)}`)
   }
 
   if (sections.length === 0) return null

@@ -2,14 +2,14 @@
 
 import { useState, useRef } from 'react'
 import {
-  Kanban, Plus, Trash2, ArrowRight, Loader2, Activity,
-  DollarSign, Clock, CheckCircle2, AlertCircle, ChevronRight, Download,
+  Kanban, Plus, Trash2, Loader2,
+  DollarSign, CheckCircle2, AlertCircle, Download,
 } from 'lucide-react'
 import Link from 'next/link'
 import { CreatePipelineModal } from '@/components/sage/create-pipeline-modal'
 import { deletePipeline, assignDealToPipeline } from '@/app/actions/sage'
 import { timeAgo } from '@/lib/utils'
-import type { SagePipeline, SageDeal, SageActivityLog, SagePipelineStage } from '@/lib/types'
+import type { SagePipeline, SageDeal, SagePipelineStage } from '@/lib/types'
 
 type PipelineWithMeta = SagePipeline & {
   stages:     SagePipelineStage[]
@@ -23,7 +23,6 @@ type UnassignedDeal = Pick<SageDeal, 'id' | 'title' | 'value' | 'currency' | 'st
 interface Props {
   pipelines:       PipelineWithMeta[]
   unassignedDeals: UnassignedDeal[]
-  activity:        SageActivityLog[]
   canWrite:        boolean
 }
 
@@ -38,24 +37,14 @@ function formatCurrency(value: number | null, currency: string) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(value)
 }
 
-function eventLabel(type: string) {
-  const map: Record<string, string> = {
-    deal_created:  'Deal created',
-    stage_changed: 'Deal moved to new stage',
-    deal_won:      'Deal won',
-    deal_lost:     'Deal lost',
-  }
-  return map[type] ?? type.replace(/_/g, ' ')
-}
 
-export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: initialDeals, activity, canWrite }: Props) {
+export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: initialDeals, canWrite }: Props) {
   const [pipelines,   setPipelines]   = useState(initialPipelines)
   const [deals,       setDeals]       = useState(initialDeals)
   const [showModal,   setShowModal]   = useState(false)
   const [deleting,    setDeleting]    = useState<string | null>(null)
   const [assigning,   setAssigning]   = useState<string | null>(null)
   const [dragOverId,  setDragOverId]  = useState<string | null>(null)
-  const [activityOpen, setActivityOpen] = useState(true)
   const draggingDealId = useRef<string | null>(null)
 
   async function handleDelete(id: string) {
@@ -98,41 +87,41 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
   }
 
   return (
-    <div className="flex flex-col">
-      {/* ── Page heading ───────────────────────────────────────────────────────── */}
-      <div className="px-8 pt-6 pb-2">
-        <div className="max-w-5xl mx-auto flex items-start justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Pipelines</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage your sales pipelines and track deals through every stage</p>
-          </div>
-          <button
-            onClick={exportCsv}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 dark:border-white/15 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/8 rounded-xl transition-colors font-medium"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Export CSV
-          </button>
+    <div className="flex flex-col w-full">
+      {/* ── Page heading ── */}
+      <div className="pl-9 pt-5 pb-3 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Pipelines</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage your sales pipelines and track deals through every stage</p>
         </div>
       </div>
 
-    <div className="flex h-full w-full gap-3 p-3 bg-[#f5f4f1] dark:bg-[#1c1c1c]">
+    <div className="flex items-start gap-3 px-3 pb-3 w-full bg-[#f5f4f1] dark:bg-[#1c1c1c]">
 
       {/* ── Left: Pipelines ─────────────────────────────── */}
-      <div className="w-72 shrink-0 flex flex-col bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8 overflow-hidden">
-        <div className="px-4 py-2.5 bg-[#141c2b] border-b border-white/10 flex items-center justify-between shrink-0">
+      <div className="w-72 shrink-0 self-start bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-200/60 dark:border-white/8 overflow-hidden shadow-[0_4px_6px_-1px_rgba(0,0,0,0.08),0_10px_30px_-5px_rgba(0,0,0,0.12),0_1px_0px_rgba(255,255,255,0.8)_inset] dark:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.3),0_20px_40px_-10px_rgba(0,0,0,0.5),0_1px_0px_rgba(255,255,255,0.04)_inset]">
+        <div className="px-4 py-2.5 bg-[#141c2b] border-b border-white/10 flex items-center justify-between shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.35),0_1px_0px_rgba(255,255,255,0.06)_inset]">
           <div>
             <h2 className="text-sm font-bold text-white">Pipelines</h2>
-            <p className="text-sm text-white mt-0.5">{pipelines.length} pipeline{pipelines.length !== 1 ? 's' : ''}</p>
+            <p className="text-[11px] text-white/50 mt-0.5">{pipelines.length} pipeline{pipelines.length !== 1 ? 's' : ''}</p>
           </div>
-          {canWrite && (
+          <div className="flex items-center gap-1.5">
             <button
-              onClick={() => setShowModal(true)}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors border border-white/20"
+              onClick={exportCsv}
+              title="Export CSV"
+              className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/20"
             >
-              <Plus className="w-3.5 h-3.5" /> New
+              <Download className="w-3.5 h-3.5" />
             </button>
-          )}
+            {canWrite && (
+              <button
+                onClick={() => setShowModal(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors border border-white/20"
+              >
+                <Plus className="w-3.5 h-3.5" /> New
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex-1 p-3 space-y-2">
@@ -186,8 +175,8 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
       </div>
 
       {/* ── Center: Unassigned deals ──────────────────────── */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white dark:bg-[#232323] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8">
-        <div className="shrink-0 bg-[#141c2b] border-b border-white/10 px-6 py-3 flex items-center justify-between">
+      <main className="flex-1 min-w-0 self-start bg-white dark:bg-[#232323] rounded-2xl border border-gray-200/60 dark:border-white/8 overflow-hidden shadow-[0_4px_6px_-1px_rgba(0,0,0,0.08),0_10px_30px_-5px_rgba(0,0,0,0.12),0_1px_0px_rgba(255,255,255,0.8)_inset] dark:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.3),0_20px_40px_-10px_rgba(0,0,0,0.5),0_1px_0px_rgba(255,255,255,0.04)_inset]">
+        <div className="shrink-0 bg-[#141c2b] border-b border-white/10 px-6 py-3 flex items-center justify-between shadow-[0_2px_8px_rgba(0,0,0,0.35),0_1px_0px_rgba(255,255,255,0.06)_inset]">
           <div>
             <h2 className="text-sm font-semibold text-white">Unassigned Deals</h2>
             <p className="text-sm text-white mt-0.5">
@@ -252,57 +241,6 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
         </div>
       </main>
 
-      {/* ── Right: Activity ───────────────────────────────── */}
-      {activityOpen ? (
-        <aside className="w-64 shrink-0 flex flex-col overflow-hidden bg-white dark:bg-[#242424] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8">
-            <div className="px-3 py-2.5 bg-[#141c2b] border-b border-white/10 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-white" />
-                <h3 className="text-sm font-semibold text-white">Activity</h3>
-              </div>
-              <button
-                onClick={() => setActivityOpen(false)}
-                className="p-1 rounded text-white hover:bg-white/10 transition-colors"
-              >
-                <ChevronRight className="w-3 h-3" />
-              </button>
-            </div>
-            <div className="divide-y dark:divide-white/8 flex-1 overflow-y-auto">
-              {activity.length === 0 ? (
-                <p className="px-4 py-8 text-sm text-gray-400 text-center">No activity yet.</p>
-              ) : activity.map(a => (
-                <div key={a.id} className="flex items-start gap-3 px-3 py-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#15A4AE] mt-1.5 shrink-0" />
-                  <div>
-                    <p className="text-[11px] text-gray-800 dark:text-gray-200 leading-snug">{eventLabel(a.event_type)}</p>
-                    {a.payload && typeof a.payload === 'object' && 'title' in a.payload && (
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-                        {String((a.payload as Record<string, unknown>).title)}
-                      </p>
-                    )}
-                    <p className="flex items-center gap-1 text-[10px] text-gray-400 mt-0.5">
-                      <Clock className="w-2.5 h-2.5" /> {timeAgo(a.created_at)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-        </aside>
-      ) : (
-        <div
-          className="w-8 shrink-0 flex flex-col items-center py-4 gap-3 cursor-pointer hover:bg-[#ede9e2] dark:hover:bg-white/4 transition-colors rounded-2xl bg-white dark:bg-[#242424] border border-gray-200/60 dark:border-white/8 shadow-xl"
-          onClick={() => setActivityOpen(true)}
-          title="Show activity"
-        >
-          <ChevronRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-          <span
-            className="text-[10px] text-gray-400 font-medium select-none"
-            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', letterSpacing: '0.05em' }}
-          >
-            Activity
-          </span>
-        </div>
-      )}
 
       {showModal && <CreatePipelineModal onClose={() => { setShowModal(false) }} />}
     </div>

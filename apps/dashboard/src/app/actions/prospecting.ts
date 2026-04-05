@@ -7,6 +7,8 @@ import { revalidatePath } from 'next/cache'
 import { runProspectPipeline } from '@/lib/prospecting/pipeline'
 import { runLocalProspectPipeline } from '@/lib/prospecting/local-pipeline'
 import { pushProspectToSage } from '@/lib/prospecting/push-to-sage'
+import { getProspectCreditBalance, type CreditBalance } from '@/lib/prospecting/credits'
+import type { DetectedPerson } from '@/lib/prospecting/extract'
 
 // ── Auth helper ───────────────────────────────────────────────────────────────
 
@@ -66,13 +68,14 @@ export interface ProspectCompany {
   phone_1:         string | null
   emails:          string[]
   phones:          string[]
-  score:           number | null
-  score_tier:      'hot' | 'warm' | 'cold' | 'discarded' | null
-  score_breakdown: { industry_score: number; location_score: number; service_score: number } | null
-  deal_id:         string | null
-  contact_id:      string | null
-  status:          string
-  created_at:      string
+  score:            number | null
+  score_tier:       'hot' | 'warm' | 'cold' | 'discarded' | null
+  score_breakdown:  { industry_score: number; location_score: number; service_score: number } | null
+  decision_makers:  DetectedPerson[]
+  deal_id:          string | null
+  contact_id:       string | null
+  status:           string
+  created_at:       string
 }
 
 export interface ProspectJob {
@@ -414,5 +417,91 @@ export async function ignoreProspect(prospectId: string): Promise<{ error?: stri
     .update({ status: 'ignored', updated_at: new Date().toISOString() })
     .eq('id', prospectId)
     .eq('workspace_id', workspaceId)
+  return error ? { error: error.message } : {}
+}
+
+export async function deleteProspect(prospectId: string): Promise<{ error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('prospect_companies')
+    .delete()
+    .eq('id', prospectId)
+    .eq('workspace_id', workspaceId)
+  return error ? { error: error.message } : {}
+}
+
+export async function createContactFromProspect(prospectId: string): Promise<{ contactId?: string; error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+
+  const { data: prospect } = await admin
+    .from('prospect_companies')
+    .select('*')
+    .eq('id', prospectId)
+    .eq('workspace_id', workspaceId)
+    .single()
+
+  if (!prospect) return { error: 'Prospect not found' }
+  const p = prospect as ProspectCompany
+
+  if (p.contact_id) return { contactId: p.contact_id }
+
+  const email = p.email_1 ?? p.emails?.[0] ?? null
+  const phone = p.phone_1 ?? p.phones?.[0] ?? null
+
+  const { data: contact, error } = await admin
+    .from('sage_contacts')
+    .insert({
+      workspace_id: workspaceId,
+      name:         p.company_name ?? p.domain,
+      email,
+      phone,
+      company_name: p.company_name,
+      website_url:  `https://${p.domain}`,
+      city:         p.city ?? p.location_text ?? null,
+      source:       'prospecting_engine',
+      notes:        p.description ?? null,
+    })
+    .select('id')
+    .single()
+
+  if (error) return { error: error.message }
+
+  await admin
+    .from('prospect_companies')
+    .update({ contact_id: (contact as { id: string }).id, updated_at: new Date().toISOString() })
+    .eq('id', prospectId)
+
+  return { contactId: (contact as { id: string }).id }
+}
+
+// ── Credit actions ────────────────────────────────────────────────────────────
+
+export async function getProspectCredits(): Promise<CreditBalance> {
+  const workspaceId = await getWorkspaceId()
+  return getProspectCreditBalance(workspaceId)
+}
+
+export async function updateProspect(
+  prospectId: string,
+  data: { email_1?: string; phone_1?: string; description?: string; city?: string; country?: string },
+): Promise<{ error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  const admin = createAdminClient()
+
+  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() }
+  if (data.email_1      !== undefined) { patch.email_1 = data.email_1 || null; patch.emails = data.email_1 ? [data.email_1] : [] }
+  if (data.phone_1      !== undefined) { patch.phone_1 = data.phone_1 || null; patch.phones = data.phone_1 ? [data.phone_1] : [] }
+  if (data.description  !== undefined) patch.description = data.description || null
+  if (data.city         !== undefined) patch.city        = data.city || null
+  if (data.country      !== undefined) patch.country     = data.country || null
+
+  const { error } = await admin
+    .from('prospect_companies')
+    .update(patch)
+    .eq('id', prospectId)
+    .eq('workspace_id', workspaceId)
+
   return error ? { error: error.message } : {}
 }

@@ -5,19 +5,22 @@ import {
   Plus, Search, Target, Trash2, ChevronDown, ChevronUp,
   Sparkles, MapPin, Globe, Mail, Phone, Check, X,
   Loader2, AlertCircle, Zap, Edit2, ArrowUpDown, Clock,
-  Download, Building2, Upload,
+  Download, Building2, Upload, UserPlus, DollarSign, Save,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   getIcpProfiles, createIcpProfile, updateIcpProfile, deleteIcpProfile,
-  startProspectSearch, startLocalSearch, getProspectJob, getProspectResults,
-  addProspectToPipeline, ignoreProspect, getRecentJobs, getWorkspacePipelines,
+  startLocalSearch, getProspectJob, getProspectResults,
+  addProspectToPipeline, getRecentJobs, getWorkspacePipelines,
+  createContactFromProspect, deleteProspect, updateProspect,
+  getProspectCredits,
   type IcpProfile, type ProspectCompany, type ProspectJob,
 } from '@/app/actions/prospecting'
+import type { CreditBalance } from '@/lib/prospecting/credits'
+import type { DetectedPerson } from '@/lib/prospecting/extract'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const SERVICES = ['Website', 'SEO', 'Google Ads', 'Social Media', 'AI Chatbot', 'Branding', 'Email Marketing', 'Video']
 
 const ALL_COUNTRIES = [
   'Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia','Australia',
@@ -130,7 +133,7 @@ function ScoreBar({ score, tier }: { score: number; tier: string }) {
   const cfg = TIER[tier] ?? TIER.cold
   return (
     <div className="flex items-center gap-2">
-      <div className="w-14 h-1.5 rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden shrink-0">
+      <div className="w-14 h-1.5 rounded-full bg-gray-100 dark:bg-white/10 shrink-0">
         <div className={cn('h-full rounded-full', cfg.bar)} style={{ width: `${Math.min(score, 100)}%` }} />
       </div>
       <span className="text-xs font-bold text-gray-700 dark:text-gray-300 tabular-nums">{score}</span>
@@ -144,15 +147,18 @@ function TagInput({ value, onChange, placeholder }: {
   value: string[]; onChange: (v: string[]) => void; placeholder: string
 }) {
   const [input, setInput] = useState('')
+  const suppressBlur = useRef(false)
+
   function add() {
     const v = input.trim()
     if (v && !value.includes(v)) onChange([...value, v])
     setInput('')
   }
+
   return (
     <div className="border border-gray-200 dark:border-white/10 rounded-lg p-2 flex flex-wrap gap-1 min-h-[38px] focus-within:ring-1 focus-within:ring-[#15A4AE]/60 focus-within:border-[#15A4AE]/50 bg-white dark:bg-white/5">
       {value.map(tag => (
-        <span key={tag} className="flex items-center gap-1 px-2 py-0.5 bg-[#15A4AE]/10 text-[#15A4AE] rounded text-[11px] font-medium">
+        <span key={tag} className="flex items-center gap-1 px-2 py-0.5 bg-[#15A4AE]/10 text-[#15A4AE] rounded text-sm font-medium">
           {tag}
           <button type="button" onClick={() => onChange(value.filter(v => v !== tag))} className="hover:text-red-500 transition-colors">
             <X className="w-2.5 h-2.5" />
@@ -162,10 +168,17 @@ function TagInput({ value, onChange, placeholder }: {
       <input
         value={input}
         onChange={e => setInput(e.target.value)}
-        onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add() } }}
-        onBlur={add}
+        onKeyDown={e => {
+          if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault()
+            suppressBlur.current = true
+            add()
+            setTimeout(() => { suppressBlur.current = false }, 0)
+          }
+        }}
+        onBlur={() => { if (!suppressBlur.current) add() }}
         placeholder={value.length === 0 ? placeholder : ''}
-        className="flex-1 min-w-[80px] text-[11px] bg-transparent outline-none placeholder-gray-400 text-gray-800 dark:text-gray-200"
+        className="flex-1 min-w-[80px] text-sm bg-transparent outline-none placeholder-gray-400 text-gray-800 dark:text-gray-200"
       />
     </div>
   )
@@ -217,10 +230,6 @@ function IcpFormModal({ initial, onSave, onClose }: {
   const [excludes,  setExcludes]  = useState<string[]>(initial?.exclude_keywords ?? [])
   const [services,  setServices]  = useState<string[]>(initial?.services_of_interest ?? [])
   const [saving,    setSaving]    = useState(false)
-
-  function toggle(svc: string) {
-    setServices(p => p.includes(svc) ? p.filter(s => s !== svc) : [...p, svc])
-  }
 
   async function submit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -345,25 +354,9 @@ function IcpFormModal({ initial, onSave, onClose }: {
             <TagInput value={excludes} onChange={setExcludes} placeholder="courses, jobs, directory…" />
           </div>
           <div>
-            <label className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Services You Offer</label>
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {SERVICES.map(svc => (
-                <button key={svc} type="button" onClick={() => toggle(svc)}
-                  className={cn('px-2.5 py-1 text-[11px] font-medium rounded-full border transition-colors',
-                    services.includes(svc)
-                      ? 'bg-[#15A4AE] text-white border-[#15A4AE]'
-                      : 'bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10 hover:border-[#15A4AE]/50',
-                  )}>
-                  {svc}
-                </button>
-              ))}
-            </div>
-            <TagInput
-              value={services.filter(s => !SERVICES.includes(s))}
-              onChange={custom => setServices([...services.filter(s => SERVICES.includes(s)), ...custom])}
-              placeholder="Custom service…"
-            />
-            <p className="text-xs text-gray-400 mt-1">Add custom services not listed above</p>
+            <label className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Services / Products You Sell</label>
+            <TagInput value={services} onChange={setServices} placeholder="e.g. Solar installation, Battery storage…" />
+            <p className="text-xs text-gray-400 mt-1">Press Enter after each. Used to score prospects who may need what you offer.</p>
           </div>
 
           <div className="flex gap-2 pt-2 border-t border-gray-100 dark:border-white/8">
@@ -382,180 +375,412 @@ function IcpFormModal({ initial, onSave, onClose }: {
   )
 }
 
+// ── Decision maker cell ───────────────────────────────────────────────────────
+
+function DecisionMakerCell({
+  decisionMakers,
+  fallbackName,
+}: {
+  decisionMakers: DetectedPerson[]
+  fallbackName:   string | null
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  // Sort by confidence descending
+  const sorted = [...decisionMakers].sort((a, b) => b.confidence_score - a.confidence_score)
+  const top    = sorted[0]
+  const rest   = sorted.slice(1)
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  if (!top && !fallbackName) {
+    return <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
+  }
+
+  if (!top) {
+    return <span className="text-sm text-gray-700 dark:text-gray-300 truncate block max-w-[160px]">{fallbackName}</span>
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={e => { e.stopPropagation(); if (rest.length > 0) setOpen(v => !v) }}
+        className="flex items-start gap-1.5 text-left group/dm w-full"
+      >
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate max-w-[140px] leading-tight">
+            {top.full_name}
+          </p>
+          {top.title && (
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate max-w-[140px] leading-tight mt-0.5">
+              {top.title}
+            </p>
+          )}
+        </div>
+        {rest.length > 0 && (
+          <span className="shrink-0 mt-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400">
+            +{rest.length}
+          </span>
+        )}
+      </button>
+
+      {open && rest.length > 0 && (
+        <div
+          onClick={e => e.stopPropagation()}
+          className="absolute left-0 top-full mt-1 z-50 w-56 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#1e1e1e] shadow-lg py-1.5"
+        >
+          {sorted.map((dm, i) => (
+            <div key={i} className="px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/5">
+              <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{dm.full_name}</p>
+              {dm.title && (
+                <p className="text-[11px] text-gray-400 truncate mt-0.5">{dm.title}</p>
+              )}
+              <div className="flex items-center gap-1 mt-1">
+                <div className="h-1 w-12 rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-[#15A4AE]/70"
+                    style={{ width: `${Math.round(dm.confidence_score * 100)}%` }}
+                  />
+                </div>
+                <span className="text-[10px] text-gray-400">{Math.round(dm.confidence_score * 100)}%</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Prospect table row ────────────────────────────────────────────────────────
 
-function ProspectRow({ prospect, cols, isPushed, onAddClick, onIgnore }: {
-  prospect:   ProspectCompany
-  cols:       Set<ColKey>
-  isPushed?:  boolean
-  onAddClick: (id: string) => void
-  onIgnore:   (id: string) => Promise<unknown>
+function ProspectRow({ prospect, cols, isPushed, onCreateDeal, onCreateContact, onDelete, onUpdate }: {
+  prospect:        ProspectCompany
+  cols:            Set<ColKey>
+  isPushed?:       boolean
+  onCreateDeal:    (id: string) => void
+  onCreateContact: (id: string) => Promise<void>
+  onDelete:        (id: string) => Promise<void>
+  onUpdate:        (id: string, data: { email_1?: string; phone_1?: string; description?: string; city?: string; country?: string }) => Promise<void>
 }) {
-  const [busy,    setBusy]    = useState(false)
-  const [ignored, setIgnored] = useState(prospect.status === 'ignored')
+  const [busy,         setBusy]         = useState(false)
+  const [gone,         setGone]         = useState(false)
+  const [contactDone,  setContactDone]  = useState(!!prospect.contact_id)
+  const [editMode,     setEditMode]     = useState(false)
+  const [editEmail,    setEditEmail]    = useState(prospect.email_1 ?? prospect.emails?.[0] ?? '')
+  const [editPhone,    setEditPhone]    = useState(prospect.phone_1 ?? prospect.phones?.[0] ?? '')
+  const [editDesc,     setEditDesc]     = useState(prospect.description ?? '')
+  const [editCity,     setEditCity]     = useState(prospect.city ?? '')
+  const [editCountry,  setEditCountry]  = useState(prospect.country ?? '')
+
+  // local display overrides after edit
+  const [localEmail,   setLocalEmail]   = useState<string | null>(null)
+  const [localPhone,   setLocalPhone]   = useState<string | null>(null)
+  const [localDesc,    setLocalDesc]    = useState<string | null>(null)
+  const [localCity,    setLocalCity]    = useState<string | null>(null)
+  const [localCountry, setLocalCountry] = useState<string | null>(null)
+
   const pushed = isPushed ?? !!prospect.deal_id
 
-  if (ignored) return null
+  if (gone) return null
 
   const tier = prospect.score_tier ?? 'cold'
   const cfg  = TIER[tier] ?? TIER.cold
   const name = prospect.company_name ?? prospect.title ?? prospect.domain
-  const desc = prospect.description ?? prospect.snippet
-  const email = prospect.email_1 ?? prospect.emails?.[0] ?? null
-  const phone = prospect.phone_1 ?? prospect.phones?.[0] ?? null
 
-  async function handleIgnore() {
+  const displayEmail   = localEmail   ?? prospect.email_1 ?? prospect.emails?.[0] ?? null
+  const displayPhone   = localPhone   ?? prospect.phone_1 ?? prospect.phones?.[0] ?? null
+  const displayDesc    = localDesc    ?? prospect.description ?? prospect.snippet
+  const displayCity    = localCity    ?? prospect.city
+  const displayCountry = localCountry ?? prospect.country
+
+  async function handleCreateContact() {
     setBusy(true)
-    await onIgnore(prospect.id)
-    setIgnored(true)
+    await onCreateContact(prospect.id)
+    setContactDone(true)
+    setBusy(false)
+  }
+
+  async function handleDelete() {
+    if (!confirm('Delete this prospect permanently? This cannot be undone.')) return
+    setBusy(true)
+    await onDelete(prospect.id)
+    setGone(true)
+    setBusy(false)
+  }
+
+  async function handleSave() {
+    setBusy(true)
+    await onUpdate(prospect.id, {
+      email_1:     editEmail,
+      phone_1:     editPhone,
+      description: editDesc,
+      city:        editCity,
+      country:     editCountry,
+    })
+    setLocalEmail(editEmail || null)
+    setLocalPhone(editPhone || null)
+    setLocalDesc(editDesc || null)
+    setLocalCity(editCity || null)
+    setLocalCountry(editCountry || null)
+    setEditMode(false)
     setBusy(false)
   }
 
   return (
-    <tr className="group border-b border-gray-50 dark:border-white/[0.04] hover:bg-gray-50/70 dark:hover:bg-white/[0.025] transition-colors">
+    <>
+      <tr className="group border-b border-gray-50 dark:border-white/[0.04] hover:bg-gray-50/70 dark:hover:bg-white/[0.025] transition-colors">
 
-      {/* Tier dot */}
-      <td className="pl-5 pr-2 py-3.5 w-3 shrink-0">
-        <div className={cn('w-2 h-2 rounded-full', cfg.dot)} title={cfg.label} />
-      </td>
+        {/* Tier dot */}
+        <td className="pl-5 pr-2 py-3.5 w-3 shrink-0">
+          <div className={cn('w-2 h-2 rounded-full', cfg.dot)} title={cfg.label} />
+        </td>
 
-      {/* Company — always visible */}
-      <td className="px-3 py-3.5" style={{ minWidth: 180, maxWidth: 220 }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-white/8 border border-gray-200/60 dark:border-white/8 flex items-center justify-center shrink-0 overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={`https://www.google.com/s2/favicons?domain=${prospect.domain}&sz=32`}
-              alt=""
-              className="w-4 h-4 object-contain"
-              onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
-            />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate leading-snug">{name}</p>
-            <a
-              href={`https://${prospect.domain}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={e => e.stopPropagation()}
-              className="text-[11px] text-gray-400 hover:text-[#15A4AE] transition-colors flex items-center gap-0.5 mt-0.5"
-            >
-              <Globe className="w-2.5 h-2.5 shrink-0" />
-              <span className="truncate">{prospect.domain}</span>
-            </a>
-          </div>
-        </div>
-      </td>
-
-      {/* Score */}
-      {cols.has('score') && (
-        <td className="px-3 py-3.5 w-36 shrink-0">
-          <div className="space-y-1.5">
-            {prospect.score != null && <ScoreBar score={prospect.score} tier={tier} />}
-            <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-bold inline-block', cfg.badge)}>
-              {cfg.label}
-            </span>
+        {/* Company — always visible */}
+        <td className="px-3 py-3.5" style={{ minWidth: 180, maxWidth: 220 }}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-white/8 border border-gray-200/60 dark:border-white/8 flex items-center justify-center shrink-0 overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`https://www.google.com/s2/favicons?domain=${prospect.domain}&sz=32`}
+                alt=""
+                className="w-4 h-4 object-contain"
+                onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate leading-snug">{name}</p>
+              <a
+                href={`https://${prospect.domain}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="text-[11px] text-gray-400 hover:text-[#15A4AE] transition-colors flex items-center gap-0.5 mt-0.5"
+              >
+                <Globe className="w-2.5 h-2.5 shrink-0" />
+                <span className="truncate">{prospect.domain}</span>
+              </a>
+            </div>
           </div>
         </td>
-      )}
 
-      {/* Email */}
-      {cols.has('email') && (
-        <td className="px-3 py-3.5 w-10 shrink-0">
-          {email
-            ? <CopyButton value={email} icon={Mail} />
-            : <span className="text-xs text-gray-300 dark:text-gray-600 pl-1">—</span>}
-        </td>
-      )}
-
-      {/* Phone */}
-      {cols.has('phone') && (
-        <td className="px-3 py-3.5 w-10 shrink-0">
-          {phone
-            ? <CopyButton value={phone} icon={Phone} />
-            : <span className="text-xs text-gray-300 dark:text-gray-600 pl-1">—</span>}
-        </td>
-      )}
-
-      {/* Contact name */}
-      {cols.has('contact_name') && (
-        <td className="px-3 py-3.5 w-36 shrink-0">
-          {prospect.contact_name ? (
-            <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{prospect.contact_name}</span>
-          ) : (
-            <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
-          )}
-        </td>
-      )}
-
-      {/* About / description */}
-      {cols.has('description') && (
-        <td className="px-3 py-3.5" style={{ maxWidth: 260 }}>
-          {desc ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">{desc}</p>
-          ) : (
-            <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
-          )}
-        </td>
-      )}
-
-      {/* Pricing hint */}
-      {cols.has('pricing_hint') && (
-        <td className="px-3 py-3.5" style={{ maxWidth: 200 }}>
-          {prospect.pricing_hint ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">{prospect.pricing_hint}</p>
-          ) : (
-            <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
-          )}
-        </td>
-      )}
-
-      {/* City */}
-      {cols.has('city') && (
-        <td className="px-3 py-3.5 w-28 shrink-0">
-          {prospect.city ? (
-            <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-              <MapPin className="w-3 h-3 shrink-0 text-gray-400" />
-              <span className="truncate">{prospect.city}</span>
-            </span>
-          ) : (
-            <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
-          )}
-        </td>
-      )}
-
-      {/* Country */}
-      {cols.has('country') && (
-        <td className="px-3 py-3.5 w-28 shrink-0">
-          {prospect.country ? (
-            <span className="text-sm text-gray-600 dark:text-gray-400 truncate">{prospect.country}</span>
-          ) : (
-            <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
-          )}
-        </td>
-      )}
-
-      {/* Actions */}
-      <td className="px-4 py-3.5 w-36 shrink-0 text-right">
-        {pushed ? (
-          <span className="inline-flex items-center gap-1 text-sm text-[#15A4AE] font-semibold">
-            <Check className="w-3.5 h-3.5" /> In pipeline
-          </span>
-        ) : (
-          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button onClick={handleIgnore} disabled={busy} title="Ignore"
-              className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
-              <X className="w-3.5 h-3.5" />
-            </button>
-            <button onClick={() => onAddClick(prospect.id)} disabled={busy}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold bg-[#15A4AE] hover:bg-[#0e8b94] text-white rounded-lg transition-colors disabled:opacity-50">
-              <Plus className="w-3 h-3" />
-              Add
-            </button>
-          </div>
+        {/* Score */}
+        {cols.has('score') && (
+          <td className="px-3 py-3.5 w-36 shrink-0">
+            <div className="space-y-1.5">
+              {prospect.score != null && <ScoreBar score={prospect.score} tier={tier} />}
+              <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-bold inline-block', cfg.badge)}>
+                {cfg.label}
+              </span>
+            </div>
+          </td>
         )}
-      </td>
-    </tr>
+
+        {/* Email */}
+        {cols.has('email') && (
+          <td className="px-3 py-3.5 shrink-0" style={{ minWidth: 160, maxWidth: 200 }}>
+            {displayEmail ? (
+              <div className="flex items-center gap-1 group/cell">
+                <span className="text-xs text-gray-700 dark:text-gray-300 truncate">{displayEmail}</span>
+                <CopyButton value={displayEmail} icon={Mail} />
+              </div>
+            ) : (
+              <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
+            )}
+          </td>
+        )}
+
+        {/* Phone */}
+        {cols.has('phone') && (
+          <td className="px-3 py-3.5 shrink-0" style={{ minWidth: 140, maxWidth: 180 }}>
+            {displayPhone ? (
+              <div className="flex items-center gap-1 group/cell">
+                <span className="text-xs text-gray-700 dark:text-gray-300 truncate">{displayPhone}</span>
+                <CopyButton value={displayPhone} icon={Phone} />
+              </div>
+            ) : (
+              <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
+            )}
+          </td>
+        )}
+
+        {/* Contact / Decision makers */}
+        {cols.has('contact_name') && (
+          <td className="px-3 py-3.5 w-44 shrink-0">
+            <DecisionMakerCell
+              decisionMakers={prospect.decision_makers ?? []}
+              fallbackName={prospect.contact_name}
+            />
+          </td>
+        )}
+
+        {/* About / description */}
+        {cols.has('description') && (
+          <td className="px-3 py-3.5" style={{ maxWidth: 260 }}>
+            {displayDesc ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">{displayDesc}</p>
+            ) : (
+              <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
+            )}
+          </td>
+        )}
+
+        {/* Pricing hint */}
+        {cols.has('pricing_hint') && (
+          <td className="px-3 py-3.5" style={{ maxWidth: 200 }}>
+            {prospect.pricing_hint ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">{prospect.pricing_hint}</p>
+            ) : (
+              <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
+            )}
+          </td>
+        )}
+
+        {/* City */}
+        {cols.has('city') && (
+          <td className="px-3 py-3.5 w-28 shrink-0">
+            {displayCity ? (
+              <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                <MapPin className="w-3 h-3 shrink-0 text-gray-400" />
+                <span className="truncate">{displayCity}</span>
+              </span>
+            ) : (
+              <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
+            )}
+          </td>
+        )}
+
+        {/* Country */}
+        {cols.has('country') && (
+          <td className="px-3 py-3.5 w-28 shrink-0">
+            {displayCountry ? (
+              <span className="text-sm text-gray-600 dark:text-gray-400 truncate">{displayCountry}</span>
+            ) : (
+              <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
+            )}
+          </td>
+        )}
+
+        {/* Actions */}
+        <td className="sticky right-0 px-3 py-3.5 bg-white dark:bg-[#232323] group-hover:bg-gray-50/70 dark:group-hover:bg-white/[0.025] z-10 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)]">
+          <div className="flex items-center justify-end gap-0.5">
+            {pushed && (
+              <span className="inline-flex items-center gap-1 text-[11px] text-[#15A4AE] font-semibold mr-1.5 shrink-0">
+                <Check className="w-3 h-3" /> Pipeline
+              </span>
+            )}
+            {/* Create contact */}
+            <button
+              onClick={handleCreateContact}
+              disabled={busy || contactDone}
+              title={contactDone ? 'Contact created' : 'Create contact'}
+              className={cn(
+                'p-1.5 rounded-lg transition-colors shrink-0 disabled:opacity-40',
+                contactDone
+                  ? 'text-[#15A4AE]'
+                  : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10'
+              )}
+            >
+              {contactDone ? <Check className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
+            </button>
+            {/* Create deal */}
+            <button
+              onClick={() => onCreateDeal(prospect.id)}
+              disabled={busy || pushed}
+              title="Create deal"
+              className={cn(
+                'p-1.5 rounded-lg transition-colors shrink-0 disabled:opacity-40',
+                pushed ? 'text-[#15A4AE]' : 'text-[#15A4AE] hover:bg-[#15A4AE]/10',
+              )}
+            >
+              <DollarSign className="w-3.5 h-3.5" />
+            </button>
+            {/* Edit */}
+            <button
+              onClick={() => setEditMode(e => !e)}
+              title="Edit"
+              className={cn(
+                'p-1.5 rounded-lg transition-colors shrink-0',
+                editMode
+                  ? 'text-[#15A4AE] bg-[#15A4AE]/10'
+                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8'
+              )}
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+            </button>
+            {/* Delete */}
+            <button
+              onClick={handleDelete}
+              disabled={busy}
+              title="Delete"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors shrink-0 disabled:opacity-40"
+            >
+              {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+        </td>
+      </tr>
+
+      {/* Inline edit row */}
+      {editMode && (
+        <tr className="border-b border-[#15A4AE]/10 bg-[#15A4AE]/[0.03] dark:bg-[#15A4AE]/[0.05]">
+          <td colSpan={99} className="px-5 py-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Email</label>
+                <input value={editEmail} onChange={e => setEditEmail(e.target.value)}
+                  placeholder="email@company.com"
+                  className="px-2 py-1 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 w-44 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50 focus:border-[#15A4AE]" />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Phone</label>
+                <input value={editPhone} onChange={e => setEditPhone(e.target.value)}
+                  placeholder="+1 555 000 0000"
+                  className="px-2 py-1 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 w-36 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50 focus:border-[#15A4AE]" />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">About</label>
+                <input value={editDesc} onChange={e => setEditDesc(e.target.value)}
+                  placeholder="Short description…"
+                  className="px-2 py-1 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 w-56 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50 focus:border-[#15A4AE]" />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">City</label>
+                <input value={editCity} onChange={e => setEditCity(e.target.value)}
+                  placeholder="Sydney"
+                  className="px-2 py-1 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 w-28 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50 focus:border-[#15A4AE]" />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Country</label>
+                <input value={editCountry} onChange={e => setEditCountry(e.target.value)}
+                  placeholder="Australia"
+                  className="px-2 py-1 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 w-28 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50 focus:border-[#15A4AE]" />
+              </div>
+              <div className="flex items-center gap-2 ml-auto">
+                <button onClick={() => setEditMode(false)}
+                  className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
+                  Cancel
+                </button>
+                <button onClick={handleSave} disabled={busy}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold bg-[#15A4AE] hover:bg-[#0e8b94] text-white rounded-lg transition-colors disabled:opacity-50">
+                  {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  Save
+                </button>
+              </div>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   )
 }
 
@@ -597,6 +822,96 @@ function JobProgressStrip({ job, profileName }: { job: ProspectJob; profileName?
       {job.stats.crawled  > 0 && <><Dot /><span className="text-gray-500 dark:text-gray-400">Crawled <strong className="text-gray-700 dark:text-gray-200">{job.stats.crawled}</strong></span></>}
       {job.stats.pushed   > 0 && <><Dot /><span className="text-gray-500 dark:text-gray-400">Pushed <strong className="text-emerald-600 dark:text-emerald-400">{job.stats.pushed}</strong></span></>}
       {isFailed && job.error  && <><Dot /><span className="text-red-500 dark:text-red-400 truncate max-w-[240px]">{job.error}</span></>}
+    </div>
+  )
+}
+
+// ── Buy credits modal ─────────────────────────────────────────────────────────
+
+const CREDIT_PACKS = [
+  { key: 'starter', label: 'Starter',  credits: 100,  price: '$35',  priceNote: 'one-off',  highlight: false },
+  { key: 'growth',  label: 'Growth',   credits: 500,  price: '$99',  priceNote: 'one-off',  highlight: true  },
+  { key: 'agency',  label: 'Agency',   credits: 1000, price: '$179', priceNote: 'one-off',  highlight: false },
+] as const
+
+function BuyCreditsModal({ onClose }: { onClose: () => void }) {
+  const [loading, setLoading] = useState<string | null>(null)
+
+  async function buyPack(pack: string) {
+    setLoading(pack)
+    try {
+      const res  = await fetch('/api/checkout/prospect-credits', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ pack }),
+      })
+      const data = await res.json() as { url?: string; error?: string }
+      if (data.url) window.location.href = data.url
+      else alert(data.error ?? 'Something went wrong')
+    } catch {
+      alert('Failed to start checkout')
+    }
+    setLoading(null)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white dark:bg-[#232323] rounded-2xl shadow-2xl border border-gray-200/60 dark:border-white/8 w-full max-w-sm">
+
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/8">
+          <div>
+            <h2 className="text-sm font-bold text-gray-900 dark:text-white">Buy Lead Credits</h2>
+            <p className="text-xs text-gray-400 mt-0.5">One-off top-ups, never expire</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="p-4 space-y-2.5">
+          {CREDIT_PACKS.map(pack => (
+            <div
+              key={pack.key}
+              className={cn(
+                'relative flex items-center justify-between rounded-xl border p-3.5 transition-colors',
+                pack.highlight
+                  ? 'border-[#15A4AE]/40 bg-[#15A4AE]/5 dark:bg-[#15A4AE]/8'
+                  : 'border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.03]',
+              )}
+            >
+              {pack.highlight && (
+                <span className="absolute -top-2 left-3 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide bg-[#15A4AE] text-white rounded-full">
+                  Popular
+                </span>
+              )}
+              <div>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{pack.label}</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  <span className="font-bold text-gray-600 dark:text-gray-300">{pack.credits.toLocaleString()}</span> lead credits · {pack.priceNote}
+                </p>
+              </div>
+              <button
+                onClick={() => buyPack(pack.key)}
+                disabled={!!loading}
+                className={cn(
+                  'flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50',
+                  pack.highlight
+                    ? 'bg-[#15A4AE] hover:bg-[#0e8b94] text-white'
+                    : 'bg-white dark:bg-white/8 border border-gray-200 dark:border-white/15 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/15',
+                )}
+              >
+                {loading === pack.key ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                {pack.price}
+              </button>
+            </div>
+          ))}
+
+          <p className="text-[10px] text-gray-400 text-center pt-1">
+            Credits are shared across all profiles in your workspace. Unused credits never expire.
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
@@ -707,12 +1022,17 @@ function PipelinePickerModal({ onConfirm, onClose }: {
 interface Props {
   initialProfiles:   IcpProfile[]
   initialRecentJobs: ProspectJob[]
-  activity?:         unknown[]
 }
+
+const LAST_ICP_KEY = 'prospects:lastIcpId'
 
 export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
   const [profiles,      setProfiles]      = useState<IcpProfile[]>(initialProfiles)
-  const [selectedIcp,   setSelectedIcp]   = useState<IcpProfile | null>(initialProfiles[0] ?? null)
+  const [selectedIcp,   setSelectedIcp]   = useState<IcpProfile | null>(() => {
+    if (typeof window === 'undefined') return initialProfiles[0] ?? null
+    const lastId = localStorage.getItem(LAST_ICP_KEY)
+    return (lastId && initialProfiles.find(p => p.id === lastId)) || initialProfiles[0] || null
+  })
   const [icpModal,      setIcpModal]      = useState<'create' | 'edit' | null>(
     initialProfiles.length === 0 ? 'create' : null,
   )
@@ -720,11 +1040,16 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
   const [showIcpPicker, setShowIcpPicker] = useState(false)
   const icpPickerRef = useRef<HTMLDivElement>(null)
 
+  function selectProfile(p: IcpProfile | null) {
+    setSelectedIcp(p)
+    if (p) localStorage.setItem(LAST_ICP_KEY, p.id)
+    else   localStorage.removeItem(LAST_ICP_KEY)
+  }
+
   const [searchQuery, setSearchQuery] = useState('')
   const [location,    setLocation]    = useState(initialProfiles[0]?.locations[0] ?? '')
   const [running,     setRunning]     = useState(false)
   const [leadCount,   setLeadCount]   = useState(20)
-  const [searchMode,  setSearchMode]  = useState<'web' | 'local'>('local')
   const [activeJob,   setActiveJob]   = useState<ProspectJob | null>(null)
   const [results,     setResults]     = useState<ProspectCompany[]>([])
   const [recentJobs,  setRecentJobs]  = useState<ProspectJob[]>(initialRecentJobs)
@@ -737,12 +1062,14 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
   const [cols,          setCols]          = useState<Set<ColKey>>(
     () => new Set(COLUMNS.filter(c => c.defaultOn).map(c => c.key))
   )
-  const [showColPicker, setShowColPicker] = useState(false)
-  const [filterCity,      setFilterCity]      = useState('')
-  const [filterCountry,   setFilterCountry]   = useState('')
-  const [filterScoreMin,  setFilterScoreMin]  = useState(0)
+  const [showColPicker,     setShowColPicker]     = useState(false)
+  const [contactOnlyFilter, setContactOnlyFilter] = useState(true)
+  const [page,              setPage]              = useState(1)
+  const [pageSize,          setPageSize]          = useState(20)
   const [pickerProspectId,   setPickerProspectId]   = useState<string | null>(null)
   const [pushedIds,          setPushedIds]           = useState<Set<string>>(new Set())
+  const [credits,            setCredits]             = useState<CreditBalance | null>(null)
+  const [showBuyCredits,     setShowBuyCredits]       = useState(false)
   const importRef = useRef<HTMLInputElement>(null)
 
   function handleImportCsv(e: React.ChangeEvent<HTMLInputElement>) {
@@ -811,6 +1138,10 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
   }, [])
 
+  const refreshCredits = useCallback(() => {
+    getProspectCredits().then(setCredits).catch(() => {})
+  }, [])
+
   const startPolling = useCallback((jobId: string) => {
     stopPolling()
     pollRef.current = setInterval(async () => {
@@ -820,15 +1151,27 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
       if (job.status === 'done' || job.status === 'failed') {
         stopPolling()
         setRunning(false)
+        refreshCredits()
         if (job.status === 'done') {
           const res = await getProspectResults(jobId)
           setResults(res)
         }
       }
     }, 3000)
-  }, [stopPolling])
+  }, [stopPolling, refreshCredits])
 
   useEffect(() => () => stopPolling(), [stopPolling])
+  useEffect(() => setPage(1), [tierFilter, tableSearch, contactOnlyFilter, sortKey, sortDir])
+
+  // Load credit balance on mount; re-fetch if returning from Stripe checkout
+  useEffect(() => {
+    getProspectCredits().then(setCredits).catch(err => console.error('[credits] load failed:', err))
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('credits') === '1') {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('credits')
+      window.history.replaceState({}, '', url.toString())
+    }
+  }, [])
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
   async function handleCreateIcp(data: Omit<IcpProfile, 'id' | 'workspace_id' | 'is_active' | 'created_at' | 'updated_at'>) {
@@ -837,7 +1180,7 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
       const updated = await getIcpProfiles()
       setProfiles(updated)
       const created = updated.find(p => p.id === result.id)
-      if (created) setSelectedIcp(created)
+      if (created) selectProfile(created)
       setIcpModal(null)
     }
   }
@@ -847,17 +1190,18 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
     await updateIcpProfile(editingIcp.id, data)
     const updated = await getIcpProfiles()
     setProfiles(updated)
-    setSelectedIcp(updated.find(p => p.id === editingIcp.id) ?? null)
+    selectProfile(updated.find(p => p.id === editingIcp.id) ?? null)
     setEditingIcp(null)
     setIcpModal(null)
   }
 
   async function inlineSaveIcp(field: string, value: string[]) {
     if (!selectedIcp) return
+    const deduped = [...new Set(value)]
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await updateIcpProfile(selectedIcp.id, { [field]: value } as any)
-    const updated = { ...selectedIcp, [field]: value }
-    setSelectedIcp(updated)
+    await updateIcpProfile(selectedIcp.id, { [field]: deduped } as any)
+    const updated = { ...selectedIcp, [field]: deduped }
+    selectProfile(updated)
     setProfiles(prev => prev.map(p => p.id === selectedIcp.id ? updated : p))
   }
 
@@ -866,7 +1210,7 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
     await deleteIcpProfile(id)
     const updated = await getIcpProfiles()
     setProfiles(updated)
-    setSelectedIcp(updated[0] ?? null)
+    selectProfile(updated[0] ?? null)
     setShowIcpPicker(false)
   }
 
@@ -877,9 +1221,7 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
     setActiveJob(null)
     setTierFilter('all')
     setTableSearch('')
-    const { jobId, error } = searchMode === 'local'
-      ? await startLocalSearch(selectedIcp.id, searchQuery, location, leadCount)
-      : await startProspectSearch(selectedIcp.id, searchQuery, location, leadCount)
+    const { jobId, error } = await startLocalSearch(selectedIcp.id, searchQuery, location, leadCount)
     if (error || !jobId) { setRunning(false); return }
     const job = await getProspectJob(jobId)
     if (job) setActiveJob(job)
@@ -936,11 +1278,10 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
     URL.revokeObjectURL(url)
   }
 
-  const activeFieldFilters = filterCity.trim() || filterCountry.trim() || filterScoreMin > 0
-
   // ── Derived ──────────────────────────────────────────────────────────────────
   const visible = results
     .filter(r => r.status !== 'ignored')
+    .filter(r => !contactOnlyFilter || (r.email_1 ?? r.emails?.[0]) || (r.phone_1 ?? r.phones?.[0]))
     .filter(r => {
       if (tierFilter === 'all')  return true
       if (tierFilter === 'hot')  return r.score_tier === 'hot'
@@ -959,9 +1300,6 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
         (r.email_1 ?? '').toLowerCase().includes(q)
       )
     })
-    .filter(r => !filterCity.trim()    || (r.city ?? '').toLowerCase().includes(filterCity.toLowerCase()))
-    .filter(r => !filterCountry.trim() || (r.country ?? '').toLowerCase().includes(filterCountry.toLowerCase()))
-    .filter(r => filterScoreMin === 0  || (r.score ?? 0) >= filterScoreMin)
     .sort((a, b) => {
       let cmp = 0
       if (sortKey === 'score')   cmp = (a.score ?? 0) - (b.score ?? 0)
@@ -970,6 +1308,10 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
       if (sortKey === 'country') cmp = (a.country ?? '').localeCompare(b.country ?? '')
       return sortDir === 'desc' ? -cmp : cmp
     })
+
+  const totalPages = Math.max(1, Math.ceil(visible.length / pageSize))
+  const safePage   = Math.min(page, totalPages)
+  const paginated  = visible.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   const hotCount  = results.filter(r => r.score_tier === 'hot'  && r.status !== 'ignored').length
   const warmCount = results.filter(r => r.score_tier === 'warm' && r.status !== 'ignored').length
@@ -984,6 +1326,9 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
       )}
       {icpModal === 'edit' && editingIcp && (
         <IcpFormModal initial={editingIcp} onSave={handleUpdateIcp} onClose={() => { setIcpModal(null); setEditingIcp(null) }} />
+      )}
+      {showBuyCredits && (
+        <BuyCreditsModal onClose={() => setShowBuyCredits(false)} />
       )}
       {pickerProspectId && (
         <PipelinePickerModal
@@ -1000,12 +1345,11 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
 
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* ── Page heading ─────────────────────────────────────────────────────── */}
-        <div className="px-8 pt-6 pb-2 shrink-0">
-          <div className="max-w-5xl mx-auto flex items-start justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Prospects</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">AI Lead Intelligence — enrich and score your best leads automatically</p>
-            </div>
+        <div className="pl-9 pt-5 pb-2 pr-4 shrink-0 flex items-start justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Lead Enrichment</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">AI Lead Intelligence — enrich and score your best leads automatically</p>
+          </div>
             <div className="flex items-center gap-2">
               <input ref={importRef} type="file" accept=".csv" className="hidden" onChange={handleImportCsv} />
               <button
@@ -1024,20 +1368,27 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
                   Export CSV
                 </button>
               )}
+              {/* Credits button */}
+              <button
+                onClick={() => setShowBuyCredits(true)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-[#15A4AE] hover:bg-[#0e8b94] text-white text-sm font-semibold rounded-xl transition-colors"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                {credits !== null ? `${credits.total} Credits` : 'Buy Credits'}
+              </button>
             </div>
-          </div>
         </div>
 
         <div className="flex flex-1 overflow-hidden gap-3 p-3 bg-[#f5f4f1] dark:bg-[#1c1c1c]">
 
         {/* ── LEFT: Filter sidebar ─────────────────────────────────────────────── */}
-        <div className="w-64 shrink-0 flex flex-col bg-white dark:bg-[#181818] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8 overflow-hidden">
+        <div className="w-64 shrink-0 flex flex-col bg-white dark:bg-[#181818] rounded-2xl border border-gray-200/60 dark:border-white/8 overflow-hidden shadow-[0_4px_6px_-1px_rgba(0,0,0,0.08),0_10px_30px_-5px_rgba(0,0,0,0.12),0_1px_0px_rgba(255,255,255,0.8)_inset] dark:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.3),0_20px_40px_-10px_rgba(0,0,0,0.5),0_1px_0px_rgba(255,255,255,0.04)_inset]">
 
           {/* Dark header — matches Sage list column headers */}
-          <div className="px-3 py-2.5 bg-[#141c2b] border-b border-white/10 shrink-0">
+          <div className="px-3 py-2.5 bg-[#141c2b] border-b border-white/10 shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.35),0_1px_0px_rgba(255,255,255,0.06)_inset]">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-sm font-semibold text-white">Prospects</h2>
+                <h2 className="text-sm font-semibold text-white">Lead Enrichment</h2>
                 <p className="text-[10px] text-white/50">Search Profiles</p>
               </div>
               <button
@@ -1097,7 +1448,7 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
                     {profiles.map(p => (
                       <div key={p.id} className="flex items-center group/item border-b border-gray-50 dark:border-white/5 last:border-0">
                         <button
-                          onClick={() => { setSelectedIcp(p); setShowIcpPicker(false) }}
+                          onClick={() => { selectProfile(p); setShowIcpPicker(false) }}
                           className={cn(
                             'flex-1 text-left px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors',
                             selectedIcp?.id === p.id && 'bg-[#15A4AE]/5',
@@ -1147,7 +1498,7 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
                     {profiles.map(p => (
                       <button
                         key={p.id}
-                        onClick={() => { setSelectedIcp(p); setShowIcpPicker(false) }}
+                        onClick={() => { selectProfile(p); setShowIcpPicker(false) }}
                         className="w-full text-left px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors border-b border-gray-50 dark:border-white/5 last:border-0"
                       >
                         <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{p.name}</p>
@@ -1160,137 +1511,201 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
             )}
           </div>
 
-          {/* Filter sections */}
+          {/* Live config panel */}
           <div className="flex-1 overflow-y-auto">
             {selectedIcp ? (
               <>
-                <FilterSection label="Search" defaultOpen count={searchQuery || location ? 1 : 0}>
-                  <div className="space-y-2">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                      <input
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter' && !running) handleStartSearch() }}
-                        placeholder={`${selectedIcp.industry} near me`}
-                        className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/60 focus:border-[#15A4AE]/50"
-                      />
-                    </div>
-                    <div>
-                      <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                        <input
-                          value={location}
-                          onChange={e => setLocation(e.target.value)}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault()
-                              const v = location.trim()
-                              if (v && selectedIcp && !selectedIcp.locations.includes(v)) {
-                                inlineSaveIcp('locations', [...selectedIcp.locations, v])
-                              }
-                              if (!running) handleStartSearch()
-                            }
-                          }}
-                          placeholder="City or suburb…"
-                          className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/60 focus:border-[#15A4AE]/50"
-                        />
-                      </div>
-                      {selectedIcp.locations.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1.5">
-                          {selectedIcp.locations.map(loc => (
-                            <button
-                              key={loc}
-                              type="button"
-                              onClick={() => setLocation(loc)}
-                              className={cn(
-                                'flex items-center gap-1 pl-2 pr-1 py-0.5 text-[11px] rounded-full border font-medium transition-colors',
-                                location === loc
-                                  ? 'bg-[#15A4AE] text-white border-[#15A4AE]'
-                                  : 'bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10 hover:border-[#15A4AE]/50',
-                              )}
-                            >
-                              {loc}
-                              <span
-                                role="button"
-                                onClick={e => { e.stopPropagation(); inlineSaveIcp('locations', selectedIcp.locations.filter(l => l !== loc)) }}
-                                className="p-0.5 rounded-full hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-500/20 transition-colors"
-                              >
-                                <X className="w-2.5 h-2.5" />
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                {/* ── Leads to find — first selector right under profile name ── */}
+                <div className="px-3 py-3 border-b border-gray-100 dark:border-white/5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Leads to find</span>
+                    <span className="text-xs font-bold text-[#15A4AE] tabular-nums">{leadCount}</span>
                   </div>
-                </FilterSection>
+                  <input
+                    type="range"
+                    min={1}
+                    max={25}
+                    value={leadCount}
+                    onChange={e => setLeadCount(Number(e.target.value))}
+                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-[#15A4AE] bg-gray-200 dark:bg-white/10"
+                  />
+                  <div className="flex justify-between mt-0.5">
+                    <span className="text-[10px] text-gray-400">1</span>
+                    <span className="text-[10px] text-gray-400">25</span>
+                  </div>
+                </div>
 
-                <FilterSection label="Filter Results" count={tableSearch || activeFieldFilters ? 1 : 0}>
-                  <div className="space-y-2">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-                      <input value={tableSearch} onChange={e => setTableSearch(e.target.value)}
-                        placeholder="Company, city, email…"
-                        className="w-full pl-9 pr-8 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/60"
-                      />
-                      {tableSearch && (
-                        <button onClick={() => setTableSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                          <X className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="relative">
-                        <MapPin className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
-                        <input value={filterCity} onChange={e => setFilterCity(e.target.value)} placeholder="City…"
-                          className="w-full pl-6 pr-2 py-1.5 text-xs border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50" />
+                {/* ── Search query ── */}
+                <div className="px-3 py-3 border-b border-gray-100 dark:border-white/5">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    <input
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && !running) handleStartSearch() }}
+                      placeholder={`${selectedIcp.industry}…`}
+                      className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/60 focus:border-[#15A4AE]/50"
+                    />
+                  </div>
+                </div>
+
+                {/* ── Locations ── */}
+                <FilterSection label="Locations" defaultOpen count={selectedIcp.locations.length}>
+                  <div className="space-y-1.5">
+                    {/* Input first */}
+                    <TagInput
+                      value={[]}
+                      onChange={added => {
+                        const newOnes = added.filter(a => !selectedIcp.locations.includes(a))
+                        if (!newOnes.length) return
+                        inlineSaveIcp('locations', [...selectedIcp.locations, ...newOnes])
+                        setLocation(newOnes[newOnes.length - 1])
+                      }}
+                      placeholder="Add suburb or city…"
+                    />
+                    {/* Geo context — country / state / postcode */}
+                    {(selectedIcp.target_country || selectedIcp.target_state || selectedIcp.target_postcode) && (
+                      <div className="flex flex-wrap gap-1">
+                        {selectedIcp.target_country && (
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400 font-medium">{selectedIcp.target_country}</span>
+                        )}
+                        {selectedIcp.target_state && (
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400 font-medium">{selectedIcp.target_state}</span>
+                        )}
+                        {selectedIcp.target_postcode && (
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400 font-medium">{selectedIcp.target_postcode}</span>
+                        )}
                       </div>
-                      <div className="relative">
-                        <Globe className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
-                        <input value={filterCountry} onChange={e => setFilterCountry(e.target.value)} placeholder="Country…"
-                          className="w-full pl-6 pr-2 py-1.5 text-xs border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50" />
+                    )}
+                    {/* Suburb / city bubbles */}
+                    {selectedIcp.locations.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {[...new Set(selectedIcp.locations)].map(loc => (
+                          <button
+                            key={loc}
+                            type="button"
+                            onClick={() => setLocation(loc)}
+                            className={cn(
+                              'flex items-center gap-1 pl-2.5 pr-1 py-0.5 text-xs rounded-full border font-medium transition-colors',
+                              location === loc
+                                ? 'bg-[#15A4AE] text-white border-[#15A4AE]'
+                                : 'bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10 hover:border-[#15A4AE]/50',
+                            )}
+                          >
+                            {loc}
+                            <span
+                              role="button"
+                              onClick={e => {
+                                e.stopPropagation()
+                                const next = selectedIcp.locations.filter(l => l !== loc)
+                                inlineSaveIcp('locations', next)
+                                if (location === loc) setLocation(next[0] ?? '')
+                              }}
+                              className="p-0.5 rounded-full opacity-50 hover:opacity-100 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-500/20 transition-all"
+                            >
+                              <X className="w-2.5 h-2.5" />
+                            </span>
+                          </button>
+                        ))}
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">Score ≥</span>
-                      <input type="number" min={0} max={100} value={filterScoreMin || ''} onChange={e => setFilterScoreMin(Number(e.target.value) || 0)}
-                        placeholder="0"
-                        className="flex-1 px-2 py-1.5 text-xs border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/50" />
-                    </div>
-                    {(tableSearch || activeFieldFilters) && (
-                      <button onClick={() => { setTableSearch(''); setFilterCity(''); setFilterCountry(''); setFilterScoreMin(0) }}
-                        className="flex items-center gap-1 px-2 py-1 text-xs rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors font-medium">
-                        <X className="w-3 h-3" /> Clear filters
-                      </button>
                     )}
                   </div>
                 </FilterSection>
 
-                <FilterSection label="Keywords" defaultOpen count={selectedIcp.target_keywords.length}>
-                  <TagInput
-                    value={selectedIcp.target_keywords}
-                    onChange={v => inlineSaveIcp('target_keywords', v)}
-                    placeholder="cosmetic dentist, implants…"
-                  />
+                {/* ── Search Keywords ── */}
+                <FilterSection label="Search Keywords" defaultOpen count={selectedIcp.target_keywords.length}>
+                  <div className="space-y-1.5">
+                    <TagInput
+                      value={[]}
+                      onChange={added => {
+                        const newOnes = added.filter(a => !selectedIcp.target_keywords.includes(a))
+                        if (!newOnes.length) return
+                        inlineSaveIcp('target_keywords', [...selectedIcp.target_keywords, ...newOnes])
+                      }}
+                      placeholder="e.g. solar installer, battery…"
+                    />
+                    {selectedIcp.target_keywords.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {selectedIcp.target_keywords.map(kw => (
+                          <span key={kw} className="flex items-center gap-1 pl-2.5 pr-1 py-0.5 text-xs rounded-full border font-medium bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10">
+                            {kw}
+                            <button
+                              type="button"
+                              onClick={() => inlineSaveIcp('target_keywords', selectedIcp.target_keywords.filter(k => k !== kw))}
+                              className="p-0.5 rounded-full opacity-50 hover:opacity-100 hover:text-red-500 transition-all"
+                            >
+                              <X className="w-2.5 h-2.5" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </FilterSection>
 
-                <FilterSection label="Services" defaultOpen count={selectedIcp.services_of_interest.length}>
-                  <TagInput
-                    value={selectedIcp.services_of_interest}
-                    onChange={v => inlineSaveIcp('services_of_interest', v)}
-                    placeholder="Website, SEO, Google Ads…"
-                  />
+                {/* ── Services You Sell ── */}
+                <FilterSection label="Services You Sell" defaultOpen count={selectedIcp.services_of_interest.length}>
+                  <div className="space-y-1.5">
+                    <TagInput
+                      value={[]}
+                      onChange={added => {
+                        const newOnes = added.filter(a => !selectedIcp.services_of_interest.includes(a))
+                        if (!newOnes.length) return
+                        inlineSaveIcp('services_of_interest', [...selectedIcp.services_of_interest, ...newOnes])
+                      }}
+                      placeholder="e.g. Website, SEO, solar install…"
+                    />
+                    {selectedIcp.services_of_interest.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {selectedIcp.services_of_interest.map(s => (
+                          <span key={s} className="flex items-center gap-1 pl-2.5 pr-1 py-0.5 text-xs rounded-full border font-medium bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10">
+                            {s}
+                            <button
+                              type="button"
+                              onClick={() => inlineSaveIcp('services_of_interest', selectedIcp.services_of_interest.filter(v => v !== s))}
+                              className="p-0.5 rounded-full opacity-50 hover:opacity-100 hover:text-red-500 transition-all"
+                            >
+                              <X className="w-2.5 h-2.5" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </FilterSection>
 
+                {/* ── Exclude ── */}
                 <FilterSection label="Exclude" count={selectedIcp.exclude_keywords.length}>
-                  <TagInput
-                    value={selectedIcp.exclude_keywords}
-                    onChange={v => inlineSaveIcp('exclude_keywords', v)}
-                    placeholder="courses, jobs, directory…"
-                  />
+                  <div className="space-y-1.5">
+                    <TagInput
+                      value={[]}
+                      onChange={added => {
+                        const newOnes = added.filter(a => !selectedIcp.exclude_keywords.includes(a))
+                        if (!newOnes.length) return
+                        inlineSaveIcp('exclude_keywords', [...selectedIcp.exclude_keywords, ...newOnes])
+                      }}
+                      placeholder="e.g. directory, courses, jobs…"
+                    />
+                    {selectedIcp.exclude_keywords.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {selectedIcp.exclude_keywords.map(ex => (
+                          <span key={ex} className="flex items-center gap-1 pl-2.5 pr-1 py-0.5 text-xs rounded-full border font-medium bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10">
+                            {ex}
+                            <button
+                              type="button"
+                              onClick={() => inlineSaveIcp('exclude_keywords', selectedIcp.exclude_keywords.filter(e => e !== ex))}
+                              className="p-0.5 rounded-full opacity-50 hover:opacity-100 hover:text-red-500 transition-all"
+                            >
+                              <X className="w-2.5 h-2.5" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </FilterSection>
 
+                {/* ── Recent searches ── */}
                 <FilterSection label="Recent Searches" count={recentJobs.length}>
                   {recentJobs.length > 0 ? (
                     <div className="space-y-0.5">
@@ -1338,70 +1753,24 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
 
           {/* Find Prospects CTA */}
           {selectedIcp && (
-            <div className="px-3 py-3 border-t border-gray-100 dark:border-white/8 shrink-0 space-y-3">
-              {/* Search mode toggle */}
-              <div>
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5 block">Search Mode</span>
-                <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 text-xs font-semibold">
-                  <button
-                    type="button"
-                    onClick={() => setSearchMode('local')}
-                    className={cn('flex-1 py-2 transition-colors', searchMode === 'local'
-                      ? 'bg-[#15A4AE] text-white'
-                      : 'bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8')}
-                  >
-                    📍 Map Pack
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSearchMode('web')}
-                    className={cn('flex-1 py-2 transition-colors', searchMode === 'web'
-                      ? 'bg-[#15A4AE] text-white'
-                      : 'bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8')}
-                  >
-                    🌐 Web
-                  </button>
-                </div>
-                <p className="text-[10px] text-gray-400 mt-1">
-                  {searchMode === 'local' ? 'GMB listings — real businesses with phone & address' : 'Web search — broader reach, may include directories'}
-                </p>
-              </div>
-              {/* Lead count slider */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Leads to find</span>
-                  <span className="text-xs font-bold text-[#15A4AE] tabular-nums">{leadCount}</span>
-                </div>
-                <input
-                  type="range"
-                  min={1}
-                  max={25}
-                  value={leadCount}
-                  onChange={e => setLeadCount(Number(e.target.value))}
-                  className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-[#15A4AE] bg-gray-200 dark:bg-white/10"
-                />
-                <div className="flex justify-between mt-0.5">
-                  <span className="text-[10px] text-gray-400">1</span>
-                  <span className="text-[10px] text-gray-400">25</span>
-                </div>
-              </div>
+            <div className="px-3 py-3 border-t border-gray-100 dark:border-white/8 shrink-0">
               <button
                 onClick={handleStartSearch}
-                disabled={!!running || !searchQuery.trim()}
+                disabled={!!running || !searchQuery.trim() || credits?.total === 0}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-[#15A4AE] hover:bg-[#0e8b94] text-white rounded-xl transition-colors disabled:opacity-50 shadow-sm shadow-[#15A4AE]/20"
               >
                 {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                {running ? 'Running…' : 'Find Prospects'}
+                {running ? 'Running…' : 'Find Leads'}
               </button>
             </div>
           )}
         </div>
 
         {/* ── CENTER: Results ──────────────────────────────────────────────────── */}
-        <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#232323] rounded-2xl shadow-xl border border-gray-200/60 dark:border-white/8 overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#232323] rounded-2xl border border-gray-200/60 dark:border-white/8 overflow-hidden shadow-[0_4px_6px_-1px_rgba(0,0,0,0.08),0_10px_30px_-5px_rgba(0,0,0,0.12),0_1px_0px_rgba(255,255,255,0.8)_inset] dark:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.3),0_20px_40px_-10px_rgba(0,0,0,0.5),0_1px_0px_rgba(255,255,255,0.04)_inset]">
 
           {/* ── Toolbar bar 1: dark navy ── */}
-          <div className="shrink-0 px-4 py-2.5 bg-[#141c2b] border-b border-white/10 flex items-center gap-3 flex-wrap">
+          <div className="shrink-0 px-4 py-2.5 bg-[#141c2b] border-b border-white/10 flex items-center gap-3 flex-wrap shadow-[0_2px_8px_rgba(0,0,0,0.35),0_1px_0px_rgba(255,255,255,0.06)_inset]">
 
             {/* Tier filter pills */}
             <div className="flex items-center gap-1">
@@ -1425,6 +1794,22 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
                 </button>
               ))}
             </div>
+
+            {/* Contact filter toggle */}
+            {results.length > 0 && (
+              <button
+                onClick={() => setContactOnlyFilter(v => !v)}
+                className={cn(
+                  'flex items-center gap-1.5 px-2.5 py-1 text-[11px] rounded-full font-medium transition-colors border',
+                  contactOnlyFilter
+                    ? 'bg-[#15A4AE]/20 border-[#15A4AE]/50 text-[#15A4AE]'
+                    : 'bg-white/10 border-white/20 text-white hover:bg-white/15',
+                )}
+              >
+                <Mail className="w-3 h-3" />
+                {contactOnlyFilter ? 'Has contact' : 'Show all'}
+              </button>
+            )}
 
             <div className="flex-1" />
 
@@ -1479,19 +1864,19 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
           {/* Results table */}
           <div className="flex-1 overflow-auto" onClick={() => setShowColPicker(false)}>
             {visible.length > 0 && (
-              <table className="w-full border-collapse">
+              <table className="w-full border-separate border-spacing-0">
                 <thead>
-                  <tr className="border-b border-white/10 bg-[#141c2b] sticky top-0 z-10">
-                    <th className="pl-5 pr-2 py-2.5 w-4" />
+                  <tr className="sticky top-0 z-10">
+                    <th className="pl-5 pr-2 py-2.5 w-4 bg-[#141c2b] border-b border-white/10 rounded-tl-xl" />
                     {/* Company — always */}
-                    <th className="px-3 py-2.5 text-left">
+                    <th className="px-3 py-2.5 text-left bg-[#141c2b] border-b border-white/10">
                       <button onClick={() => toggleSort('company')}
                         className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-white hover:text-white transition-colors">
                         Company {sortKey === 'company' && <span>{sortDir === 'desc' ? '↓' : '↑'}</span>}
                       </button>
                     </th>
                     {cols.has('score') && (
-                      <th className="px-3 py-2.5 text-left">
+                      <th className="px-3 py-2.5 text-left bg-[#141c2b] border-b border-white/10">
                         <button onClick={() => toggleSort('score')}
                           className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-white hover:text-white transition-colors">
                           Score {sortKey === 'score' && <span>{sortDir === 'desc' ? '↓' : '↑'}</span>}
@@ -1499,22 +1884,22 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
                       </th>
                     )}
                     {cols.has('email') && (
-                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-white">Email</th>
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-white bg-[#141c2b] border-b border-white/10">Email</th>
                     )}
                     {cols.has('phone') && (
-                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-white">Phone</th>
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-white bg-[#141c2b] border-b border-white/10">Phone</th>
                     )}
                     {cols.has('contact_name') && (
-                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-white">Contact</th>
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-white bg-[#141c2b] border-b border-white/10">Contact</th>
                     )}
                     {cols.has('description') && (
-                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-white">About</th>
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-white bg-[#141c2b] border-b border-white/10">About</th>
                     )}
                     {cols.has('pricing_hint') && (
-                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-white">Pricing</th>
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-white bg-[#141c2b] border-b border-white/10">Pricing</th>
                     )}
                     {cols.has('city') && (
-                      <th className="px-3 py-2.5 text-left">
+                      <th className="px-3 py-2.5 text-left bg-[#141c2b] border-b border-white/10">
                         <button onClick={() => toggleSort('city')}
                           className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-white hover:text-white transition-colors">
                           City {sortKey === 'city' && <span>{sortDir === 'desc' ? '↓' : '↑'}</span>}
@@ -1522,29 +1907,62 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
                       </th>
                     )}
                     {cols.has('country') && (
-                      <th className="px-3 py-2.5 text-left">
+                      <th className="px-3 py-2.5 text-left bg-[#141c2b] border-b border-white/10">
                         <button onClick={() => toggleSort('country')}
                           className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-white hover:text-white transition-colors">
                           Country {sortKey === 'country' && <span>{sortDir === 'desc' ? '↓' : '↑'}</span>}
                         </button>
                       </th>
                     )}
-                    <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-white">Action</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-white bg-[#141c2b] border-b border-white/10 rounded-tr-xl">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {visible.map(p => (
+                  {paginated.map(p => (
                     <ProspectRow
                       key={p.id}
                       prospect={p}
                       cols={cols}
                       isPushed={pushedIds.has(p.id)}
-                      onAddClick={id => setPickerProspectId(id)}
-                      onIgnore={async (id) => { await ignoreProspect(id) }}
+                      onCreateDeal={id => setPickerProspectId(id)}
+                      onCreateContact={async (id) => { await createContactFromProspect(id) }}
+                      onDelete={async (id) => {
+                        await deleteProspect(id)
+                        setResults(prev => prev.filter(r => r.id !== id))
+                      }}
+                      onUpdate={async (id, data) => { await updateProspect(id, data) }}
                     />
                   ))}
                 </tbody>
               </table>
+            )}
+
+            {/* Pagination footer */}
+            {visible.length > 0 && (
+              <div className="flex items-center justify-between px-4 py-2.5 border-t border-gray-100 dark:border-white/8 bg-gray-50/60 dark:bg-white/[0.02] shrink-0">
+                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <span>Rows per page:</span>
+                  <select
+                    value={pageSize}
+                    onChange={e => { setPageSize(Number(e.target.value)); setPage(1) }}
+                    className="text-xs border dark:border-white/10 rounded-lg px-2 py-1 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]/40 cursor-pointer"
+                  >
+                    {[10, 20, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                  <span>
+                    {visible.length === 0 ? '0' : `${(safePage - 1) * pageSize + 1}–${Math.min(safePage * pageSize, visible.length)}`} of {visible.length}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage <= 1}
+                      className="px-2.5 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium">← Prev</button>
+                    <span className="px-1">{safePage} / {totalPages}</span>
+                    <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}
+                      className="px-2.5 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium">Next →</button>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Empty: search done, no results */}
@@ -1563,11 +1981,11 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
                   <Sparkles className="w-8 h-8 text-[#15A4AE]" />
                 </div>
                 <p className="text-base font-semibold text-gray-700 dark:text-gray-300">
-                  {selectedIcp ? 'Ready to find prospects' : 'Select a profile to get started'}
+                  {selectedIcp ? 'Ready to find leads' : 'Select a profile to get started'}
                 </p>
                 <p className="text-sm text-gray-400 mt-1.5 max-w-xs leading-relaxed">
                   {selectedIcp
-                    ? 'Enter a search query in the left panel and click Find Prospects'
+                    ? 'Enter a search query in the left panel and click Find Leads'
                     : 'Create a search profile to define your target market'}
                 </p>
                 {selectedIcp && (

@@ -67,7 +67,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Sage',
     pro: true,
     items: [
-      { href: '/sage/prospects',  label: 'Prospects',         icon: Target,     permissionKey: 'can_view_pipelines' },
+      { href: '/sage/prospects',  label: 'Lead Enrichment',   icon: Target,     permissionKey: 'can_view_pipelines' },
       { href: '/sage/contacts',   label: 'Contacts',          icon: Users,      permissionKey: 'can_view_contacts'  },
       { href: '/sage/pipelines',  label: 'Pipelines',         icon: Kanban,     permissionKey: 'can_view_pipelines' },
       { href: '/sage/projects',   label: 'Projects',          icon: FolderOpen, permissionKey: 'can_view_projects'  },

@@ -106,6 +106,31 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     ? session.subscription
     : session.subscription?.id
 
+  // ── Prospect credit pack purchase ─────────────────────────────────────────
+  if (metadata.prospect_credits_pack && metadata.workspace_id) {
+    const pack    = metadata.prospect_credits_pack
+    const credits = parseInt(metadata.prospect_credits ?? '0', 10)
+    if (credits > 0) {
+      await supabase
+        .from('workspace_prospect_credit_packs')
+        .upsert({
+          workspace_id:      metadata.workspace_id,
+          stripe_session_id: session.id,
+          pack_name:         pack,
+          credits_total:     credits,
+          credits_remaining: credits,
+        }, { onConflict: 'stripe_session_id' })
+      console.log(`[stripe] Prospect credits +${credits} (${pack}) → workspace ${metadata.workspace_id}`)
+    }
+    return
+  }
+
+  // ── Conversation/seat/storage top-up — handled by topup route ─────────────
+  if (metadata.topup_pack) {
+    // Already handled elsewhere; nothing more to do here
+    return
+  }
+
   if (!email) {
     console.error('[stripe] checkout.session.completed — no email in session')
     return
@@ -224,16 +249,27 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
   // Update billing_period_start whenever the subscription renews
   const billingPeriodStart = new Date(sub.current_period_start * 1000).toISOString()
 
-  await supabase
+  const { data: ws } = await supabase
     .from('workspaces')
     .update({
       plan,
-      subscription_status:  status,
+      subscription_status:   status,
       stripe_subscription_id: sub.id,
-      billing_period_start: billingPeriodStart,
+      billing_period_start:  billingPeriodStart,
       ...PLAN_LIMITS[plan],
     })
     .eq('stripe_subscription_id', sub.id)
+    .select('id, billing_period_start')
+    .maybeSingle()
+
+  // Reset monthly prospect credits when the billing period changes (renewal)
+  if (ws) {
+    const prevPeriodStart = (ws as { id: string; billing_period_start: string | null }).billing_period_start
+    if (prevPeriodStart !== billingPeriodStart) {
+      const { error: resetErr } = await supabase.rpc('reset_prospect_credits_monthly', { p_workspace_id: (ws as { id: string }).id })
+      if (resetErr) console.error('[stripe] reset_prospect_credits_monthly failed:', resetErr)
+    }
+  }
 }
 
 async function handleSubscriptionDeleted(sub: Stripe.Subscription) {

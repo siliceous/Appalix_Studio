@@ -5,6 +5,9 @@ import { crawlBatch } from './firecrawl'
 import { extractCompanyData } from './extract'
 import { scoreProspect } from './score'
 import { pushProspectToSage } from './push-to-sage'
+import { enrichFromPlaces } from './google-places'
+import { enrichEmailsFromHunter } from './hunter'
+import { deductProspectCredit } from './credits'
 
 interface IcpProfile {
   id:                   string
@@ -148,14 +151,14 @@ export async function runProspectPipeline(
       const crawl = crawlResults.get(result.domain)
 
       // GMB / directory enrichment via targeted Brave search (non-blocking if it fails)
-      let gmbContext: string | undefined
+      // Always seed with the original search snippet so phone numbers in it are never lost
+      const stripHtmlCtx = (s: string) => s.replace(/<[^>]+>/g, '').replace(/&[a-z]+;/g, ' ').replace(/\s+/g, ' ').trim()
+      let gmbContext: string = `Search snippet: ${stripHtmlCtx(result.description)}`
       try {
         const gmbResults = await searchBrave(`"${result.domain}" phone email address contact`, 5)
         if (gmbResults.length > 0) {
-          // Strip HTML tags from Brave snippets before passing to LLM
-          const stripHtml = (s: string) => s.replace(/<[^>]+>/g, '').replace(/&[a-z]+;/g, ' ').replace(/\s+/g, ' ').trim()
-          gmbContext = gmbResults
-            .map(r => `${r.title}: ${stripHtml(r.description)}`)
+          gmbContext += '\n' + gmbResults
+            .map(r => `${r.title}: ${stripHtmlCtx(r.description)}`)
             .join('\n')
         }
       } catch { /* non-critical */ }
@@ -165,48 +168,104 @@ export async function runProspectPipeline(
 
       const extracted = crawl
         ? await extractCompanyData(result.domain, crawl.markdown, crawl.title, gmbContext)
-        : {
-            company_name: result.title ?? result.domain,
-            contact_name: null,
-            description:  stripHtml(result.description),
-            services:     [],
-            pricing_hint: null,
-            city:         null,
-            state:        null,
-            country:      null,
-            emails:       [],
-            phones:       [],
-          }
+        : (() => {
+            // Crawl failed — regex sweep on snippet + gmbContext to salvage contact info
+            const fallbackText = `${result.title} ${stripHtml(result.description)} ${gmbContext ?? ''}`
+            const emailRe = /([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/g
+            const phoneRe = /(?:\+?61[-\s]?)?(?:1[38]\d{2}[\s-]?\d{3}[\s-]?\d{3}|\(?0\d\)?[\s-]?\d{4}[\s-]?\d{4}|\+\d{1,3}[\s-]?\d[\s\d\-]{6,14}\d)/g
+            const fallbackEmails = [...new Set((fallbackText.match(emailRe) ?? []).filter(e => !e.includes('example') && !e.includes('sentry') && !e.includes('@2x')))]
+            const fallbackPhones = [...new Set((fallbackText.match(phoneRe) ?? []).map(p => p.trim()))]
+            return {
+              company_name:    result.title ?? result.domain,
+              contact_name:    null,
+              description:     stripHtml(result.description),
+              services:        [],
+              pricing_hint:    null,
+              city:            null,
+              state:           null,
+              country:         null,
+              emails:          fallbackEmails,
+              phones:          fallbackPhones,
+              decision_makers: [],
+            }
+          })()
+
+      // Google Places enrichment — phone + address (non-blocking)
+      let placesPhone:   string | null = null
+      let placesCity:    string | null = null
+      let placesCountry: string | null = null
+      try {
+        const places = await enrichFromPlaces(
+          extracted.company_name ?? result.title ?? result.domain,
+          location,
+          result.domain,
+        )
+        if (places) {
+          placesPhone   = places.phone
+          placesCity    = places.city    ?? placesCity
+          placesCountry = places.country ?? placesCountry
+        }
+      } catch { /* non-critical */ }
+
+      // Hunter.io email enrichment (non-blocking)
+      let hunterEmails: string[] = []
+      try {
+        const hunter = await enrichEmailsFromHunter(result.domain)
+        if (hunter) hunterEmails = hunter.emails
+      } catch { /* non-critical */ }
+
+      // Merge: Google Places phone wins; Hunter emails prepended (highest confidence first)
+      const finalPhones  = [...new Set([...(placesPhone ? [placesPhone] : []), ...extracted.phones])]
+      const finalEmails  = [...new Set([...hunterEmails, ...extracted.emails])]
+      const finalCity    = extracted.city    ?? placesCity
+      const finalCountry = extracted.country ?? placesCountry
 
       // Score
-      const scoreResult = scoreProspect(extracted, icp, result.title, result.description)
+      const scoreResult = scoreProspect({ ...extracted, phones: finalPhones }, icp, result.title, result.description)
       scored++
 
+      // Deduct 1 credit — stop pipeline if exhausted
+      const { data: prospectRow } = await admin
+        .from('prospect_companies')
+        .select('id')
+        .eq('workspace_id', workspaceId)
+        .eq('domain', result.domain)
+        .single()
+
+      if (prospectRow) {
+        const credited = await deductProspectCredit(workspaceId, prospectRow.id, jobId)
+        if (!credited) {
+          await updateJob(jobId, 'done', { scored, pushed })
+          return
+        }
+      }
+
       // Compute location_text from structured fields for backwards compat
-      const locationText = [extracted.city, extracted.state, extracted.country].filter(Boolean).join(', ') || null
+      const locationText = [finalCity, extracted.state, finalCountry].filter(Boolean).join(', ') || null
 
       // Update prospect record with extraction + score
       await admin
         .from('prospect_companies')
         .update({
-          company_name:    extracted.company_name,
-          contact_name:    extracted.contact_name,
-          description:     extracted.description,
-          services:        extracted.services,
-          pricing_hint:    extracted.pricing_hint,
-          city:            extracted.city,
-          state:           extracted.state,
-          country:         extracted.country,
-          location_text:   locationText,
-          emails:          extracted.emails,
-          phones:          extracted.phones,
-          email_1:         extracted.emails[0] ?? null,
-          phone_1:         extracted.phones[0] ?? null,
-          score:           scoreResult.score,
-          score_tier:      scoreResult.tier,
-          score_breakdown: scoreResult.breakdown,
-          status:          scoreResult.tier === 'discarded' ? 'found' : 'scored',
-          updated_at:      new Date().toISOString(),
+          company_name:     extracted.company_name,
+          contact_name:     extracted.contact_name,
+          description:      extracted.description,
+          services:         extracted.services,
+          pricing_hint:     extracted.pricing_hint,
+          city:             finalCity,
+          state:            extracted.state,
+          country:          finalCountry,
+          location_text:    locationText,
+          emails:           finalEmails,
+          phones:           finalPhones,
+          email_1:          finalEmails[0] ?? null,
+          phone_1:          finalPhones[0] ?? null,
+          decision_makers:  extracted.decision_makers,
+          score:            scoreResult.score,
+          score_tier:       scoreResult.tier,
+          score_breakdown:  scoreResult.breakdown,
+          status:           scoreResult.tier === 'discarded' ? 'found' : 'scored',
+          updated_at:       new Date().toISOString(),
         })
         .eq('workspace_id', workspaceId)
         .eq('domain', result.domain)

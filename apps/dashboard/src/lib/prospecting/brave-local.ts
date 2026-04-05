@@ -104,7 +104,7 @@ export async function searchLocalBusinesses(
     (descriptionsData.results ?? []).map(d => [d.id, d.description ?? null])
   )
 
-  const pois = poisData.results ?? []
+  const pois = (poisData.results ?? []).filter(p => p != null)
 
   return pois.map(poi => {
     const website = poi.url ?? null

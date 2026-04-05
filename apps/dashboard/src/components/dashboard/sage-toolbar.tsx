@@ -33,7 +33,7 @@ const TRIAGE_PAGES: PageDef[] = [
 ]
 
 const SAGE_PAGES: PageDef[] = [
-  { key: 'prospects',  label: 'Prospects',  href: '/sage/prospects',  icon: Target     },
+  { key: 'prospects',  label: 'Lead Enrichment',  href: '/sage/prospects',  icon: Target     },
   { key: 'contacts',   label: 'Contacts',   href: '/sage/contacts',   icon: Users      },
   { key: 'pipelines',  label: 'Pipelines',  href: '/sage/pipelines',  icon: Kanban     },
   { key: 'projects',   label: 'Projects',   href: '/sage/projects',   icon: FolderOpen },
@@ -235,12 +235,11 @@ export function SageToolbar({ pageKey, preset, autoEnabled, customFrom, customTo
   return (
     <nav className="px-4 ml-3 mr-4 border-b border-white/10 bg-[#141c2b] rounded-b-2xl shadow-lg flex items-end shrink-0 gap-x-2 min-h-[52px] pb-2">
 
-      {/* Nav pills */}
-      <div className="flex flex-1 items-end gap-1.5 overflow-x-auto min-w-0">
-
-        {isTriagePage ? (
-          /* ── Triage page nav: Overview link | triage pills flat | Sage ▾ dropdown ── */
-          <>
+      {/* Nav pills — dropdowns live OUTSIDE the overflow-x-auto scroll zone */}
+      {isTriagePage ? (
+        <>
+          {/* Scrollable triage pills */}
+          <div className="flex flex-1 items-end gap-1.5 overflow-x-auto min-w-0">
             <Link
               href={viewAsUserId ? `/dashboard?viewAs=${viewAsUserId}` : '/dashboard'}
               className="flex items-center gap-1.5 text-sm text-white hover:text-white transition-colors shrink-0 px-2 py-1.5 rounded-lg hover:bg-white/10 mr-0.5"
@@ -250,100 +249,102 @@ export function SageToolbar({ pageKey, preset, autoEnabled, customFrom, customTo
             </Link>
             <Divider />
             {TRIAGE_PAGES.map(navButton)}
-            <Divider />
+          </div>
 
-            {/* Sage ▾ dropdown */}
-            <div className="relative shrink-0" ref={sageMenuRef}>
-              <button
-                onClick={() => setShowSageMenu(v => !v)}
-                className={[
-                  'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border transition-colors whitespace-nowrap',
-                  showSageMenu ? 'bg-white/20 text-white border-white/40' : 'border-transparent text-white hover:bg-white/10',
-                ].join(' ')}
-              >
-                Sage
-                <ChevronDown className={`w-3 h-3 opacity-60 transition-transform ${showSageMenu ? 'rotate-180' : ''}`} />
-              </button>
+          {/* Sage ▾ — outside overflow div so dropdown isn't clipped */}
+          <Divider />
+          <div className="relative shrink-0" ref={sageMenuRef}>
+            <button
+              onClick={() => setShowSageMenu(v => !v)}
+              className={[
+                'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border transition-colors whitespace-nowrap',
+                showSageMenu ? 'bg-white/20 text-white border-white/40' : 'border-transparent text-white hover:bg-white/10',
+              ].join(' ')}
+            >
+              Sage
+              <ChevronDown className={`w-3 h-3 opacity-60 transition-transform ${showSageMenu ? 'rotate-180' : ''}`} />
+            </button>
 
-              {showSageMenu && (
-                <div className="absolute left-0 top-full mt-2 z-50 bg-white dark:bg-[#1e2535] border border-gray-200 dark:border-white/12 rounded-2xl shadow-xl w-52 overflow-hidden py-1.5">
-                  <p className="px-3 pt-1 pb-1.5 text-[10px] font-semibold text-gray-400 dark:text-white/40 uppercase tracking-wide">CRM</p>
-                  {SAGE_PAGES.map(p => (
-                    <button
-                      key={p.key}
-                      onClick={() => { setShowSageMenu(false); setLoadingKey(p.key); router.push(p.href) }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
-                    >
-                      <p.icon className="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-white/40" />
-                      {p.label}
-                    </button>
-                  ))}
-                  <div className="mx-3 my-1.5 border-t border-gray-100 dark:border-white/8" />
-                  <p className="px-3 pt-0.5 pb-1.5 text-[10px] font-semibold text-gray-400 dark:text-white/40 uppercase tracking-wide">Agents</p>
-                  {AGENT_PAGES.map(p => (
-                    <button
-                      key={p.key}
-                      onClick={() => { setShowSageMenu(false); setLoadingKey(p.key); router.push(p.href) }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
-                    >
-                      <p.icon className="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-white/40" />
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </>
-        ) : (
-          /* ── Sage/Agent page nav: Overview ▾ (triage dropdown) | sage+agent pills flat ── */
-          <>
-            {/* Overview ▾ dropdown with triage pages */}
-            <div className="relative shrink-0 mr-0.5" ref={overviewMenuRef}>
-              <button
-                onClick={() => setShowOverviewMenu(v => !v)}
-                className={[
-                  'flex items-center gap-1.5 px-2 py-1.5 text-sm rounded-lg border transition-colors whitespace-nowrap',
-                  showOverviewMenu ? 'bg-white/10 text-white border-white/20' : 'border-transparent text-white hover:bg-white/10',
-                ].join(' ')}
-              >
-                <LayoutDashboard className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Overview</span>
-                <ChevronDown className={`w-3 h-3 opacity-60 transition-transform ${showOverviewMenu ? 'rotate-180' : ''}`} />
-              </button>
-
-              {showOverviewMenu && (
-                <div className="absolute left-0 top-full mt-2 z-50 bg-white dark:bg-[#1e2535] border border-gray-200 dark:border-white/12 rounded-2xl shadow-xl w-52 overflow-hidden py-1.5">
-                  <Link
-                    href={viewAsUserId ? `/dashboard?viewAs=${viewAsUserId}` : '/dashboard'}
-                    onClick={() => setShowOverviewMenu(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
+            {showSageMenu && (
+              <div className="absolute right-0 top-full mt-2 z-50 bg-white dark:bg-[#1e2535] border border-gray-200 dark:border-white/12 rounded-2xl shadow-xl w-52 overflow-hidden py-1.5">
+                <p className="px-3 pt-1 pb-1.5 text-[10px] font-semibold text-gray-400 dark:text-white/40 uppercase tracking-wide">CRM</p>
+                {SAGE_PAGES.map(p => (
+                  <button
+                    key={p.key}
+                    onClick={() => { setShowSageMenu(false); setLoadingKey(p.key); router.push(p.href) }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
                   >
-                    <LayoutDashboard className="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-white/40" />
-                    Dashboard
-                  </Link>
-                  <div className="mx-3 my-1.5 border-t border-gray-100 dark:border-white/8" />
-                  <p className="px-3 pt-0.5 pb-1.5 text-[10px] font-semibold text-gray-400 dark:text-white/40 uppercase tracking-wide">Triage</p>
-                  {TRIAGE_PAGES.map(p => (
-                    <button
-                      key={p.key}
-                      onClick={() => { setShowOverviewMenu(false); setLoadingKey(p.key); router.push(p.href) }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
-                    >
-                      <p.icon className="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-white/40" />
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+                    <p.icon className="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-white/40" />
+                    {p.label}
+                  </button>
+                ))}
+                <div className="mx-3 my-1.5 border-t border-gray-100 dark:border-white/8" />
+                <p className="px-3 pt-0.5 pb-1.5 text-[10px] font-semibold text-gray-400 dark:text-white/40 uppercase tracking-wide">Agents</p>
+                {AGENT_PAGES.map(p => (
+                  <button
+                    key={p.key}
+                    onClick={() => { setShowSageMenu(false); setLoadingKey(p.key); router.push(p.href) }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
+                  >
+                    <p.icon className="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-white/40" />
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Overview ▾ — outside overflow div so dropdown isn't clipped */}
+          <div className="relative shrink-0 mr-0.5" ref={overviewMenuRef}>
+            <button
+              onClick={() => setShowOverviewMenu(v => !v)}
+              className={[
+                'flex items-center gap-1.5 px-2 py-1.5 text-sm rounded-lg border transition-colors whitespace-nowrap',
+                showOverviewMenu ? 'bg-white/10 text-white border-white/20' : 'border-transparent text-white hover:bg-white/10',
+              ].join(' ')}
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Overview</span>
+              <ChevronDown className={`w-3 h-3 opacity-60 transition-transform ${showOverviewMenu ? 'rotate-180' : ''}`} />
+            </button>
 
+            {showOverviewMenu && (
+              <div className="absolute left-0 top-full mt-2 z-50 bg-white dark:bg-[#1e2535] border border-gray-200 dark:border-white/12 rounded-2xl shadow-xl w-52 overflow-hidden py-1.5">
+                <Link
+                  href={viewAsUserId ? `/dashboard?viewAs=${viewAsUserId}` : '/dashboard'}
+                  onClick={() => setShowOverviewMenu(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-white/40" />
+                  Dashboard
+                </Link>
+                <div className="mx-3 my-1.5 border-t border-gray-100 dark:border-white/8" />
+                <p className="px-3 pt-0.5 pb-1.5 text-[10px] font-semibold text-gray-400 dark:text-white/40 uppercase tracking-wide">Triage</p>
+                {TRIAGE_PAGES.map(p => (
+                  <button
+                    key={p.key}
+                    onClick={() => { setShowOverviewMenu(false); setLoadingKey(p.key); router.push(p.href) }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
+                  >
+                    <p.icon className="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-white/40" />
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Scrollable sage + agent pills */}
+          <div className="flex flex-1 items-end gap-1.5 overflow-x-auto min-w-0">
             <Divider />
             {SAGE_PAGES.map(navButton)}
             <Divider />
             {AGENT_PAGES.map(navButton)}
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      )}
 
       {/* Right controls */}
       <div className="flex items-end gap-2.5 shrink-0">
