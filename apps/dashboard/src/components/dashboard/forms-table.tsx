@@ -596,7 +596,9 @@ export function FormsTable({
   }
 
   return (
-    <div className="max-w-full mx-auto space-y-5 p-8">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      {/* ── Fixed header: sources bar + title + filters ── */}
+      <div className="shrink-0 space-y-5 p-8 pb-0">
 
       {/* ── Connected sources bar ── */}
       {(() => {
@@ -845,6 +847,11 @@ export function FormsTable({
           </div>
         </div>
       </div>
+
+      </div>{/* end shrink-0 header */}
+
+      {/* ── Scrollable table area ── */}
+      <div className="flex-1 overflow-y-auto min-h-0 px-8 pb-8 pt-5">
 
       {/* ── Table or Trash ── */}
       {activeStatus === 'trash' ? (
@@ -1189,6 +1196,7 @@ export function FormsTable({
           Showing first 200 results — use filters to narrow down.
         </p>
       )}
+      </div>{/* end scroll area */}
     </div>
   )
 }

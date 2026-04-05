@@ -218,7 +218,6 @@ export default async function FormsPage({
         teamMembers={teamMembersForPicker}
       />
       <div className="flex flex-1 overflow-hidden min-h-0">
-        <div className="flex-1 overflow-y-auto min-h-0">
           <FormsTable
             submissions={submissions}
             forms={forms}
@@ -231,7 +230,6 @@ export default async function FormsPage({
             teamMembers={teamMembersForPicker}
             canAllocate={callerRank >= ROLE_RANK.manager}
           />
-        </div>
         <ActivitySidebar
           activity={activity}
           date={activityDate}
