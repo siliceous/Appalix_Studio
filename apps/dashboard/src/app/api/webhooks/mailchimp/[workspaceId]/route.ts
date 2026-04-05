@@ -20,6 +20,16 @@ export async function POST(
   const { workspaceId } = await params
   if (!workspaceId) return NextResponse.json({ error: 'missing workspace' }, { status: 400 })
 
+  // Only process if Mailchimp integration is connected
+  const admin = createAdminClient()
+  const { data: integ } = await (admin as any)
+    .from('sage_integrations')
+    .select('status')
+    .eq('workspace_id', workspaceId)
+    .eq('provider', 'mailchimp')
+    .maybeSingle()
+  if (!integ || integ.status !== 'connected') return NextResponse.json({ ok: true })
+
   let body: Record<string, unknown>
   const ct = req.headers.get('content-type') ?? ''
   if (ct.includes('application/x-www-form-urlencoded') || ct.includes('multipart/form-data')) {
