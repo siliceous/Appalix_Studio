@@ -32,6 +32,7 @@ const SKIP_EVENTS = new Set([
   'contact.identified',            // fires alongside contact.created — causes duplicates
   'contacts/applied_tag.created',  // fires alongside contact.created — causes duplicates
   'contacts/applied_tag.deleted',
+  'form_submission.created',       // contact.created already captures the opt-in contact
   'communities/post.created',
   'communities/posts/comment.created',
   'course.created', 'course.updated', 'course.deleted', 'course.published',
@@ -226,6 +227,24 @@ export async function POST(
   if (!hasEmail && !hasName && !hasPhone) {
     console.log('[clickfunnels] skipping — no usable contact data in payload')
     return NextResponse.json({ ok: true })
+  }
+
+  // Time-window dedup: if the same email was ingested in the last 60 seconds, skip.
+  // Handles race conditions from simultaneous CF events and duplicate CF endpoints.
+  if (hasEmail) {
+    const windowStart = new Date(Date.now() - 60_000).toISOString()
+    const { data: recent } = await a
+      .from('sage_form_submissions')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .filter('fields->>email', 'eq', normalizedFields['email'])
+      .gte('created_at', windowStart)
+      .limit(1)
+      .maybeSingle()
+    if (recent) {
+      console.log('[clickfunnels] dedup — recent entry exists for', normalizedFields['email'], '— skipping')
+      return NextResponse.json({ ok: true })
+    }
   }
 
   const result = await insertFormSubmission(a, workspaceId, raw, normalizedFields, 'clickfunnels', formName, true)
