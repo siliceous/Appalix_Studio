@@ -207,7 +207,7 @@ export default async function FormsPage({
   ])
 
   return (
-    <div className="-m-8 flex flex-col h-screen overflow-hidden">
+    <div className="-m-8 flex flex-col flex-1 overflow-hidden">
       <SageToolbar
         pageKey="forms"
         preset={preset}
@@ -217,8 +217,8 @@ export default async function FormsPage({
         viewAsUserId={viewAsUserId}
         teamMembers={teamMembersForPicker}
       />
-      <div className="flex flex-1 overflow-hidden">
-        <div className="flex-1 overflow-y-auto">
+      <div className="flex flex-1 overflow-hidden min-h-0">
+        <div className="flex-1 overflow-y-auto min-h-0">
           <FormsTable
             submissions={submissions}
             forms={forms}

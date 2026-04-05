@@ -109,6 +109,7 @@ export default async function SettingsPage() {
     .map((m) => ({ user_id: m.user_id, name: m.name, email: m.email, role: m.role }))
 
   return (
+    <div className="flex-1 overflow-y-auto -m-8 p-8">
     <div className="max-w-2xl mx-auto space-y-6">
       <Header title="Settings" description="Workspace configuration and billing" />
 
@@ -375,6 +376,7 @@ export default async function SettingsPage() {
           </div>
         </section>
       )}
+    </div>
     </div>
   )
 }

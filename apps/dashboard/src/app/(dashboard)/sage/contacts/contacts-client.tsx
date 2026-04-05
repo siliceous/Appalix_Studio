@@ -518,7 +518,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
     }`
 
   return (
-    <div className="min-w-0" onClick={() => setOpenPanel(null)}>
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden" onClick={() => setOpenPanel(null)}>
 
       {/* Action notification */}
       {notification && (
@@ -544,7 +544,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
         </div>
       )}
       {/* Header */}
-      <div className="pl-9 pt-5 pb-3 pr-4 flex items-start justify-between">
+      <div className="pl-9 pt-5 pb-3 pr-4 flex items-start justify-between shrink-0">
         <div>
           <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Contacts</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{contacts.length} total</p>
@@ -576,7 +576,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center gap-2 mb-4 flex-wrap" onClick={e => e.stopPropagation()}>
+      <div className="flex items-center gap-2 mb-4 flex-wrap shrink-0" onClick={e => e.stopPropagation()}>
         {/* Search */}
         <div className="relative flex-1 min-w-52">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -777,8 +777,8 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col overflow-hidden min-w-0">
-      <div className="overflow-x-auto min-w-0">
+      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col overflow-hidden min-w-0 flex-1">
+      <div className="overflow-auto min-w-0 flex-1">
         {filtered.length === 0 ? (
           <div className="py-20 text-center">
             <UserPlus className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-3" />

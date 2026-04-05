@@ -120,7 +120,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {isOnTrial && workspace.trial_ends_at && (
           <TrialBanner trialEndsAt={workspace.trial_ends_at} />
         )}
-        <main className="flex-1 p-8 overflow-auto bg-[#f5f4f1] dark:bg-[#1c1c1c]">
+        <main className="flex-1 p-8 overflow-hidden flex flex-col bg-[#f5f4f1] dark:bg-[#1c1c1c]">
           {children}
         </main>
       </div>

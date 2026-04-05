@@ -54,9 +54,9 @@ export default async function SourcesPage() {
   const hasActiveJobs = sources.some((s) => s.status === 'pending' || s.status === 'processing')
 
   return (
-    <div className="-m-8">
+    <div className="-m-8 flex flex-col flex-1">
       <SageToolbar pageKey="sources" />
-      <div className="p-8">
+      <div className="p-8 flex-1 overflow-y-auto">
       <div className="max-w-6xl mx-auto">
       {hasActiveJobs && <SourcesPoller />}
       <Header

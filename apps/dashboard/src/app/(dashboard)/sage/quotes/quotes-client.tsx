@@ -224,7 +224,8 @@ export function QuotesClient({ initialDocuments }: Props) {
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+    <div className="p-6 max-w-7xl mx-auto w-full flex flex-col flex-1 min-h-0 overflow-hidden gap-6">
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4">
@@ -393,6 +394,7 @@ export function QuotesClient({ initialDocuments }: Props) {
       </div>
 
       {/* ── Table / Empty state ── */}
+      <div className="flex-1 overflow-y-auto min-h-0">
       {filtered.length === 0 ? (
         <EmptyState
           hasDocuments={documents.length > 0}
@@ -538,6 +540,8 @@ export function QuotesClient({ initialDocuments }: Props) {
           </div>
         </div>
       )}
+      </div>
+    </div>
     </div>
   )
 }

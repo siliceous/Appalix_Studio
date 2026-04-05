@@ -121,6 +121,7 @@ export default async function AnalyticsPage() {
   }
 
   return (
+    <div className="flex-1 overflow-y-auto -m-8 p-8">
     <div className="max-w-5xl mx-auto">
       <Header title="Analytics" description="Usage and performance over the last 30 days" />
 
@@ -322,6 +323,7 @@ export default async function AnalyticsPage() {
           </>
         )}
       </div>
+    </div>
     </div>
   )
 }

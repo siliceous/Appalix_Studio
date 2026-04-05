@@ -8,9 +8,9 @@ export const metadata: Metadata = { title: 'Quotes & Invoices' }
 export default async function QuotesPage() {
   const documents = await getDocuments()
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full overflow-hidden">
       <SageToolbar pageKey="quotes" />
-      <div>
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
         <QuotesClient initialDocuments={documents} />
       </div>
     </div>

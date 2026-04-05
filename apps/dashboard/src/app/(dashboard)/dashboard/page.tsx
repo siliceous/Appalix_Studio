@@ -131,12 +131,13 @@ export default async function DashboardPage({
   ])
 
   return (
-    <>
+    <div className="flex-1 overflow-y-auto -m-8">
       {viewAsUserId && overviewActivity && (
-        <div className="-m-8 mb-0">
+        <div className="mb-0">
           <TeamMemberBanner activity={overviewActivity} date={overviewActivityDate} currentPath="/dashboard" viewingAs={viewingAs} selectedDate={activityDate} />
         </div>
       )}
+      <div className="p-8">
       <Suspense>
         <SageDashboardClient
           workspaceId={membership.workspace_id}
@@ -150,7 +151,8 @@ export default async function DashboardPage({
           connectProvider={connectProvider}
         />
       </Suspense>
-    </>
+      </div>
+    </div>
   )
 }
 

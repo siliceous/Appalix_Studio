@@ -80,9 +80,9 @@ export default async function BotsPage() {
   ]
 
   return (
-    <div className="-m-8">
+    <div className="-m-8 flex flex-col flex-1 overflow-hidden">
       <SageToolbar pageKey="bots" />
-      <div className="p-8">
+      <div className="p-8 flex-1 overflow-y-auto">
       <div className="max-w-5xl mx-auto">
       <Header
         title="Bots"
