@@ -181,7 +181,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-5 p-8">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Merge modal */}
       {showMerge && selectedIds.size >= 2 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -231,6 +231,8 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
         </div>
       )}
 
+      {/* Fixed header + filter */}
+      <div className="shrink-0 space-y-5 p-8 pb-0">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -330,6 +332,9 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
         </div>
       </div>
 
+      </div>{/* end shrink-0 header */}
+
+      <div className="flex-1 overflow-y-auto min-h-0 px-8 pb-8 pt-5">
       {/* Tickets list or Trash */}
       {filter === 'trash' ? (
         <TrashTab type="ticket" />
@@ -491,6 +496,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
         </div>
       </div>
       )}
+      </div>{/* end scroll area */}
 
       {showModal && <TicketModal contacts={contacts} onClose={() => setShowModal(false)} />}
 
