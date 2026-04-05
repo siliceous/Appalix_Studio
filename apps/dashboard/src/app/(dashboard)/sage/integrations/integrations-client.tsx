@@ -961,6 +961,34 @@ export function IntegrationsClient({ connected: initialConnected, standalone = t
                                   </button>
                                 </div>
                               </div>
+                              <div className="border-t dark:border-white/8 pt-3">
+                                <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">Webhook secret <span className="text-gray-400 font-normal">(optional)</span></p>
+                                <p className="text-[11px] text-gray-400 mb-2">Paste the secret shown in ClickFunnels → your endpoint settings to enable signature verification.</p>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="password"
+                                    value={inlineSecret[integration.provider] ?? ''}
+                                    onChange={e => setInlineSecret(prev => ({ ...prev, [integration.provider]: e.target.value }))}
+                                    placeholder="Paste ClickFunnels webhook secret…"
+                                    className="flex-1 px-3 py-2 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-[#232323] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                                  />
+                                  <button
+                                    disabled={!inlineSecret[integration.provider]?.trim() || pending}
+                                    onClick={() => {
+                                      const secret = inlineSecret[integration.provider]?.trim()
+                                      if (!secret) return
+                                      startTransition(async () => {
+                                        await saveSageIntegration(integration.provider, { webhook_secret: secret })
+                                        setInlineSecretSaved(integration.provider)
+                                        setTimeout(() => setInlineSecretSaved(null), 3000)
+                                      })
+                                    }}
+                                    className="shrink-0 px-3 py-2 text-xs font-medium rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition-colors disabled:opacity-40"
+                                  >
+                                    {inlineSecretSaved === integration.provider ? 'Saved!' : 'Save'}
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           )}
 
