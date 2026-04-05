@@ -98,6 +98,7 @@ const COLUMNS = [
   { key: 'email',        label: 'Email',   defaultOn: true  },
   { key: 'phone',        label: 'Phone',   defaultOn: true  },
   { key: 'contact_name', label: 'Contact', defaultOn: true  },
+  { key: 'url',          label: 'URL',     defaultOn: true  },
   { key: 'description',  label: 'About',   defaultOn: true  },
   { key: 'pricing_hint', label: 'Pricing', defaultOn: false },
   { key: 'city',         label: 'City',    defaultOn: true  },
@@ -541,12 +542,12 @@ function ProspectRow({ prospect, cols, isPushed, onCreateDeal, onCreateContact, 
       <tr className="group border-b border-gray-50 dark:border-white/[0.04] hover:bg-gray-50/70 dark:hover:bg-white/[0.025] transition-colors">
 
         {/* Tier dot */}
-        <td className="pl-5 pr-2 py-3.5 w-3 shrink-0">
+        <td className="pl-5 pr-2 py-2 w-3 shrink-0">
           <div className={cn('w-2 h-2 rounded-full', cfg.dot)} title={cfg.label} />
         </td>
 
         {/* Company — always visible */}
-        <td className="px-3 py-3.5" style={{ minWidth: 180, maxWidth: 220 }}>
+        <td className="px-3 py-2" style={{ minWidth: 180, maxWidth: 220 }}>
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-white/8 border border-gray-200/60 dark:border-white/8 flex items-center justify-center shrink-0 overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -575,7 +576,7 @@ function ProspectRow({ prospect, cols, isPushed, onCreateDeal, onCreateContact, 
 
         {/* Score */}
         {cols.has('score') && (
-          <td className="px-3 py-3.5 w-36 shrink-0">
+          <td className="px-3 py-2 w-36 shrink-0">
             <div className="space-y-1.5">
               {prospect.score != null && <ScoreBar score={prospect.score} tier={tier} />}
               <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-bold inline-block', cfg.badge)}>
@@ -587,7 +588,7 @@ function ProspectRow({ prospect, cols, isPushed, onCreateDeal, onCreateContact, 
 
         {/* Email */}
         {cols.has('email') && (
-          <td className="px-3 py-3.5 shrink-0" style={{ minWidth: 160, maxWidth: 200 }}>
+          <td className="px-3 py-2 shrink-0" style={{ minWidth: 160, maxWidth: 200 }}>
             {displayEmail ? (
               <div className="flex items-center gap-1 group/cell">
                 <span className="text-xs text-gray-700 dark:text-gray-300 truncate">{displayEmail}</span>
@@ -601,7 +602,7 @@ function ProspectRow({ prospect, cols, isPushed, onCreateDeal, onCreateContact, 
 
         {/* Phone */}
         {cols.has('phone') && (
-          <td className="px-3 py-3.5 shrink-0" style={{ minWidth: 140, maxWidth: 180 }}>
+          <td className="px-3 py-2 shrink-0" style={{ minWidth: 140, maxWidth: 180 }}>
             {displayPhone ? (
               <div className="flex items-center gap-1 group/cell">
                 <span className="text-xs text-gray-700 dark:text-gray-300 truncate">{displayPhone}</span>
@@ -615,7 +616,7 @@ function ProspectRow({ prospect, cols, isPushed, onCreateDeal, onCreateContact, 
 
         {/* Contact / Decision makers */}
         {cols.has('contact_name') && (
-          <td className="px-3 py-3.5 w-44 shrink-0">
+          <td className="px-3 py-2 w-44 shrink-0">
             <DecisionMakerCell
               decisionMakers={prospect.decision_makers ?? []}
               fallbackName={prospect.contact_name}
@@ -623,11 +624,30 @@ function ProspectRow({ prospect, cols, isPushed, onCreateDeal, onCreateContact, 
           </td>
         )}
 
+        {/* URL */}
+        {cols.has('url') && (
+          <td className="px-3 py-2 shrink-0" style={{ minWidth: 140, maxWidth: 200 }}>
+            {prospect.domain ? (
+              <a
+                href={`https://${prospect.domain}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="text-xs text-[#15A4AE] hover:underline truncate block"
+              >
+                {prospect.domain}
+              </a>
+            ) : (
+              <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
+            )}
+          </td>
+        )}
+
         {/* About / description */}
         {cols.has('description') && (
-          <td className="px-3 py-3.5" style={{ maxWidth: 260 }}>
+          <td className="px-3 py-2" style={{ maxWidth: 260 }}>
             {displayDesc ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">{displayDesc}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{displayDesc}</p>
             ) : (
               <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
             )}
@@ -636,9 +656,9 @@ function ProspectRow({ prospect, cols, isPushed, onCreateDeal, onCreateContact, 
 
         {/* Pricing hint */}
         {cols.has('pricing_hint') && (
-          <td className="px-3 py-3.5" style={{ maxWidth: 200 }}>
+          <td className="px-3 py-2" style={{ maxWidth: 200 }}>
             {prospect.pricing_hint ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">{prospect.pricing_hint}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{prospect.pricing_hint}</p>
             ) : (
               <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
             )}
@@ -647,7 +667,7 @@ function ProspectRow({ prospect, cols, isPushed, onCreateDeal, onCreateContact, 
 
         {/* City */}
         {cols.has('city') && (
-          <td className="px-3 py-3.5 w-28 shrink-0">
+          <td className="px-3 py-2 w-28 shrink-0">
             {displayCity ? (
               <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
                 <MapPin className="w-3 h-3 shrink-0 text-gray-400" />
@@ -661,7 +681,7 @@ function ProspectRow({ prospect, cols, isPushed, onCreateDeal, onCreateContact, 
 
         {/* Country */}
         {cols.has('country') && (
-          <td className="px-3 py-3.5 w-28 shrink-0">
+          <td className="px-3 py-2 w-28 shrink-0">
             {displayCountry ? (
               <span className="text-sm text-gray-600 dark:text-gray-400 truncate">{displayCountry}</span>
             ) : (
@@ -671,7 +691,7 @@ function ProspectRow({ prospect, cols, isPushed, onCreateDeal, onCreateContact, 
         )}
 
         {/* Actions */}
-        <td className="sticky right-0 px-3 py-3.5 bg-white dark:bg-[#232323] group-hover:bg-gray-50/70 dark:group-hover:bg-white/[0.025] z-10 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)]">
+        <td className="sticky right-0 px-3 py-2 bg-white dark:bg-[#232323] group-hover:bg-gray-50/70 dark:group-hover:bg-white/[0.025] z-10 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)]">
           <div className="flex items-center justify-end gap-0.5">
             {pushed && (
               <span className="inline-flex items-center gap-1 text-[11px] text-[#15A4AE] font-semibold mr-1.5 shrink-0">
@@ -1891,6 +1911,9 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
                     )}
                     {cols.has('contact_name') && (
                       <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-white bg-[#141c2b] border-b border-white/10">Contact</th>
+                    )}
+                    {cols.has('url') && (
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-white bg-[#141c2b] border-b border-white/10">URL</th>
                     )}
                     {cols.has('description') && (
                       <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-white bg-[#141c2b] border-b border-white/10">About</th>
