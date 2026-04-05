@@ -207,7 +207,7 @@ export default async function FormsPage({
   ])
 
   return (
-    <div className="-m-8 flex flex-col flex-1 overflow-hidden">
+    <div className="-m-8 h-[calc(100vh-0px)] flex flex-col overflow-hidden">
       <SageToolbar
         pageKey="forms"
         preset={preset}
