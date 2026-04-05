@@ -548,38 +548,26 @@ function ProspectRow({ prospect, cols, isPushed, onCreateDeal, onCreateContact, 
 
         {/* Company — always visible */}
         <td className="px-3 py-2" style={{ minWidth: 180, maxWidth: 220 }}>
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-white/8 border border-gray-200/60 dark:border-white/8 flex items-center justify-center shrink-0 overflow-hidden">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-5 h-5 rounded bg-gray-100 dark:bg-white/8 border border-gray-200/60 dark:border-white/8 flex items-center justify-center shrink-0 overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={`https://www.google.com/s2/favicons?domain=${prospect.domain}&sz=32`}
                 alt=""
-                className="w-4 h-4 object-contain"
+                className="w-3.5 h-3.5 object-contain"
                 onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
               />
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate leading-snug">{name}</p>
-              <a
-                href={`https://${prospect.domain}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                className="text-[11px] text-gray-400 hover:text-[#15A4AE] transition-colors flex items-center gap-0.5 mt-0.5"
-              >
-                <Globe className="w-2.5 h-2.5 shrink-0" />
-                <span className="truncate">{prospect.domain}</span>
-              </a>
-            </div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{name}</p>
           </div>
         </td>
 
         {/* Score */}
         {cols.has('score') && (
           <td className="px-3 py-2 w-36 shrink-0">
-            <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
               {prospect.score != null && <ScoreBar score={prospect.score} tier={tier} />}
-              <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-bold inline-block', cfg.badge)}>
+              <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-bold shrink-0', cfg.badge)}>
                 {cfg.label}
               </span>
             </div>
