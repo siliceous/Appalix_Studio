@@ -56,7 +56,7 @@ async function upsertContact(workspaceId: string, contact: { email: string; name
   // Mirror into sage_form_submissions (Forms feed + AI triage)
   await ingestLead(
     { name: contact.name || contact.email.split('@')[0], email: contact.email, phone: contact.phone || null, company: contact.company || null, job_title: null, website: null, campaign_name: null, ad_name: null, form_name: null },
-    { workspaceId, sourcePlatform: 'mailchimp', rawPayload: contact, dedup: true },
+    { workspaceId, sourcePlatform: 'mailchimp', rawPayload: contact, dedup: false },
   ).catch(() => null)
 
   const { data: existing } = await a
