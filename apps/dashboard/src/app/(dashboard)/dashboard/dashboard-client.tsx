@@ -432,6 +432,34 @@ export function SageDashboardClient({
     return () => { cancelled = true }
   }, [dateRange, customFrom, customTo, workspaceId, viewAsUserId])
 
+  // ── Realtime: prepend new form submissions without a full reload ──────────
+  useEffect(() => {
+    if (!workspaceId) return
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`dashboard-forms-${workspaceId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'sage_form_submissions', filter: `workspace_id=eq.${workspaceId}` },
+        (payload) => {
+          const f = payload.new as { id: string; fields: Record<string, string> | null; ai_priority: string | null; source_platform: string; created_at: string; assigned_to: string | null }
+          const newLead: RawLead = {
+            id:              f.id,
+            name:            f.fields?.name ?? f.fields?.full_name ?? f.fields?.first_name ?? '(unknown)',
+            email:           f.fields?.email ?? null,
+            phone:           f.fields?.phone ?? null,
+            company:         f.fields?.company ?? f.fields?.company_name ?? null,
+            lead_score:      f.ai_priority,
+            source_platform: f.source_platform,
+            created_at:      f.created_at,
+          }
+          setForms(prev => [newLead, ...prev.filter(x => x.id !== newLead.id)])
+        },
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [workspaceId])
+
   // ── Visible (non-dismissed) subsets — used by both donuts and timeline ───
   const visEmails  = useMemo(() => emails.filter(e  => !dismissedIds.has(`email-${e.id}`)),   [emails,   dismissedIds])
   const visBots    = useMemo(() => bots.filter(b    => !dismissedIds.has(`bot-${b.id}`)),     [bots,     dismissedIds])
