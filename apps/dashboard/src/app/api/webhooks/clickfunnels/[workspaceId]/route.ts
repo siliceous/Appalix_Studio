@@ -32,7 +32,6 @@ const SKIP_EVENTS = new Set([
   'contact.identified',            // fires alongside contact.created — causes duplicates
   'contacts/applied_tag.created',  // fires alongside contact.created — causes duplicates
   'contacts/applied_tag.deleted',
-  'form_submission.created',       // contact.created already captures the opt-in contact
   'communities/post.created',
   'communities/posts/comment.created',
   'course.created', 'course.updated', 'course.deleted', 'course.published',
@@ -226,6 +225,27 @@ export async function POST(
   const hasPhone = !!normalizedFields['phone']
   if (!hasEmail && !hasName && !hasPhone) {
     console.log('[clickfunnels] skipping — no usable contact data in payload')
+    return NextResponse.json({ ok: true })
+  }
+
+  // form_submission.created: enrich the existing record with form field values (message etc.)
+  // Never insert a new row — contact.created already did that.
+  if (eventType === 'form_submission.created') {
+    if (hasEmail) {
+      const { data: existing } = await a
+        .from('sage_form_submissions')
+        .select('id, fields')
+        .eq('workspace_id', workspaceId)
+        .filter('fields->>email', 'eq', normalizedFields['email'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (existing) {
+        const merged = { ...(existing.fields ?? {}), ...normalizedFields }
+        await a.from('sage_form_submissions').update({ fields: merged }).eq('id', existing.id)
+        console.log('[clickfunnels] form_submission enriched fields for', normalizedFields['email'])
+      }
+    }
     return NextResponse.json({ ok: true })
   }
 
