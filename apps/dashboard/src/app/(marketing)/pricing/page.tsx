@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { ScrollReveal } from '@/components/marketing/animate'
 import { PricingCards, BillingProvider, BillingToggle } from '@/components/marketing/pricing-cards'
 import { TopupCards } from '@/components/marketing/topup-cards'
+import { EnrichmentCards } from '@/components/marketing/enrichment-cards'
 import { ContactSalesButton } from '@/components/marketing/contact-sales-button'
 
 export const metadata: Metadata = {
@@ -89,6 +90,23 @@ export default function PricingPage() {
           <TopupCards />
           <ScrollReveal delay={0.15}>
             <p className="text-xs text-gray-600 text-center mt-5">Top-ups are available on all paid plans. Credits do not roll over to the next billing period.</p>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* Lead Enrichment Credits */}
+      <section className="py-16 px-6 border-t border-white/5">
+        <div className="max-w-4xl mx-auto">
+          <ScrollReveal>
+            <div className="text-center mb-10">
+              <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Lead Enrichment</p>
+              <h2 className="text-2xl font-bold mb-3">Enrich &amp; qualify your leads</h2>
+              <p className="text-white/65 text-sm">One-time credit packs for Sage lead enrichment. Enrich, score, and qualify prospects — credits never expire.</p>
+            </div>
+          </ScrollReveal>
+          <EnrichmentCards />
+          <ScrollReveal delay={0.15}>
+            <p className="text-xs text-gray-600 text-center mt-5">Enrichment credits are available on Pro plan and above. Credits never expire and do not roll over.</p>
           </ScrollReveal>
         </div>
       </section>
