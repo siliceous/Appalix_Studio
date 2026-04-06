@@ -490,7 +490,7 @@ export async function createAutomationFromProspect(opts: {
     source_ref_id:   opts.prospectId,
     goal:            opts.goal,
     primary_channel: opts.primaryChannel,
-    current_summary: opts.summary ?? null ?? undefined,
+    current_summary: opts.summary ?? undefined,
   })
 
   return { automationId: automation.id, contactId: contactId ?? '' }
