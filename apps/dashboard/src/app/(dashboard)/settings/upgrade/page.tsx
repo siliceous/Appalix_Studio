@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/header'
 import { UpgradePlanCards } from '@/components/settings/upgrade-plan-cards'
 import { TopupSection } from '@/components/settings/topup-section'
 import { EnrichmentCreditsSection } from '@/components/settings/enrichment-credits-section'
+import { AddonsSection } from '@/components/settings/addons-section'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Upgrade Plan' }
@@ -44,6 +45,8 @@ export default async function UpgradePage() {
       <UpgradePlanCards currentPlan={currentPlan} hasSubscription={hasSubscription} />
 
       <TopupSection />
+
+      <AddonsSection />
 
       <EnrichmentCreditsSection />
 

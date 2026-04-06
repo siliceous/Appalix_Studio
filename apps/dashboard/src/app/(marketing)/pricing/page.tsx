@@ -4,6 +4,7 @@ import { ScrollReveal } from '@/components/marketing/animate'
 import { PricingCards, BillingProvider, BillingToggle } from '@/components/marketing/pricing-cards'
 import { TopupCards } from '@/components/marketing/topup-cards'
 import { EnrichmentCards } from '@/components/marketing/enrichment-cards'
+import { AddonsCards } from '@/components/marketing/addons-cards'
 import { ContactSalesButton } from '@/components/marketing/contact-sales-button'
 
 export const metadata: Metadata = {
@@ -91,6 +92,20 @@ export default function PricingPage() {
           <ScrollReveal delay={0.15}>
             <p className="text-xs text-gray-600 text-center mt-5">Top-ups are available on all paid plans. Credits do not roll over to the next billing period.</p>
           </ScrollReveal>
+        </div>
+      </section>
+
+      {/* Subscription Add-ons */}
+      <section className="py-16 px-6 border-t border-white/5">
+        <div className="max-w-4xl mx-auto">
+          <ScrollReveal>
+            <div className="text-center mb-10">
+              <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Add-ons</p>
+              <h2 className="text-2xl font-bold mb-3">Expand your plan</h2>
+              <p className="text-white/65 text-sm">Add extra seats, bots, or storage to any paid plan — billed with your subscription.</p>
+            </div>
+          </ScrollReveal>
+          <AddonsCards />
         </div>
       </section>
 
