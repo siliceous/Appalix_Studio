@@ -149,34 +149,41 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
           <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Pipelines</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage your sales pipelines and track deals through every stage</p>
         </div>
+        <div className="flex items-center gap-2">
+          <input ref={importRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
+          <button
+            onClick={() => importRef.current?.click()}
+            disabled={importing}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 dark:border-white/15 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/8 rounded-xl transition-colors font-medium disabled:opacity-50"
+          >
+            {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+            Import
+          </button>
+          <button
+            onClick={exportCsv}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 dark:border-white/15 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/8 rounded-xl transition-colors font-medium"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export
+          </button>
+          {importResult && (
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {importResult.failed < 0 ? 'Import failed' : `${importResult.success} imported${importResult.failed > 0 ? `, ${importResult.failed} failed` : ''}`}
+            </span>
+          )}
+        </div>
       </div>
 
     <div className="flex-1 min-h-0 flex gap-3 px-3 pb-3">
 
       {/* ── Left: Pipelines ─────────────────────────────── */}
       <div className="w-72 shrink-0 flex flex-col bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-200/60 dark:border-white/8 overflow-hidden shadow-[0_4px_6px_-1px_rgba(0,0,0,0.08),0_10px_30px_-5px_rgba(0,0,0,0.12),0_1px_0px_rgba(255,255,255,0.8)_inset] dark:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.3),0_20px_40px_-10px_rgba(0,0,0,0.5),0_1px_0px_rgba(255,255,255,0.04)_inset]">
-        <div className="relative px-4 py-2.5 bg-[#141c2b] border-b border-white/10 flex items-center justify-between shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.35),0_1px_0px_rgba(255,255,255,0.06)_inset]">
+        <div className="px-4 py-2.5 bg-[#141c2b] border-b border-white/10 flex items-center justify-between shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.35),0_1px_0px_rgba(255,255,255,0.06)_inset]">
           <div>
             <h2 className="text-sm font-bold text-white">Pipelines</h2>
             <p className="text-[11px] text-white/50 mt-0.5">{pipelines.length} pipeline{pipelines.length !== 1 ? 's' : ''}</p>
           </div>
           <div className="flex items-center gap-1.5">
-            <input ref={importRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
-            <button
-              onClick={() => importRef.current?.click()}
-              disabled={importing}
-              title="Import CSV"
-              className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/20 disabled:opacity-50"
-            >
-              {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-            </button>
-            <button
-              onClick={exportCsv}
-              title="Export CSV"
-              className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/20"
-            >
-              <Download className="w-3.5 h-3.5" />
-            </button>
             {canWrite && (
               <button
                 onClick={() => setShowModal(true)}
@@ -186,12 +193,6 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
               </button>
             )}
           </div>
-          {importResult && (
-            <div className="absolute top-full left-0 right-0 mt-1 mx-3 z-10 px-3 py-1.5 rounded-lg bg-white dark:bg-[#232323] border border-gray-200 dark:border-white/10 shadow-lg text-[11px] text-gray-700 dark:text-gray-300 flex items-center justify-between">
-              <span>{importResult.failed < 0 ? 'Import failed' : `${importResult.success} imported${importResult.failed > 0 ? `, ${importResult.failed} failed` : ''}`}</span>
-              <button onClick={() => setImportResult(null)} className="ml-2 text-gray-400 hover:text-gray-600">×</button>
-            </div>
-          )}
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2">
@@ -318,6 +319,7 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
         date={activityDate}
         currentPath="/sage/pipelines"
         viewingAs={viewingAs}
+        className="w-64 flex-shrink-0 flex flex-col overflow-hidden"
       />
 
       {showModal && <CreatePipelineModal onClose={() => { setShowModal(false) }} />}

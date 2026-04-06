@@ -147,9 +147,10 @@ interface Props {
   date:        string          // YYYY-MM-DD
   currentPath: string
   viewingAs?:  ViewingAsInfo | null
+  className?:  string
 }
 
-export function ActivitySidebar({ activity, date, currentPath, viewingAs }: Props) {
+export function ActivitySidebar({ activity, date, currentPath, viewingAs, className }: Props) {
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
 
@@ -194,7 +195,7 @@ export function ActivitySidebar({ activity, date, currentPath, viewingAs }: Prop
 
   // ── Expanded ───────────────────────────────────────────────────────────────
   return (
-    <div className="w-64 flex-shrink-0 bg-[#f5f4f1] dark:bg-[#1c1c1c] flex flex-col overflow-hidden p-3 pr-4">
+    <div className={className ?? 'w-64 flex-shrink-0 bg-[#f5f4f1] dark:bg-[#1c1c1c] flex flex-col overflow-hidden p-3 pr-4'}>
       <div className="flex flex-col flex-1 overflow-hidden bg-white dark:bg-[#242424] rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_16px_rgba(0,0,0,0.4)] border border-gray-200/70 dark:border-white/8">
 
       {/* Header */}
