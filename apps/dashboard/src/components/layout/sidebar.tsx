@@ -22,6 +22,7 @@ import {
   Clock,
   Target,
   Zap,
+  Palette,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -68,6 +69,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Sage',
     pro: true,
     items: [
+      { href: '/sage/branding',    label: 'Branding',        icon: Palette,    permissionKey: 'can_view_pipelines' },
       { href: '/sage/prospects',   label: 'Lead Enrichment', icon: Target,     permissionKey: 'can_view_pipelines' },
       { href: '/sage/automations', label: 'Automations',     icon: Zap,        permissionKey: 'can_view_pipelines' },
       { href: '/sage/rules',       label: 'Rules',           icon: ListFilter, adminOnly: true                     },

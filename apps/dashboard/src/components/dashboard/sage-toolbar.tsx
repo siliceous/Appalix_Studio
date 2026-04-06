@@ -9,7 +9,7 @@ import {
   Target, Users, Kanban, FolderOpen, Receipt,
   Settings, TrendingUp, BarChart2, CreditCard,
   Mail, MessageSquare, FileText, Ticket as TicketIcon,
-  Calendar, ChevronDown, Zap, Loader2,
+  Calendar, ChevronDown, Zap, Loader2, Palette,
 } from 'lucide-react'
 import { useUserAvatar } from '@/contexts/user-avatar-context'
 import { updateAutoSetting, type AutoSettings } from '@/app/actions/sage-auto-settings'
@@ -18,6 +18,7 @@ export type SagePageKey =
   | 'bots' | 'integrations' | 'sources'
   | 'prospects' | 'contacts' | 'pipelines' | 'projects' | 'quotes' | 'rules' | 'automations'
   | 'email' | 'conversations' | 'forms' | 'tickets' | 'my-activity'
+  | 'branding'
 
 export type TriagePreset = 'all' | 'today' | 'yesterday' | '7d' | '30d' | 'custom'
 
@@ -33,6 +34,7 @@ const TRIAGE_PAGES: PageDef[] = [
 ]
 
 const SAGE_PAGES: PageDef[] = [
+  { key: 'branding',    label: 'Branding',     href: '/sage/branding',    icon: Palette    },
   { key: 'prospects',   label: 'Enrichment',   href: '/sage/prospects',   icon: Target     },
   { key: 'automations', label: 'Automations',  href: '/sage/automations', icon: Zap        },
   { key: 'contacts',    label: 'Contacts',     href: '/sage/contacts',    icon: Users      },
