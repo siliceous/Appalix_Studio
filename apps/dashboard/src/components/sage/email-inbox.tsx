@@ -7,7 +7,7 @@ import {
   Mail, RefreshCw, Send, Sparkles, Star, Inbox,
   Loader2, AlertCircle, Paperclip, Receipt, FileText, X, ArrowRight,
   Pencil, Search, Trash2, Reply, Forward, FolderInput, Calendar,
-  UserPlus, Ticket, CheckCircle,
+  UserPlus, Ticket, CheckCircle, MailX, MailCheck,
 } from 'lucide-react'
 import {
   syncEmails, quickCheckEmails, sendEmail, rewriteEmail,
@@ -500,6 +500,8 @@ export function EmailInbox({
           ai_action: null, ai_entities: null, ai_insights: null,
           ai_reply_drafts: null, ai_analyzed_at: null,
           assigned_to: null,
+          delivery_status: 'sent', provider_message_id: null,
+          bounced_at: null, failed_reason: null, opened_at: null, last_event_at: null,
           created_at: new Date().toISOString(),
         }
         setEmails(prev => [sent, ...prev])
@@ -1044,6 +1046,26 @@ export function EmailInbox({
                         <div className="flex items-center gap-2 shrink-0">
                           {msg.ai_priority && (
                             <span className={cn('w-2 h-2 rounded-full', PRIORITY_DOT[msg.ai_priority])} title={msg.ai_priority} />
+                          )}
+                          {isOutbound && msg.delivery_status === 'bounced' && (
+                            <span title={`Bounced${msg.bounced_at ? ' · ' + new Date(msg.bounced_at).toLocaleDateString() : ''}`}
+                              className="flex items-center gap-1 text-[10px] text-red-400 font-medium">
+                              <MailX className="w-3 h-3" />
+                              Bounced
+                            </span>
+                          )}
+                          {isOutbound && msg.delivery_status === 'failed' && (
+                            <span title={msg.failed_reason ?? 'Delivery failed'}
+                              className="flex items-center gap-1 text-[10px] text-red-400 font-medium">
+                              <MailX className="w-3 h-3" />
+                              Failed
+                            </span>
+                          )}
+                          {isOutbound && msg.delivery_status === 'delivered' && (
+                            <span title="Delivered" className="flex items-center gap-1 text-[10px] text-emerald-500 font-medium">
+                              <MailCheck className="w-3 h-3" />
+                              Delivered
+                            </span>
                           )}
                           <span className="text-[11px] text-gray-400 tabular-nums">{formatFull(msg.received_at)}</span>
                           <button onClick={e => handleToggleStar(msg, e)} className="shrink-0">

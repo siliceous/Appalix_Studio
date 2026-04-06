@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import {
-  FolderKanban, Plus, Trash2, ArrowRight, Loader2, Activity,
-  Clock, X, GripVertical, ChevronRight, Download,
+  FolderKanban, Plus, Trash2, Loader2, Activity,
+  Clock, X, GripVertical, ChevronRight, Download, Upload,
 } from 'lucide-react'
 import Link from 'next/link'
-import { createProjectBoard, deleteProjectBoard } from '@/app/actions/sage-projects'
+import { createProjectBoard, deleteProjectBoard, createProject } from '@/app/actions/sage-projects'
 import { timeAgo } from '@/lib/utils'
 import type { SageActivityLog, SageProjectBoard, SageProjectBoardStage } from '@/lib/types'
 
@@ -42,11 +42,49 @@ export function ProjectsInboxClient({ boards: initialBoards, activity }: Props) 
   const [boardName,    setBoardName]    = useState('')
   const [boardDesc,    setBoardDesc]    = useState('')
   const [stages,       setStages]       = useState<string[]>([...DEFAULT_STAGES])
+  const [importing,    setImporting]    = useState(false)
+  const [importResult, setImportResult] = useState<{ success: number; failed: number } | null>(null)
+  const importRef = useRef<HTMLInputElement>(null)
 
   function addStage() { setStages(prev => [...prev, '']) }
   function removeStage(i: number) { setStages(prev => prev.filter((_, idx) => idx !== i)) }
   function updateStage(i: number, val: string) { setStages(prev => prev.map((s, idx) => idx === i ? val : s)) }
   function resetForm() { setBoardName(''); setBoardDesc(''); setStages([...DEFAULT_STAGES]); setFormError('') }
+
+  function parseCSVLine(line: string): string[] {
+    const result: string[] = []; let cur = '', inQ = false
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i]
+      if (ch === '"') { inQ = !inQ }
+      else if (ch === ',' && !inQ) { result.push(cur.trim()); cur = '' }
+      else { cur += ch }
+    }
+    result.push(cur.trim()); return result
+  }
+
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]; if (!file) return
+    e.target.value = ''; setImporting(true); setImportResult(null)
+    try {
+      const text = await file.text()
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+      if (lines.length < 2) { setImportResult({ success: 0, failed: 0 }); return }
+      const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z_]/g, ''))
+      const col = (n: string) => headers.indexOf(n)
+      let success = 0, failed = 0
+      for (const line of lines.slice(1)) {
+        const vals = parseCSVLine(line)
+        const name = col('name') >= 0 ? vals[col('name')] ?? '' : vals[0] ?? ''
+        if (!name.trim()) { failed++; continue }
+        try {
+          const res = await createProject({ name, notes: col('description') >= 0 ? vals[col('description')] : undefined })
+          if (res.error) failed++; else success++
+        } catch { failed++ }
+      }
+      setImportResult({ success, failed })
+    } catch { setImportResult({ success: 0, failed: -1 }) }
+    finally { setImporting(false) }
+  }
 
   async function handleCreate(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -95,42 +133,55 @@ export function ProjectsInboxClient({ boards: initialBoards, activity }: Props) 
   }
 
   return (
-    <div className="flex flex-col">
-      {/* ── Page heading ───────────────────────────────────────────────────────── */}
-      <div className="px-8 pt-6 pb-2">
-        <div className="max-w-5xl mx-auto flex items-start justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Projects</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Organise work across boards and track progress through every stage</p>
-          </div>
-          <button
-            onClick={exportCsv}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 dark:border-white/15 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/8 rounded-xl transition-colors font-medium"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Export CSV
-          </button>
-        </div>
+    <div className="h-full flex flex-col">
+      {/* ── Page heading ── */}
+      <div className="shrink-0 pl-9 pt-5 pb-3 pr-6">
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Projects</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Organise work across boards and track progress through every stage</p>
       </div>
 
-    <div className="flex h-full overflow-hidden bg-gray-50 dark:bg-[#141414]">
+    <div className="flex-1 min-h-0 flex gap-3 px-3 pb-3">
 
       {/* ── Left: Project Boards ─────────────────────────── */}
-      <aside className="w-80 shrink-0 border-r dark:border-white/8 bg-white dark:bg-[#1a1a1a] overflow-y-auto flex flex-col">
-        <div className="px-4 py-4 border-b dark:border-white/8 flex items-center justify-between">
+      <div className="w-72 shrink-0 flex flex-col bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-200/60 dark:border-white/8 overflow-hidden shadow-[0_4px_6px_-1px_rgba(0,0,0,0.08),0_10px_30px_-5px_rgba(0,0,0,0.12),0_1px_0px_rgba(255,255,255,0.8)_inset] dark:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.3),0_20px_40px_-10px_rgba(0,0,0,0.5),0_1px_0px_rgba(255,255,255,0.04)_inset]">
+        <div className="relative px-4 py-2.5 bg-[#141c2b] border-b border-white/10 flex items-center justify-between shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.35),0_1px_0px_rgba(255,255,255,0.06)_inset]">
           <div>
-            <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Project Boards</h2>
-            <p className="text-[11px] text-gray-400 mt-0.5">{boards.length} board{boards.length !== 1 ? 's' : ''}</p>
+            <h2 className="text-sm font-bold text-white">Project Boards</h2>
+            <p className="text-[11px] text-white/50 mt-0.5">{boards.length} board{boards.length !== 1 ? 's' : ''}</p>
           </div>
-          <button
-            onClick={() => setShowNew(true)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#15A4AE]/10 text-[#15A4AE] text-xs font-medium hover:bg-[#15A4AE]/20 transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" /> New
-          </button>
+          <div className="flex items-center gap-1.5">
+            <input ref={importRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
+            <button
+              onClick={() => importRef.current?.click()}
+              disabled={importing}
+              title="Import CSV"
+              className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/20 disabled:opacity-50"
+            >
+              {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+            </button>
+            <button
+              onClick={exportCsv}
+              title="Export CSV"
+              className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/20"
+            >
+              <Download className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setShowNew(true)}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/10 text-white text-xs font-medium hover:bg-white/20 transition-colors border border-white/20"
+            >
+              <Plus className="w-3.5 h-3.5" /> New
+            </button>
+          </div>
+          {importResult && (
+            <div className="absolute top-full left-0 right-0 mt-1 mx-3 z-10 px-3 py-1.5 rounded-lg bg-white dark:bg-[#232323] border border-gray-200 dark:border-white/10 shadow-lg text-[11px] text-gray-700 dark:text-gray-300 flex items-center justify-between">
+              <span>{importResult.failed < 0 ? 'Import failed' : `${importResult.success} imported${importResult.failed > 0 ? `, ${importResult.failed} failed` : ''}`}</span>
+              <button onClick={() => setImportResult(null)} className="ml-2 text-gray-400 hover:text-gray-600">×</button>
+            </div>
+          )}
         </div>
 
-        <div className="flex-1 p-3 space-y-2">
+        <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2">
           {boards.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center px-4">
               <FolderKanban className="w-8 h-8 text-gray-300 dark:text-gray-600 mb-3" />
@@ -183,14 +234,21 @@ export function ProjectsInboxClient({ boards: initialBoards, activity }: Props) 
             </Link>
           ))}
         </div>
-      </aside>
+      </div>
 
-      {/* ── Center: empty fill ────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto min-w-0 flex flex-col">
-        <div className="flex-1 flex items-center justify-center p-6">
+      {/* ── Center ───────────────────────────────────────── */}
+      <main className="flex-1 min-w-0 flex flex-col bg-white dark:bg-[#232323] rounded-2xl border border-gray-200/60 dark:border-white/8 overflow-hidden shadow-[0_4px_6px_-1px_rgba(0,0,0,0.08),0_10px_30px_-5px_rgba(0,0,0,0.12),0_1px_0px_rgba(255,255,255,0.8)_inset] dark:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.3),0_20px_40px_-10px_rgba(0,0,0,0.5),0_1px_0px_rgba(255,255,255,0.04)_inset]">
+        <div className="shrink-0 bg-[#141c2b] border-b border-white/10 px-6 py-3 flex items-center justify-between shadow-[0_2px_8px_rgba(0,0,0,0.35),0_1px_0px_rgba(255,255,255,0.06)_inset]">
+          <div>
+            <h2 className="text-sm font-semibold text-white">Project Boards</h2>
+            <p className="text-xs text-white/50 mt-0.5">Select a board from the left to open it</p>
+          </div>
+        </div>
+        <div className="flex-1 min-h-0 overflow-y-auto flex items-center justify-center p-6">
           <div className="text-center">
             <FolderKanban className="w-10 h-10 text-gray-200 dark:text-gray-700 mx-auto mb-3" />
-            <p className="text-sm text-gray-400">Select a board to open it</p>
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">All caught up</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-xs">Every project is assigned to a board. New projects without a board will appear here.</p>
           </div>
         </div>
       </main>

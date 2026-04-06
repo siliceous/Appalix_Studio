@@ -598,7 +598,7 @@ export function FormsTable({
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* ── Fixed header: sources bar + title + filters ── */}
-      <div className="shrink-0 space-y-5 p-8 pb-5">
+      <div className="shrink-0 space-y-5 p-8 pb-0">
 
       {/* ── Connected sources bar ── */}
       {(() => {
@@ -850,47 +850,82 @@ export function FormsTable({
 
       </div>{/* end shrink-0 header */}
 
-      {/* ── Scrollable table area ── */}
-      <div className="flex-1 overflow-y-auto min-h-0 px-8 pb-8">
+      {/* ── Padding wrapper (mirrors ActivitySidebar outer: overflow-hidden + padding) ── */}
+      <div className="flex-1 overflow-hidden flex flex-col px-8 pb-8 pt-5">
 
-      {/* ── Table or Trash ── */}
+      {/* ── Body card ── */}
       {activeStatus === 'trash' ? (
-        <TrashTab type="submission" />
+        <div className="flex-1 overflow-y-auto">
+          <TrashTab type="submission" />
+        </div>
       ) : (
-      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-hidden">
+      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col flex-1 overflow-hidden">
+
+        {/* ── Static header — outside scroll so scrollbar starts below it ── */}
+        <table className="w-full text-sm table-fixed shrink-0">
+          <colgroup>
+            <col className="w-10" />
+            {show('priority')  && <col className="w-24" />}
+            {show('name')      && <col />}
+            {show('email')     && <col />}
+            {show('phone')     && <col className="w-28" />}
+            {show('company')   && <col className="w-28" />}
+            {show('address')   && <col className="w-32" />}
+            {show('city')      && <col className="w-24" />}
+            {show('message')   && <col />}
+            {show('source')    && <col className="w-28" />}
+            {show('submitted') && <col className="w-28" />}
+            {show('status')    && <col className="w-28" />}
+            {show('assigned')  && <col className="w-32" />}
+            <col className="w-20" />
+          </colgroup>
+          <thead>
+            <tr className="bg-[#141c2b]">
+              <th className="bg-[#141c2b] px-4 py-3 rounded-tl-xl">
+                <input type="checkbox" checked={allSelected} onChange={toggleAll} className="rounded border-white/30 text-brand-600 focus:ring-[#15A4AE]/40" />
+              </th>
+              {show('priority')  && <th className="bg-[#141c2b] text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Priority</th>}
+              {show('name')      && <th className="bg-[#141c2b] text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Name</th>}
+              {show('email')     && <th className="bg-[#141c2b] text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Email</th>}
+              {show('phone')     && <th className="bg-[#141c2b] text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Phone</th>}
+              {show('company')   && <th className="bg-[#141c2b] text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Company</th>}
+              {show('address')   && <th className="bg-[#141c2b] text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Address</th>}
+              {show('city')      && <th className="bg-[#141c2b] text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">City</th>}
+              {show('message')   && <th className="bg-[#141c2b] text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Message</th>}
+              {show('source')    && <th className="bg-[#141c2b] text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Source</th>}
+              {show('submitted') && <th className="bg-[#141c2b] text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Submitted</th>}
+              {show('status')    && <th className="bg-[#141c2b] text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Status</th>}
+              {show('assigned')  && <th className="bg-[#141c2b] text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Assigned to</th>}
+              <th className="bg-[#141c2b] text-right px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide rounded-tr-xl">Actions</th>
+            </tr>
+          </thead>
+        </table>
+
+        {/* ── Scrollable body — scrollbar sits here, below the header ── */}
         {filteredSubs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="flex flex-col items-center justify-center py-20 text-center flex-1">
             <ClipboardList className="w-10 h-10 text-gray-200 dark:text-gray-600 mb-3" />
             <p className="text-sm text-gray-400">No submissions match your filters.</p>
           </div>
         ) : (
-          <div className="relative overflow-x-auto">
-          <table className="min-w-full text-sm table-auto">
-            <thead>
-              <tr className="bg-[#141c2b]">
-                <th className="px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={toggleAll}
-                    className="rounded border-white/30 text-brand-600 focus:ring-[#15A4AE]/40"
-                  />
-                </th>
-                {show('priority')  && <th className="text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Priority</th>}
-                {show('name')      && <th className="text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Name</th>}
-                {show('email')     && <th className="text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Email</th>}
-                {show('phone')     && <th className="text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Phone</th>}
-                {show('company')   && <th className="text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Company</th>}
-                {show('address')   && <th className="text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Address</th>}
-                {show('city')      && <th className="text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">City</th>}
-                {show('message')   && <th className="text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Message</th>}
-                {show('source')    && <th className="text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Source</th>}
-                {show('submitted') && <th className="text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Submitted</th>}
-                {show('status')    && <th className="text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Status</th>}
-                {show('assigned')  && <th className="text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Assigned to</th>}
-                <th className="sticky right-0 text-right px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide bg-[#141c2b] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.2)]">Actions</th>
-              </tr>
-            </thead>
+          <div className="flex-1 overflow-y-auto">
+          <table className="w-full text-sm table-fixed">
+            <colgroup>
+              <col className="w-10" />
+              {show('priority')  && <col className="w-24" />}
+              {show('name')      && <col />}
+              {show('email')     && <col />}
+              {show('phone')     && <col className="w-28" />}
+              {show('company')   && <col className="w-28" />}
+              {show('address')   && <col className="w-32" />}
+              {show('city')      && <col className="w-24" />}
+              {show('message')   && <col />}
+              {show('source')    && <col className="w-28" />}
+              {show('submitted') && <col className="w-28" />}
+              {show('status')    && <col className="w-28" />}
+              {show('assigned')  && <col className="w-32" />}
+              <col className="w-20" />
+            </colgroup>
               <tbody className="divide-y dark:divide-white/5">
                 {paginated.map(sub => {
                   const name     = getName(sub) || 'Anonymous'
@@ -1163,8 +1198,14 @@ export function FormsTable({
             </table>
           </div>
         )}
-        {/* Pagination — always visible */}
-        <div className="flex items-center justify-between px-4 py-2.5 border-t dark:border-white/8 bg-gray-50/60 dark:bg-white/[0.02]">
+        {/* 200-result cap notice */}
+        {submissions.length === 200 && (
+          <p className="text-xs text-center text-gray-400 py-1.5 border-t dark:border-white/8">
+            Showing first 200 results — use filters to narrow down.
+          </p>
+        )}
+        {/* Pagination */}
+        <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-t dark:border-white/8 bg-gray-50/60 dark:bg-white/[0.02]">
           <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
             <span>Rows per page:</span>
             <select
@@ -1191,12 +1232,7 @@ export function FormsTable({
       </div>
       )}
 
-      {activeStatus !== 'trash' && submissions.length === 200 && (
-        <p className="text-xs text-center text-gray-400 pb-2">
-          Showing first 200 results — use filters to narrow down.
-        </p>
-      )}
-      </div>{/* end scroll area */}
+      </div>{/* end padding wrapper */}
     </div>
   )
 }

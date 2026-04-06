@@ -3,13 +3,15 @@
 import { useState, useRef } from 'react'
 import {
   Kanban, Plus, Trash2, Loader2,
-  DollarSign, CheckCircle2, AlertCircle, Download,
+  DollarSign, CheckCircle2, AlertCircle, Download, Upload,
 } from 'lucide-react'
 import Link from 'next/link'
 import { CreatePipelineModal } from '@/components/sage/create-pipeline-modal'
-import { deletePipeline, assignDealToPipeline } from '@/app/actions/sage'
+import { deletePipeline, assignDealToPipeline, createDeal } from '@/app/actions/sage'
 import { timeAgo } from '@/lib/utils'
 import type { SagePipeline, SageDeal, SagePipelineStage } from '@/lib/types'
+import { ActivitySidebar } from '@/components/team/activity-sidebar'
+import type { ActivityEntry, ViewingAsInfo } from '@/app/actions/activity-feed'
 
 type PipelineWithMeta = SagePipeline & {
   stages:     SagePipelineStage[]
@@ -24,6 +26,9 @@ interface Props {
   pipelines:       PipelineWithMeta[]
   unassignedDeals: UnassignedDeal[]
   canWrite:        boolean
+  activity:        ActivityEntry[]
+  activityDate:    string
+  viewingAs?:      ViewingAsInfo | null
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -38,14 +43,17 @@ function formatCurrency(value: number | null, currency: string) {
 }
 
 
-export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: initialDeals, canWrite }: Props) {
-  const [pipelines,   setPipelines]   = useState(initialPipelines)
-  const [deals,       setDeals]       = useState(initialDeals)
-  const [showModal,   setShowModal]   = useState(false)
-  const [deleting,    setDeleting]    = useState<string | null>(null)
-  const [assigning,   setAssigning]   = useState<string | null>(null)
-  const [dragOverId,  setDragOverId]  = useState<string | null>(null)
+export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: initialDeals, canWrite, activity, activityDate, viewingAs }: Props) {
+  const [pipelines,    setPipelines]    = useState(initialPipelines)
+  const [deals,        setDeals]        = useState(initialDeals)
+  const [showModal,    setShowModal]    = useState(false)
+  const [deleting,     setDeleting]     = useState<string | null>(null)
+  const [assigning,    setAssigning]    = useState<string | null>(null)
+  const [dragOverId,   setDragOverId]   = useState<string | null>(null)
+  const [importing,    setImporting]    = useState(false)
+  const [importResult, setImportResult] = useState<{ success: number; failed: number } | null>(null)
   const draggingDealId = useRef<string | null>(null)
+  const importRef      = useRef<HTMLInputElement>(null)
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this pipeline and all its deals? This cannot be undone.')) return
@@ -86,26 +94,82 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
     URL.revokeObjectURL(url)
   }
 
+  function parseCSVLine(line: string): string[] {
+    const result: string[] = []
+    let cur = '', inQ = false
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i]
+      if (ch === '"') { inQ = !inQ }
+      else if (ch === ',' && !inQ) { result.push(cur.trim()); cur = '' }
+      else { cur += ch }
+    }
+    result.push(cur.trim())
+    return result
+  }
+
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    setImporting(true)
+    setImportResult(null)
+    try {
+      const text = await file.text()
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+      if (lines.length < 2) { setImportResult({ success: 0, failed: 0 }); return }
+      const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z_]/g, ''))
+      const col = (name: string) => headers.indexOf(name)
+      let success = 0, failed = 0
+      for (const line of lines.slice(1)) {
+        const vals = parseCSVLine(line)
+        const title = col('title') >= 0 ? vals[col('title')] ?? '' : vals[0] ?? ''
+        if (!title.trim()) { failed++; continue }
+        try {
+          const fd = new FormData()
+          fd.append('title', title)
+          if (col('value') >= 0 && vals[col('value')]) fd.append('value', vals[col('value')])
+          if (col('currency') >= 0 && vals[col('currency')]) fd.append('currency', vals[col('currency')])
+          if (col('contact_name') >= 0) fd.append('contact_name', vals[col('contact_name')] ?? '')
+          if (col('contact_email') >= 0) fd.append('contact_email', vals[col('contact_email')] ?? '')
+          fd.append('status', col('status') >= 0 && vals[col('status')] ? vals[col('status')] : 'open')
+          await createDeal(fd)
+          success++
+        } catch { failed++ }
+      }
+      setImportResult({ success, failed })
+    } catch { setImportResult({ success: 0, failed: -1 }) }
+    finally { setImporting(false) }
+  }
+
   return (
-    <div className="flex flex-col w-full">
+    <div className="h-full flex flex-col">
       {/* ── Page heading ── */}
-      <div className="pl-9 pt-5 pb-3 flex items-center justify-between">
+      <div className="shrink-0 pl-9 pt-5 pb-3 flex items-center justify-between pr-6">
         <div>
           <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Pipelines</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage your sales pipelines and track deals through every stage</p>
         </div>
       </div>
 
-    <div className="flex items-start gap-3 px-3 pb-3 w-full bg-[#f5f4f1] dark:bg-[#1c1c1c]">
+    <div className="flex-1 min-h-0 flex gap-3 px-3 pb-3">
 
       {/* ── Left: Pipelines ─────────────────────────────── */}
-      <div className="w-72 shrink-0 self-start bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-200/60 dark:border-white/8 overflow-hidden shadow-[0_4px_6px_-1px_rgba(0,0,0,0.08),0_10px_30px_-5px_rgba(0,0,0,0.12),0_1px_0px_rgba(255,255,255,0.8)_inset] dark:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.3),0_20px_40px_-10px_rgba(0,0,0,0.5),0_1px_0px_rgba(255,255,255,0.04)_inset]">
-        <div className="px-4 py-2.5 bg-[#141c2b] border-b border-white/10 flex items-center justify-between shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.35),0_1px_0px_rgba(255,255,255,0.06)_inset]">
+      <div className="w-72 shrink-0 flex flex-col bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-200/60 dark:border-white/8 overflow-hidden shadow-[0_4px_6px_-1px_rgba(0,0,0,0.08),0_10px_30px_-5px_rgba(0,0,0,0.12),0_1px_0px_rgba(255,255,255,0.8)_inset] dark:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.3),0_20px_40px_-10px_rgba(0,0,0,0.5),0_1px_0px_rgba(255,255,255,0.04)_inset]">
+        <div className="relative px-4 py-2.5 bg-[#141c2b] border-b border-white/10 flex items-center justify-between shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.35),0_1px_0px_rgba(255,255,255,0.06)_inset]">
           <div>
             <h2 className="text-sm font-bold text-white">Pipelines</h2>
             <p className="text-[11px] text-white/50 mt-0.5">{pipelines.length} pipeline{pipelines.length !== 1 ? 's' : ''}</p>
           </div>
           <div className="flex items-center gap-1.5">
+            <input ref={importRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
+            <button
+              onClick={() => importRef.current?.click()}
+              disabled={importing}
+              title="Import CSV"
+              className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/20 disabled:opacity-50"
+            >
+              {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+            </button>
             <button
               onClick={exportCsv}
               title="Export CSV"
@@ -122,9 +186,15 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
               </button>
             )}
           </div>
+          {importResult && (
+            <div className="absolute top-full left-0 right-0 mt-1 mx-3 z-10 px-3 py-1.5 rounded-lg bg-white dark:bg-[#232323] border border-gray-200 dark:border-white/10 shadow-lg text-[11px] text-gray-700 dark:text-gray-300 flex items-center justify-between">
+              <span>{importResult.failed < 0 ? 'Import failed' : `${importResult.success} imported${importResult.failed > 0 ? `, ${importResult.failed} failed` : ''}`}</span>
+              <button onClick={() => setImportResult(null)} className="ml-2 text-gray-400 hover:text-gray-600">×</button>
+            </div>
+          )}
         </div>
 
-        <div className="flex-1 p-3 space-y-2">
+        <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2">
           {pipelines.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center px-4">
               <Kanban className="w-8 h-8 text-gray-300 dark:text-gray-600 mb-3" />
@@ -175,7 +245,7 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
       </div>
 
       {/* ── Center: Unassigned deals ──────────────────────── */}
-      <main className="flex-1 min-w-0 self-start bg-white dark:bg-[#232323] rounded-2xl border border-gray-200/60 dark:border-white/8 overflow-hidden shadow-[0_4px_6px_-1px_rgba(0,0,0,0.08),0_10px_30px_-5px_rgba(0,0,0,0.12),0_1px_0px_rgba(255,255,255,0.8)_inset] dark:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.3),0_20px_40px_-10px_rgba(0,0,0,0.5),0_1px_0px_rgba(255,255,255,0.04)_inset]">
+      <main className="flex-1 min-w-0 flex flex-col bg-white dark:bg-[#232323] rounded-2xl border border-gray-200/60 dark:border-white/8 overflow-hidden shadow-[0_4px_6px_-1px_rgba(0,0,0,0.08),0_10px_30px_-5px_rgba(0,0,0,0.12),0_1px_0px_rgba(255,255,255,0.8)_inset] dark:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.3),0_20px_40px_-10px_rgba(0,0,0,0.5),0_1px_0px_rgba(255,255,255,0.04)_inset]">
         <div className="shrink-0 bg-[#141c2b] border-b border-white/10 px-6 py-3 flex items-center justify-between shadow-[0_2px_8px_rgba(0,0,0,0.35),0_1px_0px_rgba(255,255,255,0.06)_inset]">
           <div>
             <h2 className="text-sm font-semibold text-white">Unassigned Deals</h2>
@@ -187,7 +257,7 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 min-h-0 overflow-y-auto p-6">
           {deals.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
               <CheckCircle2 className="w-10 h-10 text-[#15A4AE]/40 mb-4" />
@@ -241,6 +311,14 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
         </div>
       </main>
 
+
+      {/* ── Right: Activity ──────────────────────────────── */}
+      <ActivitySidebar
+        activity={activity}
+        date={activityDate}
+        currentPath="/sage/pipelines"
+        viewingAs={viewingAs}
+      />
 
       {showModal && <CreatePipelineModal onClose={() => { setShowModal(false) }} />}
     </div>

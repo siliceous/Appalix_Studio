@@ -4,7 +4,6 @@ import type { SagePipeline, SagePipelineStage, SageDeal } from '@/lib/types'
 import { PipelinesClient } from './pipelines-client'
 import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
-import { ActivitySidebar } from '@/components/team/activity-sidebar'
 
 export default async function PipelinesPage() {
   const supabase = await createClient()
@@ -86,18 +85,13 @@ export default async function PipelinesPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <SageToolbar pageKey="pipelines" />
-      <div className="flex flex-1 overflow-hidden min-h-0">
-        <div className="flex-1 min-w-0 overflow-y-auto">
-          <PipelinesClient
-            pipelines={pipelines}
-            unassignedDeals={unassignedDeals}
-            canWrite={canWrite}
-          />
-        </div>
-        <ActivitySidebar
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <PipelinesClient
+          pipelines={pipelines}
+          unassignedDeals={unassignedDeals}
+          canWrite={canWrite}
           activity={activity}
-          date={activityDate}
-          currentPath="/sage/pipelines"
+          activityDate={activityDate}
           viewingAs={viewingAs}
         />
       </div>

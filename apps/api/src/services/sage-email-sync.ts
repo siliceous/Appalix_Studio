@@ -17,6 +17,32 @@ import { executeAutoAction }                           from './sage-auto-execute
 import { getValidAccessToken }                         from './oauth-token-refresh.js'
 
 // ---------------------------------------------------------------------------
+// Internal AI review trigger — fire-and-forget HTTP call to dashboard service
+// ---------------------------------------------------------------------------
+function callInternalAiReview(opts: {
+  entityType:           string
+  entityId:             string
+  workspaceId:          string
+  triggeredBy:          string
+  propagateToOpenDeals?: boolean
+}): void {
+  const dashboardUrl = process.env.DASHBOARD_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const secret       = process.env.INTERNAL_AI_REVIEW_SECRET
+  if (!secret) {
+    console.warn('[sage-email-sync] INTERNAL_AI_REVIEW_SECRET not set — AI review skipped')
+    return
+  }
+  fetch(`${dashboardUrl}/api/internal/ai-review`, {
+    method:  'POST',
+    headers: {
+      'Content-Type':     'application/json',
+      'x-internal-secret': secret,
+    },
+    body: JSON.stringify(opts),
+  }).catch(err => console.warn('[sage-email-sync] AI review call failed (non-fatal):', err))
+}
+
+// ---------------------------------------------------------------------------
 // .ics / iCalendar parser — no external dependency needed
 // ---------------------------------------------------------------------------
 
@@ -149,6 +175,141 @@ function stripHtml(html: string): string {
     .replace(/&#(\d+);/g, (_: string, n: string) => String.fromCharCode(Number(n)))
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+// ---------------------------------------------------------------------------
+// Bounce detection
+// ---------------------------------------------------------------------------
+
+const BOUNCE_SENDER_RE = /^(mailer-daemon|postmaster|mail-daemon|delivery-status)@/i
+
+const BOUNCE_SUBJECT_RE = /delivery.*(failed|failure|problem)|undeliverable|returned mail|mail delivery failed|failure notice|undelivered mail|returned to sender|bounce/i
+
+interface BounceInfo {
+  failedRecipient: string | null
+  snippet:         string
+}
+
+/**
+ * Returns BounceInfo if the email looks like a bounce notification,
+ * otherwise returns null. Best-effort — never throws.
+ */
+function detectBounce(
+  fromAddress: string,
+  subject:     string,
+  bodyText:    string,
+): BounceInfo | null {
+  const isBounce =
+    BOUNCE_SENDER_RE.test(fromAddress) ||
+    BOUNCE_SUBJECT_RE.test(subject)
+  if (!isBounce) return null
+
+  // Try to extract the failed recipient address from the body
+  const recipientRe = /(?:failed recipient|final.recipient|original.recipient|to:|recipient address)[^\n:]*[:]\s*([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/i
+  const match = bodyText.match(recipientRe)
+  // Fallback: first email address in body that isn't the sender
+  const anyEmailRe = /([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/g
+  let failedRecipient = match ? match[1].toLowerCase() : null
+  if (!failedRecipient) {
+    const candidates: string[] = []
+    let m: RegExpExecArray | null
+    while ((m = anyEmailRe.exec(bodyText)) !== null) {
+      const addr = m[1].toLowerCase()
+      if (!BOUNCE_SENDER_RE.test(addr) && addr !== fromAddress) candidates.push(addr)
+    }
+    failedRecipient = candidates[0] ?? null
+  }
+
+  return {
+    failedRecipient,
+    snippet: bodyText.slice(0, 500),
+  }
+}
+
+/**
+ * When a bounce is detected: write message_events row, update sage_emails +
+ * sage_contacts. Fire-and-forget — never throws.
+ */
+async function handleBounce(opts: {
+  workspaceId:    string
+  emailId:        string
+  failedRecipient: string | null
+  snippet:        string
+}): Promise<void> {
+  try {
+    const now = new Date().toISOString()
+
+    // Find the most recent outbound sage_email to this address (if known)
+    let outboundEmailId: string | null = null
+    let contactId:       string | null = null
+    if (opts.failedRecipient) {
+      const { data: outbound } = await supabase
+        .from('sage_emails')
+        .select('id, contact_id')
+        .eq('workspace_id', opts.workspaceId)
+        .eq('to_address', opts.failedRecipient)
+        .eq('direction', 'outbound')
+        .order('received_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (outbound) {
+        outboundEmailId = outbound.id
+        contactId       = outbound.contact_id
+        // Update outbound email delivery status
+        await supabase
+          .from('sage_emails')
+          .update({ delivery_status: 'bounced', bounced_at: now, last_event_at: now })
+          .eq('id', outboundEmailId)
+      }
+      // Mark the contact deliverability status
+      const { data: contact } = await supabase
+        .from('sage_contacts')
+        .select('id')
+        .eq('workspace_id', opts.workspaceId)
+        .ilike('email', opts.failedRecipient)
+        .maybeSingle()
+      if (contact) {
+        contactId = contact.id
+        await supabase
+          .from('sage_contacts')
+          .update({
+            email_deliverability: 'bounced',
+            email_bounced_at:     now,
+            email_bounce_reason:  opts.snippet.slice(0, 255),
+          })
+          .eq('id', contact.id)
+      }
+    }
+
+    // Write message_events row for the bounce
+    await supabase.from('message_events').insert({
+      workspace_id:        opts.workspaceId,
+      channel:             'email',
+      internal_message_id: outboundEmailId ?? opts.emailId,
+      contact_id:          contactId,
+      event_type:          'email_bounced',
+      provider:            'imap',
+      provider_payload: {
+        bounce_email_id:  opts.emailId,
+        failed_recipient: opts.failedRecipient,
+        raw_bounce_snippet: opts.snippet,
+      },
+      event_at:   now,
+    })
+
+    // Trigger AI review for the contact + all linked open deals (fire-and-forget)
+    if (contactId) {
+      callInternalAiReview({
+        entityType:           'contact',
+        entityId:             contactId,
+        workspaceId:          opts.workspaceId,
+        triggeredBy:          'email_bounced',
+        propagateToOpenDeals: true,
+      })
+    }
+  } catch (err) {
+    console.error('[bounce-detection] handler failed (non-fatal):', err)
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -670,6 +831,13 @@ async function syncGmailEmailsViaAPI(opts: {
       synced++
       if (calendarEmail) continue
 
+      // Bounce detection — runs before AI triage, never blocks
+      const bounceInfo = detectBounce(fromAddress, subject, bodyText)
+      if (bounceInfo) {
+        await handleBounce({ workspaceId, emailId: inserted.id, ...bounceInfo })
+        continue  // bounce-back emails don't need AI triage
+      }
+
       // Parse .ics calendar attachment → store as meeting
       try {
         const icsAtt = attachments0.find(
@@ -1023,6 +1191,13 @@ async function syncMicrosoftEmailsViaGraph(opts: {
       synced++
 
       if (calendarEmail) continue
+
+      // Bounce detection — runs before AI triage, never blocks
+      const bounceInfo = detectBounce(fromAddress, subject, bodyText)
+      if (bounceInfo) {
+        await handleBounce({ workspaceId, emailId: inserted.id, ...bounceInfo })
+        continue
+      }
 
       // Parse .ics calendar attachment
       if (icsText) {

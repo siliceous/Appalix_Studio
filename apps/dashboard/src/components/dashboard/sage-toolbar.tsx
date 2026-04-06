@@ -89,18 +89,27 @@ function ToolbarAvatar({ src, initials, brandColor }: { src: string | null; init
   )
 }
 
+export interface DeliveryStats {
+  sent:      number
+  delivered: number
+  bounced:   number
+  failed:    number
+  hasIssues: boolean
+}
+
 interface Props {
   pageKey: SagePageKey
   // triage-only props (omit for non-triage pages)
-  preset?:       TriagePreset
-  autoEnabled?:  boolean
-  customFrom?:   string
-  customTo?:     string
-  viewAsUserId?: string | null
-  teamMembers?:  TeamMemberOption[]
+  preset?:        TriagePreset
+  autoEnabled?:   boolean
+  customFrom?:    string
+  customTo?:      string
+  viewAsUserId?:  string | null
+  teamMembers?:   TeamMemberOption[]
+  deliveryStats?: DeliveryStats | null
 }
 
-export function SageToolbar({ pageKey, preset, autoEnabled, customFrom, customTo, viewAsUserId, teamMembers }: Props) {
+export function SageToolbar({ pageKey, preset, autoEnabled, customFrom, customTo, viewAsUserId, teamMembers, deliveryStats }: Props) {
   const router   = useRouter()
   const pathname = usePathname()
   const [, startTransition] = useTransition()
@@ -450,6 +459,33 @@ export function SageToolbar({ pageKey, preset, autoEnabled, customFrom, customTo
               <span className="font-bold">{localAuto ? 'ON' : 'OFF'}</span>
             </button>
           </>
+        )}
+
+        {/* Email delivery stats — only on email page when data exists */}
+        {deliveryStats && (
+          <div className={`flex items-center gap-3 px-3 py-1.5 rounded-lg border text-[14px] font-medium ${
+            deliveryStats.hasIssues
+              ? 'border-red-500/30 bg-red-500/10 text-white'
+              : 'border-emerald-500/30 bg-emerald-500/10 text-white'
+          }`}>
+            <span className="text-white/50 font-normal">30d</span>
+            <span title="Sent" className="tabular-nums">{deliveryStats.sent.toLocaleString()} sent</span>
+            {deliveryStats.bounced > 0 && (
+              <span title="Bounced" className="tabular-nums text-red-300">
+                {deliveryStats.bounced} bounced ({((deliveryStats.bounced / deliveryStats.sent) * 100).toFixed(1)}%)
+              </span>
+            )}
+            {deliveryStats.failed > 0 && (
+              <span title="Failed" className="tabular-nums text-amber-300">
+                {deliveryStats.failed} failed
+              </span>
+            )}
+            {!deliveryStats.hasIssues && deliveryStats.delivered > 0 && (
+              <span title="Delivered" className="tabular-nums text-emerald-300">
+                {deliveryStats.delivered} delivered
+              </span>
+            )}
+          </div>
         )}
 
         {/* Profile avatar + dropdown */}

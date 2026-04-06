@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import twilio from 'twilio'
 import { createAdminClient } from '@/lib/supabase/server'
 
+// Twilio MessageStatus → message_events event_type
+const STATUS_EVENT_MAP: Record<string, string> = {
+  sent:      'sms_sent',
+  delivered: 'sms_delivered',
+  failed:    'sms_failed',
+  undelivered: 'sms_failed',
+}
+
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
@@ -61,6 +69,34 @@ export async function POST(req: NextRequest) {
       ...(costUsd !== null ? { cost_usd: costUsd } : {}),
     } as never)
     .eq('message_sid', messageSid)
+
+  // ── 6. Write message_events delivery event ────────────────────────────────
+  const eventType = STATUS_EVENT_MAP[messageStatus]
+  if (eventType) {
+    // Look up conversation + contact linkage from sms_usage_log
+    const { data: usageRow } = await admin
+      .from('sms_usage_log')
+      .select('workspace_id, conversation_id')
+      .eq('message_sid', messageSid)
+      .maybeSingle()
+
+    if (usageRow?.workspace_id) {
+      await admin.from('message_events').upsert({
+        workspace_id:        usageRow.workspace_id,
+        channel:             'sms',
+        external_message_id: messageSid,
+        conversation_id:     usageRow.conversation_id ?? null,
+        event_type:          eventType,
+        provider:            'twilio',
+        provider_payload:    {
+          message_status: messageStatus,
+          error_code:     errorCode,
+          cost_usd:       costUsd,
+        },
+        event_at: new Date().toISOString(),
+      }, { onConflict: 'external_message_id,event_type', ignoreDuplicates: true })
+    }
+  }
 
   console.info(`[twilio/status] ${messageSid} → ${messageStatus}${costUsd ? ` ($${costUsd})` : ''}`)
 

@@ -8,6 +8,7 @@ import { SageToolbar, type TriagePreset } from '@/components/dashboard/sage-tool
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
 import { ActivitySidebar }    from '@/components/team/activity-sidebar'
+import type { DeliveryStats }  from '@/components/dashboard/sage-toolbar'
 
 export const metadata: Metadata = { title: 'Email Triage' }
 
@@ -232,14 +233,36 @@ export default async function EmailTriagePage({ searchParams }: { searchParams: 
   })()
 
   const activityDate = params.activityDate ?? new Date().toISOString().slice(0, 10)
-  const [activity, viewingAs] = await Promise.all([
+  const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+
+  const [activity, viewingAs, deliveryEventsRes] = await Promise.all([
     getActivityFeed(effectiveUserId, workspaceId, activityDate),
     resolveViewingAs(params.viewAs, workspaceId),
+    supabase
+      .from('message_events')
+      .select('event_type')
+      .eq('workspace_id', workspaceId)
+      .eq('channel', 'email')
+      .gte('event_at', since30d),
   ])
+
+  let deliveryStats: DeliveryStats | null = null
+  const evRows = (deliveryEventsRes.data ?? []) as { event_type: string }[]
+  if (evRows.length > 0) {
+    const counts: Record<string, number> = {}
+    for (const r of evRows) counts[r.event_type] = (counts[r.event_type] ?? 0) + 1
+    const sent      = counts['email_sent']      ?? 0
+    const delivered = counts['email_delivered'] ?? 0
+    const bounced   = counts['email_bounced']   ?? 0
+    const failed    = counts['email_failed']    ?? 0
+    if (sent > 0) {
+      deliveryStats = { sent, delivered, bounced, failed, hasIssues: bounced > 0 || failed > 0 }
+    }
+  }
 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
-      <SageToolbar pageKey="email" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.email_auto_enabled} viewAsUserId={viewAsUserId} teamMembers={teamMembers} />
+      <SageToolbar pageKey="email" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.email_auto_enabled} viewAsUserId={viewAsUserId} teamMembers={teamMembers} deliveryStats={deliveryStats} />
       <div className="flex flex-1 overflow-hidden min-h-0">
         <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} connectedEmail={connectedEmail} autoSync={params.syncing === '1'} readonly={!!viewAsUserId} teamMembers={teamMembers} initialEmailId={params.emailId} initialAction={params.action} />
         <ActivitySidebar activity={activity} date={activityDate} currentPath="/dashboard/email" viewingAs={viewingAs} />

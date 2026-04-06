@@ -2,7 +2,8 @@
  * Sage Email SMTP — send emails using connected Gmail/Outlook credentials
  *
  * Uses nodemailer with the App Password credentials stored in sage_integrations.
- * After sending, logs the email to sage_emails as direction='outbound'.
+ * After sending, logs the email to sage_emails as direction='outbound' and
+ * writes a message_events row with event_type='email_sent' or 'email_failed'.
  *
  * Supported providers: gmail → smtp.gmail.com:587
  *                      microsoft → smtp.office365.com:587
@@ -34,27 +35,56 @@ interface SmtpCreds {
   port:        number
   user:        string
   password?:   string
-  accessToken?: string   // OAuth2 — used instead of password when set
+  accessToken?: string
 }
 
 function getSmtpCreds(provider: string, config: Record<string, string>, accessToken?: string): SmtpCreds | null {
   const user = config.from_email
   if (!user) return null
 
-  // OAuth2 path
   if (accessToken) {
     if (provider === 'gmail')     return { host: 'smtp.gmail.com',    port: 587, user, accessToken }
     if (provider === 'microsoft') return { host: 'smtp.office365.com', port: 587, user, accessToken }
     return null
   }
 
-  // App-password fallback
   const password = config.app_password ?? config.password
   if (!password) return null
 
   if (provider === 'gmail')     return { host: 'smtp.gmail.com',    port: 587, user, password }
   if (provider === 'microsoft') return { host: 'smtp.office365.com', port: 587, user, password }
   return null
+}
+
+// ---------------------------------------------------------------------------
+// Helper: write a message_events row — fire-and-forget, never throws
+// ---------------------------------------------------------------------------
+async function writeMessageEvent(opts: {
+  workspaceId:        string
+  internalMessageId?: string | null
+  externalMessageId?: string | null
+  contactId?:         string | null
+  dealId?:            string | null
+  eventType:          string
+  provider:           string
+  providerPayload?:   Record<string, unknown>
+}): Promise<void> {
+  try {
+    await supabase.from('message_events').insert({
+      workspace_id:        opts.workspaceId,
+      channel:             'email',
+      internal_message_id: opts.internalMessageId ?? null,
+      external_message_id: opts.externalMessageId ?? null,
+      contact_id:          opts.contactId ?? null,
+      deal_id:             opts.dealId    ?? null,
+      event_type:          opts.eventType,
+      provider:            opts.provider,
+      provider_payload:    opts.providerPayload ?? null,
+      event_at:            new Date().toISOString(),
+    })
+  } catch (err) {
+    console.error('[message_events] write failed (non-fatal):', err)
+  }
 }
 
 export async function sendEmailSMTP(opts: SendEmailOptions): Promise<void> {
@@ -76,7 +106,7 @@ export async function sendEmailSMTP(opts: SendEmailOptions): Promise<void> {
 
   const { provider, config } = integrations[0] as { provider: string; config: Record<string, string> }
 
-  // Resolve access token — refresh if OAuth2 and expired
+  // Resolve access token
   let accessToken: string | undefined
   if (config.auth_method === 'oauth2') {
     const token = await getValidAccessToken(workspaceId, userId, provider as 'gmail' | 'microsoft', config)
@@ -84,8 +114,9 @@ export async function sendEmailSMTP(opts: SendEmailOptions): Promise<void> {
     accessToken = token
   }
 
-  // Determine In-Reply-To header if replying (needed before sending)
+  // Load In-Reply-To header + contact linkage
   let replyToMessageId: string | null = null
+  let replyToContactId: string | null = null
   if (replyToEmailId) {
     const { data: original } = await supabase
       .from('sage_emails')
@@ -93,9 +124,10 @@ export async function sendEmailSMTP(opts: SendEmailOptions): Promise<void> {
       .eq('id', replyToEmailId)
       .single()
     replyToMessageId = original?.message_id ?? null
+    replyToContactId = original?.contact_id ?? null
   }
 
-  // Microsoft OAuth2 → use Graph API sendMail (SMTP OAuth is unreliable for personal accounts)
+  // ── Microsoft Graph API ──────────────────────────────────────────────────
   if (provider === 'microsoft' && accessToken) {
     const toRecipients  = to.split(',').map(a => ({ emailAddress: { address: a.trim() } }))
     const ccRecipients  = cc  ? cc.split(',').map(a => ({ emailAddress: { address: a.trim() } })) : undefined
@@ -129,29 +161,47 @@ export async function sendEmailSMTP(opts: SendEmailOptions): Promise<void> {
 
     if (!sendRes.ok) {
       const errText = await sendRes.text()
+      await writeMessageEvent({
+        workspaceId,
+        eventType:       'email_failed',
+        provider:        'smtp_microsoft',
+        providerPayload: { error: errText, to },
+      })
       throw new Error(`Graph sendMail error: ${sendRes.status} ${errText}`)
     }
 
     const messageId = `graph-sent-${Date.now()}`
-    await supabase.from('sage_emails').insert({
-      workspace_id: workspaceId,
-      user_id:      userId,
-      message_id:   messageId,
-      thread_id:    replyToMessageId,
-      from_address: config.from_email,
-      from_name:    'You',
-      to_address:   to,
+    const { data: inserted } = await supabase.from('sage_emails').insert({
+      workspace_id:        workspaceId,
+      user_id:             userId,
+      message_id:          messageId,
+      thread_id:           replyToMessageId,
+      from_address:        config.from_email,
+      from_name:           'You',
+      to_address:          to,
       subject,
-      body_text:    body,
-      received_at:  new Date().toISOString(),
-      direction:    'outbound',
-      is_read:      true,
-      ai_priority:  null,
+      body_text:           body,
+      received_at:         new Date().toISOString(),
+      direction:           'outbound',
+      is_read:             true,
+      ai_priority:         null,
+      delivery_status:     'sent',
+      provider_message_id: messageId,
+    }).select('id, contact_id').single()
+
+    await writeMessageEvent({
+      workspaceId,
+      internalMessageId: inserted?.id,
+      externalMessageId: messageId,
+      contactId:         inserted?.contact_id ?? replyToContactId,
+      eventType:         'email_sent',
+      provider:          'smtp_microsoft',
+      providerPayload:   { to, subject },
     })
     return
   }
 
-  // Gmail OAuth2 → use Gmail API messages.send (replaces SMTP which requires mail.google.com scope)
+  // ── Gmail API ────────────────────────────────────────────────────────────
   if (provider === 'gmail' && accessToken) {
     const lines: string[] = []
     lines.push(`From: ${config.from_email}`)
@@ -199,76 +249,121 @@ export async function sendEmailSMTP(opts: SendEmailOptions): Promise<void> {
 
     if (!sendRes.ok) {
       const errText = await sendRes.text()
+      await writeMessageEvent({
+        workspaceId,
+        eventType:       'email_failed',
+        provider:        'smtp_gmail',
+        providerPayload: { error: errText, to },
+      })
       throw new Error(`Gmail API send error: ${sendRes.status} ${errText}`)
     }
 
-    const sentMsg    = await sendRes.json() as { id?: string }
-    const messageId  = sentMsg.id ? `gmail-sent-${sentMsg.id}` : `sent-${Date.now()}`
-    await supabase.from('sage_emails').insert({
-      workspace_id: workspaceId,
-      user_id:      userId,
-      message_id:   messageId,
-      thread_id:    replyToMessageId,
-      from_address: config.from_email,
-      from_name:    'You',
-      to_address:   to,
+    const sentMsg   = await sendRes.json() as { id?: string }
+    const gmailId   = sentMsg.id
+    const messageId = gmailId ? `gmail-sent-${gmailId}` : `sent-${Date.now()}`
+
+    const { data: inserted } = await supabase.from('sage_emails').insert({
+      workspace_id:        workspaceId,
+      user_id:             userId,
+      message_id:          messageId,
+      thread_id:           replyToMessageId,
+      from_address:        config.from_email,
+      from_name:           'You',
+      to_address:          to,
       subject,
-      body_text:    body,
-      received_at:  new Date().toISOString(),
-      direction:    'outbound',
-      is_read:      true,
-      ai_priority:  null,
+      body_text:           body,
+      received_at:         new Date().toISOString(),
+      direction:           'outbound',
+      is_read:             true,
+      ai_priority:         null,
+      delivery_status:     'sent',
+      provider_message_id: gmailId ?? messageId,
+    }).select('id, contact_id').single()
+
+    await writeMessageEvent({
+      workspaceId,
+      internalMessageId: inserted?.id,
+      externalMessageId: gmailId ?? messageId,
+      contactId:         inserted?.contact_id ?? replyToContactId,
+      eventType:         'email_sent',
+      provider:          'smtp_gmail',
+      providerPayload:   { to, subject, gmail_id: gmailId },
     })
     return
   }
 
+  // ── Nodemailer SMTP (app-password) ───────────────────────────────────────
   const creds = getSmtpCreds(provider, config, accessToken)
-
   if (!creds) {
     throw new Error(`Missing SMTP credentials for ${provider} integration.`)
   }
 
-  // Create nodemailer transporter (app-password path only — OAuth2 Gmail uses Gmail API above)
   const transporter = nodemailer.createTransport({
     host:   creds.host,
     port:   creds.port,
-    secure: false,  // STARTTLS on port 587
+    secure: false,
     auth: {
       user: creds.user,
       pass: creds.password,
     },
   })
 
-  // Send the email
-  const info = await transporter.sendMail({
-    from:        `"Sage CRM" <${creds.user}>`,
-    to,
-    ...(cc  ? { cc }  : {}),
-    ...(bcc ? { bcc } : {}),
-    subject,
-    text:        body,
-    attachments: attachments?.map(a => ({
-      filename:    a.filename,
-      content:     Buffer.from(a.dataBase64, 'base64'),
-      contentType: a.contentType,
-    })),
-  })
+  let info: Awaited<ReturnType<typeof transporter.sendMail>>
+  try {
+    info = await transporter.sendMail({
+      from:        `"Sage CRM" <${creds.user}>`,
+      to,
+      ...(cc  ? { cc }  : {}),
+      ...(bcc ? { bcc } : {}),
+      subject,
+      text:        body,
+      ...(replyToMessageId ? {
+        inReplyTo:  replyToMessageId,
+        references: replyToMessageId,
+      } : {}),
+      attachments: attachments?.map(a => ({
+        filename:    a.filename,
+        content:     Buffer.from(a.dataBase64, 'base64'),
+        contentType: a.contentType,
+      })),
+    })
+  } catch (err) {
+    const failReason = err instanceof Error ? err.message : String(err)
+    await writeMessageEvent({
+      workspaceId,
+      eventType:       'email_failed',
+      provider:        `smtp_${provider}`,
+      providerPayload: { error: failReason, to },
+    })
+    throw err
+  }
 
-  // Log outbound email to sage_emails
   const messageId = (info.messageId as string | undefined) ?? `sent-${Date.now()}`
-  await supabase.from('sage_emails').insert({
-    workspace_id: workspaceId,
-    user_id:      userId,
-    message_id:   messageId,
-    thread_id:    replyToMessageId,
-    from_address: creds.user,
-    from_name:    'You',
-    to_address:   to,
+  const { data: inserted } = await supabase.from('sage_emails').insert({
+    workspace_id:        workspaceId,
+    user_id:             userId,
+    message_id:          messageId,
+    thread_id:           replyToMessageId,
+    from_address:        creds.user,
+    from_name:           'You',
+    to_address:          to,
     subject,
-    body_text:    body,
-    received_at:  new Date().toISOString(),
-    direction:    'outbound',
-    is_read:      true,
-    ai_priority:  null,
+    body_text:           body,
+    received_at:         new Date().toISOString(),
+    direction:           'outbound',
+    is_read:             true,
+    ai_priority:         null,
+    delivery_status:     'sent',
+    provider_message_id: messageId,
+  }).select('id, contact_id').single()
+
+  await writeMessageEvent({
+    workspaceId,
+    internalMessageId: inserted?.id,
+    externalMessageId: messageId,
+    contactId:         inserted?.contact_id ?? replyToContactId,
+    eventType:         'email_sent',
+    provider:          `smtp_${provider}`,
+    providerPayload:   { to, subject, message_id: messageId },
   })
 }

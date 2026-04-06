@@ -1351,7 +1351,7 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
         />
       )}
 
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
         {/* ── Page heading ─────────────────────────────────────────────────────── */}
         <div className="pl-9 pt-5 pb-2 pr-4 shrink-0 flex items-start justify-between">
           <div>
@@ -1387,7 +1387,7 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
             </div>
         </div>
 
-        <div className="flex flex-1 overflow-hidden gap-3 p-3 bg-[#f5f4f1] dark:bg-[#1c1c1c]">
+        <div className="flex flex-1 min-h-0 overflow-hidden gap-3 p-3 bg-[#f5f4f1] dark:bg-[#1c1c1c]">
 
         {/* ── LEFT: Filter sidebar ─────────────────────────────────────────────── */}
         <div className="w-64 shrink-0 flex flex-col bg-white dark:bg-[#181818] rounded-2xl border border-gray-200/60 dark:border-white/8 overflow-hidden shadow-[0_4px_6px_-1px_rgba(0,0,0,0.08),0_10px_30px_-5px_rgba(0,0,0,0.12),0_1px_0px_rgba(255,255,255,0.8)_inset] dark:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.3),0_20px_40px_-10px_rgba(0,0,0,0.5),0_1px_0px_rgba(255,255,255,0.04)_inset]">

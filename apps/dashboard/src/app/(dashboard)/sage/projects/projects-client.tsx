@@ -146,38 +146,38 @@ export function ProjectsClient({ projects: initialProjects }: Props) {
     <div className="h-full flex flex-col">
 
       {/* Header */}
-      <div className="shrink-0 flex items-center justify-between gap-4 flex-wrap px-6 py-4 border-b border-gray-200 dark:border-white/8 bg-white dark:bg-[#1c1c1c]">
+      <div className="shrink-0 flex items-center justify-between gap-4 flex-wrap px-6 py-3 border-b border-white/10 bg-[#141c2b] shadow-[0_2px_8px_rgba(0,0,0,0.35),0_1px_0px_rgba(255,255,255,0.06)_inset]">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-base font-bold text-gray-900 dark:text-gray-100">Projects</h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <h1 className="text-sm font-bold text-white">Projects</h1>
+            <p className="text-xs text-white/50">
               {projects.length} project{projects.length !== 1 ? 's' : ''}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Search — always visible */}
+          {/* Search */}
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none" />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search…"
-              className="pl-8 pr-3 py-1.5 text-xs border dark:border-white/10 rounded-lg bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 w-44"
+              className="pl-8 pr-3 py-1.5 text-xs border border-white/15 rounded-lg bg-white/8 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 w-44"
             />
           </div>
-          <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-white/8 rounded-lg border dark:border-white/10">
+          <div className="flex items-center gap-1 p-1 bg-white/8 rounded-lg border border-white/15">
             <button
               onClick={() => setView('kanban')}
-              className={cn('p-1.5 rounded-md transition-colors', view === 'kanban' ? 'bg-white dark:bg-[#232323] text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300')}
+              className={cn('p-1.5 rounded-md transition-colors', view === 'kanban' ? 'bg-white/20 text-white shadow-sm' : 'text-white/40 hover:text-white/70')}
               title="Kanban view"
             >
               <LayoutGrid className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setView('list')}
-              className={cn('p-1.5 rounded-md transition-colors', view === 'list' ? 'bg-white dark:bg-[#232323] text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300')}
+              className={cn('p-1.5 rounded-md transition-colors', view === 'list' ? 'bg-white/20 text-white shadow-sm' : 'text-white/40 hover:text-white/70')}
               title="List view"
             >
               <List className="w-3.5 h-3.5" />
@@ -300,7 +300,7 @@ export function ProjectsClient({ projects: initialProjects }: Props) {
                           onDragEnd={handleDragEnd}
                           onClick={() => router.push(`/sage/projects/${p.id}`)}
                           className={cn(
-                            'shrink-0 bg-white dark:bg-[#232323] rounded-xl border border-gray-200 dark:border-white/8 p-3 cursor-pointer hover:shadow-md hover:border-gray-300 dark:hover:border-white/15 transition-all',
+                            'shrink-0 bg-white dark:bg-[#232323] rounded-xl border border-gray-200 dark:border-white/8 p-3 cursor-pointer shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-white/15 transition-all',
                             isDragging && 'opacity-40 scale-95',
                           )}
                         >

@@ -3,6 +3,7 @@ import twilio from 'twilio'
 import { parsePhoneNumber, isValidPhoneNumber } from 'libphonenumber-js'
 import { createAdminClient } from '@/lib/supabase/server'
 import { lookupPhoneOwner, isRealName } from '@/lib/phone-lookup'
+import { triggerAiReview } from '@/lib/ai-guidance/review-trigger'
 
 // Never statically render — dynamic webhook
 export const dynamic = 'force-dynamic'
@@ -300,7 +301,27 @@ async function handleInbound({
 
   console.info(`[twilio/inbound] Saved SMS from ${fromE164} → conv=${conversationId}`)
 
-  // ── 10. Trigger bot auto-reply if integration has a bot assigned ───────────
+  // ── 10. Write sms_replied event + trigger AI review ───────────────────────
+  // Every inbound SMS is a reply signal — log it and let Sage update context.
+  await admin.from('message_events').insert({
+    workspace_id:        workspaceId,
+    channel:             'sms',
+    external_message_id: messageSid,
+    conversation_id:     conversationId,
+    contact_id:          contactId,
+    event_type:          'sms_replied',
+    provider:            'twilio',
+    provider_payload:    { from: fromE164, to: toRaw, body_preview: body.slice(0, 100) },
+    event_at:            new Date().toISOString(),
+  })
+
+  // AI review: conversation-scoped (primary) + contact if linked
+  void triggerAiReview('conversation' as never, conversationId, workspaceId, 'sms_replied').catch(() => {})
+  if (contactId) {
+    void triggerAiReview('contact', contactId, workspaceId, 'sms_replied').catch(() => {})
+  }
+
+  // ── 12. Trigger bot auto-reply if integration has a bot assigned ───────────
   if (botId && body && body !== '(no text)') {
     const apiBase = process.env.API_BASE_URL
     if (apiBase) {

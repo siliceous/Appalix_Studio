@@ -311,6 +311,9 @@ export interface SageContact {
   ai_analyzed_at:         string | null
   mailchimp_member_id:    string | null
   sync_deleted_at:        string | null
+  email_deliverability:   'ok' | 'bounced' | 'complained' | 'invalid' | null
+  email_bounced_at:       string | null
+  email_bounce_reason:    string | null
   created_at:             string
   updated_at:             string
   // joined
@@ -600,8 +603,14 @@ export interface SageEmail {
   ai_insights:     string[] | null
   ai_reply_drafts: { tone: string; body: string }[] | null
   ai_analyzed_at:  string | null
-  assigned_to:     string | null
-  created_at:      string
+  assigned_to:          string | null
+  delivery_status:      'sent' | 'delivered' | 'bounced' | 'failed' | 'complained' | null
+  provider_message_id:  string | null
+  bounced_at:           string | null
+  failed_reason:        string | null
+  opened_at:            string | null
+  last_event_at:        string | null
+  created_at:           string
   // joined
   contact?:        Pick<SageContact, 'id' | 'name' | 'email'> | null
 }

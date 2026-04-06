@@ -63,12 +63,12 @@ export default async function ProjectsPage() {
   }))
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full">
       <SageToolbar pageKey="projects" />
-      <div>
+      <div className="flex-1 min-h-0 overflow-hidden">
         <ProjectsInboxClient
-      boards={boards}
-      activity={(activityRaw ?? []) as SageActivityLog[]}
+          boards={boards}
+          activity={(activityRaw ?? []) as SageActivityLog[]}
         />
       </div>
     </div>

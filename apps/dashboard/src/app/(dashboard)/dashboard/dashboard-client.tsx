@@ -10,7 +10,7 @@ import {
   Plus, Kanban, Zap, RefreshCw, Calendar,
   ChevronDown, X, CheckCircle2,
   Sparkles, LayoutList, LayoutGrid,
-  Loader2,
+  Loader2, Settings, TrendingUp, BarChart2, CreditCard,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import { UpcomingPanel } from '@/components/sage/upcoming-panel'
@@ -241,6 +241,8 @@ export function SageDashboardClient({
   const [contactMatches, setContactMatches] = useState<Record<string, ContactMatch | null | undefined>>({})
   const [showAutoDesc, setShowAutoDesc] = useState(false)
   const autoDescTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false)
+  const settingsMenuRef = useRef<HTMLDivElement>(null)
 
   // Load preferences + DB settings on mount
   useEffect(() => {
@@ -294,6 +296,15 @@ export function SageDashboardClient({
     if (autoDescTimer.current) clearTimeout(autoDescTimer.current)
     autoDescTimer.current = setTimeout(() => setShowAutoDesc(false), 10000)
   }
+
+  useEffect(() => {
+    if (!showSettingsMenu) return
+    const handler = (e: MouseEvent) => {
+      if (settingsMenuRef.current && !settingsMenuRef.current.contains(e.target as Node)) setShowSettingsMenu(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showSettingsMenu])
 
   // Close feed calendar on outside click
   useEffect(() => {
@@ -603,6 +614,42 @@ export function SageDashboardClient({
               <span className={`text-xs font-bold ${sageAuto ? 'text-[#15A4AE]' : 'text-gray-400'}`}>
                 {sageAuto ? 'ON' : 'OFF'}
               </span>
+              {/* Settings gear */}
+              <div className="relative" ref={settingsMenuRef}>
+                <button
+                  onClick={() => setShowSettingsMenu(v => !v)}
+                  title="Settings"
+                  className={`flex items-center justify-center w-7 h-7 rounded-lg border transition-colors ${
+                    showSettingsMenu
+                      ? 'bg-gray-100 dark:bg-white/10 border-gray-300 dark:border-white/20 text-gray-700 dark:text-gray-200'
+                      : 'border-gray-200 dark:border-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5'
+                  }`}
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                </button>
+                {showSettingsMenu && (
+                  <div className="absolute left-0 top-full mt-2 z-50 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/12 rounded-2xl shadow-xl w-52 overflow-hidden py-1.5">
+                    <p className="px-3 pt-1 pb-1.5 text-[10px] font-semibold text-gray-400 dark:text-white/40 uppercase tracking-wide">Settings</p>
+                    {[
+                      { href: '/settings',         label: 'Settings',       Icon: Settings    },
+                      { href: '/sage/roi',         label: 'ROI',            Icon: TrendingUp  },
+                      { href: '/analytics',        label: 'Analytics',      Icon: BarChart2   },
+                      { href: '/settings/upgrade', label: 'Upgrade Plan',   Icon: CreditCard  },
+                      { href: '/settings/support', label: 'Support',        Icon: Sparkles    },
+                    ].map(({ href, label, Icon }) => (
+                      <Link
+                        key={href}
+                        href={href}
+                        onClick={() => setShowSettingsMenu(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
+                      >
+                        <Icon className="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-white/40" />
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
               {/* Right side — always fills the gap */}
               <div className="ml-auto flex items-center gap-2">
                 {pipelines.length > 0 && (

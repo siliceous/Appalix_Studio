@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   UserPlus, Search, Mail, Phone, Globe, Trash2,
-  Zap, ArrowUpDown, SlidersHorizontal, Columns3, Check, Ticket, DollarSign,
+  Zap, ArrowUpDown, SlidersHorizontal, Columns3, Check, Ticket, DollarSign, MailX,
 } from 'lucide-react'
 import { ContactModal } from '@/components/sage/contact-modal'
 import { deleteContact, deleteContacts, undoDeleteContact, assignContact, patchContact } from '@/app/actions/sage'
@@ -432,7 +432,19 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
         <InlineEditCell value={c.company_name ?? ''} placeholder="—" onSave={async val => { await patchContact(c.id, { company_name: val }); setContacts(prev => prev.map(x => x.id === c.id ? { ...x, company_name: val } : x)) }} />
       )
       case 'email': return (
-        <InlineEditCell value={c.email ?? ''} placeholder="—" onSave={async val => { await patchContact(c.id, { email: val }); setContacts(prev => prev.map(x => x.id === c.id ? { ...x, email: val } : x)) }} />
+        <div className="flex items-center gap-1.5">
+          <InlineEditCell value={c.email ?? ''} placeholder="—" onSave={async val => { await patchContact(c.id, { email: val }); setContacts(prev => prev.map(x => x.id === c.id ? { ...x, email: val } : x)) }} />
+          {c.email_deliverability === 'bounced' && (
+            <span title={`Email bounced${c.email_bounced_at ? ` · ${new Date(c.email_bounced_at).toLocaleDateString()}` : ''}`}>
+              <MailX className="w-3.5 h-3.5 text-red-400 shrink-0" />
+            </span>
+          )}
+          {c.email_deliverability === 'complained' && (
+            <span title="Marked as spam">
+              <MailX className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            </span>
+          )}
+        </div>
       )
       case 'contact_type': {
         const meta = CONTACT_TYPE_META[c.contact_type ?? 'other'] ?? CONTACT_TYPE_META.other

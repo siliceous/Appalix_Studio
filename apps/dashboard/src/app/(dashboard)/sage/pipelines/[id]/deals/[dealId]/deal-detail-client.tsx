@@ -460,7 +460,7 @@ export function DealDetailClient({
         />
       )}
 
-      <div className="flex h-full w-full gap-3 p-3 bg-[#f5f4f1] dark:bg-[#1c1c1c]">
+      <div className="flex flex-1 min-h-0 w-full gap-3 p-3 bg-[#f5f4f1] dark:bg-[#1c1c1c]">
 
         {/* ── LEFT: Deal list ─────────────────────────────────────────────── */}
         <div className={cn(

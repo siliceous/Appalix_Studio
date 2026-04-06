@@ -334,14 +334,46 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
 
       </div>{/* end shrink-0 header */}
 
-      <div className="flex-1 overflow-y-auto min-h-0 px-8 pb-8 pt-5">
-      {/* Tickets list or Trash */}
+      {/* ── Padding wrapper ── */}
+      <div className="flex-1 overflow-hidden flex flex-col px-8 pb-8 pt-5">
+
+      {/* ── Body card ── */}
       {filter === 'trash' ? (
-        <TrashTab type="ticket" />
+        <div className="flex-1 overflow-y-auto">
+          <TrashTab type="ticket" />
+        </div>
       ) : (
-      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-hidden">
+      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col flex-1 overflow-hidden">
+
+        {/* ── Static header — outside scroll ── */}
+        <table className="w-full text-sm table-fixed shrink-0">
+          <colgroup>
+            {canWrite && <col className="w-10" />}
+            <col className="w-24" />
+            <col />
+            <col className="w-28" />
+            <col className="w-28" />
+            <col className="w-28" />
+            {canAssign && <col className="w-32" />}
+            <col className="w-24" />
+          </colgroup>
+          <thead>
+            <tr className="bg-[#141c2b]">
+              {canWrite && <th className="bg-[#141c2b] px-4 py-3 rounded-tl-xl"><input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="w-4 h-4 rounded border-white/30 accent-[#15A4AE] cursor-pointer" /></th>}
+              <th className={`bg-[#141c2b] text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide${!canWrite ? ' rounded-tl-xl' : ''}`}>Priority</th>
+              <th className="bg-[#141c2b] text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Name</th>
+              <th className="bg-[#141c2b] text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Source</th>
+              <th className="bg-[#141c2b] text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Submitted</th>
+              <th className="bg-[#141c2b] text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Status</th>
+              {canAssign && <th className="bg-[#141c2b] text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Assigned to</th>}
+              <th className="bg-[#141c2b] text-right px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide rounded-tr-xl">Actions</th>
+            </tr>
+          </thead>
+        </table>
+
+        {/* ── Scrollable body ── */}
         {filtered.length === 0 ? (
-          <div className="py-20 text-center">
+          <div className="py-20 text-center flex-1">
             <Ticket className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {filter === 'all' ? 'No tickets yet.' : `No ${filter} tickets.`}
@@ -353,20 +385,18 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-[#141c2b]">
-                  {canWrite && <th className="px-4 py-3 w-px"><input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="w-4 h-4 rounded border-white/30 accent-[#15A4AE] cursor-pointer" /></th>}
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Priority</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Name</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Source</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Submitted</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Status</th>
-                  {canAssign && <th className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Assigned to</th>}
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide w-px whitespace-nowrap">Actions</th>
-                </tr>
-              </thead>
+          <div className="flex-1 overflow-y-auto">
+            <table className="w-full text-sm table-fixed">
+              <colgroup>
+                {canWrite && <col className="w-10" />}
+                <col className="w-24" />
+                <col />
+                <col className="w-28" />
+                <col className="w-28" />
+                <col className="w-28" />
+                {canAssign && <col className="w-32" />}
+                <col className="w-24" />
+              </colgroup>
               <tbody className="divide-y dark:divide-white/5">
                 {paginated.map(ticket => {
                   const sc = STATUS_CONFIG[ticket.status] ?? STATUS_CONFIG.open
@@ -496,7 +526,8 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
         </div>
       </div>
       )}
-      </div>{/* end scroll area */}
+
+      </div>{/* end padding wrapper */}
 
       {showModal && <TicketModal contacts={contacts} onClose={() => setShowModal(false)} />}
 

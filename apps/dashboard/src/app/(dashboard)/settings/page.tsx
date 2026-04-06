@@ -109,7 +109,6 @@ export default async function SettingsPage() {
     .map((m) => ({ user_id: m.user_id, name: m.name, email: m.email, role: m.role }))
 
   return (
-    <div className="flex-1 overflow-y-auto -m-8 p-8">
     <div className="max-w-2xl mx-auto space-y-6">
       <Header title="Settings" description="Workspace configuration and billing" />
 
@@ -363,6 +362,24 @@ export default async function SettingsPage() {
         </section>
       )}
 
+      {/* Support */}
+      <section className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10">
+        <div className="px-6 py-5 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Support</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Get help with your subscription, billing, feature requests, or any other issues.
+            </p>
+          </div>
+          <a
+            href="/settings/support"
+            className="shrink-0 px-4 py-2 text-sm font-medium border border-gray-300 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300 transition-colors"
+          >
+            Contact us →
+          </a>
+        </div>
+      </section>
+
       {/* Danger zone */}
       {membership.role === 'owner' && (
         <section className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-red-100 dark:border-red-900/30">
@@ -376,7 +393,6 @@ export default async function SettingsPage() {
           </div>
         </section>
       )}
-    </div>
     </div>
   )
 }

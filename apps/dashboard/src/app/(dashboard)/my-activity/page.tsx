@@ -182,9 +182,9 @@ export default async function MyActivityPage({
 
   const viewAsUserId = targetUserId !== user.id ? targetUserId : null
   return (
-    <div className="-m-8 flex flex-col flex-1">
+    <div className="-m-8 flex flex-col flex-1 min-h-0">
       <SageToolbar pageKey="my-activity" />
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <MyActivityClient rows={rows} viewAsName={viewAsName} viewAsUserId={viewAsUserId} canExport={callerRank >= ROLE_RANK.manager} teamMembers={teamMembers} />
       </div>
     </div>
