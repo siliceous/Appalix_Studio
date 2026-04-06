@@ -253,3 +253,56 @@ export async function importDeals(rows: CsvRow[]): Promise<ImportResult> {
 
   return { imported, skipped, errors }
 }
+
+// ---------------------------------------------------------------------------
+// Pipelines (deals) import — same as importDeals, re-exported with clear name
+// ---------------------------------------------------------------------------
+
+export { importDeals as importPipelineDeals }
+
+// ---------------------------------------------------------------------------
+// Projects import
+//
+// Accepted CSV columns: name*, description / notes, status, priority
+// Rows without a name are skipped.
+// ---------------------------------------------------------------------------
+
+export async function importProjects(rows: CsvRow[]): Promise<ImportResult> {
+  const workspaceId = await getWorkspaceId()
+  const admin       = createAdminClient()
+
+  let imported = 0
+  let skipped  = 0
+  const errors: string[] = []
+
+  // Resolve owner_id
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { imported: 0, skipped: rows.length, errors: ['Not authenticated'] }
+
+  for (const rawRow of rows) {
+    const row  = normalise(rawRow)
+    const name = col(row, 'name', 'project_name', 'title')
+    if (!name) { skipped++; continue }
+
+    try {
+      const record: Record<string, unknown> = {
+        workspace_id: workspaceId,
+        owner_id:     user.id,
+        name,
+        notes:        col(row, 'notes', 'description') || null,
+        status:       col(row, 'status') || 'active',
+        priority:     col(row, 'priority') || null,
+        project_type: 'client_work',
+        source:       'import',
+      }
+      const { error } = await admin.from('sage_projects').insert(record)
+      if (error) { errors.push(`Row "${name}": ${error.message}`); continue }
+      imported++
+    } catch (e) {
+      errors.push(`Row "${name}": ${(e as Error).message}`)
+    }
+  }
+
+  return { imported, skipped, errors }
+}

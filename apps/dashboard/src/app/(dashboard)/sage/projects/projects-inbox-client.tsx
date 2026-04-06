@@ -1,12 +1,16 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import {
   FolderKanban, Plus, Trash2, Loader2, Activity,
-  Clock, X, GripVertical, ChevronRight, Download, Upload,
+  Clock, X, GripVertical, ChevronRight,
 } from 'lucide-react'
 import Link from 'next/link'
-import { createProjectBoard, deleteProjectBoard, createProject } from '@/app/actions/sage-projects'
+import { createProjectBoard, deleteProjectBoard } from '@/app/actions/sage-projects'
+import { CsvExportButton } from '@/components/ui/csv-export-button'
+import { CsvImportButton } from '@/components/ui/csv-import-button'
+import { exportProjects } from '@/app/actions/csv-export'
+import { importProjects } from '@/app/actions/csv-import'
 import { timeAgo } from '@/lib/utils'
 import type { SageActivityLog, SageProjectBoard, SageProjectBoardStage } from '@/lib/types'
 
@@ -42,49 +46,11 @@ export function ProjectsInboxClient({ boards: initialBoards, activity }: Props) 
   const [boardName,    setBoardName]    = useState('')
   const [boardDesc,    setBoardDesc]    = useState('')
   const [stages,       setStages]       = useState<string[]>([...DEFAULT_STAGES])
-  const [importing,    setImporting]    = useState(false)
-  const [importResult, setImportResult] = useState<{ success: number; failed: number } | null>(null)
-  const importRef = useRef<HTMLInputElement>(null)
 
   function addStage() { setStages(prev => [...prev, '']) }
   function removeStage(i: number) { setStages(prev => prev.filter((_, idx) => idx !== i)) }
   function updateStage(i: number, val: string) { setStages(prev => prev.map((s, idx) => idx === i ? val : s)) }
   function resetForm() { setBoardName(''); setBoardDesc(''); setStages([...DEFAULT_STAGES]); setFormError('') }
-
-  function parseCSVLine(line: string): string[] {
-    const result: string[] = []; let cur = '', inQ = false
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i]
-      if (ch === '"') { inQ = !inQ }
-      else if (ch === ',' && !inQ) { result.push(cur.trim()); cur = '' }
-      else { cur += ch }
-    }
-    result.push(cur.trim()); return result
-  }
-
-  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]; if (!file) return
-    e.target.value = ''; setImporting(true); setImportResult(null)
-    try {
-      const text = await file.text()
-      const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
-      if (lines.length < 2) { setImportResult({ success: 0, failed: 0 }); return }
-      const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z_]/g, ''))
-      const col = (n: string) => headers.indexOf(n)
-      let success = 0, failed = 0
-      for (const line of lines.slice(1)) {
-        const vals = parseCSVLine(line)
-        const name = col('name') >= 0 ? vals[col('name')] ?? '' : vals[0] ?? ''
-        if (!name.trim()) { failed++; continue }
-        try {
-          const res = await createProject({ name, notes: col('description') >= 0 ? vals[col('description')] : undefined })
-          if (res.error) failed++; else success++
-        } catch { failed++ }
-      }
-      setImportResult({ success, failed })
-    } catch { setImportResult({ success: 0, failed: -1 }) }
-    finally { setImporting(false) }
-  }
 
   async function handleCreate(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -123,46 +89,12 @@ export function ProjectsInboxClient({ boards: initialBoards, activity }: Props) 
     setDeleting(null)
   }
 
-  function exportCsv() {
-    const headers = ['Board', 'Description', 'Stages', 'Projects']
-    const rows = boards.map(b => [b.name, b.description ?? '', b.stages.map(s => s.name).join(' → '), b.project_count])
-    const csv = [headers, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
-    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
-    Object.assign(document.createElement('a'), { href: url, download: 'projects.csv' }).click()
-    URL.revokeObjectURL(url)
-  }
-
   return (
     <div className="h-full flex flex-col">
       {/* ── Page heading ── */}
-      <div className="shrink-0 pl-9 pt-5 pb-3 pr-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Projects</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Organise work across boards and track progress through every stage</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <input ref={importRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
-          <button
-            onClick={() => importRef.current?.click()}
-            disabled={importing}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 dark:border-white/15 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/8 rounded-xl transition-colors font-medium disabled:opacity-50"
-          >
-            {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-            Import
-          </button>
-          <button
-            onClick={exportCsv}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 dark:border-white/15 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/8 rounded-xl transition-colors font-medium"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Export
-          </button>
-          {importResult && (
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              {importResult.failed < 0 ? 'Import failed' : `${importResult.success} imported${importResult.failed > 0 ? `, ${importResult.failed} failed` : ''}`}
-            </span>
-          )}
-        </div>
+      <div className="shrink-0 pl-9 pt-5 pb-3 pr-6">
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Projects</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Organise work across boards and track progress through every stage</p>
       </div>
 
     <div className="flex-1 min-h-0 flex gap-3 px-3 pb-3">
@@ -243,6 +175,10 @@ export function ProjectsInboxClient({ boards: initialBoards, activity }: Props) 
           <div>
             <h2 className="text-sm font-semibold text-white">Project Boards</h2>
             <p className="text-xs text-white/50 mt-0.5">Select a board from the left to open it</p>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <CsvExportButton action={exportProjects} label="Export CSV" className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 text-white text-xs font-medium hover:bg-white/20 transition-colors border border-white/20" />
+            <CsvImportButton action={importProjects} label="Import CSV" className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 text-white text-xs font-medium hover:bg-white/20 transition-colors border border-white/20" />
           </div>
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto flex items-center justify-center p-6">

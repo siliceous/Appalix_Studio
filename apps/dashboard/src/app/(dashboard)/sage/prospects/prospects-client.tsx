@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Plus, Search, Target, Trash2, ChevronDown, ChevronUp,
-  Sparkles, MapPin, Globe, Mail, Phone, Check, X,
+  Sparkles, MapPin, Mail, Phone, Check, X,
   Loader2, AlertCircle, Zap, Edit2, ArrowUpDown, Clock,
   Download, Building2, Upload, UserPlus, DollarSign, Save,
 } from 'lucide-react'
@@ -18,6 +18,8 @@ import {
 } from '@/app/actions/prospecting'
 import type { CreditBalance } from '@/lib/prospecting/credits'
 import type { DetectedPerson } from '@/lib/prospecting/extract'
+import { ActivitySidebar } from '@/components/team/activity-sidebar'
+import type { ActivityEntry, ViewingAsInfo } from '@/app/actions/activity-feed'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -1030,11 +1032,14 @@ function PipelinePickerModal({ onConfirm, onClose }: {
 interface Props {
   initialProfiles:   IcpProfile[]
   initialRecentJobs: ProspectJob[]
+  activity:          ActivityEntry[]
+  activityDate:      string
+  viewingAs?:        ViewingAsInfo | null
 }
 
 const LAST_ICP_KEY = 'prospects:lastIcpId'
 
-export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
+export function ProspectsClient({ initialProfiles, initialRecentJobs, activity, activityDate, viewingAs }: Props) {
   const [profiles,      setProfiles]      = useState<IcpProfile[]>(initialProfiles)
   const [selectedIcp,   setSelectedIcp]   = useState<IcpProfile | null>(() => {
     if (typeof window === 'undefined') return initialProfiles[0] ?? null
@@ -1359,23 +1364,6 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">AI Lead Intelligence — enrich and score your best leads automatically</p>
           </div>
             <div className="flex items-center gap-2">
-              <input ref={importRef} type="file" accept=".csv" className="hidden" onChange={handleImportCsv} />
-              <button
-                onClick={() => importRef.current?.click()}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 dark:border-white/15 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/8 rounded-xl transition-colors font-medium"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                Import CSV
-              </button>
-              {visible.length > 0 && (
-                <button
-                  onClick={exportCsv}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 dark:border-white/15 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/8 rounded-xl transition-colors font-medium"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  Export CSV
-                </button>
-              )}
               {/* Credits button */}
               <button
                 onClick={() => setShowBuyCredits(true)}
@@ -1863,6 +1851,25 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
                 </div>
               )}
             </div>
+
+            {/* Import / Export */}
+            <input ref={importRef} type="file" accept=".csv" className="hidden" onChange={handleImportCsv} />
+            <button
+              onClick={() => importRef.current?.click()}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 text-white text-xs font-medium hover:bg-white/20 transition-colors border border-white/20"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              Import CSV
+            </button>
+            {visible.length > 0 && (
+              <button
+                onClick={exportCsv}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 text-white text-xs font-medium hover:bg-white/20 transition-colors border border-white/20"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Export CSV
+              </button>
+            )}
           </div>
 
 
@@ -2029,6 +2036,15 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs }: Props) {
             )}
           </div>
         </div>
+
+        {/* ── RIGHT: Activity ──────────────────────────────────────────────────── */}
+        <ActivitySidebar
+          activity={activity}
+          date={activityDate}
+          currentPath="/sage/prospects"
+          viewingAs={viewingAs}
+          className="w-64 flex-shrink-0 flex flex-col overflow-hidden"
+        />
 
         </div>
       </div>

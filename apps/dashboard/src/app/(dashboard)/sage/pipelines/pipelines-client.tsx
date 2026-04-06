@@ -3,15 +3,19 @@
 import { useState, useRef } from 'react'
 import {
   Kanban, Plus, Trash2, Loader2,
-  DollarSign, CheckCircle2, AlertCircle, Download, Upload,
+  DollarSign, CheckCircle2, AlertCircle,
 } from 'lucide-react'
 import Link from 'next/link'
 import { CreatePipelineModal } from '@/components/sage/create-pipeline-modal'
-import { deletePipeline, assignDealToPipeline, createDeal } from '@/app/actions/sage'
+import { deletePipeline, assignDealToPipeline } from '@/app/actions/sage'
 import { timeAgo } from '@/lib/utils'
 import type { SagePipeline, SageDeal, SagePipelineStage } from '@/lib/types'
 import { ActivitySidebar } from '@/components/team/activity-sidebar'
 import type { ActivityEntry, ViewingAsInfo } from '@/app/actions/activity-feed'
+import { CsvExportButton } from '@/components/ui/csv-export-button'
+import { CsvImportButton } from '@/components/ui/csv-import-button'
+import { exportPipelines } from '@/app/actions/csv-export'
+import { importPipelineDeals } from '@/app/actions/csv-import'
 
 type PipelineWithMeta = SagePipeline & {
   stages:     SagePipelineStage[]
@@ -44,16 +48,13 @@ function formatCurrency(value: number | null, currency: string) {
 
 
 export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: initialDeals, canWrite, activity, activityDate, viewingAs }: Props) {
-  const [pipelines,    setPipelines]    = useState(initialPipelines)
-  const [deals,        setDeals]        = useState(initialDeals)
-  const [showModal,    setShowModal]    = useState(false)
-  const [deleting,     setDeleting]     = useState<string | null>(null)
-  const [assigning,    setAssigning]    = useState<string | null>(null)
-  const [dragOverId,   setDragOverId]   = useState<string | null>(null)
-  const [importing,    setImporting]    = useState(false)
-  const [importResult, setImportResult] = useState<{ success: number; failed: number } | null>(null)
+  const [pipelines,  setPipelines]  = useState(initialPipelines)
+  const [deals,      setDeals]      = useState(initialDeals)
+  const [showModal,  setShowModal]  = useState(false)
+  const [deleting,   setDeleting]   = useState<string | null>(null)
+  const [assigning,  setAssigning]  = useState<string | null>(null)
+  const [dragOverId, setDragOverId] = useState<string | null>(null)
   const draggingDealId = useRef<string | null>(null)
-  const importRef      = useRef<HTMLInputElement>(null)
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this pipeline and all its deals? This cannot be undone.')) return
@@ -85,93 +86,12 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
     }
   }
 
-  function exportCsv() {
-    const headers = ['Pipeline', 'Stages', 'Deals']
-    const rows = pipelines.map(p => [p.name, p.stages.map(s => s.name).join(' → '), p.deal_count])
-    const csv = [headers, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
-    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
-    Object.assign(document.createElement('a'), { href: url, download: 'pipelines.csv' }).click()
-    URL.revokeObjectURL(url)
-  }
-
-  function parseCSVLine(line: string): string[] {
-    const result: string[] = []
-    let cur = '', inQ = false
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i]
-      if (ch === '"') { inQ = !inQ }
-      else if (ch === ',' && !inQ) { result.push(cur.trim()); cur = '' }
-      else { cur += ch }
-    }
-    result.push(cur.trim())
-    return result
-  }
-
-  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    e.target.value = ''
-    setImporting(true)
-    setImportResult(null)
-    try {
-      const text = await file.text()
-      const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
-      if (lines.length < 2) { setImportResult({ success: 0, failed: 0 }); return }
-      const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z_]/g, ''))
-      const col = (name: string) => headers.indexOf(name)
-      let success = 0, failed = 0
-      for (const line of lines.slice(1)) {
-        const vals = parseCSVLine(line)
-        const title = col('title') >= 0 ? vals[col('title')] ?? '' : vals[0] ?? ''
-        if (!title.trim()) { failed++; continue }
-        try {
-          const fd = new FormData()
-          fd.append('title', title)
-          if (col('value') >= 0 && vals[col('value')]) fd.append('value', vals[col('value')])
-          if (col('currency') >= 0 && vals[col('currency')]) fd.append('currency', vals[col('currency')])
-          if (col('contact_name') >= 0) fd.append('contact_name', vals[col('contact_name')] ?? '')
-          if (col('contact_email') >= 0) fd.append('contact_email', vals[col('contact_email')] ?? '')
-          fd.append('status', col('status') >= 0 && vals[col('status')] ? vals[col('status')] : 'open')
-          await createDeal(fd)
-          success++
-        } catch { failed++ }
-      }
-      setImportResult({ success, failed })
-    } catch { setImportResult({ success: 0, failed: -1 }) }
-    finally { setImporting(false) }
-  }
-
   return (
     <div className="h-full flex flex-col">
       {/* ── Page heading ── */}
-      <div className="shrink-0 pl-9 pt-5 pb-3 flex items-center justify-between pr-6">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Pipelines</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage your sales pipelines and track deals through every stage</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <input ref={importRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
-          <button
-            onClick={() => importRef.current?.click()}
-            disabled={importing}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 dark:border-white/15 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/8 rounded-xl transition-colors font-medium disabled:opacity-50"
-          >
-            {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-            Import
-          </button>
-          <button
-            onClick={exportCsv}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 dark:border-white/15 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/8 rounded-xl transition-colors font-medium"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Export
-          </button>
-          {importResult && (
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              {importResult.failed < 0 ? 'Import failed' : `${importResult.success} imported${importResult.failed > 0 ? `, ${importResult.failed} failed` : ''}`}
-            </span>
-          )}
-        </div>
+      <div className="shrink-0 pl-9 pt-5 pb-3 pr-6">
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Pipelines</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage your sales pipelines and track deals through every stage</p>
       </div>
 
     <div className="flex-1 min-h-0 flex gap-3 px-3 pb-3">
@@ -250,11 +170,15 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
         <div className="shrink-0 bg-[#141c2b] border-b border-white/10 px-6 py-3 flex items-center justify-between shadow-[0_2px_8px_rgba(0,0,0,0.35),0_1px_0px_rgba(255,255,255,0.06)_inset]">
           <div>
             <h2 className="text-sm font-semibold text-white">Unassigned Deals</h2>
-            <p className="text-sm text-white mt-0.5">
+            <p className="text-xs text-white/50 mt-0.5">
               {deals.length > 0
-                ? `${deals.length} deal${deals.length !== 1 ? 's' : ''} waiting to be assigned — drag onto a pipeline`
+                ? `${deals.length} deal${deals.length !== 1 ? 's' : ''} waiting — drag onto a pipeline to assign`
                 : 'All deals are assigned to pipelines'}
             </p>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <CsvExportButton action={exportPipelines} label="Export CSV" className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 text-white text-xs font-medium hover:bg-white/20 transition-colors border border-white/20" />
+            {canWrite && <CsvImportButton action={importPipelineDeals} label="Import CSV" className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 text-white text-xs font-medium hover:bg-white/20 transition-colors border border-white/20" />}
           </div>
         </div>
 

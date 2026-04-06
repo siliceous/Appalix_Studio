@@ -1,10 +1,9 @@
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getIcpProfiles, getRecentJobs } from '@/app/actions/prospecting'
 import { ProspectsClient } from './prospects-client'
 import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
-import { ActivitySidebar } from '@/components/team/activity-sidebar'
 
 export default async function ProspectsPage() {
   const supabase = await createClient()
@@ -36,17 +35,12 @@ export default async function ProspectsPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <SageToolbar pageKey="prospects" />
-      <div className="flex flex-1 overflow-hidden min-h-0">
-        <div className="flex-1 min-w-0 overflow-hidden flex flex-col">
-          <ProspectsClient
-            initialProfiles={profiles}
-            initialRecentJobs={recentJobs}
-          />
-        </div>
-        <ActivitySidebar
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <ProspectsClient
+          initialProfiles={profiles}
+          initialRecentJobs={recentJobs}
           activity={activity}
-          date={activityDate}
-          currentPath="/sage/prospects"
+          activityDate={activityDate}
           viewingAs={viewingAs}
         />
       </div>

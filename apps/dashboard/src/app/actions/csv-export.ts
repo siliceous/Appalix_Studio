@@ -305,3 +305,90 @@ export async function exportProjectsForBoard(boardId: string): Promise<{ csv: st
   }
 }
 
+
+// ---------------------------------------------------------------------------
+// Pipelines
+// ---------------------------------------------------------------------------
+
+export async function exportPipelines(): Promise<{ csv: string; filename: string } | { error: string }> {
+  try {
+    const { workspaceId } = await getWorkspaceAndUser()
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('sage_deals')
+      .select('title, value, currency, status, created_at, contact:sage_contacts(name, email)')
+      .eq('workspace_id', workspaceId)
+      .order('created_at', { ascending: false })
+
+    if (error) return { error: error.message }
+
+    type Row = { title: string; value: number | null; currency: string | null; status: string; created_at: string; contact: { name: string; email: string }[] }
+    const rows = ((data ?? []) as Row[]).map(r => ({
+      title:        r.title,
+      value:        r.value ?? '',
+      currency:     r.currency ?? 'USD',
+      status:       r.status,
+      contact_name: r.contact?.[0]?.name ?? '',
+      contact_email:r.contact?.[0]?.email ?? '',
+      created_at:   r.created_at,
+    }))
+
+    const columns = [
+      { key: 'title',         header: 'Title' },
+      { key: 'value',         header: 'Value' },
+      { key: 'currency',      header: 'Currency' },
+      { key: 'status',        header: 'Status' },
+      { key: 'contact_name',  header: 'Contact Name' },
+      { key: 'contact_email', header: 'Contact Email' },
+      { key: 'created_at',    header: 'Created At' },
+    ]
+
+    return { csv: toCsv(rows, columns), filename: `deals-${new Date().toISOString().slice(0, 10)}.csv` }
+  } catch (e) {
+    return { error: (e as Error).message }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Projects
+// ---------------------------------------------------------------------------
+
+export async function exportProjects(): Promise<{ csv: string; filename: string } | { error: string }> {
+  try {
+    const { workspaceId } = await getWorkspaceAndUser()
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('sage_projects')
+      .select('name, status, priority, notes, created_at, board:sage_project_boards(name)')
+      .eq('workspace_id', workspaceId)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+
+    if (error) return { error: error.message }
+
+    type Row = { name: string; status: string | null; priority: string | null; notes: string | null; created_at: string; board: { name: string }[] }
+    const rows = ((data ?? []) as Row[]).map(r => ({
+      name:       r.name,
+      status:     r.status ?? '',
+      priority:   r.priority ?? '',
+      board:      r.board?.[0]?.name ?? '',
+      notes:      r.notes ?? '',
+      created_at: r.created_at,
+    }))
+
+    const columns = [
+      { key: 'name',       header: 'Name' },
+      { key: 'status',     header: 'Status' },
+      { key: 'priority',   header: 'Priority' },
+      { key: 'board',      header: 'Board' },
+      { key: 'notes',      header: 'Notes' },
+      { key: 'created_at', header: 'Created At' },
+    ]
+
+    return { csv: toCsv(rows, columns), filename: `projects-${new Date().toISOString().slice(0, 10)}.csv` }
+  } catch (e) {
+    return { error: (e as Error).message }
+  }
+}
