@@ -89,9 +89,15 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
   return (
     <div className="h-full flex flex-col">
       {/* ── Page heading ── */}
-      <div className="shrink-0 pl-9 pt-5 pb-3 pr-6">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Pipelines</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage your sales pipelines and track deals through every stage</p>
+      <div className="shrink-0 pl-9 pt-5 pb-3 pr-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Pipelines</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage your sales pipelines and track deals through every stage</p>
+        </div>
+        <div className="flex items-center gap-2 mt-1">
+          <CsvExportButton action={exportPipelines} />
+          {canWrite && <CsvImportButton action={importPipelineDeals} />}
+        </div>
       </div>
 
     <div className="flex-1 min-h-0 flex gap-3 px-3 pb-3">
@@ -175,10 +181,6 @@ export function PipelinesClient({ pipelines: initialPipelines, unassignedDeals: 
                 ? `${deals.length} deal${deals.length !== 1 ? 's' : ''} waiting — drag onto a pipeline to assign`
                 : 'All deals are assigned to pipelines'}
             </p>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <CsvExportButton action={exportPipelines} label="Export CSV" className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 text-white text-xs font-medium hover:bg-white/20 transition-colors border border-white/20" />
-            {canWrite && <CsvImportButton action={importPipelineDeals} label="Import CSV" className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 text-white text-xs font-medium hover:bg-white/20 transition-colors border border-white/20" />}
           </div>
         </div>
 

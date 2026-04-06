@@ -92,9 +92,15 @@ export function ProjectsInboxClient({ boards: initialBoards, activity }: Props) 
   return (
     <div className="h-full flex flex-col">
       {/* ── Page heading ── */}
-      <div className="shrink-0 pl-9 pt-5 pb-3 pr-6">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Projects</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Organise work across boards and track progress through every stage</p>
+      <div className="shrink-0 pl-9 pt-5 pb-3 pr-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Projects</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Organise work across boards and track progress through every stage</p>
+        </div>
+        <div className="flex items-center gap-2 mt-1">
+          <CsvExportButton action={exportProjects} />
+          <CsvImportButton action={importProjects} />
+        </div>
       </div>
 
     <div className="flex-1 min-h-0 flex gap-3 px-3 pb-3">
@@ -176,11 +182,8 @@ export function ProjectsInboxClient({ boards: initialBoards, activity }: Props) 
             <h2 className="text-sm font-semibold text-white">Project Boards</h2>
             <p className="text-xs text-white/50 mt-0.5">Select a board from the left to open it</p>
           </div>
-          <div className="flex items-center gap-1.5">
-            <CsvExportButton action={exportProjects} label="Export CSV" className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 text-white text-xs font-medium hover:bg-white/20 transition-colors border border-white/20" />
-            <CsvImportButton action={importProjects} label="Import CSV" className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 text-white text-xs font-medium hover:bg-white/20 transition-colors border border-white/20" />
-          </div>
         </div>
+
         <div className="flex-1 min-h-0 overflow-y-auto flex items-center justify-center p-6">
           <div className="text-center">
             <FolderKanban className="w-10 h-10 text-gray-200 dark:text-gray-700 mx-auto mb-3" />

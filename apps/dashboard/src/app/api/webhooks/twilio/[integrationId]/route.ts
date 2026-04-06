@@ -4,6 +4,7 @@ import { parsePhoneNumber, isValidPhoneNumber } from 'libphonenumber-js'
 import { createAdminClient } from '@/lib/supabase/server'
 import { lookupPhoneOwner, isRealName } from '@/lib/phone-lookup'
 import { triggerAiReview } from '@/lib/ai-guidance/review-trigger'
+import { escalateAutomationsForOptOut } from '@/app/actions/automations'
 
 // Never statically render — dynamic webhook
 export const dynamic = 'force-dynamic'
@@ -153,15 +154,18 @@ async function handleInbound({
   // ── 3. Handle opt-out / opt-in / help keywords ────────────────────────────
   const keyword = body.trim().toLowerCase()
 
-  if (OPT_OUT_KEYWORDS.has(keyword)) {
+  const isOptOut = OPT_OUT_KEYWORDS.has(keyword)
+  const isOptIn  = OPT_IN_KEYWORDS.has(keyword)
+
+  if (isOptOut) {
     await admin
       .from('sage_contacts')
-      .update({ sms_opt_out: true } as never)
+      .update({ sms_opt_out: true, sms_opted_out_at: new Date().toISOString() } as never)
       .eq('workspace_id', workspaceId)
       .eq('phone', fromE164)
     console.info(`[twilio/inbound] Opt-out recorded for ${fromE164}`)
     // Still save the message below so agents see it
-  } else if (OPT_IN_KEYWORDS.has(keyword)) {
+  } else if (isOptIn) {
     await admin
       .from('sage_contacts')
       .update({ sms_opt_out: false } as never)
@@ -301,24 +305,33 @@ async function handleInbound({
 
   console.info(`[twilio/inbound] Saved SMS from ${fromE164} → conv=${conversationId}`)
 
-  // ── 10. Write sms_replied event + trigger AI review ───────────────────────
-  // Every inbound SMS is a reply signal — log it and let Sage update context.
+  // ── 10. Write sms_replied / sms_opted_out event + trigger AI review ─────────
+  const smsEventType = isOptOut ? 'sms_opted_out' : 'sms_replied'
   await admin.from('message_events').insert({
     workspace_id:        workspaceId,
     channel:             'sms',
     external_message_id: messageSid,
     conversation_id:     conversationId,
     contact_id:          contactId,
-    event_type:          'sms_replied',
+    event_type:          smsEventType,
     provider:            'twilio',
     provider_payload:    { from: fromE164, to: toRaw, body_preview: body.slice(0, 100) },
     event_at:            new Date().toISOString(),
   })
 
+  if (isOptOut && contactId) {
+    // Escalate all active automations for this contact so AI flags them
+    void escalateAutomationsForOptOut(
+      contactId,
+      workspaceId,
+      'Contact replied STOP — SMS opt-out',
+    ).catch(() => {})
+  }
+
   // AI review: conversation-scoped (primary) + contact if linked
-  void triggerAiReview('conversation' as never, conversationId, workspaceId, 'sms_replied').catch(() => {})
+  void triggerAiReview('conversation' as never, conversationId, workspaceId, smsEventType).catch(() => {})
   if (contactId) {
-    void triggerAiReview('contact', contactId, workspaceId, 'sms_replied').catch(() => {})
+    void triggerAiReview('contact', contactId, workspaceId, smsEventType).catch(() => {})
   }
 
   // ── 12. Trigger bot auto-reply if integration has a bot assigned ───────────

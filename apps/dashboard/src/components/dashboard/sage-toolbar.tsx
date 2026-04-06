@@ -16,7 +16,7 @@ import { updateAutoSetting, type AutoSettings } from '@/app/actions/sage-auto-se
 
 export type SagePageKey =
   | 'bots' | 'integrations' | 'sources'
-  | 'prospects' | 'contacts' | 'pipelines' | 'projects' | 'quotes' | 'rules'
+  | 'prospects' | 'contacts' | 'pipelines' | 'projects' | 'quotes' | 'rules' | 'automations'
   | 'email' | 'conversations' | 'forms' | 'tickets' | 'my-activity'
 
 export type TriagePreset = 'all' | 'today' | 'yesterday' | '7d' | '30d' | 'custom'
@@ -33,17 +33,16 @@ const TRIAGE_PAGES: PageDef[] = [
 ]
 
 const SAGE_PAGES: PageDef[] = [
-  { key: 'prospects',  label: 'Lead Enrichment',  href: '/sage/prospects',  icon: Target     },
-  { key: 'contacts',   label: 'Contacts',   href: '/sage/contacts',   icon: Users      },
-  { key: 'pipelines',  label: 'Pipelines',  href: '/sage/pipelines',  icon: Kanban     },
-  { key: 'projects',   label: 'Projects',   href: '/sage/projects',   icon: FolderOpen },
-  { key: 'quotes',     label: 'Quotes',     href: '/sage/quotes',     icon: Receipt    },
+  { key: 'prospects',   label: 'Enrichment',   href: '/sage/prospects',   icon: Target     },
+  { key: 'automations', label: 'Automations',  href: '/sage/automations', icon: Zap        },
+  { key: 'contacts',    label: 'Contacts',     href: '/sage/contacts',    icon: Users      },
+  { key: 'pipelines',   label: 'Pipelines',    href: '/sage/pipelines',   icon: Kanban     },
+  { key: 'projects',    label: 'Projects',     href: '/sage/projects',    icon: FolderOpen },
+  { key: 'quotes',      label: 'Quotes',       href: '/sage/quotes',      icon: Receipt    },
 ]
 
 const AGENT_PAGES: PageDef[] = [
-  { key: 'bots',         label: 'Bots',           href: '/bots',         icon: Bot      },
-  { key: 'integrations', label: 'Integrations',   href: '/integrations', icon: Plug     },
-  { key: 'sources',      label: 'Knowledge Base', href: '/sources',      icon: BookOpen },
+  { key: 'integrations', label: 'Integrations', href: '/integrations', icon: Plug },
 ]
 
 const TRIAGE_KEYS = new Set<SagePageKey>(['email', 'conversations', 'forms', 'tickets'])
@@ -281,9 +280,12 @@ export function SageToolbar({ pageKey, preset, autoEnabled, customFrom, customTo
                   <button
                     key={p.key}
                     onClick={() => { setShowSageMenu(false); setLoadingKey(p.key); router.push(p.href) }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
+                    className={[
+                      'w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors',
+                      p.key === pageKey ? 'bg-gray-50 dark:bg-white/8 font-medium' : '',
+                    ].join(' ')}
                   >
-                    <p.icon className="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-white/40" />
+                    <p.icon className={`w-3.5 h-3.5 shrink-0 ${p.key === pageKey ? 'text-[#15A4AE]' : 'text-gray-400 dark:text-white/40'}`} />
                     {p.label}
                   </button>
                 ))}
@@ -335,9 +337,9 @@ export function SageToolbar({ pageKey, preset, autoEnabled, customFrom, customTo
                   <button
                     key={p.key}
                     onClick={() => { setShowOverviewMenu(false); setLoadingKey(p.key); router.push(p.href) }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
+                    className={['w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors', p.key === pageKey ? 'bg-gray-50 dark:bg-white/8 font-medium' : ''].join(' ')}
                   >
-                    <p.icon className="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-white/40" />
+                    <p.icon className={`w-3.5 h-3.5 shrink-0 ${p.key === pageKey ? 'text-[#15A4AE]' : 'text-gray-400 dark:text-white/40'}`} />
                     {p.label}
                   </button>
                 ))}

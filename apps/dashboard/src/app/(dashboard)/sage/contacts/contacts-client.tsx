@@ -213,6 +213,29 @@ const ALL_COLUMNS: { key: ColKey; label: string; required?: true }[] = [
 
 const DEFAULT_VISIBLE = new Set<ColKey>(['name', 'company_name', 'email', 'contact_type', 'deal_value', 'tags', 'source', 'created_at', 'assigned_to'])
 
+// Tailwind width class per column; empty string = flexible (fills remaining space)
+const COL_CLASS: Partial<Record<ColKey, string>> = {
+  title:             'w-36',
+  company_name:      'w-40',
+  contact_type:      'w-32',
+  last_contacted_at: 'w-36',
+  interactions:      'w-28',
+  inactive_days:     'w-28',
+  tags:              'w-40',
+  city:              'w-24',
+  country:           'w-24',
+  created_at:        'w-32',
+  updated_at:        'w-32',
+  phone:             'w-32',
+  state:             'w-24',
+  street:            'w-36',
+  website_url:       'w-40',
+  deal_value:        'w-24',
+  assigned_to:       'w-36',
+  source:            'w-24',
+}
+
+
 const SORT_FIELDS: { key: string; label: string }[] = [
   { key: '',             label: 'None' },
   { key: 'name',         label: 'Name' },
@@ -556,7 +579,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
         </div>
       )}
       {/* Header */}
-      <div className="pl-9 pt-5 pb-3 pr-4 flex items-start justify-between shrink-0">
+      <div className="ml-3 mr-4 pt-5 pb-3 px-4 flex items-start justify-between shrink-0">
         <div>
           <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Contacts</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{contacts.length} total</p>
@@ -588,7 +611,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center gap-2 mb-4 flex-wrap shrink-0" onClick={e => e.stopPropagation()}>
+      <div className="ml-3 mr-4 px-4 flex items-center gap-2 mb-3 flex-wrap shrink-0" onClick={e => e.stopPropagation()}>
         {/* Search */}
         <div className="relative flex-1 min-w-52">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -788,11 +811,45 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col overflow-hidden min-w-0 flex-1">
-      <div className="overflow-auto min-w-0 flex-1">
+      {/* Table — header outside scroll (forms-table pattern) so scrollbar starts below header */}
+      <div className="ml-3 mr-4 px-0 flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col overflow-hidden min-w-0 flex-1 mb-4">
+
+        {/* Static header */}
+        <table className="w-full table-fixed shrink-0">
+          <colgroup>
+            {canWrite && <col className="w-10" />}
+            {visibleColDefs.map(col => <col key={col.key} className={COL_CLASS[col.key] ?? ''} />)}
+            {canWrite && <col className="w-24" />}
+          </colgroup>
+          <thead>
+            <tr className="bg-[#141c2b]">
+              {canWrite && (
+                <th className="bg-[#141c2b] pl-4 pr-2 py-3 rounded-tl-xl">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-white/30 accent-brand-600 cursor-pointer"
+                  />
+                </th>
+              )}
+              {visibleColDefs.map((col, i) => (
+                <th
+                  key={col.key}
+                  className={`bg-[#141c2b] text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap${!canWrite && i === 0 ? ' rounded-tl-xl' : ''}`}
+                >
+                  {col.label}
+                </th>
+              ))}
+              <th className="bg-[#141c2b] px-4 py-3 rounded-tr-xl" />
+            </tr>
+          </thead>
+        </table>
+
+        {/* Scrollable body */}
         {filtered.length === 0 ? (
-          <div className="py-20 text-center">
+          <div className="flex-1 flex flex-col items-center justify-center py-20 text-center">
             <UserPlus className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {search || activeFilterCount > 0 ? 'No contacts match your filters.' : 'No contacts yet. Add your first one.'}
@@ -804,94 +861,80 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
             )}
           </div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="bg-[#141c2b]">
-                {canWrite && (
-                  <th className="pl-4 pr-2 py-3 w-8">
-                    <input
-                      type="checkbox"
-                      checked={allSelected}
-                      onChange={toggleSelectAll}
-                      className="w-4 h-4 rounded border-white/30 accent-brand-600 cursor-pointer"
-                    />
-                  </th>
-                )}
-                {visibleColDefs.map(col => (
-                  <th key={col.key} className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                    {col.label}
-                  </th>
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <table className="w-full table-fixed">
+              <colgroup>
+                {canWrite && <col className="w-10" />}
+                {visibleColDefs.map(col => <col key={col.key} className={COL_CLASS[col.key] ?? ''} />)}
+                {canWrite && <col className="w-24" />}
+              </colgroup>
+              <tbody className="divide-y dark:divide-white/8">
+                {paginated.map(contact => (
+                  <tr
+                    key={contact.id}
+                    className={`transition-colors ${selectedIds.has(contact.id) ? 'bg-brand-50 dark:bg-[#15A4AE]/8' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}
+                  >
+                    {canWrite && (
+                      <td className="pl-4 pr-2 py-3" onClick={e => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(contact.id)}
+                          onChange={() => toggleSelect(contact.id)}
+                          className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-brand-600 cursor-pointer"
+                        />
+                      </td>
+                    )}
+                    {visibleColDefs.map(col => (
+                      <td
+                        key={col.key}
+                        className="px-4 py-3"
+                        onClick={col.key === 'name' ? undefined : () => router.push(`/sage/contacts/${contact.id}`)}
+                      >
+                        {renderCell(col.key, contact)}
+                      </td>
+                    ))}
+                    {canWrite && (
+                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center gap-1 justify-end">
+                          <button
+                            onClick={() => handleCreateDeal(contact)}
+                            disabled={actionLoading === `${contact.id}:deal`}
+                            title="Create deal"
+                            className="p-1.5 rounded-lg text-[#15A4AE] hover:bg-[#15A4AE]/10 transition-colors disabled:opacity-50"
+                          >
+                            {actionLoading === `${contact.id}:deal`
+                              ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[#15A4AE]" />
+                              : <DollarSign className="w-3.5 h-3.5" />
+                            }
+                          </button>
+                          <button
+                            onClick={() => handleCreateTicket(contact)}
+                            disabled={actionLoading === `${contact.id}:ticket`}
+                            title="Create ticket"
+                            className="p-1.5 rounded-lg hover:bg-yellow-50 dark:hover:bg-yellow-500/10 transition-colors disabled:opacity-50"
+                          >
+                            {actionLoading === `${contact.id}:ticket`
+                              ? <Loader2 className="w-3.5 h-3.5 animate-spin text-yellow-500" />
+                              : <Ticket className="w-3.5 h-3.5 text-gray-400 hover:text-yellow-500" />
+                            }
+                          </button>
+                          <button
+                            onClick={() => handleDelete(contact.id)}
+                            disabled={deleting === contact.id}
+                            title="Delete"
+                            className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
                 ))}
-                {canWrite && <th className="px-4 py-3 w-16 bg-[#141c2b]" />}
-              </tr>
-            </thead>
-            <tbody className="divide-y dark:divide-white/8">
-              {paginated.map(contact => (
-                <tr
-                  key={contact.id}
-                  className={`transition-colors ${selectedIds.has(contact.id) ? 'bg-brand-50 dark:bg-[#15A4AE]/8' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}
-                >
-                  {canWrite && (
-                    <td className="pl-4 pr-2 py-3" onClick={e => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(contact.id)}
-                        onChange={() => toggleSelect(contact.id)}
-                        className="w-4 h-4 rounded border-gray-300 dark:border-white/20 accent-brand-600 cursor-pointer"
-                      />
-                    </td>
-                  )}
-                  {visibleColDefs.map(col => (
-                    <td
-                      key={col.key}
-                      className="px-4 py-3"
-                      onClick={col.key === 'name' ? undefined : () => router.push(`/sage/contacts/${contact.id}`)}
-                    >
-                      {renderCell(col.key, contact)}
-                    </td>
-                  ))}
-                  {canWrite && (
-                    <td className="sticky right-0 px-4 py-3 bg-white dark:bg-[#1e1e1e] group-hover:bg-gray-50 dark:group-hover:bg-[#1e1e1e] z-10 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)]" onClick={e => e.stopPropagation()}>
-                      <div className="flex items-center gap-1 justify-end">
-                        <button
-                          onClick={() => handleCreateDeal(contact)}
-                          disabled={actionLoading === `${contact.id}:deal`}
-                          title="Create deal"
-                          className="p-1.5 rounded-lg text-[#15A4AE] hover:bg-[#15A4AE]/10 transition-colors disabled:opacity-50"
-                        >
-                          {actionLoading === `${contact.id}:deal`
-                            ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[#15A4AE]" />
-                            : <DollarSign className="w-3.5 h-3.5" />
-                          }
-                        </button>
-                        <button
-                          onClick={() => handleCreateTicket(contact)}
-                          disabled={actionLoading === `${contact.id}:ticket`}
-                          title="Create ticket"
-                          className="p-1.5 rounded-lg hover:bg-yellow-50 dark:hover:bg-yellow-500/10 transition-colors disabled:opacity-50"
-                        >
-                          {actionLoading === `${contact.id}:ticket`
-                            ? <Loader2 className="w-3.5 h-3.5 animate-spin text-yellow-500" />
-                            : <Ticket className="w-3.5 h-3.5 text-gray-400 hover:text-yellow-500" />
-                          }
-                        </button>
-                        <button
-                          onClick={() => handleDelete(contact.id)}
-                          disabled={deleting === contact.id}
-                          title="Delete"
-                          className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
-                        </button>
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         )}
-      </div>
 
       {/* Pagination footer */}
       <div className="flex items-center justify-between px-4 py-2.5 border-t dark:border-white/8 bg-gray-50/60 dark:bg-white/[0.02] rounded-b-xl">
@@ -917,6 +960,7 @@ export function ContactsClient({ contacts: initial, members, callerRole, teamMem
               className="px-2.5 py-1 rounded-lg border dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium">Next →</button>
           </div>
         </div>
+      </div>
       </div>
       </div>
 

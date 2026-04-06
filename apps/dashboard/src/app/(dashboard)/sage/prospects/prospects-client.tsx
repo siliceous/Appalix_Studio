@@ -5,13 +5,13 @@ import {
   Plus, Search, Target, Trash2, ChevronDown, ChevronUp,
   Sparkles, MapPin, Mail, Phone, Check, X,
   Loader2, AlertCircle, Zap, Edit2, ArrowUpDown, Clock,
-  Download, Building2, Upload, UserPlus, DollarSign, Save,
+  Download, Building2, Upload, UserPlus, Save,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   getIcpProfiles, createIcpProfile, updateIcpProfile, deleteIcpProfile,
   startLocalSearch, getProspectJob, getProspectResults,
-  addProspectToPipeline, getRecentJobs, getWorkspacePipelines,
+  getRecentJobs,
   createContactFromProspect, deleteProspect, updateProspect,
   getProspectCredits,
   type IcpProfile, type ProspectCompany, type ProspectJob,
@@ -20,6 +20,8 @@ import type { CreditBalance } from '@/lib/prospecting/credits'
 import type { DetectedPerson } from '@/lib/prospecting/extract'
 import { ActivitySidebar } from '@/components/team/activity-sidebar'
 import type { ActivityEntry, ViewingAsInfo } from '@/app/actions/activity-feed'
+import { createAutomationFromProspect } from '@/app/actions/automations'
+import type { AutomationGoal } from '@/lib/types'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -466,12 +468,12 @@ function DecisionMakerCell({
 
 // ── Prospect table row ────────────────────────────────────────────────────────
 
-function ProspectRow({ prospect, cols, isPushed, onCreateDeal, onCreateContact, onDelete, onUpdate }: {
-  prospect:        ProspectCompany
-  cols:            Set<ColKey>
-  isPushed?:       boolean
-  onCreateDeal:    (id: string) => void
-  onCreateContact: (id: string) => Promise<void>
+function ProspectRow({ prospect, cols, isPushed, onStartAutomation, onCreateContact, onDelete, onUpdate }: {
+  prospect:           ProspectCompany
+  cols:               Set<ColKey>
+  isPushed?:          boolean
+  onStartAutomation:  (id: string) => void
+  onCreateContact:    (id: string) => Promise<void>
   onDelete:        (id: string) => Promise<void>
   onUpdate:        (id: string, data: { email_1?: string; phone_1?: string; description?: string; city?: string; country?: string }) => Promise<void>
 }) {
@@ -702,17 +704,17 @@ function ProspectRow({ prospect, cols, isPushed, onCreateDeal, onCreateContact, 
             >
               {contactDone ? <Check className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
             </button>
-            {/* Create deal */}
+            {/* Start automation */}
             <button
-              onClick={() => onCreateDeal(prospect.id)}
+              onClick={() => onStartAutomation(prospect.id)}
               disabled={busy || pushed}
-              title="Create deal"
+              title={pushed ? 'Automation started' : 'Start automation'}
               className={cn(
                 'p-1.5 rounded-lg transition-colors shrink-0 disabled:opacity-40',
                 pushed ? 'text-[#15A4AE]' : 'text-[#15A4AE] hover:bg-[#15A4AE]/10',
               )}
             >
-              <DollarSign className="w-3.5 h-3.5" />
+              {pushed ? <Check className="w-3.5 h-3.5" /> : <Zap className="w-3.5 h-3.5" />}
             </button>
             {/* Edit */}
             <button
@@ -926,35 +928,31 @@ function BuyCreditsModal({ onClose }: { onClose: () => void }) {
   )
 }
 
-// ── Pipeline picker modal ─────────────────────────────────────────────────────
+// ── Automation picker modal ───────────────────────────────────────────────────
 
-function PipelinePickerModal({ onConfirm, onClose }: {
-  onConfirm: (pipelineId: string, stageId: string) => Promise<void>
+const GOAL_OPTIONS: { value: AutomationGoal; label: string; description: string }[] = [
+  { value: 'warm_introduction',  label: 'Warm Introduction',  description: 'Break the ice and start a conversation' },
+  { value: 'qualification',      label: 'Qualification',      description: 'Understand fit and gather key info' },
+  { value: 'reengagement',       label: 'Re-engagement',      description: 'Reconnect with a cold or inactive lead' },
+  { value: 'meeting_conversion', label: 'Book a Meeting',     description: 'Drive toward a demo or discovery call' },
+]
+
+const CHANNEL_OPTIONS: { value: 'email' | 'sms'; label: string }[] = [
+  { value: 'email', label: 'Email' },
+  { value: 'sms',   label: 'SMS'   },
+]
+
+function AutomationPickerModal({ onConfirm, onClose }: {
+  onConfirm: (goal: AutomationGoal, channel: 'email' | 'sms') => Promise<void>
   onClose:   () => void
 }) {
-  type Pipeline = { id: string; name: string; stages: { id: string; name: string; position: number }[] }
-  const [pipelines,   setPipelines]   = useState<Pipeline[]>([])
-  const [loading,     setLoading]     = useState(true)
-  const [selPipeline, setSelPipeline] = useState<Pipeline | null>(null)
-  const [selStage,    setSelStage]    = useState<string>('')
-  const [saving,      setSaving]      = useState(false)
-
-  useEffect(() => {
-    getWorkspacePipelines().then(data => {
-      setPipelines(data)
-      if (data[0]) { setSelPipeline(data[0]); setSelStage(data[0].stages[0]?.id ?? '') }
-      setLoading(false)
-    })
-  }, [])
-
-  useEffect(() => {
-    if (selPipeline) setSelStage(selPipeline.stages[0]?.id ?? '')
-  }, [selPipeline?.id])
+  const [goal,    setGoal]    = useState<AutomationGoal>('warm_introduction')
+  const [channel, setChannel] = useState<'email' | 'sms'>('email')
+  const [saving,  setSaving]  = useState(false)
 
   async function confirm() {
-    if (!selPipeline || !selStage) return
     setSaving(true)
-    await onConfirm(selPipeline.id, selStage)
+    await onConfirm(goal, channel)
     setSaving(false)
   }
 
@@ -963,9 +961,14 @@ function PipelinePickerModal({ onConfirm, onClose }: {
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white dark:bg-[#232323] rounded-2xl shadow-2xl border border-gray-200/60 dark:border-white/8 w-full max-w-sm">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/8">
-          <div>
-            <h2 className="text-sm font-bold text-gray-900 dark:text-white">Add to Pipeline</h2>
-            <p className="text-sm text-gray-400 mt-0.5">Choose where this prospect should go</p>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-[#15A4AE]/10 flex items-center justify-center">
+              <Zap className="w-4 h-4 text-[#15A4AE]" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white">Start Automation</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Choose a goal and outreach channel</p>
+            </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors">
             <X className="w-4 h-4" />
@@ -973,43 +976,40 @@ function PipelinePickerModal({ onConfirm, onClose }: {
         </div>
 
         <div className="p-5 space-y-4">
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-5 h-5 text-[#15A4AE] animate-spin" />
+          <div>
+            <label className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-2">Goal</label>
+            <div className="space-y-1.5">
+              {GOAL_OPTIONS.map(opt => (
+                <button key={opt.value} type="button" onClick={() => setGoal(opt.value)}
+                  className={cn('w-full text-left px-3 py-2.5 rounded-xl border text-sm transition-colors',
+                    goal === opt.value
+                      ? 'bg-[#15A4AE]/8 border-[#15A4AE]/40 text-[#15A4AE]'
+                      : 'border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5',
+                  )}>
+                  <span className="font-medium">{opt.label}</span>
+                  <span className={cn('block text-xs mt-0.5', goal === opt.value ? 'text-[#15A4AE]/70' : 'text-gray-400')}>
+                    {opt.description}
+                  </span>
+                </button>
+              ))}
             </div>
-          ) : pipelines.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-4">No pipelines found. Create one in Pipelines first.</p>
-          ) : (
-            <>
-              <div>
-                <label className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-2">Pipeline</label>
-                <div className="space-y-1">
-                  {pipelines.map(p => (
-                    <button key={p.id} type="button" onClick={() => setSelPipeline(p)}
-                      className={cn('w-full text-left px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors',
-                        selPipeline?.id === p.id
-                          ? 'bg-[#15A4AE]/8 border-[#15A4AE]/40 text-[#15A4AE]'
-                          : 'border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5',
-                      )}>
-                      {p.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          </div>
 
-              {selPipeline && selPipeline.stages.length > 0 && (
-                <div>
-                  <label className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-2">Stage</label>
-                  <select value={selStage} onChange={e => setSelStage(e.target.value)}
-                    className="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40">
-                    {selPipeline.stages.map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </>
-          )}
+          <div>
+            <label className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-2">Primary Channel</label>
+            <div className="flex gap-2">
+              {CHANNEL_OPTIONS.map(opt => (
+                <button key={opt.value} type="button" onClick={() => setChannel(opt.value)}
+                  className={cn('flex-1 px-3 py-2 rounded-xl border text-sm font-medium transition-colors',
+                    channel === opt.value
+                      ? 'bg-[#15A4AE]/8 border-[#15A4AE]/40 text-[#15A4AE]'
+                      : 'border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5',
+                  )}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="flex gap-2 px-5 pb-5">
@@ -1017,9 +1017,10 @@ function PipelinePickerModal({ onConfirm, onClose }: {
             className="flex-1 px-4 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors font-medium">
             Cancel
           </button>
-          <button type="button" onClick={confirm} disabled={saving || !selPipeline || !selStage || loading}
-            className="flex-1 px-4 py-2 text-sm font-semibold bg-[#15A4AE] hover:bg-[#0e8b94] text-white rounded-xl transition-colors disabled:opacity-50">
-            {saving ? 'Adding…' : 'Add to Pipeline'}
+          <button type="button" onClick={confirm} disabled={saving}
+            className="flex-1 px-4 py-2 text-sm font-semibold bg-[#15A4AE] hover:bg-[#0e8b94] text-white rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5">
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+            {saving ? 'Starting…' : 'Start Automation'}
           </button>
         </div>
       </div>
@@ -1079,8 +1080,8 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity, 
   const [contactOnlyFilter, setContactOnlyFilter] = useState(true)
   const [page,              setPage]              = useState(1)
   const [pageSize,          setPageSize]          = useState(20)
-  const [pickerProspectId,   setPickerProspectId]   = useState<string | null>(null)
-  const [pushedIds,          setPushedIds]           = useState<Set<string>>(new Set())
+  const [automationProspectId, setAutomationProspectId] = useState<string | null>(null)
+  const [pushedIds,            setPushedIds]            = useState<Set<string>>(new Set())
   const [credits,            setCredits]             = useState<CreditBalance | null>(null)
   const [showBuyCredits,     setShowBuyCredits]       = useState(false)
   const importRef = useRef<HTMLInputElement>(null)
@@ -1343,20 +1344,27 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity, 
       {showBuyCredits && (
         <BuyCreditsModal onClose={() => setShowBuyCredits(false)} />
       )}
-      {pickerProspectId && (
-        <PipelinePickerModal
-          onConfirm={async (pipelineId, stageId) => {
-            const result = await addProspectToPipeline(pickerProspectId, pipelineId, stageId)
-            if (!result.error) {
-              setPushedIds(prev => new Set([...prev, pickerProspectId]))
+      {automationProspectId && (
+        <AutomationPickerModal
+          onConfirm={async (goal, channel) => {
+            try {
+              await createAutomationFromProspect({
+                prospectId:     automationProspectId,
+                goal,
+                primaryChannel: channel,
+              })
+              setPushedIds(prev => new Set([...prev, automationProspectId]))
+            } catch (err) {
+              console.error('[prospects] createAutomationFromProspect failed:', err)
             }
-            setPickerProspectId(null)
+            setAutomationProspectId(null)
           }}
-          onClose={() => setPickerProspectId(null)}
+          onClose={() => setAutomationProspectId(null)}
         />
       )}
 
       <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        <input ref={importRef} type="file" accept=".csv" className="hidden" onChange={handleImportCsv} />
         {/* ── Page heading ─────────────────────────────────────────────────────── */}
         <div className="pl-9 pt-5 pb-2 pr-4 shrink-0 flex items-start justify-between">
           <div>
@@ -1364,6 +1372,20 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity, 
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">AI Lead Intelligence — enrich and score your best leads automatically</p>
           </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => importRef.current?.click()}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm border dark:border-white/10 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                Import CSV
+              </button>
+              <button
+                onClick={exportCsv}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm border dark:border-white/10 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Export CSV
+              </button>
               {/* Credits button */}
               <button
                 onClick={() => setShowBuyCredits(true)}
@@ -1852,26 +1874,7 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity, 
               )}
             </div>
 
-            {/* Import / Export */}
-            <input ref={importRef} type="file" accept=".csv" className="hidden" onChange={handleImportCsv} />
-            <button
-              onClick={() => importRef.current?.click()}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 text-white text-xs font-medium hover:bg-white/20 transition-colors border border-white/20"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              Import CSV
-            </button>
-            {visible.length > 0 && (
-              <button
-                onClick={exportCsv}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 text-white text-xs font-medium hover:bg-white/20 transition-colors border border-white/20"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Export CSV
-              </button>
-            )}
           </div>
-
 
           {/* Job progress — single line */}
           {activeJob && <JobProgressStrip job={activeJob} profileName={selectedIcp?.name} />}
@@ -1942,7 +1945,7 @@ export function ProspectsClient({ initialProfiles, initialRecentJobs, activity, 
                       prospect={p}
                       cols={cols}
                       isPushed={pushedIds.has(p.id)}
-                      onCreateDeal={id => setPickerProspectId(id)}
+                      onStartAutomation={id => setAutomationProspectId(id)}
                       onCreateContact={async (id) => { await createContactFromProspect(id) }}
                       onDelete={async (id) => {
                         await deleteProspect(id)

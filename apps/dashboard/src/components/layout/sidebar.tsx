@@ -21,6 +21,7 @@ import {
   Receipt,
   Clock,
   Target,
+  Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -67,12 +68,19 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Sage',
     pro: true,
     items: [
-      { href: '/sage/prospects',  label: 'Lead Enrichment',   icon: Target,     permissionKey: 'can_view_pipelines' },
-      { href: '/sage/contacts',   label: 'Contacts',          icon: Users,      permissionKey: 'can_view_contacts'  },
-      { href: '/sage/pipelines',  label: 'Pipelines',         icon: Kanban,     permissionKey: 'can_view_pipelines' },
-      { href: '/sage/projects',   label: 'Projects',          icon: FolderOpen, permissionKey: 'can_view_projects'  },
-      { href: '/sage/quotes',    label: 'Quotes & Invoices', icon: Receipt,    permissionKey: 'can_view_projects'  },
-      { href: '/sage/rules',     label: 'Rules',             icon: ListFilter, adminOnly: true                     },
+      { href: '/sage/prospects',   label: 'Lead Enrichment', icon: Target,     permissionKey: 'can_view_pipelines' },
+      { href: '/sage/automations', label: 'Automations',     icon: Zap,        permissionKey: 'can_view_pipelines' },
+      { href: '/sage/rules',       label: 'Rules',           icon: ListFilter, adminOnly: true                     },
+    ],
+  },
+  {
+    label: 'CRM',
+    pro: true,
+    items: [
+      { href: '/sage/contacts',  label: 'Contacts',        icon: Users,      permissionKey: 'can_view_contacts'  },
+      { href: '/sage/pipelines', label: 'Pipelines',       icon: Kanban,     permissionKey: 'can_view_pipelines' },
+      { href: '/sage/projects',  label: 'Projects',        icon: FolderOpen, permissionKey: 'can_view_projects'  },
+      { href: '/sage/quotes',    label: 'Quotes & Invoices', icon: Receipt,  permissionKey: 'can_view_projects'  },
     ],
   },
   {

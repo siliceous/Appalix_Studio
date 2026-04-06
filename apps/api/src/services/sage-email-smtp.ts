@@ -9,6 +9,7 @@
  *                      microsoft → smtp.office365.com:587
  */
 import nodemailer from 'nodemailer'
+import { createHmac } from 'crypto'
 import { supabase } from '../lib/supabase.js'
 import { getValidAccessToken } from './oauth-token-refresh.js'
 
@@ -19,15 +20,17 @@ interface EmailAttachment {
 }
 
 interface SendEmailOptions {
-  workspaceId:     string
-  userId:          string
-  to:              string
-  cc?:             string
-  bcc?:            string
-  subject:         string
-  body:            string
-  replyToEmailId?: string  // sage_emails.id of the email being replied to
-  attachments?:    EmailAttachment[]
+  workspaceId:       string
+  userId:            string
+  to:                string
+  cc?:               string
+  bcc?:              string
+  subject:           string
+  body:              string
+  replyToEmailId?:   string  // sage_emails.id of the email being replied to
+  attachments?:      EmailAttachment[]
+  contactId?:        string  // when sending automation emails — enables opt-out guard + unsubscribe footer
+  isAutomation?:     boolean // if true, appends unsubscribe footer even without replyToEmailId
 }
 
 interface SmtpCreds {
@@ -87,8 +90,44 @@ async function writeMessageEvent(opts: {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Unsubscribe link helpers
+// ---------------------------------------------------------------------------
+
+function buildUnsubscribeToken(contactId: string): string {
+  const secret = process.env.INTERNAL_AI_REVIEW_SECRET ?? ''
+  return createHmac('sha256', secret).update(contactId).digest('hex')
+}
+
+function buildUnsubscribeFooter(contactId: string): string {
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? '').replace(/\/$/, '')
+  const sig    = buildUnsubscribeToken(contactId)
+  const url    = `${appUrl}/api/unsubscribe?c=${contactId}&sig=${sig}`
+  return `\n\n---\nTo stop receiving these emails, click here to unsubscribe: ${url}`
+}
+
+// ---------------------------------------------------------------------------
+
 export async function sendEmailSMTP(opts: SendEmailOptions): Promise<void> {
-  const { workspaceId, userId, to, cc, bcc, subject, body, replyToEmailId, attachments } = opts
+  const { workspaceId, userId, to, cc, bcc, subject, replyToEmailId, attachments, contactId, isAutomation } = opts
+  let body = opts.body
+
+  // ── Opt-out guard ─────────────────────────────────────────────────────────
+  if (contactId) {
+    const { data: contact } = await supabase
+      .from('sage_contacts')
+      .select('email_opt_out')
+      .eq('id', contactId)
+      .single()
+    if (contact?.email_opt_out) {
+      throw new Error(`[smtp] Contact ${contactId} has unsubscribed from email.`)
+    }
+  }
+
+  // ── Append unsubscribe footer for automation emails ───────────────────────
+  if (contactId && isAutomation) {
+    body = body + buildUnsubscribeFooter(contactId)
+  }
 
   // Load connected email integration for this user
   const { data: integrations } = await supabase

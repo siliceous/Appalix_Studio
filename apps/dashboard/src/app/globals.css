@@ -216,11 +216,13 @@
     z-index: 1;
   }
 
-  /* Top bars (subpage toolbar + overview tab bar) */
-  .happy .bg-\[\#141c2b\],
+  /* Top bars (subpage toolbar + overview tab bar) — exempt .theme-stable */
+  .happy .bg-\[\#141c2b\]:not(.theme-stable),
   .happy .bg-\[\#9a3bdd\] {
     background-color: #6b4aad !important;
   }
+  /* theme-stable: elements that must keep their own bg regardless of theme */
+  .happy .theme-stable { background-color: #141c2b !important; }
 
   /* ── Cool mode — deep navy + electric blue theme ── */
   .cool body,

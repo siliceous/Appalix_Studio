@@ -314,6 +314,10 @@ export interface SageContact {
   email_deliverability:   'ok' | 'bounced' | 'complained' | 'invalid' | null
   email_bounced_at:       string | null
   email_bounce_reason:    string | null
+  sms_opt_out:            boolean
+  sms_opted_out_at:       string | null
+  email_opt_out:          boolean
+  email_opted_out_at:     string | null
   created_at:             string
   updated_at:             string
   // joined
@@ -382,6 +386,89 @@ export interface SageTicketActivity {
   completed_at: string | null
   created_by:   string | null
   created_at:   string
+}
+
+// ── Lead Automations ──────────────────────────────────────────────────────────
+
+export type AutomationGoal    = 'warm_introduction' | 'qualification' | 'reengagement' | 'meeting_conversion'
+export type AutomationStatus  = 'running' | 'waiting' | 'engaged' | 'escalated' | 'paused' | 'completed' | 'stopped'
+export type AutomationStage   = 'initial_outreach' | 'follow_up' | 'qualification' | 'engagement_detected' | 'handoff_ready' | 'nurture' | 'closed'
+export type AutomationMomentum = 'increasing' | 'flat' | 'declining'
+export type AutomationChannel = 'email' | 'sms' | 'call'
+export type AutomationSourceType = 'email' | 'sms' | 'bot' | 'form' | 'ticket' | 'prospect' | 'manual'
+export type AutomationNextAction = 'send_email' | 'send_sms' | 'call' | 'wait' | 'handoff'
+
+export interface LeadAutomation {
+  id:                   string
+  workspace_id:         string
+  contact_id:           string | null
+  deal_id:              string | null
+  source_type:          AutomationSourceType
+  source_ref_id:        string | null
+  goal:                 AutomationGoal
+  primary_channel:      AutomationChannel
+  fallback_channel:     AutomationChannel | null
+  status:               AutomationStatus
+  stage:                AutomationStage
+  priority:             'high' | 'medium' | 'low'
+  momentum:             AutomationMomentum
+  next_action_type:     AutomationNextAction | null
+  next_action_at:       string | null
+  current_summary:      string | null
+  current_reasoning:    string | null
+  ai_strategy:          Record<string, unknown>
+  qualification:        Record<string, unknown>
+  last_activity_at:     string | null
+  last_engagement_at:   string | null
+  step_count:           number
+  paused_at:            string | null
+  paused_reason:        string | null
+  completed_at:         string | null
+  stopped_at:           string | null
+  stopped_reason:       string | null
+  created_at:           string
+  updated_at:           string
+}
+
+// Joined shape returned by list queries
+export interface AutomationListItem extends LeadAutomation {
+  contact_name:   string | null
+  contact_email:  string | null
+  contact_phone:  string | null
+  deal_title:     string | null
+}
+
+// Full detail shape including related data
+export interface AutomationDetail {
+  automation:   LeadAutomation
+  contact:      Pick<SageContact, 'id' | 'name' | 'email' | 'phone' | 'company_name' | 'email_deliverability'> | null
+  deal:         Pick<SageDeal, 'id' | 'title' | 'value' | 'status' | 'stage'> | null
+  timeline:     AutomationTimelineEvent[]
+}
+
+export interface AutomationTimelineEvent {
+  id:         string
+  source:     string
+  event_type: string
+  actor_type: string
+  content:    string
+  metadata:   Record<string, unknown> | null
+  event_at:   string
+}
+
+// Input shape for createAutomation action
+export interface CreateAutomationInput {
+  contact_id?:       string
+  deal_id?:          string
+  source_type:       AutomationSourceType
+  source_ref_id?:    string
+  goal:              AutomationGoal
+  primary_channel:   AutomationChannel
+  fallback_channel?: AutomationChannel
+  priority?:         'high' | 'medium' | 'low'
+  current_summary?:  string
+  ai_strategy?:      Record<string, unknown>
+  qualification?:    Record<string, unknown>
 }
 
 export interface SageDealActivity {
