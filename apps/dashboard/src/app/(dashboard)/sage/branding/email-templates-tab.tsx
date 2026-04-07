@@ -720,8 +720,8 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
   const [, startTransition] = useTransition()
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const primary   = profile?.color_primary   ?? '#7c3aed'
-  const secondary = profile?.color_secondary ?? '#a78bfa'
+  const primary   = profile?.color_primary   ?? '#111827'
+  const secondary = profile?.color_secondary ?? '#374151'
   const palette   = profile?.brand_palette_json?.map(c => c.hex) ?? []
   const logoAsset = assets.find(
     a => a.brand_profile_id === profile?.id &&

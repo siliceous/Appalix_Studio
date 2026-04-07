@@ -16,7 +16,7 @@
  *   - DragOverlay renders via React portal — never clipped.
  */
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useMemo } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -896,9 +896,8 @@ function BrandAssetsPanel({
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
 
       {/* Themed header — title only */}
-      <div style={{ padding: '10px 12px 10px', flexShrink: 0, background: '#fff', borderBottom: `2px solid ${primary}` }}>
-        <p style={{ fontSize: 12, fontWeight: 700, color: '#111827', margin: '0 0 1px', letterSpacing: 0.2 }}>Brand Assets</p>
-        <p style={{ fontSize: 9, color: '#9ca3af', margin: 0, letterSpacing: 0.3 }}>drag or click to use</p>
+      <div style={{ padding: '10px 12px', flexShrink: 0, background: '#141c2b' }}>
+        <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', margin: 0, letterSpacing: 0.2 }}>Brand Assets</p>
       </div>
 
       {/* Brand selector — white strip below header */}
@@ -1237,6 +1236,31 @@ export function EmailBuilderCanvas({
 
   const primary = defaults.primaryColor
 
+  const previewDoc = useMemo(() => {
+    try {
+      return renderEmailHtml(
+        'newsletter',
+        { subject, preheader, footer_text: footerText, blocks },
+        {
+          company_name: defaults.companyName ?? null,
+          tagline:      null,
+          logo_url:     defaults.logoUrl ?? null,
+          favicon_url:  null,
+          colors:       { primary: defaults.primaryColor, secondary: null, accent: null, background: null, text: null },
+          palette:      [],
+          fonts:        { heading: null, body: null },
+          brand_tone:   null,
+          brand_style:  null,
+          cta_style:    null,
+          assets:       [],
+        }
+      )
+    } catch (e) {
+      console.error('[EmailBuilderCanvas] renderEmailHtml failed:', e)
+      return '<html><body style="font-family:sans-serif;padding:32px;color:#6b7280">Preview unavailable — check console for details.</body></html>'
+    }
+  }, [showPreview, blocks, subject, preheader, footerText, defaults])
+
   const isDraggingFromPalette = dragActiveId?.startsWith('new::') ?? false
   const draggingCanvasBlock   = dragActiveId && !isDraggingFromPalette
     ? blocks.find(b => b.id === dragActiveId) ?? null
@@ -1464,14 +1488,14 @@ export function EmailBuilderCanvas({
         )}
 
         {/* ── 3-panel floating layout ────────────────────────────────── */}
-        <div style={{ display: 'flex', flex: 1, minHeight: 0, gap: 10, padding: '0 10px 10px', overflow: 'hidden', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', flex: 1, minHeight: 0, gap: 10, padding: '8px 10px 10px', overflow: 'hidden', boxSizing: 'border-box' }}>
 
         {/* ── LEFT panel — palette + settings + properties ─────────── */}
         <div style={{ width: 220, flexShrink: 0, display: 'flex', flexDirection: 'column', background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
 
           {/* Block palette */}
-          <div style={{ flexShrink: 0, borderBottom: `2px solid ${primary}`, padding: '10px 10px 8px' }}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: '#111827', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 8px' }}>Blocks — drag or click</p>
+          <div style={{ flexShrink: 0, borderBottom: '1px solid #f3f4f6', padding: '10px 10px 8px' }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: '#141c2b', textTransform: 'none', letterSpacing: 0.2, margin: '-10px -10px 8px', padding: '10px 12px' }}>Blocks</p>
             <div className="grid grid-cols-3 gap-1.5 mb-2">
               {CORE_PALETTE.map(p => (
                 <div key={p.id} onClick={() => quickAdd(p.id)} className="cursor-pointer">
@@ -1634,25 +1658,8 @@ export function EmailBuilderCanvas({
             </div>
             {/* Rendered email HTML */}
             <iframe
-              srcDoc={renderEmailHtml(
-                'newsletter',
-                { subject, preheader, footer_text: footerText, blocks },
-                {
-                  company_name: defaults.companyName ?? null,
-                  tagline:      null,
-                  logo_url:     defaults.logoUrl ?? null,
-                  favicon_url:  null,
-                  colors:       { primary: defaults.primaryColor, secondary: null, accent: null, background: null, text: null },
-                  palette:      [],
-                  fonts:        { heading: null, body: null },
-                  brand_tone:   null,
-                  brand_style:  null,
-                  cta_style:    null,
-                  assets:       [],
-                }
-              )}
+              srcDoc={previewDoc}
               style={{ width: '100%', height: '80vh', border: 'none', display: 'block' }}
-              sandbox="allow-same-origin"
               title="Email Preview"
             />
           </div>

@@ -259,8 +259,8 @@ function BrandSelector({
   return (
     <div className="flex flex-col rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden h-full">
 
-      {/* Header — dark panel, title only */}
-      <div className="bg-gray-900 dark:bg-gray-800 px-4 py-3 shrink-0">
+      {/* Header */}
+      <div className="px-4 py-3 shrink-0 bg-[#141c2b]">
         <div className="flex items-center gap-2">
           <Palette className="w-3.5 h-3.5 text-white/60" />
           <span className="text-sm font-semibold text-white">Brand IDs</span>
@@ -679,8 +679,8 @@ function AssetsTab({
         {/* ── Column 2: Assets (center) ── */}
         <div className="flex-1 min-w-0 flex flex-col rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
 
-          {/* Header — dark bar, matches Identity header */}
-          <div className="shrink-0 px-4 py-2.5 bg-gray-900 dark:bg-gray-800">
+          {/* Header */}
+          <div className="shrink-0 px-4 py-2.5 bg-[#141c2b]">
             <span className="text-sm font-semibold text-white">Assets</span>
           </div>
 
@@ -936,8 +936,8 @@ function AssetsTab({
         {/* ── Column 3: Brand Identity (right) ── */}
         <div className="w-80 shrink-0 flex flex-col rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
 
-          {/* Black header */}
-          <div className="shrink-0 px-4 py-2.5 bg-gray-900 dark:bg-gray-800">
+          {/* Header */}
+          <div className="shrink-0 px-4 py-2.5 bg-[#141c2b]">
             <span className="text-sm font-semibold text-white">Identity</span>
           </div>
 
