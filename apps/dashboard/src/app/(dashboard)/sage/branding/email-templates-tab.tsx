@@ -6,7 +6,26 @@ import {
   Plus, Trash2, Loader2, Check, ChevronLeft,
   RefreshCw, Mail, ChevronDown, Megaphone,
   Rocket, Tag, Newspaper, Bell, Sparkles,
+  GripVertical, AlignLeft, ImageIcon as ImgIcon,
+  MousePointerClick, Minus, Space, Heading1,
 } from 'lucide-react'
+import {
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import {
   listEmailTemplates,
   createEmailTemplate,
@@ -28,7 +47,14 @@ import {
   DEFAULT_STYLE_OPTIONS,
   type TemplateContent,
   type StyleOptions,
+  type ContentBlock,
+  type BlockType,
 } from '@/lib/email-templates/html-renderer'
+import {
+  EmailBuilderCanvas,
+  makeHybridNewsletterBlocks,
+  type AssetDefaults,
+} from './email-builder-canvas'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -45,6 +71,9 @@ interface BrandProfileRow {
   color_background?:  string | null
   color_text?:        string | null
   brand_palette_json?: Array<{ hex: string }> | null
+  website_url?:        string | null
+  footer_text?:        string | null
+  social_links_json?:  Record<string, string> | null
 }
 
 interface BrandAssetRow {
@@ -58,17 +87,54 @@ interface BrandAssetRow {
 }
 
 interface Props {
-  profile: BrandProfileRow | null
-  assets:  BrandAssetRow[]
+  profile:     BrandProfileRow | null
+  assets:      BrandAssetRow[]
+  allProfiles: BrandProfileRow[]
+  allAssets:   BrandAssetRow[]
 }
 
 type FlowStep = 'gallery' | 'intent' | 'style-pick' | 'variations' | 'edit' | 'view-saved'
 type EditTab   = 'content' | 'styles'
-type TextContentKey = 'subject' | 'headline' | 'preheader' | 'body_text' | 'cta_text' | 'cta_url' | 'footer_text'
+
+// ── Block utilities ───────────────────────────────────────────────────────────
+
+const uid = () => Math.random().toString(36).slice(2, 9)
+
+function makeBlock(type: BlockType): ContentBlock {
+  switch (type) {
+    case 'headline':     return { id: uid(), type, text: 'Your headline here', align: 'center' }
+    case 'text':         return { id: uid(), type, text: 'Add your message here.', align: 'left' }
+    case 'image':        return { id: uid(), type, url: '', alt: '', align: 'center' }
+    case 'button':       return { id: uid(), type, text: 'Get Started', url: '', align: 'center' }
+    case 'divider':      return { id: uid(), type }
+    case 'spacer':       return { id: uid(), type, height: 32 }
+    case 'logo':         return { id: uid(), type, align: 'left', bgColor: '#f8f9fa' }
+    case 'social':       return { id: uid(), type, socialLinks: {}, align: 'center' }
+    case 'footer_block': return { id: uid(), type, companyName: '', companyUrl: '', unsubscribeUrl: '' }
+    case 'columns':      return { id: uid(), type, ratio: '1:1', columns: [[], []] }
+  }
+}
+
+function defaultBlocks(): ContentBlock[] {
+  return [
+    makeBlock('headline'),
+    makeBlock('text'),
+    makeBlock('button'),
+  ]
+}
+
+const BLOCK_PALETTE: { type: BlockType; label: string; icon: React.ElementType }[] = [
+  { type: 'headline', label: 'Headline',  icon: Heading1          },
+  { type: 'text',     label: 'Text',      icon: AlignLeft         },
+  { type: 'image',    label: 'Image',     icon: ImgIcon           },
+  { type: 'button',   label: 'Button',    icon: MousePointerClick },
+  { type: 'divider',  label: 'Divider',   icon: Minus             },
+  { type: 'spacer',   label: 'Spacer',    icon: Space             },
+]
 
 const EMPTY_CONTENT: TemplateContent = {
-  subject: '', headline: '', preheader: '',
-  body_text: '', cta_text: '', cta_url: '', footer_text: '',
+  subject: '', preheader: '', footer_text: '',
+  blocks: defaultBlocks(),
 }
 
 // ── Intent definitions ────────────────────────────────────────────────────────
@@ -186,10 +252,10 @@ function VariationThumbnail({ style, variation, logoUrl }: {
 
 // ── Gallery template card ─────────────────────────────────────────────────────
 
-function GalleryCard({ style, name, isSaved, primary, logoUrl, onClick, onDelete }: {
+function GalleryCard({ style, name, isSaved, primary, logoUrl, onClick, onEdit, onDelete }: {
   style: TemplateStyle; name: string; isSaved?: boolean
   primary: string; logoUrl?: string | null
-  onClick: () => void; onDelete?: () => void
+  onClick: () => void; onEdit?: () => void; onDelete?: () => void
 }) {
   const [hover, setHover] = useState(false)
   const fakeVariation: VariationConfig = {
@@ -206,8 +272,13 @@ function GalleryCard({ style, name, isSaved, primary, logoUrl, onClick, onDelete
         {hover && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"
             style={{ background: 'rgba(0,0,0,0.14)', backdropFilter: 'blur(1px)' }}>
+            {isSaved && onEdit && (
+              <button onClick={e => { e.stopPropagation(); onEdit() }}
+                className="text-white text-xs font-semibold px-4 py-1.5 rounded-full shadow"
+                style={{ background: primary }}>Edit</button>
+            )}
             <button className="text-white text-xs font-semibold px-4 py-1.5 rounded-full shadow"
-              style={{ background: primary }}>{isSaved ? 'View' : 'Use'}</button>
+              style={{ background: isSaved ? 'rgba(0,0,0,0.4)' : primary }}>{isSaved ? 'Preview' : 'Use'}</button>
             {isSaved && onDelete && (
               <button onClick={e => { e.stopPropagation(); onDelete() }}
                 className="text-white/80 hover:text-white text-[10px] flex items-center gap-1">
@@ -337,33 +408,231 @@ function StylesPanel({ so, onUpdate, style }: { so: StyleOptions; onUpdate: (p: 
 
 // ── Content form ──────────────────────────────────────────────────────────────
 
-function ContentForm({ content, onChange }: { content: TemplateContent; onChange: (c: TemplateContent) => void }) {
-  const fields: Array<{ key: TextContentKey; label: string; placeholder: string; multi?: boolean; type?: string }> = [
-    { key: 'subject',     label: 'Subject Line', placeholder: 'e.g. Something exciting from your company' },
-    { key: 'preheader',   label: 'Preheader',    placeholder: 'Short preview text shown after subject' },
-    { key: 'headline',    label: 'Headline',     placeholder: 'Main heading inside the email' },
-    { key: 'body_text',   label: 'Body',         placeholder: 'Your message…', multi: true },
-    { key: 'cta_text',    label: 'Button Text',  placeholder: 'e.g. Get Started' },
-    { key: 'cta_url',     label: 'Button URL',   placeholder: 'https://', type: 'url' },
-    { key: 'footer_text', label: 'Footer',       placeholder: '{{company_name}} · Unsubscribe' },
-  ]
+// ── Block editor components ───────────────────────────────────────────────────
+
+const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
+  headline: 'Headline', text: 'Text', image: 'Image',
+  button: 'Button', divider: 'Divider', spacer: 'Spacer',
+  logo: 'Logo', social: 'Social', footer_block: 'Footer', columns: 'Columns',
+}
+const BLOCK_TYPE_ICONS: Record<BlockType, React.ElementType> = {
+  headline: Heading1, text: AlignLeft, image: ImgIcon,
+  button: MousePointerClick, divider: Minus, spacer: Space,
+  logo: AlignLeft, social: AlignLeft, footer_block: Mail, columns: Minus,
+}
+
+function SortableBlockRow({ block, selected, onSelect, onDelete }: {
+  block: ContentBlock; selected: boolean
+  onSelect: () => void; onDelete: () => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: block.id })
+  const Icon = BLOCK_TYPE_ICONS[block.type]
   return (
-    <div className="space-y-3 px-4 py-4">
-      {fields.map(f => (
-        <div key={f.key} className="space-y-1">
-          <label className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{f.label}</label>
-          {f.multi ? (
-            <textarea rows={4} value={content[f.key]} placeholder={f.placeholder}
-              className="w-full text-xs rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 px-3 py-2 text-gray-800 dark:text-gray-200 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500/40 resize-none"
-              onChange={e => onChange({ ...content, [f.key]: e.target.value })} />
-          ) : (
-            <input type={f.type ?? 'text'} value={content[f.key]} placeholder={f.placeholder}
-              className="w-full text-xs rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 px-3 py-2 text-gray-800 dark:text-gray-200 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
-              onChange={e => onChange({ ...content, [f.key]: e.target.value })} />
-          )}
-        </div>
-      ))}
+    <div ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
+      onClick={onSelect}
+      className={`group flex items-center gap-2 px-2.5 py-2 rounded-lg cursor-pointer border transition-all ${
+        selected
+          ? 'border-violet-400 bg-violet-50 dark:bg-violet-900/20'
+          : 'border-transparent hover:border-gray-200 dark:hover:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5'
+      }`}>
+      <button {...attributes} {...listeners}
+        className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 shrink-0 touch-none"
+        onClick={e => e.stopPropagation()}>
+        <GripVertical className="w-3.5 h-3.5" />
+      </button>
+      <Icon className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+      <span className="text-xs text-gray-600 dark:text-gray-300 truncate flex-1">
+        {block.type === 'headline' || block.type === 'text' || block.type === 'button'
+          ? (block.text?.slice(0, 28) || BLOCK_TYPE_LABELS[block.type])
+          : BLOCK_TYPE_LABELS[block.type]}
+      </span>
+      <button onClick={e => { e.stopPropagation(); onDelete() }}
+        className="opacity-0 group-hover:opacity-100 shrink-0 text-gray-300 hover:text-red-500 transition-opacity">
+        <Trash2 className="w-3 h-3" />
+      </button>
     </div>
+  )
+}
+
+function BlockPropsEditor({ block, onChange }: {
+  block: ContentBlock; onChange: (patch: Partial<ContentBlock>) => void
+}) {
+  const inp = (label: string, key: keyof ContentBlock, ph: string, multi?: boolean, type?: string) => (
+    <div className="space-y-1">
+      <label className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{label}</label>
+      {multi ? (
+        <textarea rows={4} value={(block[key] as string) ?? ''} placeholder={ph}
+          className="w-full text-xs rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 px-3 py-2 text-gray-800 dark:text-gray-200 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500/40 resize-none"
+          onChange={e => onChange({ [key]: e.target.value })} />
+      ) : (
+        <input type={type ?? 'text'} value={(block[key] as string) ?? ''} placeholder={ph}
+          className="w-full text-xs rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 px-3 py-2 text-gray-800 dark:text-gray-200 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+          onChange={e => onChange({ [key]: e.target.value })} />
+      )}
+    </div>
+  )
+
+  const alignPicker = (
+    <div className="space-y-1">
+      <label className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Align</label>
+      <div className="flex gap-1.5">
+        {(['left', 'center', 'right'] as const).map(a => (
+          <button key={a} onClick={() => onChange({ align: a })}
+            className={`flex-1 py-1 text-[10px] font-semibold rounded-lg border capitalize transition-colors ${
+              (block.align ?? 'left') === a
+                ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/30 text-violet-600'
+                : 'border-gray-200 dark:border-white/10 text-gray-500 hover:border-gray-300'
+            }`}>{a}</button>
+        ))}
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="space-y-3 px-3 py-3">
+      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+        {(() => { const Icon = BLOCK_TYPE_ICONS[block.type]; return <Icon className="w-3 h-3" /> })()}
+        {BLOCK_TYPE_LABELS[block.type]}
+      </p>
+      {block.type === 'headline' && <>{inp('Text', 'text', 'Your headline…')}{alignPicker}</>}
+      {block.type === 'text'     && <>{inp('Text', 'text', 'Your message…', true)}{alignPicker}</>}
+      {block.type === 'image'    && <>{inp('Image URL', 'url', 'https://…', false, 'url')}{inp('Alt text', 'alt', 'Describe the image')}{alignPicker}</>}
+      {block.type === 'button'   && <>{inp('Button text', 'text', 'Get Started')}{inp('URL', 'url', 'https://…', false, 'url')}{alignPicker}</>}
+      {block.type === 'spacer'   && (
+        <div className="space-y-1">
+          <label className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Height: {block.height ?? 32}px</label>
+          <input type="range" min={8} max={96} step={8} value={block.height ?? 32}
+            onChange={e => onChange({ height: Number(e.target.value) })}
+            className="w-full accent-violet-500" />
+        </div>
+      )}
+      {(block.type === 'divider') && (
+        <p className="text-xs text-gray-400">Horizontal rule — no properties to edit.</p>
+      )}
+    </div>
+  )
+}
+
+function BlockEditorPanel({ content, onChange }: {
+  content: TemplateContent; onChange: (c: TemplateContent) => void
+}) {
+  const [selectedId, setSelectedId] = useState<string | null>(content.blocks[0]?.id ?? null)
+  const [activeId,   setActiveId]   = useState<string | null>(null)
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
+  const blocks = content.blocks
+
+  function addBlock(type: BlockType) {
+    const nb = makeBlock(type)
+    onChange({ ...content, blocks: [...blocks, nb] })
+    setSelectedId(nb.id)
+  }
+  function deleteBlock(id: string) {
+    const next = blocks.filter(b => b.id !== id)
+    onChange({ ...content, blocks: next })
+    setSelectedId(next[0]?.id ?? null)
+  }
+  function updateBlock(id: string, patch: Partial<ContentBlock>) {
+    onChange({ ...content, blocks: blocks.map(b => b.id === id ? { ...b, ...patch } : b) })
+  }
+  function handleDragStart({ active }: DragStartEvent) {
+    setActiveId(active.id as string)
+  }
+  function handleDragEnd(e: DragEndEvent) {
+    setActiveId(null)
+    const { active, over } = e
+    if (over && active.id !== over.id) {
+      const from = blocks.findIndex(b => b.id === active.id)
+      const to   = blocks.findIndex(b => b.id === over.id)
+      onChange({ ...content, blocks: arrayMove(blocks, from, to) })
+    }
+  }
+
+  const selected     = blocks.find(b => b.id === selectedId) ?? null
+  const activeBlock  = activeId ? blocks.find(b => b.id === activeId) ?? null : null
+
+  return (
+    // DndContext at the outermost level — outside all overflow containers
+    // so DragOverlay is never clipped
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={() => setActiveId(null)}
+    >
+      <div className="flex flex-col h-full">
+        {/* Add block palette */}
+        <div className="shrink-0 px-3 pt-3 pb-2 border-b border-gray-100 dark:border-white/10">
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Add block</p>
+          <div className="grid grid-cols-3 gap-1.5">
+            {BLOCK_PALETTE.map(({ type, label, icon: Icon }) => (
+              <button key={type} onClick={() => addBlock(type)}
+                className="flex flex-col items-center gap-1 py-2 px-1 rounded-lg border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/5 hover:border-violet-300 dark:hover:border-violet-700 hover:bg-violet-50/60 dark:hover:bg-violet-900/10 transition-all group">
+                <Icon className="w-4 h-4 text-gray-400 group-hover:text-violet-500 transition-colors" />
+                <span className="text-[9px] font-semibold text-gray-500 dark:text-gray-400 group-hover:text-violet-600 dark:group-hover:text-violet-400">{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Block list — SortableContext here, DragOverlay handles the floating preview */}
+        <div className="shrink-0 max-h-48 overflow-y-auto px-2 py-2 border-b border-gray-100 dark:border-white/10">
+          {blocks.length === 0 && (
+            <p className="text-[11px] text-gray-400 text-center py-4">No blocks yet — add one above</p>
+          )}
+          <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
+            {blocks.map(b => (
+              <SortableBlockRow key={b.id} block={b}
+                selected={selectedId === b.id && activeId !== b.id}
+                onSelect={() => { if (!activeId) setSelectedId(b.id) }}
+                onDelete={() => deleteBlock(b.id)} />
+            ))}
+          </SortableContext>
+        </div>
+
+        {/* Selected block properties */}
+        <div className="flex-1 overflow-y-auto">
+          {selected
+            ? <BlockPropsEditor block={selected} onChange={p => updateBlock(selected.id, p)} />
+            : <p className="text-xs text-gray-400 text-center py-8">Select a block to edit</p>
+          }
+        </div>
+
+        {/* Subject / Preheader / Footer — email meta */}
+        <div className="shrink-0 border-t border-gray-100 dark:border-white/10 px-3 py-3 space-y-2">
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Email settings</p>
+          {[
+            { key: 'subject'     as const, label: 'Subject',   ph: 'e.g. Exciting news from us' },
+            { key: 'preheader'   as const, label: 'Preheader', ph: 'Preview text after subject' },
+            { key: 'footer_text' as const, label: 'Footer',    ph: '{{company_name}} · Unsubscribe' },
+          ].map(f => (
+            <div key={f.key} className="space-y-0.5">
+              <label className="text-[10px] text-gray-400">{f.label}</label>
+              <input type="text" value={content[f.key]} placeholder={f.ph}
+                className="w-full text-xs rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 px-2.5 py-1.5 text-gray-800 dark:text-gray-200 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+                onChange={e => onChange({ ...content, [f.key]: e.target.value })} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* DragOverlay — rendered via portal, never clipped by overflow */}
+      <DragOverlay dropAnimation={null}>
+        {activeBlock ? (
+          <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg border border-violet-400 bg-white dark:bg-gray-900 shadow-xl opacity-95 w-64">
+            <GripVertical className="w-3.5 h-3.5 text-violet-400 shrink-0" />
+            {(() => { const Icon = BLOCK_TYPE_ICONS[activeBlock.type]; return <Icon className="w-3.5 h-3.5 text-violet-500 shrink-0" /> })()}
+            <span className="text-xs font-medium text-gray-700 dark:text-gray-200 truncate">
+              {activeBlock.type === 'headline' || activeBlock.type === 'text' || activeBlock.type === 'button'
+                ? (activeBlock.text?.slice(0, 28) || BLOCK_TYPE_LABELS[activeBlock.type])
+                : BLOCK_TYPE_LABELS[activeBlock.type]}
+            </span>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   )
 }
 
@@ -423,10 +692,9 @@ function FlowProgress({ current }: { current: 0 | 1 | 2 | 3 | 4 }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function EmailTemplatesTab({ profile, assets }: Props) {
+export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: Props) {
   const router = useRouter()
   const [step,           setStep]           = useState<FlowStep>('gallery')
-  const [editTab,        setEditTab]        = useState<EditTab>('content')
   const [sidebarFilter,  setSidebarFilter]  = useState<TemplateStyle | 'all'>('all')
   const [templates,      setTemplates]      = useState<EmailTemplateRow[]>([])
   const [loadingList,    setLoadingList]    = useState(false)
@@ -444,6 +712,7 @@ export function EmailTemplatesTab({ profile, assets }: Props) {
   const [previewHtml,    setPreviewHtml]    = useState('')
   const [previewLoading, setPreviewLoading] = useState(false)
   const [viewTemplate,   setViewTemplate]   = useState<EmailTemplateRow | null>(null)
+  const [editingId,      setEditingId]      = useState<string | null>(null)
 
   // Save
   const [saving, setSaving] = useState(false)
@@ -459,6 +728,18 @@ export function EmailTemplatesTab({ profile, assets }: Props) {
          (a.asset_role === 'primary_logo' || a.asset_role === 'logo_mark') &&
          a.is_approved && !a.is_archived,
   )
+
+  // Asset defaults for the visual canvas (logo, social, brand colors)
+  const assetDefaults: AssetDefaults = {
+    profileId:    profile?.id,
+    logoUrl:      logoAsset?.file_url,
+    logoAlt:      profile?.company_name ?? 'Logo',
+    companyName:  profile?.company_name ?? 'Your Company',
+    companyUrl:   profile?.website_url  ?? '',
+    footerText:   profile?.footer_text  ?? '',
+    socialLinks:  profile?.social_links_json ?? {},
+    primaryColor: primary,
+  }
 
   useEffect(() => {
     if (!profile) { setTemplates([]); return }
@@ -546,12 +827,49 @@ export function EmailTemplatesTab({ profile, assets }: Props) {
 
   // ── Flow helpers ────────────────────────────────────────────────────────────
 
+  /** Re-open a saved template in the canvas for editing */
+  function openSavedForEdit(t: EmailTemplateRow) {
+    const c = t.content_json as TemplateContent
+    setName(t.name)
+    setEditingId(t.id)
+    setContent({
+      subject:       c.subject     ?? '',
+      preheader:     c.preheader   ?? '',
+      footer_text:   c.footer_text ?? '',
+      blocks:        Array.isArray(c.blocks) ? c.blocks : defaultBlocks(),
+      style_options: c.style_options,
+    })
+    setStyle(t.template_style as TemplateStyle)
+    setStyleOpts(c.style_options ? { ...DEFAULT_STYLE_OPTIONS, ...c.style_options } : { ...DEFAULT_STYLE_OPTIONS })
+    setSelectedVar(null)
+    setPreviewHtml('')
+    setStep('edit')
+  }
+
+  /** Direct path: opens the hybrid Basic+Newsletter canvas immediately */
+  function openHybridTemplate() {
+    const blocks = makeHybridNewsletterBlocks(assetDefaults)
+    setName('')
+    setEditingId(null)
+    setContent({
+      subject:     '',
+      preheader:   '',
+      footer_text: assetDefaults.footerText ?? '',
+      blocks,
+    })
+    setStyle('basic')
+    setStyleOpts({ ...DEFAULT_STYLE_OPTIONS })
+    setPreviewHtml('')
+    setStep('edit')
+  }
+
   function startNewTemplate() {
     setCampaignIntent(null)
     setStyle(recommendation.topStyle)
     setVariations([])
     setSelectedVar(null)
     setName('')
+    setEditingId(null)
     setContent(EMPTY_CONTENT)
     setStyleOpts({ ...DEFAULT_STYLE_OPTIONS })
     setPreviewHtml('')
@@ -566,7 +884,13 @@ export function EmailTemplatesTab({ profile, assets }: Props) {
   function onStyleConfirmed(style: TemplateStyle) {
     const preset = TEMPLATE_PRESETS.find(p => p.id === style)!
     setStyle(style)
-    setContent({ ...EMPTY_CONTENT, ...preset.defaults })
+    const d = preset.defaults
+    const blocks: ContentBlock[] = [
+      { id: uid(), type: 'headline', text: d.headline, align: 'center' },
+      { id: uid(), type: 'text',     text: d.body_text, align: 'left' },
+      { id: uid(), type: 'button',   text: d.cta_text,  url: '',       align: 'center' },
+    ]
+    setContent({ subject: d.subject, preheader: d.preheader, footer_text: d.footer_text, blocks })
     const vars = generateVariations(fakeSnap, style)
     setVariations(vars)
     const recIdx = campaignIntent ? recommendVariationIndex(campaignIntent) : 1
@@ -583,7 +907,6 @@ export function EmailTemplatesTab({ profile, assets }: Props) {
   function onVariationConfirmed() {
     if (!selectedVar) return
     setStyleOpts({ ...selectedVar.style_options })
-    setEditTab('content')
     setPreviewHtml('')
     setStep('edit')
   }
@@ -592,15 +915,24 @@ export function EmailTemplatesTab({ profile, assets }: Props) {
     if (!profile) return
     setSaving(true)
     try {
-      await createEmailTemplate({
-        brandProfileId: profile.id,
-        name: templateName.trim() || `${TEMPLATE_PRESETS.find(p => p.id === selectedStyle)?.label} — ${selectedVar?.name ?? ''}`.trim(),
-        style: selectedStyle,
-        content: { ...content, style_options: styleOpts },
-        campaignIntent: campaignIntent ?? undefined,
-        variationName:  selectedVar?.name,
-        variationIndex: selectedVar?.index,
-      })
+      const name = templateName.trim() || `${TEMPLATE_PRESETS.find(p => p.id === selectedStyle)?.label ?? 'Template'} — ${selectedVar?.name ?? new Date().toLocaleDateString()}`.trim()
+      if (editingId) {
+        await updateEmailTemplate({
+          templateId: editingId,
+          name,
+          content: { ...content, style_options: styleOpts },
+        })
+      } else {
+        await createEmailTemplate({
+          brandProfileId: profile.id,
+          name,
+          style: selectedStyle,
+          content: { ...content, style_options: styleOpts },
+          campaignIntent: campaignIntent ?? undefined,
+          variationName:  selectedVar?.name,
+          variationIndex: selectedVar?.index,
+        })
+      }
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
       const updated = await listEmailTemplates(profile.id)
@@ -646,6 +978,7 @@ export function EmailTemplatesTab({ profile, assets }: Props) {
 
   if (step === 'view-saved' && viewTemplate) {
     return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#fff', display: 'flex', flexDirection: 'column' }}>
       <PreviewShell html={previewHtml} loading={previewLoading}
         onBack={() => { setViewTemplate(null); setStep('gallery') }} backLabel="All Templates">
         <div className="p-4 space-y-5">
@@ -678,6 +1011,12 @@ export function EmailTemplatesTab({ profile, assets }: Props) {
             </div>
           </div>
           <div className="space-y-2 pt-1">
+            <button
+              onClick={() => openSavedForEdit(viewTemplate)}
+              className="w-full flex items-center justify-center gap-2 text-xs font-bold text-white rounded-lg py-2"
+              style={{ background: primary }}>
+              Edit in canvas
+            </button>
             <button onClick={handleRefreshSnapshot} disabled={saving}
               className="w-full flex items-center justify-center gap-2 text-xs font-semibold border border-gray-200 dark:border-white/10 rounded-lg py-2 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50">
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
@@ -690,6 +1029,7 @@ export function EmailTemplatesTab({ profile, assets }: Props) {
           </div>
         </div>
       </PreviewShell>
+      </div>
     )
   }
 
@@ -886,64 +1226,30 @@ export function EmailTemplatesTab({ profile, assets }: Props) {
     )
   }
 
-  // ── Step 4–5: Edit content + styles ────────────────────────────────────────
+  // ── Edit: visual drag-and-drop canvas ─────────────────────────────────────
 
   if (step === 'edit') {
+    const backStep = selectedVar ? 'variations' : 'gallery'
     return (
+      // flex flex-col so the canvas gets flex: 1 height from its parent
       <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-        <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-2.5 border-b border-gray-100 dark:border-white/10 bg-white dark:bg-gray-950">
-          <button onClick={() => setStep('variations')} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-200">
-            <ChevronLeft className="w-3.5 h-3.5" /> Variations
-          </button>
-          <FlowProgress current={3} />
-          <button onClick={handleSave} disabled={saving}
-            className="flex items-center gap-1.5 text-xs font-semibold text-white px-3 py-1.5 rounded-lg disabled:opacity-60"
-            style={{ background: primary }}>
-            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : saved ? <Check className="w-3.5 h-3.5" /> : null}
-            {saved ? 'Saved!' : 'Save Template'}
-          </button>
-        </div>
-        <div className="flex-1 flex overflow-hidden min-h-0">
-          {/* Live preview */}
-          <div className="flex-1 overflow-auto bg-[#f0f0f2] dark:bg-gray-950 p-5 min-w-0">
-            <div className="mx-auto w-full" style={{ maxWidth: 500 }}>
-              <div className="relative rounded-2xl overflow-hidden shadow-lg bg-white" style={{ aspectRatio: '1/1.5' }}>
-                {previewLoading && <div className="absolute inset-0 flex items-center justify-center z-10 bg-white/80"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>}
-                {previewHtml
-                  ? <iframe srcDoc={previewHtml} title="Email preview" className="w-full h-full border-0" sandbox="allow-same-origin" />
-                  : <div className="flex items-center justify-center h-full"><p className="text-xs text-gray-400">Preview loading…</p></div>
-                }
-              </div>
-            </div>
-          </div>
-
-          {/* Right: tabs */}
-          <div className="w-64 shrink-0 border-l border-gray-100 dark:border-white/10 flex flex-col bg-white dark:bg-gray-950">
-            <div className="shrink-0 flex border-b border-gray-100 dark:border-white/10">
-              {(['content', 'styles'] as EditTab[]).map(t => (
-                <button key={t} onClick={() => setEditTab(t)}
-                  className={`flex-1 py-2.5 text-xs font-semibold capitalize transition-colors ${
-                    editTab === t ? 'text-gray-800 dark:text-gray-100 border-b-2 -mb-px' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                  }`}
-                  style={editTab === t ? { borderBottomColor: primary } : {}}>
-                  {t}
-                </button>
-              ))}
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {editTab === 'content' && <ContentForm content={content} onChange={setContent} />}
-              {editTab === 'styles' && <StylesPanel so={styleOpts} onUpdate={p => setStyleOpts(s => ({ ...s, ...p }))} style={selectedStyle} />}
-            </div>
-            {editTab === 'content' && (
-              <div className="shrink-0 px-4 pb-4 border-t border-gray-100 dark:border-white/10 pt-3">
-                <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Template name</label>
-                <input type="text" value={templateName} placeholder="e.g. March Newsletter"
-                  className="w-full mt-1 text-xs rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 px-3 py-2 text-gray-800 dark:text-gray-200 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
-                  onChange={e => setName(e.target.value)} />
-              </div>
-            )}
-          </div>
-        </div>
+        <EmailBuilderCanvas
+          blocks={content.blocks}
+          onChange={blocks => setContent(c => ({ ...c, blocks }))}
+          subject={content.subject}
+          preheader={content.preheader}
+          footerText={content.footer_text}
+          onMetaChange={patch => setContent(c => ({ ...c, ...patch }))}
+          defaults={assetDefaults}
+          allProfiles={allProfiles}
+          allAssets={allAssets}
+          onBack={() => setStep(backStep)}
+          templateName={templateName}
+          onNameChange={setName}
+          onSave={handleSave}
+          saving={saving}
+          saved={saved}
+        />
       </div>
     )
   }
@@ -984,9 +1290,18 @@ export function EmailTemplatesTab({ profile, assets }: Props) {
       {/* Main gallery */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <div className="shrink-0 flex items-center justify-between gap-3 px-5 py-3 border-b border-gray-100 dark:border-white/10 bg-white dark:bg-gray-950">
-          <p className="text-[11px] text-gray-500 dark:text-gray-400">
-            {templates.length > 0 ? `${templates.length} saved template${templates.length !== 1 ? 's' : ''}` : 'Start creating templates'}
-          </p>
+          {/* "All Templates" theme-colored tag */}
+          <div className="flex items-center gap-2">
+            <span
+              className="text-[11px] font-bold px-2.5 py-1 rounded-full"
+              style={{ background: `${primary}18`, color: primary }}
+            >
+              All Templates
+            </span>
+            {templates.length > 0 && (
+              <span className="text-[11px] text-gray-400">{templates.length} saved</span>
+            )}
+          </div>
           <button onClick={startNewTemplate}
             className="flex items-center gap-1.5 text-xs font-semibold text-white px-3 py-1.5 rounded-lg"
             style={{ background: primary }}>
@@ -995,23 +1310,90 @@ export function EmailTemplatesTab({ profile, assets }: Props) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-8">
-          {/* Saved templates */}
-          {sidebarFilter === 'all' && templates.length > 0 && (
+
+          {/* ── My Saved Templates — always visible, filtered by style ── */}
+          {(() => {
+            const myTemplates = sidebarFilter === 'all'
+              ? templates
+              : templates.filter(t => t.template_style === sidebarFilter)
+            if (myTemplates.length === 0) return null
+            return (
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">My Templates</h2>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: `${primary}15`, color: primary }}>
+                    {myTemplates.length} saved
+                  </span>
+                </div>
+                {loadingList
+                  ? <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-gray-300" /></div>
+                  : <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+                      {myTemplates.map(t => (
+                        <GalleryCard key={t.id} style={t.template_style} name={t.name} isSaved
+                          primary={primary} logoUrl={logoAsset?.file_url}
+                          onClick={() => { setViewTemplate(t); setPreviewHtml(''); setStep('view-saved') }}
+                          onEdit={() => openSavedForEdit(t)}
+                          onDelete={() => handleDelete(t.id)} />
+                      ))}
+                    </div>
+                }
+              </section>
+            )
+          })()}
+
+          {/* ── Basic Layouts — direct canvas entry ─────────────────── */}
+          {(sidebarFilter === 'all' || sidebarFilter === 'basic') && (
             <section>
-              <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4">My Templates</h2>
-              {loadingList
-                ? <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-gray-300" /></div>
-                : <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
-                    {templates.map(t => (
-                      <GalleryCard key={t.id} style={t.template_style} name={t.name} isSaved
-                        primary={primary} logoUrl={logoAsset?.file_url}
-                        onClick={() => { setViewTemplate(t); setPreviewHtml(''); setStep('view-saved') }}
-                        onDelete={() => handleDelete(t.id)} />
-                    ))}
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Basic Layouts</h2>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: `${primary}15`, color: primary }}>
+                  Drag &amp; drop editor
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+                {/* Basic Newsletter — opens visual canvas directly */}
+                <div className="flex flex-col gap-2">
+                  <div
+                    className="relative rounded-xl overflow-hidden cursor-pointer transition-all"
+                    style={{ aspectRatio: '3/4', border: `2px solid ${primary}30`, boxShadow: '0 2px 8px rgba(0,0,0,.08)' }}
+                    onClick={openHybridTemplate}
+                  >
+                    {/* Mini preview thumbnail */}
+                    <div className="w-full h-full flex flex-col" style={{ background: '#f8f9fa' }}>
+                      {/* Header bar */}
+                      <div style={{ height: '14%', background: '#f1f3f5', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', padding: '0 10px' }}>
+                        <div style={{ width: 32, height: 8, borderRadius: 3, background: primary + '60' }} />
+                      </div>
+                      {/* Body */}
+                      <div style={{ flex: 1, background: '#fff', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+                        <div style={{ height: 7, borderRadius: 2, background: '#111827', width: '80%', alignSelf: 'center' }} />
+                        <div style={{ height: 4, borderRadius: 2, background: '#e5e7eb', width: '65%', alignSelf: 'center' }} />
+                        <div style={{ height: 30, borderRadius: 4, background: '#f3f4f6', border: '1px dashed #d1d5db', marginTop: 4 }} />
+                        <div style={{ height: 14, borderRadius: 4, background: primary, width: '50%', alignSelf: 'center', marginTop: 4 }} />
+                        <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                          <div style={{ flex: 1, height: 24, borderRadius: 4, background: '#f3f4f6' }} />
+                          <div style={{ flex: 1, height: 24, borderRadius: 4, background: '#f3f4f6' }} />
+                        </div>
+                      </div>
+                      {/* Footer */}
+                      <div style={{ height: '10%', background: '#f9fafb', borderTop: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                        {[0,1,2].map(i => <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: primary + '80' }} />)}
+                      </div>
+                    </div>
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity"
+                      style={{ background: 'rgba(0,0,0,0.12)', backdropFilter: 'blur(1px)' }}>
+                      <button className="text-white text-xs font-bold px-4 py-1.5 rounded-full shadow"
+                        style={{ background: primary }}>Use</button>
+                    </div>
                   </div>
-              }
+                  <p className="text-xs font-medium text-gray-700 dark:text-gray-200">Basic Newsletter</p>
+                  <p className="text-[10px] text-gray-400">Hybrid layout · drag &amp; drop</p>
+                </div>
+              </div>
             </section>
           )}
+
 
           {/* Style sections */}
           {visibleSections.map(section => {

@@ -68,17 +68,55 @@ const HEADING_SIZE_MAP = {
   lg: '34px',
 }
 
+// ── Blocks ─────────────────────────────────────────────────────────────────────
+
+export type BlockType =
+  | 'headline' | 'text' | 'image' | 'button' | 'divider' | 'spacer'
+  | 'logo' | 'social' | 'footer_block' | 'columns'
+
+export type ColumnRatio = '1:1' | '1:1:1' | '1:1:1:1' | '1:2' | '2:1' | '1:3' | '3:1'
+
+export interface ContentBlock {
+  id:      string
+  type:    BlockType
+  text?:   string
+  url?:    string
+  alt?:    string
+  align?:  'left' | 'center' | 'right'
+  height?: number        // spacer only, px
+  // logo
+  logoUrl?:  string
+  logoAlt?:  string
+  bgColor?:  string      // background color (logo header bg, button bg)
+  // text / headline / button styling
+  textColor?:   string   // override text / headline color
+  fontFamily?:  string   // override font-family
+  fontSize?:    number   // override font size (px)
+  blockBgColor?: string  // block-level background (behind all content)
+  // social
+  socialLinks?: Record<string, string>
+  // columns
+  ratio?:   ColumnRatio
+  columns?: ContentBlock[][]
+  // footer_block
+  companyName?:    string
+  companyUrl?:     string
+  unsubscribeUrl?: string
+}
+
 // ── Content ────────────────────────────────────────────────────────────────────
 
 export interface TemplateContent {
   subject:        string
-  headline:       string
   preheader:      string
-  body_text:      string
-  cta_text:       string
-  cta_url:        string
   footer_text:    string
+  blocks:         ContentBlock[]
   style_options?: Partial<StyleOptions>
+  // Legacy fields — kept for backward compat with saved templates
+  headline?:   string
+  body_text?:  string
+  cta_text?:   string
+  cta_url?:    string
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -105,6 +143,110 @@ function safeUrl(url: string): string {
     if (u.protocol === 'https:' || u.protocol === 'http:') return url
   } catch { /* ignore */ }
   return '#'
+}
+
+// ── Block renderer ─────────────────────────────────────────────────────────────
+
+function wrap(inner: string, bg?: string): string {
+  return bg
+    ? `<div style="background:${bg};">${inner}</div>`
+    : inner
+}
+
+function renderBlocksHtml(blocks: ContentBlock[], c: Ctx): string {
+  return blocks.map(block => {
+    switch (block.type) {
+      case 'headline': {
+        const align    = block.align ?? 'center'
+        const text     = escape(block.text ?? '')
+        if (!text) return ''
+        const color    = block.textColor   || c.headColor
+        const ff       = block.fontFamily  ? `'${block.fontFamily}',${c.fontFamily}` : c.fontFamily
+        const fs       = block.fontSize    ? `${block.fontSize}px` : c.headSize
+        const inner    = `<h2 style="font-size:${fs};font-weight:700;color:${color};line-height:1.3;margin:0 0 20px;text-align:${align};font-family:${ff};">${text}</h2>`
+        return wrap(inner, block.blockBgColor)
+      }
+      case 'text': {
+        const align  = block.align ?? 'left'
+        const color  = block.textColor  || c.textColor
+        const ff     = block.fontFamily ? `'${block.fontFamily}',${c.bodyFont}` : c.bodyFont
+        const fs     = block.fontSize   ? `${block.fontSize}px` : '15px'
+        const paras  = (block.text ?? '').split('\n\n').filter(Boolean)
+          .map(p => `<p style="font-size:${fs};line-height:1.8;color:${color};font-family:${ff};margin:0 0 16px;text-align:${align};">${p.replace(/\n/g, '<br/>')}</p>`)
+          .join('\n')
+        return wrap(paras, block.blockBgColor)
+      }
+      case 'image': {
+        if (!block.url) return ''
+        const align  = block.align ?? 'center'
+        const margin = align === 'center' ? 'margin:0 auto 24px;display:block;'
+          : align === 'right' ? 'margin:0 0 24px auto;display:block;'
+          : 'display:block;margin-bottom:24px;'
+        const inner  = `<img src="${escape(block.url)}" alt="${escape(block.alt ?? '')}" style="max-width:100%;height:auto;border-radius:8px;${margin}" />`
+        return wrap(inner, block.blockBgColor)
+      }
+      case 'button': {
+        if (!block.text) return ''
+        const href    = block.url ? safeUrl(block.url) : '#'
+        const align   = block.align ?? 'center'
+        const btnBg   = block.bgColor    || c.linkColor
+        const btnClr  = block.textColor  || '#ffffff'
+        const ff      = block.fontFamily ? `'${block.fontFamily}',${c.fontFamily}` : c.fontFamily
+        const fs      = block.fontSize   ? `${block.fontSize}px` : '14px'
+        const inner   = `<div style="text-align:${align};margin:8px 0 24px;"><a href="${escape(href)}" style="display:inline-block;padding:12px 28px;background:${btnBg};color:${btnClr};text-decoration:none;border-radius:6px;font-family:${ff};font-size:${fs};font-weight:600;">${escape(block.text)}</a></div>`
+        return wrap(inner, block.blockBgColor)
+      }
+      case 'divider':
+        return `<div style="height:1px;background:#e5e7eb;margin:24px 0;"></div>`
+      case 'spacer':
+        return `<div style="height:${block.height ?? 32}px;"></div>`
+      case 'logo': {
+        const bg = block.blockBgColor || block.bgColor || '#f8f9fa'
+        const align = block.align ?? 'left'
+        const logoEl = block.logoUrl
+          ? `<img src="${escape(block.logoUrl)}" alt="${escape(block.logoAlt ?? c.companyName)}" style="max-height:48px;max-width:180px;object-fit:contain;display:block;" />`
+          : `<span style="font-family:${c.fontFamily};font-size:20px;font-weight:700;color:${c.headColor};">${escape(block.logoAlt ?? c.companyName)}</span>`
+        return `<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td style="padding:20px 40px;background:${bg};text-align:${align};">${logoEl}</td></tr></table>`
+      }
+      case 'social': {
+        const links = block.socialLinks ?? {}
+        const platforms = Object.keys(links).filter(k => links[k])
+        if (!platforms.length) return ''
+        const icons = platforms.map(p =>
+          `<a href="${escape(links[p])}" style="display:inline-block;margin:0 5px;width:34px;height:34px;border-radius:50%;background:${c.linkColor};color:#fff;text-align:center;line-height:34px;text-decoration:none;font-family:${c.fontFamily};font-size:13px;font-weight:700;">${escape(p[0].toUpperCase())}</a>`
+        ).join('')
+        return `<div style="text-align:${block.align ?? 'center'};padding:16px 40px;">${icons}</div>`
+      }
+      case 'footer_block': {
+        const company = escape(block.companyName ?? c.companyName)
+        const cu = block.companyUrl ? safeUrl(block.companyUrl) : '#'
+        const uu = block.unsubscribeUrl ? safeUrl(block.unsubscribeUrl) : '#'
+        const socialLinks = block.socialLinks ?? {}
+        const socialIcons = Object.keys(socialLinks).filter(k => socialLinks[k]).map(p =>
+          `<a href="${escape(socialLinks[p])}" style="display:inline-block;margin:0 4px;width:30px;height:30px;border-radius:50%;background:${c.linkColor};color:#fff;text-align:center;line-height:30px;text-decoration:none;font-size:12px;font-weight:700;">${escape(p[0].toUpperCase())}</a>`
+        ).join('')
+        return `<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td style="padding:24px 40px;background:#f9fafb;border-top:1px solid #e5e7eb;text-align:center;font-family:${c.fontFamily};">
+${socialIcons ? `<div style="margin-bottom:12px;">${socialIcons}</div>` : ''}
+<p style="margin:0 0 6px;font-size:13px;color:#6b7280;">© ${c.year} <a href="${escape(cu)}" style="color:${c.linkColor};text-decoration:none;">${company}</a> · All rights reserved.</p>
+<p style="margin:0;font-size:11px;color:#9ca3af;"><a href="${escape(uu)}" style="color:#9ca3af;text-decoration:underline;">Unsubscribe</a></p>
+</td></tr></table>`
+      }
+      case 'columns': {
+        const ratio  = block.ratio ?? '1:1'
+        const parts  = ratio.split(':').map(Number)
+        const total  = parts.reduce((a, b) => a + b, 0)
+        const cols   = block.columns ?? parts.map(() => [])
+        const colBg  = block.blockBgColor ? `background:${block.blockBgColor};` : ''
+        const tds    = cols.map((col, i) => {
+          const pct   = Math.round((parts[i] / total) * 100)
+          const inner = renderBlocksHtml(col, c)
+          return `<td style="width:${pct}%;vertical-align:top;padding:8px;${colBg}">${inner}</td>`
+        }).join('')
+        return `<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0;"><tr>${tds}</tr></table>`
+      }
+      default: return ''
+    }
+  }).join('\n')
 }
 
 // ── Main entry ─────────────────────────────────────────────────────────────────
@@ -136,9 +278,11 @@ export function renderEmailHtml(
     ? `'${brand.fonts.body}', Georgia, 'Times New Roman', serif`
     : fontFamily
 
-  const headline   = escape(interpolate(content.headline,    brand))
-  const bodyText   = escape(interpolate(content.body_text,   brand))
-  const ctaText    = escape(interpolate(content.cta_text,    brand))
+  // Block-based or legacy field rendering
+  const hasBlocks  = content.blocks && content.blocks.length > 0
+  const headline   = escape(interpolate(content.headline   ?? '', brand))
+  const bodyText   = escape(interpolate(content.body_text  ?? '', brand))
+  const ctaText    = escape(interpolate(content.cta_text   ?? '', brand))
   const footerText = escape(interpolate(content.footer_text, brand))
   const ctaHref    = content.cta_url ? safeUrl(content.cta_url) : '#'
 
@@ -162,12 +306,17 @@ export function renderEmailHtml(
   const companyName = escape(brand.company_name ?? 'Your Company')
   const year        = new Date().getFullYear().toString()
 
-  const ctx = {
+  const baseCtx = {
     headline, bodyText, ctaBlock, footerText, logoBlock, logoImg,
     primary, headColor, bodyBg, headerBg, footerBg, wrapperBg,
     textColor, headSize, fontFamily, bodyFont, linkColor,
     cardStyle, pad, so, companyName, year, ctaHref,
+    blocksHtml: '', hasBlocks,
   }
+
+  const blocksHtml = hasBlocks ? renderBlocksHtml(content.blocks, baseCtx) : ''
+
+  const ctx: Ctx = { ...baseCtx, blocksHtml }
 
   switch (style) {
     case 'basic':        return basicHtml(ctx)
@@ -207,6 +356,8 @@ interface Ctx {
   companyName: string
   year:        string
   ctaHref:     string
+  blocksHtml:  string
+  hasBlocks:   boolean
 }
 
 // ── SVG social icons ───────────────────────────────────────────────────────────
@@ -251,9 +402,10 @@ a{color:${c.linkColor}}
 
     <!-- Body -->
     <div style="background:${c.bodyBg};padding:${pad.v}px ${pad.h}px;">
+      ${c.hasBlocks ? c.blocksHtml : `
       <h1 style="font-size:${c.headSize};font-weight:700;color:${c.headColor};line-height:1.3;margin:0 0 20px;text-align:center;font-family:${c.fontFamily};">${c.headline}</h1>
       ${bodyParas}
-      ${c.ctaBlock ? `<div style="text-align:center;margin:24px 0 8px;">${c.ctaBlock}</div>` : ''}
+      ${c.ctaBlock ? `<div style="text-align:center;margin:24px 0 8px;">${c.ctaBlock}</div>` : ''}`}
     </div>
 
     <!-- Divider -->
@@ -292,9 +444,10 @@ function minimalistHtml(c: Ctx): string {
   <div style="${c.cardStyle}">
     <div style="padding:${pad.v}px ${pad.h}px ${pad.v * 0.75}px;border-bottom:1px solid #f0f0f0;background:${c.headerBg};">${c.logoBlock}</div>
     <div style="background:${c.bodyBg};padding:${pad.v}px ${pad.h}px;">
+      ${c.hasBlocks ? c.blocksHtml : `
       <h1 style="font-size:${c.headSize};font-weight:700;color:${c.headColor};line-height:1.3;margin:0 0 16px;font-family:${c.fontFamily};">${c.headline}</h1>
       <p style="font-size:15px;line-height:1.7;color:${c.textColor};font-family:${c.bodyFont};margin:0 0 24px;">${c.bodyText.replace(/\n/g, '<br/>')}</p>
-      ${c.ctaBlock ? `<div>${c.ctaBlock}</div>` : ''}
+      ${c.ctaBlock ? `<div>${c.ctaBlock}</div>` : ''}`}
     </div>
     <div style="background:${c.footerBg};padding:${pad.v * 0.625}px ${pad.h}px;text-align:center;font-size:11px;color:#9ca3af;">${c.footerText}</div>
   </div>

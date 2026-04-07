@@ -1294,6 +1294,8 @@ export function BrandingClient({ profiles, assets }: Props) {
           <EmailTemplatesTab
             profile={selectedProfile ?? null}
             assets={assets}
+            allProfiles={profiles}
+            allAssets={assets}
           />
         )}
         {activeTab === 'forms'           && <ComingSoonTab label="Forms" />}
