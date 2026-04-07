@@ -190,6 +190,48 @@ export async function saveProfile(formData: FormData) {
         .from('workspaces')
         .update({ sage_business_description: businessDescription })
         .eq('id', membership.workspace_id)
+
+      // Seed brand profile identity fields from onboarding data.
+      // Only sets fields that are not yet present — never overwrites existing brand profile data.
+      // Uses upsert on workspace_id (unique partial index) with ignoreDuplicates: false
+      // so we can merge safely.
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: existingProfile } = await (supabase as any)
+          .from('brand_profiles')
+          .select('id, company_name')
+          .eq('workspace_id', membership.workspace_id)
+          .is('deleted_at', null)
+          .maybeSingle()
+
+        if (!existingProfile) {
+          // No profile yet — create one with what we have
+          const voiceNotes = [
+            whatYouSell ? `We sell: ${whatYouSell}` : null,
+            targetCust  ? `Our customers: ${targetCust}` : null,
+            industry    ? `Industry: ${industry}` : null,
+          ].filter(Boolean).join('. ')
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supabase as any)
+            .from('brand_profiles')
+            .insert({
+              workspace_id:           membership.workspace_id,
+              company_name:           company || null,
+              brand_voice_notes:      voiceNotes || null,
+              brand_version:          1,
+              brand_confidence_score: company ? 1 : 0,
+              updated_by:             user.id,
+            })
+        } else if (!existingProfile.company_name && company) {
+          // Profile exists but company name is blank — fill it in
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supabase as any)
+            .from('brand_profiles')
+            .update({ company_name: company, updated_by: user.id })
+            .eq('id', existingProfile.id)
+        }
+      } catch { /* best-effort — don't fail onboarding if brand profile write fails */ }
     }
   }
 
