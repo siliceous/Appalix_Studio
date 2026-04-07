@@ -715,10 +715,10 @@ function AssetsTab({
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
 
 
-            {/* ── Color Palette ── */}
+            {/* ── Color Palette — only shown during/after an active scan ── */}
             {(() => {
-              // When a scan is active use form state (live); otherwise use saved profile data
-              const src = scanResult ? form : profile
+              if (!scanResult) return null
+              const src = form
               const palette: string[] = (src?.brand_palette_json as Array<{ hex: string }> | undefined)?.map(c => c.hex)
                 ?? [src?.color_primary, src?.color_secondary, src?.color_accent, src?.color_background, src?.color_text].filter(Boolean) as string[]
               if (!palette.length) return null
@@ -1090,20 +1090,6 @@ function AssetsTab({
                       <Field label="Footer Text"><Input value={form.footer_text ?? ''} onChange={e => set('footer_text', e.target.value)} placeholder="© 2025 Acme Ltd." /></Field>
                     </div>
                   </section>
-
-                  {/* Colors — only shown when scan result palette not already displayed above */}
-                  {!scanResult && (form.color_primary || form.color_secondary || form.color_accent || form.color_background || form.color_text) && (
-                    <section className="space-y-3">
-                      <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Colors</h2>
-                      <div className="grid grid-cols-3 gap-3">
-                        <ColorField label="Primary"    name="color_primary"    value={form.color_primary    ?? ''} onChange={v => set('color_primary',    v)} />
-                        <ColorField label="Secondary"  name="color_secondary"  value={form.color_secondary  ?? ''} onChange={v => set('color_secondary',  v)} />
-                        <ColorField label="Accent"     name="color_accent"     value={form.color_accent     ?? ''} onChange={v => set('color_accent',     v)} />
-                        <ColorField label="Background" name="color_background" value={form.color_background ?? ''} onChange={v => set('color_background', v)} />
-                        <ColorField label="Text"       name="color_text"       value={form.color_text       ?? ''} onChange={v => set('color_text',       v)} />
-                      </div>
-                    </section>
-                  )}
 
                   {/* Typography */}
                   <section className="space-y-3">
