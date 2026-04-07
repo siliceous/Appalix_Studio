@@ -31,6 +31,7 @@ import { runMailchimpTwoWaySync }                   from './services/mailchimp-t
 import { notificationRoutes }                       from './routes/notifications/index.js'
 import { pollDueNotifications }                     from './services/sage-notifications.js'
 import { liveRoutes }                               from './routes/live/index.js'
+import { internalTrackRoutes }                      from './routes/internal/track.js'
 import { handleLiveWsConnection }                   from './live/session-manager.js'
 
 const server = Fastify({
@@ -133,6 +134,9 @@ await server.register(notificationRoutes, { prefix: '/notifications' })
 
 // Sage Live Gateway — session creation (REST) + WebSocket bridge
 await server.register(liveRoutes, { prefix: '/live' })
+
+// Internal tracking endpoint — behavioral events from tracker.js
+await server.register(internalTrackRoutes, { prefix: '/internal' })
 
 // ---------------------------------------------------------------
 // Error handler
