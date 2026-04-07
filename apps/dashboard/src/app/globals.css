@@ -315,3 +315,21 @@
   .cool ::-webkit-scrollbar-thumb:hover { background: rgba(4, 187, 255, 0.5); }
 }
 
+
+/* Workspace background theme override — set via --ws-bg CSS variable on :root */
+.bg-\[\#f5f4f1\] {
+  background-color: var(--ws-bg, #f5f4f1) !important;
+}
+
+/* Workspace font theme — set via --ws-font CSS variable on :root */
+body, button, input, textarea, select {
+  font-family: var(--ws-font, inherit);
+}
+
+/* Workspace card colour — targets rounded card elements, not inputs/buttons */
+.bg-white.rounded-xl,
+.bg-white.rounded-2xl,
+.bg-white.rounded-lg.shadow-sm,
+.bg-white.rounded-lg.border {
+  background-color: var(--ws-card, #ffffff) !important;
+}

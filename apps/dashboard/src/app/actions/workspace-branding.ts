@@ -8,6 +8,10 @@ export interface WorkspaceBranding {
   logo_url:         string | null
   favicon_url:      string | null
   primary_color:    string
+  background_color: string | null
+  font_family:      string | null
+  font_size:        number | null
+  card_color:       string | null
   hide_powered_by:  boolean
   welcome_message:  string | null
   // Business / invoice details
@@ -21,7 +25,11 @@ const DEFAULTS: Omit<WorkspaceBranding, 'workspace_id'> = {
   brand_name:       null,
   logo_url:         null,
   favicon_url:      null,
-  primary_color:    '#15A4AE',
+  primary_color:    '#141C2B',
+  background_color: null,
+  font_family:      null,
+  font_size:        null,
+  card_color:       null,
   hide_powered_by:  false,
   welcome_message:  null,
   business_address: null,

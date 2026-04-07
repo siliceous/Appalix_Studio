@@ -25,6 +25,7 @@ import {
   type ScanResult,
 } from '@/app/actions/branding'
 import { EmailTemplatesTab } from './email-templates-tab'
+import { useUserAvatar } from '@/contexts/user-avatar-context'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -132,6 +133,7 @@ function BrandSelector({
   onCreated:  (id: string) => void
 }) {
   const router = useRouter()
+  const { brandColor } = useUserAvatar()
   const [showNew,    setShowNew]    = useState(false)
   const [newName,    setNewName]    = useState('')
   const [newCompany, setNewCompany] = useState('')
@@ -260,7 +262,7 @@ function BrandSelector({
     <div className="flex flex-col rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden h-full">
 
       {/* Header */}
-      <div className="px-4 py-3 shrink-0 bg-[#141c2b]">
+      <div className="px-4 py-3 shrink-0" style={{ background: brandColor }}>
         <div className="flex items-center gap-2">
           <Palette className="w-3.5 h-3.5 text-white/60" />
           <span className="text-sm font-semibold text-white">Brand IDs</span>
@@ -483,6 +485,7 @@ function AssetsTab({
   const [saved,  setSaved]  = useState(false)
 
   const [scanning,        setScanning]        = useState(false)
+  const { brandColor } = useUserAvatar()
   const [scanError,       setScanError]       = useState<string | null>(null)
   const [scanResult,      setScanResult]      = useState<ScanResult | null>(null)
   const [applyingAssets,  setApplyingAssets]  = useState<Record<string, boolean>>({})
@@ -662,7 +665,7 @@ function AssetsTab({
   const imageAssets   = assets.filter(a => !['primary_logo', 'secondary_logo', 'logo_mark', 'favicon'].includes(a.asset_role))
 
   return (
-    <div className="flex-1 min-h-0 bg-gray-100 dark:bg-gray-950 overflow-hidden flex flex-col">
+    <div className="flex-1 min-h-0 bg-[#f5f4f1] dark:bg-gray-950 overflow-hidden flex flex-col">
 
       <div className="flex gap-5 flex-1 min-h-0 px-6 py-5">
 
@@ -680,7 +683,7 @@ function AssetsTab({
         <div className="flex-1 min-w-0 flex flex-col rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
 
           {/* Header */}
-          <div className="shrink-0 px-4 py-2.5 bg-[#141c2b]">
+          <div className="shrink-0 px-4 py-2.5" style={{ background: brandColor }}>
             <span className="text-sm font-semibold text-white">Assets</span>
           </div>
 
@@ -937,25 +940,23 @@ function AssetsTab({
         <div className="w-80 shrink-0 flex flex-col rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
 
           {/* Header */}
-          <div className="shrink-0 px-4 py-2.5 bg-[#141c2b]">
-            <span className="text-sm font-semibold text-white">Identity</span>
+          <div className="shrink-0 px-4 py-2.5" style={{ background: brandColor }}>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-semibold text-white shrink-0">Identity</span>
+              {profile ? (() => {
+                const pct   = Math.round((profile.brand_confidence_score / 6) * 100)
+                const color = pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444'
+                return (
+                  <div className="flex-1 flex items-center gap-1.5">
+                    <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.12)' }}>
+                      <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
+                    </div>
+                    <span className="text-[10px] tabular-nums shrink-0 text-white">{profile.brand_confidence_score}/6</span>
+                  </div>
+                )
+              })() : <div className="flex-1 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.12)' }} />}
+            </div>
           </div>
-
-          {/* Green score bar */}
-          {profile ? (() => {
-            const pct  = Math.round((profile.brand_confidence_score / 6) * 100)
-            const color = pct >= 80 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-400' : 'bg-red-400'
-            return (
-              <div className={cn('shrink-0 flex items-center justify-between px-4 py-1', color)}>
-                <span className="text-[10px] font-semibold text-white/90 tabular-nums">
-                  {profile.brand_confidence_score}/6
-                </span>
-                <span className="text-[10px] text-white/80 tabular-nums">V{profile.brand_version}</span>
-              </div>
-            )
-          })() : (
-            <div className="shrink-0 h-1 bg-emerald-500/30" />
-          )}
 
           {/* Scrollable body */}
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">

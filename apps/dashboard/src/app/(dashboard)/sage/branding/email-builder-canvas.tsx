@@ -51,6 +51,7 @@ import {
   renderEmailHtml,
 } from '@/lib/email-templates/html-renderer'
 import { getBrandAssetUploadUrl, registerBrandAsset } from '@/app/actions/branding'
+import { useUserAvatar } from '@/contexts/user-avatar-context'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -841,6 +842,8 @@ function BrandAssetsPanel({
   const [fontSize,      setFontSize]      = useState<number>(16)
   const [fontFamily,    setFontFamily]    = useState<string>('')
 
+  const { brandColor: headerColor } = useUserAvatar()
+
   const activeBrand  = allProfiles.find(p => p.id === activeBrandId) ?? allProfiles[0]
   const brandAssets  = allAssets.filter(a => a.brand_profile_id === activeBrandId && !a.is_archived)
   const LOGO_ROLES   = ['primary_logo', 'secondary_logo', 'logo_mark']
@@ -896,7 +899,7 @@ function BrandAssetsPanel({
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
 
       {/* Themed header — title only */}
-      <div style={{ padding: '10px 12px', flexShrink: 0, background: '#141c2b' }}>
+      <div style={{ padding: '10px 12px', flexShrink: 0, background: headerColor }}>
         <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', margin: 0, letterSpacing: 0.2 }}>Brand Assets</p>
       </div>
 
@@ -1221,6 +1224,7 @@ export function EmailBuilderCanvas({
   const [selectedSubPath, setSelectedSubPath] = useState<SubPath | null>(null)
   const [dragActiveId,    setDragActiveId]    = useState<string | null>(null)
   const [dropTargetId,    setDropTargetId]    = useState<string | null>(null)
+  const [showMoreBlocks,  setShowMoreBlocks]  = useState(false)
   const [showColumns,     setShowColumns]     = useState(false)
   const [showPreview,     setShowPreview]     = useState(false)
   // Brand + upload state shared between left (images) and right (colors/fonts) panels
@@ -1235,6 +1239,8 @@ export function EmailBuilderCanvas({
   )
 
   const primary = defaults.primaryColor
+  const { brandColor: workspaceBrandColor } = useUserAvatar()
+  const headerColor = workspaceBrandColor
 
   const previewDoc = useMemo(() => {
     try {
@@ -1495,14 +1501,33 @@ export function EmailBuilderCanvas({
 
           {/* Block palette */}
           <div style={{ flexShrink: 0, borderBottom: '1px solid #f3f4f6', padding: '10px 10px 8px' }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: '#141c2b', textTransform: 'none', letterSpacing: 0.2, margin: '-10px -10px 8px', padding: '10px 12px' }}>Blocks</p>
-            <div className="grid grid-cols-3 gap-1.5 mb-2">
-              {CORE_PALETTE.map(p => (
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: headerColor, textTransform: 'none', letterSpacing: 0.2, margin: '-10px -10px 8px', padding: '10px 12px' }}>Blocks</p>
+
+            {/* Core blocks — always show first 2 rows (6 items), chevron for 3rd */}
+            <div className="grid grid-cols-3 gap-1.5 mb-1">
+              {CORE_PALETTE.slice(0, 6).map(p => (
                 <div key={p.id} onClick={() => quickAdd(p.id)} className="cursor-pointer">
                   <PaletteItem id={p.id} label={p.label} icon={p.icon} />
                 </div>
               ))}
             </div>
+            {showMoreBlocks && (
+              <div className="grid grid-cols-3 gap-1.5 mb-1">
+                {CORE_PALETTE.slice(6).map(p => (
+                  <div key={p.id} onClick={() => quickAdd(p.id)} className="cursor-pointer">
+                    <PaletteItem id={p.id} label={p.label} icon={p.icon} />
+                  </div>
+                ))}
+              </div>
+            )}
+            <button
+              onClick={() => setShowMoreBlocks(v => !v)}
+              className="w-full flex items-center justify-end py-0.5 text-[10px] text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <ChevronDown className={`w-3 h-3 transition-transform ${showMoreBlocks ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Columns — always show first 2 rows (6 items), chevron for rest */}
             <button
               onClick={() => setShowColumns(v => !v)}
               className="w-full flex items-center justify-between py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition-colors"
@@ -1510,16 +1535,65 @@ export function EmailBuilderCanvas({
               <span>Columns</span>
               <ChevronDown className={`w-3 h-3 transition-transform ${showColumns ? 'rotate-180' : ''}`} />
             </button>
-            {showColumns && (
+            <div className="grid grid-cols-3 gap-1.5">
+              {COLUMN_PALETTE.slice(0, 6).map(p => (
+                <div key={p.id} onClick={() => quickAdd(p.id)} className="cursor-pointer">
+                  <PaletteItem id={p.id} label={p.label} />
+                </div>
+              ))}
+            </div>
+            {showColumns && COLUMN_PALETTE.length > 6 && (
               <div className="grid grid-cols-3 gap-1.5 mt-1.5">
-                {COLUMN_PALETTE.map(p => (
+                {COLUMN_PALETTE.slice(6).map(p => (
                   <div key={p.id} onClick={() => quickAdd(p.id)} className="cursor-pointer">
                     <PaletteItem id={p.id} label={p.label} />
                   </div>
                 ))}
               </div>
             )}
-          </div>
+
+            {/* Brand images + upload — right under columns */}
+            {allProfiles.length > 0 && (
+              <div style={{ marginTop: 8, borderTop: '1px solid #f3f4f6', paddingTop: 8 }}>
+                <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, color: '#9ca3af', textTransform: 'uppercase', margin: '0 0 6px' }}>Images — drag or click</p>
+                {imageAssets.length > 0 && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginBottom: 6 }}>
+                    {imageAssets.map(a => (
+                      <DraggableAssetThumb
+                        key={a.id}
+                        url={a.file_url}
+                        role={a.asset_role}
+                        selectedBlock={editingBlock}
+                        onApply={applyImageToBlock}
+                      />
+                    ))}
+                  </div>
+                )}
+                <input
+                  ref={leftFileRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f) }}
+                />
+                <button
+                  onClick={() => leftFileRef.current?.click()}
+                  disabled={uploading}
+                  style={{
+                    width: '100%', padding: '7px 10px',
+                    border: `1.5px dashed ${primary}66`,
+                  borderRadius: 8, background: `${primary}06`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  cursor: uploading ? 'wait' : 'pointer',
+                  fontSize: 11, fontWeight: 600, color: primary,
+                }}
+              >
+                <Upload style={{ width: 12, height: 12 }} />
+                {uploading ? 'Uploading…' : uploadDone ? 'Done!' : 'Upload image'}
+              </button>
+            </div>
+          )}
+          </div>{/* end palette section */}
 
           {/* Block properties — shows sub-block when one is selected */}
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
@@ -1539,48 +1613,7 @@ export function EmailBuilderCanvas({
             <BlockPropertyEditor block={editingBlock} onChange={updateSelected} primary={primary} />
           </div>
 
-          {/* Brand images + upload (left panel) */}
-          {allProfiles.length > 0 && (
-            <div style={{ flexShrink: 0, borderTop: '1px solid #f3f4f6', padding: '8px 10px' }}>
-              <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, color: '#9ca3af', textTransform: 'uppercase', margin: '0 0 6px' }}>Brand images — drag or click</p>
-              {imageAssets.length > 0 && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginBottom: 6 }}>
-                  {imageAssets.map(a => (
-                    <DraggableAssetThumb
-                      key={a.id}
-                      url={a.file_url}
-                      role={a.asset_role}
-                      selectedBlock={editingBlock}
-                      onApply={applyImageToBlock}
-                    />
-                  ))}
-                </div>
-              )}
-              <input
-                ref={leftFileRef}
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f) }}
-              />
-              <button
-                onClick={() => leftFileRef.current?.click()}
-                disabled={uploading}
-                style={{
-                  width: '100%', padding: '7px 10px',
-                  border: `1.5px dashed ${primary}66`,
-                  borderRadius: 8, background: `${primary}06`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  cursor: uploading ? 'wait' : 'pointer',
-                  fontSize: 11, fontWeight: 600, color: primary,
-                }}
-              >
-                <Upload style={{ width: 12, height: 12 }} />
-                {uploading ? 'Uploading…' : uploadDone ? 'Done!' : 'Upload image'}
-              </button>
-            </div>
-          )}
-        </div>
+        </div>{/* end left panel */}
 
         {/* ── CENTER — A4 canvas ────────────────────────────────────── */}
         <div style={{ flex: 1, overflowY: 'auto', minWidth: 0, borderRadius: 12 }}>

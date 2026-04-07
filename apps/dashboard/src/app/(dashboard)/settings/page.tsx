@@ -12,6 +12,8 @@ import { ProfileForm } from './profile/profile-form'
 import { parseBusinessDescription } from '@/lib/business-profile'
 import { BusinessDetailsSection } from '@/components/settings/business-details-section'
 import { getBranding } from '@/app/actions/workspace-branding'
+import { WorkspaceColorPicker } from '@/components/settings/workspace-color-picker'
+import { WorkspaceFontPicker } from '@/components/settings/workspace-font-picker'
 import { STATUS_COLORS, formatDate } from '@/lib/utils'
 import type { Metadata } from 'next'
 import type { Workspace, WorkspaceMember, WorkspaceMemberRole } from '@/lib/types'
@@ -222,6 +224,19 @@ export default async function SettingsPage() {
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Appearance</h2>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Choose your preferred dashboard theme.</p>
           <ThemeToggle />
+          <div className="mt-4 pt-4 border-t dark:border-white/10">
+            <WorkspaceColorPicker
+              initialColor={brandingData?.primary_color ?? '#141C2B'}
+              initialBgColor={brandingData?.background_color ?? null}
+              initialCardColor={brandingData?.card_color ?? null}
+            />
+          </div>
+          <div className="mt-4 pt-4 border-t dark:border-white/10">
+            <WorkspaceFontPicker
+              initialFont={brandingData?.font_family ?? null}
+              initialSize={brandingData?.font_size ?? null}
+            />
+          </div>
           <div className="mt-4 pt-4 border-t dark:border-white/10">
             <ReplayOnboardingButton />
           </div>

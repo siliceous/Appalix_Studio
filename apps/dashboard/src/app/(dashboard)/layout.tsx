@@ -10,6 +10,8 @@ import { getBranding } from '@/app/actions/workspace-branding'
 import { WelcomeModal } from '@/components/onboarding/welcome-modal'
 import { TrialBanner } from '@/components/layout/trial-banner'
 import { BodyScrollLock } from '@/components/layout/body-scroll-lock'
+import { WorkspaceBgApplier } from '@/components/layout/workspace-bg-applier'
+import { WorkspaceFontApplier } from '@/components/layout/workspace-font-applier'
 import type { Workspace, WorkspaceMemberRole } from '@/lib/types'
 
 // All dashboard pages are user-specific and require live DB access — never statically render.
@@ -104,8 +106,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
       initialUrl={userAvatar}
       userName={userName}
       plan={workspace.plan}
-      brandColor={branding?.primary_color ?? '#15A4AE'}
+      brandColor={branding?.primary_color ?? '#141C2B'}
+      bgColor={branding?.background_color ?? null}
     >
+    <WorkspaceBgApplier bgColor={branding?.background_color ?? null} cardColor={branding?.card_color ?? null} />
+    <WorkspaceFontApplier fontFamily={branding?.font_family ?? null} fontSize={branding?.font_size ?? null} />
     <div className="flex h-screen overflow-hidden bg-[#f5f4f1] dark:bg-[#1c1c1c] relative">
       {/* Subtle green ambient glow in dark mode */}
       <div className="pointer-events-none fixed top-0 left-[204px] right-0 h-[300px] dark:bg-[#15A4AE]/[0.03] blur-[80px] hidden dark:block" />
