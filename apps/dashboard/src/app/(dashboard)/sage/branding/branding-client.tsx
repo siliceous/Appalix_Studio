@@ -715,10 +715,9 @@ function AssetsTab({
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
 
 
-            {/* ── Color Palette — only shown during/after an active scan ── */}
+            {/* ── Color Palette — 5×2 circles, from scan or saved profile ── */}
             {(() => {
-              if (!scanResult) return null
-              const src = form
+              const src = scanResult ? form : profile
               const palette: string[] = (src?.brand_palette_json as Array<{ hex: string }> | undefined)?.map(c => c.hex)
                 ?? [src?.color_primary, src?.color_secondary, src?.color_accent, src?.color_background, src?.color_text].filter(Boolean) as string[]
               if (!palette.length) return null
@@ -726,16 +725,13 @@ function AssetsTab({
               return (
                 <section className="space-y-2">
                   <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Palette</h2>
-                  {[capped.slice(0,5), capped.slice(5)].filter(r => r.length > 0).map((row, ri) => (
-                    <div key={ri} className="grid grid-cols-5 gap-2">
+                  {[capped.slice(0, 5), capped.slice(5)].filter(r => r.length > 0).map((row, ri) => (
+                    <div key={ri} className="flex gap-2">
                       {row.map((hex, ci) => (
                         <button key={`${ri}-${ci}`} onClick={() => navigator.clipboard?.writeText(hex)}
-                          title={`Copy ${hex}`} className="flex flex-col items-center gap-1 group">
-                          <div className="w-8 h-8 rounded-full border border-gray-200 dark:border-white/10 shadow-sm group-hover:scale-110 transition-transform"
+                          title={hex} className="group shrink-0">
+                          <div className="w-7 h-7 rounded-full border border-gray-200 dark:border-white/10 shadow-sm group-hover:scale-110 transition-transform"
                             style={{ backgroundColor: hex }} />
-                          <span className="text-[9px] font-mono text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200 w-full text-center truncate leading-tight">
-                            {hex}
-                          </span>
                         </button>
                       ))}
                     </div>
@@ -1090,6 +1086,25 @@ function AssetsTab({
                       <Field label="Footer Text"><Input value={form.footer_text ?? ''} onChange={e => set('footer_text', e.target.value)} placeholder="© 2025 Acme Ltd." /></Field>
                     </div>
                   </section>
+
+                  {/* Colors — read-only circles, 5×2 */}
+                  {(() => {
+                    const colors = [form.color_primary, form.color_secondary, form.color_accent, form.color_background, form.color_text].filter(Boolean) as string[]
+                    if (!colors.length) return null
+                    return (
+                      <section className="space-y-2">
+                        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Colors</h2>
+                        <div className="flex gap-2 flex-wrap">
+                          {colors.map((hex, i) => (
+                            <button key={i} onClick={() => navigator.clipboard?.writeText(hex)} title={hex} className="group shrink-0">
+                              <div className="w-7 h-7 rounded-full border border-gray-200 dark:border-white/10 shadow-sm group-hover:scale-110 transition-transform"
+                                style={{ backgroundColor: hex }} />
+                            </button>
+                          ))}
+                        </div>
+                      </section>
+                    )
+                  })()}
 
                   {/* Typography */}
                   <section className="space-y-3">
