@@ -114,9 +114,12 @@ interface Props {
   canAssign?:    boolean
   readonly?:     boolean
   statusCounts?: { active: number; completed: number; archived: number }
+  detailBasePath?: string
+  pageTitle?: string
+  pageSubtitle?: string
 }
 
-export function ConversationsClient({ conversations, bots, filters, teamMembers = [], canAssign = false, readonly = false, showNewBotButton = false, statusCounts }: Props) {
+export function ConversationsClient({ conversations, bots, filters, teamMembers = [], canAssign = false, readonly = false, showNewBotButton = false, statusCounts, detailBasePath = '/conversations', pageTitle = 'Conversations', pageSubtitle }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [localAssign,    setLocalAssign]    = React.useState<Record<string, string | null>>({})
@@ -248,9 +251,9 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
       {/* ── Header ── */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Conversations</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{pageTitle}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Permanent record of every bot conversation — {conversations.length} shown
+            {pageSubtitle ?? `Permanent record of every bot conversation — ${conversations.length} shown`}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -427,12 +430,6 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
         <TrashTab type="conversation" />
       ) : (
       <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-x-auto">
-        {conversations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <MessageSquare className="w-10 h-10 text-gray-200 dark:text-gray-600 mb-3" />
-            <p className="text-sm text-gray-400">No conversations match your filters.</p>
-          </div>
-        ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-[#141c2b]">
@@ -454,6 +451,16 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-white/5">
+              {conversations.length === 0 && (
+                <tr>
+                  <td colSpan={canAssign ? 10 : 9} className="py-20 text-center">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <MessageSquare className="w-10 h-10 text-gray-200 dark:text-gray-600" />
+                      <p className="text-sm text-gray-400">No conversations match your filters.</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
               {paginated.map(c => {
                 const contactName = c.ai_entities?.name ?? null
                 const title = c.title ?? '(no title)'
@@ -497,7 +504,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                     <td className="px-5 py-3.5 max-w-[220px]">
                       <ClickOrEditCell
                         value={title}
-                        href={`/conversations/${c.id}`}
+                        href={`${detailBasePath}/${c.id}`}
                         onSave={val => handleRename(c.id, val)}
                         readonly={readonly}
                       />
@@ -630,7 +637,6 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
               })}
             </tbody>
           </table>
-        )}
         {/* Pagination — always visible */}
         <div className="flex items-center justify-between px-4 py-2.5 border-t dark:border-white/8 bg-gray-50/60 dark:bg-white/[0.02]">
           <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">

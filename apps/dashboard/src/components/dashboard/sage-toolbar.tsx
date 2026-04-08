@@ -10,14 +10,15 @@ import {
   Settings, TrendingUp, BarChart2, CreditCard,
   Mail, MessageSquare, FileText, Ticket as TicketIcon,
   Calendar, ChevronDown, Zap, Loader2, Palette,
+  Smartphone, Phone, LayoutTemplate,
 } from 'lucide-react'
 import { useUserAvatar } from '@/contexts/user-avatar-context'
 import { updateAutoSetting, type AutoSettings } from '@/app/actions/sage-auto-settings'
 
 export type SagePageKey =
   | 'bots' | 'integrations' | 'sources'
-  | 'prospects' | 'contacts' | 'pipelines' | 'projects' | 'quotes' | 'rules' | 'automations'
-  | 'email' | 'conversations' | 'forms' | 'tickets' | 'my-activity'
+  | 'prospects' | 'contacts' | 'pipelines' | 'projects' | 'quotes' | 'rules' | 'automations' | 'templates'
+  | 'email' | 'conversations' | 'sms' | 'calls' | 'forms' | 'tickets' | 'my-activity'
   | 'branding'
 
 export type TriagePreset = 'all' | 'today' | 'yesterday' | '7d' | '30d' | 'custom'
@@ -28,29 +29,34 @@ interface PageDef { key: SagePageKey; label: string; href: string; icon: React.E
 
 const TRIAGE_PAGES: PageDef[] = [
   { key: 'email',         label: 'Email',         href: '/dashboard/email',  icon: Mail          },
+  { key: 'sms',           label: 'SMS',           href: '/dashboard/sms',    icon: Smartphone    },
+  { key: 'calls',         label: 'Phone Calls',   href: '/dashboard/calls',  icon: Phone         },
   { key: 'conversations', label: 'Conversations', href: '/dashboard/bots',   icon: MessageSquare },
   { key: 'forms',         label: 'Forms',         href: '/dashboard/forms',  icon: FileText      },
   { key: 'tickets',       label: 'Tickets',       href: '/sage/tickets',     icon: TicketIcon    },
 ]
 
 const SAGE_PAGES: PageDef[] = [
-  { key: 'branding',    label: 'Branding',     href: '/sage/branding',    icon: Palette    },
-  { key: 'prospects',   label: 'Enrichment',   href: '/sage/prospects',   icon: Target     },
-  { key: 'automations', label: 'Automations',  href: '/sage/automations', icon: Zap        },
-  { key: 'contacts',    label: 'Contacts',     href: '/sage/contacts',    icon: Users      },
-  { key: 'pipelines',   label: 'Pipelines',    href: '/sage/pipelines',   icon: Kanban     },
-  { key: 'projects',    label: 'Projects',     href: '/sage/projects',    icon: FolderOpen },
-  { key: 'quotes',      label: 'Quotes',       href: '/sage/quotes',      icon: Receipt    },
+  { key: 'branding',    label: 'Branding',     href: '/sage/branding',    icon: Palette        },
+  { key: 'prospects',   label: 'Enrichment',   href: '/sage/prospects',   icon: Target         },
+  { key: 'automations', label: 'Automations',  href: '/sage/automations', icon: Zap            },
+  { key: 'templates',   label: 'Templates',    href: '/sage/templates',   icon: LayoutTemplate },
+  { key: 'contacts',    label: 'Contacts',     href: '/sage/contacts',    icon: Users          },
+  { key: 'pipelines',   label: 'Pipelines',    href: '/sage/pipelines',   icon: Kanban         },
+  { key: 'projects',    label: 'Projects',     href: '/sage/projects',    icon: FolderOpen     },
+  { key: 'quotes',      label: 'Quotes',       href: '/sage/quotes',      icon: Receipt        },
 ]
 
 const AGENT_PAGES: PageDef[] = [
   { key: 'integrations', label: 'Integrations', href: '/integrations', icon: Plug },
 ]
 
-const TRIAGE_KEYS = new Set<SagePageKey>(['email', 'conversations', 'forms', 'tickets'])
+const TRIAGE_KEYS = new Set<SagePageKey>(['email', 'sms', 'calls', 'conversations', 'forms', 'tickets'])
 
 const TRIAGE_SOURCE_FIELD: Record<string, keyof AutoSettings> = {
   email:         'email_auto_enabled',
+  sms:           'bots_auto_enabled',
+  calls:         'bots_auto_enabled',
   conversations: 'bots_auto_enabled',
   forms:         'forms_auto_enabled',
   tickets:       'tickets_auto_enabled',
@@ -58,6 +64,8 @@ const TRIAGE_SOURCE_FIELD: Record<string, keyof AutoSettings> = {
 
 const TRIAGE_SOURCE_LABEL: Record<string, string> = {
   email:         'emails',
+  sms:           'SMS conversations',
+  calls:         'phone calls',
   conversations: 'bot conversations',
   forms:         'form submissions',
   tickets:       'tickets',

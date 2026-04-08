@@ -8,6 +8,8 @@ import {
   LayoutDashboard,
   Bot,
   MessageSquare,
+  Smartphone,
+  Phone,
   Plug,
   LogOut,
   BookOpen,
@@ -23,6 +25,7 @@ import {
   Target,
   Zap,
   Palette,
+  LayoutTemplate,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -52,6 +55,8 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/dashboard',         label: 'Overview',       icon: LayoutDashboard },
       { href: '/dashboard/email',   label: 'Emails',         icon: Mail,            sub: true },
+      { href: '/dashboard/sms',     label: 'SMS',            icon: Smartphone,      sub: true },
+      { href: '/dashboard/calls',   label: 'Phone Calls',    icon: Phone,           sub: true },
       { href: '/dashboard/bots',    label: 'Conversations',  icon: MessageSquare,   sub: true },
       { href: '/dashboard/forms',   label: 'Forms',          icon: FileText,        sub: true },
       { href: '/dashboard/tickets', label: 'Tickets',        icon: Ticket,          sub: true },
@@ -69,10 +74,11 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Sage',
     pro: true,
     items: [
-      { href: '/sage/branding',    label: 'Branding',        icon: Palette,    permissionKey: 'can_view_pipelines' },
-      { href: '/sage/prospects',   label: 'Lead Enrichment', icon: Target,     permissionKey: 'can_view_pipelines' },
-      { href: '/sage/automations', label: 'Automations',     icon: Zap,        permissionKey: 'can_view_pipelines' },
-      { href: '/sage/rules',       label: 'Rules',           icon: ListFilter, adminOnly: true                     },
+      { href: '/sage/branding',    label: 'Branding',        icon: Palette,        permissionKey: 'can_view_pipelines' },
+      { href: '/sage/prospects',   label: 'Lead Enrichment', icon: Target,         permissionKey: 'can_view_pipelines' },
+      { href: '/sage/automations', label: 'Automations',     icon: Zap,            permissionKey: 'can_view_pipelines' },
+      { href: '/sage/templates',   label: 'Templates',       icon: LayoutTemplate, permissionKey: 'can_view_pipelines' },
+      { href: '/sage/rules',       label: 'Rules',           icon: ListFilter,     adminOnly: true                     },
     ],
   },
   {

@@ -85,6 +85,8 @@ interface Props {
   smsSuggestedContact?: SmsContact | null
   prevId?:              string | null
   nextId?:              string | null
+  listBasePath?:        string
+  listTitle?:           string
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -93,6 +95,8 @@ export function ConversationPanelClient({
   teamMembers = [], canAssign = false, readonly = false,
   smsSuggestedContact = null,
   prevId = null, nextId = null,
+  listBasePath = '/conversations',
+  listTitle = 'Conversations',
 }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
@@ -380,7 +384,7 @@ export function ConversationPanelClient({
         {/* Header */}
         <div className="px-3 py-2.5 bg-[#141c2b] border-b border-white/10 shrink-0 space-y-2">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white">Conversations</h2>
+            <h2 className="text-sm font-semibold text-white">{listTitle}</h2>
             <Link href="/dashboard/bots" className="text-sm text-white hover:opacity-70 transition-opacity">← Back</Link>
           </div>
           <div className="relative">
@@ -424,7 +428,7 @@ export function ConversationPanelClient({
             return (
               <Link
                 key={c.id}
-                href={`/conversations/${c.id}`}
+                href={`${listBasePath}/${c.id}`}
                 className={`flex items-start gap-3 px-3 py-3 border-b dark:border-white/5 transition-colors ${
                   isActive
                     ? 'bg-[#15A4AE]/10 dark:bg-[#15A4AE]/15'
@@ -593,10 +597,10 @@ export function ConversationPanelClient({
 
             {/* Prev / Next navigation */}
             <div className="flex items-center border border-white/20 rounded-lg overflow-hidden ml-0.5">
-              <button onClick={() => prevId && router.push(`/conversations/${prevId}`)} disabled={!prevId} title="Previous conversation" className="p-1.5 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border-r border-white/20">
+              <button onClick={() => prevId && router.push(`${listBasePath}/${prevId}`)} disabled={!prevId} title="Previous conversation" className="p-1.5 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border-r border-white/20">
                 <ChevronUp className="w-3.5 h-3.5" />
               </button>
-              <button onClick={() => nextId && router.push(`/conversations/${nextId}`)} disabled={!nextId} title="Next conversation" className="p-1.5 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+              <button onClick={() => nextId && router.push(`${listBasePath}/${nextId}`)} disabled={!nextId} title="Next conversation" className="p-1.5 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                 <ChevronDown className="w-3.5 h-3.5" />
               </button>
             </div>

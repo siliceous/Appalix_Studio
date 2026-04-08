@@ -298,6 +298,76 @@ export default async function IntegrationsPage({
         </div>
       )}
 
+      {/* Google Workspace & Cloud Storage */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Google Workspace &amp; Cloud</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {([
+            {
+              provider: 'google_calendar',
+              name: 'Google Calendar',
+              desc: 'Sync calendar events, schedule meetings, and check availability directly from Sage.',
+              logo: '/integrations/google-calendar.png',
+              href: '/api/oauth/google-calendar',
+            },
+            {
+              provider: 'google_forms',
+              name: 'Google Forms (OAuth)',
+              desc: 'Connect via OAuth to read form responses and trigger automations when new responses arrive.',
+              logo: '/integrations/google-forms.png',
+              href: '/api/oauth/google-forms',
+            },
+            {
+              provider: 'google_drive',
+              name: 'Google Drive',
+              desc: 'Index files from Google Drive into your knowledge base so your bot can answer questions from documents.',
+              logo: '/integrations/google-drive.png',
+              href: '/api/oauth/google-drive',
+            },
+            {
+              provider: 'onedrive',
+              name: 'OneDrive',
+              desc: 'Connect Microsoft OneDrive to index SharePoint and OneDrive files into your knowledge base.',
+              logo: '/integrations/onedrive.png',
+              href: '/api/oauth/onedrive',
+            },
+          ] as const).map(({ provider, name, desc, logo, href }) => {
+            const isConnected = sageConnected.has(provider)
+            const info = connectedProviderInfo[provider]
+            return (
+              <div key={provider} className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-[#15A4AE]/30 p-4 flex items-start gap-3">
+                <div className="w-12 h-12 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 shadow-sm flex items-center justify-center shrink-0 overflow-hidden p-2">
+                  <img src={logo} alt={name} className="w-full h-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{name}</p>
+                    {isConnected && <span className="text-xs text-green-600 dark:text-green-400 font-medium">Connected</span>}
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
+                  {isConnected && info?.userName && (
+                    <p className="text-[11px] text-gray-400 mt-0.5">Connected by {info.userName}</p>
+                  )}
+                  <div className="mt-2">
+                    <a
+                      href={href}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                        isConnected
+                          ? 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/12'
+                          : 'bg-brand-600 hover:bg-brand-700 text-white'
+                      }`}
+                    >
+                      <Plug className="w-3 h-3" />
+                      {isConnected ? 'Reconnect' : 'Connect'}
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </section>
+
       {/* Email — Gmail + Microsoft, full width */}
       <section className="mb-8">
         <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Email</h2>

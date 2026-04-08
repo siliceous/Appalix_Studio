@@ -11,8 +11,10 @@ import {
   ChevronDown, X, CheckCircle2,
   Sparkles, LayoutList, LayoutGrid,
   Loader2, Settings, TrendingUp, BarChart2, CreditCard,
+  Smartphone, Phone,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
+import { useUserAvatar } from '@/contexts/user-avatar-context'
 import { UpcomingPanel } from '@/components/sage/upcoming-panel'
 import { updateAutoSetting, dismissFeedItem, runAutoBackfill, setDefaultPipeline } from '@/app/actions/sage-auto-settings'
 import type { BackfillResultItem } from '@/app/actions/sage-auto-settings'
@@ -34,6 +36,8 @@ interface RawTicket  { id: string; title: string; priority: string; status: stri
 type TItem =
   | { kind: 'email';  data: RawEmail;  time: string }
   | { kind: 'bot';    data: RawBot;    time: string }
+  | { kind: 'sms';    data: RawBot;    time: string }
+  | { kind: 'call';   data: RawBot;    time: string }
   | { kind: 'form';   data: RawLead;   time: string }
   | { kind: 'ticket'; data: RawTicket; time: string }
 
@@ -171,22 +175,46 @@ export function SageDashboardClient({
   const [refreshKey, setRefreshKey] = useState(0)
   const [emails,     setEmails]     = useState<RawEmail[]>([])
   const [bots,       setBots]       = useState<RawBot[]>([])
+  const [smsConvs,   setSmsConvs]   = useState<RawBot[]>([])
+  const [callConvs,  setCallConvs]  = useState<RawBot[]>([])
   const [forms,      setForms]      = useState<RawLead[]>([])
   const [tickets,    setTickets]    = useState<RawTicket[]>([])
   const [popup,      setPopup]      = useState<PopupState | null>(null)
   const [feedView,    setFeedView]   = useState<'list' | 'grid'>('list')
   const [showFeedCal, setShowFeedCal] = useState(false)
   const feedCalRef = useRef<HTMLDivElement>(null)
-  const [topType,     setTopType]    = useState<'email' | 'bot' | 'form' | 'ticket' | null>(null)
+  const [topType,     setTopType]    = useState<'email' | 'bot' | 'sms' | 'call' | 'form' | 'ticket' | null>(null)
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
   const [donutsCollapsed, setDonutsCollapsed] = useState(false)
   const [loadingDonut,    setLoadingDonut]    = useState<string | null>(null)
+  const [showProfile,     setShowProfile]     = useState(false)
+  const profileRef = useRef<HTMLDivElement>(null)
   const router      = useRouter()
   const pathname    = usePathname()
   const searchParams = useSearchParams()
 
   // Clear donut loading state once navigation settles
   useEffect(() => { setLoadingDonut(null) }, [pathname])
+
+  // Avatar context
+  const { avatarUrl, userName: avatarUserName, plan, brandColor } = useUserAvatar()
+  const initials = avatarUserName
+    ? avatarUserName.split(' ').map((w: string) => w[0]).slice(0, 2).join('')
+    : '?'
+  const planBadgeCls =
+    plan === 'enterprise' ? 'bg-purple-500/20 text-purple-700 dark:text-purple-300' :
+    plan === 'pro'        ? 'bg-[#15A4AE]/20 text-[#15A4AE]'  :
+                           'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400'
+
+  // Close profile dropdown on outside click
+  useEffect(() => {
+    if (!showProfile) return
+    const handler = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setShowProfile(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showProfile])
 
   // Sage voice: open a feed item popup without navigating away
   useEffect(() => {
@@ -363,7 +391,29 @@ export function SageDashboardClient({
       (() => {
         let q = supabase.from('conversations')
           .select('id, title, platform, message_count, last_activity_at, ai_priority, ai_entities, bot:bots(name)')
-          .eq('workspace_id', workspaceId).eq('status', 'active')
+          .eq('workspace_id', workspaceId).eq('status', 'active').neq('platform', 'sms')
+          .gte('last_activity_at', from).lte('last_activity_at', to)
+          .order('last_activity_at', { ascending: false })
+        if (viewAsUserId) q = (q as any).eq('assigned_to', viewAsUserId)
+        else if (visibleUserIds.length === 1) q = (q as any).eq('assigned_to', visibleUserIds[0])
+        else if (visibleUserIds.length > 1) q = (q as any).in('assigned_to', visibleUserIds)
+        return q
+      })(),
+      (() => {
+        let q = supabase.from('conversations')
+          .select('id, title, platform, message_count, last_activity_at, ai_priority, ai_entities, bot:bots(name)')
+          .eq('workspace_id', workspaceId).eq('status', 'active').eq('platform', 'sms')
+          .gte('last_activity_at', from).lte('last_activity_at', to)
+          .order('last_activity_at', { ascending: false })
+        if (viewAsUserId) q = (q as any).eq('assigned_to', viewAsUserId)
+        else if (visibleUserIds.length === 1) q = (q as any).eq('assigned_to', visibleUserIds[0])
+        else if (visibleUserIds.length > 1) q = (q as any).in('assigned_to', visibleUserIds)
+        return q
+      })(),
+      (() => {
+        let q = supabase.from('conversations')
+          .select('id, title, platform, message_count, last_activity_at, ai_priority, ai_entities, bot:bots(name)')
+          .eq('workspace_id', workspaceId).eq('status', 'active').eq('platform', 'voice')
           .gte('last_activity_at', from).lte('last_activity_at', to)
           .order('last_activity_at', { ascending: false })
         if (viewAsUserId) q = (q as any).eq('assigned_to', viewAsUserId)
@@ -397,12 +447,14 @@ export function SageDashboardClient({
         else if (visibleUserIds.length > 1)  q = (q as any).in('owner_id', visibleUserIds)
         return q
       })(),
-    ]).then(([eR, bR, fR, tR]) => {
+    ]).then(([eR, bR, smsR, callsR, fR, tR]) => {
       console.log('[dash:then]', 'cancelled=', cancelled, '| tickets=', tR.data?.length ?? 0, tR.error ? `ERR:${tR.error.message}` : 'ok')
       if (tR.error)  console.error('[dash:tickets-err]', tR.error)
       if (cancelled) return
-      const newEmails  = (eR.data  ?? []) as RawEmail[]
-      const newBots    = (bR.data  ?? []) as RawBot[]
+      const newEmails  = (eR.data     ?? []) as RawEmail[]
+      const newBots    = (bR.data     ?? []) as RawBot[]
+      const newSms     = (smsR.data   ?? []) as RawBot[]
+      const newCalls   = (callsR.data ?? []) as RawBot[]
       const newForms = ((fR.data ?? []) as Array<{
         id: string; fields: Record<string, string> | null; ai_priority: string | null
         source_platform: string; created_at: string; assigned_to: string | null
@@ -419,6 +471,8 @@ export function SageDashboardClient({
       const newTickets = (tR.data  ?? []) as RawTicket[]
       setEmails(newEmails)
       setBots(newBots)
+      setSmsConvs(newSms)
+      setCallConvs(newCalls)
       setForms(newForms)
       setTickets(newTickets)
       setLoading(false)
@@ -468,15 +522,19 @@ export function SageDashboardClient({
   }, [])
 
   // ── Visible (non-dismissed) subsets — used by both donuts and timeline ───
-  const visEmails  = useMemo(() => emails.filter(e  => !dismissedIds.has(`email-${e.id}`)),   [emails,   dismissedIds])
-  const visBots    = useMemo(() => bots.filter(b    => !dismissedIds.has(`bot-${b.id}`)),     [bots,     dismissedIds])
-  const visForms   = useMemo(() => forms.filter(f   => !dismissedIds.has(`form-${f.id}`)),    [forms,    dismissedIds])
+  const visEmails  = useMemo(() => emails.filter(e    => !dismissedIds.has(`email-${e.id}`)),     [emails,     dismissedIds])
+  const visBots    = useMemo(() => bots.filter(b      => !dismissedIds.has(`bot-${b.id}`)),       [bots,       dismissedIds])
+  const visSms     = useMemo(() => smsConvs.filter(s  => !dismissedIds.has(`bot-${s.id}`)),       [smsConvs,   dismissedIds])
+  const visCalls   = useMemo(() => callConvs.filter(c => !dismissedIds.has(`bot-${c.id}`)),       [callConvs,  dismissedIds])
+  const visForms   = useMemo(() => forms.filter(f     => !dismissedIds.has(`form-${f.id}`)),      [forms,      dismissedIds])
   // Tickets are open support items — always show regardless of dismissal until status changes
   const visTickets = useMemo(() => tickets, [tickets])
 
   // ── Donut segments (always reflect visible feed, same as triage counts) ──
-  const emailSegs:  DonutSegment[] = [{ name: 'High', value: visEmails.filter(e => e.ai_priority === 'high').length, fill: P_COLORS.high }, { name: 'Medium', value: visEmails.filter(e => e.ai_priority === 'medium').length, fill: P_COLORS.medium }]
-  const botSegs:    DonutSegment[] = [{ name: 'High', value: visBots.filter(b => b.ai_priority === 'high').length,   fill: P_COLORS.high }, { name: 'Medium', value: visBots.filter(b => b.ai_priority === 'medium').length,   fill: P_COLORS.medium }]
+  const emailSegs:  DonutSegment[] = [{ name: 'High', value: visEmails.filter(e => e.ai_priority === 'high').length,  fill: P_COLORS.high }, { name: 'Medium', value: visEmails.filter(e => e.ai_priority === 'medium').length,  fill: P_COLORS.medium }]
+  const botSegs:    DonutSegment[] = [{ name: 'High', value: visBots.filter(b => b.ai_priority === 'high').length,    fill: P_COLORS.high }, { name: 'Medium', value: visBots.filter(b => b.ai_priority === 'medium').length,    fill: P_COLORS.medium }]
+  const smsSegs:    DonutSegment[] = [{ name: 'High', value: visSms.filter(s => s.ai_priority === 'high').length,     fill: P_COLORS.high }, { name: 'Medium', value: visSms.filter(s => s.ai_priority === 'medium').length,     fill: P_COLORS.medium }]
+  const callSegs:   DonutSegment[] = [{ name: 'High', value: visCalls.filter(c => c.ai_priority === 'high').length,   fill: P_COLORS.high }, { name: 'Medium', value: visCalls.filter(c => c.ai_priority === 'medium').length,   fill: P_COLORS.medium }]
   const formSegs:   DonutSegment[] = [{ name: 'High', value: visForms.filter(f => f.lead_score === 'high').length, fill: P_COLORS.high }, { name: 'Medium', value: visForms.filter(f => f.lead_score === 'medium').length, fill: P_COLORS.medium }, { name: 'Low', value: visForms.filter(f => f.lead_score === 'low' || !f.lead_score).length, fill: P_COLORS.low }]
   const ticketSegs: DonutSegment[] = [{ name: 'High', value: visTickets.filter(t => t.priority === 'high' || t.priority === 'urgent').length, fill: P_COLORS.high }, { name: 'Medium', value: visTickets.filter(t => t.priority === 'medium').length, fill: P_COLORS.medium }, { name: 'Low', value: visTickets.filter(t => t.priority === 'low').length, fill: P_COLORS.low }]
 
@@ -489,8 +547,10 @@ export function SageDashboardClient({
   }
   const timeline = useMemo<TItem[]>(() => {
     const all: TItem[] = [
-      ...visEmails.map(d  => ({ kind: 'email'  as const, data: d, time: d.received_at    })),
+      ...visEmails.map(d  => ({ kind: 'email'  as const, data: d, time: d.received_at     })),
       ...visBots.map(d    => ({ kind: 'bot'    as const, data: d, time: d.last_activity_at })),
+      ...visSms.map(d     => ({ kind: 'sms'    as const, data: d, time: d.last_activity_at })),
+      ...visCalls.map(d   => ({ kind: 'call'   as const, data: d, time: d.last_activity_at })),
       ...visForms.map(d   => ({ kind: 'form'   as const, data: d, time: d.created_at      })),
       ...visTickets.map(d => ({ kind: 'ticket' as const, data: d, time: d.created_at      })),
     ]
@@ -503,7 +563,7 @@ export function SageDashboardClient({
       if (pd !== 0) return pd
       return new Date(b.time).getTime() - new Date(a.time).getTime()
     })
-  }, [visEmails, visBots, visForms, visTickets, feedView])
+  }, [visEmails, visBots, visSms, visCalls, visForms, visTickets, feedView])
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -679,6 +739,73 @@ export function SageDashboardClient({
                     {backfilling ? 'Processing…' : 'Process existing'}
                   </button>
                 )}
+
+                {/* User avatar + dropdown */}
+                <div className="relative" ref={profileRef}>
+                  <button
+                    onClick={() => setShowProfile(v => !v)}
+                    title="Account"
+                    className={`flex items-center rounded-full border-2 transition-all ${
+                      showProfile ? 'border-gray-400 dark:border-white/40 ring-2 ring-gray-200 dark:ring-white/10' : 'border-gray-200 dark:border-white/20 hover:border-gray-300 dark:hover:border-white/40'
+                    }`}
+                  >
+                    <div
+                      className="relative w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-white text-[10px] font-bold uppercase select-none overflow-hidden"
+                      style={{ backgroundColor: brandColor }}
+                    >
+                      {initials}
+                      {avatarUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={avatarUrl} alt="" className="absolute inset-0 w-full h-full object-cover z-10"
+                          onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                      )}
+                    </div>
+                  </button>
+
+                  {showProfile && (
+                    <div className="absolute right-0 top-full mt-2 z-50 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/12 rounded-2xl shadow-xl w-52 overflow-hidden">
+                      <div className="px-4 py-3 border-b border-gray-100 dark:border-white/8 flex items-center gap-2.5">
+                        <div
+                          className="relative w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-white text-[10px] font-bold uppercase select-none overflow-hidden"
+                          style={{ backgroundColor: brandColor }}
+                        >
+                          {initials}
+                          {avatarUrl && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={avatarUrl} alt="" className="absolute inset-0 w-full h-full object-cover z-10"
+                              onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          {avatarUserName && <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">{avatarUserName}</p>}
+                          <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none mt-0.5 ${planBadgeCls}`}>
+                            {plan}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="py-1.5">
+                        {[
+                          { href: '/settings',         label: 'Settings',       Icon: Settings   },
+                          { href: '/sage/roi',         label: 'ROI',            Icon: TrendingUp },
+                          { href: '/analytics',        label: 'Analytics',      Icon: BarChart2  },
+                          { href: '/settings/upgrade', label: 'Plan (Upgrade)', Icon: CreditCard },
+                          { href: '/settings/billing', label: 'Billing',        Icon: CreditCard },
+                          { href: '/settings/support', label: 'Support',        Icon: Sparkles   },
+                        ].map(({ href, label, Icon }) => (
+                          <Link
+                            key={href}
+                            href={href}
+                            onClick={() => setShowProfile(false)}
+                            className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-colors"
+                          >
+                            <Icon className="w-4 h-4 shrink-0 text-gray-400 dark:text-gray-500" />
+                            {label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             {/* Status description — fades in briefly after toggle */}
@@ -750,7 +877,9 @@ export function SageDashboardClient({
           /* Collapsed: compact single-row pills */
           <div className="flex flex-wrap gap-3">
             {[
-              { label: 'Emails',    Icon: Mail,          iconCls: 'text-blue-500',   total: visEmails.length,  href: viewAsUserId ? `/dashboard/email?viewAs=${viewAsUserId}`    : '/dashboard/email'    },
+              { label: 'Emails',        Icon: Mail,          iconCls: 'text-blue-500',   total: visEmails.length,  href: viewAsUserId ? `/dashboard/email?viewAs=${viewAsUserId}`    : '/dashboard/email'    },
+              { label: 'SMS',           Icon: Smartphone,    iconCls: 'text-[#7bcd13]',  total: visSms.length,     href: '/dashboard/sms'   },
+              { label: 'Phone Calls',   Icon: Phone,         iconCls: 'text-[#eb5297]',  total: visCalls.length,   href: '/dashboard/calls' },
               { label: 'Conversations', Icon: MessageSquare, iconCls: 'text-purple-500', total: visBots.length,    href: viewAsUserId ? `/dashboard/bots?viewAs=${viewAsUserId}`    : '/dashboard/bots'    },
               { label: 'Forms',         Icon: FileText,      iconCls: 'text-green-500',  total: visForms.length,   href: viewAsUserId ? `/dashboard/forms?viewAs=${viewAsUserId}`   : '/dashboard/forms'   },
               { label: 'Tickets',       Icon: TicketIcon,    iconCls: 'text-amber-500',  total: tickets.length,    href: viewAsUserId ? `/dashboard/tickets?viewAs=${viewAsUserId}` : '/dashboard/tickets' },
@@ -771,12 +900,14 @@ export function SageDashboardClient({
           </div>
         ) : (
           /* Expanded: full donut cards */
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-6 gap-4">
             {[
-              { label: 'Emails',        sub: 'high & medium unread',  Icon: Mail,          iconCls: 'text-blue-200',   barCls: 'bg-blue-600',    segs: emailSegs,  total: visEmails.length,  href: viewAsUserId ? `/dashboard/email?viewAs=${viewAsUserId}`    : '/dashboard/email'    },
-              { label: 'Conversations', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-200', barCls: 'bg-purple-600',  segs: botSegs,    total: visBots.length,    href: viewAsUserId ? `/dashboard/bots?viewAs=${viewAsUserId}`    : '/dashboard/bots'    },
-              { label: 'Forms',         sub: 'all submissions',       Icon: FileText,      iconCls: 'text-green-200',  barCls: 'bg-green-600',   segs: formSegs,   total: visForms.length,   href: viewAsUserId ? `/dashboard/forms?viewAs=${viewAsUserId}`   : '/dashboard/forms'   },
-              { label: 'Tickets',       sub: 'all tickets',           Icon: TicketIcon,    iconCls: 'text-amber-200',  barCls: 'bg-amber-500',   segs: ticketSegs, total: tickets.length,    href: viewAsUserId ? `/dashboard/tickets?viewAs=${viewAsUserId}` : '/dashboard/tickets' },
+              { label: 'Emails',        sub: 'high & medium unread',  Icon: Mail,          iconCls: 'text-blue-200',   barColor: undefined,  barCls: 'bg-blue-600',   segs: emailSegs,  total: visEmails.length,  href: viewAsUserId ? `/dashboard/email?viewAs=${viewAsUserId}`    : '/dashboard/email'    },
+              { label: 'SMS',           sub: 'active threads',         Icon: Smartphone,    iconCls: 'text-white/70',   barColor: '#7bcd13',  barCls: '',              segs: smsSegs,    total: visSms.length,     href: '/dashboard/sms'   },
+              { label: 'Phone Calls',   sub: 'all calls',             Icon: Phone,         iconCls: 'text-white/70',   barColor: '#eb5297',  barCls: '',              segs: callSegs,   total: visCalls.length,   href: '/dashboard/calls' },
+              { label: 'Conversations', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-200', barColor: undefined,  barCls: 'bg-purple-600', segs: botSegs,    total: visBots.length,    href: viewAsUserId ? `/dashboard/bots?viewAs=${viewAsUserId}`    : '/dashboard/bots'    },
+              { label: 'Forms',         sub: 'all submissions',       Icon: FileText,      iconCls: 'text-green-200',  barColor: undefined,  barCls: 'bg-green-600',  segs: formSegs,   total: visForms.length,   href: viewAsUserId ? `/dashboard/forms?viewAs=${viewAsUserId}`   : '/dashboard/forms'   },
+              { label: 'Tickets',       sub: 'all tickets',           Icon: TicketIcon,    iconCls: 'text-amber-200',  barColor: undefined,  barCls: 'bg-amber-500',  segs: ticketSegs, total: tickets.length,    href: viewAsUserId ? `/dashboard/tickets?viewAs=${viewAsUserId}` : '/dashboard/tickets' },
             ].map(card => {
               const isLoading = loadingDonut === card.label
               return (
@@ -784,7 +915,10 @@ export function SageDashboardClient({
                   onClick={() => { setLoadingDonut(card.label); router.push(card.href) }}
                   className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-hidden flex flex-col items-center hover:shadow-md hover:border-gray-300 dark:hover:border-white/15 transition-all cursor-pointer w-full">
                   {/* Coloured top bar */}
-                  <div className={`w-full flex items-center justify-between px-4 py-2.5 ${card.barCls}`}>
+                  <div
+                    className={`w-full flex items-center justify-between px-4 py-2.5 ${card.barCls}`}
+                    style={card.barColor ? { backgroundColor: card.barColor } : undefined}
+                  >
                     <p className="text-sm font-semibold text-white">{card.label}</p>
                     {isLoading
                       ? <Loader2 className={`w-3.5 h-3.5 animate-spin ${card.iconCls}`} />
@@ -794,12 +928,15 @@ export function SageDashboardClient({
                   <div className="p-4 flex flex-col items-center w-full">
                     <DonutChart segments={card.segs} total={card.total} />
                     <div className="flex items-center gap-2.5 mt-2 text-[11px] flex-wrap justify-center">
-                      {card.segs.map(s => (
-                        <span key={s.name} className="flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full" style={{ background: s.fill }} />
-                          <span className="text-gray-500 dark:text-gray-400">{s.value} {s.name.toLowerCase()}</span>
-                        </span>
-                      ))}
+                      {card.segs.length > 0
+                        ? card.segs.map(s => (
+                            <span key={s.name} className="flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full" style={{ background: s.fill }} />
+                              <span className="text-gray-500 dark:text-gray-400">{s.value} {s.name.toLowerCase()}</span>
+                            </span>
+                          ))
+                        : <span className="text-gray-400 dark:text-gray-500 text-[11px]">coming soon</span>
+                      }
                     </div>
                   </div>
                 </button>
@@ -907,28 +1044,42 @@ export function SageDashboardClient({
                 className={`flex items-center gap-1 text-white/80 hover:text-white transition-colors ${topType === 'email' && feedView === 'grid' ? 'font-bold text-white' : ''}`}
                 title="Emails"
               >
-                <Mail className="w-[18px] h-[18px]" />{visEmails.length}
+                <Mail className="w-[18px] h-[18px] text-blue-400" />{visEmails.length}
+              </button>
+              <button
+                onClick={() => { setFeedView('grid'); setTopType('sms') }}
+                className={`flex items-center gap-1 text-white/80 hover:text-white transition-colors ${topType === 'sms' && feedView === 'grid' ? 'font-bold text-white' : ''}`}
+                title="SMS"
+              >
+                <Smartphone className="w-[18px] h-[18px]" style={{ color: '#7bcd13' }} />{visSms.length}
+              </button>
+              <button
+                onClick={() => { setFeedView('grid'); setTopType('call') }}
+                className={`flex items-center gap-1 text-white/80 hover:text-white transition-colors ${topType === 'call' && feedView === 'grid' ? 'font-bold text-white' : ''}`}
+                title="Phone Calls"
+              >
+                <Phone className="w-[18px] h-[18px]" style={{ color: '#eb5297' }} />{visCalls.length}
               </button>
               <button
                 onClick={() => { setFeedView('grid'); setTopType('bot') }}
                 className={`flex items-center gap-1 text-white/80 hover:text-white transition-colors ${topType === 'bot' && feedView === 'grid' ? 'font-bold text-white' : ''}`}
                 title="Bot chats"
               >
-                <MessageSquare className="w-[18px] h-[18px]" />{visBots.length}
+                <MessageSquare className="w-[18px] h-[18px] text-purple-400" />{visBots.length}
               </button>
               <button
                 onClick={() => { setFeedView('grid'); setTopType('form') }}
                 className={`flex items-center gap-1 text-white/80 hover:text-white transition-colors ${topType === 'form' && feedView === 'grid' ? 'font-bold text-white' : ''}`}
                 title="Form submissions"
               >
-                <FileText className="w-[18px] h-[18px]" />{visForms.length}
+                <FileText className="w-[18px] h-[18px] text-green-400" />{visForms.length}
               </button>
               <button
                 onClick={() => { setFeedView('grid'); setTopType('ticket') }}
                 className={`flex items-center gap-1 text-white/80 hover:text-white transition-colors ${topType === 'ticket' && feedView === 'grid' ? 'font-bold text-white' : ''}`}
                 title="Tickets"
               >
-                <TicketIcon className="w-[18px] h-[18px]" />{visTickets.length}
+                <TicketIcon className="w-[18px] h-[18px] text-amber-400" />{visTickets.length}
               </button>
             </div>
           </div>
@@ -986,6 +1137,50 @@ export function SageDashboardClient({
                         </div>
                         <span className="text-xs text-gray-400 shrink-0">{timeLabel}</span>
                         <button onClick={ev => handleDismiss('bot', b.id, ev)} title="Dismiss"
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all shrink-0">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )
+                  }
+                  if (item.kind === 'sms') {
+                    const s = item.data
+                    const contact = s.ai_entities?.name ?? s.ai_entities?.phone ?? null
+                    return (
+                      <div key={timeKey} onClick={() => setPopup({ kind: 'bot', id: s.id })}
+                        className="group flex items-start gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
+                        <PriorityDot priority={s.ai_priority ?? 'low'} pulse={s.ai_priority === 'high'} />
+                        <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ background: '#7bcd1320' }}>
+                          <Smartphone className="w-3.5 h-3.5" style={{ color: '#7bcd13' }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{s.title ?? contact ?? 'SMS'}</p>
+                          {contact && <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{contact}</p>}
+                        </div>
+                        <span className="text-xs text-gray-400 shrink-0">{timeLabel}</span>
+                        <button onClick={ev => handleDismiss('bot', s.id, ev)} title="Dismiss"
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all shrink-0">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )
+                  }
+                  if (item.kind === 'call') {
+                    const c = item.data
+                    const caller = c.ai_entities?.name ?? c.ai_entities?.phone ?? null
+                    return (
+                      <div key={timeKey} onClick={() => setPopup({ kind: 'bot', id: c.id })}
+                        className="group flex items-start gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors cursor-pointer">
+                        <PriorityDot priority={c.ai_priority ?? 'low'} pulse={c.ai_priority === 'high'} />
+                        <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ background: '#eb529720' }}>
+                          <Phone className="w-3.5 h-3.5" style={{ color: '#eb5297' }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{c.title ?? caller ?? 'Phone call'}</p>
+                          {caller && <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{caller}</p>}
+                        </div>
+                        <span className="text-xs text-gray-400 shrink-0">{timeLabel}</span>
+                        <button onClick={ev => handleDismiss('bot', c.id, ev)} title="Dismiss"
                           className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all shrink-0">
                           <X className="w-3 h-3" />
                         </button>
@@ -1055,8 +1250,10 @@ export function SageDashboardClient({
               const sortedBots    = [...visBots].sort((a, b)   => sortP(a.ai_priority) - sortP(b.ai_priority))
               const sortedForms   = [...visForms].sort((a, b)  => sortP(a.lead_score)  - sortP(b.lead_score))
               const sortedTickets = [...visTickets].sort((a, b) => sortP(a.priority)   - sortP(b.priority))
+              const sortedSms     = [...visSms].sort((a, b)    => sortP(a.ai_priority) - sortP(b.ai_priority))
+              const sortedCalls   = [...visCalls].sort((a, b)  => sortP(a.ai_priority) - sortP(b.ai_priority))
               const allTablets: Array<{
-                key: 'email' | 'bot' | 'form' | 'ticket'
+                key: 'email' | 'bot' | 'sms' | 'call' | 'form' | 'ticket'
                 label: string
                 icon: React.ReactNode
                 accentClass: string
@@ -1065,6 +1262,7 @@ export function SageDashboardClient({
                 headerBg: string
                 count: number
                 rows: React.ReactNode
+                previewRows: React.ReactNode | null
               }> = [
                 {
                   key: 'email',
@@ -1093,6 +1291,106 @@ export function SageDashboardClient({
                         </button>
                       </div>
                     )),
+                  previewRows: sortedEmails.slice(0, 3).map(e => (
+                    <div key={e.id} onClick={() => setPopup({ kind: 'email', id: e.id })}
+                      className="group flex items-start gap-3 px-5 py-4 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer border-b border-blue-100 dark:border-blue-500/15 last:border-0">
+                      <PriorityDot priority={e.ai_priority ?? 'low'} pulse={e.ai_priority === 'high'} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{e.from_name ?? e.from_address}</p>
+                        <p className="text-[11px] text-blue-600/80 dark:text-blue-300/70 truncate">{e.subject}</p>
+                        {e.ai_summary && <p className="text-[10px] text-blue-500/60 dark:text-blue-400/60 italic truncate mt-0.5">{e.ai_summary}</p>}
+                      </div>
+                      <span className="text-[10px] text-blue-500/70 dark:text-blue-400/60 shrink-0">{timeAgo(e.received_at)}</span>
+                    </div>
+                  )),
+                },
+                {
+                  key: 'sms' as const,
+                  label: 'SMS',
+                  icon: <Smartphone className="w-3.5 h-3.5" />,
+                  accentClass: 'text-[#7bcd13]',
+                  borderClass: 'border-[#7bcd13]/30',
+                  bgClass: 'bg-[#7bcd13]/15',
+                  headerBg: '#7bcd13',
+                  count: visSms.length,
+                  rows: sortedSms.length === 0
+                    ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No SMS conversations this period.</p>
+                    : sortedSms.map(s => {
+                        const contact = s.ai_entities?.name ?? s.ai_entities?.phone ?? null
+                        return (
+                          <div key={s.id} onClick={() => setPopup({ kind: 'bot', id: s.id })}
+                            className="group flex items-start gap-3 px-5 py-3 hover:bg-[#7bcd13]/5 transition-colors cursor-pointer border-b border-[#7bcd13]/15 last:border-0">
+                            <PriorityDot priority={s.ai_priority ?? 'low'} pulse={s.ai_priority === 'high'} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{s.title ?? contact ?? 'SMS'}</p>
+                              {contact && <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{contact}</p>}
+                            </div>
+                            <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(s.last_activity_at)}</span>
+                            <button onClick={ev => handleDismiss('bot', s.id, ev)} title="Dismiss"
+                              className="opacity-0 group-hover:opacity-100 p-1 rounded text-gray-400 hover:text-gray-600 transition-all shrink-0">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )
+                      }),
+                  previewRows: sortedSms.slice(0, 2).map(s => {
+                    const contact = s.ai_entities?.name ?? s.ai_entities?.phone ?? null
+                    return (
+                      <div key={s.id} onClick={() => setPopup({ kind: 'bot', id: s.id })}
+                        className="group flex items-start gap-3 px-5 py-3 hover:bg-[#7bcd13]/5 transition-colors cursor-pointer border-b border-[#7bcd13]/15 last:border-0">
+                        <PriorityDot priority={s.ai_priority ?? 'low'} pulse={s.ai_priority === 'high'} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{s.title ?? contact ?? 'SMS'}</p>
+                          {contact && <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{contact}</p>}
+                        </div>
+                        <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(s.last_activity_at)}</span>
+                      </div>
+                    )
+                  }),
+                },
+                {
+                  key: 'call' as const,
+                  label: 'Phone Calls',
+                  icon: <Phone className="w-3.5 h-3.5" />,
+                  accentClass: 'text-[#eb5297]',
+                  borderClass: 'border-[#eb5297]/30',
+                  bgClass: 'bg-[#eb5297]/15',
+                  headerBg: '#eb5297',
+                  count: visCalls.length,
+                  rows: sortedCalls.length === 0
+                    ? <p className="px-5 py-6 text-xs text-gray-400 text-center">No phone calls this period.</p>
+                    : sortedCalls.map(c => {
+                        const caller = c.ai_entities?.name ?? c.ai_entities?.phone ?? null
+                        return (
+                          <div key={c.id} onClick={() => setPopup({ kind: 'bot', id: c.id })}
+                            className="group flex items-start gap-3 px-5 py-3 hover:bg-[#eb5297]/5 transition-colors cursor-pointer border-b border-[#eb5297]/15 last:border-0">
+                            <PriorityDot priority={c.ai_priority ?? 'low'} pulse={c.ai_priority === 'high'} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{c.title ?? caller ?? 'Phone call'}</p>
+                              {caller && <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{caller}</p>}
+                            </div>
+                            <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(c.last_activity_at)}</span>
+                            <button onClick={ev => handleDismiss('bot', c.id, ev)} title="Dismiss"
+                              className="opacity-0 group-hover:opacity-100 p-1 rounded text-gray-400 hover:text-gray-600 transition-all shrink-0">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )
+                      }),
+                  previewRows: sortedCalls.slice(0, 2).map(c => {
+                    const caller = c.ai_entities?.name ?? c.ai_entities?.phone ?? null
+                    return (
+                      <div key={c.id} onClick={() => setPopup({ kind: 'bot', id: c.id })}
+                        className="group flex items-start gap-3 px-5 py-3 hover:bg-[#eb5297]/5 transition-colors cursor-pointer border-b border-[#eb5297]/15 last:border-0">
+                        <PriorityDot priority={c.ai_priority ?? 'low'} pulse={c.ai_priority === 'high'} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{c.title ?? caller ?? 'Phone call'}</p>
+                          {caller && <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{caller}</p>}
+                        </div>
+                        <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(c.last_activity_at)}</span>
+                      </div>
+                    )
+                  }),
                 },
                 {
                   key: 'bot',
@@ -1122,6 +1420,19 @@ export function SageDashboardClient({
                         </button>
                       </div>
                     )),
+                  previewRows: sortedBots.slice(0, 1).map(b => (
+                    <div key={b.id} onClick={() => setPopup({ kind: 'bot', id: b.id })}
+                      className="group flex items-start gap-3 px-5 py-3 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-colors cursor-pointer border-b border-purple-100 dark:border-purple-500/15 last:border-0">
+                      <PriorityDot priority={b.ai_priority ?? 'low'} pulse={b.ai_priority === 'high'} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{b.title ?? 'Untitled conversation'}</p>
+                        <p className="text-[11px] text-purple-600/80 dark:text-purple-300/70">
+                          {b.bot?.name && <span className="font-medium">{b.bot.name} · </span>}{b.message_count} msgs
+                        </p>
+                      </div>
+                      <span className="text-[10px] text-purple-500/70 dark:text-purple-400/60 shrink-0">{timeAgo(b.last_activity_at)}</span>
+                    </div>
+                  )),
                 },
                 {
                   key: 'form',
@@ -1151,6 +1462,7 @@ export function SageDashboardClient({
                         </button>
                       </div>
                     )),
+                  previewRows: null,
                 },
                 {
                   key: 'ticket',
@@ -1178,6 +1490,7 @@ export function SageDashboardClient({
                         </button>
                       </div>
                     )),
+                  previewRows: null,
                 },
               ]
 
@@ -1186,43 +1499,59 @@ export function SageDashboardClient({
                 ? [...allTablets.filter(t => t.key === topType), ...allTablets.filter(t => t.key !== topType)]
                 : allTablets
 
+              const activeTablet    = topType ? ordered.find(t => t.key === topType) : null
+              const collapsedTablets = topType ? ordered.filter(t => t.key !== topType) : []
+
+              const renderTabletHeader = (tablet: typeof ordered[number], isActive: boolean) => (
+                <div
+                  className="tablet-header px-4 py-2.5 flex items-center justify-between cursor-pointer shrink-0"
+                  style={{ backgroundColor: tablet.headerBg }}
+                  onClick={() => setTopType(isActive ? null : tablet.key)}
+                >
+                  <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                    {tablet.icon}
+                    {tablet.label}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-white/15 text-white">
+                      {tablet.count}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-white/60 transition-transform duration-200 ${isActive ? 'rotate-180' : ''}`} />
+                  </div>
+                </div>
+              )
+
               return (
-                <div className="flex flex-col gap-2 p-4 overflow-y-auto max-h-[700px]">
-                  {ordered.map(tablet => {
-                    const isActive   = topType === tablet.key
-                    const isCollapsed = topType !== null && !isActive
-                    return (
-                      <div
-                        key={tablet.key}
-                        className="rounded-xl border border-gray-100 dark:border-white/[0.06] overflow-hidden transition-all duration-200"
-                      >
-                        {/* Tablet header */}
-                        <div
-                          className="tablet-header px-4 py-2.5 flex items-center justify-between cursor-pointer"
-                          style={{ backgroundColor: tablet.headerBg }}
-                          onClick={() => setTopType(isActive ? null : tablet.key)}
-                        >
-                          <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                            {tablet.icon}
-                            {tablet.label}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-white/15 text-white">
-                              {tablet.count}
-                            </span>
-                            <ChevronDown className={`w-4 h-4 text-white/60 transition-transform duration-200 ${isActive ? 'rotate-180' : ''}`} />
-                          </div>
+                <div className="flex flex-col gap-2 p-4 overflow-hidden" style={{ height: '700px' }}>
+                  {topType === null ? (
+                    /* ── No selection: scrollable stacked preview ── */
+                    <div className="overflow-y-auto flex flex-col gap-2 flex-1 min-h-0">
+                      {ordered.map(tablet => (
+                        <div key={tablet.key} className="shrink-0 rounded-xl border border-gray-100 dark:border-white/[0.06] overflow-hidden">
+                          {renderTabletHeader(tablet, false)}
+                          {tablet.previewRows && <div>{tablet.previewRows}</div>}
                         </div>
-                        {/* Tablet rows */}
-                        <div className={`overflow-y-auto transition-all duration-200 ${
-                          isActive    ? 'max-h-[520px]' :
-                          isCollapsed ? 'max-h-0'       : 'max-h-[200px]'
-                        }`}>
-                          {tablet.rows}
+                      ))}
+                    </div>
+                  ) : (
+                    <>
+                      {/* ── Active tablet: fills all available space ── */}
+                      {activeTablet && (
+                        <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-gray-100 dark:border-white/[0.06] overflow-hidden">
+                          {renderTabletHeader(activeTablet, true)}
+                          <div className="flex-1 overflow-y-auto">{activeTablet.rows}</div>
                         </div>
+                      )}
+                      {/* ── Collapsed tablets: tightly grouped at bottom ── */}
+                      <div className="shrink-0 rounded-xl overflow-hidden border border-gray-100 dark:border-white/[0.06]">
+                        {collapsedTablets.map((tablet, i) => (
+                          <div key={tablet.key} className={i > 0 ? 'border-t border-white/10' : ''}>
+                            {renderTabletHeader(tablet, false)}
+                          </div>
+                        ))}
                       </div>
-                    )
-                  })}
+                    </>
+                  )}
                 </div>
               )
             })()
