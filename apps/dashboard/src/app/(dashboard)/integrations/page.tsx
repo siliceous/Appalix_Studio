@@ -337,7 +337,7 @@ export default async function IntegrationsPage({
             return (
               <div key={provider} className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-[#15A4AE]/30 p-4 flex items-start gap-3">
                 <div className="w-12 h-12 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 shadow-sm flex items-center justify-center shrink-0 overflow-hidden p-2">
-                  <img src={logo} alt={name} className="w-full h-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                  <img src={logo} alt={name} className="w-full h-full object-contain" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">

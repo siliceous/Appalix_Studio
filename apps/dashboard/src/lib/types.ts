@@ -264,6 +264,7 @@ export type SageIntegrationProvider =
   | 'gravity_forms' | 'google_forms' | 'typeform' | 'fluent_forms'
   | 'clickfunnels' | 'webflow' | 'wordpress_forms'
   | 'linkedin' | 'tiktok' | 'microsoft_ads' | 'calendly'
+  | 'google_calendar' | 'google_drive' | 'onedrive'
 export type SageIntegrationStatus   = 'connected' | 'disconnected' | 'error'
 export type SageActivityEntityType  = 'contact' | 'deal' | 'ticket' | 'company' | 'project'
 export type SageProjectStatus        = 'onboarding' | 'active' | 'on_hold' | 'completed' | 'cancelled'
@@ -469,6 +470,199 @@ export interface CreateAutomationInput {
   current_summary?:  string
   ai_strategy?:      Record<string, unknown>
   qualification?:    Record<string, unknown>
+}
+
+// ── Automation Templates ──────────────────────────────────────────────────────
+
+export type AutomationType       = 'warm_introduction' | 'qualification' | 'reengagement' | 'meeting_conversion' | 'nurture' | 'custom'
+export type AutomationTriggerType = 'manual' | 'prospect_converted' | 'form_submit' | 'inbound_email' | 'inbound_sms' | 'deal_stage_change'
+export type AutomationTemplateChannel = 'email' | 'sms' | 'call' | 'multi'
+
+export type AutomationStepType =
+  | 'send_email'
+  | 'send_sms'
+  | 'call'
+  | 'wait'
+  | 'condition'
+  | 'handoff'
+  | 'update_contact'
+  | 'create_deal'
+  | 'webhook'
+
+// Config shape varies by step type — kept as free-form JSONB in DB
+export type AutomationStepConfig = Record<string, unknown>
+
+export interface AutomationStepDefinition {
+  id:               string             // Unique within the template
+  type:             AutomationStepType
+  label:            string
+  config:           AutomationStepConfig
+  next_step_id:     string | null      // Normal flow
+  on_fail_step_id:  string | null      // Error / retry branch
+  delay_hours?:     number             // Wait N hours before executing
+}
+
+export interface AutomationTemplate {
+  id:               string
+  workspace_id:     string | null      // null = system template
+  name:             string
+  description:      string | null
+  automation_type:  AutomationType
+  trigger_type:     AutomationTriggerType
+  primary_channel:  AutomationTemplateChannel
+  steps:            AutomationStepDefinition[]
+  entry_step_id:    string | null
+  is_active:        boolean
+  is_system:        boolean
+  version:          number
+  created_by:       string | null
+  created_at:       string
+  updated_at:       string
+}
+
+// ── Automation Executions ─────────────────────────────────────────────────────
+
+export type AutomationExecutionStatus =
+  | 'running'
+  | 'waiting'
+  | 'paused'
+  | 'completed'
+  | 'stopped'
+  | 'failed'
+
+export type AutomationStepStatus =
+  | 'pending'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'skipped'
+
+export interface AutomationExecution {
+  id:                   string
+  workspace_id:         string
+  template_id:          string | null
+  template_version:     number | null
+  contact_id:           string | null
+  deal_id:              string | null
+  lead_automation_id:   string | null
+  trigger_type:         AutomationTriggerType
+  trigger_data:         Record<string, unknown>
+  status:               AutomationExecutionStatus
+  current_step_id:      string | null
+  next_step_at:         string | null
+  step_count:           number
+  paused_at:            string | null
+  paused_reason:        string | null
+  stopped_at:           string | null
+  stopped_reason:       string | null
+  failed_at:            string | null
+  failure_reason:       string | null
+  completed_at:         string | null
+  output_summary:       Record<string, unknown>
+  created_by:           string | null
+  created_at:           string
+  updated_at:           string
+}
+
+export interface AutomationStepExecution {
+  id:           string
+  workspace_id: string
+  execution_id: string
+  step_id:      string
+  step_type:    AutomationStepType
+  step_label:   string | null
+  status:       AutomationStepStatus
+  started_at:   string | null
+  completed_at: string | null
+  resume_at:    string | null
+  input_data:   Record<string, unknown>
+  output_data:  Record<string, unknown>
+  error_data:   Record<string, unknown> | null
+  attempt:      number
+  max_attempts: number
+  created_at:   string
+  updated_at:   string
+}
+
+// Enriched execution (joined with template + contact names)
+export interface AutomationExecutionWithMeta extends AutomationExecution {
+  template_name:  string | null
+  contact_name:   string | null
+  contact_email:  string | null
+  deal_title:     string | null
+}
+
+// ── Sage Email Templates ──────────────────────────────────────────────────────
+
+export type EmailTemplateCategory =
+  | 'initial_outreach'
+  | 'follow_up'
+  | 'qualification'
+  | 'meeting_request'
+  | 'reengagement'
+  | 'handoff'
+  | 'nurture'
+  | 'general'
+
+export type EmailTemplateChannel = 'email' | 'sms'
+
+export type EmailTemplateSelectionMode = 'exact' | 'category' | 'style_inferred' | 'fallback'
+
+export interface EmailStyleMetadata {
+  tone:               'formal' | 'casual' | 'friendly'
+  greeting_style:     string    // e.g. 'Hi', 'Hello', 'Dear'
+  signoff_style:      string    // e.g. 'Best', 'Thanks', 'Regards'
+  cta_style:          'direct' | 'soft' | 'question'
+  paragraph_density:  'short' | 'medium' | 'long'
+  formatting_style:   'plain' | 'light_html' | 'rich_html'
+  brand_terms:        string[]
+}
+
+export interface SageEmailTemplate {
+  id:                   string
+  workspace_id:         string | null    // null = system template
+  name:                 string
+  description:          string | null
+  category:             EmailTemplateCategory
+  automation_type:      AutomationType | null
+  channel:              EmailTemplateChannel
+  subject_template:     string | null
+  body_template:        string
+  variables:            string[]
+  style_metadata_json:  Partial<EmailStyleMetadata>
+  selection_mode:       EmailTemplateSelectionMode | null
+  is_active:            boolean
+  is_system:            boolean
+  created_by:           string | null
+  created_at:           string
+  updated_at:           string
+}
+
+// Context passed to findBestEmailTemplate()
+export interface EmailTemplateLookupContext {
+  workspace_id:     string
+  category:         EmailTemplateCategory
+  automation_type?: AutomationType
+  channel?:         EmailTemplateChannel   // defaults to 'email'
+}
+
+// Result of findBestEmailTemplate()
+export interface EmailTemplateResolveResult {
+  template:       SageEmailTemplate
+  selection_mode: EmailTemplateSelectionMode
+}
+
+export interface SageEmailTemplateUsage {
+  id:             string
+  workspace_id:   string
+  template_id:    string | null
+  execution_id:   string | null
+  contact_id:     string | null
+  selection_mode: EmailTemplateSelectionMode
+  channel:        EmailTemplateChannel
+  outcome:        'sent' | 'bounced' | 'replied' | 'opened' | 'clicked' | null
+  outcome_at:     string | null
+  used_at:        string
 }
 
 export interface SageDealActivity {
