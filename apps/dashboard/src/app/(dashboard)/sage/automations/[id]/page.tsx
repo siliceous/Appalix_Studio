@@ -56,7 +56,8 @@ export default async function MonitorPage({ params }: Props) {
 
   const contact = contactRes.data as { id: string; name: string; email: string | null; phone: string | null; company_name: string | null } | null
 
-  type RawTemplate = { id: string; name: string; steps: Array<{ id: string; type: string; label?: string; delay_hours?: number; next_step_id?: string; branch_yes_id?: string; branch_no_id?: string; config?: Record<string, unknown> }>; entry_step_id: string | null; automation_type: string }
+  type RawStep = { id: string; type: string; label?: string; delay_hours?: number; next_step_id?: string; branch_yes_id?: string; branch_no_id?: string; config?: Record<string, unknown> }
+  type RawTemplate = { id: string; name: string; steps: Array<RawStep>; entry_step_id: string | null; automation_type: string }
   const template = templateRes.data as RawTemplate | null
 
   type RawStepExec = { step_id: string; step_type: string; step_label: string | null; status: string; started_at: string | null; completed_at: string | null; resume_at: string | null; output_data: Record<string, unknown>; error_data: Record<string, unknown> | null; attempt: number }
@@ -68,14 +69,14 @@ export default async function MonitorPage({ params }: Props) {
   // Walk template steps
   let steps: AutomationStepState[] = []
   if (template?.steps) {
-    const stepById = new Map(template.steps.map((s) => [s.id, s]))
+    const stepById = new Map<string, RawStep>(template.steps.map((st) => [st.id, st] as [string, RawStep]))
     const entryId = template.entry_step_id ?? template.steps[0]?.id
     const visited = new Set<string>()
     let cursor: string | undefined = entryId
 
     while (cursor && stepById.has(cursor) && !visited.has(cursor)) {
       visited.add(cursor)
-      const s = stepById.get(cursor)!
+      const s: RawStep = stepById.get(cursor)!
       const se = execMap.get(s.id)
       const isCurrent = s.id === exec.current_step_id
 
@@ -83,7 +84,7 @@ export default async function MonitorPage({ params }: Props) {
       if (se)         status = se.status as AutomationStepState['status']
       else if (isCurrent) status = exec.status === 'waiting' ? 'waiting' : 'running'
 
-      const branch_taken = s.type === 'condition'
+      const branch_taken: 'yes' | 'no' | null = s.type === 'condition'
         ? ((se?.output_data?.branch_taken ?? null) as 'yes' | 'no' | null)
         : null
 

@@ -178,7 +178,7 @@ function ExecutionRow({ exec, onOpen }: {
       onClick={() => onOpen(exec.id)}
       className="flex items-center gap-4 px-5 py-3.5 border-b border-gray-100 dark:border-white/6 hover:bg-gray-50/60 dark:hover:bg-white/[0.02] cursor-pointer transition-colors group"
     >
-      <Avatar name={exec.contact_name} size={30} />
+      <Avatar name={exec.contact_name ?? null} size={30} />
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">

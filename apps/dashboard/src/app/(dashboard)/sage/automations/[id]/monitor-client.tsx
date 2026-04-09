@@ -136,7 +136,7 @@ function TimelineStep({ step }: { step: AutomationStepState }) {
         )}
 
         {/* Email output preview */}
-        {step.type === 'send_email' && step.output_data.message_id && (
+        {step.type === 'send_email' && !!step.output_data.message_id && (
           <div className="mt-2 flex items-center gap-1.5 text-[11px] text-emerald-500">
             <CheckCircle2 className="w-3 h-3" /> Sent · ID: {String(step.output_data.message_id).slice(0, 20)}…
           </div>
@@ -209,7 +209,7 @@ export function MonitorClient({ exec, contact, templateName, automationType, ste
             <div className="bg-white dark:bg-[#1e1e1e] rounded-2xl border border-gray-200 dark:border-white/8 px-5 py-4 mb-6 shadow-sm">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-full bg-[#141c2b] flex items-center justify-center shrink-0 text-white text-sm font-bold">
-                  {initials(contact?.name)}
+                  {initials(contact?.name ?? null)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">

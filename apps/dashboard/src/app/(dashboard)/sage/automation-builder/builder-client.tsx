@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef, useId } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, Save, Play, Plus, X, Trash2,
@@ -13,7 +13,7 @@ import {
   createAutomationTemplate, updateAutomationTemplate, saveBuilderGraph,
 } from '@/app/actions/automation-templates-service'
 import type {
-  AutomationTemplate, BuilderNode, BuilderEdge, BuilderGraph,
+  AutomationTemplate, BuilderNode, BuilderGraph,
   AutomationStepType, AutomationType, AutomationTriggerType, AutomationTemplateChannel,
 } from '@/lib/types'
 
@@ -316,6 +316,8 @@ function NodeCard({ node, selected, onSelect, onAddAfter }: {
   const spec  = SPEC_BY_TYPE.get(node.type)
   const Icon  = spec?.icon ?? Zap
   const isTrigger = node.type === 'trigger'
+  const emailSubject = typeof node.config.subject_template === 'string' ? node.config.subject_template : null
+  const smsBody      = typeof node.config.body_template === 'string' ? node.config.body_template : null
 
   return (
     <div className="flex flex-col items-center">
@@ -356,18 +358,18 @@ function NodeCard({ node, selected, onSelect, onAddAfter }: {
             </p>
             {/* Brief config summary */}
             {node.type === 'send_email' && typeof node.config.subject_template === 'string' && (
-              <p className="text-[11px] text-gray-400 truncate mt-0.5">{node.config.subject_template}</p>
+              <p className="text-[11px] text-gray-400 truncate mt-0.5">{node.config.subject_template as string}</p>
             )}
-            {node.type === 'send_sms' && node.config.body_template && (
+            {node.type === 'send_sms' && !!node.config.body_template && (
               <p className="text-[11px] text-gray-400 truncate mt-0.5">{String(node.config.body_template).slice(0, 60)}</p>
             )}
-            {node.type === 'wait' && node.delay_hours && (
+            {node.type === 'wait' && !!node.delay_hours && (
               <p className="text-[11px] text-amber-500 mt-0.5">
                 {node.delay_hours >= 24 ? `${Math.round(node.delay_hours / 24)} day${Math.round(node.delay_hours / 24) !== 1 ? 's' : ''}` : `${node.delay_hours}h`} delay
               </p>
             )}
             {node.type === 'condition' && typeof node.config.condition_label === 'string' && (
-              <p className="text-[11px] text-indigo-400 mt-0.5">{node.config.condition_label}</p>
+              <p className="text-[11px] text-indigo-400 mt-0.5">{node.config.condition_label as string}</p>
             )}
           </div>
         </div>
@@ -654,12 +656,11 @@ export function BuilderClient({ template }: { template: AutomationTemplate | nul
         tpl = await saveBuilderGraph(template.id, graph)
       } else {
         tpl = await createAutomationTemplate({
-          name, description: null,
+          name,
           automation_type:  automationType,
           trigger_type:     triggerType,
           primary_channel:  channel,
           steps:            [],
-          entry_step_id:    null,
         })
         tpl = await saveBuilderGraph(tpl.id, graph, {
           name, automation_type: automationType,
