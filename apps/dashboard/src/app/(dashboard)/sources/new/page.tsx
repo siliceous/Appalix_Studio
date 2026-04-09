@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { NewSourceForm, type SourceType } from './new-source-form'
@@ -39,13 +39,29 @@ export default async function NewSourcePage() {
 
   const allowedTypes: SourceType[] = PLAN_ALLOWED[plan] ?? ['url']
 
+  // Check if user has connected Google Drive via OAuth
+  const admin = createAdminClient()
+  const { data: gdriveRow } = await admin
+    .from('sage_integrations' as never)
+    .select('status, config')
+    .eq('workspace_id', membership.workspace_id)
+    .eq('user_id', user.id)
+    .eq('provider', 'google_drive')
+    .maybeSingle() as unknown as { data: { status: string; config: { google_email?: string } } | null }
+  const gdriveConnected = gdriveRow?.status === 'connected'
+  const gdriveEmail     = gdriveRow?.config?.google_email ?? null
+
   return (
     <div className="max-w-2xl mx-auto">
       <Header
         title="Add source"
         description="Train your bot with a website, document, or custom text"
       />
-      <NewSourceForm allowedTypes={allowedTypes} />
+      <NewSourceForm
+        allowedTypes={allowedTypes}
+        gdriveConnected={gdriveConnected}
+        gdriveEmail={gdriveEmail}
+      />
     </div>
   )
 }

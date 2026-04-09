@@ -4,20 +4,20 @@ import { useState, useTransition } from 'react'
 import { updateBranding } from '@/app/actions/workspace-branding'
 
 const ACCENT_PRESETS = [
-  { label: 'Dark Navy',  hex: '#141C2B' },
-  { label: 'Purple',     hex: '#6b4aad' },
-  { label: 'Indigo',     hex: '#4338ca' },
-  { label: 'Blue',       hex: '#1d4ed8' },
-  { label: 'Teal',       hex: '#0d9488' },
-  { label: 'Emerald',    hex: '#059669' },
-  { label: 'Rose',       hex: '#e11d48' },
-  { label: 'Orange',     hex: '#ea580c' },
-  { label: 'Slate',      hex: '#475569' },
-  { label: 'Black',      hex: '#111111' },
+  { label: 'Light',    hex: '#141C2B' },
+  { label: 'Happy',    hex: '#6b4aad' },
+  { label: 'Indigo',   hex: '#4338ca' },
+  { label: 'Blue',     hex: '#1d4ed8' },
+  { label: 'Teal',     hex: '#0d9488' },
+  { label: 'Emerald',  hex: '#059669' },
+  { label: 'Rose',     hex: '#e11d48' },
+  { label: 'Orange',   hex: '#ea580c' },
+  { label: 'Slate',    hex: '#475569' },
+  { label: 'Black',    hex: '#111111' },
 ]
 
 const CARD_PRESETS = [
-  { label: 'White',         hex: '#ffffff' },
+  { label: 'Default (Light & Happy)', hex: '#ffffff' },
   { label: 'Warm White',    hex: '#fafaf8' },
   { label: 'Soft Gray',     hex: '#f9fafb' },
   { label: 'Cream',         hex: '#fefce8' },
@@ -30,7 +30,7 @@ const CARD_PRESETS = [
 ]
 
 const BG_PRESETS = [
-  { label: 'Default Sand',  hex: '#f5f4f1' },
+  { label: 'Default (Light & Happy)', hex: '#f5f4f1' },
   { label: 'Light Blue',    hex: '#e8f0fe' },
   { label: 'Soft Lavender', hex: '#f0ebff' },
   { label: 'Mint',          hex: '#e6f7f1' },

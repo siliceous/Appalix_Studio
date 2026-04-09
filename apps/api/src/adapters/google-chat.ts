@@ -28,8 +28,9 @@ export function parseGoogleChatEvent(
   const cleanText = text.replace(/@\S+/g, '').trim()
   if (!cleanText) return null
 
-  const threadName  = body.message?.thread?.name ?? body.space?.name ?? 'unknown'
-  const senderName  = body.message?.sender?.name ?? 'unknown'
+  const threadName   = body.message?.thread?.name ?? body.space?.name ?? 'unknown'
+  const senderEmail  = body.message?.sender?.email ?? ''
+  const senderName   = senderEmail || body.message?.sender?.displayName || body.message?.sender?.name || 'unknown'
 
   return {
     platform:         'google_chat',

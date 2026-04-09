@@ -22,6 +22,7 @@ import type {
   AutomationListItem,
   AutomationDetail,
   AutomationTimelineEvent,
+  AutomationStepState,
   CreateAutomationInput,
 } from '@/lib/types'
 
@@ -205,7 +206,7 @@ export async function getAutomationDetail(
   if (error || !row) return null
   const automation = row as LeadAutomation
 
-  const [contactRes, dealRes, timelineRes] = await Promise.all([
+  const [contactRes, dealRes, timelineRes, execRes] = await Promise.all([
     automation.contact_id
       ? admin
           .from('sage_contacts')
@@ -231,6 +232,15 @@ export async function getAutomationDetail(
           .order('created_at', { ascending: false })
           .limit(50)
       : { data: [] },
+    // Most recent execution for this lead_automation
+    admin
+      .from('automation_executions')
+      .select('id, status, current_step_id, template_id')
+      .eq('lead_automation_id', automationId)
+      .eq('workspace_id', workspaceId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ])
 
   const timeline: AutomationTimelineEvent[] = ((timelineRes.data ?? []) as {
@@ -246,11 +256,124 @@ export async function getAutomationDetail(
     event_at:   e.created_at,
   }))
 
+  // ── Build execution flow ─────────────────────────────────────────────────────
+  let executionFlow: AutomationDetail['executionFlow'] = null
+
+  const exec = execRes.data as {
+    id: string; status: string; current_step_id: string | null; template_id: string | null
+  } | null
+
+  if (exec) {
+    // Fetch template steps + step execution outcomes in parallel
+    const [templateRes, stepExecsRes] = await Promise.all([
+      exec.template_id
+        ? admin
+            .from('automation_templates')
+            .select('steps, entry_step_id')
+            .eq('id', exec.template_id)
+            .single()
+        : { data: null },
+      admin
+        .from('automation_step_executions')
+        .select('step_id, status, completed_at, resume_at, output_data, error_data')
+        .eq('execution_id', exec.id)
+        .order('created_at', { ascending: true }),
+    ])
+
+    type RawStep = {
+      id: string; type: string; label?: string; delay_hours?: number
+      next_step_id?: string
+      branch_yes_id?: string; branch_no_id?: string
+      config?: Record<string, unknown>
+    }
+    type RawStepExec = {
+      step_id: string; status: string; completed_at: string | null; resume_at: string | null;
+      output_data: Record<string, unknown>; error_data: Record<string, unknown> | null
+    }
+
+    const rawSteps: RawStep[] = (templateRes?.data as { steps: RawStep[] } | null)?.steps ?? []
+    const stepExecs = (stepExecsRes.data ?? []) as RawStepExec[]
+
+    // Build a map: step_id → most recent exec outcome
+    const execMap = new Map<string, RawStepExec>()
+    for (const se of stepExecs) execMap.set(se.step_id, se)
+
+    // Walk the DAG in order: follow next_step_id for linear steps,
+    // for condition steps follow the branch that was actually taken (from output_data),
+    // falling back to branch_yes_id for pending conditions.
+    const orderedSteps: RawStep[] = []
+    const stepById = new Map<string, RawStep>(rawSteps.map(s => [s.id, s]))
+    const entryId = (templateRes?.data as { entry_step_id?: string } | null)?.entry_step_id
+    let cursor: string | undefined = entryId ?? rawSteps[0]?.id
+    const visited = new Set<string>()
+    while (cursor && stepById.has(cursor) && !visited.has(cursor)) {
+      visited.add(cursor)
+      const step: RawStep = stepById.get(cursor)!
+      orderedSteps.push(step)
+
+      if (step.type === 'condition') {
+        // Determine which branch to follow for the walk
+        const se = execMap.get(step.id)
+        const taken = (se?.output_data?.branch_taken ?? null) as 'yes' | 'no' | null
+        cursor = taken === 'no'
+          ? step.branch_no_id
+          : (step.branch_yes_id ?? step.next_step_id)
+      } else {
+        cursor = step.next_step_id
+      }
+    }
+    // Append any steps not reachable via the walked path (shouldn't happen but safe)
+    for (const s of rawSteps) {
+      if (!visited.has(s.id)) orderedSteps.push(s)
+    }
+
+    const steps: AutomationStepState[] = orderedSteps.map(s => {
+      const se = execMap.get(s.id)
+      const isCurrent = s.id === exec.current_step_id
+
+      let status: AutomationStepState['status'] = 'pending'
+      if (se) {
+        status = se.status as AutomationStepState['status']
+      } else if (isCurrent) {
+        status = exec.status === 'waiting' ? 'waiting' : 'running'
+      }
+
+      const branch_taken = s.type === 'condition'
+        ? ((se?.output_data?.branch_taken ?? null) as 'yes' | 'no' | null)
+        : null
+
+      return {
+        id:             s.id,
+        type:           s.type,
+        label:          s.label ?? s.type,
+        delay_hours:    s.delay_hours ?? 0,
+        status,
+        isCurrent,
+        completed_at:   se?.completed_at ?? null,
+        resume_at:      se?.resume_at ?? null,
+        output_data:    se?.output_data ?? {},
+        error_data:     se?.error_data ?? null,
+        branch_yes_id:  s.branch_yes_id ?? null,
+        branch_no_id:   s.branch_no_id ?? null,
+        branch_taken,
+        config:         s.config ?? {},
+      }
+    })
+
+    executionFlow = {
+      executionId:     exec.id,
+      executionStatus: exec.status,
+      currentStepId:   exec.current_step_id,
+      steps,
+    }
+  }
+
   return {
     automation,
     contact:  contactRes.data as AutomationDetail['contact'] ?? null,
     deal:     dealRes.data    as AutomationDetail['deal']    ?? null,
     timeline,
+    executionFlow,
   }
 }
 
@@ -292,7 +415,12 @@ export async function createAutomation(
     .single()
 
   if (error) throw new Error(`[automations] createAutomation: ${error.message}`)
-  return data as LeadAutomation
+  const created = data as LeadAutomation
+
+  // Spawn a template-bound execution (non-blocking)
+  void spawnExecution(admin, workspaceId, created)
+
+  return created
 }
 
 // ── 5. pauseAutomation / resumeAutomation ─────────────────────────────────────
@@ -419,10 +547,21 @@ export async function getAutomationInsights(): Promise<{
 export async function searchContactsForAutomation(
   query: string,
 ): Promise<{ id: string; name: string; email: string | null; phone: string | null; company_name: string | null }[]> {
-  if (!query || query.trim().length < 2) return []
   const workspaceId = await getWorkspaceId()
   const admin       = createAdminClient()
-  const q           = query.trim().toLowerCase()
+
+  // Empty query → return most recent contacts
+  if (!query || query.trim().length === 0) {
+    const { data } = await admin
+      .from('sage_contacts')
+      .select('id, name, email, phone, company_name')
+      .eq('workspace_id', workspaceId)
+      .order('created_at', { ascending: false })
+      .limit(10)
+    return (data ?? []) as { id: string; name: string; email: string | null; phone: string | null; company_name: string | null }[]
+  }
+
+  const q = query.trim().toLowerCase()
 
   const { data } = await admin
     .from('sage_contacts')
@@ -494,4 +633,98 @@ export async function createAutomationFromProspect(opts: {
   })
 
   return { automationId: automation.id, contactId: contactId ?? '' }
+}
+
+// ── 9b. stopAutomation ───────────────────────────────────────────────────────
+/**
+ * Permanently stops an automation. Unlike pause, this cannot be resumed.
+ */
+export async function stopAutomation(
+  automationId: string,
+  reason?: string,
+): Promise<void> {
+  const workspaceId = await getWorkspaceId()
+  const admin       = createAdminClient()
+
+  const { error } = await admin
+    .from('lead_automations')
+    .update({
+      status:        'stopped',
+      stopped_at:    new Date().toISOString(),
+      stopped_reason: reason ?? null,
+    })
+    .eq('id', automationId)
+    .eq('workspace_id', workspaceId)
+    .not('status', 'in', '("stopped","completed")')
+
+  if (error) throw new Error(`[automations] stopAutomation: ${error.message}`)
+}
+
+// ── 9c. getAllAutomations ─────────────────────────────────────────────────────
+/**
+ * Returns ALL automations for the workspace (all statuses).
+ * Used by the full 2-panel list view where user can filter client-side.
+ */
+export async function getAllAutomations(): Promise<AutomationListItem[]> {
+  const workspaceId = await getWorkspaceId()
+  const admin       = createAdminClient()
+
+  const { data, error } = await admin
+    .from('lead_automations')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .order('updated_at', { ascending: false })
+
+  if (error) {
+    console.error('[automations] getAllAutomations error:', error.message)
+    return []
+  }
+
+  return joinNames(admin, (data ?? []) as LeadAutomation[])
+}
+
+// ── 9. spawnExecution (internal helper) ───────────────────────────────────────
+/**
+ * Finds the best matching automation_template for a given goal + channel,
+ * then creates an automation_executions row linked to the lead_automation.
+ * Called from createAutomation — fire-and-forget, never throws.
+ */
+async function spawnExecution(
+  admin:          ReturnType<typeof createAdminClient>,
+  workspaceId:    string,
+  leadAutomation: import('@/lib/types').LeadAutomation,
+): Promise<void> {
+  try {
+    // Find best matching system or workspace template
+    const { data: template } = await admin
+      .from('automation_templates')
+      .select('id, version, entry_step_id')
+      .eq('automation_type', leadAutomation.goal)
+      .eq('primary_channel', leadAutomation.primary_channel)
+      .eq('is_active', true)
+      .or(`workspace_id.eq.${workspaceId},workspace_id.is.null`)
+      .order('is_system', { ascending: true }) // workspace-specific first
+      .limit(1)
+      .maybeSingle()
+
+    if (!template) return // No matching template; execution not spawned
+
+    const t = template as { id: string; version: number; entry_step_id: string | null }
+
+    await admin.from('automation_executions').insert({
+      workspace_id:       workspaceId,
+      template_id:        t.id,
+      template_version:   t.version,
+      contact_id:         leadAutomation.contact_id,
+      deal_id:            leadAutomation.deal_id,
+      lead_automation_id: leadAutomation.id,
+      trigger_type:       'manual',
+      trigger_data:       { source_type: leadAutomation.source_type, goal: leadAutomation.goal },
+      status:             'running',
+      current_step_id:    t.entry_step_id,
+      next_step_at:       t.entry_step_id ? new Date().toISOString() : null,
+    })
+  } catch (err) {
+    console.error('[automations] spawnExecution failed (non-fatal):', err)
+  }
 }

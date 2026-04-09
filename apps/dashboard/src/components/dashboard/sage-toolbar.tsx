@@ -17,7 +17,7 @@ import { updateAutoSetting, type AutoSettings } from '@/app/actions/sage-auto-se
 
 export type SagePageKey =
   | 'bots' | 'integrations' | 'sources'
-  | 'prospects' | 'contacts' | 'pipelines' | 'projects' | 'quotes' | 'rules' | 'automations' | 'templates'
+  | 'prospects' | 'contacts' | 'pipelines' | 'projects' | 'quotes' | 'rules' | 'automations' | 'automation-builder' | 'templates'
   | 'email' | 'conversations' | 'sms' | 'calls' | 'forms' | 'tickets' | 'my-activity'
   | 'branding'
 

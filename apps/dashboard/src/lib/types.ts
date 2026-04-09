@@ -439,12 +439,40 @@ export interface AutomationListItem extends LeadAutomation {
   deal_title:     string | null
 }
 
+// Step state for the execution flow map
+export interface AutomationStepState {
+  id:             string
+  type:           string   // send_email | send_sms | wait | condition | handoff | webhook | update_contact | create_deal
+  label:          string
+  delay_hours:    number
+  status:         'completed' | 'running' | 'waiting' | 'pending' | 'failed' | 'skipped'
+  isCurrent:      boolean
+  completed_at:   string | null
+  resume_at:      string | null
+  output_data:    Record<string, unknown>
+  error_data:     Record<string, unknown> | null
+  // Condition branch fields
+  branch_yes_id:  string | null
+  branch_no_id:   string | null
+  branch_taken:   'yes' | 'no' | null
+  // Config from template (subject preview, wait label etc.)
+  config:         Record<string, unknown>
+}
+
+export interface AutomationExecutionFlow {
+  executionId:     string
+  executionStatus: string
+  currentStepId:   string | null
+  steps:           AutomationStepState[]
+}
+
 // Full detail shape including related data
 export interface AutomationDetail {
-  automation:   LeadAutomation
-  contact:      Pick<SageContact, 'id' | 'name' | 'email' | 'phone' | 'company_name' | 'email_deliverability'> | null
-  deal:         Pick<SageDeal, 'id' | 'title' | 'value' | 'status' | 'stage'> | null
-  timeline:     AutomationTimelineEvent[]
+  automation:     LeadAutomation
+  contact:        Pick<SageContact, 'id' | 'name' | 'email' | 'phone' | 'company_name' | 'email_deliverability'> | null
+  deal:           Pick<SageDeal, 'id' | 'title' | 'value' | 'status' | 'stage'> | null
+  timeline:       AutomationTimelineEvent[]
+  executionFlow:  AutomationExecutionFlow | null
 }
 
 export interface AutomationTimelineEvent {
@@ -487,7 +515,12 @@ export type AutomationStepType =
   | 'handoff'
   | 'update_contact'
   | 'create_deal'
+  | 'assign'
+  | 'create_ticket'
+  | 'create_task'
+  | 'notify_internal'
   | 'webhook'
+  | 'end'
 
 // Config shape varies by step type — kept as free-form JSONB in DB
 export type AutomationStepConfig = Record<string, unknown>
@@ -500,6 +533,30 @@ export interface AutomationStepDefinition {
   next_step_id:     string | null      // Normal flow
   on_fail_step_id:  string | null      // Error / retry branch
   delay_hours?:     number             // Wait N hours before executing
+  // Condition branch targets
+  branch_yes_id?:   string | null
+  branch_no_id?:    string | null
+}
+
+// Builder graph types (stored in config_json)
+export interface BuilderNode {
+  id:            string
+  type:          AutomationStepType | 'trigger'
+  label:         string
+  config:        AutomationStepConfig
+  delay_hours?:  number
+}
+
+export interface BuilderEdge {
+  from:    string
+  to:      string
+  branch?: 'yes' | 'no'
+}
+
+export interface BuilderGraph {
+  nodes:       BuilderNode[]
+  edges:       BuilderEdge[]
+  entryNodeId: string | null
 }
 
 export interface AutomationTemplate {
@@ -512,12 +569,35 @@ export interface AutomationTemplate {
   primary_channel:  AutomationTemplateChannel
   steps:            AutomationStepDefinition[]
   entry_step_id:    string | null
+  config_json:      BuilderGraph | null   // Builder graph (null for legacy templates)
   is_active:        boolean
   is_system:        boolean
   version:          number
   created_by:       string | null
   created_at:       string
   updated_at:       string
+}
+
+// Execution row (lightweight, for list views)
+export interface AutomationExecutionRow {
+  id:                  string
+  workspace_id:        string
+  template_id:         string | null
+  template_name?:      string | null
+  contact_id:          string | null
+  contact_name?:       string | null
+  contact_email?:      string | null
+  deal_id:             string | null
+  lead_automation_id:  string | null
+  trigger_type:        string
+  status:              string
+  current_step_id:     string | null
+  step_count:          number
+  next_step_at:        string | null
+  completed_at:        string | null
+  failed_at:           string | null
+  created_at:          string
+  updated_at:          string
 }
 
 // ── Automation Executions ─────────────────────────────────────────────────────

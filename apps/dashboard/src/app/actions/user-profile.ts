@@ -72,6 +72,72 @@ export async function uploadUserAvatar(
   return { ok: true, url: publicUrl }
 }
 
+export async function saveCalendarLink(url: string): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Not authenticated' }
+
+  const trimmed = url.trim()
+  if (trimmed && !trimmed.startsWith('https://')) {
+    return { ok: false, error: 'Calendar link must be a valid https:// URL' }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any).from('user_profiles').upsert(
+    { user_id: user.id, calendar_link: trimmed || null, updated_at: new Date().toISOString() },
+    { onConflict: 'user_id' },
+  )
+
+  revalidatePath('/settings')
+  return { ok: true }
+}
+
+export async function saveJobTitle(title: string): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Not authenticated' }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any).from('user_profiles').upsert(
+    { user_id: user.id, job_title: title.trim() || null, updated_at: new Date().toISOString() },
+    { onConflict: 'user_id' },
+  )
+
+  revalidatePath('/settings')
+  return { ok: true }
+}
+
+export async function disconnectGoogleCalendar(): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Not authenticated' }
+
+  const admin = createAdminClient()
+
+  // Fetch token to revoke it
+  const { data: row } = await admin
+    .from('sage_integrations' as never)
+    .select('config')
+    .eq('user_id', user.id)
+    .eq('provider', 'google_calendar')
+    .maybeSingle() as unknown as { data: { config: Record<string, string> } | null }
+
+  // Best-effort revoke with Google
+  const token = row?.config?.access_token
+  if (token) {
+    fetch(`https://oauth2.googleapis.com/revoke?token=${token}`, { method: 'POST' }).catch(() => {})
+  }
+
+  await admin
+    .from('sage_integrations' as never)
+    .delete()
+    .eq('user_id', user.id)
+    .eq('provider', 'google_calendar')
+
+  revalidatePath('/settings')
+  return { ok: true }
+}
+
 export async function removeUserAvatar(): Promise<{ ok: boolean; error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

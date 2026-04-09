@@ -14,6 +14,7 @@ import { BusinessDetailsSection } from '@/components/settings/business-details-s
 import { getBranding } from '@/app/actions/workspace-branding'
 import { WorkspaceColorPicker } from '@/components/settings/workspace-color-picker'
 import { WorkspaceFontPicker } from '@/components/settings/workspace-font-picker'
+import { GoogleCalendarSection } from '@/components/settings/google-calendar-section'
 import { STATUS_COLORS, formatDate } from '@/lib/utils'
 import type { Metadata } from 'next'
 import type { Workspace, WorkspaceMember, WorkspaceMemberRole } from '@/lib/types'
@@ -59,16 +60,36 @@ export default async function SettingsPage() {
 
   // Fetch names + avatar from user_profiles
   const memberUserIds = rawMemberList.map((m) => m.user_id)
-  const { data: profiles } = await admin
-    .from('user_profiles')
-    .select('user_id, first_name, last_name, avatar_url')
-    .in('user_id', memberUserIds)
+  const [profilesResult, gcalResult, myProfileExtResult] = await Promise.all([
+    admin
+      .from('user_profiles')
+      .select('user_id, first_name, last_name, avatar_url')
+      .in('user_id', memberUserIds),
+    admin
+      .from('sage_integrations' as never)
+      .select('status, config')
+      .eq('workspace_id', workspace.id)
+      .eq('user_id', user.id)
+      .eq('provider', 'google_calendar')
+      .maybeSingle(),
+    admin
+      .from('user_profiles' as never)
+      .select('calendar_link, job_title')
+      .eq('user_id', user.id)
+      .maybeSingle(),
+  ])
+
   type ProfileRow = { user_id: string; first_name: string; last_name: string | null; avatar_url: string | null }
   const profileMap: Record<string, ProfileRow> = {}
-  for (const p of (profiles ?? []) as ProfileRow[]) {
+  for (const p of ((profilesResult.data ?? []) as ProfileRow[])) {
     profileMap[p.user_id] = p
   }
   const myProfile = profileMap[user.id] ?? null
+
+  const gcalRow       = gcalResult.data as { status: string; config: Record<string, string> } | null
+  const gcalConnected = gcalRow?.status === 'connected'
+  const gcalEmail     = gcalRow?.config?.google_email ?? null
+  const myExt         = myProfileExtResult.data as { calendar_link: string | null; job_title: string | null } | null
 
   const members: MemberDisplay[] = rawMemberList.map((m) => {
     const profile = profileMap[m.user_id]
@@ -120,6 +141,14 @@ export default async function SettingsPage() {
         lastName={myProfile?.last_name ?? ''}
         email={user.email ?? ''}
         avatarUrl={myProfile?.avatar_url ?? null}
+      />
+
+      {/* Google Calendar */}
+      <GoogleCalendarSection
+        connected={gcalConnected}
+        googleEmail={gcalEmail}
+        calendarLink={myExt?.calendar_link ?? null}
+        jobTitle={myExt?.job_title ?? null}
       />
 
       {/* Business Profile */}

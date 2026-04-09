@@ -330,8 +330,65 @@ export async function scheduleMeetingFromEmail(opts: {
 
   if (error) return { ok: false, calendarUrl: '', error: (error as { message: string }).message }
 
+  // Get the newly created meeting id
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: newMeeting } = await (supabase as any)
+    .from('sage_meetings')
+    .select('id')
+    .eq('workspace_id', workspaceId)
+    .eq('email_id', opts.emailId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  const meetingId = (newMeeting as { id: string } | null)?.id ?? null
+
   revalidatePath('/dashboard')
 
+  // If the current user has Google Calendar connected, auto-create the event
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+  if (currentUser) {
+    const admin = createAdminClient()
+    const { data: gcalRow } = await admin
+      .from('sage_integrations' as never)
+      .select('status')
+      .eq('workspace_id', workspaceId)
+      .eq('user_id', currentUser.id)
+      .eq('provider', 'google_calendar')
+      .eq('status', 'connected')
+      .maybeSingle()
+
+    if (gcalRow) {
+      const apiBase    = process.env.API_BASE_URL
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+      if (apiBase && serviceKey) {
+        // Default to 30-min slot starting 1 hour from now
+        const startAt = new Date(Date.now() + 60 * 60 * 1000).toISOString()
+        const endAt   = new Date(Date.now() + 90 * 60 * 1000).toISOString()
+        try {
+          const resp = await fetch(`${apiBase}/calendar/events`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Service-Key': serviceKey },
+            body: JSON.stringify({
+              workspace_id:    workspaceId,
+              user_id:         currentUser.id,
+              title,
+              description,
+              start_at:        startAt,
+              end_at:          endAt,
+              attendee_emails: [opts.fromAddress],
+              sage_meeting_id: meetingId,
+            }),
+          })
+          const result = await resp.json() as { ok?: boolean; html_link?: string }
+          if (result.ok && result.html_link) {
+            return { ok: true, calendarUrl: result.html_link }
+          }
+        } catch { /* fall through to manual URL */ }
+      }
+    }
+  }
+
+  // Fallback: manual Google Calendar "create event" URL
   const params = new URLSearchParams({
     text:    title,
     details: description,

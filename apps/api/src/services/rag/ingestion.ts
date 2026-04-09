@@ -5,6 +5,70 @@ import { recordUsage } from '../../lib/usage.js'
 import { refreshBusinessDescriptionFromKB } from '../sage-email-sync.js'
 
 /**
+ * Resolve a fresh Google access token from a workspace-level OAuth integration
+ * stored in sage_integrations (provider = 'google_drive').
+ * If the stored token is expired (or within 5 min of expiry), uses the
+ * refresh_token to obtain a new one and persists it back.
+ */
+async function resolveWorkspaceGoogleToken(workspaceId: string, userId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('sage_integrations')
+    .select('config')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', userId)
+    .eq('provider', 'google_drive')
+    .eq('status', 'connected')
+    .maybeSingle() as unknown as { data: { config: Record<string, string> } | null }
+
+  if (!data?.config?.access_token) return null
+
+  const config      = data.config
+  const expiresAt   = config.expires_at ? new Date(config.expires_at).getTime() : 0
+  const bufferMs    = 5 * 60 * 1000 // refresh if <5 min remaining
+  const needsRefresh = Date.now() + bufferMs >= expiresAt
+
+  if (!needsRefresh) return config.access_token
+
+  // Refresh using refresh_token
+  if (!config.refresh_token) return null
+
+  const clientId     = process.env.GOOGLE_CLIENT_ID
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+  if (!clientId || !clientSecret) return config.access_token // can't refresh; try existing token
+
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body:    new URLSearchParams({
+      client_id:     clientId,
+      client_secret: clientSecret,
+      refresh_token: config.refresh_token,
+      grant_type:    'refresh_token',
+    }),
+  })
+
+  if (!res.ok) return config.access_token // refresh failed; try existing token
+
+  const { access_token, expires_in } = await res.json() as { access_token?: string; expires_in?: number }
+  if (!access_token) return config.access_token
+
+  // Persist refreshed token
+  const newConfig = {
+    ...config,
+    access_token,
+    expires_at: new Date(Date.now() + (expires_in ?? 3600) * 1000).toISOString(),
+  }
+  await supabase
+    .from('sage_integrations')
+    .update({ config: newConfig })
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', userId)
+    .eq('provider', 'google_drive')
+
+  return access_token
+}
+
+/**
  * Accepts either a short-lived OAuth access token (ya29.…) or a full
  * Service Account JSON key. If JSON is detected, a signed JWT is exchanged
  * for a fresh access token via Google's token endpoint.
@@ -164,6 +228,8 @@ async function fetchSourceContent(source: {
   file_path?: string | null
   name: string
   metadata?: Record<string, unknown> | null
+  workspace_id: string
+  user_id?: string | null
 }): Promise<string> {
   switch (source.type) {
     case 'text': {
@@ -528,10 +594,15 @@ async function fetchSourceContent(source: {
     // Google Drive — access token + file/folder URL
     // ----------------------------------------------------------------
     case 'google_drive': {
-      const credential = (source.metadata as Record<string, string> | null)?.google_access_token
-      if (!credential) throw new Error('Google Drive source missing google_access_token in metadata')
       if (!source.url) throw new Error('Google Drive source has no URL')
-      const token = await resolveGoogleAccessToken(credential)
+
+      // Prefer workspace-level OAuth integration (auto-refreshes); fall back to per-source credential
+      let token: string | null = await resolveWorkspaceGoogleToken(source.workspace_id, source.user_id ?? '')
+      if (!token) {
+        const credential = (source.metadata as Record<string, string> | null)?.google_access_token
+        if (!credential) throw new Error('Google Drive: no OAuth integration connected and no credential saved on this source. Connect Google Drive via Settings → Integrations, or paste a Service Account JSON / access token.')
+        token = await resolveGoogleAccessToken(credential)
+      }
 
       // Extract file ID from URL
       const fileMatch = source.url.match(/\/d\/([^/?#]+)/) ?? source.url.match(/id=([^&]+)/)

@@ -57,10 +57,7 @@ const PLATFORM_FIELDS: Partial<Record<Platform, FieldConfig[]>> = {
     { name: 'phone_number_id', label: 'Phone number ID', placeholder: '1234567890', hint: 'Meta for Developers → WhatsApp → API Setup.' },
     { name: 'verify_token',    label: 'Verify token',    placeholder: 'any secret string', optional: true, hint: 'A string you choose for webhook verification.' },
   ],
-  google_chat: [
-    { name: 'service_account_json', label: 'Service account key (JSON)', placeholder: '{"type":"service_account",...}', hint: 'Paste the full JSON from your Google Cloud service account.' },
-    { name: 'space_name',           label: 'Space name (optional)',       placeholder: 'spaces/XXXXXX', optional: true, hint: 'Restrict the bot to a specific Chat space.' },
-  ],
+  google_chat: [],
   telegram: [
     { name: 'telegram_bot_token',       label: 'Bot token',      placeholder: '7412345678:AAF...', hint: 'Get from @BotFather on Telegram.' },
     { name: 'telegram_webhook_secret',  label: 'Webhook secret', placeholder: 'Auto-generated if left blank', optional: true, hint: 'Leave blank to auto-generate.' },
@@ -405,6 +402,25 @@ export function NewIntegrationForm({
                   An API key will be auto-generated after you create this integration.{' '}
                   {guideUrl && <a href={guideUrl} className="text-brand-600 hover:underline">View API docs →</a>}
                 </p>
+              </div>
+            )}
+
+            {platform === 'google_chat' && (
+              <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5 space-y-3">
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">How Google Chat works</p>
+                <ol className="space-y-2 text-xs text-gray-600 dark:text-gray-400 list-decimal list-inside">
+                  <li>Click <strong>Create integration</strong> below.</li>
+                  <li>Copy your webhook URL from the integration detail page.</li>
+                  <li>
+                    Go to{' '}
+                    <span className="font-mono bg-gray-100 dark:bg-white/10 px-1 py-0.5 rounded text-[11px]">
+                      Google Cloud Console → Google Chat API → Configuration
+                    </span>
+                  </li>
+                  <li>Paste the webhook URL as the <strong>App URL</strong> and save.</li>
+                  <li>Add your bot to a Google Chat space — it will start responding automatically.</li>
+                </ol>
+                <p className="text-xs text-gray-400">No OAuth review required. Works immediately for any space your bot is added to.</p>
               </div>
             )}
 

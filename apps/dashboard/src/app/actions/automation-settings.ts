@@ -55,3 +55,42 @@ export async function saveAutomationSettings(formData: FormData) {
 
   redirect('/settings/automation?saved=1')
 }
+
+export async function saveOutreachVariables(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: membershipRaw } = await supabase
+    .from('workspace_members')
+    .select('workspace_id, role')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single()
+
+  const membership = membershipRaw as { workspace_id: string; role: string } | null
+  if (!membership || !['owner', 'admin', 'manager'].includes(membership.role)) {
+    throw new Error('Unauthorised')
+  }
+
+  const get = (key: string) => (formData.get(key) as string | null)?.trim() || null
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any)
+    .from('workspace_automation_settings')
+    .upsert(
+      {
+        workspace_id:           membership.workspace_id,
+        value_proposition:      get('value_proposition'),
+        workspace_tagline:      get('workspace_tagline'),
+        challenge_area:         get('challenge_area'),
+        fallback_sender_title:  get('fallback_sender_title'),
+        fallback_calendar_link: get('fallback_calendar_link'),
+        updated_by:             user.id,
+      },
+      { onConflict: 'workspace_id' }
+    )
+
+  redirect('/settings/automation?saved=outreach')
+}

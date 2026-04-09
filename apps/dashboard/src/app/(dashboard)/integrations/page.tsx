@@ -389,6 +389,73 @@ export default async function IntegrationsPage({
         />
       </section>
 
+      {/* Google Workspace & Cloud */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Google Workspace &amp; Cloud</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {([
+            {
+              id: 'google_calendar',
+              name: 'Google Calendar',
+              desc: 'Connect Google Calendar to let Sage read availability, create events, and manage your schedule.',
+              logo: '/integrations/google-calendar.png',
+              href: '/api/oauth/google-calendar',
+              isConnected: sageConnected.has('google_calendar'),
+              info: connectedProviderInfo['google_calendar'],
+            },
+            {
+              id: 'google_drive',
+              name: 'Google Drive',
+              desc: 'Index Google Drive files and folders into your knowledge base for instant bot answers.',
+              logo: '/integrations/google-drive.png',
+              href: '/api/oauth/google-drive',
+              isConnected: sageConnected.has('google_drive'),
+              info: connectedProviderInfo['google_drive'],
+            },
+            {
+              id: 'google_forms',
+              name: 'Google Forms',
+              desc: 'Capture form responses from Google Forms and route leads directly into Sage.',
+              logo: '/integrations/google-forms.png',
+              href: '/api/oauth/google-forms',
+              isConnected: sageConnected.has('google_forms'),
+              info: connectedProviderInfo['google_forms'],
+            },
+            {
+              id: 'google_chat',
+              name: 'Google Chat',
+              desc: 'Add your Appalix bot to Google Chat spaces — configure via Google Cloud Console.',
+              logo: '/integrations/google-chat.png',
+              href: '/integrations/new?platform=google_chat',
+              isConnected: false,
+              info: undefined,
+            },
+          ]).map(({ id, name, desc, logo, href, isConnected, info }) => (
+            <div key={id} className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-[#15A4AE]/30 p-4 flex items-start gap-3">
+              <div className="w-12 h-12 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 shadow-sm flex items-center justify-center shrink-0 overflow-hidden p-2">
+                <img src={logo} alt={name} className="w-full h-full object-contain" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{name}</p>
+                  {isConnected && <span className="text-xs text-green-600 dark:text-green-400 font-medium">Connected</span>}
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
+                {isConnected && info?.userName && (
+                  <p className="text-[11px] text-gray-400 mt-0.5">Connected by {info.userName}</p>
+                )}
+                <div className="mt-2">
+                  <a href={href} className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${isConnected ? 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/12' : 'bg-brand-600 hover:bg-brand-700 text-white'}`}>
+                    <Plug className="w-3 h-3" />
+                    {isConnected ? 'Reconnect' : id === 'google_chat' ? 'Set up' : 'Connect'}
+                  </a>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Microsoft — OneDrive */}
       <section className="mb-8">
         <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Microsoft</h2>

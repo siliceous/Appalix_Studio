@@ -105,8 +105,36 @@ function DonutChart({ segments, total, size = 130 }: { segments: DonutSegment[];
           contentStyle={{ fontSize: 11, borderRadius: 8, padding: '4px 8px' }} />}
       </PieChart>
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <span className="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-none">{total}</span>
+        <span className={`font-bold text-gray-900 dark:text-gray-100 leading-none ${size <= 60 ? 'text-sm' : size <= 80 ? 'text-lg' : 'text-xl'}`}>{total}</span>
       </div>
+    </div>
+  )
+}
+
+// ── Collapsed deck ────────────────────────────────────────────────────────────
+interface DeckCard { label: string; Icon: React.ElementType; iconCls: string; total: number; href: string }
+function CollapsedDeck({ cards, loadingDonut, onNavigate }: { cards: DeckCard[]; loadingDonut: string | null; onNavigate: (label: string, href: string) => void }) {
+  // Each non-last card shows its left 96px (icon + label), last card is fully visible
+  const PEEK   = 96   // px visible for non-last cards
+  const CARD_W = 150  // full card width
+  const totalW = PEEK * (cards.length - 1) + CARD_W
+  return (
+    <div className="relative" style={{ height: 36, width: totalW }}>
+      {cards.map((card, i) => (
+        <button
+          key={card.label}
+          onClick={() => onNavigate(card.label, card.href)}
+          title={card.label}
+          style={{ left: i * PEEK, zIndex: i + 1, width: CARD_W }}
+          className="absolute top-0 flex items-center gap-2 bg-white dark:bg-[#232323] border border-gray-200 dark:border-white/10 shadow-sm rounded-lg px-3 h-9 hover:shadow-md hover:z-50 hover:-translate-y-0.5 transition-all"
+        >
+          {loadingDonut === card.label
+            ? <Loader2 className={`w-3.5 h-3.5 animate-spin shrink-0 ${card.iconCls}`} />
+            : <card.Icon className={`w-3.5 h-3.5 shrink-0 ${card.iconCls}`} />}
+          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{card.label}</span>
+          <span className="text-xs font-bold text-gray-900 dark:text-gray-100 ml-auto shrink-0 pl-2">{card.total}</span>
+        </button>
+      ))}
     </div>
   )
 }
@@ -391,7 +419,7 @@ export function SageDashboardClient({
       (() => {
         let q = supabase.from('conversations')
           .select('id, title, platform, message_count, last_activity_at, ai_priority, ai_entities, bot:bots(name)')
-          .eq('workspace_id', workspaceId).eq('status', 'active').neq('platform', 'sms')
+          .eq('workspace_id', workspaceId).eq('status', 'active').neq('platform', 'sms').neq('platform', 'voice')
           .gte('last_activity_at', from).lte('last_activity_at', to)
           .order('last_activity_at', { ascending: false })
         if (viewAsUserId) q = (q as any).eq('assigned_to', viewAsUserId)
@@ -860,7 +888,7 @@ export function SageDashboardClient({
       )}
 
       {/* ── 4 Donut cards ──────────────────────────────────────────────── */}
-      <div className="mb-6">
+      <div className="mb-6 overflow-visible">
         {/* Section header with collapse toggle */}
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Overview</span>
@@ -874,69 +902,61 @@ export function SageDashboardClient({
         </div>
 
         {donutsCollapsed ? (
-          /* Collapsed: compact single-row pills */
-          <div className="flex flex-wrap gap-3">
-            {[
+          /* Collapsed: stacked deck */
+          <CollapsedDeck
+            cards={[
               { label: 'Emails',        Icon: Mail,          iconCls: 'text-blue-500',   total: visEmails.length,  href: viewAsUserId ? `/dashboard/email?viewAs=${viewAsUserId}`    : '/dashboard/email'    },
               { label: 'SMS',           Icon: Smartphone,    iconCls: 'text-[#7bcd13]',  total: visSms.length,     href: '/dashboard/sms'   },
               { label: 'Phone Calls',   Icon: Phone,         iconCls: 'text-[#eb5297]',  total: visCalls.length,   href: '/dashboard/calls' },
               { label: 'Conversations', Icon: MessageSquare, iconCls: 'text-purple-500', total: visBots.length,    href: viewAsUserId ? `/dashboard/bots?viewAs=${viewAsUserId}`    : '/dashboard/bots'    },
               { label: 'Forms',         Icon: FileText,      iconCls: 'text-green-500',  total: visForms.length,   href: viewAsUserId ? `/dashboard/forms?viewAs=${viewAsUserId}`   : '/dashboard/forms'   },
               { label: 'Tickets',       Icon: TicketIcon,    iconCls: 'text-amber-500',  total: tickets.length,    href: viewAsUserId ? `/dashboard/tickets?viewAs=${viewAsUserId}` : '/dashboard/tickets' },
-            ].map(card => {
-              const isLoading = loadingDonut === card.label
-              return (
-                <button key={card.label}
-                  onClick={() => { setLoadingDonut(card.label); router.push(card.href) }}
-                  className="flex items-center gap-2 bg-white dark:bg-[#232323] border dark:border-white/8 rounded-lg px-3 py-2 hover:shadow-sm hover:border-gray-300 dark:hover:border-white/15 transition-all">
-                  {isLoading
-                    ? <Loader2 className={`w-3.5 h-3.5 animate-spin ${card.iconCls}`} />
-                    : <card.Icon className={`w-3.5 h-3.5 ${card.iconCls}`} />}
-                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{card.label}</span>
-                  <span className="text-xs font-bold text-gray-900 dark:text-gray-100">{card.total}</span>
-                </button>
-              )
-            })}
-          </div>
+            ]}
+            loadingDonut={loadingDonut}
+            onNavigate={(label, href) => { setLoadingDonut(label); router.push(href) }}
+          />
         ) : (
-          /* Expanded: full donut cards */
-          <div className="grid grid-cols-6 gap-4">
+          /* Expanded: slim horizontal stat cards */
+          <div className="grid grid-cols-6 gap-3 overflow-visible">
             {[
-              { label: 'Emails',        sub: 'high & medium unread',  Icon: Mail,          iconCls: 'text-blue-200',   barColor: undefined,  barCls: 'bg-blue-600',   segs: emailSegs,  total: visEmails.length,  href: viewAsUserId ? `/dashboard/email?viewAs=${viewAsUserId}`    : '/dashboard/email'    },
-              { label: 'SMS',           sub: 'active threads',         Icon: Smartphone,    iconCls: 'text-white/70',   barColor: '#7bcd13',  barCls: '',              segs: smsSegs,    total: visSms.length,     href: '/dashboard/sms'   },
-              { label: 'Phone Calls',   sub: 'all calls',             Icon: Phone,         iconCls: 'text-white/70',   barColor: '#eb5297',  barCls: '',              segs: callSegs,   total: visCalls.length,   href: '/dashboard/calls' },
-              { label: 'Conversations', sub: 'high & medium active',  Icon: MessageSquare, iconCls: 'text-purple-200', barColor: undefined,  barCls: 'bg-purple-600', segs: botSegs,    total: visBots.length,    href: viewAsUserId ? `/dashboard/bots?viewAs=${viewAsUserId}`    : '/dashboard/bots'    },
-              { label: 'Forms',         sub: 'all submissions',       Icon: FileText,      iconCls: 'text-green-200',  barColor: undefined,  barCls: 'bg-green-600',  segs: formSegs,   total: visForms.length,   href: viewAsUserId ? `/dashboard/forms?viewAs=${viewAsUserId}`   : '/dashboard/forms'   },
-              { label: 'Tickets',       sub: 'all tickets',           Icon: TicketIcon,    iconCls: 'text-amber-200',  barColor: undefined,  barCls: 'bg-amber-500',  segs: ticketSegs, total: tickets.length,    href: viewAsUserId ? `/dashboard/tickets?viewAs=${viewAsUserId}` : '/dashboard/tickets' },
+              { label: 'Emails',        sub: 'unread',      Icon: Mail,          accentCls: 'bg-blue-600',   accentColor: undefined,  segs: emailSegs,  total: visEmails.length,  href: viewAsUserId ? `/dashboard/email?viewAs=${viewAsUserId}`    : '/dashboard/email'    },
+              { label: 'SMS',           sub: 'threads',     Icon: Smartphone,    accentCls: '',              accentColor: '#7bcd13',  segs: smsSegs,    total: visSms.length,     href: '/dashboard/sms'   },
+              { label: 'Phone Calls',   sub: 'calls',       Icon: Phone,         accentCls: '',              accentColor: '#eb5297',  segs: callSegs,   total: visCalls.length,   href: '/dashboard/calls' },
+              { label: 'Conversations', sub: 'active',      Icon: MessageSquare, accentCls: 'bg-purple-600', accentColor: undefined,  segs: botSegs,    total: visBots.length,    href: viewAsUserId ? `/dashboard/bots?viewAs=${viewAsUserId}`    : '/dashboard/bots'    },
+              { label: 'Forms',         sub: 'submissions', Icon: FileText,      accentCls: 'bg-green-600',  accentColor: undefined,  segs: formSegs,   total: visForms.length,   href: viewAsUserId ? `/dashboard/forms?viewAs=${viewAsUserId}`   : '/dashboard/forms'   },
+              { label: 'Tickets',       sub: 'open',        Icon: TicketIcon,    accentCls: 'bg-amber-500',  accentColor: undefined,  segs: ticketSegs, total: tickets.length,    href: viewAsUserId ? `/dashboard/tickets?viewAs=${viewAsUserId}` : '/dashboard/tickets' },
             ].map(card => {
               const isLoading = loadingDonut === card.label
+              const accentStyle = card.accentColor ? { backgroundColor: card.accentColor } : undefined
               return (
                 <button key={card.label}
                   onClick={() => { setLoadingDonut(card.label); router.push(card.href) }}
-                  className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-hidden flex flex-col items-center hover:shadow-md hover:border-gray-300 dark:hover:border-white/15 transition-all cursor-pointer w-full">
-                  {/* Coloured top bar */}
+                  className="relative bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-visible flex flex-col hover:shadow-md hover:border-gray-300 dark:hover:border-white/15 transition-all cursor-pointer w-full group">
+                  {/* Top colour bar */}
                   <div
-                    className={`w-full flex items-center justify-between px-4 py-2.5 ${card.barCls}`}
-                    style={card.barColor ? { backgroundColor: card.barColor } : undefined}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-t-xl ${card.accentCls}`}
+                    style={accentStyle}
                   >
-                    <p className="text-sm font-semibold text-white">{card.label}</p>
+                    <p className="text-xs font-semibold text-white truncate">{card.label}</p>
                     {isLoading
-                      ? <Loader2 className={`w-3.5 h-3.5 animate-spin ${card.iconCls}`} />
-                      : <card.Icon className={`w-3.5 h-3.5 ${card.iconCls}`} />}
+                      ? <Loader2 className="w-3 h-3 animate-spin text-white/70 shrink-0" />
+                      : <card.Icon className="w-3 h-3 text-white/70 shrink-0" />}
                   </div>
-                  {/* Donut + legend */}
-                  <div className="p-4 flex flex-col items-center w-full">
-                    <DonutChart segments={card.segs} total={card.total} />
-                    <div className="flex items-center gap-2.5 mt-2 text-[11px] flex-wrap justify-center">
-                      {card.segs.length > 0
-                        ? card.segs.map(s => (
-                            <span key={s.name} className="flex items-center gap-1">
-                              <span className="w-2 h-2 rounded-full" style={{ background: s.fill }} />
-                              <span className="text-gray-500 dark:text-gray-400">{s.value} {s.name.toLowerCase()}</span>
-                            </span>
-                          ))
-                        : <span className="text-gray-400 dark:text-gray-500 text-[11px]">coming soon</span>
-                      }
+                  {/* Content + donut */}
+                  <div className="flex-1 flex flex-col items-center justify-center px-3 py-4 overflow-visible h-[120px]">
+                    {/* Donut centered */}
+                    <div className="opacity-85 group-hover:opacity-100 transition-opacity relative z-10">
+                      <DonutChart segments={card.segs} total={card.total} size={72} />
+                    </div>
+                    {/* Segments in one row */}
+                    <div className="flex items-center gap-3 mt-2">
+                      {card.segs.map(s => (
+                        <span key={s.name} className="flex items-center gap-1 whitespace-nowrap">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: s.fill }} />
+                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 leading-none">{s.value}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 leading-none">{s.name}</span>
+                        </span>
+                      ))}
                     </div>
                   </div>
                 </button>

@@ -56,7 +56,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/webhooks') ||
     pathname.startsWith('/api/slack') ||
     pathname.startsWith('/api/widget-chat') ||
-    pathname.startsWith('/api/widget-config')
+    pathname.startsWith('/api/widget-config') ||
+    pathname.startsWith('/api/sage/automation-scheduler')
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone()

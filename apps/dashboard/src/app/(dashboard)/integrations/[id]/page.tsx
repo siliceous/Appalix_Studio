@@ -401,17 +401,36 @@ function GoogleChatSetup({
 
   return (
     <div className="space-y-5">
-      <SetupSection title="Google Chat app configuration">
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <SetupSection title="Step 1 — Enable Google Chat API">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           In{' '}
           <a href="https://console.cloud.google.com" target="_blank" rel="noreferrer" className="text-brand-600 hover:underline">
             Google Cloud Console
           </a>
-          , configure your Chat app to use HTTP endpoint and enter:
+          , go to <strong>APIs &amp; Services → Library</strong>, search for <strong>Google Chat API</strong>,
+          and click <strong>Enable</strong> (if not already enabled).
         </p>
+      </SetupSection>
+
+      <SetupSection title="Step 2 — Configure your Chat app">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Go to <strong>Google Chat API → Configuration</strong> in the Cloud Console.
+          Fill in the app name and avatar, then set the Connection settings:
+        </p>
+        <ul className="space-y-1.5 text-sm text-gray-600 dark:text-gray-400 list-disc list-inside mb-4">
+          <li>Connection type: <strong>HTTP endpoint URL</strong></li>
+          <li>Paste the URL below as the App URL</li>
+        </ul>
         <CopyField value={endpointUrl} />
         <p className="text-xs text-gray-400 mt-3">
-          Set the app&apos;s Connection settings to <strong>HTTP endpoint URL</strong> and paste the URL above.
+          Save the configuration — no OAuth review required for internal use.
+        </p>
+      </SetupSection>
+
+      <SetupSection title="Step 3 — Add the bot to a Space">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Open Google Chat, go to any Space (or create one), click <strong>Add people &amp; apps</strong>,
+          and search for your app by name. Once added, your bot will reply to every message in that Space.
         </p>
       </SetupSection>
     </div>
