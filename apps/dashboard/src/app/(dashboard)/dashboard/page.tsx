@@ -131,7 +131,7 @@ export default async function DashboardPage({
   ])
 
   return (
-    <div className="flex-1 overflow-y-auto -m-8">
+    <div className="-m-8">
       {viewAsUserId && overviewActivity && (
         <div className="mb-0">
           <TeamMemberBanner activity={overviewActivity} date={overviewActivityDate} currentPath="/dashboard" viewingAs={viewingAs} selectedDate={activityDate} />

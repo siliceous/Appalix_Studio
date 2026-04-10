@@ -132,7 +132,7 @@ export async function GET(req: NextRequest) {
   }
 
   // ── 7. Register app-level webhook (idempotent) and subscribe the page ──────
-  const apiUrl       = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://ap.appalix.ai'
+  const apiUrl       = process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://appalix-api.onrender.com'
   const webhookToken = process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN ?? ''
   const appToken     = `${appId}|${appSecret}`
 

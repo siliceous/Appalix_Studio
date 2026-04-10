@@ -63,6 +63,7 @@ export async function selectInstagramAccount(
   const appToken     = `${appId}|${appSecret}`
   const webhookToken = process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN ?? process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN ?? ''
 
+  // App subscription — page object (Messenger)
   try {
     await fetch(`https://graph.facebook.com/v18.0/${appId}/subscriptions`, {
       method:  'POST',
@@ -77,6 +78,22 @@ export async function selectInstagramAccount(
     })
   } catch { /* non-fatal */ }
 
+  // App subscription — instagram object (Instagram DMs)
+  try {
+    await fetch(`https://graph.facebook.com/v18.0/${appId}/subscriptions`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object:       'instagram',
+        callback_url: `${apiUrl}/webhooks/facebook`,
+        fields:       'messages,messaging_postbacks',
+        verify_token: webhookToken,
+        access_token: appToken,
+      }),
+    })
+  } catch { /* non-fatal */ }
+
+  // Subscribe the page
   try {
     await fetch(`https://graph.facebook.com/v18.0/${pick.pageId}/subscribed_apps`, {
       method:  'POST',
@@ -84,6 +101,17 @@ export async function selectInstagramAccount(
       body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks'], access_token: pick.accessToken }),
     })
   } catch { /* non-fatal */ }
+
+  // Subscribe the Instagram account directly
+  if (pick.igAccountId) {
+    try {
+      await fetch(`https://graph.facebook.com/v18.0/${pick.igAccountId}/subscribed_apps`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks'], access_token: pick.accessToken }),
+      })
+    } catch { /* non-fatal */ }
+  }
 
   return { integrationId: sessionId }
 }

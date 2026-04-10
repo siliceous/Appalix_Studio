@@ -545,6 +545,7 @@ export interface BuilderNode {
   label:         string
   config:        AutomationStepConfig
   delay_hours?:  number
+  position?:     { x: number; y: number }
 }
 
 export interface BuilderEdge {
@@ -570,6 +571,7 @@ export interface AutomationTemplate {
   steps:            AutomationStepDefinition[]
   entry_step_id:    string | null
   config_json:      BuilderGraph | null   // Builder graph (null for legacy templates)
+  track:            string | null         // Named grouping, e.g. "Lead Nurturing"
   is_active:        boolean
   is_system:        boolean
   version:          number

@@ -393,26 +393,60 @@ export function AutomationsClient({ templates: initialTemplates, running, histor
           <div className="flex-1 min-h-0 overflow-y-auto">
 
             {/* Templates tab */}
-            {tab === 'templates' && (
-              filteredTemplates.length === 0
-                ? <EmptyState
-                    icon={Zap}
-                    title="No templates yet"
-                    desc="Build your first automation template to start sending sequences."
-                    action="New Template"
-                    onAction={() => router.push('/sage/automation-builder')}
-                  />
-                : filteredTemplates.map(tpl => (
-                    <TemplateRow
-                      key={tpl.id}
-                      tpl={tpl}
-                      onEdit={id => router.push(`/sage/automation-builder?templateId=${id}`)}
-                      onDuplicate={handleDuplicate}
-                      onToggle={handleToggle}
-                      onDelete={handleDelete}
-                    />
-                  ))
-            )}
+            {tab === 'templates' && (() => {
+              if (filteredTemplates.length === 0) return (
+                <EmptyState
+                  icon={Zap}
+                  title="No templates yet"
+                  desc="Build your first automation template to start sending sequences."
+                  action="New Template"
+                  onAction={() => router.push('/sage/automation-builder')}
+                />
+              )
+              // Group by track
+              const tracked = filteredTemplates.filter(t => t.track)
+              const untracked = filteredTemplates.filter(t => !t.track)
+              const trackGroups: Record<string, typeof filteredTemplates> = {}
+              for (const t of tracked) {
+                const k = t.track!
+                trackGroups[k] = trackGroups[k] ?? []
+                trackGroups[k].push(t)
+              }
+              const renderRow = (tpl: AutomationTemplate) => (
+                <TemplateRow
+                  key={tpl.id}
+                  tpl={tpl}
+                  onEdit={id => router.push(`/sage/automation-builder?templateId=${id}`)}
+                  onDuplicate={handleDuplicate}
+                  onToggle={handleToggle}
+                  onDelete={handleDelete}
+                />
+              )
+              return (
+                <>
+                  {Object.entries(trackGroups).map(([track, tpls]) => (
+                    <div key={track}>
+                      <div className="px-5 py-2 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/6 flex items-center gap-2">
+                        <Zap className="w-3 h-3 text-violet-400 shrink-0" />
+                        <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{track}</span>
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500">{tpls.length} templates</span>
+                      </div>
+                      {tpls.map(renderRow)}
+                    </div>
+                  ))}
+                  {untracked.length > 0 && (
+                    <div>
+                      {Object.keys(trackGroups).length > 0 && (
+                        <div className="px-5 py-2 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/6">
+                          <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Custom</span>
+                        </div>
+                      )}
+                      {untracked.map(renderRow)}
+                    </div>
+                  )}
+                </>
+              )
+            })()}
 
             {/* Running tab */}
             {tab === 'running' && (

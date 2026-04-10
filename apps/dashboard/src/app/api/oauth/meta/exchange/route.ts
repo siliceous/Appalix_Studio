@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     // ── Auto-register app-level webhook (idempotent) ─────────────────────────
-    const apiUrl       = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://ap.appalix.ai'
+    const apiUrl       = process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://appalix-api.onrender.com'
     const webhookToken = process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN ?? verifyToken
     const appToken     = `${appId}|${appSecret}`
     try {
@@ -222,7 +222,7 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     const integrationId = (inserted as { id: string }).id
-    const apiUrl        = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://ap.appalix.ai'
+    const apiUrl        = process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://appalix-api.onrender.com'
     const appToken      = `${appId}|${appSecret}`
 
     // ── Auto-register app-level WhatsApp webhook ──────────────────────────────

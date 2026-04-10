@@ -458,9 +458,16 @@ export function ConversationPanelClient({
                   </div>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2 leading-snug">{preview}</p>
                   <div className="flex items-center gap-1.5 mt-1">
-                    {c.status === 'active' && (
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
-                    )}
+                    {c.status === 'active' && (() => {
+                      const mins = Math.floor((now - new Date(c.last_activity_at ?? 0).getTime()) / 60_000)
+                      const alive = mins < 5
+                      return (
+                        <span className={`relative flex w-2 h-2 shrink-0 ${alive ? '' : 'items-center justify-center'}`}>
+                          {alive && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#15A4AE] opacity-60" />}
+                          <span className={`relative inline-flex rounded-full w-1.5 h-1.5 ${alive ? 'bg-[#15A4AE]' : 'bg-gray-400'}`} />
+                        </span>
+                      )
+                    })()}
                     {c.ai_priority === 'high'   && <span className="text-[10px] font-semibold text-green-600 dark:text-green-400">High</span>}
                     {c.ai_priority === 'medium' && <span className="text-[10px] font-semibold text-yellow-600 dark:text-yellow-400">Medium</span>}
                     {c.ai_priority === 'low'    && <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500">Low</span>}
@@ -509,8 +516,11 @@ export function ConversationPanelClient({
               )}
               {/* Online / inactive indicator */}
               <div className="flex items-center gap-1 mt-0.5">
-                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isUserActive ? 'bg-green-400' : 'bg-gray-500'}`} />
-                <span className={`text-[10px] leading-none ${isUserActive ? 'text-green-400' : 'text-gray-500'}`}>
+                <span className={`relative flex w-2 h-2 shrink-0 ${isUserActive ? '' : 'items-center justify-center'}`}>
+                  {isUserActive && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#15A4AE] opacity-60" />}
+                  <span className={`relative inline-flex rounded-full w-1.5 h-1.5 ${isUserActive ? 'bg-[#15A4AE]' : 'bg-gray-400'}`} />
+                </span>
+                <span className={`text-[10px] leading-none ${isUserActive ? 'text-[#15A4AE]' : 'text-gray-400'}`}>
                   {isUserActive
                     ? 'Active now'
                     : minutesSinceActivity < 60

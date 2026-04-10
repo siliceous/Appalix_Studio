@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { getAutomationTemplate } from '@/app/actions/automation-templates-service'
+import { getAutomationTemplate, listAutomationTemplates } from '@/app/actions/automation-templates-service'
 import { BuilderClient } from './builder-client'
 
 export const metadata: Metadata = { title: 'Automation Builder · Sage' }
@@ -16,7 +16,12 @@ export default async function AutomationBuilderPage({ searchParams }: Props) {
   if (!user) redirect('/login')
 
   const { templateId } = await searchParams
-  const template = templateId ? await getAutomationTemplate(templateId) : null
+  const [template, allTemplates] = await Promise.all([
+    templateId ? getAutomationTemplate(templateId) : Promise.resolve(null),
+    listAutomationTemplates({ includeInactive: false }),
+  ])
 
-  return <BuilderClient template={template ?? null} />
+  const systemTemplates = allTemplates.filter(t => t.is_system)
+
+  return <BuilderClient template={template ?? null} systemTemplates={systemTemplates} />
 }

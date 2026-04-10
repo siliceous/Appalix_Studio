@@ -17,6 +17,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.6",
+    "@xyflow/react": "^12.10.2",
     "clsx": "^2.1.1",
     "framer-motion": "^12.34.3",
     "libphonenumber-js": "^1.12.41",
