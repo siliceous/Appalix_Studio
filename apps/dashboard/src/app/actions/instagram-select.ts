@@ -58,12 +58,14 @@ export async function selectInstagramAccount(
 
   if (updateErr) return { error: updateErr.message }
 
-  // Register webhook — use Messenger app (already approved) routing via Facebook webhook
   const apiUrl       = process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://appalix-api.onrender.com'
   const appToken     = `${appId}|${appSecret}`
+  const igAppId      = process.env.INSTAGRAM_APP_ID || appId
+  const igAppSecret  = process.env.INSTAGRAM_APP_SECRET || appSecret
+  const igAppToken   = `${igAppId}|${igAppSecret}`
   const webhookToken = process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN ?? process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN ?? ''
 
-  // App subscription — page object (Messenger)
+  // Messenger app — object:page subscription
   try {
     await fetch(`https://graph.facebook.com/v18.0/${appId}/subscriptions`, {
       method:  'POST',
@@ -78,9 +80,9 @@ export async function selectInstagramAccount(
     })
   } catch { /* non-fatal */ }
 
-  // App subscription — instagram object (Instagram DMs)
+  // Instagram app — object:instagram subscription
   try {
-    await fetch(`https://graph.facebook.com/v18.0/${appId}/subscriptions`, {
+    await fetch(`https://graph.facebook.com/v18.0/${igAppId}/subscriptions`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -88,12 +90,12 @@ export async function selectInstagramAccount(
         callback_url: `${apiUrl}/webhooks/facebook`,
         fields:       'messages,messaging_postbacks',
         verify_token: webhookToken,
-        access_token: appToken,
+        access_token: igAppToken,
       }),
     })
   } catch { /* non-fatal */ }
 
-  // Subscribe the page
+  // Subscribe the page (Messenger app)
   try {
     await fetch(`https://graph.facebook.com/v18.0/${pick.pageId}/subscribed_apps`, {
       method:  'POST',
@@ -102,13 +104,13 @@ export async function selectInstagramAccount(
     })
   } catch { /* non-fatal */ }
 
-  // Subscribe the Instagram account directly
+  // Subscribe the Instagram account (Instagram app token)
   if (pick.igAccountId) {
     try {
       await fetch(`https://graph.facebook.com/v18.0/${pick.igAccountId}/subscribed_apps`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks'], access_token: pick.accessToken }),
+        body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks'], access_token: igAppToken }),
       })
     } catch { /* non-fatal */ }
   }

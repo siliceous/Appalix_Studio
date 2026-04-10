@@ -269,7 +269,12 @@ async function registerWebhook(appId: string, appSecret: string, pageId: string,
   const appToken     = `${appId}|${appSecret}`
   const webhookToken = process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN ?? process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN ?? ''
 
-  // App-level subscription for page (Messenger DMs)
+  // Instagram app — separate app with Instagram product configured
+  const igAppId     = process.env.INSTAGRAM_APP_ID || appId
+  const igAppSecret = process.env.INSTAGRAM_APP_SECRET || appSecret
+  const igAppToken  = `${igAppId}|${igAppSecret}`
+
+  // 1. Messenger app — object:page subscription (Messenger DMs)
   try {
     const subRes  = await fetch(`https://graph.facebook.com/v18.0/${appId}/subscriptions`, {
       method:  'POST',
@@ -288,9 +293,9 @@ async function registerWebhook(appId: string, appSecret: string, pageId: string,
     console.error('[oauth/instagram/callback] page app subscription failed:', err)
   }
 
-  // App-level subscription for instagram object (Instagram DMs)
+  // 2. Instagram app — object:instagram subscription (Instagram DMs)
   try {
-    const igSubRes  = await fetch(`https://graph.facebook.com/v18.0/${appId}/subscriptions`, {
+    const igSubRes  = await fetch(`https://graph.facebook.com/v18.0/${igAppId}/subscriptions`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -298,7 +303,7 @@ async function registerWebhook(appId: string, appSecret: string, pageId: string,
         callback_url: `${apiUrl}/webhooks/facebook`,
         fields:       'messages,messaging_postbacks',
         verify_token: webhookToken,
-        access_token: appToken,
+        access_token: igAppToken,
       }),
     })
     const igSubData = await igSubRes.json()
@@ -307,7 +312,7 @@ async function registerWebhook(appId: string, appSecret: string, pageId: string,
     console.error('[oauth/instagram/callback] instagram app subscription failed:', err)
   }
 
-  // Subscribe the Facebook Page
+  // 3. Subscribe the Facebook Page (Messenger app)
   if (pageId && pageAccessToken) {
     try {
       const pageSubRes  = await fetch(
@@ -325,15 +330,15 @@ async function registerWebhook(appId: string, appSecret: string, pageId: string,
     }
   }
 
-  // Subscribe the Instagram account directly
-  if (igAccountId && pageAccessToken) {
+  // 4. Subscribe the Instagram account (Instagram app token)
+  if (igAccountId) {
     try {
       const igAccRes  = await fetch(
         `https://graph.facebook.com/v18.0/${igAccountId}/subscribed_apps`,
         {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks'], access_token: pageAccessToken }),
+          body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks'], access_token: igAppToken }),
         }
       )
       const igAccData = await igAccRes.json()

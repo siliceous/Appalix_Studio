@@ -21,15 +21,18 @@ export async function resubscribeInstagramWebhooks(integrationId: string): Promi
   const pageId       = cfg.page_id
   const igAccountId  = cfg.instagram_account_id
   const accessToken  = cfg.page_access_token || cfg.access_token
-  const appId        = process.env.MESSENGER_APP_ID || process.env.INSTAGRAM_APP_ID || process.env.META_APP_ID || ''
+  const appId        = process.env.MESSENGER_APP_ID || process.env.META_APP_ID || ''
   const appSecret    = process.env.MESSENGER_APP_SECRET || cfg.app_secret || process.env.META_APP_SECRET || ''
   const appToken     = `${appId}|${appSecret}`
+  const igAppId      = process.env.INSTAGRAM_APP_ID || appId
+  const igAppSecret  = process.env.INSTAGRAM_APP_SECRET || appSecret
+  const igAppToken   = `${igAppId}|${igAppSecret}`
   const apiUrl       = process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://appalix-api.onrender.com'
   const verifyToken  = process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN ?? process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN ?? ''
 
   const results: string[] = []
 
-  // 1. App-level subscription — page object (Messenger)
+  // 1. Messenger app — object:page subscription
   try {
     const res  = await fetch(`https://graph.facebook.com/v18.0/${appId}/subscriptions`, {
       method:  'POST',
@@ -48,9 +51,9 @@ export async function resubscribeInstagramWebhooks(integrationId: string): Promi
     results.push(`Page app sub error: ${err}`)
   }
 
-  // 2. App-level subscription — instagram object (Instagram DMs)
+  // 2. Instagram app — object:instagram subscription
   try {
-    const res  = await fetch(`https://graph.facebook.com/v18.0/${appId}/subscriptions`, {
+    const res  = await fetch(`https://graph.facebook.com/v18.0/${igAppId}/subscriptions`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -58,7 +61,7 @@ export async function resubscribeInstagramWebhooks(integrationId: string): Promi
         callback_url: `${apiUrl}/webhooks/facebook`,
         fields:       'messages,messaging_postbacks',
         verify_token: verifyToken,
-        access_token: appToken,
+        access_token: igAppToken,
       }),
     })
     const data = await res.json()
@@ -67,7 +70,7 @@ export async function resubscribeInstagramWebhooks(integrationId: string): Promi
     results.push(`Instagram app sub error: ${err}`)
   }
 
-  // 3. Page subscription
+  // 3. Page subscription (Messenger app)
   if (pageId && accessToken) {
     try {
       const res  = await fetch(`https://graph.facebook.com/v18.0/${pageId}/subscribed_apps`, {
@@ -82,13 +85,13 @@ export async function resubscribeInstagramWebhooks(integrationId: string): Promi
     }
   }
 
-  // 4. Instagram account subscription
-  if (igAccountId && accessToken) {
+  // 4. Instagram account subscription (Instagram app token)
+  if (igAccountId) {
     try {
       const res  = await fetch(`https://graph.facebook.com/v18.0/${igAccountId}/subscribed_apps`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks'], access_token: accessToken }),
+        body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks'], access_token: igAppToken }),
       })
       const data = await res.json()
       results.push(`IG account sub: ${data.success ? 'OK' : JSON.stringify(data)}`)
