@@ -317,17 +317,15 @@ export async function sendAgentReply(
     const pageAccessToken = cfg.page_access_token ?? cfg.access_token
     if (!pageAccessToken) return { error: 'No page access token in integration config' }
 
-    const endpoint = conv.platform === 'instagram'
-      ? 'https://graph.facebook.com/v21.0/me/messages'
-      : 'https://graph.facebook.com/v21.0/me/messages'
+    const endpoint = `https://graph.facebook.com/v21.0/me/messages?access_token=${encodeURIComponent(pageAccessToken)}`
 
     const fbRes = await fetch(endpoint, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        recipient:    { id: recipientId },
-        message:      { text: content },
-        access_token: pageAccessToken,
+        recipient:      { id: recipientId },
+        message:        { text: content },
+        messaging_type: 'RESPONSE',
       }),
     })
 
