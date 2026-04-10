@@ -45,19 +45,18 @@ export async function facebookRoutes(fastify: FastifyInstance) {
       // Acknowledge immediately
       reply.status(200).send()
 
-      console.log('[facebook global webhook] received body type:', (body as Record<string,unknown>).object)
+      const objectType = (body as Record<string,unknown>).object as string
+      console.log('[facebook global webhook] received body type:', objectType)
       const entries = (body as never as { entry?: { id: string; messaging?: unknown[] }[] }).entry ?? []
       const pageId  = entries[0]?.id
       console.log('[facebook global webhook] page_id from entry:', pageId, '— entry count:', entries.length)
       if (!pageId) return
 
-      // Try Facebook Messenger integration first, then Instagram (IG DMs arrive as page events)
-      let integration = await resolveIntegrationByConfig('facebook_messenger', 'page_id', pageId)
-      const isInstagram = !integration
-
-      if (!integration) {
-        integration = await resolveIntegrationByConfig('instagram', 'page_id', pageId)
-      }
+      // Route by object type: 'instagram' → Instagram, 'page' → Messenger
+      const isInstagram = objectType === 'instagram'
+      let integration = isInstagram
+        ? await resolveIntegrationByConfig('instagram', 'page_id', pageId)
+        : await resolveIntegrationByConfig('facebook_messenger', 'page_id', pageId)
 
       if (!integration) {
         console.warn('[facebook global webhook] no integration found for page_id:', pageId)
