@@ -81,7 +81,7 @@ export async function selectInstagramAccount(
     await fetch(`https://graph.facebook.com/v18.0/${pick.pageId}/subscribed_apps`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks', 'instagram'], access_token: pick.accessToken }),
+      body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks'], access_token: pick.accessToken }),
     })
   } catch { /* non-fatal */ }
 

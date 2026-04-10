@@ -54,7 +54,7 @@ export async function resubscribeInstagramWebhooks(integrationId: string): Promi
       const res  = await fetch(`https://graph.facebook.com/v18.0/${pageId}/subscribed_apps`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks', 'instagram'], access_token: accessToken }),
+        body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks'], access_token: accessToken }),
       })
       const data = await res.json()
       results.push(`Page subscription: ${data.success ? 'OK' : JSON.stringify(data)}`)

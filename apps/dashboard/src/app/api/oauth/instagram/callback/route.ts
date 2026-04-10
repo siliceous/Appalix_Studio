@@ -296,7 +296,7 @@ async function registerWebhook(appId: string, appSecret: string, pageId: string,
         {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks', 'instagram'], access_token: pageAccessToken }),
+          body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks'], access_token: pageAccessToken }),
         }
       )
       const pageSubData = await pageSubRes.json()
