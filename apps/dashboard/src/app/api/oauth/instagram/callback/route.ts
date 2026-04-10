@@ -267,7 +267,7 @@ export async function GET(req: NextRequest) {
 async function registerWebhook(appId: string, appSecret: string, pageId: string, pageAccessToken: string) {
   const apiUrl       = process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.appalix.ai'
   const appToken     = `${appId}|${appSecret}`
-  const webhookToken = process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN ?? process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN ?? ''
+  const webhookToken = process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN ?? process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN ?? ''
 
   // Register the Messenger app to receive 'page' events (covers instagram DMs via page)
   try {
