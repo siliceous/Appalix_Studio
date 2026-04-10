@@ -10,7 +10,7 @@ import {
   Plus, Kanban, Zap, RefreshCw, Calendar,
   ChevronDown, X, CheckCircle2,
   Sparkles, LayoutList, LayoutGrid,
-  Loader2, TrendingUp, BarChart2, CreditCard,
+  Loader2, TrendingUp, BarChart2, CreditCard, Settings,
   Smartphone, Phone,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
