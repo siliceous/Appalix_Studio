@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { updateAutoSetting, type AutoSettings } from '@/app/actions/sage-auto-settings'
 import { useUserAvatar } from '@/contexts/user-avatar-context'
+import { NotificationBell } from '@/components/layout/notification-bell'
 
 export type SubpagePreset = 'all' | 'today' | 'yesterday' | '7d' | '30d' | 'custom'
 export type SubpageSource = 'email' | 'bots' | 'forms' | 'tickets'
@@ -82,7 +83,7 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
   const calRef     = useRef<HTMLDivElement>(null)
   const profileRef = useRef<HTMLDivElement>(null)
 
-  const { avatarUrl, userName, plan, brandColor } = useUserAvatar()
+  const { avatarUrl, userName, plan, brandColor, workspaceId } = useUserAvatar()
   const initials = userName
     ? userName.split(' ').map((w: string) => w[0]).slice(0, 2).join('')
     : '?'
@@ -330,6 +331,9 @@ export function SubpageToolbar({ sourceKey, preset, autoEnabled, customFrom, cus
           <span>Auto</span>
           <span className="font-bold">{localAuto ? 'ON' : 'OFF'}</span>
         </button>
+
+        {/* Notification bell */}
+        {workspaceId && <NotificationBell workspaceId={workspaceId} dark />}
 
         {/* Profile avatar + dropdown */}
         <div className="relative ml-2" ref={profileRef}>

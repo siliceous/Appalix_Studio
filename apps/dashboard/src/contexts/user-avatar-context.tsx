@@ -9,6 +9,7 @@ interface UserAvatarContextValue {
   plan:         string
   brandColor:   string
   bgColor:      string | null
+  workspaceId:  string
 }
 
 const UserAvatarContext = createContext<UserAvatarContextValue>({
@@ -18,6 +19,7 @@ const UserAvatarContext = createContext<UserAvatarContextValue>({
   plan:         'free',
   brandColor:   '#141C2B',
   bgColor:      null,
+  workspaceId:  '',
 })
 
 export function UserAvatarProvider({
@@ -27,23 +29,26 @@ export function UserAvatarProvider({
   plan,
   brandColor,
   bgColor,
+  workspaceId,
 }: {
-  children:    React.ReactNode
-  initialUrl:  string | null
-  userName?:   string | null
-  plan?:       string
-  brandColor?: string
-  bgColor?:    string | null
+  children:     React.ReactNode
+  initialUrl:   string | null
+  userName?:    string | null
+  plan?:        string
+  brandColor?:  string
+  bgColor?:     string | null
+  workspaceId?: string
 }) {
   const [avatarUrl, setAvatarUrl] = useState(initialUrl)
   return (
     <UserAvatarContext.Provider value={{
       avatarUrl,
       setAvatarUrl,
-      userName:   userName   ?? null,
-      plan:       plan       ?? 'free',
-      brandColor: brandColor ?? '#141C2B',
-      bgColor:    bgColor    ?? null,
+      userName:    userName    ?? null,
+      plan:        plan        ?? 'free',
+      brandColor:  brandColor  ?? '#141C2B',
+      bgColor:     bgColor     ?? null,
+      workspaceId: workspaceId ?? '',
     }}>
       {children}
     </UserAvatarContext.Provider>

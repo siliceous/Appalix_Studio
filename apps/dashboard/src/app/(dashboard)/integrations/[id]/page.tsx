@@ -11,6 +11,7 @@ import { SlackChannelPicker } from './slack-channel-picker'
 import { FacebookPageSwitcher } from './facebook-page-switcher'
 import { DeleteIntegrationButton } from './delete-integration-button'
 import { ShopifyInjectButton } from './shopify-inject-button'
+import { InstagramResubscribeButton } from './instagram-resubscribe-button'
 
 export const metadata: Metadata = { title: 'Integration setup' }
 
@@ -514,6 +515,7 @@ function TelegramSetup({
 // ─── Instagram ────────────────────────────────────────────────────────────────
 
 function InstagramSetup({
+  integrationId,
   cfg,
 }: {
   integrationId: string
@@ -562,6 +564,14 @@ function InstagramSetup({
             Message Control must be enabled in Instagram Professional Settings
           </li>
         </ul>
+      </SetupSection>
+
+      <SetupSection title="Webhook Subscriptions">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          If your bot isn't responding to DMs, click below to re-register the webhook subscriptions
+          with Meta. This is safe to run at any time.
+        </p>
+        <InstagramResubscribeButton integrationId={integrationId} />
       </SetupSection>
 
       <SetupSection title="Testing">

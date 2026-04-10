@@ -8,7 +8,8 @@ import { createClient } from '@/lib/supabase/server'
  *   bot_id  – Appalix bot to attach
  */
 export async function GET(req: NextRequest) {
-  const appId = process.env.INSTAGRAM_APP_ID || process.env.META_APP_ID || process.env.FACEBOOK_APP_ID
+  // Use the Messenger app — it's already Live + approved for page messaging + instagram events
+  const appId = process.env.MESSENGER_APP_ID || process.env.INSTAGRAM_APP_ID || process.env.META_APP_ID || process.env.FACEBOOK_APP_ID
   if (!appId) {
     return NextResponse.json({ error: 'Instagram OAuth not configured' }, { status: 500 })
   }

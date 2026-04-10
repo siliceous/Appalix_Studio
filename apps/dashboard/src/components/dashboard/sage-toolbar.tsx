@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { useUserAvatar } from '@/contexts/user-avatar-context'
 import { updateAutoSetting, type AutoSettings } from '@/app/actions/sage-auto-settings'
+import { NotificationBell } from '@/components/layout/notification-bell'
 
 export type SagePageKey =
   | 'bots' | 'integrations' | 'sources'
@@ -138,7 +139,7 @@ export function SageToolbar({ pageKey, preset, autoEnabled, customFrom, customTo
   const sageMenuRef    = useRef<HTMLDivElement>(null)
   const overviewMenuRef = useRef<HTMLDivElement>(null)
 
-  const { avatarUrl, userName, plan, brandColor } = useUserAvatar()
+  const { avatarUrl, userName, plan, brandColor, workspaceId } = useUserAvatar()
   const initials = userName
     ? userName.split(' ').map((w: string) => w[0]).slice(0, 2).join('')
     : '?'
@@ -499,6 +500,9 @@ export function SageToolbar({ pageKey, preset, autoEnabled, customFrom, customTo
             )}
           </div>
         )}
+
+        {/* Notification bell */}
+        {workspaceId && <NotificationBell workspaceId={workspaceId} dark />}
 
         {/* Profile avatar + dropdown */}
         <div className="relative ml-2" ref={profileRef}>

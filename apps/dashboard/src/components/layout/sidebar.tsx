@@ -26,6 +26,7 @@ import {
   Zap,
   Palette,
   LayoutTemplate,
+  GitBranch,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -76,8 +77,9 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/sage/branding',    label: 'Branding',        icon: Palette,        permissionKey: 'can_view_pipelines' },
       { href: '/sage/prospects',   label: 'Lead Enrichment', icon: Target,         permissionKey: 'can_view_pipelines' },
-      { href: '/sage/automations', label: 'Automations',     icon: Zap,            permissionKey: 'can_view_pipelines' },
-      { href: '/sage/templates',   label: 'Templates',       icon: LayoutTemplate, permissionKey: 'can_view_pipelines' },
+      { href: '/sage/automations',        label: 'Automations',    icon: Zap,            permissionKey: 'can_view_pipelines' },
+      { href: '/sage/automation-builder', label: 'Flow Builder',   icon: GitBranch,      permissionKey: 'can_view_pipelines' },
+      { href: '/sage/templates',          label: 'Templates',      icon: LayoutTemplate, permissionKey: 'can_view_pipelines' },
       { href: '/sage/rules',       label: 'Rules',           icon: ListFilter,     adminOnly: true                     },
     ],
   },
@@ -283,8 +285,9 @@ export function Sidebar({ workspace, callerRole, userPermissions, branding }: Si
           })}
         </nav>
 
-        {/* ── Sign out ──────────────────────────────────────────── */}
-        <div className="px-2 pb-4 pt-3 border-t dark:border-white/8 shrink-0">
+        {/* ── Notifications + Sign out ───────────────────────────── */}
+        <div className="px-2 pb-4 pt-3 border-t dark:border-white/8 shrink-0 space-y-0.5">
+            {/* Sign out */}
           <button
             onClick={signOut}
             title="Sign out"

@@ -35,8 +35,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${appUrl}/integrations/new?platform=instagram&error=missing_context`)
   }
 
-  const appId       = process.env.INSTAGRAM_APP_ID || process.env.META_APP_ID || process.env.FACEBOOK_APP_ID || ''
-  const appSecret   = process.env.INSTAGRAM_APP_SECRET || process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || ''
+  // Use the Messenger app — already Live + approved; Instagram events route via the Facebook webhook
+  const appId       = process.env.MESSENGER_APP_ID || process.env.INSTAGRAM_APP_ID || process.env.META_APP_ID || process.env.FACEBOOK_APP_ID || ''
+  const appSecret   = process.env.MESSENGER_APP_SECRET || process.env.INSTAGRAM_APP_SECRET || process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || ''
   const redirectUri = `${appUrl}/api/oauth/instagram/callback`
 
   // ── 2. Exchange code → short-lived token ─────────────────────────────────
@@ -258,24 +259,25 @@ export async function GET(req: NextRequest) {
   }
 
   const integrationId = (inserted as { id: string }).id
-  await registerWebhook(appId, appSecret, pick.pageId, pick.igAccountId, pick.accessToken)
+  await registerWebhook(appId, appSecret, pick.pageId, pick.accessToken)
 
   return NextResponse.redirect(`${appUrl}/integrations/${integrationId}?connected=instagram`)
 }
 
-async function registerWebhook(appId: string, appSecret: string, pageId: string, igAccountId: string, pageAccessToken: string) {
-  const apiUrl       = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.appalix.ai'
+async function registerWebhook(appId: string, appSecret: string, pageId: string, pageAccessToken: string) {
+  const apiUrl       = process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.appalix.ai'
   const appToken     = `${appId}|${appSecret}`
   const webhookToken = process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN ?? process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN ?? ''
 
+  // Register the Messenger app to receive 'page' events (covers instagram DMs via page)
   try {
     const subRes  = await fetch(`https://graph.facebook.com/v18.0/${appId}/subscriptions`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        object:       'instagram',
-        callback_url: `${apiUrl}/webhooks/instagram`,
-        fields:       'messages',
+        object:       'page',
+        callback_url: `${apiUrl}/webhooks/facebook`,
+        fields:       'messages,messaging_postbacks',
         verify_token: webhookToken,
         access_token: appToken,
       }),
@@ -286,7 +288,7 @@ async function registerWebhook(appId: string, appSecret: string, pageId: string,
     console.error('[oauth/instagram/callback] webhook registration failed:', err)
   }
 
-  // Subscribe the Facebook Page with both messenger + instagram fields
+  // Subscribe the Facebook Page — include 'instagram' so DMs to the IG account arrive here too
   if (pageId && pageAccessToken) {
     try {
       const pageSubRes  = await fetch(
@@ -294,31 +296,13 @@ async function registerWebhook(appId: string, appSecret: string, pageId: string,
         {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ subscribed_fields: ['messages', 'instagram'], access_token: pageAccessToken }),
+          body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks', 'instagram'], access_token: pageAccessToken }),
         }
       )
       const pageSubData = await pageSubRes.json()
       console.log('[oauth/instagram/callback] page subscription result:', JSON.stringify(pageSubData))
     } catch (err) {
       console.error('[oauth/instagram/callback] page subscription failed:', err)
-    }
-  }
-
-  // Subscribe the Instagram Business Account (required for Instagram DM webhooks)
-  if (igAccountId && pageAccessToken) {
-    try {
-      const igSubRes  = await fetch(
-        `https://graph.facebook.com/v18.0/${igAccountId}/subscribed_apps`,
-        {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ subscribed_fields: ['messages'], access_token: pageAccessToken }),
-        }
-      )
-      const igSubData = await igSubRes.json()
-      console.log('[oauth/instagram/callback] ig account subscription result:', JSON.stringify(igSubData))
-    } catch (err) {
-      console.error('[oauth/instagram/callback] ig account subscription failed:', err)
     }
   }
 }

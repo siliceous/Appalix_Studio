@@ -10,7 +10,7 @@ import {
   Plus, Kanban, Zap, RefreshCw, Calendar,
   ChevronDown, X, CheckCircle2,
   Sparkles, LayoutList, LayoutGrid,
-  Loader2, Settings, TrendingUp, BarChart2, CreditCard,
+  Loader2, TrendingUp, BarChart2, CreditCard,
   Smartphone, Phone,
 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
@@ -24,6 +24,7 @@ import type { WorkspaceMemberRole } from '@/lib/types'
 import { ROLE_RANK } from '@/lib/types'
 import { ItemPopup } from '@/components/inbox/ItemPopup'
 import type { PopupState } from '@/components/inbox/ItemPopup'
+import { NotificationBell } from '@/components/layout/notification-bell'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type DatePreset = 'today' | 'yesterday' | '7d' | '30d' | 'custom'
@@ -111,28 +112,46 @@ function DonutChart({ segments, total, size = 130 }: { segments: DonutSegment[];
   )
 }
 
-// ── Collapsed deck ────────────────────────────────────────────────────────────
-interface DeckCard { label: string; Icon: React.ElementType; iconCls: string; total: number; href: string }
+// ── Collapsed deck (drawer file tabs) ────────────────────────────────────────
+interface DeckCard { label: string; Icon: React.ElementType; color: string; total: number; href: string }
 function CollapsedDeck({ cards, loadingDonut, onNavigate }: { cards: DeckCard[]; loadingDonut: string | null; onNavigate: (label: string, href: string) => void }) {
-  // Each non-last card shows its left 96px (icon + label), last card is fully visible
-  const PEEK   = 96   // px visible for non-last cards
-  const CARD_W = 150  // full card width
-  const totalW = PEEK * (cards.length - 1) + CARD_W
   return (
-    <div className="relative" style={{ height: 36, width: totalW }}>
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', height: 52, overflow: 'visible' }}>
       {cards.map((card, i) => (
         <button
           key={card.label}
           onClick={() => onNavigate(card.label, card.href)}
-          title={card.label}
-          style={{ left: i * PEEK, zIndex: i + 1, width: CARD_W }}
-          className="absolute top-0 flex items-center gap-2 bg-white dark:bg-[#232323] border border-gray-200 dark:border-white/10 shadow-sm rounded-lg px-3 h-9 hover:shadow-md hover:z-50 hover:-translate-y-0.5 transition-all"
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.zIndex = '50' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.zIndex = String(i + 1) }}
+          style={{
+            position: 'relative',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            height: 38,
+            padding: '0 10px',
+            marginLeft: i === 0 ? 0 : -18,
+            borderRadius: '10px 10px 0 0',
+            flex: 1,
+            minWidth: 0,
+            zIndex: i + 1,
+            background: card.color,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: 'pointer',
+            border: 'none',
+            color: 'white',
+            overflow: 'hidden',
+          }}
         >
           {loadingDonut === card.label
-            ? <Loader2 className={`w-3.5 h-3.5 animate-spin shrink-0 ${card.iconCls}`} />
-            : <card.Icon className={`w-3.5 h-3.5 shrink-0 ${card.iconCls}`} />}
-          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{card.label}</span>
-          <span className="text-xs font-bold text-gray-900 dark:text-gray-100 ml-auto shrink-0 pl-2">{card.total}</span>
+            ? <Loader2 style={{ width: 13, height: 13, flexShrink: 0 }} className="animate-spin" />
+            : <card.Icon style={{ width: 13, height: 13, flexShrink: 0 }} />}
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{card.label}</span>
+          <span style={{ minWidth: 20, height: 20, borderRadius: 999, background: 'rgba(255,255,255,0.18)', fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px', flexShrink: 0 }}>
+            {card.total}
+          </span>
         </button>
       ))}
     </div>
@@ -213,8 +232,9 @@ export function SageDashboardClient({
   const feedCalRef = useRef<HTMLDivElement>(null)
   const [topType,     setTopType]    = useState<'email' | 'bot' | 'sms' | 'call' | 'form' | 'ticket' | null>(null)
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
-  const [donutsCollapsed, setDonutsCollapsed] = useState(false)
-  const [loadingDonut,    setLoadingDonut]    = useState<string | null>(null)
+  const [donutsCollapsed,  setDonutsCollapsed]  = useState(false)
+  const [loadingDonut,     setLoadingDonut]     = useState<string | null>(null)
+  const [collapsingCard,   setCollapsingCard]   = useState<string | null>(null)
   const [showProfile,     setShowProfile]     = useState(false)
   const profileRef = useRef<HTMLDivElement>(null)
   const router      = useRouter()
@@ -225,7 +245,7 @@ export function SageDashboardClient({
   useEffect(() => { setLoadingDonut(null) }, [pathname])
 
   // Avatar context
-  const { avatarUrl, userName: avatarUserName, plan, brandColor } = useUserAvatar()
+  const { avatarUrl, userName: avatarUserName, plan, brandColor, workspaceId: ctxWorkspaceId } = useUserAvatar()
   const initials = avatarUserName
     ? avatarUserName.split(' ').map((w: string) => w[0]).slice(0, 2).join('')
     : '?'
@@ -297,9 +317,6 @@ export function SageDashboardClient({
   const [contactMatches, setContactMatches] = useState<Record<string, ContactMatch | null | undefined>>({})
   const [showAutoDesc, setShowAutoDesc] = useState(false)
   const autoDescTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [showSettingsMenu, setShowSettingsMenu] = useState(false)
-  const settingsMenuRef = useRef<HTMLDivElement>(null)
-
   // Load preferences + DB settings on mount
   useEffect(() => {
     const r = localStorage.getItem('sage-range')
@@ -352,15 +369,6 @@ export function SageDashboardClient({
     if (autoDescTimer.current) clearTimeout(autoDescTimer.current)
     autoDescTimer.current = setTimeout(() => setShowAutoDesc(false), 10000)
   }
-
-  useEffect(() => {
-    if (!showSettingsMenu) return
-    const handler = (e: MouseEvent) => {
-      if (settingsMenuRef.current && !settingsMenuRef.current.contains(e.target as Node)) setShowSettingsMenu(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [showSettingsMenu])
 
   // Close feed calendar on outside click
   useEffect(() => {
@@ -702,42 +710,6 @@ export function SageDashboardClient({
               <span className={`text-xs font-bold ${sageAuto ? 'text-[#15A4AE]' : 'text-gray-400'}`}>
                 {sageAuto ? 'ON' : 'OFF'}
               </span>
-              {/* Settings gear */}
-              <div className="relative" ref={settingsMenuRef}>
-                <button
-                  onClick={() => setShowSettingsMenu(v => !v)}
-                  title="Settings"
-                  className={`flex items-center justify-center w-7 h-7 rounded-lg border transition-colors ${
-                    showSettingsMenu
-                      ? 'bg-gray-100 dark:bg-white/10 border-gray-300 dark:border-white/20 text-gray-700 dark:text-gray-200'
-                      : 'border-gray-200 dark:border-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5'
-                  }`}
-                >
-                  <Settings className="w-3.5 h-3.5" />
-                </button>
-                {showSettingsMenu && (
-                  <div className="absolute left-0 top-full mt-2 z-50 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/12 rounded-2xl shadow-xl w-52 overflow-hidden py-1.5">
-                    <p className="px-3 pt-1 pb-1.5 text-[10px] font-semibold text-gray-400 dark:text-white/40 uppercase tracking-wide">Settings</p>
-                    {[
-                      { href: '/settings',         label: 'Settings',       Icon: Settings    },
-                      { href: '/sage/roi',         label: 'ROI',            Icon: TrendingUp  },
-                      { href: '/analytics',        label: 'Analytics',      Icon: BarChart2   },
-                      { href: '/settings/upgrade', label: 'Upgrade Plan',   Icon: CreditCard  },
-                      { href: '/settings/support', label: 'Support',        Icon: Sparkles    },
-                    ].map(({ href, label, Icon }) => (
-                      <Link
-                        key={href}
-                        href={href}
-                        onClick={() => setShowSettingsMenu(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
-                      >
-                        <Icon className="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-white/40" />
-                        {label}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
               {/* Right side — always fills the gap */}
               <div className="ml-auto flex items-center gap-2">
                 {pipelines.length > 0 && (
@@ -766,6 +738,11 @@ export function SageDashboardClient({
                     {backfilling ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
                     {backfilling ? 'Processing…' : 'Process existing'}
                   </button>
+                )}
+
+                {/* Notification bell */}
+                {(ctxWorkspaceId || workspaceId) && (
+                  <NotificationBell workspaceId={ctxWorkspaceId || workspaceId} />
                 )}
 
                 {/* User avatar + dropdown */}
@@ -902,22 +879,20 @@ export function SageDashboardClient({
         </div>
 
         {donutsCollapsed ? (
-          /* Collapsed: stacked deck */
           <CollapsedDeck
             cards={[
-              { label: 'Emails',        Icon: Mail,          iconCls: 'text-blue-500',   total: visEmails.length,  href: viewAsUserId ? `/dashboard/email?viewAs=${viewAsUserId}`    : '/dashboard/email'    },
-              { label: 'SMS',           Icon: Smartphone,    iconCls: 'text-[#7bcd13]',  total: visSms.length,     href: '/dashboard/sms'   },
-              { label: 'Phone Calls',   Icon: Phone,         iconCls: 'text-[#eb5297]',  total: visCalls.length,   href: '/dashboard/calls' },
-              { label: 'Conversations', Icon: MessageSquare, iconCls: 'text-purple-500', total: visBots.length,    href: viewAsUserId ? `/dashboard/bots?viewAs=${viewAsUserId}`    : '/dashboard/bots'    },
-              { label: 'Forms',         Icon: FileText,      iconCls: 'text-green-500',  total: visForms.length,   href: viewAsUserId ? `/dashboard/forms?viewAs=${viewAsUserId}`   : '/dashboard/forms'   },
-              { label: 'Tickets',       Icon: TicketIcon,    iconCls: 'text-amber-500',  total: tickets.length,    href: viewAsUserId ? `/dashboard/tickets?viewAs=${viewAsUserId}` : '/dashboard/tickets' },
+              { label: 'Emails',        Icon: Mail,          color: '#5E6BFA', total: visEmails.length, href: viewAsUserId ? `/dashboard/email?viewAs=${viewAsUserId}`    : '/dashboard/email'    },
+              { label: 'SMS',           Icon: Smartphone,    color: '#88D400', total: visSms.length,    href: '/dashboard/sms'   },
+              { label: 'Phone Calls',   Icon: Phone,         color: '#EC4E96', total: visCalls.length,  href: '/dashboard/calls' },
+              { label: 'Conversations', Icon: MessageSquare, color: '#9737E8', total: visBots.length,   href: viewAsUserId ? `/dashboard/bots?viewAs=${viewAsUserId}`    : '/dashboard/bots'    },
+              { label: 'Forms',         Icon: FileText,      color: '#14B824', total: visForms.length,  href: viewAsUserId ? `/dashboard/forms?viewAs=${viewAsUserId}`   : '/dashboard/forms'   },
+              { label: 'Tickets',       Icon: TicketIcon,    color: '#D9A400', total: tickets.length,   href: viewAsUserId ? `/dashboard/tickets?viewAs=${viewAsUserId}` : '/dashboard/tickets' },
             ]}
             loadingDonut={loadingDonut}
             onNavigate={(label, href) => { setLoadingDonut(label); router.push(href) }}
           />
         ) : (
-          /* Expanded: slim horizontal stat cards */
-          <div className="grid grid-cols-6 gap-3 overflow-visible">
+          <div className={`grid grid-cols-6 gap-3 overflow-visible transition-all duration-300 ${collapsingCard ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
             {[
               { label: 'Emails',        sub: 'unread',      Icon: Mail,          accentCls: 'bg-blue-600',   accentColor: undefined,  segs: emailSegs,  total: visEmails.length,  href: viewAsUserId ? `/dashboard/email?viewAs=${viewAsUserId}`    : '/dashboard/email'    },
               { label: 'SMS',           sub: 'threads',     Icon: Smartphone,    accentCls: '',              accentColor: '#7bcd13',  segs: smsSegs,    total: visSms.length,     href: '/dashboard/sms'   },
@@ -930,7 +905,15 @@ export function SageDashboardClient({
               const accentStyle = card.accentColor ? { backgroundColor: card.accentColor } : undefined
               return (
                 <button key={card.label}
-                  onClick={() => { setLoadingDonut(card.label); router.push(card.href) }}
+                  onClick={() => {
+                    setCollapsingCard(card.label)
+                    setTimeout(() => {
+                      setDonutsCollapsed(true)
+                      setCollapsingCard(null)
+                      setLoadingDonut(card.label)
+                      router.push(card.href)
+                    }, 280)
+                  }}
                   className="relative bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-visible flex flex-col hover:shadow-md hover:border-gray-300 dark:hover:border-white/15 transition-all cursor-pointer w-full group">
                   {/* Top colour bar */}
                   <div
@@ -1520,7 +1503,10 @@ export function SageDashboardClient({
                 : allTablets
 
               const activeTablet    = topType ? ordered.find(t => t.key === topType) : null
-              const collapsedTablets = topType ? ordered.filter(t => t.key !== topType) : []
+              const TAB_ORDER = ['email', 'sms', 'call', 'bot', 'form', 'ticket']
+              const collapsedTablets = topType
+                ? allTablets.filter(t => t.key !== topType).sort((a, b) => TAB_ORDER.indexOf(a.key) - TAB_ORDER.indexOf(b.key))
+                : []
 
               const renderTabletHeader = (tablet: typeof ordered[number], isActive: boolean) => (
                 <div
@@ -1562,12 +1548,42 @@ export function SageDashboardClient({
                           <div className="flex-1 overflow-y-auto">{activeTablet.rows}</div>
                         </div>
                       )}
-                      {/* ── Collapsed tablets: tightly grouped at bottom ── */}
-                      <div className="shrink-0 rounded-xl overflow-hidden border border-gray-100 dark:border-white/[0.06]">
+                      {/* ── Collapsed tablets: drawer file tabs ── */}
+                      <div className="shrink-0" style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', height: 52, overflow: 'visible' }}>
                         {collapsedTablets.map((tablet, i) => (
-                          <div key={tablet.key} className={i > 0 ? 'border-t border-white/10' : ''}>
-                            {renderTabletHeader(tablet, false)}
-                          </div>
+                          <button
+                            key={tablet.key}
+                            onClick={() => setTopType(tablet.key)}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.zIndex = '50' }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.zIndex = String(i + 1) }}
+                            style={{
+                              position: 'relative',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              height: 38,
+                              padding: '0 10px',
+                              marginLeft: i === 0 ? 0 : -18,
+                              borderRadius: '10px 10px 0 0',
+                              flex: 1,
+                              minWidth: 0,
+                              zIndex: i + 1,
+                              backgroundColor: tablet.headerBg,
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+                              fontSize: 13,
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              border: 'none',
+                              color: 'white',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <span style={{ display: 'inline-flex', alignItems: 'center', width: 13, height: 13, flexShrink: 0 }}>{tablet.icon}</span>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{tablet.label}</span>
+                            <span style={{ minWidth: 20, height: 20, borderRadius: 999, background: 'rgba(255,255,255,0.18)', fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px', flexShrink: 0 }}>
+                              {tablet.count}
+                            </span>
+                          </button>
                         ))}
                       </div>
                     </>

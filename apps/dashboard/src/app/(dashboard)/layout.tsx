@@ -108,6 +108,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       plan={workspace.plan}
       brandColor={branding?.primary_color ?? '#141C2B'}
       bgColor={branding?.background_color ?? null}
+      workspaceId={workspace.id}
     >
     <WorkspaceBgApplier bgColor={branding?.background_color ?? null} cardColor={branding?.card_color ?? null} />
     <WorkspaceFontApplier fontFamily={branding?.font_family ?? null} fontSize={branding?.font_size ?? null} />
@@ -126,7 +127,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {isOnTrial && workspace.trial_ends_at && (
           <TrialBanner trialEndsAt={workspace.trial_ends_at} />
         )}
-        <main className="flex-1 p-8 overflow-y-auto flex flex-col bg-[#f5f4f1] dark:bg-[#1c1c1c]">
+        <main className="flex-1 p-8 overflow-y-auto bg-[#f5f4f1] dark:bg-[#1c1c1c]">
           {children}
         </main>
       </div>
