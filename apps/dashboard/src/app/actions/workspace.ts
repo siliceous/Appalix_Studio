@@ -395,7 +395,7 @@ export async function createWorkspace(formData: FormData) {
     .slice(0, 48) + '-' + suffix
 
   const admin = createAdminClient()
-  const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+  const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
 
   const { data: workspace, error } = await admin
     .from('workspaces')
