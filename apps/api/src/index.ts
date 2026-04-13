@@ -196,6 +196,20 @@ try {
     })
 
     wss.on('connection', handleLiveWsConnection)
+
+    // Keep-alive: ping every 30 s so Render's 55 s idle timeout never fires
+    setInterval(() => {
+      wss.clients.forEach((ws) => {
+        if ((ws as { isAlive?: boolean }).isAlive === false) { ws.terminate(); return }
+        ;(ws as { isAlive?: boolean }).isAlive = false
+        ws.ping()
+      })
+    }, 30_000)
+    wss.on('connection', (ws) => {
+      ;(ws as { isAlive?: boolean }).isAlive = true
+      ws.on('pong', () => { ;(ws as { isAlive?: boolean }).isAlive = true })
+    })
+
     console.log(`   WS   /live/ws               (Sage Voice gateway)`)
   } catch {
     console.warn('[live-gateway] ws package not found — voice disabled. Run: npm i ws @google/genai in apps/api')

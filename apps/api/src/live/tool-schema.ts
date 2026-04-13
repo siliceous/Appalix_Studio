@@ -16,7 +16,7 @@ export const SAGE_LIVE_FUNCTION_DECLARATIONS = [
   },
   {
     name: 'navigate_to',
-    description: "Navigate the user to a page in the Appalix app. Use this when the user asks to 'go to', 'open', 'show me', or 'take me to' a section. Map user intent to the closest path. NOTE: If the user says 'open pipeline X' by name, use open_pipeline instead. If the user says 'open deal X', use open_deal instead. Available paths and their labels — Dashboard: /dashboard, Emails (triage): /dashboard/email, Bots activity: /dashboard/bots, Forms activity: /dashboard/forms, Tickets activity: /dashboard/tickets, Pipelines/CRM: /sage/pipelines, Contacts: /sage/contacts, Projects: /sage/projects, Quotes & Invoices: /sage/quotes, Tickets: /sage/tickets, Emails (inbox): /sage/emails, ROI: /sage/roi, Rules/Automation: /sage/rules, Integrations (Sage): /sage/integrations, Bots: /bots, Conversations: /conversations, Integrations: /integrations, Knowledge Base/Sources: /sources, Forms: /dashboard/forms, Analytics: /analytics, My Activity: /my-activity, Settings (general): /settings — NOTE: there is NO /settings/general path, always use /settings for the main settings page. Settings > Profile: /settings/profile, Settings > Sage Voice: /settings/sage-voice, Settings > Automation: /settings/automation, Settings > Branding: /settings/branding, Settings > Invite: /settings/invite, Settings > Upgrade/billing: /settings/upgrade.",
+    description: "Navigate the user to a page in the Appalix app. Use this when the user explicitly says 'go to', 'take me to', 'open the X page', or 'navigate to'. Do NOT call this just because the user asks about data — use the query tools instead. NOTE: If the user says 'open pipeline X' by name, use open_pipeline instead. If the user says 'open deal X', use open_deal instead. Available paths and their labels — Dashboard: /dashboard, Emails (triage): /dashboard/email, Bots activity: /dashboard/bots, Forms activity: /dashboard/forms, Tickets activity: /dashboard/tickets, SMS: /dashboard/sms, Phone Calls: /dashboard/calls, Pipelines/CRM: /sage/pipelines, Contacts: /sage/contacts, Projects: /sage/projects, Quotes & Invoices: /sage/quotes, Tickets: /sage/tickets, Emails (inbox): /sage/emails, ROI: /sage/roi, Rules/Automation: /sage/rules, Integrations (Sage): /sage/integrations, Bots: /bots, Conversations: /conversations, SMS Conversations: /conversations?platform=sms, Phone Calls page: /conversations?platform=voice, Integrations: /integrations, Knowledge Base/Sources: /sources, Forms: /dashboard/forms, Analytics: /analytics, My Activity: /my-activity, Settings (general): /settings — NOTE: there is NO /settings/general path, always use /settings for the main settings page. Settings > Profile: /settings/profile, Settings > Sage Voice: /settings/sage-voice, Settings > Automation: /settings/automation, Settings > Branding: /settings/branding, Settings > Invite: /settings/invite, Settings > Upgrade/billing: /settings/upgrade.",
     parameters: {
       type: 'OBJECT',
       properties: {
@@ -438,11 +438,12 @@ export const SAGE_LIVE_FUNCTION_DECLARATIONS = [
   },
   {
     name: 'filter_activity_feed',
-    description: "Filter the activity feed on the dashboard to show a specific type. Use when the user says 'show emails on the feed', 'filter to forms', 'show only tickets', 'switch to conversations feed', or 'show all activity'.",
+    description: "Filter the dashboard activity feed to show a specific channel type, optionally within a date range. Use when the user says 'show emails on the feed', 'filter to SMS', 'show phone calls', 'show only tickets', 'show conversations today', 'filter to forms this week', or 'show all activity'.",
     parameters: {
       type: 'OBJECT',
       properties: {
-        filter: { type: 'STRING', description: "One of: 'email', 'bot', 'form', 'ticket', 'all'" },
+        filter:     { type: 'STRING', description: "One of: 'email', 'bot', 'sms', 'call', 'form', 'ticket', 'all'" },
+        date_range: { type: 'STRING', description: "Optional date range — e.g. 'today', 'yesterday', 'this week', 'last week', 'this month', 'last month', 'past 7 days', 'past 30 days', 'from YYYY-MM-DD to YYYY-MM-DD'" },
       },
       required: ['filter'],
     },
@@ -473,6 +474,32 @@ export const SAGE_LIVE_FUNCTION_DECLARATIONS = [
         new_title:          { type: 'STRING', description: 'New title for the conversation' },
       },
       required: ['new_title'],
+    },
+  },
+  {
+    name: 'list_sms',
+    description: "List recent SMS conversations. Call this when the user asks about text messages, SMS, 'show me texts', 'any SMS today', 'who texted us', or wants to see incoming SMS activity.",
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        contact_name: { type: 'STRING', description: "Filter by contact name or phone number — e.g. 'John', '+1555'" },
+        date_range:   { type: 'STRING', description: "Filter by date: 'today', 'yesterday', 'this week', 'last week', 'past N days'" },
+        priority:     { type: 'STRING', description: "Filter by AI priority: 'high', 'medium', or 'low'" },
+        limit:        { type: 'STRING', description: 'Max results to return (default 10)' },
+      },
+    },
+  },
+  {
+    name: 'list_phone_calls',
+    description: "List recent phone/voice call conversations. Call this when the user asks about calls, 'show me calls', 'any calls today', 'who called us', or wants to see incoming call activity.",
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        contact_name: { type: 'STRING', description: "Filter by contact name or phone number" },
+        date_range:   { type: 'STRING', description: "Filter by date: 'today', 'yesterday', 'this week', 'last week', 'past N days'" },
+        priority:     { type: 'STRING', description: "Filter by AI priority: 'high', 'medium', or 'low'" },
+        limit:        { type: 'STRING', description: 'Max results to return (default 10)' },
+      },
     },
   },
 ]

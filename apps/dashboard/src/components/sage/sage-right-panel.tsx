@@ -339,7 +339,7 @@ export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt, wak
   const wakeWordVersionRef = useRef(0)        // increment on each start; onend checks its own version
   const liveVoiceRef       = useRef<LiveVoiceState>('off')
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const INACTIVITY_MS      = 120_000 // 120 seconds
+  const INACTIVITY_MS      = 60_000 // 60 seconds
 
   function startResize(e: React.MouseEvent) {
     e.preventDefault()
@@ -654,7 +654,7 @@ export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt, wak
     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current)
     inactivityTimerRef.current = setTimeout(() => {
       if (liveVoiceRef.current !== 'off') {
-        showTranscriptMessage('Sage went to sleep after 2 minutes of inactivity. Say "Hey Sage" to wake up.')
+        showTranscriptMessage('Sage went to sleep after 1 minute of inactivity. Say "Hey Sage" to wake up.')
         stopLiveVoice()
         setTimeout(startWakeWord, 800)
       }
@@ -807,7 +807,10 @@ export function SageRightPanel({ workspaceId, plan = 'starter', trialEndsAt, wak
               break
             case 'filter_activity_feed':
               window.dispatchEvent(new CustomEvent('sage:filter_feed', {
-                detail: { filter: String(msg.filter ?? 'all') },
+                detail: {
+                  filter:     String(msg.filter ?? 'all'),
+                  date_range: msg.date_range ? String(msg.date_range) : undefined,
+                },
               }))
               break
             case 'refresh':

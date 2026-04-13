@@ -135,12 +135,18 @@ export async function handleLiveWsConnection(ws: WebSocket, req: IncomingMessage
     `${focusedEntityNote} ` +
     `Rules: Be very brief (1-2 sentences max). Call tools immediately without preamble. ` +
     `Never guess at live data — always use tools for CRM queries. ` +
-    `STAY-ON-PAGE RULE: Do NOT call navigate_to unless the user explicitly says "go to", "take me to", "open the X page", or "navigate to". ` +
-    `Answering a question about data (emails, tickets, reminders, tasks, deals, stats) does NOT require navigation — just call the right tool and answer. ` +
+    `STAY-ON-PAGE RULE: Do NOT call navigate_to unless the user explicitly says "go to", "take me to", "open the X page", or "navigate to X". ` +
+    `Asking about data (emails, SMS, calls, tickets, reminders, tasks, deals, stats) is NEVER a navigation request — use the right query tool and answer in place. ` +
+    `EXPLICIT NAVIGATION TEST: Before calling navigate_to, verify the user's message contains a navigation verb ("go to", "take me to", "navigate to", "open the … page"). If absent, do NOT navigate. ` +
+    `DASHBOARD-FIRST RULE: When on the dashboard, always show results in the activity feed (filter_activity_feed + list_* tools) rather than navigating away. ` +
+    `Saying "show me SMS" → call filter_activity_feed with filter=sms. Saying "show emails today" → call filter_activity_feed with filter=email, date_range=today. ` +
+    `SMS AWARENESS: The dashboard activity feed includes 6 types — email, bot (chat), sms, call (phone), form, ticket. ` +
+    `Use list_sms to fetch SMS conversation summaries, list_phone_calls for phone/voice call summaries. ` +
+    `These are stored as conversations with platform=sms or platform=voice respectively. ` +
     (onDashboard
-      ? `DASHBOARD CONTEXT: The user is on the main dashboard which shows the activity feed (emails, bots, forms, tickets) and the right-bar reminders/tasks feed. ` +
-        `When they ask about counts or summaries (e.g. "how many emails", "what tickets are open", "any reminders", "what tasks do I have"), ` +
-        `call the appropriate tool (list_emails, list_tickets, list_reminders, list_tasks, get_workspace_stats, get_today_plate) and answer verbally — stay on the dashboard. ` +
+      ? `DASHBOARD CONTEXT: The user is on the main dashboard which shows the activity feed (emails, bot chats, SMS, phone calls, forms, tickets) and the right-bar reminders/tasks feed. ` +
+        `When they ask about counts or summaries (e.g. "how many emails", "any SMS?", "what calls came in", "what tickets are open", "any reminders"), ` +
+        `call the appropriate tool (list_emails, list_sms, list_phone_calls, list_tickets, list_reminders, list_tasks, get_workspace_stats, get_today_plate) and answer verbally — stay on the dashboard. ` +
         `DASHBOARD OPEN RULE: When the user says "open", "show me", "pull up", or "show the email/bot/form/ticket from X" on the dashboard, ` +
         `call open_feed_item immediately with kind=email/bot/form/ticket and the query — this opens a popup on the current page without navigating away. ` +
         `Do NOT call list_emails first when the user just wants to open/view an item — call open_feed_item directly. ` +
@@ -153,7 +159,7 @@ export async function handleLiveWsConnection(ws: WebSocket, req: IncomingMessage
     `create_ticket_from_lead, create_deal_from_lead, delete_lead), ` +
     `first state what you are about to do in one sentence and ask "shall I go ahead?". ` +
     `Only call the tool after the user says yes, confirmed, or go ahead. ` +
-    `For read-only tools (get_today_plate, get_workspace_stats, list_deals, list_tickets, list_projects, list_tasks, list_reminders, find_contact, navigate_to, open_deal, open_pipeline, list_emails, read_email, open_email, open_feed_item, filter_activity_feed) call immediately — no confirmation needed. ` +
+    `For read-only tools (get_today_plate, get_workspace_stats, list_deals, list_tickets, list_projects, list_tasks, list_reminders, find_contact, navigate_to, open_deal, open_pipeline, list_emails, list_sms, list_phone_calls, read_email, open_email, open_feed_item, filter_activity_feed) call immediately — no confirmation needed. ` +
     `reply_to_email is a ONE-SHOT action — call it exactly once to open the reply compose window. Do NOT call it multiple times. ` +
     `EMAIL WORKFLOW: When asked to reply to, prioritize, assign, or delete a specific email and you don't have the email_id, call list_emails first. ` +
     `Exception: on the dashboard or email page, use open_feed_item or open_email directly — no list_emails needed for opening. ` +
@@ -428,9 +434,13 @@ export async function handleLiveWsConnection(ws: WebSocket, req: IncomingMessage
                   : send({ type: 'navigate', url: `/dashboard/email?emailId=${String(call.args.email_id)}&action=reply` })
               }
 
-              // Filter activity feed: switch feed view to show a specific type
+              // Filter activity feed: switch feed view to show a specific type (+ optional date range)
               if (call.name === 'filter_activity_feed' && call.args?.filter) {
-                send({ type: 'filter_activity_feed', filter: String(call.args.filter) })
+                send({
+                  type:       'filter_activity_feed',
+                  filter:     String(call.args.filter),
+                  date_range: call.args.date_range ? String(call.args.date_range) : undefined,
+                })
               }
 
               // Open deal: look up pipeline and navigate to board with deal slide-over

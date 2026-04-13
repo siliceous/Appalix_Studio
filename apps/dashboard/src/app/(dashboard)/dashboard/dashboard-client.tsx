@@ -274,13 +274,15 @@ export function SageDashboardClient({
     return () => window.removeEventListener('sage:open_item', handler)
   }, [])
 
-  // Sage voice: filter the activity feed to a specific type
+  // Sage voice: filter the activity feed to a specific type (+ optional date range)
   useEffect(() => {
     function handler(e: Event) {
-      const { filter } = (e as CustomEvent<{ filter: string }>).detail
-      const typeMap: Record<string, 'email' | 'bot' | 'form' | 'ticket' | null> = {
+      const { filter, date_range } = (e as CustomEvent<{ filter: string; date_range?: string }>).detail
+      const typeMap: Record<string, 'email' | 'bot' | 'sms' | 'call' | 'form' | 'ticket' | null> = {
         email: 'email', emails: 'email',
         bot: 'bot', bots: 'bot', conversations: 'bot', conversation: 'bot',
+        sms: 'sms', text: 'sms', texts: 'sms',
+        call: 'call', calls: 'call', phone: 'call', voice: 'call',
         form: 'form', forms: 'form',
         ticket: 'ticket', tickets: 'ticket',
         all: null,
@@ -289,6 +291,52 @@ export function SageDashboardClient({
         setDonutsCollapsed(true)
         setFeedView('grid')
         setTopType(typeMap[filter])
+      }
+      // Apply date range if provided — map common phrases to preset or custom
+      if (date_range) {
+        const lower = date_range.toLowerCase().trim()
+        if (lower === 'today') {
+          setDateRange('today')
+        } else if (lower === 'yesterday') {
+          setDateRange('yesterday')
+        } else if (lower === 'this week' || lower === 'last 7 days' || lower === 'past 7 days') {
+          setDateRange('7d')
+        } else if (lower === 'this month' || lower === 'last 30 days' || lower === 'past 30 days') {
+          setDateRange('30d')
+        } else {
+          // For other phrases (last week, past N days, from…to…) parse into custom range
+          const today0 = new Date(); today0.setHours(0, 0, 0, 0)
+
+          // "past/last N days"
+          const nDays = lower.match(/(?:past|last)\s+(\d+)\s+days?/)
+          if (nDays) {
+            const n       = parseInt(nDays[1])
+            const fromD   = new Date(today0.getTime() - n * 86_400_000)
+            const toD     = new Date(today0.getTime() + 86_400_000 - 1)
+            setCustomFrom(fromD.toISOString().slice(0, 10))
+            setCustomTo(toD.toISOString().slice(0, 10))
+            setDateRange('custom')
+            return
+          }
+          // "last week"
+          if (lower === 'last week') {
+            const dow        = today0.getDay() || 7
+            const thisMonday = new Date(today0.getTime() - (dow - 1) * 86_400_000)
+            const lastMonday = new Date(thisMonday.getTime() - 7 * 86_400_000)
+            const lastSunday = new Date(thisMonday.getTime() - 1)
+            setCustomFrom(lastMonday.toISOString().slice(0, 10))
+            setCustomTo(lastSunday.toISOString().slice(0, 10))
+            setDateRange('custom')
+            return
+          }
+          // "from YYYY-MM-DD to YYYY-MM-DD"
+          const rangeMatch = lower.match(/(?:from\s+)?(\d{4}-\d{2}-\d{2})\s+to\s+(\d{4}-\d{2}-\d{2})/)
+          if (rangeMatch) {
+            setCustomFrom(rangeMatch[1])
+            setCustomTo(rangeMatch[2])
+            setDateRange('custom')
+          }
+        }
       }
     }
     window.addEventListener('sage:filter_feed', handler)

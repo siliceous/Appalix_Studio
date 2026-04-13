@@ -4,7 +4,8 @@
  * Routes Gemini tool calls to existing Sage services.
  * All write operations enforce permissions and log to sage_activity_log.
  */
-import { supabase } from '../lib/supabase.js'
+import { supabase }                   from '../lib/supabase.js'
+import { resolveRelativeDateRange }   from '../lib/resolve-date-range.js'
 import {
   sageSetReminder,
   sageMoveDeal,
@@ -713,23 +714,7 @@ type EmailRow = {
   assigned_to: string | null
 }
 
-function parseDateFilter(filter: string): { gte?: string; lte?: string } | null {
-  const now   = new Date()
-  const today = new Date(now); today.setHours(0, 0, 0, 0)
-  const lower = filter.toLowerCase().trim()
-  if (lower === 'today') {
-    return { gte: today.toISOString(), lte: new Date().toISOString() }
-  }
-  if (lower === 'yesterday') {
-    const start = new Date(today); start.setDate(start.getDate() - 1)
-    return { gte: start.toISOString(), lte: today.toISOString() }
-  }
-  if (lower === 'this week' || lower === 'week') {
-    const start = new Date(today); start.setDate(start.getDate() - 7)
-    return { gte: start.toISOString() }
-  }
-  return null
-}
+// parseDateFilter is replaced by resolveRelativeDateRange from '../lib/resolve-date-range.js'
 
 // ── list_emails ──────────────────────────────────────────────────────────────
 
@@ -755,7 +740,7 @@ async function listEmails(args: Record<string, unknown>, ctx: ToolContext): Prom
     query = query.eq('ai_priority', priority)
   }
   if (dateFilter) {
-    const range = parseDateFilter(dateFilter)
+    const range = resolveRelativeDateRange(dateFilter)
     if (range?.gte) query = query.gte('received_at', range.gte)
     if (range?.lte) query = query.lte('received_at', range.lte)
   }
@@ -772,6 +757,94 @@ async function listEmails(args: Record<string, unknown>, ctx: ToolContext): Prom
     return `• ${sender} — "${e.subject}"${pri}${unread} (${date}) [id:${e.id}]`
   })
   return `${data.length} email(s):\n${lines.join('\n')}`
+}
+
+// ── list_sms ─────────────────────────────────────────────────────────────────
+
+async function listSmsConversations(args: Record<string, unknown>, ctx: ToolContext): Promise<string> {
+  const contactName = args.contact_name ? String(args.contact_name).trim() : null
+  const dateFilter  = args.date_range   ? String(args.date_range).trim()   : null
+  const priority    = args.priority     ? String(args.priority).trim()     : null
+  const limit       = Math.min(parseInt(String(args.limit ?? '10'), 10) || 10, 20)
+
+  type ConvRow = { id: string; title: string | null; platform: string; message_count: number; last_activity_at: string; ai_priority: string | null }
+
+  let query = supabase
+    .from('conversations')
+    .select('id, title, platform, message_count, last_activity_at, ai_priority')
+    .eq('workspace_id', ctx.workspaceId)
+    .eq('status', 'active')
+    .eq('platform', 'sms')
+    .order('last_activity_at', { ascending: false })
+    .limit(limit)
+
+  if (contactName) {
+    query = query.ilike('title', `%${contactName}%`)
+  }
+  if (priority) {
+    query = query.eq('ai_priority', priority)
+  }
+  if (dateFilter) {
+    const range = resolveRelativeDateRange(dateFilter)
+    if (range?.gte) query = query.gte('last_activity_at', range.gte)
+    if (range?.lte) query = query.lte('last_activity_at', range.lte)
+  }
+
+  const { data, error } = await query
+  if (error) return `Error fetching SMS conversations: ${error.message}`
+  if (!data || data.length === 0) return 'No SMS conversations found.'
+
+  const lines = (data as unknown as ConvRow[]).map(c => {
+    const name  = c.title ?? 'Unknown'
+    const pri   = c.ai_priority ? ` [${c.ai_priority.toUpperCase()}]` : ''
+    const date  = new Date(c.last_activity_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    return `• ${name}${pri} — ${c.message_count} msg(s) (${date}) [id:${c.id}]`
+  })
+  return `${data.length} SMS conversation(s):\n${lines.join('\n')}`
+}
+
+// ── list_phone_calls ──────────────────────────────────────────────────────────
+
+async function listPhoneCalls(args: Record<string, unknown>, ctx: ToolContext): Promise<string> {
+  const contactName = args.contact_name ? String(args.contact_name).trim() : null
+  const dateFilter  = args.date_range   ? String(args.date_range).trim()   : null
+  const priority    = args.priority     ? String(args.priority).trim()     : null
+  const limit       = Math.min(parseInt(String(args.limit ?? '10'), 10) || 10, 20)
+
+  type ConvRow = { id: string; title: string | null; platform: string; message_count: number; last_activity_at: string; ai_priority: string | null }
+
+  let query = supabase
+    .from('conversations')
+    .select('id, title, platform, message_count, last_activity_at, ai_priority')
+    .eq('workspace_id', ctx.workspaceId)
+    .eq('status', 'active')
+    .eq('platform', 'voice')
+    .order('last_activity_at', { ascending: false })
+    .limit(limit)
+
+  if (contactName) {
+    query = query.ilike('title', `%${contactName}%`)
+  }
+  if (priority) {
+    query = query.eq('ai_priority', priority)
+  }
+  if (dateFilter) {
+    const range = resolveRelativeDateRange(dateFilter)
+    if (range?.gte) query = query.gte('last_activity_at', range.gte)
+    if (range?.lte) query = query.lte('last_activity_at', range.lte)
+  }
+
+  const { data, error } = await query
+  if (error) return `Error fetching phone calls: ${error.message}`
+  if (!data || data.length === 0) return 'No phone call records found.'
+
+  const lines = (data as unknown as ConvRow[]).map(c => {
+    const name = c.title ?? 'Unknown caller'
+    const pri  = c.ai_priority ? ` [${c.ai_priority.toUpperCase()}]` : ''
+    const date = new Date(c.last_activity_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    return `• ${name}${pri} — ${c.message_count} msg(s) (${date}) [id:${c.id}]`
+  })
+  return `${data.length} call(s):\n${lines.join('\n')}`
 }
 
 // ── read_email ───────────────────────────────────────────────────────────────
@@ -1690,6 +1763,12 @@ export async function routeToolCall(
       case 'list_emails':
         return await listEmails(args, ctx)
 
+      case 'list_sms':
+        return await listSmsConversations(args, ctx)
+
+      case 'list_phone_calls':
+        return await listPhoneCalls(args, ctx)
+
       case 'read_email':
         return await readEmail(args, ctx)
 
@@ -1731,9 +1810,15 @@ export async function routeToolCall(
       case 'rename_conversation':
         return await renameConversation(args, ctx)
 
-      case 'filter_activity_feed':
-        // Navigation handled in session-manager
-        return `Filtering activity feed to show ${String(args.filter ?? 'all')}.`
+      case 'filter_activity_feed': {
+        // UI event dispatched in session-manager; resolve date range for verbal confirmation
+        const drPhrase = args.date_range ? String(args.date_range).trim() : null
+        const drResult = drPhrase ? resolveRelativeDateRange(drPhrase) : null
+        const drNote   = drResult
+          ? ` for ${drPhrase}`
+          : (drPhrase ? ` (unrecognised date range "${drPhrase}" — showing all time)` : '')
+        return `Filtering activity feed to show ${String(args.filter ?? 'all')}${drNote}.`
+      }
 
       case 'update_lead':
         return await updateLead(args, ctx)
