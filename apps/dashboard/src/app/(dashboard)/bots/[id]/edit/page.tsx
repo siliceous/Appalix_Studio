@@ -7,6 +7,7 @@ import type { Bot } from '@/lib/types'
 import { Globe, Sparkles } from 'lucide-react'
 import { LANGUAGE_GROUPS } from '@/lib/languages'
 import { SkinPicker } from '@/components/bots/skin-picker'
+import { BotAvatarUploader } from '@/components/bots/bot-avatar-uploader'
 import { SubmitButton } from '@/components/ui/submit-button'
 
 export const metadata: Metadata = { title: 'Edit bot' }
@@ -153,6 +154,16 @@ export default async function EditBotPage({ params }: { params: Promise<{ id: st
             defaultAccentColor={bot.widget_accent_color ?? ''}
             defaultHeaderColor={bot.widget_header_color ?? ''}
           />
+          <div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Avatar <span className="text-gray-400 font-normal">(optional)</span>
+            </p>
+            <BotAvatarUploader
+              botId={id}
+              defaultAvatarUrl={bot.widget_avatar_url ?? ''}
+              botName={bot.name}
+            />
+          </div>
         </div>
 
         {/* System prompt */}

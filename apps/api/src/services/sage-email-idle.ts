@@ -151,12 +151,28 @@ export function startGmailPollForWorkspace(
   let running = true
   const label = `workspace=${workspaceId} user=${userId}`
 
+  async function markDisconnected() {
+    await supabase
+      .from('sage_integrations')
+      .update({ status: 'disconnected' })
+      .eq('workspace_id', workspaceId)
+      .eq('user_id', userId)
+      .eq('provider', 'gmail')
+    running = false
+  }
+
   async function loop() {
     // Initial catch-up sync
     try {
       await syncEmailsForWorkspace(workspaceId, userId, 50)
     } catch (err) {
-      console.error(`[Gmail poll] catch-up sync failed for ${label}:`, (err as Error).message)
+      const msg = (err as Error).message
+      console.error(`[Gmail poll] catch-up sync failed for ${label}:`, msg)
+      if (msg.includes('401') || msg.includes('invalid_grant') || msg.includes('unauthorized')) {
+        console.warn(`[Gmail poll] auth error for ${label} — token revoked, stopping loop`)
+        await markDisconnected()
+        return
+      }
     }
 
     // Track the newest message id we have seen to detect new arrivals
@@ -168,13 +184,22 @@ export function startGmailPollForWorkspace(
 
       try {
         const token = await getValidAccessToken(workspaceId, userId, 'gmail', config)
-        if (!token) continue
+        if (!token) {
+          console.warn(`[Gmail poll] no valid token for ${label} — token revoked, stopping loop`)
+          await markDisconnected()
+          break
+        }
 
         // Check if there is any message newer than what we last saw
         const checkUrl = 'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=1&labelIds=INBOX&q=-is:spam+-is:draft'
         const res = await fetch(checkUrl, {
           headers: { Authorization: `Bearer ${token}` },
         })
+        if (res.status === 401) {
+          console.warn(`[Gmail poll] 401 on poll check for ${label} — stopping loop`)
+          await markDisconnected()
+          break
+        }
         if (!res.ok) continue
 
         const data = await res.json() as { messages?: { id: string }[] }

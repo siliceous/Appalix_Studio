@@ -82,10 +82,49 @@ export async function updateBot(botId: string, formData: FormData) {
     widget_skin:         (formData.get('widget_skin') as string) || 'light',
     widget_accent_color: (formData.get('widget_accent_color') as string) || null,
     widget_header_color:  (formData.get('widget_header_color') as string) || null,
+    widget_avatar_url:    (formData.get('widget_avatar_url') as string)?.trim() || null,
   }).eq('id', botId)
 
   if (error) throw new Error(error.message)
   redirect(`/bots/${botId}`)
+}
+
+export async function uploadBotAvatar(
+  botId: string,
+  base64: string,
+): Promise<{ ok: boolean; url?: string; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Not authenticated' }
+
+  const { data: membershipRaw } = await supabase
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single()
+  const membership = membershipRaw as { workspace_id: string } | null
+  if (!membership) return { ok: false, error: 'Not authenticated' }
+
+  const buffer = Buffer.from(base64, 'base64')
+  if (buffer.length === 0) return { ok: false, error: 'Empty image data' }
+  if (buffer.length > 1 * 1024 * 1024) return { ok: false, error: 'Avatar must be under 1 MB after crop' }
+
+  const admin = createAdminClient()
+  const path  = `${membership.workspace_id}/bots/${botId}/avatar_${Date.now()}.jpg`
+
+  const { error: uploadError } = await admin.storage
+    .from('bot-avatars')
+    .upload(path, buffer, { contentType: 'image/jpeg', upsert: false })
+
+  if (uploadError) return { ok: false, error: uploadError.message }
+
+  const { data: { publicUrl } } = admin.storage
+    .from('bot-avatars')
+    .getPublicUrl(path)
+
+  return { ok: true, url: publicUrl }
 }
 
 export async function deleteBot(botId: string) {

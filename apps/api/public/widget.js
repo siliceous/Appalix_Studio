@@ -127,6 +127,7 @@
   var welcomeMessage = 'Hi there! How can I help you today?';
   var botName = 'Chat Support';
   var skinVars = SKINS.appalix;
+  var botAvatarUrl = '';
   var sessionId = '';
   var userWidth  = 0;
   var userHeight = 0;
@@ -187,7 +188,9 @@
     '  display:flex;align-items:center;padding:12px 14px;gap:10px;',
     '  background:var(--apx-header-bg);border-bottom:1px solid var(--apx-border);flex-shrink:0;',
     '}',
-    '.hd{width:10px;height:10px;border-radius:50%;background:var(--apx-accent);flex-shrink:0;}',
+    '.av{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;}',
+    '.av img{width:100%;height:100%;object-fit:cover;border-radius:50%;}',
+    '.av-init{width:100%;height:100%;border-radius:50%;background:var(--apx-accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--apx-accent-text);text-transform:uppercase;letter-spacing:0;}',
     '.ht{flex:1;min-width:0;}',
     '.ht-name{font-size:14px;font-weight:600;color:var(--apx-header-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
     '.ht-sub{font-size:11px;color:var(--apx-header-text);opacity:.6;}',
@@ -316,7 +319,11 @@
       '<div id="apx-window" class="window' + (isExpanded ? ' expanded' : '') + '" style="' + winStyle + '">',
         '<div class="header">',
           '<div class="resize-grip" id="apx-resize"><svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="10" cy="2" r="1.2"/></svg></div>',
-          '<div class="hd"></div>',
+          '<div class="av">',
+            botAvatarUrl
+              ? '<img src="' + esc(botAvatarUrl) + '" alt="' + esc(botName) + '">'
+              : '<div class="av-init">' + esc(botName.charAt(0) || 'A') + '</div>',
+          '</div>',
           '<div class="ht">',
             '<div class="ht-name">', esc(botName), '</div>',
             '<div class="ht-sub">Online &middot; Replies instantly</div>',
@@ -554,6 +561,7 @@
     .then(function (d) {
       if (d.welcome_message) welcomeMessage = d.welcome_message;
       if (d.bot_name) botName = d.bot_name;
+      if (d.bot_avatar_url) botAvatarUrl = d.bot_avatar_url;
       var skinId = d.skin || 'appalix_lite';
       if (skinId === 'custom') {
         skinVars = Object.assign({}, SKINS.appalix_lite);

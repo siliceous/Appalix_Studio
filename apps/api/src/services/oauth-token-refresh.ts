@@ -84,7 +84,11 @@ export async function getValidAccessToken(
 
     if (!newTokens.access_token) {
       console.error(`[OAuth] Token refresh failed for ${provider}:`, newTokens)
-      return config.access_token || null
+      // invalid_grant / invalid_token = refresh token permanently revoked.
+      // Returning the old dead token would just cause every downstream call to 401.
+      const revokedErrors = ['invalid_grant', 'invalid_token', 'token_expired', 'unauthorized_client']
+      const isRevoked = revokedErrors.includes((newTokens as { error?: string }).error ?? '')
+      return isRevoked ? null : (config.access_token || null)
     }
 
     // Persist refreshed token back to DB
