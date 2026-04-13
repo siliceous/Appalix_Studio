@@ -27,6 +27,9 @@ import {
   Palette,
   LayoutTemplate,
   GitBranch,
+  Mic,
+  PhoneCall,
+  Library,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -66,9 +69,17 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Agent',
     items: [
-      { href: '/bots',         label: 'Bots',           icon: Bot,      adminOnly: true },
-      { href: '/integrations', label: 'Integrations',   icon: Plug,     adminOnly: true },
-      { href: '/sources',      label: 'Knowledge Base', icon: BookOpen, adminOnly: true },
+      { href: '/bots',                      label: 'Bots',               icon: Bot,      adminOnly: true },
+      { href: '/integrations',              label: 'Integrations',       icon: Plug,     adminOnly: true },
+      { href: '/sources',                   label: 'Knowledge Base',     icon: BookOpen, adminOnly: true },
+      { href: '/agent/voice-training',      label: 'Voice Training',     icon: Mic,      adminOnly: true, sub: true },
+      { href: '/agent/knowledge-base/voice',label: 'Voice Knowledge',    icon: Library,  adminOnly: true, sub: true },
+    ],
+  },
+  {
+    label: 'Phone',
+    items: [
+      { href: '/phone/voice-agents', label: 'Voice Agents', icon: PhoneCall, adminOnly: true },
     ],
   },
   {

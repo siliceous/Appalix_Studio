@@ -135,6 +135,28 @@ export interface Integration {
   updated_at: string
 }
 
+export type VoiceMode   = 'text' | 'voice' | 'voice_text'
+export type VoicePreset = 'receptionist' | 'sales' | 'support' | 'booking' | 'lead_capture'
+export type VoiceGoal   = 'book_meeting' | 'capture_lead' | 'resolve_ticket' | 'sales_pitch' | 'take_message' | 'route_human'
+export type VoiceAgentType = 'inbound' | 'outbound' | 'both'
+
+export interface VoiceConfig {
+  tone?:                string   // 'friendly' | 'professional' | 'casual' | 'formal'
+  pace?:                string   // 'slow' | 'moderate' | 'fast'
+  empathy?:             number   // 1–5
+  assertiveness?:       number   // 1–5
+  formality?:           number   // 1–5
+  ask_one_at_a_time?:   boolean
+  confirm_details?:     boolean
+  push_for_booking?:    boolean
+  escalate_sooner?:     boolean
+  collect_lead_first?:  boolean
+  greeting_script?:     string
+  escalation_rules?:    string
+  capture_fields?:      string[]
+  working_hours?:       string
+}
+
 export interface Bot {
   id: string
   workspace_id: string
@@ -154,8 +176,45 @@ export interface Bot {
   widget_accent_color: string | null
   widget_header_color:  string | null
   widget_avatar_url:    string | null
+  // Voice
+  enable_voice:  boolean
+  voice_mode:    VoiceMode
+  voice_name:    string | null
+  voice_preset:  VoicePreset | null
+  voice_goal:    VoiceGoal | null
+  voice_config:  VoiceConfig | null
   created_at: string
   updated_at: string
+}
+
+export interface VoiceAgent {
+  id:           string
+  workspace_id: string
+  name:         string
+  type:         VoiceAgentType
+  phone_number: string | null
+  bot_id:       string | null
+  preset:       VoicePreset | null
+  goal:         VoiceGoal | null
+  is_active:    boolean
+  config:       VoiceConfig | null
+  created_at:   string
+  updated_at:   string
+}
+
+export interface VoiceKnowledgeEntry {
+  id:             string
+  workspace_id:   string
+  bot_id:         string | null
+  voice_agent_id: string | null
+  category:       'faq' | 'objection' | 'booking' | 'escalation' | 'script' | 'compliance' | 'fallback' | 'greeting'
+  title:          string
+  content:        string
+  usage_type:     'auto' | 'manual' | 'always'
+  is_active:      boolean
+  sort_order:     number
+  created_at:     string
+  updated_at:     string
 }
 
 export interface Conversation {
