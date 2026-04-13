@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import { ChevronLeft, PhoneIncoming, PhoneOutgoing, Phone, Trash2, ToggleLeft, ToggleRight } from 'lucide-react'
 import { updateVoiceAgent, deleteVoiceAgent, toggleVoiceAgentActive } from '@/app/actions/voice'
+import { VoiceSubNav } from '@/components/voice/voice-sub-nav'
 import type { VoiceAgent, Bot } from '@/lib/types'
 
 export const metadata: Metadata = { title: 'Voice Agent Settings' }
@@ -92,6 +93,8 @@ export default async function VoiceAgentDetailPage({
               </form>
             </div>
           </div>
+
+          <VoiceSubNav />
 
           <form id="update-form" action={updateAction} className="space-y-6">
 

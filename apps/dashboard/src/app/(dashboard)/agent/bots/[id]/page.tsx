@@ -2,11 +2,11 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { Header } from '@/components/layout/header'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { updateBotVoice } from '@/app/actions/voice'
+import { VoiceSubNav } from '@/components/voice/voice-sub-nav'
 import type { Bot } from '@/lib/types'
-import { Mic, Settings, ChevronLeft } from 'lucide-react'
+import { Mic, Settings, ChevronRight } from 'lucide-react'
 
 export const metadata: Metadata = { title: 'Bot Voice Settings' }
 
@@ -37,10 +37,13 @@ const GOALS = [
 
 export default async function AgentBotVoicePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ preset?: string }>
 }) {
   const { id } = await params
+  const { preset: presetParam } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -56,6 +59,7 @@ export default async function AgentBotVoicePage({
     'id'|'name'|'description'|'enable_voice'|'voice_mode'|'voice_name'|'voice_preset'|'voice_goal'|'voice_config'>
 
   const vc = bot.voice_config ?? {}
+  const activePreset = presetParam ?? bot.voice_preset ?? null
   const action = updateBotVoice.bind(null, id)
 
   return (
@@ -63,15 +67,22 @@ export default async function AgentBotVoicePage({
       <div className="p-8 flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto">
 
-          <Link href="/agent/bots"
-            className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 mb-5 transition-colors">
-            <ChevronLeft className="w-3.5 h-3.5" />Back to bots
-          </Link>
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mb-5">
+            <Link href="/bots" className="hover:text-gray-700 dark:hover:text-gray-200 transition-colors">Bots</Link>
+            <ChevronRight className="w-3 h-3" />
+            <Link href={`/bots/${id}`} className="hover:text-gray-700 dark:hover:text-gray-200 transition-colors">{bot.name}</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-gray-700 dark:text-gray-300 font-medium">Voice Config</span>
+          </div>
 
-          <Header
-            title={bot.name}
-            description="Configure voice mode, personality preset, and conversation behavior"
-          />
+          <VoiceSubNav botId={id} botName={bot.name} />
+
+          {presetParam && (
+            <div className="mb-4 px-4 py-3 bg-[#15A4AE]/10 border border-[#15A4AE]/20 rounded-xl text-xs text-[#15A4AE]">
+              Preset <strong>{presetParam}</strong> pre-selected from Training — save below to apply it to {bot.name}.
+            </div>
+          )}
 
           <form action={action} className="space-y-5">
 
@@ -138,7 +149,7 @@ export default async function AgentBotVoicePage({
               <div className="grid grid-cols-1 gap-2">
                 <label className="relative cursor-pointer">
                   <input type="radio" name="voice_preset" value=""
-                    defaultChecked={!bot.voice_preset}
+                    defaultChecked={!activePreset}
                     className="peer sr-only" />
                   <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-gray-200 dark:border-white/10 peer-checked:border-[#15A4AE]/60 peer-checked:bg-[#15A4AE]/5 transition-colors">
                     <span className="text-lg">🤖</span>
@@ -151,7 +162,7 @@ export default async function AgentBotVoicePage({
                 {PRESETS.map(p => (
                   <label key={p.value} className="relative cursor-pointer">
                     <input type="radio" name="voice_preset" value={p.value}
-                      defaultChecked={bot.voice_preset === p.value}
+                      defaultChecked={activePreset === p.value}
                       className="peer sr-only" />
                     <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-gray-200 dark:border-white/10 peer-checked:border-[#15A4AE]/60 peer-checked:bg-[#15A4AE]/5 transition-colors">
                       <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-white/5 flex items-center justify-center shrink-0">
@@ -285,7 +296,7 @@ export default async function AgentBotVoicePage({
                 className="px-5 py-2.5 bg-[#15A4AE] hover:bg-[#0e8f99] disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors">
                 Save voice settings
               </SubmitButton>
-              <Link href="/agent/bots"
+              <Link href="/bots"
                 className="px-5 py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
                 Cancel
               </Link>

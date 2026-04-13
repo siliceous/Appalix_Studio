@@ -3,7 +3,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
-import { Mic, Zap, HeadphonesIcon, Users, Phone, Briefcase, MessageCircle, Clock } from 'lucide-react'
+import { Mic } from 'lucide-react'
+import { VoiceSubNav } from '@/components/voice/voice-sub-nav'
 import type { Bot } from '@/lib/types'
 
 export const metadata: Metadata = { title: 'Voice Training' }
@@ -99,6 +100,8 @@ export default async function VoiceTrainingPage({
             description="Choose a preset to instantly configure how your voice bot speaks and behaves. Fine-tune per bot from the bot editor."
           />
 
+          <VoiceSubNav botId={selectedBot?.id} botName={selectedBot?.name} />
+
           {/* Bot selector */}
           {bots.length > 0 && (
             <div className="mb-6">
@@ -162,9 +165,9 @@ export default async function VoiceTrainingPage({
                   <Link
                     href={selectedBot
                       ? `/agent/bots/${selectedBot.id}?preset=${p.id}`
-                      : `/agent/bots?action=apply_preset&preset=${p.id}`}
+                      : '/bots'}
                     className="mt-auto block text-center text-xs font-medium px-3 py-2 rounded-lg bg-[#15A4AE]/10 text-[#15A4AE] hover:bg-[#15A4AE]/20 transition-colors">
-                    {selectedBot ? `Apply to ${selectedBot.name}` : 'Select a bot to apply'}
+                    {selectedBot ? `Apply to ${selectedBot.name}` : 'Select a bot first ↑'}
                   </Link>
                 </div>
               ))}
@@ -245,7 +248,7 @@ export default async function VoiceTrainingPage({
 
           {/* Quick links */}
           <div className="flex items-center gap-3">
-            <Link href="/agent/bots"
+            <Link href="/bots"
               className="flex items-center gap-2 px-4 py-2 bg-[#15A4AE]/10 text-[#15A4AE] hover:bg-[#15A4AE]/20 text-sm font-medium rounded-lg transition-colors">
               <Mic className="w-4 h-4" />Go to bots
             </Link>

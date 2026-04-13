@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { Plus, PhoneCall, PhoneIncoming, PhoneOutgoing, Phone, Mic, Zap } from 'lucide-react'
-import { toggleVoiceAgentActive } from '@/app/actions/voice'
+import { VoiceSubNav } from '@/components/voice/voice-sub-nav'
 import type { VoiceAgent } from '@/lib/types'
 
 export const metadata: Metadata = { title: 'Voice Agents' }
@@ -84,6 +84,8 @@ export default async function VoiceAgentsPage({
               </Link>
             }
           />
+
+          <VoiceSubNav />
 
           {/* Stats strip */}
           <div className="grid grid-cols-4 gap-4 mb-6">

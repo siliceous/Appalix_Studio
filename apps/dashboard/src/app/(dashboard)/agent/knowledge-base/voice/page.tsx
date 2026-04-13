@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { Plus, BookOpen, ChevronRight } from 'lucide-react'
 import { createVoiceKnowledgeEntry, deleteVoiceKnowledgeEntry } from '@/app/actions/voice'
+import { VoiceSubNav } from '@/components/voice/voice-sub-nav'
 import type { VoiceKnowledgeEntry, Bot } from '@/lib/types'
 
 export const metadata: Metadata = { title: 'Voice Knowledge Base' }
@@ -82,6 +83,8 @@ export default async function VoiceKnowledgePage({
             title="Voice Knowledge Base"
             description="Train your voice bots with scripts, FAQs, objection responses, and approved phrases."
           />
+
+          <VoiceSubNav botId={activeBotId} />
 
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
             {/* Sidebar: category filters */}

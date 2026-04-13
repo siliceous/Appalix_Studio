@@ -69,11 +69,11 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Agent',
     items: [
-      { href: '/bots',                      label: 'Bots',               icon: Bot,      adminOnly: true },
-      { href: '/integrations',              label: 'Integrations',       icon: Plug,     adminOnly: true },
-      { href: '/sources',                   label: 'Knowledge Base',     icon: BookOpen, adminOnly: true },
-      { href: '/agent/voice-training',      label: 'Voice Training',     icon: Mic,      adminOnly: true, sub: true },
-      { href: '/agent/knowledge-base/voice',label: 'Voice Knowledge',    icon: Library,  adminOnly: true, sub: true },
+      { href: '/bots',                       label: 'Bots',               icon: Bot,      adminOnly: true },
+      { href: '/integrations',               label: 'Integrations',       icon: Plug,     adminOnly: true },
+      { href: '/sources',                    label: 'Knowledge Base',     icon: BookOpen, adminOnly: true },
+      { href: '/agent/voice-training',       label: 'Voice Training',     icon: Mic,      adminOnly: true, sub: true },
+      { href: '/agent/knowledge-base/voice', label: 'Voice Knowledge',    icon: Library,  adminOnly: true, sub: true },
     ],
   },
   {
@@ -143,6 +143,8 @@ export function Sidebar({ workspace, callerRole, userPermissions, branding }: Si
 
   function isActive(href: string) {
     if (href === '/dashboard') return pathname === '/dashboard'
+    // /bots also covers /agent/bots/[id] (voice config pages for a bot)
+    if (href === '/bots') return pathname.startsWith('/bots') || pathname.startsWith('/agent/bots/')
     return pathname.startsWith(href)
   }
 

@@ -2,7 +2,7 @@ import { createClient }  from '@/lib/supabase/server'
 import { redirect }       from 'next/navigation'
 import { Header }         from '@/components/layout/header'
 import Image from 'next/image'
-import { Bot, Plus, Plug, MessageSquare, TrendingUp } from 'lucide-react'
+import { Bot, Plus, Plug, MessageSquare, TrendingUp, Mic } from 'lucide-react'
 import { formatDate, formatTokens, formatCost, timeAgo, PLATFORM_META } from '@/lib/utils'
 import type { Metadata } from 'next'
 import type { Bot as BotRow, Conversation, UsageEvent } from '@/lib/types'
@@ -111,45 +111,80 @@ export default async function BotsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {bots?.map((bot) => (
-            <a
+            <div
               key={bot.id}
-              href={`/bots/${bot.id}`}
-              className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-5 hover:shadow-sm transition-shadow group"
+              className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-5 hover:shadow-sm transition-shadow flex flex-col"
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-white dark:bg-white/5">
-                  <Image src="/favicon.png" alt="Bot" width={22} height={22} className="w-5 h-5 object-contain" />
+              {/* Main clickable area → bot detail */}
+              <a href={`/bots/${bot.id}`} className="flex-1 group block">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-white dark:bg-white/5">
+                    <Image src="/favicon.png" alt="Bot" width={22} height={22} className="w-5 h-5 object-contain" />
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {bot.enable_voice && (
+                      <span className="text-[10px] bg-[#15A4AE]/10 text-[#15A4AE] px-1.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                        <Mic className="w-2.5 h-2.5" />Voice
+                      </span>
+                    )}
+                    {bot.bot_type === 'internal' && (
+                      <span className="text-[10px] bg-[#15A4AE]/10 text-[#15A4AE] px-1.5 py-0.5 rounded-full font-semibold">
+                        Sage
+                      </span>
+                    )}
+                  </div>
                 </div>
-                {bot.bot_type === 'internal' && (
-                  <span className="text-xs bg-[#15A4AE]/10 text-[#15A4AE] px-2 py-0.5 rounded-full font-medium">
-                    Sage
+
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1 group-hover:text-brand-700 dark:group-hover:text-[#ec732e] transition-colors">
+                  {bot.name}
+                </h3>
+                <p className="text-xs text-gray-400 line-clamp-2 mb-4">
+                  {bot.description ?? bot.system_prompt?.slice(0, 100) ?? 'No description'}
+                </p>
+
+                <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                  <span className="flex items-center gap-1">
+                    <Plug className="w-3.5 h-3.5" />
+                    {/* @ts-expect-error — aggregate count */}
+                    {bot.integrations?.[0]?.count ?? 0} integrations
                   </span>
-                )}
-              </div>
+                  <span>·</span>
+                  <span>{formatDate(bot.created_at)}</span>
+                  {bot.enable_rag && (
+                    <>
+                      <span>·</span>
+                      <span className="text-green-600 font-medium">RAG</span>
+                    </>
+                  )}
+                </div>
+              </a>
 
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1 group-hover:text-brand-700 dark:group-hover:text-[#ec732e] transition-colors">
-                {bot.name}
-              </h3>
-              <p className="text-xs text-gray-400 line-clamp-2 mb-4">
-                {bot.description ?? bot.system_prompt?.slice(0, 100) ?? 'No description'}
-              </p>
-
-              <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                <span className="flex items-center gap-1">
-                  <Plug className="w-3.5 h-3.5" />
-                  {/* @ts-expect-error — aggregate count */}
-                  {bot.integrations?.[0]?.count ?? 0} integrations
-                </span>
-                <span>·</span>
-                <span>{formatDate(bot.created_at)}</span>
-                {bot.enable_rag && (
-                  <>
-                    <span>·</span>
-                    <span className="text-green-600 font-medium">RAG</span>
-                  </>
+              {/* Voice action row */}
+              <div className="mt-3 pt-3 border-t dark:border-white/8 flex items-center justify-between">
+                {bot.enable_voice ? (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {bot.voice_preset && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 font-medium">
+                        {bot.voice_preset}
+                      </span>
+                    )}
+                    {bot.voice_goal && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium">
+                        {bot.voice_goal.replace('_', ' ')}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-gray-400">Text only</span>
                 )}
+                <a
+                  href={`/agent/bots/${bot.id}`}
+                  className="text-[10px] font-medium text-[#15A4AE] hover:text-[#0e8f99] transition-colors whitespace-nowrap"
+                >
+                  {bot.enable_voice ? 'Voice config →' : 'Enable voice →'}
+                </a>
               </div>
-            </a>
+            </div>
           ))}
         </div>
       )}
