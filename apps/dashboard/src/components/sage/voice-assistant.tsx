@@ -196,7 +196,9 @@ export function VoiceAssistant({ workspaceId, plan }: VoiceAssistantProps) {
         )
       }
 
-      const { wsUrl, firstName } = await res.json() as { wsUrl: string; firstName?: string }
+      const { wsUrl: rawWsUrl, firstName } = await res.json() as { wsUrl: string; firstName?: string }
+      // Ensure wss:// in production (HTTPS pages block plain ws://)
+      const wsUrl = rawWsUrl.replace(/^ws:\/\//, 'wss://')
       const ws = new WebSocket(wsUrl)
       wsRef.current = ws
       let greetingDone = false
