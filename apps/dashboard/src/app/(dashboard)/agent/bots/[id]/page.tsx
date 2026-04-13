@@ -48,13 +48,14 @@ export default async function AgentBotVoicePage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: botRaw } = await supabase
+  // Use * so the query succeeds even if voice migrations haven't run yet
+  const { data: botRaw, error: botError } = await supabase
     .from('bots')
-    .select('id,name,description,enable_voice,voice_mode,voice_name,voice_preset,voice_goal,voice_config')
+    .select('*')
     .eq('id', id)
     .single()
 
-  if (!botRaw) notFound()
+  if (botError || !botRaw) notFound()
   const bot = botRaw as Pick<Bot,
     'id'|'name'|'description'|'enable_voice'|'voice_mode'|'voice_name'|'voice_preset'|'voice_goal'|'voice_config'>
 
