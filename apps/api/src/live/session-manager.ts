@@ -301,14 +301,14 @@ export async function handleLiveWsConnection(ws: WebSocket, req: IncomingMessage
     const genaiModule = await import('@google/genai')
     const GoogleGenAI = genaiModule.GoogleGenAI
 
-    const ai = new GoogleGenAI({ apiKey, apiVersion: 'v1alpha' } as never)
+    const ai = new GoogleGenAI({ apiKey })
 
     const vc       = meta.voiceConfig
     const voiceName = vc?.voice_name ?? 'Aoede'
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     gemini = await (ai.live as any).connect({
-      model: 'gemini-2.0-flash-live-preview-04-09',
+      model: 'gemini-live-2.5-flash-preview',
       config: {
         responseModalities: ['AUDIO'],
         speechConfig:       { voiceConfig: { prebuiltVoiceConfig: { voiceName } } },
