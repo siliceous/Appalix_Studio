@@ -113,6 +113,7 @@ export async function handleWidgetVoiceWs(
   }
 
   geminiWs.on('open', () => {
+    console.log(`[widget-voice] gemini ws open — session=${sessionId}`)
     // First message must be BidiGenerateContentSetup
     geminiWs!.send(JSON.stringify({
       setup: {
@@ -140,8 +141,15 @@ export async function handleWidgetVoiceWs(
 
       // Gemini signals setup is done
       if ('setupComplete' in msg) {
+        console.log(`[widget-voice] setupComplete received — session=${sessionId}`)
         send({ type: 'ready' })
         return
+      }
+
+      // Log unexpected top-level keys (helps debug model errors / unexpected frames)
+      const topKeys = Object.keys(msg)
+      if (!topKeys.includes('serverContent')) {
+        console.log(`[widget-voice] gemini frame keys=${topKeys.join(',')} — session=${sessionId}`, JSON.stringify(msg).slice(0, 300))
       }
 
       const sc = msg.serverContent as {
@@ -208,9 +216,13 @@ export async function handleWidgetVoiceWs(
           },
         }))
       } else if (msg.type === 'text' && msg.content) {
-        // 3.1 model: use realtimeInput for text during conversation
+        // Use clientContent + turnComplete so Gemini immediately generates a spoken reply.
+        // realtimeInput.text buffers without triggering a response on its own.
         geminiWs.send(JSON.stringify({
-          realtimeInput: { text: msg.content },
+          clientContent: {
+            turns: [{ role: 'user', parts: [{ text: msg.content }] }],
+            turnComplete: true,
+          },
         }))
       }
     } catch {

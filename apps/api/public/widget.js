@@ -175,6 +175,8 @@
 
   function playPcm(base64, mimeType) {
     if (!voiceAudioCtx) return;
+    // Resume the context if it was suspended (Safari/iOS policy)
+    if (voiceAudioCtx.state === 'suspended') voiceAudioCtx.resume();
     var sr = 24000;
     var m = mimeType && mimeType.match(/rate=(\d+)/);
     if (m) sr = parseInt(m[1]);
