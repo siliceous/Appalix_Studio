@@ -134,15 +134,18 @@
 
   // Voice state
   var enableVoice          = false;
-  var voiceVoiceName       = 'Aoede';
+  var voiceMode            = 'voice_text';  // 'voice_text' | 'voice_only'
+  var voiceGreetingText    = 'Hello';       // set from voice-session response (greeting_script)
   var voiceWs              = null;
   var voiceActive          = false;
+  var voiceState           = 'idle';       // 'idle' | 'listening' | 'thinking' | 'speaking'
   var voiceAudioCtx        = null;
   var voiceAudioStream     = null;
   var voiceProcessor       = null;
   var voiceNextPlayTime    = 0;
-  var voiceIdleTimer       = null;   // setTimeout handle — disconnects after 60s of no activity
-  var VOICE_IDLE_TIMEOUT   = 60000;  // 60 seconds
+  var voiceActiveSources   = [];           // tracked AudioBufferSource nodes — stopped on interrupt
+  var voiceIdleTimer       = null;         // setTimeout handle — disconnects after 60s of no activity
+  var VOICE_IDLE_TIMEOUT   = 60000;        // 60 seconds
 
   function resetVoiceIdleTimer() {
     if (voiceIdleTimer) clearTimeout(voiceIdleTimer);
@@ -154,6 +157,24 @@
 
   function clearVoiceIdleTimer() {
     if (voiceIdleTimer) { clearTimeout(voiceIdleTimer); voiceIdleTimer = null; }
+  }
+
+  // Stop every queued/playing audio buffer immediately (called on interruption or session end)
+  function stopAllAudio() {
+    voiceActiveSources.forEach(function (src) { try { src.stop(); } catch (_) {} });
+    voiceActiveSources = [];
+    voiceNextPlayTime  = 0;
+  }
+
+  // Update the voice state and reflect it in the header subtitle without a full re-render
+  function updateVoiceState(newState) {
+    voiceState = newState;
+    var el = shadow.getElementById('apx-ht-sub');
+    if (!el) return;
+    el.textContent = newState === 'listening' ? 'Listening\u2026'
+                   : newState === 'thinking'  ? 'Thinking\u2026'
+                   : newState === 'speaking'  ? 'Speaking\u2026'
+                   : 'Online \u00b7 Replies instantly';
   }
 
   // ── Audio helpers ──────────────────────────────────────────────────────────
@@ -208,6 +229,17 @@
     var when = Math.max(voiceAudioCtx.currentTime, voiceNextPlayTime);
     src.start(when);
     voiceNextPlayTime = when + abuf.duration;
+    // Track the source so we can stop it immediately on interruption
+    voiceActiveSources.push(src);
+    src.onended = function () {
+      var idx = voiceActiveSources.indexOf(src);
+      if (idx !== -1) voiceActiveSources.splice(idx, 1);
+      // When the last chunk finishes playing, go back to listening
+      if (voiceActiveSources.length === 0 && voiceState === 'speaking') {
+        updateVoiceState('listening');
+      }
+    };
+    updateVoiceState('speaking');
   }
 
   try {
@@ -404,22 +436,37 @@
           '</div>',
           '<div class="ht">',
             '<div class="ht-name">', esc(botName), '</div>',
-            '<div class="ht-sub">Online &middot; Replies instantly</div>',
+            '<div class="ht-sub" id="apx-ht-sub">',
+              voiceState === 'listening' ? 'Listening\u2026' :
+              voiceState === 'thinking'  ? 'Thinking\u2026'  :
+              voiceState === 'speaking'  ? 'Speaking\u2026'  :
+              'Online &middot; Replies instantly',
+            '</div>',
           '</div>',
           '<button class="hbtn" id="apx-expand" aria-label="', (isExpanded ? 'Contract' : 'Expand'), '">', ICONS[isExpanded ? 'contract' : 'expand'], '</button>',
           '<button class="hbtn" id="apx-min" aria-label="Minimise">', ICONS.minimise, '</button>',
           '<button class="hbtn" id="apx-close" aria-label="Close">', ICONS.close, '</button>',
         '</div>',
         '<div class="messages" id="apx-messages">', msgsHtml, '</div>',
-        '<div class="inputbar">',
-          '<button class="icon-btn" id="apx-mic" title="Voice input">', ICONS.mic, '</button>',
-          '<div class="input-wrap">',
-            '<textarea id="apx-input" rows="1" placeholder="Ask anything\u2026"></textarea>',
-            '<button class="pin-btn" id="apx-file" title="Attach file">', ICONS.file, '</button>',
-            '<input type="file" id="apx-file-input" style="display:none">',
+        // voice_only: centre the mic, hide text input entirely
+        (enableVoice && voiceMode === 'voice_only') ? [
+          '<div class="inputbar" style="justify-content:center;padding:16px 12px;">',
+            '<button class="icon-btn" id="apx-mic" title="', voiceActive ? 'Stop voice' : 'Start voice', '"',
+              ' style="width:48px;height:48px;border-radius:50%;background:var(--apx-accent);color:var(--apx-accent-text);opacity:1;">',
+              ICONS.mic,
+            '</button>',
           '</div>',
-          '<button class="sbtn" id="apx-send"', (pendingTyping ? ' disabled' : ''), '>', ICONS.send, '</button>',
-        '</div>',
+        ].join('') : [
+          '<div class="inputbar">',
+            '<button class="icon-btn" id="apx-mic" title="Voice input">', ICONS.mic, '</button>',
+            '<div class="input-wrap">',
+              '<textarea id="apx-input" rows="1" placeholder="Ask anything\u2026"></textarea>',
+              '<button class="pin-btn" id="apx-file" title="Attach file">', ICONS.file, '</button>',
+              '<input type="file" id="apx-file-input" style="display:none">',
+            '</div>',
+            '<button class="sbtn" id="apx-send"', (pendingTyping ? ' disabled' : ''), '>', ICONS.send, '</button>',
+          '</div>',
+        ].join(''),
         '<div class="powered">Powered by <a href="https://appalix.ai/" target="_blank" rel="noopener">Appalix.ai</a></div>',
       '</div>',
     ].join('');
@@ -664,6 +711,8 @@
   function stopVoiceSession() {
     voiceActive = false;
     clearVoiceIdleTimer();
+    stopAllAudio();
+    updateVoiceState('idle');
     updateMicBtn(false);
     if (voiceProcessor) {
       try { voiceProcessor.disconnect(); } catch (_) {}
@@ -687,83 +736,122 @@
   function startVoiceSession(autoGreet) {
     if (voiceActive) { stopVoiceSession(); return; }
 
-    fetch(apiBase + '/chat/voice-session/' + integrationId, { method: 'POST' })
+    // Snapshot the current text conversation so the voice session has context
+    var historySnapshot = messages.slice(-10).map(function (m) {
+      return { role: m.role === 'bot' ? 'assistant' : 'user', text: m.text };
+    });
+
+    fetch(apiBase + '/chat/voice-session/' + integrationId, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ history: historySnapshot, voice_mode: voiceMode }),
+    })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (!d.wsUrl) throw new Error('No wsUrl');
 
-        // AudioContext for playback (and to know the native sample rate for capture)
-        voiceAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
-        voiceNextPlayTime = 0;
+        // Server returns the greeting text derived from greeting_script (or 'Hello')
+        voiceGreetingText = d.greetingText || 'Hello';
 
-        voiceWs = new WebSocket(d.wsUrl);
+        voiceAudioCtx     = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+        voiceNextPlayTime = 0;
+        voiceWs           = new WebSocket(d.wsUrl);
 
         voiceWs.onmessage = function (evt) {
           try {
             var msg = JSON.parse(evt.data);
 
+            // ── Session ready ─────────────────────────────────────────────
             if (msg.type === 'ready') {
-              // Trigger bot greeting before user speaks, then start 60s idle timeout
               if (autoGreet) {
-                voiceWs.send(JSON.stringify({ type: 'text', content: 'Hello' }));
+                voiceWs.send(JSON.stringify({ type: 'text', content: voiceGreetingText }));
+                updateVoiceState('thinking');  // waiting for bot's first words
               }
-              resetVoiceIdleTimer(); // 60s to get a response; resets on any activity
-              // Open mic
-              navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+              resetVoiceIdleTimer();
+
+              // Open mic — iOS-friendly constraints
+              navigator.mediaDevices.getUserMedia({
+                audio: { echoCancellation: true, noiseSuppression: true },
+                video: false,
+              })
                 .then(function (stream) {
-                  // Guard: session may have been torn down while waiting for mic permission
+                  // Guard: session may have closed while waiting for mic permission
                   if (!voiceWs || voiceWs.readyState !== 1) {
                     stream.getTracks().forEach(function (t) { t.stop(); });
                     return;
                   }
                   voiceAudioStream = stream;
-                  voiceActive = true;
+                  voiceActive      = true;
+                  // Keep 'thinking' state if autoGreet is still waiting for bot reply
+                  if (!autoGreet) updateVoiceState('listening');
                   updateMicBtn(true);
 
-                  var nativeSr = voiceAudioCtx.sampleRate;
-                  var source = voiceAudioCtx.createMediaStreamSource(stream);
-                  voiceProcessor = voiceAudioCtx.createScriptProcessor(4096, 1, 1);
+                  var nativeSr    = voiceAudioCtx.sampleRate;
+                  var source      = voiceAudioCtx.createMediaStreamSource(stream);
+                  voiceProcessor  = voiceAudioCtx.createScriptProcessor(4096, 1, 1);
 
-                  // Track whether mic is picking up actual speech (RMS > threshold)
-                  // to avoid resetting the idle timer on silence
                   var SPEECH_RMS_THRESHOLD = 0.01;
                   voiceProcessor.onaudioprocess = function (e) {
                     if (!voiceActive || !voiceWs || voiceWs.readyState !== 1) return;
-                    var f32  = e.inputBuffer.getChannelData(0);
-                    var d16  = downsampleBuffer(f32, nativeSr, 16000);
-                    var pcm  = float32ToInt16(d16);
-                    var b64  = bufToBase64(pcm.buffer);
+                    var f32 = e.inputBuffer.getChannelData(0);
+                    var d16 = downsampleBuffer(f32, nativeSr, 16000);
+                    var pcm = float32ToInt16(d16);
+                    var b64 = bufToBase64(pcm.buffer);
                     voiceWs.send(JSON.stringify({ type: 'audio', data: b64 }));
-                    // Reset idle timer only when user is actually speaking, not on silence
+                    // Only reset idle timer when user is actually speaking (not on silence)
                     var rms = 0;
                     for (var k = 0; k < f32.length; k++) rms += f32[k] * f32[k];
-                    if (Math.sqrt(rms / f32.length) > SPEECH_RMS_THRESHOLD) resetVoiceIdleTimer();
+                    if (Math.sqrt(rms / f32.length) > SPEECH_RMS_THRESHOLD) {
+                      resetVoiceIdleTimer();
+                      if (voiceState !== 'speaking') updateVoiceState('listening');
+                    }
                   };
 
                   source.connect(voiceProcessor);
                   voiceProcessor.connect(voiceAudioCtx.destination);
                 })
                 .catch(function (err) {
-                  // Only show mic error if the session is still alive (not killed by a Gemini error)
                   if (voiceWs) {
-                    var msg = (err && err.name === 'NotAllowedError')
+                    var errMsg = (err && err.name === 'NotAllowedError')
                       ? 'Microphone access denied. Please allow microphone permission and try again.'
                       : 'Could not access microphone. Please check your browser settings.';
-                    messages.push({ role: 'bot', text: msg });
+                    messages.push({ role: 'bot', text: errMsg });
                     render();
                   }
                   stopVoiceSession();
                 });
 
+            // ── Bot audio ─────────────────────────────────────────────────
             } else if (msg.type === 'audio' && msg.data) {
-              resetVoiceIdleTimer(); // Gemini responded — session is live, reset the clock
-              playPcm(msg.data, msg.mimeType);
+              resetVoiceIdleTimer();
+              playPcm(msg.data, msg.mimeType);  // sets voiceState='speaking' internally
 
+            // ── Bot text transcript (voice_text mode only) ─────────────────
             } else if (msg.type === 'text' && msg.content) {
               resetVoiceIdleTimer();
-              messages.push({ role: 'bot', text: msg.content });
-              render();
+              if (voiceMode === 'voice_text') {
+                messages.push({ role: 'bot', text: msg.content });
+                render();
+              }
 
+            // ── User speech transcript (voice_text mode, final only) ───────
+            } else if (msg.type === 'input_transcript' && msg.finished && msg.text) {
+              if (voiceMode === 'voice_text' && msg.text.trim()) {
+                messages.push({ role: 'user', text: msg.text.trim() });
+                updateVoiceState('thinking');  // user finished; bot is processing
+                render();
+              }
+
+            // ── Bot finished its turn → back to listening ──────────────────
+            } else if (msg.type === 'turn_complete') {
+              updateVoiceState('listening');
+
+            // ── Interruption: user spoke mid-reply → kill queued audio ─────
+            } else if (msg.type === 'interrupted') {
+              stopAllAudio();
+              updateVoiceState('listening');
+
+            // ── Error ─────────────────────────────────────────────────────
             } else if (msg.type === 'error') {
               messages.push({ role: 'bot', text: msg.message || 'Voice error — please try again.' });
               render();
@@ -788,8 +876,8 @@
       if (d.welcome_message) welcomeMessage = d.welcome_message;
       if (d.bot_name) botName = d.bot_name;
       if (d.bot_avatar_url) botAvatarUrl = d.bot_avatar_url;
-      enableVoice    = !!d.enable_voice;
-      voiceVoiceName = d.voice_name || 'Aoede';
+      enableVoice = !!d.enable_voice;
+      voiceMode   = d.voice_mode || 'voice_text';
       var skinId = d.skin || 'appalix_lite';
       if (skinId === 'custom') {
         skinVars = Object.assign({}, SKINS.appalix_lite);

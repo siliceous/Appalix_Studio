@@ -39,7 +39,35 @@ interface WidgetVoiceSession {
   botName:       string
   systemPrompt:  string
   voiceName:     string
+  voiceConfig:   Record<string, unknown> | null
+  history:       Array<{ role: string; text: string }>
   createdAt:     Date
+}
+
+// ── Persona + history helpers ───────────────────────────────────────────────
+
+function buildVoicePersonaPrompt(cfg: Record<string, unknown> | null): string {
+  if (!cfg) return ''
+  const lines: string[] = []
+  if (cfg.tone)               lines.push(`Tone: Speak in a ${cfg.tone} tone.`)
+  if (cfg.pace)               lines.push(`Pace: Speak at a ${cfg.pace} pace.`)
+  const lvl = (n: unknown) => Number(n) >= 4 ? 'high' : Number(n) >= 3 ? 'moderate' : 'low'
+  if (cfg.empathy        != null) lines.push(`Empathy: Express ${lvl(cfg.empathy)} empathy.`)
+  if (cfg.assertiveness  != null) lines.push(`Assertiveness: Be ${lvl(cfg.assertiveness)} assertiveness.`)
+  if (cfg.formality      != null) lines.push(`Formality: Use ${lvl(cfg.formality)} formality.`)
+  if (cfg.ask_one_at_a_time)  lines.push('Ask only one question at a time.')
+  if (cfg.confirm_details)    lines.push('Confirm key details back to the user before proceeding.')
+  if (cfg.push_for_booking)   lines.push('Proactively guide toward booking an appointment.')
+  if (cfg.escalate_sooner)    lines.push('Escalate to a human agent sooner if needed.')
+  if (cfg.collect_lead_first) lines.push('Collect contact details (name, email, phone) early in the conversation.')
+  return lines.length ? 'PERSONA:\n' + lines.join('\n') : ''
+}
+
+function buildHistoryContext(history: Array<{ role: string; text: string }>): string {
+  if (!history || history.length === 0) return ''
+  const lines = history.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.text}`)
+  return '\n\n[Prior conversation — continue naturally from this context]\n' +
+    lines.join('\n') + '\n[End prior context]'
 }
 
 const sessions = new Map<string, WidgetVoiceSession>()
@@ -89,14 +117,19 @@ export async function handleWidgetVoiceWs(
     return
   }
 
-  // Build system prompt
-  const systemPrompt =
+  // Build system prompt — base + persona + voice rules + prior history
+  const personaBlock  = buildVoicePersonaPrompt(meta.voiceConfig)
+  const historyBlock  = buildHistoryContext(meta.history)
+  const systemPrompt  =
     (meta.systemPrompt?.trim()
-      ? meta.systemPrompt.trim() + '\n\n'
-      : `You are ${meta.botName}, a helpful assistant.\n\n`) +
+      ? meta.systemPrompt.trim()
+      : `You are ${meta.botName}, a helpful assistant.`) +
+    (personaBlock ? '\n\n' + personaBlock : '') +
+    '\n\n' +
     `VOICE RULES: This is a real-time voice conversation. Keep every response to ` +
     `1–2 short sentences. Be conversational and natural. Do not use lists, markdown, ` +
-    `or any formatting — speak in plain, flowing sentences.`
+    `or any formatting — speak in plain, flowing sentences.` +
+    historyBlock
 
   let closed    = false
   let geminiWs: WebSocket | null = null
@@ -119,7 +152,8 @@ export async function handleWidgetVoiceWs(
       setup: {
         model: GEMINI_MODEL,
         generationConfig: {
-          responseModalities: ['AUDIO'],
+          responseModalities:    ['AUDIO', 'TEXT'],  // TEXT gives us bot transcript for free
+          inputAudioTranscription: {},               // enables user speech → text events
           speechConfig: {
             voiceConfig: {
               prebuiltVoiceConfig: { voiceName: meta.voiceName || 'Aoede' },
@@ -159,8 +193,9 @@ export async function handleWidgetVoiceWs(
             inlineData?: { mimeType: string; data: string }
           }>
         }
-        turnComplete?: boolean
-        interrupted?:  boolean
+        turnComplete?:       boolean
+        interrupted?:        boolean
+        inputTranscription?: { text?: string; finished?: boolean }
       } | undefined
 
       if (sc?.modelTurn?.parts) {
@@ -172,6 +207,11 @@ export async function handleWidgetVoiceWs(
             send({ type: 'text', content: part.text })
           }
         }
+      }
+
+      // User speech transcription — forward so client can show user bubbles in voice_text mode
+      if (sc?.inputTranscription?.text) {
+        send({ type: 'input_transcript', text: sc.inputTranscription.text, finished: !!sc.inputTranscription.finished })
       }
 
       if (sc?.turnComplete) send({ type: 'turn_complete' })

@@ -77,27 +77,39 @@ export async function chatRoutes(fastify: FastifyInstance) {
       const integration = await resolveIntegration(request.params.integrationId)
       if (!integration?.bot_id) return reply.status(404).send({ error: 'Integration not found' })
 
+      // Accept optional conversation history and voice_mode from the widget
+      const body = (request.body ?? {}) as {
+        history?:    Array<{ role: string; text: string }>
+        voice_mode?: string
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: bot } = await supabase
         .from('bots')
-        .select('name, system_prompt, enable_voice, voice_name')
+        .select('name, system_prompt, enable_voice, voice_name, voice_config')
         .eq('id', integration.bot_id)
         .single()
 
       const b = bot as {
         name: string; system_prompt: string | null
         enable_voice?: boolean; voice_name?: string | null
+        voice_config?: Record<string, unknown> | null
       } | null
 
       if (!b?.enable_voice) {
         return reply.status(403).send({ error: 'Voice not enabled for this bot' })
       }
 
+      const voiceConfig   = (b.voice_config ?? null) as Record<string, unknown> | null
+      const greetingText  = (voiceConfig?.greeting_script as string | undefined)?.trim() || 'Hello'
+
       const sessionId = createWidgetVoiceSession({
         integrationId: integration.id,
         botName:       b.name,
         systemPrompt:  b.system_prompt ?? '',
         voiceName:     b.voice_name   ?? 'Aoede',
+        voiceConfig,
+        history:       (body.history ?? []).slice(-10),  // carry last 10 messages max
       })
 
       const apiBase = process.env.API_BASE_URL ?? 'http://localhost:3001'
@@ -105,7 +117,8 @@ export async function chatRoutes(fastify: FastifyInstance) {
 
       return reply.send({
         sessionId,
-        wsUrl: `${wsBase}/chat/voice-ws?session=${sessionId}`,
+        wsUrl:         `${wsBase}/chat/voice-ws?session=${sessionId}`,
+        greetingText,
       })
     },
   )
