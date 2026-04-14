@@ -1,10 +1,11 @@
 /**
  * Widget Voice Handler
  *
- * Bridges the customer-facing chat widget ↔ Gemini Live.
- * Simpler than session-manager.ts — no Sage tools, just the bot's system prompt.
+ * Bridges the customer-facing chat widget ↔ Gemini Live via raw WebSocket.
+ * Uses the Gemini BidiGenerateContent wire protocol directly so we aren't
+ * constrained by whichever model the SDK bundle hardcodes.
  *
- * Protocol (same as Sage Live):
+ * Protocol (widget ↔ this server):
  *   Client → { type: "audio", data: "<base64 PCM 16kHz mono>" }
  *   Client → { type: "text",  content: "..." }
  *   Server → { type: "audio", data: "<base64>", mimeType: "audio/pcm;rate=24000" }
@@ -16,8 +17,20 @@
  */
 
 import { randomUUID } from 'crypto'
-import type { WebSocket } from 'ws'
+import { WebSocket } from 'ws'
 import type { IncomingMessage } from 'http'
+
+// ── Model & endpoint ────────────────────────────────────────────────────────
+
+const GEMINI_MODEL = 'models/gemini-3.1-flash-live-preview'
+
+function geminiWsUrl(apiKey: string) {
+  return (
+    'wss://generativelanguage.googleapis.com' +
+    '/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent' +
+    `?key=${apiKey}`
+  )
+}
 
 // ── In-memory session store ─────────────────────────────────────────────────
 
@@ -47,14 +60,6 @@ export function createWidgetVoiceSession(
   return id
 }
 
-// ── Gemini session interface (minimal) ──────────────────────────────────────
-
-interface GeminiSession {
-  sendRealtimeInput(input: { audio: { data: string; mimeType: string } }): void
-  sendClientContent(input: { turns: unknown[]; turnComplete: boolean }): void
-  close(): void
-}
-
 // ── WebSocket handler ───────────────────────────────────────────────────────
 
 export async function handleWidgetVoiceWs(
@@ -65,9 +70,7 @@ export async function handleWidgetVoiceWs(
   const sessionId = url.searchParams.get('session')
 
   function send(data: unknown) {
-    if (ws.readyState === (ws as unknown as { OPEN: number }).OPEN) {
-      ws.send(JSON.stringify(data))
-    }
+    if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(data))
   }
 
   if (!sessionId || !sessions.has(sessionId)) {
@@ -76,7 +79,6 @@ export async function handleWidgetVoiceWs(
     return
   }
 
-  // Consume the one-time token immediately
   const meta = sessions.get(sessionId)!
   sessions.delete(sessionId)
 
@@ -87,7 +89,7 @@ export async function handleWidgetVoiceWs(
     return
   }
 
-  // Build system prompt: bot's own prompt + voice brevity rule
+  // Build system prompt
   const systemPrompt =
     (meta.systemPrompt?.trim()
       ? meta.systemPrompt.trim() + '\n\n'
@@ -96,104 +98,120 @@ export async function handleWidgetVoiceWs(
     `1–2 short sentences. Be conversational and natural. Do not use lists, markdown, ` +
     `or any formatting — speak in plain, flowing sentences.`
 
-  let gemini: GeminiSession | null = null
-  let closed = false
+  let closed    = false
+  let geminiWs: WebSocket | null = null
+
+  // ── Open raw WebSocket to Gemini ──────────────────────────────────────────
 
   try {
-    const genaiModule  = await import('@google/genai')
-    const GoogleGenAI  = genaiModule.GoogleGenAI
-    const ai           = new GoogleGenAI({ apiKey })
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    gemini = await (ai.live as any).connect({
-      model:  'gemini-live-2.5-flash-preview',
-      config: {
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: { prebuiltVoiceConfig: { voiceName: meta.voiceName || 'Aoede' } },
-        },
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-      },
-      callbacks: {
-        onopen() {
-          send({ type: 'ready' })
-        },
-
-        async onmessage(message: Record<string, unknown>) {
-          const serverContent = message.serverContent as {
-            modelTurn?: {
-              parts?: Array<{
-                text?:       string
-                inlineData?: { mimeType: string; data: string }
-              }>
-            }
-            turnComplete?: boolean
-            interrupted?:  boolean
-          } | undefined
-
-          if (serverContent?.modelTurn?.parts) {
-            for (const part of serverContent.modelTurn.parts) {
-              if (part.inlineData) {
-                send({ type: 'audio', data: part.inlineData.data, mimeType: part.inlineData.mimeType })
-              }
-              if (part.text) {
-                send({ type: 'text', content: part.text })
-              }
-            }
-          }
-
-          if (serverContent?.turnComplete) send({ type: 'turn_complete' })
-          if (serverContent?.interrupted)  send({ type: 'interrupted' })
-        },
-
-        onerror(err: unknown) {
-          const msg = err instanceof Error ? err.message : String(err)
-          console.error('[widget-voice] onerror:', msg)
-          if (!closed) {
-            closed = true
-            send({ type: 'error', message: 'Voice session error — please try again.' })
-            if (ws.readyState === (ws as unknown as { OPEN: number }).OPEN) ws.close(1011, 'Gemini error')
-          }
-        },
-
-        onclose(evt: unknown) {
-          const e      = evt as { code?: number; reason?: Buffer | string } | undefined
-          const reason = Buffer.isBuffer(e?.reason) ? e.reason.toString() : String(e?.reason ?? '')
-          console.warn(`[widget-voice] onclose — code=${e?.code} reason="${reason}"`)
-          if (!closed) {
-            closed = true
-            send({ type: 'error', message: reason || 'Voice session ended — please reconnect.' })
-            if (ws.readyState === (ws as unknown as { OPEN: number }).OPEN) ws.close(1000, 'Session ended')
-          }
-        },
-      },
-    })
-
+    geminiWs = new WebSocket(geminiWsUrl(apiKey))
   } catch (err) {
-    console.error('[widget-voice] connect failed:', err)
-    send({ type: 'error', message: 'Failed to start voice session. Check GEMINI_API_KEY.' })
+    console.error('[widget-voice] failed to create gemini ws:', err)
+    send({ type: 'error', message: 'Failed to start voice session.' })
     ws.close(1011, 'Upstream error')
     return
   }
 
+  geminiWs.on('open', () => {
+    // First message must be BidiGenerateContentSetup
+    geminiWs!.send(JSON.stringify({
+      setup: {
+        model: GEMINI_MODEL,
+        generationConfig: {
+          responseModalities: ['AUDIO'],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: meta.voiceName || 'Aoede' },
+            },
+          },
+        },
+        systemInstruction: {
+          parts: [{ text: systemPrompt }],
+        },
+      },
+    }))
+  })
+
+  geminiWs.on('message', (raw: Buffer | string) => {
+    try {
+      const msg = JSON.parse(
+        typeof raw === 'string' ? raw : raw.toString(),
+      ) as Record<string, unknown>
+
+      // Gemini signals setup is done
+      if ('setupComplete' in msg) {
+        send({ type: 'ready' })
+        return
+      }
+
+      const sc = msg.serverContent as {
+        modelTurn?: {
+          parts?: Array<{
+            text?:       string
+            inlineData?: { mimeType: string; data: string }
+          }>
+        }
+        turnComplete?: boolean
+        interrupted?:  boolean
+      } | undefined
+
+      if (sc?.modelTurn?.parts) {
+        for (const part of sc.modelTurn.parts) {
+          if (part.inlineData) {
+            send({ type: 'audio', data: part.inlineData.data, mimeType: part.inlineData.mimeType })
+          }
+          if (part.text) {
+            send({ type: 'text', content: part.text })
+          }
+        }
+      }
+
+      if (sc?.turnComplete) send({ type: 'turn_complete' })
+      if (sc?.interrupted)  send({ type: 'interrupted' })
+    } catch {
+      // Ignore malformed frames
+    }
+  })
+
+  geminiWs.on('error', (err) => {
+    console.error('[widget-voice] gemini ws error:', err)
+    if (!closed) {
+      closed = true
+      send({ type: 'error', message: 'Voice session error — please try again.' })
+      if (ws.readyState === WebSocket.OPEN) ws.close(1011, 'Gemini error')
+    }
+  })
+
+  geminiWs.on('close', (code, reason) => {
+    const r = Buffer.isBuffer(reason) ? reason.toString() : String(reason ?? '')
+    console.warn(`[widget-voice] gemini closed — code=${code} reason="${r}"`)
+    if (!closed) {
+      closed = true
+      send({ type: 'error', message: r || 'Voice session ended — please reconnect.' })
+      if (ws.readyState === WebSocket.OPEN) ws.close(1000, 'Session ended')
+    }
+  })
+
   // ── Forward client → Gemini ───────────────────────────────────────────────
 
   ws.on('message', (data: Buffer) => {
-    if (!gemini || closed) return
+    if (!geminiWs || closed || geminiWs.readyState !== WebSocket.OPEN) return
     try {
       const msg = JSON.parse(data.toString()) as {
-        type: string; data?: string; content?: string; mimeType?: string
+        type: string; data?: string; content?: string
       }
 
       if (msg.type === 'audio' && msg.data) {
-        gemini.sendRealtimeInput({
-          audio: { data: msg.data, mimeType: 'audio/pcm;rate=16000' },
-        })
+        geminiWs.send(JSON.stringify({
+          realtimeInput: {
+            audio: { data: msg.data, mimeType: 'audio/pcm;rate=16000' },
+          },
+        }))
       } else if (msg.type === 'text' && msg.content) {
-        gemini.sendClientContent({
-          turns:        [{ role: 'user', parts: [{ text: msg.content }] }],
-          turnComplete: true,
-        })
+        // 3.1 model: use realtimeInput for text during conversation
+        geminiWs.send(JSON.stringify({
+          realtimeInput: { text: msg.content },
+        }))
       }
     } catch {
       // Ignore malformed frames
@@ -202,12 +220,12 @@ export async function handleWidgetVoiceWs(
 
   ws.on('close', () => {
     closed = true
-    try { gemini?.close() } catch {}
+    try { geminiWs?.close() } catch {}
   })
 
   ws.on('error', (err) => {
     console.error('[widget-voice] client ws error:', err)
     closed = true
-    try { gemini?.close() } catch {}
+    try { geminiWs?.close() } catch {}
   })
 }
