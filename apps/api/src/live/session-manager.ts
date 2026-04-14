@@ -308,7 +308,7 @@ export async function handleLiveWsConnection(ws: WebSocket, req: IncomingMessage
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     gemini = await (ai.live as any).connect({
-      model: 'gemini-3.1-flash-live-preview',
+      model: 'gemini-2.0-flash-live-exp',
       config: {
         responseModalities: ['AUDIO'],
         speechConfig:       { voiceConfig: { prebuiltVoiceConfig: { voiceName } } },
@@ -538,6 +538,8 @@ export async function handleLiveWsConnection(ws: WebSocket, req: IncomingMessage
           console.warn(`[gemini-live] onclose fired — code=${e?.code} reason="${reason}"`)
           if (!closed) {
             closed = true
+            // Send error before closing so the client can show a message
+            send({ type: 'error', message: reason || 'Voice session ended unexpectedly — please reconnect.' })
             if (ws.readyState === (ws as unknown as { OPEN: number }).OPEN) ws.close(1000, 'Session ended')
           }
         },
