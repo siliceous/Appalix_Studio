@@ -301,7 +301,7 @@ export async function handleLiveWsConnection(ws: WebSocket, req: IncomingMessage
     const genaiModule = await import('@google/genai')
     const GoogleGenAI = genaiModule.GoogleGenAI
 
-    const ai = new GoogleGenAI({ apiKey, httpOptions: { apiVersion: 'v1beta' } })
+    const ai = new GoogleGenAI({ apiKey, apiVersion: 'v1alpha' } as never)
 
     const vc       = meta.voiceConfig
     const voiceName = vc?.voice_name ?? 'Aoede'

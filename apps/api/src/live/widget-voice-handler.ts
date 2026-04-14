@@ -102,7 +102,7 @@ export async function handleWidgetVoiceWs(
   try {
     const genaiModule  = await import('@google/genai')
     const GoogleGenAI  = genaiModule.GoogleGenAI
-    const ai           = new GoogleGenAI({ apiKey, httpOptions: { apiVersion: 'v1beta' } })
+    const ai           = new GoogleGenAI({ apiKey, apiVersion: 'v1alpha' } as never)
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     gemini = await (ai.live as any).connect({
