@@ -106,7 +106,7 @@ export async function handleWidgetVoiceWs(
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     gemini = await (ai.live as any).connect({
-      model:  'gemini-live-3.1-flash-preview',
+      model:  'gemini-3.1-flash-live-preview',
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
