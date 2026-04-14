@@ -33,6 +33,7 @@ import { pollDueNotifications }                     from './services/sage-notifi
 import { liveRoutes }                               from './routes/live/index.js'
 import { internalTrackRoutes }                      from './routes/internal/track.js'
 import { handleLiveWsConnection }                   from './live/session-manager.js'
+import { handleWidgetVoiceWs }                      from './live/widget-voice-handler.js'
 
 const server = Fastify({
   logger: {
@@ -184,11 +185,18 @@ try {
     const { WebSocketServer } = await import('ws')
     const wss = new WebSocketServer({ noServer: true })
 
+    // Second WSS for widget voice — separate server so connections are routed cleanly
+    const wssWidget = new WebSocketServer({ noServer: true })
+
     server.server.on('upgrade', (request: import('http').IncomingMessage, socket: import('net').Socket, head: Buffer) => {
       const url = new URL(request.url ?? '/', `http://localhost:${port}`)
       if (url.pathname === '/live/ws') {
         wss.handleUpgrade(request, socket, head, (ws) => {
           wss.emit('connection', ws, request)
+        })
+      } else if (url.pathname === '/chat/voice-ws') {
+        wssWidget.handleUpgrade(request, socket, head, (ws) => {
+          wssWidget.emit('connection', ws, request)
         })
       } else {
         socket.destroy()
@@ -196,21 +204,27 @@ try {
     })
 
     wss.on('connection', handleLiveWsConnection)
+    wssWidget.on('connection', (ws, req) => { void handleWidgetVoiceWs(ws, req) })
 
     // Keep-alive: ping every 30 s so Render's 55 s idle timeout never fires
-    setInterval(() => {
-      wss.clients.forEach((ws) => {
-        if ((ws as { isAlive?: boolean }).isAlive === false) { ws.terminate(); return }
-        ;(ws as { isAlive?: boolean }).isAlive = false
-        ws.ping()
+    function keepAlive(server: InstanceType<typeof WebSocketServer>) {
+      setInterval(() => {
+        server.clients.forEach((ws) => {
+          if ((ws as { isAlive?: boolean }).isAlive === false) { ws.terminate(); return }
+          ;(ws as { isAlive?: boolean }).isAlive = false
+          ws.ping()
+        })
+      }, 30_000)
+      server.on('connection', (ws) => {
+        ;(ws as { isAlive?: boolean }).isAlive = true
+        ws.on('pong', () => { ;(ws as { isAlive?: boolean }).isAlive = true })
       })
-    }, 30_000)
-    wss.on('connection', (ws) => {
-      ;(ws as { isAlive?: boolean }).isAlive = true
-      ws.on('pong', () => { ;(ws as { isAlive?: boolean }).isAlive = true })
-    })
+    }
+    keepAlive(wss)
+    keepAlive(wssWidget)
 
     console.log(`   WS   /live/ws               (Sage Voice gateway)`)
+    console.log(`   WS   /chat/voice-ws          (Widget Voice gateway)`)
   } catch {
     console.warn('[live-gateway] ws package not found — voice disabled. Run: npm i ws @google/genai in apps/api')
   }

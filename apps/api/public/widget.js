@@ -132,6 +132,68 @@
   var userWidth  = 0;
   var userHeight = 0;
 
+  // Voice state
+  var enableVoice       = false;
+  var voiceVoiceName    = 'Aoede';
+  var voiceWs           = null;
+  var voiceActive       = false;
+  var voiceAudioCtx     = null;
+  var voiceAudioStream  = null;
+  var voiceProcessor    = null;
+  var voiceNextPlayTime = 0;
+
+  // ── Audio helpers ──────────────────────────────────────────────────────────
+
+  function downsampleBuffer(buffer, fromRate, toRate) {
+    if (fromRate === toRate) return buffer;
+    var ratio = fromRate / toRate;
+    var newLen = Math.round(buffer.length / ratio);
+    var out = new Float32Array(newLen);
+    for (var i = 0; i < newLen; i++) {
+      var s = Math.round(i * ratio), e = Math.round((i + 1) * ratio);
+      var sum = 0, cnt = 0;
+      for (var j = s; j < e && j < buffer.length; j++) { sum += buffer[j]; cnt++; }
+      out[i] = cnt ? sum / cnt : 0;
+    }
+    return out;
+  }
+
+  function float32ToInt16(buf) {
+    var out = new Int16Array(buf.length);
+    for (var i = 0; i < buf.length; i++) {
+      var s = Math.max(-1, Math.min(1, buf[i]));
+      out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+    return out;
+  }
+
+  function bufToBase64(buf) {
+    var bytes = new Uint8Array(buf), bin = '';
+    for (var i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+
+  function playPcm(base64, mimeType) {
+    if (!voiceAudioCtx) return;
+    var sr = 24000;
+    var m = mimeType && mimeType.match(/rate=(\d+)/);
+    if (m) sr = parseInt(m[1]);
+    var bin = atob(base64);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    var int16 = new Int16Array(bytes.buffer);
+    var f32 = new Float32Array(int16.length);
+    for (var j = 0; j < int16.length; j++) f32[j] = int16[j] / 0x8000;
+    var abuf = voiceAudioCtx.createBuffer(1, f32.length, sr);
+    abuf.copyToChannel(f32, 0);
+    var src = voiceAudioCtx.createBufferSource();
+    src.buffer = abuf;
+    src.connect(voiceAudioCtx.destination);
+    var when = Math.max(voiceAudioCtx.currentTime, voiceNextPlayTime);
+    src.start(when);
+    voiceNextPlayTime = when + abuf.duration;
+  }
+
   try {
     var stored = localStorage.getItem('apx_session_' + integrationId);
     if (stored) sessionId = stored;
@@ -370,10 +432,14 @@
         messages.push({ role: 'bot', text: welcomeMessage });
       }
       render();
-      setTimeout(function () {
-        var inp = shadow.getElementById('apx-input');
-        if (inp) inp.focus();
-      }, 50);
+      if (enableVoice && !voiceActive) {
+        startVoiceSession(true);
+      } else {
+        setTimeout(function () {
+          var inp = shadow.getElementById('apx-input');
+          if (inp) inp.focus();
+        }, 50);
+      }
     });
 
     var expandBtn = shadow.getElementById('apx-expand');
@@ -387,11 +453,13 @@
     var minBtn = shadow.getElementById('apx-min');
     if (minBtn) minBtn.addEventListener('click', function () {
       state = 'closed';
+      stopVoiceSession();
       render();
     });
 
     var closeBtn = shadow.getElementById('apx-close');
     if (closeBtn) closeBtn.addEventListener('click', function () {
+      stopVoiceSession();
       host.remove();
     });
 
@@ -409,39 +477,47 @@
     }
     if (sendBtn) sendBtn.addEventListener('click', doSend);
 
-    // Mic — Web Speech API
+    // Mic — Gemini Live voice (when enable_voice) or Web Speech API fallback
     var micBtn = shadow.getElementById('apx-mic');
     if (micBtn) {
-      var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SR) {
-        var recognition = new SR();
-        recognition.continuous = false;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
-        recognition.onresult = function (e) {
-          var transcript = '';
-          for (var i = e.resultIndex; i < e.results.length; i++) {
-            transcript += e.results[i][0].transcript;
-          }
-          var inp = shadow.getElementById('apx-input');
-          if (inp) inp.value = transcript;
-        };
-        recognition.onend = function () {
-          micBtn.classList.remove('recording');
-        };
-        recognition.onerror = function () {
-          micBtn.classList.remove('recording');
-        };
+      if (enableVoice) {
+        // Full Gemini Live real-time voice (no auto-greet on manual tap)
         micBtn.addEventListener('click', function () {
-          if (micBtn.classList.contains('recording')) {
-            recognition.stop();
-          } else {
-            recognition.start();
-            micBtn.classList.add('recording');
-          }
+          startVoiceSession(false);
         });
       } else {
-        micBtn.style.display = 'none';
+        // Fallback: speech-to-text via browser SpeechRecognition
+        var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SR) {
+          var recognition = new SR();
+          recognition.continuous = false;
+          recognition.interimResults = true;
+          recognition.lang = 'en-US';
+          recognition.onresult = function (e) {
+            var transcript = '';
+            for (var i = e.resultIndex; i < e.results.length; i++) {
+              transcript += e.results[i][0].transcript;
+            }
+            var inp = shadow.getElementById('apx-input');
+            if (inp) inp.value = transcript;
+          };
+          recognition.onend = function () {
+            micBtn.classList.remove('recording');
+          };
+          recognition.onerror = function () {
+            micBtn.classList.remove('recording');
+          };
+          micBtn.addEventListener('click', function () {
+            if (micBtn.classList.contains('recording')) {
+              recognition.stop();
+            } else {
+              recognition.start();
+              micBtn.classList.add('recording');
+            }
+          });
+        } else {
+          micBtn.style.display = 'none';
+        }
       }
     }
 
@@ -555,6 +631,118 @@
       });
   }
 
+  // ── Voice session helpers ──────────────────────────────────────────────────
+
+  function updateMicBtn(active) {
+    var btn = shadow.getElementById('apx-mic');
+    if (!btn) return;
+    if (active) {
+      btn.classList.add('recording');
+      btn.setAttribute('title', 'Stop voice');
+    } else {
+      btn.classList.remove('recording');
+      btn.setAttribute('title', 'Start voice');
+    }
+  }
+
+  function stopVoiceSession() {
+    voiceActive = false;
+    updateMicBtn(false);
+    if (voiceProcessor) {
+      try { voiceProcessor.disconnect(); } catch (_) {}
+      voiceProcessor = null;
+    }
+    if (voiceAudioStream) {
+      voiceAudioStream.getTracks().forEach(function (t) { t.stop(); });
+      voiceAudioStream = null;
+    }
+    if (voiceAudioCtx) {
+      try { voiceAudioCtx.close(); } catch (_) {}
+      voiceAudioCtx = null;
+    }
+    if (voiceWs) {
+      try { voiceWs.close(); } catch (_) {}
+      voiceWs = null;
+    }
+    voiceNextPlayTime = 0;
+  }
+
+  function startVoiceSession(autoGreet) {
+    if (voiceActive) { stopVoiceSession(); return; }
+
+    fetch(apiBase + '/chat/voice-session/' + integrationId, { method: 'POST' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.wsUrl) throw new Error('No wsUrl');
+
+        // AudioContext for playback (and to know the native sample rate for capture)
+        voiceAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+        voiceNextPlayTime = 0;
+
+        voiceWs = new WebSocket(d.wsUrl);
+
+        voiceWs.onmessage = function (evt) {
+          try {
+            var msg = JSON.parse(evt.data);
+
+            if (msg.type === 'ready') {
+              // Trigger bot greeting before user speaks
+              if (autoGreet) {
+                voiceWs.send(JSON.stringify({ type: 'text', content: 'Hello' }));
+              }
+              // Open mic
+              navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+                .then(function (stream) {
+                  voiceAudioStream = stream;
+                  voiceActive = true;
+                  updateMicBtn(true);
+
+                  var nativeSr = voiceAudioCtx.sampleRate;
+                  var source = voiceAudioCtx.createMediaStreamSource(stream);
+                  voiceProcessor = voiceAudioCtx.createScriptProcessor(4096, 1, 1);
+
+                  voiceProcessor.onaudioprocess = function (e) {
+                    if (!voiceActive || !voiceWs || voiceWs.readyState !== 1) return;
+                    var f32  = e.inputBuffer.getChannelData(0);
+                    var d16  = downsampleBuffer(f32, nativeSr, 16000);
+                    var pcm  = float32ToInt16(d16);
+                    var b64  = bufToBase64(pcm.buffer);
+                    voiceWs.send(JSON.stringify({ type: 'audio', data: b64 }));
+                  };
+
+                  source.connect(voiceProcessor);
+                  voiceProcessor.connect(voiceAudioCtx.destination);
+                })
+                .catch(function () {
+                  messages.push({ role: 'bot', text: 'Microphone access denied. Please allow microphone and try again.' });
+                  render();
+                  stopVoiceSession();
+                });
+
+            } else if (msg.type === 'audio' && msg.data) {
+              playPcm(msg.data, msg.mimeType);
+
+            } else if (msg.type === 'text' && msg.content) {
+              messages.push({ role: 'bot', text: msg.content });
+              render();
+
+            } else if (msg.type === 'error') {
+              messages.push({ role: 'bot', text: msg.message || 'Voice error — please try again.' });
+              render();
+              stopVoiceSession();
+            }
+          } catch (_) {}
+        };
+
+        voiceWs.onerror = function () { stopVoiceSession(); };
+        voiceWs.onclose = function () { if (voiceActive) stopVoiceSession(); };
+      })
+      .catch(function () {
+        messages.push({ role: 'bot', text: 'Could not start voice session. Please try again.' });
+        render();
+      });
+  }
+
   // Boot
   fetch(apiBase + '/chat/config/' + integrationId)
     .then(function (r) { return r.json(); })
@@ -562,6 +750,8 @@
       if (d.welcome_message) welcomeMessage = d.welcome_message;
       if (d.bot_name) botName = d.bot_name;
       if (d.bot_avatar_url) botAvatarUrl = d.bot_avatar_url;
+      enableVoice    = !!d.enable_voice;
+      voiceVoiceName = d.voice_name || 'Aoede';
       var skinId = d.skin || 'appalix_lite';
       if (skinId === 'custom') {
         skinVars = Object.assign({}, SKINS.appalix_lite);

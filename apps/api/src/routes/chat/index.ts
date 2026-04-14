@@ -4,6 +4,7 @@ import { verifyCustomApiKey, parseCustomApiRequest, formatCustomApiReply } from 
 import { processMessage, resolveIntegration } from '../../services/processor.js'
 import { ingestSource } from '../../services/rag/ingestion.js'
 import { supabase } from '../../lib/supabase.js'
+import { createWidgetVoiceSession } from '../../live/widget-voice-handler.js'
 
 export async function chatRoutes(fastify: FastifyInstance) {
   /**
@@ -25,21 +26,87 @@ export async function chatRoutes(fastify: FastifyInstance) {
       let headerColor: string | null  = null
       let botName: string | null      = null
       let botAvatarUrl: string | null = null
+      let enableVoice  = false
+      let voiceName    = 'Aoede'
+      let voiceMode    = 'voice_text'
       if (integration.bot_id) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: bot } = await supabase
           .from('bots')
-          .select('name, widget_skin, widget_accent_color, widget_header_color, widget_avatar_url')
+          .select('name, widget_skin, widget_accent_color, widget_header_color, widget_avatar_url, enable_voice, voice_name, voice_mode')
           .eq('id', integration.bot_id)
           .single()
-        const b = bot as { name: string; widget_skin: string; widget_accent_color: string | null; widget_header_color: string | null; widget_avatar_url: string | null } | null
+        const b = bot as {
+          name: string; widget_skin: string
+          widget_accent_color: string | null; widget_header_color: string | null; widget_avatar_url: string | null
+          enable_voice?: boolean; voice_name?: string | null; voice_mode?: string | null
+        } | null
         skin         = b?.widget_skin        ?? 'light'
         accentColor  = b?.widget_accent_color ?? null
         headerColor  = b?.widget_header_color  ?? null
         botAvatarUrl = b?.widget_avatar_url    ?? null
         if (b?.name) botName = b.name
+        enableVoice  = b?.enable_voice  ?? false
+        voiceName    = b?.voice_name    ?? 'Aoede'
+        voiceMode    = b?.voice_mode    ?? 'voice_text'
       }
 
-      return reply.send({ welcome_message: welcomeMessage, bot_name: botName, skin, accent_color: accentColor, header_color: headerColor, bot_avatar_url: botAvatarUrl })
+      return reply.send({
+        welcome_message: welcomeMessage,
+        bot_name:        botName,
+        skin,
+        accent_color:    accentColor,
+        header_color:    headerColor,
+        bot_avatar_url:  botAvatarUrl,
+        enable_voice:    enableVoice,
+        voice_name:      voiceName,
+        voice_mode:      voiceMode,
+      })
+    },
+  )
+
+  /**
+   * POST /chat/voice-session/:integrationId
+   * Mints a one-time voice session token for the widget.
+   * Called by widget.js when the user clicks the voice button.
+   * Public — the integration ID is the auth token.
+   */
+  fastify.post<{ Params: { integrationId: string } }>(
+    '/voice-session/:integrationId',
+    async (request, reply) => {
+      const integration = await resolveIntegration(request.params.integrationId)
+      if (!integration?.bot_id) return reply.status(404).send({ error: 'Integration not found' })
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: bot } = await supabase
+        .from('bots')
+        .select('name, system_prompt, enable_voice, voice_name')
+        .eq('id', integration.bot_id)
+        .single()
+
+      const b = bot as {
+        name: string; system_prompt: string | null
+        enable_voice?: boolean; voice_name?: string | null
+      } | null
+
+      if (!b?.enable_voice) {
+        return reply.status(403).send({ error: 'Voice not enabled for this bot' })
+      }
+
+      const sessionId = createWidgetVoiceSession({
+        integrationId: integration.id,
+        botName:       b.name,
+        systemPrompt:  b.system_prompt ?? '',
+        voiceName:     b.voice_name   ?? 'Aoede',
+      })
+
+      const apiBase = process.env.API_BASE_URL ?? 'http://localhost:3001'
+      const wsBase  = apiBase.replace(/^https/, 'wss').replace(/^http/, 'ws')
+
+      return reply.send({
+        sessionId,
+        wsUrl: `${wsBase}/chat/voice-ws?session=${sessionId}`,
+      })
     },
   )
 

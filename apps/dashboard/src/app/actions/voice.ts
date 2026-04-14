@@ -25,8 +25,29 @@ async function getWorkspaceId(): Promise<string> {
 // ── Bot voice settings ────────────────────────────────────────────────────────
 
 export async function updateBotVoice(botId: string, formData: FormData) {
-  const workspaceId = await getWorkspaceId()
-  const admin = createAdminClient()
+  // Verify ownership using user session (RLS-based read)
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: membershipRaw } = await supabase
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single()
+  const membership = membershipRaw as { workspace_id: string } | null
+  if (!membership) redirect('/login')
+
+  const { data: botRaw } = await supabase
+    .from('bots')
+    .select('workspace_id')
+    .eq('id', botId)
+    .single()
+  if (!botRaw || (botRaw as { workspace_id: string }).workspace_id !== membership.workspace_id) {
+    throw new Error('Bot not found')
+  }
 
   const voiceConfig: VoiceConfig = {
     tone:               (formData.get('tone') as string) || 'professional',
@@ -43,6 +64,9 @@ export async function updateBotVoice(botId: string, formData: FormData) {
     escalation_rules:   (formData.get('escalation_rules') as string)?.trim() || undefined,
   }
 
+  // Use admin client to bypass RLS for the write (same pattern as updateBot)
+  const admin = createAdminClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await admin.from('bots').update({
     enable_voice: formData.get('enable_voice') === 'on',
     voice_mode:   (formData.get('voice_mode') as string) || 'voice_text',
@@ -51,9 +75,8 @@ export async function updateBotVoice(botId: string, formData: FormData) {
     voice_goal:   (formData.get('voice_goal') as string) || null,
     voice_config: voiceConfig,
     updated_at:   new Date().toISOString(),
-  })
+  } as any)
     .eq('id', botId)
-    .eq('workspace_id', workspaceId)
 
   if (error) throw new Error(error.message)
   redirect(`/agent/bots/${botId}`)
