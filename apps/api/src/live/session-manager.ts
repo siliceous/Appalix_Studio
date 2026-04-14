@@ -308,7 +308,7 @@ export async function handleLiveWsConnection(ws: WebSocket, req: IncomingMessage
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     gemini = await (ai.live as any).connect({
-      model: 'gemini-live-2.5-flash-preview',
+      model: 'gemini-live-3.1-flash-preview',
       config: {
         responseModalities: ['AUDIO'],
         speechConfig:       { voiceConfig: { prebuiltVoiceConfig: { voiceName } } },
