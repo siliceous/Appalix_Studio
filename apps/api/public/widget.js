@@ -133,14 +133,28 @@
   var userHeight = 0;
 
   // Voice state
-  var enableVoice       = false;
-  var voiceVoiceName    = 'Aoede';
-  var voiceWs           = null;
-  var voiceActive       = false;
-  var voiceAudioCtx     = null;
-  var voiceAudioStream  = null;
-  var voiceProcessor    = null;
-  var voiceNextPlayTime = 0;
+  var enableVoice          = false;
+  var voiceVoiceName       = 'Aoede';
+  var voiceWs              = null;
+  var voiceActive          = false;
+  var voiceAudioCtx        = null;
+  var voiceAudioStream     = null;
+  var voiceProcessor       = null;
+  var voiceNextPlayTime    = 0;
+  var voiceIdleTimer       = null;   // setTimeout handle — disconnects after 60s of no activity
+  var VOICE_IDLE_TIMEOUT   = 60000;  // 60 seconds
+
+  function resetVoiceIdleTimer() {
+    if (voiceIdleTimer) clearTimeout(voiceIdleTimer);
+    voiceIdleTimer = setTimeout(function () {
+      // Quietly disconnect — no error message, just stop billing
+      stopVoiceSession();
+    }, VOICE_IDLE_TIMEOUT);
+  }
+
+  function clearVoiceIdleTimer() {
+    if (voiceIdleTimer) { clearTimeout(voiceIdleTimer); voiceIdleTimer = null; }
+  }
 
   // ── Audio helpers ──────────────────────────────────────────────────────────
 
@@ -649,6 +663,7 @@
 
   function stopVoiceSession() {
     voiceActive = false;
+    clearVoiceIdleTimer();
     updateMicBtn(false);
     if (voiceProcessor) {
       try { voiceProcessor.disconnect(); } catch (_) {}
@@ -688,10 +703,11 @@
             var msg = JSON.parse(evt.data);
 
             if (msg.type === 'ready') {
-              // Trigger bot greeting before user speaks
+              // Trigger bot greeting before user speaks, then start 60s idle timeout
               if (autoGreet) {
                 voiceWs.send(JSON.stringify({ type: 'text', content: 'Hello' }));
               }
+              resetVoiceIdleTimer(); // 60s to get a response; resets on any activity
               // Open mic
               navigator.mediaDevices.getUserMedia({ audio: true, video: false })
                 .then(function (stream) {
@@ -708,6 +724,9 @@
                   var source = voiceAudioCtx.createMediaStreamSource(stream);
                   voiceProcessor = voiceAudioCtx.createScriptProcessor(4096, 1, 1);
 
+                  // Track whether mic is picking up actual speech (RMS > threshold)
+                  // to avoid resetting the idle timer on silence
+                  var SPEECH_RMS_THRESHOLD = 0.01;
                   voiceProcessor.onaudioprocess = function (e) {
                     if (!voiceActive || !voiceWs || voiceWs.readyState !== 1) return;
                     var f32  = e.inputBuffer.getChannelData(0);
@@ -715,6 +734,10 @@
                     var pcm  = float32ToInt16(d16);
                     var b64  = bufToBase64(pcm.buffer);
                     voiceWs.send(JSON.stringify({ type: 'audio', data: b64 }));
+                    // Reset idle timer only when user is actually speaking, not on silence
+                    var rms = 0;
+                    for (var k = 0; k < f32.length; k++) rms += f32[k] * f32[k];
+                    if (Math.sqrt(rms / f32.length) > SPEECH_RMS_THRESHOLD) resetVoiceIdleTimer();
                   };
 
                   source.connect(voiceProcessor);
@@ -733,9 +756,11 @@
                 });
 
             } else if (msg.type === 'audio' && msg.data) {
+              resetVoiceIdleTimer(); // Gemini responded — session is live, reset the clock
               playPcm(msg.data, msg.mimeType);
 
             } else if (msg.type === 'text' && msg.content) {
+              resetVoiceIdleTimer();
               messages.push({ role: 'bot', text: msg.content });
               render();
 
