@@ -693,6 +693,11 @@
               // Open mic
               navigator.mediaDevices.getUserMedia({ audio: true, video: false })
                 .then(function (stream) {
+                  // Guard: session may have been torn down while waiting for mic permission
+                  if (!voiceWs || voiceWs.readyState !== 1) {
+                    stream.getTracks().forEach(function (t) { t.stop(); });
+                    return;
+                  }
                   voiceAudioStream = stream;
                   voiceActive = true;
                   updateMicBtn(true);
@@ -713,9 +718,15 @@
                   source.connect(voiceProcessor);
                   voiceProcessor.connect(voiceAudioCtx.destination);
                 })
-                .catch(function () {
-                  messages.push({ role: 'bot', text: 'Microphone access denied. Please allow microphone and try again.' });
-                  render();
+                .catch(function (err) {
+                  // Only show mic error if the session is still alive (not killed by a Gemini error)
+                  if (voiceWs) {
+                    var msg = (err && err.name === 'NotAllowedError')
+                      ? 'Microphone access denied. Please allow microphone permission and try again.'
+                      : 'Could not access microphone. Please check your browser settings.';
+                    messages.push({ role: 'bot', text: msg });
+                    render();
+                  }
                   stopVoiceSession();
                 });
 
