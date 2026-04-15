@@ -146,18 +146,8 @@
   var voiceActiveSources   = [];           // tracked AudioBufferSource nodes — stopped on interrupt
   var voiceIdleTimer       = null;         // setTimeout handle — disconnects after 60s of no activity
   var VOICE_IDLE_TIMEOUT   = 60000;        // 60 seconds
-
-  function resetVoiceIdleTimer() {
-    if (voiceIdleTimer) clearTimeout(voiceIdleTimer);
-    voiceIdleTimer = setTimeout(function () {
-      // Quietly disconnect — no error message, just stop billing
-      stopVoiceSession();
-    }, VOICE_IDLE_TIMEOUT);
-  }
-
-  function clearVoiceIdleTimer() {
-    if (voiceIdleTimer) { clearTimeout(voiceIdleTimer); voiceIdleTimer = null; }
-  }
+  // shadow is hoisted here so updateVoiceState (defined at IIFE level) can access it
+  var shadow               = null;
 
   // Stop every queued/playing audio buffer immediately (called on interruption or session end)
   function stopAllAudio() {
@@ -256,7 +246,7 @@
   var host = document.createElement('div');
   host.id = 'appalix-widget-host';
   document.body.appendChild(host);
-  var shadow = host.attachShadow({ mode: 'open' });
+  shadow = host.attachShadow({ mode: 'open' }); // assigns to IIFE-level var so updateVoiceState can see it
 
   // SVG icons
   var ICONS = {
@@ -695,6 +685,19 @@
   }
 
   // ── Voice session helpers ──────────────────────────────────────────────────
+
+  // resetVoiceIdleTimer / clearVoiceIdleTimer must live inside init() so their
+  // timeout callbacks can close over stopVoiceSession (which is also inside init()).
+  function resetVoiceIdleTimer() {
+    if (voiceIdleTimer) clearTimeout(voiceIdleTimer);
+    voiceIdleTimer = setTimeout(function () {
+      stopVoiceSession(); // quietly disconnect — no error message, just stop billing
+    }, VOICE_IDLE_TIMEOUT);
+  }
+
+  function clearVoiceIdleTimer() {
+    if (voiceIdleTimer) { clearTimeout(voiceIdleTimer); voiceIdleTimer = null; }
+  }
 
   function updateMicBtn(active) {
     var btn = shadow.getElementById('apx-mic');
