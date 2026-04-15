@@ -24,8 +24,14 @@ import type { IncomingMessage } from 'http'
 
 const GEMINI_MODEL = 'models/gemini-3.1-flash-live-preview'
 
-// Voices confirmed working with gemini-3.1-flash-live-preview
-const SUPPORTED_VOICES = new Set(['Puck','Charon','Kore','Fenrir','Aoede','Leda','Orus','Zephyr'])
+// Full Gemini prebuilt voice catalogue (matches sage-voice-settings-form.tsx)
+const SUPPORTED_VOICES = new Set([
+  'Aoede','Kore','Leda','Zephyr','Autonoe','Callirrhoe','Despina',
+  'Erinome','Laomedeia','Vindemiatrix','Sulafat',
+  'Puck','Charon','Fenrir','Orus','Orbit','Achernar','Achird',
+  'Alula','Gacrux','Rasalgethi','Sadachbia','Sadaltager',
+  'Schedar','Umbriel','Enceladus','Iocaste','Zubenelgenubi',
+])
 function safeVoice(name: string | null | undefined): string {
   const v = name ?? 'Aoede'
   return SUPPORTED_VOICES.has(v) ? v : 'Aoede'

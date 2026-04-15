@@ -11,14 +11,36 @@ import { Mic, Settings, ChevronRight } from 'lucide-react'
 export const metadata: Metadata = { title: 'Bot Voice Settings' }
 
 const VOICES = [
-  { value: 'Aoede',  label: 'Aoede — Warm, natural (Female)' },
-  { value: 'Kore',   label: 'Kore — Bright, expressive (Female)' },
-  { value: 'Leda',   label: 'Leda — Clear, professional (Female)' },
-  { value: 'Zephyr', label: 'Zephyr — Light, conversational (Female)' },
-  { value: 'Puck',   label: 'Puck — Friendly, upbeat (Male)' },
-  { value: 'Charon', label: 'Charon — Deep, authoritative (Male)' },
-  { value: 'Fenrir', label: 'Fenrir — Strong, confident (Male)' },
-  { value: 'Orus',   label: 'Orus — Rich, warm (Male)' },
+  // Female
+  { value: 'Aoede',         label: 'Aoede — Warm & natural (Female)' },
+  { value: 'Kore',          label: 'Kore — Firm & confident (Female)' },
+  { value: 'Leda',          label: 'Leda — Soft & calm (Female)' },
+  { value: 'Zephyr',        label: 'Zephyr — Bright & clear (Female)' },
+  { value: 'Autonoe',       label: 'Autonoe — Expressive (Female)' },
+  { value: 'Callirrhoe',    label: 'Callirrhoe — Easy-going (Female)' },
+  { value: 'Despina',       label: 'Despina — Smooth (Female)' },
+  { value: 'Erinome',       label: 'Erinome — Clear & precise (Female)' },
+  { value: 'Laomedeia',     label: 'Laomedeia — Upbeat (Female)' },
+  { value: 'Vindemiatrix',  label: 'Vindemiatrix — Gentle (Female)' },
+  { value: 'Sulafat',       label: 'Sulafat — Warm (Female)' },
+  // Male
+  { value: 'Puck',          label: 'Puck — Upbeat & energetic (Male)' },
+  { value: 'Charon',        label: 'Charon — Deep & authoritative (Male)' },
+  { value: 'Fenrir',        label: 'Fenrir — Excitable & dynamic (Male)' },
+  { value: 'Orus',          label: 'Orus — Confident & measured (Male)' },
+  { value: 'Orbit',         label: 'Orbit — Friendly & approachable (Male)' },
+  { value: 'Achernar',      label: 'Achernar — Soft (Male)' },
+  { value: 'Achird',        label: 'Achird — Friendly (Male)' },
+  { value: 'Alula',         label: 'Alula — Easy-going (Male)' },
+  { value: 'Gacrux',        label: 'Gacrux — Mature (Male)' },
+  { value: 'Rasalgethi',    label: 'Rasalgethi — Informative (Male)' },
+  { value: 'Sadachbia',     label: 'Sadachbia — Lively (Male)' },
+  { value: 'Sadaltager',    label: 'Sadaltager — Knowledgeable (Male)' },
+  { value: 'Schedar',       label: 'Schedar — Even (Male)' },
+  { value: 'Umbriel',       label: 'Umbriel — Easy-going (Male)' },
+  { value: 'Enceladus',     label: 'Enceladus — Breathy (Male)' },
+  { value: 'Iocaste',       label: 'Iocaste — Warm (Male)' },
+  { value: 'Zubenelgenubi', label: 'Zubenelgenubi — Casual (Male)' },
 ]
 
 const PRESETS = [
