@@ -11,35 +11,37 @@ import { Mic, Settings, ChevronRight } from 'lucide-react'
 export const metadata: Metadata = { title: 'Bot Voice Settings' }
 
 const VOICES = [
-  // Female
-  { value: 'Aoede',         label: 'Aoede — Warm & natural (Female)' },
+  // Female (13) — sourced from Google Cloud TTS official documentation
+  { value: 'Aoede',         label: 'Aoede — Breezy & warm (Female)' },
   { value: 'Kore',          label: 'Kore — Firm & confident (Female)' },
-  { value: 'Leda',          label: 'Leda — Soft & calm (Female)' },
-  { value: 'Zephyr',        label: 'Zephyr — Bright & clear (Female)' },
-  { value: 'Autonoe',       label: 'Autonoe — Expressive (Female)' },
+  { value: 'Leda',          label: 'Leda — Youthful & clear (Female)' },
+  { value: 'Zephyr',        label: 'Zephyr — Bright & crisp (Female)' },
+  { value: 'Autonoe',       label: 'Autonoe — Bright & expressive (Female)' },
   { value: 'Callirrhoe',    label: 'Callirrhoe — Easy-going (Female)' },
   { value: 'Despina',       label: 'Despina — Smooth (Female)' },
   { value: 'Erinome',       label: 'Erinome — Clear & precise (Female)' },
   { value: 'Laomedeia',     label: 'Laomedeia — Upbeat (Female)' },
   { value: 'Vindemiatrix',  label: 'Vindemiatrix — Gentle (Female)' },
   { value: 'Sulafat',       label: 'Sulafat — Warm (Female)' },
-  // Male
+  { value: 'Achernar',      label: 'Achernar — Soft (Female)' },
+  { value: 'Gacrux',        label: 'Gacrux — Mature (Female)' },
+  { value: 'Pulcherrima',   label: 'Pulcherrima — Forward (Female)' },
+  // Male (16)
   { value: 'Puck',          label: 'Puck — Upbeat & energetic (Male)' },
-  { value: 'Charon',        label: 'Charon — Deep & authoritative (Male)' },
+  { value: 'Charon',        label: 'Charon — Informative & deep (Male)' },
   { value: 'Fenrir',        label: 'Fenrir — Excitable & dynamic (Male)' },
-  { value: 'Orus',          label: 'Orus — Confident & measured (Male)' },
-  { value: 'Orbit',         label: 'Orbit — Friendly & approachable (Male)' },
-  { value: 'Achernar',      label: 'Achernar — Soft (Male)' },
+  { value: 'Orus',          label: 'Orus — Firm & measured (Male)' },
   { value: 'Achird',        label: 'Achird — Friendly (Male)' },
-  { value: 'Alula',         label: 'Alula — Easy-going (Male)' },
-  { value: 'Gacrux',        label: 'Gacrux — Mature (Male)' },
+  { value: 'Algenib',       label: 'Algenib — Gravelly (Male)' },
+  { value: 'Algieba',       label: 'Algieba — Smooth (Male)' },
+  { value: 'Alnilam',       label: 'Alnilam — Firm (Male)' },
   { value: 'Rasalgethi',    label: 'Rasalgethi — Informative (Male)' },
   { value: 'Sadachbia',     label: 'Sadachbia — Lively (Male)' },
   { value: 'Sadaltager',    label: 'Sadaltager — Knowledgeable (Male)' },
   { value: 'Schedar',       label: 'Schedar — Even (Male)' },
   { value: 'Umbriel',       label: 'Umbriel — Easy-going (Male)' },
   { value: 'Enceladus',     label: 'Enceladus — Breathy (Male)' },
-  { value: 'Iocaste',       label: 'Iocaste — Warm (Male)' },
+  { value: 'Iapetus',       label: 'Iapetus — Clear (Male)' },
   { value: 'Zubenelgenubi', label: 'Zubenelgenubi — Casual (Male)' },
 ]
 

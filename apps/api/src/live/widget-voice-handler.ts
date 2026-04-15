@@ -24,13 +24,17 @@ import type { IncomingMessage } from 'http'
 
 const GEMINI_MODEL = 'models/gemini-3.1-flash-live-preview'
 
-// Full Gemini prebuilt voice catalogue (matches sage-voice-settings-form.tsx)
+// Full Gemini prebuilt voice catalogue — 30 voices from Google Cloud TTS official docs
+// Female (14): Achernar, Aoede, Autonoe, Callirrhoe, Despina, Erinome, Gacrux,
+//              Kore, Laomedeia, Leda, Pulcherrima, Sulafat, Vindemiatrix, Zephyr
+// Male  (16): Achird, Algenib, Algieba, Alnilam, Charon, Enceladus, Fenrir,
+//              Iapetus, Orus, Puck, Rasalgethi, Sadachbia, Sadaltager, Schedar,
+//              Umbriel, Zubenelgenubi
 const SUPPORTED_VOICES = new Set([
   'Aoede','Kore','Leda','Zephyr','Autonoe','Callirrhoe','Despina',
-  'Erinome','Laomedeia','Vindemiatrix','Sulafat',
-  'Puck','Charon','Fenrir','Orus','Orbit','Achernar','Achird',
-  'Alula','Gacrux','Rasalgethi','Sadachbia','Sadaltager',
-  'Schedar','Umbriel','Enceladus','Iocaste','Zubenelgenubi',
+  'Erinome','Laomedeia','Vindemiatrix','Sulafat','Achernar','Gacrux','Pulcherrima',
+  'Puck','Charon','Fenrir','Orus','Achird','Algenib','Algieba','Alnilam',
+  'Rasalgethi','Sadachbia','Sadaltager','Schedar','Umbriel','Enceladus','Iapetus','Zubenelgenubi',
 ])
 function safeVoice(name: string | null | undefined): string {
   const v = name ?? 'Aoede'
