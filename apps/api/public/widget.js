@@ -135,7 +135,7 @@
   // Voice state
   var enableVoice          = false;
   var voiceMode            = 'voice_text';  // 'voice_text' | 'voice_only'
-  var voiceGreetingText    = 'Hello';       // set from voice-session response (greeting_script)
+  var voiceGreetingText    = '';            // unused — server-side now triggers the opening greeting
   var voiceWs              = null;
   var voiceActive          = false;
   var voiceState           = 'idle';       // 'idle' | 'listening' | 'thinking' | 'speaking'
@@ -764,8 +764,7 @@
             // ── Session ready ─────────────────────────────────────────────
             if (msg.type === 'ready') {
               if (autoGreet) {
-                voiceWs.send(JSON.stringify({ type: 'text', content: voiceGreetingText }));
-                updateVoiceState('thinking');  // waiting for bot's first words
+                updateVoiceState('thinking');  // server already triggered Gemini's opening greeting
               }
               resetVoiceIdleTimer();
 
@@ -812,9 +811,17 @@
                 })
                 .catch(function (err) {
                   if (voiceWs) {
-                    var errMsg = (err && err.name === 'NotAllowedError')
-                      ? 'Microphone access denied. Please allow microphone permission and try again.'
-                      : 'Could not access microphone. Please check your browser settings.';
+                    var errName = (err && err.name) || '';
+                    var errMsg;
+                    if (errName === 'NotAllowedError' || errName === 'PermissionDeniedError') {
+                      errMsg = 'Microphone access denied. Click the padlock icon in your browser address bar, allow microphone access, then try again.';
+                    } else if (errName === 'NotFoundError' || errName === 'DevicesNotFoundError') {
+                      errMsg = 'No microphone detected. Please connect a microphone and try again.';
+                    } else if (errName === 'NotReadableError' || errName === 'TrackStartError') {
+                      errMsg = 'Microphone is in use by another app or tab. Please close it and try again.';
+                    } else {
+                      errMsg = 'Could not access microphone' + (errName ? ' (' + errName + ')' : '') + '. Please check your browser\u2019s microphone permissions.';
+                    }
                     messages.push({ role: 'bot', text: errMsg });
                     render();
                   }

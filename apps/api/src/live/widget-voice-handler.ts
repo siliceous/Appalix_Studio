@@ -124,9 +124,11 @@ export async function handleWidgetVoiceWs(
     return
   }
 
-  // Build system prompt — base + persona + voice rules + prior history
+  // Build system prompt — base + persona + voice rules + greeting + prior history
   const personaBlock  = buildVoicePersonaPrompt(meta.voiceConfig)
   const historyBlock  = buildHistoryContext(meta.history)
+  const greetingScript = (meta.voiceConfig?.greeting_script as string | undefined)?.trim()
+  const openingLine    = greetingScript || `Hello! I'm ${meta.botName}, how can I help you today?`
   const systemPrompt  =
     (meta.systemPrompt?.trim()
       ? meta.systemPrompt.trim()
@@ -136,6 +138,8 @@ export async function handleWidgetVoiceWs(
     `VOICE RULES: This is a real-time voice conversation. Keep every response to ` +
     `1–2 short sentences. Be conversational and natural. Do not use lists, markdown, ` +
     `or any formatting — speak in plain, flowing sentences.` +
+    `\n\nOPENING: Your very first spoken output must be this exact greeting: ` +
+    `"${openingLine}". Speak it immediately when the conversation begins.` +
     historyBlock
 
   let closed    = false
@@ -180,10 +184,15 @@ export async function handleWidgetVoiceWs(
         typeof raw === 'string' ? raw : raw.toString(),
       ) as Record<string, unknown>
 
-      // Gemini signals setup is done
+      // Gemini signals setup is done — send ready to widget, then trigger the opening greeting
       if ('setupComplete' in msg) {
         console.log(`[widget-voice] setupComplete received — session=${sessionId}`)
         send({ type: 'ready' })
+        // Trigger Gemini to speak first (the OPENING instruction in the system prompt
+        // tells it exactly what to say). A neutral dot is enough to start generation.
+        geminiWs!.send(JSON.stringify({
+          realtimeInput: { text: '.' },
+        }))
         return
       }
 
