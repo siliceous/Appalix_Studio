@@ -148,6 +148,7 @@
   var VOICE_IDLE_TIMEOUT   = 60000;        // 60 seconds
   // shadow is hoisted here so updateVoiceState (defined at IIFE level) can access it
   var shadow               = null;
+  var voiceVoiceSR         = null;  // SpeechRecognition instance for user transcript in voice_text mode
 
   // Stop every queued/playing audio buffer immediately (called on interruption or session end)
   function stopAllAudio() {
@@ -159,12 +160,22 @@
   // Update the voice state and reflect it in the header subtitle without a full re-render
   function updateVoiceState(newState) {
     voiceState = newState;
-    var el = shadow.getElementById('apx-ht-sub');
-    if (!el) return;
-    el.textContent = newState === 'listening' ? 'Listening\u2026'
-                   : newState === 'thinking'  ? 'Thinking\u2026'
-                   : newState === 'speaking'  ? 'Speaking\u2026'
-                   : 'Online \u00b7 Replies instantly';
+    var el = shadow && shadow.getElementById('apx-ht-sub');
+    if (el) {
+      el.textContent = newState === 'listening' ? 'Listening\u2026'
+                     : newState === 'thinking'  ? 'Thinking\u2026'
+                     : newState === 'speaking'  ? 'Speaking\u2026'
+                     : 'Online \u00b7 Replies instantly';
+    }
+    // Pause SpeechRecognition while the bot is speaking/thinking to avoid
+    // transcribing bot audio as user speech; restart when listening.
+    if (voiceVoiceSR) {
+      if (newState === 'speaking' || newState === 'thinking') {
+        try { voiceVoiceSR.abort(); } catch (_) {}
+      } else if (newState === 'listening' && voiceActive) {
+        try { voiceVoiceSR.start(); } catch (_) {}
+      }
+    }
   }
 
   // ── Audio helpers ──────────────────────────────────────────────────────────
@@ -733,6 +744,10 @@
       try { voiceWs.close(); } catch (_) {}
       voiceWs = null;
     }
+    if (voiceVoiceSR) {
+      try { voiceVoiceSR.abort(); } catch (_) {}
+      voiceVoiceSR = null;
+    }
     voiceNextPlayTime = 0;
   }
 
@@ -811,6 +826,37 @@
 
                   source.connect(voiceProcessor);
                   voiceProcessor.connect(voiceAudioCtx.destination);
+
+                  // SpeechRecognition for user transcript in voice_text mode.
+                  // Runs alongside the Gemini audio stream; paused while bot speaks.
+                  if (voiceMode === 'voice_text') {
+                    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    if (SR) {
+                      voiceVoiceSR = new SR();
+                      voiceVoiceSR.continuous    = true;
+                      voiceVoiceSR.interimResults = false;
+                      voiceVoiceSR.lang          = 'en-US';
+                      voiceVoiceSR.onresult = function (e) {
+                        for (var i = e.resultIndex; i < e.results.length; i++) {
+                          if (e.results[i].isFinal) {
+                            var text = e.results[i][0].transcript.trim();
+                            if (text && voiceState !== 'speaking') {
+                              messages.push({ role: 'user', text: text });
+                              render();
+                            }
+                          }
+                        }
+                      };
+                      voiceVoiceSR.onend = function () {
+                        // Auto-restart unless bot is speaking or session ended
+                        if (voiceActive && voiceState === 'listening') {
+                          try { voiceVoiceSR.start(); } catch (_) {}
+                        }
+                      };
+                      voiceVoiceSR.onerror = function () { /* ignore no-speech etc. */ };
+                      try { voiceVoiceSR.start(); } catch (_) {}
+                    }
+                  }
                 })
                 .catch(function (err) {
                   if (voiceWs) {

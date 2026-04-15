@@ -11,11 +11,14 @@ import { Mic, Settings, ChevronRight } from 'lucide-react'
 export const metadata: Metadata = { title: 'Bot Voice Settings' }
 
 const VOICES = [
-  { value: 'Aoede',   label: 'Aoede — Warm, clear' },
-  { value: 'Charon',  label: 'Charon — Deep, authoritative' },
-  { value: 'Fenrir',  label: 'Fenrir — Strong, confident' },
-  { value: 'Kore',    label: 'Kore — Bright, energetic' },
-  { value: 'Puck',    label: 'Puck — Friendly, upbeat' },
+  { value: 'Aoede',  label: 'Aoede — Warm, natural (Female)' },
+  { value: 'Kore',   label: 'Kore — Bright, expressive (Female)' },
+  { value: 'Leda',   label: 'Leda — Clear, professional (Female)' },
+  { value: 'Zephyr', label: 'Zephyr — Light, conversational (Female)' },
+  { value: 'Puck',   label: 'Puck — Friendly, upbeat (Male)' },
+  { value: 'Charon', label: 'Charon — Deep, authoritative (Male)' },
+  { value: 'Fenrir', label: 'Fenrir — Strong, confident (Male)' },
+  { value: 'Orus',   label: 'Orus — Rich, warm (Male)' },
 ]
 
 const PRESETS = [
