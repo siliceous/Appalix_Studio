@@ -103,6 +103,8 @@ export async function chatRoutes(fastify: FastifyInstance) {
       const voiceConfig   = (b.voice_config ?? null) as Record<string, unknown> | null
       const greetingText  = (voiceConfig?.greeting_script as string | undefined)?.trim() || 'Hello'
 
+      console.log(`[voice-session] bot=${integration.bot_id} voice_name="${b.voice_name ?? 'null→Aoede'}"`)
+
       const sessionId = createWidgetVoiceSession({
         integrationId: integration.id,
         botName:       b.name,
@@ -119,6 +121,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
         sessionId,
         wsUrl:         `${wsBase}/chat/voice-ws?session=${sessionId}`,
         greetingText,
+        voiceName:     b.voice_name ?? 'Aoede',
       })
     },
   )

@@ -854,6 +854,7 @@
 
         // Server returns the greeting text derived from greeting_script (or 'Hello')
         voiceGreetingText = d.greetingText || 'Hello';
+        console.log('[apx-voice] session voice:', d.voiceName || '(not returned)');
 
         voiceAudioCtx     = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
         voiceNextPlayTime = 0;
