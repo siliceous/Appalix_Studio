@@ -149,6 +149,7 @@
   // shadow is hoisted here so updateVoiceState (defined at IIFE level) can access it
   var shadow               = null;
   var voiceVoiceSR         = null;  // SpeechRecognition instance for user transcript in voice_text mode
+  var voicePassiveSR       = null;  // passive wake-up listener active after idle disconnect
 
   // Stop every queued/playing audio buffer immediately (called on interruption or session end)
   function stopAllAudio() {
@@ -703,11 +704,54 @@
     if (voiceIdleTimer) clearTimeout(voiceIdleTimer);
     voiceIdleTimer = setTimeout(function () {
       stopVoiceSession(); // quietly disconnect — no error message, just stop billing
+      // Widget is still open — start passive listening so any speech auto-reconnects
+      startPassiveListening();
     }, VOICE_IDLE_TIMEOUT);
   }
 
   function clearVoiceIdleTimer() {
     if (voiceIdleTimer) { clearTimeout(voiceIdleTimer); voiceIdleTimer = null; }
+  }
+
+  // ── Passive wake-up listener ───────────────────────────────────────────────
+  // Runs via SpeechRecognition (free, browser-side) after an idle disconnect.
+  // The moment any speech is detected the Gemini socket is reconnected silently
+  // (no re-greeting — user is already mid-thought).
+
+  function startPassiveListening() {
+    if (!enableVoice) return;
+    if (state !== 'open' && state !== 'expanded') return;
+    if (voicePassiveSR) return; // already running
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+
+    voicePassiveSR = new SR();
+    voicePassiveSR.continuous    = false;
+    voicePassiveSR.interimResults = true;
+    voicePassiveSR.onresult = function () {
+      // First word detected → wake the Gemini socket immediately
+      stopPassiveListening();
+      startVoiceSession(false); // reconnect silently; user is already speaking
+    };
+    voicePassiveSR.onend = function () {
+      // Auto-restart the passive listener if nothing triggered a reconnect
+      if (!voiceActive && voicePassiveSR === null &&
+          (state === 'open' || state === 'expanded')) {
+        startPassiveListening();
+      }
+    };
+    voicePassiveSR.onerror = function (e) {
+      if (e.error === 'not-allowed') { voicePassiveSR = null; return; }
+      // 'no-speech' and other transient errors: onend will restart
+    };
+    try { voicePassiveSR.start(); } catch (_) {}
+  }
+
+  function stopPassiveListening() {
+    if (voicePassiveSR) {
+      try { voicePassiveSR.abort(); } catch (_) {}
+      voicePassiveSR = null;
+    }
   }
 
   function updateMicBtn(active) {
@@ -723,6 +767,7 @@
   }
 
   function stopVoiceSession() {
+    stopPassiveListening(); // always kill passive listener when session stops
     voiceActive = false;
     clearVoiceIdleTimer();
     stopAllAudio();
@@ -752,6 +797,7 @@
   }
 
   function startVoiceSession(autoGreet) {
+    stopPassiveListening(); // kill passive listener before opening a real session
     if (voiceActive) { stopVoiceSession(); return; }
 
     // Snapshot the current text conversation so the voice session has context
