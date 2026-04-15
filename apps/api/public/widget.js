@@ -810,6 +810,10 @@
                   var SPEECH_RMS_THRESHOLD = 0.01;
                   voiceProcessor.onaudioprocess = function (e) {
                     if (!voiceActive || !voiceWs || voiceWs.readyState !== 1) return;
+                    // Mute mic to Gemini while bot is speaking — prevents the bot's own
+                    // audio leaking back into the mic (echo), which triggers Gemini's VAD
+                    // and causes the "interrupted" loop (break → repeat → break → repeat).
+                    if (voiceState === 'speaking' || voiceState === 'thinking') return;
                     var f32 = e.inputBuffer.getChannelData(0);
                     var d16 = downsampleBuffer(f32, nativeSr, 16000);
                     var pcm = float32ToInt16(d16);
@@ -820,7 +824,7 @@
                     for (var k = 0; k < f32.length; k++) rms += f32[k] * f32[k];
                     if (Math.sqrt(rms / f32.length) > SPEECH_RMS_THRESHOLD) {
                       resetVoiceIdleTimer();
-                      if (voiceState !== 'speaking') updateVoiceState('listening');
+                      updateVoiceState('listening');
                     }
                   };
 
