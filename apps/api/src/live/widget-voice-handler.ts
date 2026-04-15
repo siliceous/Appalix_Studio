@@ -152,8 +152,7 @@ export async function handleWidgetVoiceWs(
       setup: {
         model: GEMINI_MODEL,
         generationConfig: {
-          responseModalities:    ['AUDIO', 'TEXT'],  // TEXT gives us bot transcript for free
-          inputAudioTranscription: {},               // enables user speech → text events
+          responseModalities: ['AUDIO', 'TEXT'],  // TEXT gives us bot transcript alongside audio
           speechConfig: {
             voiceConfig: {
               prebuiltVoiceConfig: { voiceName: meta.voiceName || 'Aoede' },
@@ -193,9 +192,8 @@ export async function handleWidgetVoiceWs(
             inlineData?: { mimeType: string; data: string }
           }>
         }
-        turnComplete?:       boolean
-        interrupted?:        boolean
-        inputTranscription?: { text?: string; finished?: boolean }
+        turnComplete?: boolean
+        interrupted?:  boolean
       } | undefined
 
       if (sc?.modelTurn?.parts) {
@@ -207,11 +205,6 @@ export async function handleWidgetVoiceWs(
             send({ type: 'text', content: part.text })
           }
         }
-      }
-
-      // User speech transcription — forward so client can show user bubbles in voice_text mode
-      if (sc?.inputTranscription?.text) {
-        send({ type: 'input_transcript', text: sc.inputTranscription.text, finished: !!sc.inputTranscription.finished })
       }
 
       if (sc?.turnComplete) send({ type: 'turn_complete' })
