@@ -145,7 +145,7 @@
   var voiceNextPlayTime    = 0;
   var voiceActiveSources   = [];           // tracked AudioBufferSource nodes — stopped on interrupt
   var voiceIdleTimer       = null;         // setTimeout handle — disconnects after 60s of no activity
-  var VOICE_IDLE_TIMEOUT   = 60000;        // 60 seconds
+  var VOICE_IDLE_TIMEOUT   = 30000;        // 30 seconds
   // shadow is hoisted here so updateVoiceState (defined at IIFE level) can access it
   var shadow               = null;
   var voiceVoiceSR         = null;  // SpeechRecognition instance for user transcript in voice_text mode
