@@ -24,6 +24,13 @@ import type { IncomingMessage } from 'http'
 
 const GEMINI_MODEL = 'models/gemini-3.1-flash-live-preview'
 
+// Voices confirmed working with gemini-3.1-flash-live-preview
+const SUPPORTED_VOICES = new Set(['Puck','Charon','Kore','Fenrir','Aoede','Leda','Orus','Zephyr'])
+function safeVoice(name: string | null | undefined): string {
+  const v = name ?? 'Aoede'
+  return SUPPORTED_VOICES.has(v) ? v : 'Aoede'
+}
+
 function geminiWsUrl(apiKey: string) {
   return (
     'wss://generativelanguage.googleapis.com' +
@@ -146,7 +153,8 @@ export async function handleWidgetVoiceWs(
   }
 
   geminiWs.on('open', () => {
-    console.log(`[widget-voice] gemini ws open — session=${sessionId}`)
+    const voice = safeVoice(meta.voiceName)
+    console.log(`[widget-voice] gemini ws open — session=${sessionId} voice=${voice} promptLen=${systemPrompt.length}`)
     // First message must be BidiGenerateContentSetup
     geminiWs!.send(JSON.stringify({
       setup: {
@@ -155,7 +163,7 @@ export async function handleWidgetVoiceWs(
           responseModalities: ['AUDIO'],
           speechConfig: {
             voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: meta.voiceName || 'Aoede' },
+              prebuiltVoiceConfig: { voiceName: voice },
             },
           },
         },
