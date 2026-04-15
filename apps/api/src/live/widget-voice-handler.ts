@@ -257,13 +257,10 @@ export async function handleWidgetVoiceWs(
           },
         }))
       } else if (msg.type === 'text' && msg.content) {
-        // Use clientContent + turnComplete so Gemini immediately generates a spoken reply.
-        // realtimeInput.text buffers without triggering a response on its own.
+        // realtimeInput.text is the correct wire format for text during a live voice session.
+        // clientContent causes code=1007 "invalid argument" with gemini-3.1-flash-live-preview.
         geminiWs.send(JSON.stringify({
-          clientContent: {
-            turns: [{ role: 'user', parts: [{ text: msg.content }] }],
-            turnComplete: true,
-          },
+          realtimeInput: { text: msg.content },
         }))
       }
     } catch {
