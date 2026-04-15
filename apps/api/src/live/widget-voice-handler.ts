@@ -152,7 +152,7 @@ export async function handleWidgetVoiceWs(
       setup: {
         model: GEMINI_MODEL,
         generationConfig: {
-          responseModalities: ['AUDIO', 'TEXT'],  // TEXT gives us bot transcript alongside audio
+          responseModalities: ['AUDIO'],
           speechConfig: {
             voiceConfig: {
               prebuiltVoiceConfig: { voiceName: meta.voiceName || 'Aoede' },
