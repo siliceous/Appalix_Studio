@@ -361,6 +361,14 @@
     '@keyframes apxpulse{0%,100%{opacity:1;}50%{opacity:.5;}}',
     '.powered{font-size:10px;text-align:center;color:#ffffff;opacity:.6;padding:3px 0 5px;}',
     '.powered a{color:inherit;text-decoration:none;}.powered a:hover{text-decoration:underline;}',
+    // Action button — rendered when bot sends a standalone [label](url) link on its own line
+    '.apx-btn{display:block;margin:8px 0 2px;padding:9px 16px;border-radius:9px;',
+    '  background:var(--apx-accent);color:var(--apx-accent-text) !important;',
+    '  font-size:13px;font-weight:600;text-align:center;text-decoration:none !important;',
+    '  cursor:pointer;transition:opacity .15s,transform .15s;line-height:1.4;}',
+    '.apx-btn:hover{opacity:.86;transform:translateY(-1px);}',
+    '.apx-link{color:var(--apx-accent);text-decoration:underline;font-weight:500;}',
+    '.apx-link:hover{opacity:.75;}',
   ].join('');
 
   function esc(str) {
@@ -372,24 +380,54 @@
       .replace(/\n/g, '<br>');
   }
 
-  // Render message text: escape HTML, then convert markdown links and bare URLs to <a> tags
+  // Render message text line-by-line:
+  //   • Entire line = [label](url)  → styled action button (.apx-btn)
+  //   • Inline [label](url)         → hyperlink (.apx-link)
+  //   • Bare https?:// URL          → hyperlink (.apx-link)
+  //   • Everything else             → HTML-escaped plain text
   function renderText(str) {
-    var escaped = String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-    // Markdown links: [label](url)
-    escaped = escaped.replace(
-      /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
-      '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--apx-accent,#3b82f6);text-decoration:underline;font-weight:500;">$1</a>'
-    );
-    // Bare URLs not already inside an href
-    escaped = escaped.replace(
-      /(?<!href=")(https?:\/\/[^\s<"]+)/g,
-      '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--apx-accent,#3b82f6);text-decoration:underline;font-weight:500;">$1</a>'
-    );
-    return escaped.replace(/\n/g, '<br>');
+    // Matches a line that is ONLY a markdown link (used on raw text before escaping)
+    var STANDALONE = /^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/;
+    // Matches inline markdown links (applied after HTML-escaping, so & is &amp; in the url)
+    var INLINE_MD  = /\[([^\]]+)\]\((https?:\/\/[^\s)&]+(?:&amp;[^\s)]+)*)\)/g;
+
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    // Safe href: keep the raw URL but protect quotes so they can't break the attribute
+    function safeHref(raw) { return raw.replace(/"/g, '%22'); }
+
+    var lines = String(str).split('\n');
+    var out   = lines.map(function (line) {
+      var t = line.trim();
+
+      // ── Standalone link → action button (checked on raw text) ──────────────
+      var m = t.match(STANDALONE);
+      if (m) {
+        return '<a href="' + safeHref(m[2]) + '" target="_blank" rel="noopener noreferrer" class="apx-btn">'
+             + escHtml(m[1]) + '</a>';
+      }
+
+      // ── Normal line: escape first, then convert inline links ────────────────
+      var s = escHtml(line);
+
+      // Inline markdown links — label & url are already HTML-escaped, use directly
+      s = s.replace(INLINE_MD, function (_, label, url) {
+        return '<a href="' + url + '" target="_blank" rel="noopener noreferrer" class="apx-link">' + label + '</a>';
+      });
+
+      // Bare URLs — split around already-generated <a> tags to avoid double-wrapping
+      var parts = s.split(/(<a\b[^>]*>[\s\S]*?<\/a>)/);
+      s = parts.map(function (chunk, i) {
+        if (i % 2 === 1) return chunk; // odd = already an <a>…</a>, leave it alone
+        return chunk.replace(/(https?:\/\/[^\s<>"'&]+(?:&amp;[^\s<>"'&]+)*)/g, function (url) {
+          return '<a href="' + url + '" target="_blank" rel="noopener noreferrer" class="apx-link">' + url + '</a>';
+        });
+      }).join('');
+
+      return s;
+    });
+    return out.join('<br>');
   }
 
   function applySkin(vars) {
