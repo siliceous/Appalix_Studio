@@ -1480,6 +1480,7 @@ export async function disconnectSageIntegration(provider: string) {
   }
 
   revalidatePath('/sage/integrations')
+  revalidatePath('/integrations')
 }
 
 // ---------------------------------------------------------------
