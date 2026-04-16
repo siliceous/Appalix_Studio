@@ -11,14 +11,34 @@ import { refreshBusinessDescriptionFromKB } from '../sage-email-sync.js'
  * refresh_token to obtain a new one and persists it back.
  */
 async function resolveWorkspaceGoogleToken(workspaceId: string, userId: string): Promise<string | null> {
-  const { data } = await supabase
-    .from('sage_integrations')
-    .select('config')
-    .eq('workspace_id', workspaceId)
-    .eq('user_id', userId)
-    .eq('provider', 'google_drive')
-    .eq('status', 'connected')
-    .maybeSingle() as unknown as { data: { config: Record<string, string> } | null }
+  // Try user-specific row first; fall back to any connected Drive integration
+  // for the workspace (handles sources created before user_id was stored).
+  let data: { config: Record<string, string> } | null = null
+
+  if (userId) {
+    const res = await supabase
+      .from('sage_integrations')
+      .select('config')
+      .eq('workspace_id', workspaceId)
+      .eq('user_id', userId)
+      .eq('provider', 'google_drive')
+      .eq('status', 'connected')
+      .maybeSingle() as unknown as { data: { config: Record<string, string> } | null }
+    data = res.data
+  }
+
+  if (!data?.config?.access_token) {
+    // Workspace-level fallback — pick any connected row
+    const res = await supabase
+      .from('sage_integrations')
+      .select('config')
+      .eq('workspace_id', workspaceId)
+      .eq('provider', 'google_drive')
+      .eq('status', 'connected')
+      .limit(1)
+      .maybeSingle() as unknown as { data: { config: Record<string, string> } | null }
+    data = res.data
+  }
 
   if (!data?.config?.access_token) return null
 
