@@ -49,20 +49,7 @@ function triggerIngest(sourceId: string) {
 }
 
 export async function createSource(formData: FormData) {
-  const supabase    = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: memberRaw } = await supabase
-    .from('workspace_members')
-    .select('workspace_id')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: true })
-    .limit(1)
-    .single()
-  const workspaceId = (memberRaw as { workspace_id: string } | null)?.workspace_id
-  if (!workspaceId) redirect('/login')
-
+  const workspaceId = await getWorkspaceId()
   const admin = createAdminClient()
 
   const type = (formData.get('type') as string) || 'url'
@@ -157,7 +144,6 @@ export async function createSource(formData: FormData) {
     .from('sources')
     .insert({
       workspace_id:    workspaceId,
-      user_id:         user.id,
       type,
       name,
       url,
