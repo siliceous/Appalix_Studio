@@ -2,9 +2,10 @@
 
 import { useState, useRef } from 'react'
 import { createSource } from '@/app/actions/source'
-import { Link2, FileText, AlignLeft, Upload, X, Lock, BookOpen, Cloud, HardDrive, Loader2, CheckCircle2 } from 'lucide-react'
+import { Link2, FileText, AlignLeft, Upload, X, Lock, BookOpen, Cloud, HardDrive, Loader2, CheckCircle2, Search, FolderOpen } from 'lucide-react'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { createClient } from '@/lib/supabase/client'
+import type { DriveFile } from '@/app/api/google-drive/files/route'
 
 export type SourceType =
   | 'url' | 'text' | 'file' | 'excel' | 'csv'
@@ -122,6 +123,28 @@ const MAX_FILE_BYTES = 50 * 1024 * 1024 // 50 MB
 
 type UploadState = 'idle' | 'uploading' | 'done' | 'error'
 
+// Mime-type display helpers for Google Drive files
+function driveTypeLabel(mimeType: string): string {
+  const map: Record<string, string> = {
+    'application/vnd.google-apps.document':     'Doc',
+    'application/vnd.google-apps.spreadsheet':  'Sheet',
+    'application/vnd.google-apps.presentation': 'Slides',
+    'application/pdf':                          'PDF',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word',
+    'text/plain': 'Text',
+    'text/csv':   'CSV',
+  }
+  return map[mimeType] ?? 'File'
+}
+
+function driveTypeBadge(mimeType: string): string {
+  if (mimeType.includes('document'))     return 'bg-blue-100   text-blue-700   dark:bg-blue-500/20   dark:text-blue-300'
+  if (mimeType.includes('spreadsheet'))  return 'bg-green-100  text-green-700  dark:bg-green-500/20  dark:text-green-300'
+  if (mimeType.includes('presentation')) return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300'
+  if (mimeType === 'application/pdf')    return 'bg-red-100    text-red-700    dark:bg-red-500/20    dark:text-red-300'
+  return 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-400'
+}
+
 export function NewSourceForm({ allowedTypes, gdriveConnected, gdriveEmail }: Props) {
   const firstAllowed = allowedTypes[0] ?? 'url'
   const [type, setType]             = useState<SourceType>(firstAllowed)
@@ -132,7 +155,45 @@ export function NewSourceForm({ allowedTypes, gdriveConnected, gdriveEmail }: Pr
   const [storagePath, setStoragePath] = useState<string>('')
   const [fileMime, setFileMime]       = useState<string>('')
   const [fileOrigName, setFileOrigName] = useState<string>('')
-  const fileRef = useRef<HTMLInputElement>(null)
+  const fileRef  = useRef<HTMLInputElement>(null)
+  const nameRef  = useRef<HTMLInputElement>(null)
+
+  // Google Drive file picker state
+  const [driveFiles, setDriveFiles]         = useState<DriveFile[] | null>(null)
+  const [driveLoading, setDriveLoading]     = useState(false)
+  const [drivePickerOpen, setDrivePickerOpen] = useState(false)
+  const [driveSearch, setDriveSearch]       = useState('')
+  const [driveUrl, setDriveUrl]             = useState('')
+  const [selectedDriveFile, setSelectedDriveFile] = useState<DriveFile | null>(null)
+
+  async function loadDriveFiles() {
+    setDrivePickerOpen(true)
+    if (driveFiles !== null) return          // already loaded
+    setDriveLoading(true)
+    try {
+      const res  = await fetch('/api/google-drive/files')
+      const data = res.ok ? (await res.json() as { files: DriveFile[] }) : { files: [] }
+      setDriveFiles(data.files)
+    } catch {
+      setDriveFiles([])
+    }
+    setDriveLoading(false)
+  }
+
+  function selectDriveFile(file: DriveFile) {
+    setSelectedDriveFile(file)
+    setDriveUrl(file.webViewLink)
+    setDrivePickerOpen(false)
+    setDriveSearch('')
+    // Auto-populate source name if still empty
+    if (nameRef.current && !nameRef.current.value) {
+      nameRef.current.value = file.name
+    }
+  }
+
+  const filteredDriveFiles = (driveFiles ?? []).filter(f =>
+    f.name.toLowerCase().includes(driveSearch.toLowerCase()),
+  )
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -301,6 +362,7 @@ export function NewSourceForm({ allowedTypes, gdriveConnected, gdriveEmail }: Pr
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Source name</label>
           <input
+            ref={nameRef}
             type="text"
             name="name"
             required
@@ -435,21 +497,111 @@ export function NewSourceForm({ allowedTypes, gdriveConnected, gdriveEmail }: Pr
         {/* ── Google Drive ── */}
         {type === 'google_drive' && (
           <>
-            {/* Connected via OAuth */}
             {gdriveConnected ? (
-              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-emerald-200 dark:border-emerald-700/40 bg-emerald-50 dark:bg-emerald-900/20">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">Google Drive connected</p>
-                  {gdriveEmail && <p className="text-xs text-emerald-600 dark:text-emerald-400 truncate">{gdriveEmail}</p>}
+              <>
+                {/* Connected badge */}
+                <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-emerald-200 dark:border-emerald-700/40 bg-emerald-50 dark:bg-emerald-900/20">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">Google Drive connected</p>
+                    {gdriveEmail && <p className="text-xs text-emerald-600 dark:text-emerald-400 truncate">{gdriveEmail}</p>}
+                  </div>
+                  <a href="/api/oauth/google-drive?return=/sources/new" className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline shrink-0">
+                    Reconnect
+                  </a>
                 </div>
-                <a
-                  href="/api/oauth/google-drive?return=/sources/new"
-                  className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline shrink-0"
+
+                {/* Browse button */}
+                <button
+                  type="button"
+                  onClick={loadDriveFiles}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-gray-300 dark:border-white/20 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
-                  Reconnect
-                </a>
-              </div>
+                  <FolderOpen className="w-4 h-4 text-gray-400" />
+                  Browse Google Drive
+                </button>
+
+                {/* Inline file picker */}
+                {drivePickerOpen && (
+                  <div className="rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden">
+                    {/* Search bar */}
+                    <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5">
+                      <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                      <input
+                        type="text"
+                        value={driveSearch}
+                        onChange={e => setDriveSearch(e.target.value)}
+                        placeholder="Search files…"
+                        className="flex-1 bg-transparent text-sm text-gray-800 dark:text-gray-200 placeholder:text-gray-400 outline-none"
+                        autoFocus
+                      />
+                      <button type="button" onClick={() => setDrivePickerOpen(false)} className="text-gray-400 hover:text-gray-600 shrink-0">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {/* File list */}
+                    <div className="max-h-60 overflow-y-auto divide-y divide-gray-100 dark:divide-white/5">
+                      {driveLoading ? (
+                        <div className="flex items-center justify-center gap-2 py-8 text-sm text-gray-400">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Loading files…
+                        </div>
+                      ) : filteredDriveFiles.length === 0 ? (
+                        <p className="py-8 text-center text-sm text-gray-400">
+                          {driveSearch ? 'No files match your search.' : 'No files found in your Drive.'}
+                        </p>
+                      ) : (
+                        filteredDriveFiles.map(file => (
+                          <button
+                            key={file.id}
+                            type="button"
+                            onClick={() => selectDriveFile(file)}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                          >
+                            <span className={`shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded ${driveTypeBadge(file.mimeType)}`}>
+                              {driveTypeLabel(file.mimeType)}
+                            </span>
+                            <span className="flex-1 text-sm text-gray-800 dark:text-gray-200 truncate">{file.name}</span>
+                            <span className="shrink-0 text-xs text-gray-400">
+                              {new Date(file.modifiedTime).toLocaleDateString()}
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Selected file indicator */}
+                {selectedDriveFile && !drivePickerOpen && (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-50 dark:bg-[#15A4AE]/10 border border-brand-200 dark:border-[#15A4AE]/30">
+                    <span className={`shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded ${driveTypeBadge(selectedDriveFile.mimeType)}`}>
+                      {driveTypeLabel(selectedDriveFile.mimeType)}
+                    </span>
+                    <span className="flex-1 text-sm text-gray-800 dark:text-gray-200 truncate">{selectedDriveFile.name}</span>
+                    <button type="button" onClick={() => { setSelectedDriveFile(null); setDriveUrl('') }} className="text-gray-400 hover:text-gray-600 shrink-0">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                {/* URL field — pre-filled from picker, still editable */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    Google Drive file URL
+                  </label>
+                  <input
+                    type="url"
+                    name="url"
+                    required
+                    value={driveUrl}
+                    onChange={e => setDriveUrl(e.target.value)}
+                    placeholder="Select a file above, or paste https://docs.google.com/…"
+                    className={inputCls}
+                  />
+                </div>
+              </>
             ) : (
               <div className="rounded-lg border border-gray-200 dark:border-white/10 p-4 space-y-3">
                 <div>
@@ -484,12 +636,13 @@ export function NewSourceForm({ allowedTypes, gdriveConnected, gdriveEmail }: Pr
                     <a href="/resources/connect-google-drive" target="_blank" rel="noreferrer" className="text-brand-400 hover:text-brand-300 underline">See tutorial →</a>
                   </p>
                 </div>
+                {/* Manual URL for service account flow */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Google Drive file URL</label>
+                  <input type="url" name="url" required placeholder="https://docs.google.com/document/d/FILE_ID/edit" className={inputCls} />
+                </div>
               </div>
             )}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Google Drive file URL</label>
-              <input type="url" name="url" required placeholder="https://docs.google.com/document/d/FILE_ID/edit" className={inputCls} />
-            </div>
           </>
         )}
 

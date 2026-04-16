@@ -326,7 +326,7 @@ export default async function IntegrationsPage({
             name="Google Drive"
             desc="Index files from Google Drive into your knowledge base so your bot can answer questions from documents."
             logo="/integrations/google-drive.png"
-            connectHref="/api/oauth/google-drive?return=/integrations"
+            connectHref="/api/oauth/google-drive"
             isConnected={sageConnected.has('google_drive')}
             connectedByName={connectedProviderInfo['google_drive']?.userName}
           />
