@@ -5,7 +5,14 @@ import { createSource } from '@/app/actions/source'
 import { Link2, FileText, AlignLeft, Upload, X, Lock, BookOpen, Cloud, HardDrive, Loader2, CheckCircle2, Search, FolderOpen } from 'lucide-react'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { createClient } from '@/lib/supabase/client'
-import type { DriveFile } from '@/app/api/google-drive/files/route'
+
+type DriveFile = {
+  id:           string
+  name:         string
+  mimeType:     string
+  webViewLink:  string
+  modifiedTime: string
+}
 
 export type SourceType =
   | 'url' | 'text' | 'file' | 'excel' | 'csv'
