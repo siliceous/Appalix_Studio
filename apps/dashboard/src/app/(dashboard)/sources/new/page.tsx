@@ -37,8 +37,6 @@ export default async function NewSourcePage() {
     .single()
   const plan = (workspaceRaw as { plan: string } | null)?.plan ?? 'starter'
 
-  const allowedTypes: SourceType[] = PLAN_ALLOWED[plan] ?? ['url']
-
   // Check if user has connected Google Drive via OAuth
   const admin = createAdminClient()
   const { data: gdriveRow } = await admin
@@ -50,6 +48,14 @@ export default async function NewSourcePage() {
     .maybeSingle() as unknown as { data: { status: string; config: { google_email?: string } } | null }
   const gdriveConnected = gdriveRow?.status === 'connected'
   const gdriveEmail     = gdriveRow?.config?.google_email ?? null
+
+  // Plan-based type restrictions — but if Google Drive is already connected
+  // via OAuth, always unlock it (the OAuth auth IS the gate).
+  const basePlanTypes: SourceType[] = PLAN_ALLOWED[plan] ?? ['url']
+  const allowedTypes: SourceType[] =
+    gdriveConnected && !basePlanTypes.includes('google_drive')
+      ? [...basePlanTypes, 'google_drive']
+      : basePlanTypes
 
   return (
     <div className="max-w-2xl mx-auto">
