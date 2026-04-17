@@ -12,25 +12,25 @@ export async function GET(req: NextRequest) {
   const rawState = searchParams.get('state') ?? ''
   const appUrl   = process.env.NEXT_PUBLIC_APP_URL ?? ''
 
-  if (!code) {
-    return NextResponse.redirect(`${appUrl}/settings?gcal=denied`)
-  }
-
-  // Decode state
+  // Decode state first so we always redirect to the correct return path
   let userId: string | null      = null
   let workspaceId: string | null = null
-  let returnPath = '/settings'
+  let returnPath = '/sage/calendar'
   try {
     const parsed = JSON.parse(Buffer.from(rawState, 'base64url').toString())
     userId      = parsed.uid ?? null
     workspaceId = parsed.wid ?? null
-    returnPath  = parsed.ret ?? '/settings'
+    returnPath  = parsed.ret ?? '/sage/calendar'
   } catch {
-    return NextResponse.redirect(`${appUrl}/settings?gcal=error`)
+    return NextResponse.redirect(`${appUrl}/sage/calendar?gcal=error`)
+  }
+
+  if (!code) {
+    return NextResponse.redirect(`${appUrl}${returnPath}?gcal=denied`)
   }
 
   if (!userId || !workspaceId) {
-    return NextResponse.redirect(`${appUrl}/settings?gcal=error`)
+    return NextResponse.redirect(`${appUrl}${returnPath}?gcal=error`)
   }
 
   const clientId     = process.env.GOOGLE_CLIENT_ID!
@@ -53,11 +53,11 @@ export async function GET(req: NextRequest) {
     })
     tokens = await res.json() as typeof tokens
   } catch {
-    return NextResponse.redirect(`${appUrl}/settings?gcal=token_failed`)
+    return NextResponse.redirect(`${appUrl}${returnPath}?gcal=token_failed`)
   }
 
   if (!tokens.access_token || tokens.error) {
-    return NextResponse.redirect(`${appUrl}/settings?gcal=token_failed`)
+    return NextResponse.redirect(`${appUrl}${returnPath}?gcal=token_failed`)
   }
 
   // ── 2. Get Google email ────────────────────────────────────────────────────
@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
 
   if (!config.refresh_token) {
     // No refresh token at all — flow won't be sustainable; surface error
-    return NextResponse.redirect(`${appUrl}/settings?gcal=no_refresh_token`)
+    return NextResponse.redirect(`${appUrl}${returnPath}?gcal=no_refresh_token`)
   }
 
   // ── 4. Upsert into sage_integrations ──────────────────────────────────────
@@ -114,7 +114,7 @@ export async function GET(req: NextRequest) {
 
   if (upsertError) {
     console.error('[oauth/google-calendar/callback] upsert failed:', upsertError.message)
-    return NextResponse.redirect(`${appUrl}/settings?gcal=save_failed`)
+    return NextResponse.redirect(`${appUrl}${returnPath}?gcal=save_failed`)
   }
 
   return NextResponse.redirect(`${appUrl}${returnPath}?gcal=connected`)

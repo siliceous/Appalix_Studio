@@ -70,7 +70,7 @@ export function GoogleCalendarSection({ connected, googleEmail, calendarLink, jo
           </span>
         ) : (
           <a
-            href="/api/oauth/google-calendar"
+            href="/api/oauth/google-calendar?return=/sage/calendar"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white transition-colors flex-shrink-0"
           >
             <Calendar className="w-3.5 h-3.5" />
