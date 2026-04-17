@@ -12,13 +12,15 @@ interface Props {
   logo:             string
   connectHref:      string
   isConnected:      boolean
+  connectedEmail?:  string
   connectedByName?: string
+  guide?:           string
   /** Set for Google Chat — uses platform integrations, no sage disconnect */
   noDisconnect?:    boolean
 }
 
 export function GoogleWorkspaceCard({
-  id, name, desc, logo, connectHref, isConnected, connectedByName, noDisconnect,
+  id, name, desc, logo, connectHref, isConnected, connectedEmail, connectedByName, guide, noDisconnect,
 }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -44,6 +46,9 @@ export function GoogleWorkspaceCard({
           )}
         </div>
         <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
+        {isConnected && connectedEmail && (
+          <p className="text-[11px] text-gray-400 mt-1 font-medium truncate">{connectedEmail}</p>
+        )}
         {isConnected && connectedByName && (
           <p className="text-[11px] text-gray-400 mt-0.5">Connected by {connectedByName}</p>
         )}
@@ -75,6 +80,16 @@ export function GoogleWorkspaceCard({
             >
               <Plug className="w-3 h-3" />
               {isConnected ? 'Reconnect' : id === 'google_chat' ? 'Set up' : 'Connect'}
+            </a>
+          )}
+          {guide && (
+            <a
+              href={guide}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              Setup guide →
             </a>
           )}
         </div>

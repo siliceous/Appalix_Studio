@@ -72,7 +72,7 @@ export default async function IntegrationsPage({
   const EMAIL_PROVIDERS = ['mailchimp', 'activecampaign', 'convertkit', 'klaviyo', 'constantcontact'] as const
 
   const admin = createAdminClient()
-  const [{ data: rawIntegrations }, { data: sageIntegrationsRaw }, { data: sourcesRaw }, { data: emailIntegrationsRaw }, { data: allConnectedEmailsRaw }, { data: profilesRaw }, { data: membersRaw }, { data: formIntegConfigsRaw }, { data: allConnectedRaw }] = await Promise.all([
+  const [{ data: rawIntegrations }, { data: sageIntegrationsRaw }, { data: sourcesRaw }, { data: emailIntegrationsRaw }, { data: allConnectedEmailsRaw }, { data: profilesRaw }, { data: membersRaw }, { data: formIntegConfigsRaw }, { data: allConnectedRaw }, { data: googleOAuthConfigsRaw }] = await Promise.all([
     supabase.from('integrations').select('*, bots(name)').eq('workspace_id', membership.workspace_id).order('created_at', { ascending: false }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('sage_integrations').select('provider, status').eq('workspace_id', membership.workspace_id).eq('user_id', user.id),
@@ -92,6 +92,9 @@ export default async function IntegrationsPage({
     // All connected sage integrations — for connector name/role display
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('sage_integrations').select('provider, user_id').eq('workspace_id', membership.workspace_id).eq('status', 'connected'),
+    // Google OAuth emails — to show which Google account is connected per provider
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any).from('sage_integrations').select('provider, config').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', ['google_calendar', 'google_drive', 'google_forms']),
   ])
   const [crmConnections, crmHistory] = await Promise.all([getCrmConnections(), getImportHistory()])
 
@@ -158,6 +161,14 @@ export default async function IntegrationsPage({
     const name = p ? [p.first_name, p.last_name].filter(Boolean).join(' ') : ''
     connectedProviderInfo[row.provider]  = { userName: name, role: m?.role ?? '' }
     connectedProviderUserId[row.provider] = row.user_id
+  }
+
+  // Google account email per OAuth provider (calendar, drive, forms)
+  type GoogleOAuthRow = { provider: string; config: Record<string, string> }
+  const googleEmailByProvider: Record<string, string> = {}
+  for (const row of (googleOAuthConfigsRaw ?? []) as GoogleOAuthRow[]) {
+    const email = row.config?.google_email
+    if (email) googleEmailByProvider[row.provider] = email
   }
 
   // Enrich email integrations with connected-by info for EmailPlatformCard
@@ -306,20 +317,24 @@ export default async function IntegrationsPage({
           <GoogleWorkspaceCard
             id="google_calendar"
             name="Google Calendar"
-            desc="Sync calendar events, schedule meetings, and check availability directly from Sage."
+            desc="Lets Sage check availability, schedule meetings, and create events on your behalf."
             logo="/integrations/google-calendar.png"
             connectHref="/api/oauth/google-calendar?return=/integrations"
             isConnected={sageConnected.has('google_calendar')}
+            connectedEmail={googleEmailByProvider['google_calendar']}
             connectedByName={connectedProviderInfo['google_calendar']?.userName}
+            guide="/resources/connect-google-calendar"
           />
           <GoogleWorkspaceCard
             id="google_forms"
             name="Google Forms"
-            desc="Connect via OAuth to read form responses and trigger automations when new responses arrive."
+            desc="Read form responses and trigger automations when new responses arrive."
             logo="/integrations/google-forms.png"
             connectHref="/api/oauth/google-forms?return=/integrations"
             isConnected={sageConnected.has('google_forms')}
+            connectedEmail={googleEmailByProvider['google_forms']}
             connectedByName={connectedProviderInfo['google_forms']?.userName}
+            guide="/resources/connect-google-forms"
           />
           <GoogleWorkspaceCard
             id="google_drive"
@@ -328,7 +343,9 @@ export default async function IntegrationsPage({
             logo="/integrations/google-drive.png"
             connectHref="/api/oauth/google-drive"
             isConnected={sageConnected.has('google_drive')}
+            connectedEmail={googleEmailByProvider['google_drive']}
             connectedByName={connectedProviderInfo['google_drive']?.userName}
+            guide="/resources/connect-google-drive"
           />
           <GoogleWorkspaceCard
             id="google_chat"
@@ -337,6 +354,7 @@ export default async function IntegrationsPage({
             logo="/integrations/google-chat.png"
             connectHref="/integrations/new?platform=google_chat"
             isConnected={connectedPlatforms.has('google_chat')}
+            guide="/resources/connect-google-chat"
             noDisconnect
           />
         </div>
