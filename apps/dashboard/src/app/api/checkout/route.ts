@@ -70,38 +70,44 @@ export async function POST(request: NextRequest) {
   if (!membership) return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
 
   const { stripe_customer_id, stripe_subscription_id } = membership.workspaces
-  const stripe  = new Stripe(process.env.STRIPE_SECRET_KEY)
-  const appUrl  = process.env.NEXT_PUBLIC_APP_URL!
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
 
-  // Existing active subscription → send to Stripe Portal to change plan
-  if (stripe_subscription_id && stripe_customer_id) {
-    const portal = await stripe.billingPortal.sessions.create({
-      customer:   stripe_customer_id,
-      return_url: `${appUrl}/settings`,
+  try {
+    // Existing active subscription → send to Stripe Portal to change plan
+    if (stripe_subscription_id && stripe_customer_id) {
+      const portal = await stripe.billingPortal.sessions.create({
+        customer:   stripe_customer_id,
+        return_url: `${appUrl}/settings`,
+      })
+      return NextResponse.json({ url: portal.url })
+    }
+
+    // No subscription yet → new checkout session with 14-day free trial
+    const session = await stripe.checkout.sessions.create({
+      mode:                 'subscription',
+      payment_method_types: ['card'],
+      customer:             stripe_customer_id ?? undefined,
+      customer_email:       stripe_customer_id ? undefined : user.email,
+      line_items:           [{ price: priceId, quantity: 1 }],
+      subscription_data: {
+        trial_period_days: 14,
+      },
+      payment_method_collection: 'if_required',
+      metadata: {
+        plan,
+        billing:      billing ?? 'monthly',
+        workspace_id: membership.workspace_id,
+        user_id:      user.id,
+      },
+      success_url: `${appUrl}/settings?upgraded=1`,
+      cancel_url:  `${appUrl}/settings/upgrade`,
     })
-    return NextResponse.json({ url: portal.url })
+
+    return NextResponse.json({ url: session.url })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Stripe error'
+    console.error('[checkout] Stripe error:', message)
+    return NextResponse.json({ error: message }, { status: 500 })
   }
-
-  // No subscription yet → new checkout session with 14-day free trial (card required upfront)
-  const session = await stripe.checkout.sessions.create({
-    mode:                 'subscription',
-    payment_method_types: ['card'],
-    customer:             stripe_customer_id ?? undefined,
-    customer_email:       stripe_customer_id ? undefined : user.email,
-    line_items:           [{ price: priceId, quantity: 1 }],
-    subscription_data: {
-      trial_period_days: 14,
-    },
-    payment_method_collection: 'if_required',
-    metadata: {
-      plan,
-      billing:      billing ?? 'monthly',
-      workspace_id: membership.workspace_id,
-      user_id:      user.id,
-    },
-    success_url: `${appUrl}/settings?upgraded=1`,
-    cancel_url:  `${appUrl}/settings/upgrade`,
-  })
-
-  return NextResponse.json({ url: session.url })
 }
