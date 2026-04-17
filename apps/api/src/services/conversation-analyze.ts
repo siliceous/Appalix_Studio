@@ -160,6 +160,17 @@ export async function analyzeConversationsForWorkspace(
       .eq('id', row.id)
       .eq('workspace_id', workspaceId)
 
+    // Auto-title: if the customer shared their name and the conversation has
+    // no title yet, set it — preserves any title the team set manually.
+    if (!error && result.entities.name) {
+      await supabase
+        .from('conversations')
+        .update({ title: result.entities.name })
+        .eq('id', row.id)
+        .eq('workspace_id', workspaceId)
+        .is('title', null)
+    }
+
     if (!error) {
       analysed++
       // Fire auto-action if full automation is enabled for the bots channel
