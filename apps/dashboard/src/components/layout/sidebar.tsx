@@ -134,7 +134,7 @@ export function Sidebar({ workspace, callerRole, userPermissions, branding }: Si
   const router      = useRouter()
   const viewAs      = searchParams.get('viewAs')
   const supabase    = createClient()
-  const isProPlan   = ['pro', 'team', 'enterprise'].includes(workspace.plan)
+  const isProPlan   = ['individual', 'pro', 'edge', 'team', 'enterprise'].includes(workspace.plan)
   const isViewer    = callerRole === 'viewer'
   const callerRank  = ROLE_RANK[(callerRole ?? 'viewer') as WorkspaceMemberRole] ?? 1
 

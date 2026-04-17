@@ -346,7 +346,7 @@ async function handleInvoiceUpcoming(invoice: Stripe.Invoice) {
 // Helpers
 // ---------------------------------------------------------------
 
-type Plan = 'individual' | 'pro' | 'team' | 'enterprise'
+type Plan = 'individual' | 'pro' | 'edge' | 'team' | 'enterprise'
 
 const PLAN_LIMITS: Record<Plan, {
   monthly_message_limit: number
@@ -360,6 +360,7 @@ const PLAN_LIMITS: Record<Plan, {
   //                                                                              seats  bots  extra seats  extra bots  storage
   individual: { monthly_message_limit:  5_000, monthly_agent_run_limit:     0, seat_limit:   1, bot_limit:  1, extra_seat_limit:    2, extra_bot_limit: null, storage_limit_bytes:  2_147_483_648 },  //  2 GB
   pro:        { monthly_message_limit: 15_000, monthly_agent_run_limit:   150, seat_limit:   3, bot_limit:  3, extra_seat_limit:    6, extra_bot_limit: null, storage_limit_bytes: 10_737_418_240 },  // 10 GB
+  edge:       { monthly_message_limit: 25_000, monthly_agent_run_limit:   300, seat_limit:   5, bot_limit:  5, extra_seat_limit:    5, extra_bot_limit: null, storage_limit_bytes: 16_106_127_360 },  // 15 GB
   team:       { monthly_message_limit: 50_000, monthly_agent_run_limit:   500, seat_limit:  10, bot_limit: 10, extra_seat_limit: null, extra_bot_limit: null, storage_limit_bytes: 32_212_254_720 },  // 30 GB
   enterprise: { monthly_message_limit: 999_999, monthly_agent_run_limit: 9_999, seat_limit: null, bot_limit: null, extra_seat_limit: null, extra_bot_limit: null, storage_limit_bytes: null },            // unlimited
 }
@@ -369,6 +370,7 @@ function getPlanFromPrice(price?: Stripe.Price): Plan {
   const nickname = (price.nickname ?? '').toLowerCase()
   if (nickname.includes('enterprise')) return 'enterprise'
   if (nickname.includes('team'))       return 'team'
+  if (nickname.includes('edge'))       return 'edge'
   if (nickname.includes('pro'))        return 'pro'
   return 'individual'
 }

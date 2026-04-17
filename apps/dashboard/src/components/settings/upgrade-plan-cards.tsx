@@ -116,7 +116,7 @@ export function UpgradePlanCards({ currentPlan, hasSubscription }: Props) {
       const res  = await fetch('/api/checkout', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ plan: planId }),
+        body:    JSON.stringify({ plan: planId, billing: isAnnual ? 'annual' : 'monthly' }),
       })
       const data = await res.json() as { url?: string; error?: string }
       if (data.url) {

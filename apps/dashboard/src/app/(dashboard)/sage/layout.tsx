@@ -22,7 +22,7 @@ export default async function SageLayout({ children }: { children: React.ReactNo
   const workspace = raw?.workspaces ?? null
   if (!workspace) redirect('/dashboard')
 
-  const isPro = ['pro', 'scale', 'enterprise'].includes(workspace.plan)
+  const isPro = ['individual', 'pro', 'edge', 'team', 'scale', 'enterprise'].includes(workspace.plan)
 
   if (!isPro) {
     return (

@@ -13,6 +13,8 @@ const PRICE_IDS: Record<string, string | undefined> = {
   individual_annual:  process.env.STRIPE_PRICE_INDIVIDUAL_ANNUAL,
   pro_monthly:        process.env.STRIPE_PRICE_PRO_MONTHLY,
   pro_annual:         process.env.STRIPE_PRICE_PRO_ANNUAL,
+  edge_monthly:       process.env.STRIPE_PRICE_EDGE_MONTHLY,
+  edge_annual:        process.env.STRIPE_PRICE_EDGE_ANNUAL,
   team_monthly:       process.env.STRIPE_PRICE_TEAM_MONTHLY,
   team_annual:        process.env.STRIPE_PRICE_TEAM_ANNUAL,
   // Extra seat add-on
