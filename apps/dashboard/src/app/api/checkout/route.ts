@@ -9,23 +9,23 @@ export const dynamic = 'force-dynamic'
 // so the webhook's getPlanFromPrice() can identify the plan.
 // Each plan has a monthly and annual price ID.
 const PRICE_IDS: Record<string, string | undefined> = {
-  individual_monthly: process.env.STRIPE_PRICE_INDIVIDUAL_MONTHLY,
-  individual_annual:  process.env.STRIPE_PRICE_INDIVIDUAL_ANNUAL,
-  pro_monthly:        process.env.STRIPE_PRICE_PRO_MONTHLY,
-  pro_annual:         process.env.STRIPE_PRICE_PRO_ANNUAL,
-  edge_monthly:       process.env.STRIPE_PRICE_EDGE_MONTHLY,
-  edge_annual:        process.env.STRIPE_PRICE_EDGE_ANNUAL,
-  team_monthly:       process.env.STRIPE_PRICE_TEAM_MONTHLY,
-  team_annual:        process.env.STRIPE_PRICE_TEAM_ANNUAL,
+  individual_monthly: process.env.STRIPE_PRICE_INDIVIDUAL_MONTHLY?.trim(),
+  individual_annual:  process.env.STRIPE_PRICE_INDIVIDUAL_ANNUAL?.trim(),
+  pro_monthly:        process.env.STRIPE_PRICE_PRO_MONTHLY?.trim(),
+  pro_annual:         process.env.STRIPE_PRICE_PRO_ANNUAL?.trim(),
+  edge_monthly:       process.env.STRIPE_PRICE_EDGE_MONTHLY?.trim(),
+  edge_annual:        process.env.STRIPE_PRICE_EDGE_ANNUAL?.trim(),
+  team_monthly:       process.env.STRIPE_PRICE_TEAM_MONTHLY?.trim(),
+  team_annual:        process.env.STRIPE_PRICE_TEAM_ANNUAL?.trim(),
   // Extra seat add-on
-  extra_seat_monthly: process.env.STRIPE_PRICE_EXTRA_SEAT_MONTHLY,
-  extra_seat_annual:  process.env.STRIPE_PRICE_EXTRA_SEAT_ANNUAL,
+  extra_seat_monthly: process.env.STRIPE_PRICE_EXTRA_SEAT_MONTHLY?.trim(),
+  extra_seat_annual:  process.env.STRIPE_PRICE_EXTRA_SEAT_ANNUAL?.trim(),
   // Extra bot add-on
-  extra_bot_monthly:     process.env.STRIPE_PRICE_EXTRA_BOT_MONTHLY,
-  extra_bot_annual:      process.env.STRIPE_PRICE_EXTRA_BOT_ANNUAL,
+  extra_bot_monthly:     process.env.STRIPE_PRICE_EXTRA_BOT_MONTHLY?.trim(),
+  extra_bot_annual:      process.env.STRIPE_PRICE_EXTRA_BOT_ANNUAL?.trim(),
   // Extra storage add-on — sold in 10 GB blocks, billed monthly or annually
-  extra_storage_monthly: process.env.STRIPE_PRICE_EXTRA_STORAGE_MONTHLY,
-  extra_storage_annual:  process.env.STRIPE_PRICE_EXTRA_STORAGE_ANNUAL,
+  extra_storage_monthly: process.env.STRIPE_PRICE_EXTRA_STORAGE_MONTHLY?.trim(),
+  extra_storage_annual:  process.env.STRIPE_PRICE_EXTRA_STORAGE_ANNUAL?.trim(),
   // NOTE: conversation overage (STRIPE_PRICE_OVERAGE_CONV) is a metered price
   // attached server-side after checkout in the webhook — not selectable here.
 }
