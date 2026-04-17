@@ -319,7 +319,7 @@ export default async function IntegrationsPage({
             name="Google Calendar"
             desc="Lets Sage check availability, schedule meetings, and create events on your behalf."
             logo="/integrations/google-calendar.png"
-            connectHref="/api/oauth/google-calendar?return=/integrations"
+            connectHref="/api/oauth/google-calendar?return=/sage/calendar"
             isConnected={sageConnected.has('google_calendar')}
             connectedEmail={googleEmailByProvider['google_calendar']}
             connectedByName={connectedProviderInfo['google_calendar']?.userName}
