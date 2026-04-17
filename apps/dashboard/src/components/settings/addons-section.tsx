@@ -54,7 +54,7 @@ export function AddonsSection() {
       const res  = await fetch('/api/checkout', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ plan: `${addonId}_${isAnnual ? 'annual' : 'monthly'}` }),
+        body:    JSON.stringify({ plan: addonId, billing: isAnnual ? 'annual' : 'monthly' }),
       })
       const data = await res.json() as { url?: string; error?: string }
       if (data.url) {
