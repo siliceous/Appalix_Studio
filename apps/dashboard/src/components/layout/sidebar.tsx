@@ -30,6 +30,7 @@ import {
   Mic,
   PhoneCall,
   Library,
+  CalendarDays,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -98,10 +99,11 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'CRM',
     pro: true,
     items: [
-      { href: '/sage/contacts',  label: 'Contacts',        icon: Users,      permissionKey: 'can_view_contacts'  },
-      { href: '/sage/pipelines', label: 'Pipelines',       icon: Kanban,     permissionKey: 'can_view_pipelines' },
-      { href: '/sage/projects',  label: 'Projects',        icon: FolderOpen, permissionKey: 'can_view_projects'  },
-      { href: '/sage/quotes',    label: 'Quotes & Invoices', icon: Receipt,  permissionKey: 'can_view_projects'  },
+      { href: '/sage/contacts',  label: 'Contacts',          icon: Users,         permissionKey: 'can_view_contacts'  },
+      { href: '/sage/calendar',  label: 'Calendar',          icon: CalendarDays,  permissionKey: 'can_view_pipelines' },
+      { href: '/sage/pipelines', label: 'Pipelines',         icon: Kanban,        permissionKey: 'can_view_pipelines' },
+      { href: '/sage/projects',  label: 'Projects',          icon: FolderOpen,    permissionKey: 'can_view_projects'  },
+      { href: '/sage/quotes',    label: 'Quotes & Invoices', icon: Receipt,       permissionKey: 'can_view_projects'  },
     ],
   },
   {

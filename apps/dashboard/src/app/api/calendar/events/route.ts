@@ -1,6 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient }         from '@/lib/supabase/server'
-import { getValidAccessToken }       from '@/lib/google-calendar/tokens'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { getValidAccessToken }             from '@/lib/google-calendar/tokens'
+
+/**
+ * GET /api/calendar/events?start=<ISO>&end=<ISO>
+ *
+ * Returns the current user's Google Calendar events for the given range.
+ * Auth: Supabase session cookie.
+ */
+export async function GET(req: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: membershipRaw } = await supabase
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single()
+  const workspaceId = (membershipRaw as { workspace_id: string } | null)?.workspace_id
+  if (!workspaceId) return NextResponse.json({ error: 'No workspace' }, { status: 403 })
+
+  const admin = createAdminClient()
+  const accessToken = await getValidAccessToken(admin, user.id, workspaceId)
+  if (!accessToken) return NextResponse.json({ error: 'Google Calendar not connected' }, { status: 404 })
+
+  const start = req.nextUrl.searchParams.get('start') ?? new Date().toISOString()
+  const end   = req.nextUrl.searchParams.get('end')   ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
+  const params = new URLSearchParams({
+    timeMin:      start,
+    timeMax:      end,
+    singleEvents: 'true',
+    orderBy:      'startTime',
+    maxResults:   '250',
+    fields:       'items(id,summary,description,start,end,htmlLink,attendees,status,colorId)',
+  })
+
+  const res = await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  )
+
+  if (!res.ok) {
+    const text = await res.text()
+    console.error('[api/calendar/events] GET error:', res.status, text)
+    return NextResponse.json({ error: 'Calendar API error' }, { status: 502 })
+  }
+
+  const data = await res.json() as { items?: unknown[] }
+  return NextResponse.json({ events: data.items ?? [] })
+}
 
 /**
  * POST /api/calendar/events
