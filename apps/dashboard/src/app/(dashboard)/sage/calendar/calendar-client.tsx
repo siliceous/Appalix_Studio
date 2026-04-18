@@ -30,32 +30,34 @@ const MONTHS = [
   'January','February','March','April','May','June',
   'July','August','September','October','November','December',
 ]
-const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+const DAYS_SHORT  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+const DAYS_MINI   = ['S','M','T','W','T','F','S']
 
 // Google Calendar colour IDs → Tailwind bg classes
 const GCAL_COLORS: Record<string, string> = {
-  '1':  'bg-[#a4bdfc] dark:bg-[#7986cb]',   // Lavender
-  '2':  'bg-[#33b679] dark:bg-[#33b679]',   // Sage
-  '3':  'bg-[#8e24aa] dark:bg-[#8e24aa]',   // Grape
-  '4':  'bg-[#e67c73] dark:bg-[#e67c73]',   // Flamingo
-  '5':  'bg-[#f6c026] dark:bg-[#f6c026]',   // Banana
-  '6':  'bg-[#f5511d] dark:bg-[#f5511d]',   // Tangerine
-  '7':  'bg-[#039be5] dark:bg-[#039be5]',   // Peacock
-  '8':  'bg-[#616161] dark:bg-[#616161]',   // Graphite
-  '9':  'bg-[#3f51b5] dark:bg-[#3f51b5]',   // Blueberry
-  '10': 'bg-[#0b8043] dark:bg-[#0b8043]',   // Basil
-  '11': 'bg-[#d50000] dark:bg-[#d50000]',   // Tomato
+  '1':  'bg-[#a4bdfc]',
+  '2':  'bg-[#33b679]',
+  '3':  'bg-[#8e24aa]',
+  '4':  'bg-[#e67c73]',
+  '5':  'bg-[#f6c026]',
+  '6':  'bg-[#f5511d]',
+  '7':  'bg-[#039be5]',
+  '8':  'bg-[#616161]',
+  '9':  'bg-[#3f51b5]',
+  '10': 'bg-[#0b8043]',
+  '11': 'bg-[#d50000]',
 }
 
 function evtBg(ev: CalEvent): string {
-  return ev.colorId ? (GCAL_COLORS[ev.colorId] ?? 'bg-brand-500') : 'bg-brand-500'
+  return ev.colorId ? (GCAL_COLORS[ev.colorId] ?? 'bg-[#15A4AE]') : 'bg-[#15A4AE]'
 }
 
 // ── Event helpers ─────────────────────────────────────────────────────────────
 
 function evtStart(ev: CalEvent): Date { return new Date(ev.start.dateTime ?? ev.start.date ?? '') }
 function evtEnd(ev: CalEvent):   Date { return new Date(ev.end.dateTime   ?? ev.end.date   ?? '') }
-function isAllDay(ev: CalEvent):   boolean { return !ev.start.dateTime }
+function isAllDay(ev: CalEvent): boolean { return !ev.start.dateTime }
 
 function sameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear()
@@ -74,7 +76,106 @@ function fmtDateShort(d: Date): string {
 }
 function pad2(n: number): string { return String(n).padStart(2, '0') }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Mini Calendar ─────────────────────────────────────────────────────────────
+
+function MiniCalendar({
+  current,
+  onSelectDate,
+}: {
+  current:      Date
+  onSelectDate: (d: Date) => void
+}) {
+  const today = new Date()
+  const [miniBase, setMiniBase] = useState(
+    () => new Date(current.getFullYear(), current.getMonth(), 1),
+  )
+
+  // Follow the main view when it navigates to a different month
+  useEffect(() => {
+    setMiniBase(prev => {
+      if (prev.getFullYear() === current.getFullYear() && prev.getMonth() === current.getMonth()) {
+        return prev
+      }
+      return new Date(current.getFullYear(), current.getMonth(), 1)
+    })
+  }, [current])
+
+  const y        = miniBase.getFullYear()
+  const m        = miniBase.getMonth()
+  const firstDow = new Date(y, m, 1).getDay()
+  const daysInMo = new Date(y, m + 1, 0).getDate()
+
+  const cells: (number | null)[] = [
+    ...Array(firstDow).fill(null),
+    ...Array.from({ length: daysInMo }, (_, i) => i + 1),
+  ]
+  while (cells.length % 7 !== 0) cells.push(null)
+
+  return (
+    <div className="select-none">
+      {/* Month nav */}
+      <div className="flex items-center justify-between mb-2 px-1">
+        <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-200">
+          {MONTHS_SHORT[m]} {y}
+        </p>
+        <div className="flex items-center">
+          <button
+            onClick={() => setMiniBase(c => new Date(c.getFullYear(), c.getMonth() - 1, 1))}
+            className="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-white/8 text-gray-400 transition-colors"
+          >
+            <ChevronLeft className="w-3 h-3" />
+          </button>
+          <button
+            onClick={() => setMiniBase(c => new Date(c.getFullYear(), c.getMonth() + 1, 1))}
+            className="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-white/8 text-gray-400 transition-colors"
+          >
+            <ChevronRight className="w-3 h-3" />
+          </button>
+        </div>
+      </div>
+
+      {/* Day-of-week headers */}
+      <div className="grid grid-cols-7 mb-1">
+        {DAYS_MINI.map((d, i) => (
+          <div
+            key={i}
+            className="text-center text-[10px] font-medium text-gray-400 dark:text-gray-500 py-0.5"
+          >
+            {d}
+          </div>
+        ))}
+      </div>
+
+      {/* Day cells */}
+      <div className="grid grid-cols-7 gap-y-0.5">
+        {cells.map((day, i) => {
+          if (!day) return <div key={`e-${i}`} className="h-6" />
+          const date       = new Date(y, m, day)
+          const isToday    = sameDay(date, today)
+          const isSelected = sameDay(date, current)
+
+          return (
+            <button
+              key={day}
+              onClick={() => onSelectDate(date)}
+              className={`h-6 w-6 mx-auto flex items-center justify-center rounded-full text-[11px] transition-colors leading-none ${
+                isToday
+                  ? 'bg-[#15A4AE] text-white font-semibold'
+                  : isSelected
+                    ? 'bg-[#15A4AE]/15 text-[#15A4AE] font-semibold'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8'
+              }`}
+            >
+              {day}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 interface Props {
   isConnected: boolean
@@ -82,16 +183,16 @@ interface Props {
 }
 
 export function CalendarClient({ isConnected, googleEmail }: Props) {
-  const [view, setView]           = useState<View>('month')
-  const [current, setCurrent]     = useState(() => new Date())
-  const [events, setEvents]       = useState<CalEvent[]>([])
-  const [loading, setLoading]     = useState(false)
+  const [view, setView]             = useState<View>('month')
+  const [current, setCurrent]       = useState(() => new Date())
+  const [events,  setEvents]        = useState<CalEvent[]>([])
+  const [loading, setLoading]       = useState(false)
   const [selectedEv, setSelectedEv] = useState<CalEvent | null>(null)
-  const [newModal, setNewModal]   = useState<{ date: Date; hour?: number } | null>(null)
-  const weekScrollRef             = useRef<HTMLDivElement>(null)
-  const today                     = new Date()
+  const [newModal, setNewModal]     = useState<{ date: Date; hour?: number } | null>(null)
+  const weekScrollRef               = useRef<HTMLDivElement>(null)
+  const today                       = new Date()
 
-  // ── Fetch events ──────────────────────────────────────────────────────────
+  // ── Fetch events ────────────────────────────────────────────────────────
 
   const fetchEvents = useCallback(async () => {
     if (!isConnected) return
@@ -120,7 +221,7 @@ export function CalendarClient({ isConnected, googleEmail }: Props) {
 
   useEffect(() => { fetchEvents() }, [fetchEvents])
 
-  // Scroll week view to 8 AM on first render of that view
+  // Scroll week view to 8 AM on first render
   useEffect(() => {
     if (view === 'week' && weekScrollRef.current) {
       const HOUR_H = 64
@@ -128,7 +229,7 @@ export function CalendarClient({ isConnected, googleEmail }: Props) {
     }
   }, [view])
 
-  // ── Navigation ──────────────────────────────────────────────────────────
+  // ── Navigation ───────────────────────────────────────────────────────────
 
   function prev() {
     if (view === 'month') setCurrent(c => new Date(c.getFullYear(), c.getMonth() - 1, 1))
@@ -139,7 +240,7 @@ export function CalendarClient({ isConnected, googleEmail }: Props) {
     else setCurrent(c => { const n = new Date(c); n.setDate(n.getDate() + 7); return n })
   }
 
-  // ── Month helpers ────────────────────────────────────────────────────────
+  // ── Month helpers ─────────────────────────────────────────────────────────
 
   function buildMonthGrid(): (Date | null)[] {
     const y = current.getFullYear(), m = current.getMonth()
@@ -158,7 +259,7 @@ export function CalendarClient({ isConnected, googleEmail }: Props) {
       .sort((a, b) => evtStart(a).getTime() - evtStart(b).getTime())
   }
 
-  // ── Week helpers ─────────────────────────────────────────────────────────
+  // ── Week helpers ──────────────────────────────────────────────────────────
 
   function buildWeekDays(): Date[] {
     const dow = current.getDay()
@@ -184,8 +285,8 @@ export function CalendarClient({ isConnected, googleEmail }: Props) {
   }
 
   function evtTopHeight(ev: CalEvent, HOUR_H: number) {
-    const s   = evtStart(ev)
-    const e   = evtEnd(ev)
+    const s    = evtStart(ev)
+    const e    = evtEnd(ev)
     const sMins = s.getHours() * 60 + s.getMinutes()
     const eMins = e.getHours() * 60 + e.getMinutes()
     return {
@@ -194,7 +295,7 @@ export function CalendarClient({ isConnected, googleEmail }: Props) {
     }
   }
 
-  // ── Derived ──────────────────────────────────────────────────────────────
+  // ── Derived ───────────────────────────────────────────────────────────────
 
   const weekDays    = view === 'week' ? buildWeekDays() : []
   const HOUR_H      = 64
@@ -203,7 +304,7 @@ export function CalendarClient({ isConnected, googleEmail }: Props) {
   const headerTitle = view === 'month'
     ? `${MONTHS[current.getMonth()]} ${current.getFullYear()}`
     : weekDays.length
-      ? `${MONTHS[weekDays[0].getMonth()]} ${weekDays[0].getDate()}–${weekDays[6].getDate()}, ${weekDays[0].getFullYear()}`
+      ? `${MONTHS[weekDays[0].getMonth()]} ${weekDays[0].getDate()} – ${weekDays[6].getDate()}, ${weekDays[0].getFullYear()}`
       : ''
 
   // ── Not connected ─────────────────────────────────────────────────────────
@@ -211,8 +312,8 @@ export function CalendarClient({ isConnected, googleEmail }: Props) {
   if (!isConnected) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-5 p-12 text-center">
-        <div className="w-20 h-20 rounded-2xl bg-brand-600/10 dark:bg-brand-400/10 flex items-center justify-center">
-          <CalendarDays className="w-10 h-10 text-brand-500" />
+        <div className="w-20 h-20 rounded-2xl bg-[#15A4AE]/10 flex items-center justify-center">
+          <CalendarDays className="w-10 h-10 text-[#15A4AE]" />
         </div>
         <div className="max-w-sm">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
@@ -226,13 +327,13 @@ export function CalendarClient({ isConnected, googleEmail }: Props) {
         <div className="flex flex-col items-center gap-2">
           <Link
             href="/api/oauth/google-calendar?return=/sage/calendar"
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#15A4AE] hover:bg-[#0e8b94] text-white text-sm font-semibold rounded-xl transition-colors"
           >
             Connect Google Calendar
           </Link>
           <p className="text-xs text-gray-400 dark:text-gray-500">
             Or connect from{' '}
-            <Link href="/integrations" className="text-brand-500 hover:underline">Integrations</Link>
+            <Link href="/integrations" className="text-[#15A4AE] hover:underline">Integrations</Link>
           </p>
         </div>
       </div>
@@ -242,278 +343,337 @@ export function CalendarClient({ isConnected, googleEmail }: Props) {
   const grid = view === 'month' ? buildMonthGrid() : []
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 h-full">
+    <div className="flex flex-1 min-h-0 h-full overflow-hidden">
 
-      {/* ── Toolbar ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 dark:border-white/8 bg-white dark:bg-[#232323] shrink-0">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setCurrent(new Date())}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
-          >
-            Today
-          </button>
-          <div className="flex items-center gap-0.5">
-            <button
-              onClick={prev}
-              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 text-gray-500 dark:text-gray-400 transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={next}
-              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 text-gray-500 dark:text-gray-400 transition-colors"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-white w-48">
-            {headerTitle}
-          </h2>
-          {loading && <Loader2 className="w-3.5 h-3.5 text-gray-400 animate-spin" />}
-        </div>
+      {/* ── Left sidebar ────────────────────────────────────────────────── */}
+      <aside className="w-56 shrink-0 flex flex-col border-r border-gray-100 dark:border-white/8 bg-white dark:bg-[#232323] overflow-y-auto py-4 gap-5">
 
-        <div className="flex items-center gap-2">
-          {googleEmail && (
-            <span className="hidden md:block text-xs text-gray-400 dark:text-gray-500 truncate max-w-[180px]">
-              {googleEmail}
-            </span>
-          )}
-          {/* View toggle */}
-          <div className="flex items-center p-0.5 rounded-lg bg-gray-100 dark:bg-white/8">
-            {(['month', 'week'] as View[]).map(v => (
-              <button
-                key={v}
-                onClick={() => setView(v)}
-                className={`px-3 py-1 text-xs font-medium rounded-md capitalize transition-colors ${
-                  view === v
-                    ? 'bg-white dark:bg-white/15 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                }`}
-              >
-                {v}
-              </button>
-            ))}
-          </div>
+        {/* Create button */}
+        <div className="px-3">
           <button
             onClick={() => setNewModal({ date: new Date() })}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-lg transition-colors"
+            className="flex items-center gap-2.5 w-full px-4 py-2.5 bg-white dark:bg-[#2d2d2d] hover:shadow-md border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 transition-all"
           >
-            <Plus className="w-3.5 h-3.5" />
-            New event
+            <Plus className="w-4 h-4 text-[#15A4AE]" />
+            Create
           </button>
         </div>
-      </div>
 
-      {/* ── Month view ───────────────────────────────────────────────────── */}
-      {view === 'month' && (
-        <div className="flex-1 flex flex-col min-h-0 overflow-auto bg-white dark:bg-[#1c1c1c]">
-          {/* Day name headers */}
-          <div className="grid grid-cols-7 border-b border-gray-100 dark:border-white/8 bg-white dark:bg-[#232323] shrink-0">
-            {DAYS_SHORT.map(d => (
-              <div key={d} className="py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                {d}
-              </div>
-            ))}
-          </div>
+        {/* Mini calendar */}
+        <div className="px-3">
+          <MiniCalendar
+            current={current}
+            onSelectDate={d => setCurrent(d)}
+          />
+        </div>
 
-          {/* Grid */}
-          <div
-            className="grid grid-cols-7 flex-1"
-            style={{ gridAutoRows: 'minmax(110px, 1fr)' }}
-          >
-            {grid.map((d, i) => {
-              if (!d) {
-                return (
-                  <div
-                    key={`blank-${i}`}
-                    className="border-r border-b border-gray-100 dark:border-white/5 bg-gray-50/40 dark:bg-white/[0.01]"
-                  />
-                )
-              }
+        {/* Divider */}
+        <div className="border-t border-gray-100 dark:border-white/8" />
 
-              const dayEvents  = eventsOnDay(d)
-              const isTo       = sameDay(d, today)
-              const isOtherMo  = d.getMonth() !== current.getMonth()
-
-              return (
-                <div
-                  key={d.toISOString()}
-                  onClick={() => setNewModal({ date: d })}
-                  className={`border-r border-b border-gray-100 dark:border-white/5 p-1.5 cursor-pointer group transition-colors hover:bg-brand-50/40 dark:hover:bg-brand-900/10 ${
-                    isOtherMo ? 'bg-gray-50/40 dark:bg-white/[0.01]' : ''
-                  }`}
-                >
-                  <div
-                    className={`inline-flex w-7 h-7 items-center justify-center rounded-full text-[13px] font-medium mb-1 transition-colors ${
-                      isTo
-                        ? 'bg-brand-600 text-white'
-                        : isOtherMo
-                          ? 'text-gray-300 dark:text-gray-600'
-                          : 'text-gray-700 dark:text-gray-300 group-hover:bg-gray-100 dark:group-hover:bg-white/10'
-                    }`}
-                  >
-                    {d.getDate()}
-                  </div>
-
-                  <div className="space-y-0.5">
-                    {dayEvents.slice(0, 3).map(ev => (
-                      <button
-                        key={ev.id}
-                        onClick={e => { e.stopPropagation(); setSelectedEv(ev) }}
-                        className={`w-full text-left px-1.5 py-0.5 rounded text-[11px] leading-snug truncate text-white hover:opacity-80 transition-opacity ${evtBg(ev)}`}
-                      >
-                        {!isAllDay(ev) && (
-                          <span className="opacity-80 mr-1">{fmtTime(evtStart(ev))}</span>
-                        )}
-                        {ev.summary ?? '(No title)'}
-                      </button>
-                    ))}
-                    {dayEvents.length > 3 && (
-                      <button
-                        onClick={e => { e.stopPropagation(); setSelectedEv(dayEvents[3]) }}
-                        className="text-[11px] text-brand-500 dark:text-brand-400 hover:underline pl-1.5"
-                      >
-                        +{dayEvents.length - 3} more
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
+        {/* My calendars */}
+        <div className="px-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">
+            My calendars
+          </p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-3 h-3 rounded-sm bg-[#15A4AE] shrink-0" />
+              <span className="text-xs text-gray-600 dark:text-gray-400 truncate" title={googleEmail}>
+                {googleEmail}
+              </span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <div className="w-3 h-3 rounded-sm bg-[#039be5] shrink-0" />
+              <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                Appointments
+              </span>
+            </div>
           </div>
         </div>
-      )}
 
-      {/* ── Week view ────────────────────────────────────────────────────── */}
-      {view === 'week' && (
-        <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-[#1c1c1c]">
+        {/* Other calendars */}
+        <div className="px-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">
+            Other calendars
+          </p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-3 h-3 rounded-sm bg-[#33b679] shrink-0" />
+              <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                Holidays
+              </span>
+            </div>
+          </div>
+        </div>
+      </aside>
 
-          {/* Day header row */}
-          <div className="flex shrink-0 border-b border-gray-100 dark:border-white/8 bg-white dark:bg-[#232323]">
-            <div className="w-14 shrink-0 border-r border-gray-100 dark:border-white/8" />
-            {weekDays.map(d => {
-              const isTo = sameDay(d, today)
-              return (
-                <div
-                  key={d.toISOString()}
-                  className="flex-1 border-l border-gray-100 dark:border-white/8 py-2 px-1 text-center min-w-0"
-                >
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                    {DAYS_SHORT[d.getDay()]}
-                  </p>
-                  <div
-                    className={`inline-flex w-8 h-8 items-center justify-center rounded-full text-sm font-semibold mt-0.5 ${
-                      isTo ? 'bg-brand-600 text-white' : 'text-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    {d.getDate()}
-                  </div>
-                  {/* All-day events */}
-                  <div className="mt-1 space-y-0.5 px-0.5">
-                    {allDayEventsOnDay(d).map(ev => (
-                      <button
-                        key={ev.id}
-                        onClick={() => setSelectedEv(ev)}
-                        className={`w-full text-left px-1.5 py-0.5 rounded text-[11px] text-white truncate leading-tight ${evtBg(ev)}`}
-                      >
-                        {ev.summary ?? '(No title)'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
+      {/* ── Main content ─────────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-[#1c1c1c]">
+
+        {/* ── Toolbar ──────────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 dark:border-white/8 bg-white dark:bg-[#232323] shrink-0">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrent(new Date())}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+            >
+              Today
+            </button>
+            <div className="flex items-center gap-0.5">
+              <button
+                onClick={prev}
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 text-gray-500 dark:text-gray-400 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={next}
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 text-gray-500 dark:text-gray-400 transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-white min-w-[160px]">
+              {headerTitle}
+            </h2>
+            {loading && <Loader2 className="w-3.5 h-3.5 text-gray-400 animate-spin" />}
           </div>
 
-          {/* Time grid */}
-          <div className="flex-1 overflow-y-auto" ref={weekScrollRef}>
-            <div className="flex" style={{ minHeight: `${24 * HOUR_H}px` }}>
-
-              {/* Hour labels */}
-              <div className="w-14 shrink-0 relative border-r border-gray-100 dark:border-white/8" style={{ minHeight: `${24 * HOUR_H}px` }}>
-                {HOURS.map(h => (
-                  <div
-                    key={h}
-                    style={{ top: h * HOUR_H, height: HOUR_H }}
-                    className="absolute inset-x-0 flex items-start justify-end pr-2 pt-1"
-                  >
-                    {h > 0 && (
-                      <span className="text-[10px] text-gray-400 dark:text-gray-500 -translate-y-2 select-none">
-                        {h === 12 ? '12 PM' : h > 12 ? `${h - 12} PM` : `${h} AM`}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Day columns */}
-              {weekDays.map(d => (
-                <div
-                  key={d.toISOString()}
-                  className="flex-1 border-l border-gray-100 dark:border-white/8 relative"
-                  style={{ minHeight: `${24 * HOUR_H}px` }}
+          <div className="flex items-center gap-2">
+            {googleEmail && (
+              <span className="hidden lg:block text-xs text-gray-400 dark:text-gray-500 truncate max-w-[180px]">
+                {googleEmail}
+              </span>
+            )}
+            {/* View toggle */}
+            <div className="flex items-center p-0.5 rounded-lg bg-gray-100 dark:bg-white/8">
+              {(['month', 'week'] as View[]).map(v => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={`px-3 py-1 text-xs font-medium rounded-md capitalize transition-colors ${
+                    view === v
+                      ? 'bg-white dark:bg-white/15 text-gray-900 dark:text-white shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                  }`}
                 >
-                  {/* Hour slot rows */}
-                  {HOURS.map(h => (
-                    <div
-                      key={h}
-                      style={{ top: h * HOUR_H, height: HOUR_H }}
-                      className="absolute inset-x-0 border-b border-gray-50 dark:border-white/[0.04] cursor-pointer hover:bg-brand-50/30 dark:hover:bg-brand-900/5 transition-colors"
-                      onClick={() => {
-                        const nd = new Date(d); nd.setHours(h, 0, 0, 0)
-                        setNewModal({ date: nd, hour: h })
-                      }}
-                    />
-                  ))}
-
-                  {/* Current time indicator */}
-                  {sameDay(d, today) && (() => {
-                    const now  = new Date()
-                    const topPx = ((now.getHours() * 60 + now.getMinutes()) / 60) * HOUR_H
-                    return (
-                      <div
-                        className="absolute inset-x-0 z-20 pointer-events-none flex items-center"
-                        style={{ top: topPx }}
-                      >
-                        <div className="w-2.5 h-2.5 rounded-full bg-red-500 -ml-1.5 shrink-0" />
-                        <div className="flex-1 h-px bg-red-500" />
-                      </div>
-                    )
-                  })()}
-
-                  {/* Timed events */}
-                  {timedEventsOnDay(d).map(ev => {
-                    const { top, height } = evtTopHeight(ev, HOUR_H)
-                    return (
-                      <button
-                        key={ev.id}
-                        onClick={() => setSelectedEv(ev)}
-                        style={{ top, height, left: 2, right: 2, position: 'absolute' }}
-                        className={`rounded-md px-1.5 py-0.5 text-[11px] text-left overflow-hidden z-10 hover:opacity-80 transition-opacity text-white ${evtBg(ev)}`}
-                      >
-                        <div className="font-semibold leading-tight truncate">
-                          {ev.summary ?? '(No title)'}
-                        </div>
-                        {height > 32 && (
-                          <div className="opacity-80 text-[10px]">{fmtTime(evtStart(ev))}</div>
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
+                  {v}
+                </button>
               ))}
             </div>
           </div>
         </div>
-      )}
 
-      {/* ── Event detail overlay ──────────────────────────────────────────── */}
+        {/* ── Month view ─────────────────────────────────────────────────── */}
+        {view === 'month' && (
+          <div className="flex-1 flex flex-col min-h-0 overflow-auto">
+            {/* Day name headers */}
+            <div className="grid grid-cols-7 border-b border-gray-100 dark:border-white/8 bg-white dark:bg-[#232323] shrink-0">
+              {DAYS_SHORT.map(d => (
+                <div key={d} className="py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                  {d}
+                </div>
+              ))}
+            </div>
+
+            {/* Grid */}
+            <div
+              className="grid grid-cols-7 flex-1"
+              style={{ gridAutoRows: 'minmax(110px, 1fr)' }}
+            >
+              {grid.map((d, i) => {
+                if (!d) {
+                  return (
+                    <div
+                      key={`blank-${i}`}
+                      className="border-r border-b border-gray-100 dark:border-white/5 bg-gray-50/40 dark:bg-white/[0.01]"
+                    />
+                  )
+                }
+
+                const dayEvents = eventsOnDay(d)
+                const isTo      = sameDay(d, today)
+                const isOtherMo = d.getMonth() !== current.getMonth()
+
+                return (
+                  <div
+                    key={d.toISOString()}
+                    onClick={() => setNewModal({ date: d })}
+                    className={`border-r border-b border-gray-100 dark:border-white/5 p-1.5 cursor-pointer group transition-colors hover:bg-[#15A4AE]/[0.03] dark:hover:bg-[#15A4AE]/[0.05] ${
+                      isOtherMo ? 'bg-gray-50/40 dark:bg-white/[0.01]' : ''
+                    }`}
+                  >
+                    <div
+                      className={`inline-flex w-7 h-7 items-center justify-center rounded-full text-[13px] font-medium mb-1 transition-colors ${
+                        isTo
+                          ? 'bg-[#15A4AE] text-white'
+                          : isOtherMo
+                            ? 'text-gray-300 dark:text-gray-600'
+                            : 'text-gray-700 dark:text-gray-300 group-hover:bg-gray-100 dark:group-hover:bg-white/10'
+                      }`}
+                    >
+                      {d.getDate()}
+                    </div>
+
+                    <div className="space-y-0.5">
+                      {dayEvents.slice(0, 3).map(ev => (
+                        <button
+                          key={ev.id}
+                          onClick={e => { e.stopPropagation(); setSelectedEv(ev) }}
+                          className={`w-full text-left px-1.5 py-0.5 rounded text-[11px] leading-snug truncate text-white hover:opacity-80 transition-opacity ${evtBg(ev)}`}
+                        >
+                          {!isAllDay(ev) && (
+                            <span className="opacity-80 mr-1">{fmtTime(evtStart(ev))}</span>
+                          )}
+                          {ev.summary ?? '(No title)'}
+                        </button>
+                      ))}
+                      {dayEvents.length > 3 && (
+                        <button
+                          onClick={e => { e.stopPropagation(); setSelectedEv(dayEvents[3]) }}
+                          className="text-[11px] text-[#15A4AE] hover:underline pl-1.5"
+                        >
+                          +{dayEvents.length - 3} more
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Week view ──────────────────────────────────────────────────── */}
+        {view === 'week' && (
+          <div className="flex-1 flex flex-col min-h-0">
+
+            {/* Day header row */}
+            <div className="flex shrink-0 border-b border-gray-100 dark:border-white/8 bg-white dark:bg-[#232323]">
+              <div className="w-14 shrink-0 border-r border-gray-100 dark:border-white/8" />
+              {weekDays.map(d => {
+                const isTo = sameDay(d, today)
+                return (
+                  <div
+                    key={d.toISOString()}
+                    className="flex-1 border-l border-gray-100 dark:border-white/8 py-2 px-1 text-center min-w-0"
+                  >
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                      {DAYS_SHORT[d.getDay()]}
+                    </p>
+                    <div
+                      className={`inline-flex w-8 h-8 items-center justify-center rounded-full text-sm font-semibold mt-0.5 ${
+                        isTo ? 'bg-[#15A4AE] text-white' : 'text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      {d.getDate()}
+                    </div>
+                    {/* All-day events */}
+                    <div className="mt-1 space-y-0.5 px-0.5">
+                      {allDayEventsOnDay(d).map(ev => (
+                        <button
+                          key={ev.id}
+                          onClick={() => setSelectedEv(ev)}
+                          className={`w-full text-left px-1.5 py-0.5 rounded text-[11px] text-white truncate leading-tight ${evtBg(ev)}`}
+                        >
+                          {ev.summary ?? '(No title)'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Time grid */}
+            <div className="flex-1 overflow-y-auto" ref={weekScrollRef}>
+              <div className="flex" style={{ minHeight: `${24 * HOUR_H}px` }}>
+
+                {/* Hour labels */}
+                <div className="w-14 shrink-0 relative border-r border-gray-100 dark:border-white/8" style={{ minHeight: `${24 * HOUR_H}px` }}>
+                  {HOURS.map(h => (
+                    <div
+                      key={h}
+                      style={{ top: h * HOUR_H, height: HOUR_H }}
+                      className="absolute inset-x-0 flex items-start justify-end pr-2 pt-1"
+                    >
+                      {h > 0 && (
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 -translate-y-2 select-none">
+                          {h === 12 ? '12 PM' : h > 12 ? `${h - 12} PM` : `${h} AM`}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Day columns */}
+                {weekDays.map(d => (
+                  <div
+                    key={d.toISOString()}
+                    className="flex-1 border-l border-gray-100 dark:border-white/8 relative"
+                    style={{ minHeight: `${24 * HOUR_H}px` }}
+                  >
+                    {/* Hour slot rows */}
+                    {HOURS.map(h => (
+                      <div
+                        key={h}
+                        style={{ top: h * HOUR_H, height: HOUR_H }}
+                        className="absolute inset-x-0 border-b border-gray-50 dark:border-white/[0.04] cursor-pointer hover:bg-[#15A4AE]/[0.03] dark:hover:bg-[#15A4AE]/[0.05] transition-colors"
+                        onClick={() => {
+                          const nd = new Date(d); nd.setHours(h, 0, 0, 0)
+                          setNewModal({ date: nd, hour: h })
+                        }}
+                      />
+                    ))}
+
+                    {/* Current time indicator */}
+                    {sameDay(d, today) && (() => {
+                      const now   = new Date()
+                      const topPx = ((now.getHours() * 60 + now.getMinutes()) / 60) * HOUR_H
+                      return (
+                        <div
+                          className="absolute inset-x-0 z-20 pointer-events-none flex items-center"
+                          style={{ top: topPx }}
+                        >
+                          <div className="w-2.5 h-2.5 rounded-full bg-red-500 -ml-1.5 shrink-0" />
+                          <div className="flex-1 h-px bg-red-500" />
+                        </div>
+                      )
+                    })()}
+
+                    {/* Timed events */}
+                    {timedEventsOnDay(d).map(ev => {
+                      const { top, height } = evtTopHeight(ev, HOUR_H)
+                      return (
+                        <button
+                          key={ev.id}
+                          onClick={() => setSelectedEv(ev)}
+                          style={{ top, height, left: 2, right: 2, position: 'absolute' }}
+                          className={`rounded-md px-1.5 py-0.5 text-[11px] text-left overflow-hidden z-10 hover:opacity-80 transition-opacity text-white ${evtBg(ev)}`}
+                        >
+                          <div className="font-semibold leading-tight truncate">
+                            {ev.summary ?? '(No title)'}
+                          </div>
+                          {height > 32 && (
+                            <div className="opacity-80 text-[10px]">{fmtTime(evtStart(ev))}</div>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Event detail overlay ────────────────────────────────────────── */}
       {selectedEv && (
         <EventDetail ev={selectedEv} onClose={() => setSelectedEv(null)} />
       )}
 
-      {/* ── New event modal ───────────────────────────────────────────────── */}
+      {/* ── New event modal ─────────────────────────────────────────────── */}
       {newModal && (
         <NewEventModal
           defaultDate={newModal.date}
@@ -613,7 +773,7 @@ function EventDetail({ ev, onClose }: { ev: CalEvent; onClose: () => void }) {
                 href={ev.htmlLink}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs text-brand-500 dark:text-brand-400 hover:underline font-medium"
+                className="inline-flex items-center gap-1.5 text-xs text-[#15A4AE] hover:underline font-medium"
               >
                 Open in Google Calendar
                 <ExternalLink className="w-3 h-3" />
@@ -642,8 +802,8 @@ function NewEventModal({
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
-  const startH = defaultHour ?? 9
-  const endH   = Math.min(startH + 1, 23)
+  const startH  = defaultHour ?? 9
+  const endH    = Math.min(startH + 1, 23)
   const dateStr = `${defaultDate.getFullYear()}-${pad2(defaultDate.getMonth() + 1)}-${pad2(defaultDate.getDate())}`
 
   const [title,       setTitle]       = useState('')
@@ -653,7 +813,7 @@ function NewEventModal({
   const [attendees,   setAttendees]   = useState('')
   const [description, setDescription] = useState('')
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
     if (!title.trim()) { setError('Event title is required'); return }
@@ -713,31 +873,31 @@ function NewEventModal({
             onChange={e => setTitle(e.target.value)}
             autoFocus
             required
-            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]"
           />
 
-          {/* Date + times on one row */}
+          {/* Date + times */}
           <div className="grid grid-cols-3 gap-2">
             <input
               type="date"
               value={date}
               onChange={e => setDate(e.target.value)}
               required
-              className="col-span-3 sm:col-span-1 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="col-span-3 sm:col-span-1 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#15A4AE]"
             />
             <input
               type="time"
               value={startTime}
               onChange={e => setStartTime(e.target.value)}
               required
-              className="col-span-3 sm:col-span-1 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="col-span-3 sm:col-span-1 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#15A4AE]"
             />
             <input
               type="time"
               value={endTime}
               onChange={e => setEndTime(e.target.value)}
               required
-              className="col-span-3 sm:col-span-1 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="col-span-3 sm:col-span-1 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#15A4AE]"
             />
           </div>
 
@@ -751,7 +911,7 @@ function NewEventModal({
               value={attendees}
               onChange={e => setAttendees(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE] resize-none"
             />
             <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
               Attendees receive a Google Calendar invite automatically.
@@ -768,7 +928,7 @@ function NewEventModal({
               value={description}
               onChange={e => setDescription(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE] resize-none"
             />
           </div>
 
@@ -791,7 +951,7 @@ function NewEventModal({
           <button
             type="submit"
             disabled={isPending}
-            className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-xl transition-colors disabled:opacity-60"
+            className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold bg-[#15A4AE] hover:bg-[#0e8b94] text-white rounded-xl transition-colors disabled:opacity-60"
           >
             {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             Create Event
