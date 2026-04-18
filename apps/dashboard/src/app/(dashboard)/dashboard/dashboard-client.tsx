@@ -655,7 +655,7 @@ export function SageDashboardClient({
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <>
+    <div className="flex flex-col h-full overflow-hidden">
       {/* AI Summary popup */}
       {popup && (
         <ItemPopup
@@ -685,7 +685,7 @@ export function SageDashboardClient({
       )}
 
       {/* ── Header ───────────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-6 mb-5 flex-wrap pt-4">
+      <div className="flex items-start justify-between gap-6 mb-3 flex-wrap pt-2 shrink-0">
         <div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{greeting}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -877,7 +877,7 @@ export function SageDashboardClient({
 
       {/* ── Sage Auto process results ────────────────────────────────── */}
       {backfillResults.length > 0 && (
-        <div className="mb-4 space-y-1.5">
+        <div className="mb-2 space-y-1 shrink-0">
           {backfillResults.map(r => {
             const pipeline = pipelines.find(p => p.id === r.pipelineId)
             const channelLabel = r.channel === 'email' ? 'email' : r.channel === 'bots' ? 'bot chat' : r.channel === 'forms' ? 'form' : 'ticket'
@@ -903,7 +903,7 @@ export function SageDashboardClient({
 
       {/* ── Sync inbox banner — shown when no email is connected ───────── */}
       {!emailConnected && !viewAsUserId && !bannerDismissed && (
-        <div className="flex items-center gap-3 mb-5 px-4 py-3 bg-[#15A4AE] rounded-xl shadow-md">
+        <div className="flex items-center gap-3 mb-3 px-4 py-3 bg-[#15A4AE] rounded-xl shadow-md shrink-0">
           <Mail className="w-5 h-5 text-white shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-white">Connect &amp; sync your inbox</p>
@@ -929,7 +929,7 @@ export function SageDashboardClient({
       )}
 
       {/* ── 4 Donut cards ──────────────────────────────────────────────── */}
-      <div className="mb-6 overflow-visible">
+      <div className="mb-3 overflow-visible shrink-0">
         {/* Section header with collapse toggle */}
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Overview</span>
@@ -1014,10 +1014,10 @@ export function SageDashboardClient({
       </div>
 
       {/* ── 2 : 1 layout ───────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+      <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-3 gap-4 overflow-hidden">
 
         {/* Left: activity feed */}
-        <div className="xl:col-span-2 bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col">
+        <div className="xl:col-span-2 bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col min-h-0 overflow-hidden">
           {/* Header */}
           <div className="px-5 py-4 bg-[#141c2b] border-b border-white/10 flex items-center justify-between rounded-t-xl shadow-[0_4px_12px_rgba(0,0,0,0.25)]">
             <div className="flex items-center gap-2">
@@ -1161,7 +1161,7 @@ export function SageDashboardClient({
                 <p className="text-xs text-gray-400 mt-1">Try selecting a wider date range.</p>
               </div>
             ) : (
-              <div className="divide-y dark:divide-white/8 overflow-y-auto max-h-[680px]">
+              <div className="divide-y dark:divide-white/8 overflow-y-auto flex-1 min-h-0">
                 {timeline.map(item => {
                   const timeKey = `${item.kind}-${item.data.id}`
                   const timeLabel = timeAgo(item.time)
@@ -1592,7 +1592,7 @@ export function SageDashboardClient({
               )
 
               return (
-                <div className="flex flex-col gap-2 p-4 overflow-hidden" style={{ height: '700px' }}>
+                <div className="flex flex-col gap-2 p-4 overflow-hidden flex-1 min-h-0">
                   {topType === null ? (
                     /* ── No selection: scrollable stacked preview ── */
                     <div className="overflow-y-auto flex flex-col gap-2 flex-1 min-h-0">
@@ -1659,10 +1659,10 @@ export function SageDashboardClient({
         </div>
 
         {/* Right: tasks & reminders */}
-        <div className="xl:col-span-1 flex flex-col">
+        <div className="xl:col-span-1 flex flex-col min-h-0 overflow-hidden">
           <UpcomingPanel workspaceId={workspaceId} userId={currentUserId ?? ''} />
         </div>
       </div>
-    </>
+    </div>
   )
 }
