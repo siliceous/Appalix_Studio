@@ -232,6 +232,10 @@ export function SageDashboardClient({
   const feedCalRef = useRef<HTMLDivElement>(null)
   const [topType,     setTopType]    = useState<'email' | 'bot' | 'sms' | 'call' | 'form' | 'ticket' | null>(null)
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
+  const [bannerDismissed, setBannerDismissed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem('inbox_banner_dismissed') === '1'
+  })
   const [donutsCollapsed,  setDonutsCollapsed]  = useState(false)
   const [loadingDonut,     setLoadingDonut]     = useState<string | null>(null)
   const [collapsingCard,   setCollapsingCard]   = useState<string | null>(null)
@@ -898,18 +902,30 @@ export function SageDashboardClient({
       )}
 
       {/* ── Sync inbox banner — shown when no email is connected ───────── */}
-      {!emailConnected && !viewAsUserId && (
-        <Link
-          href={connectProvider ? `/onboarding/connect?provider=${connectProvider}` : '/onboarding/connect'}
-          className="flex items-center gap-3 mb-5 px-4 py-3 bg-[#15A4AE] rounded-xl hover:bg-[#4eab97] transition-colors group shadow-md"
-        >
+      {!emailConnected && !viewAsUserId && !bannerDismissed && (
+        <div className="flex items-center gap-3 mb-5 px-4 py-3 bg-[#15A4AE] rounded-xl shadow-md">
           <Mail className="w-5 h-5 text-white shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-white">Connect &amp; sync your inbox</p>
             <p className="text-xs text-white/80">Link Gmail or Outlook so Sage AI can read and prioritise your emails.</p>
           </div>
-          <span className="text-sm font-bold text-white whitespace-nowrap group-hover:underline">Get started →</span>
-        </Link>
+          <Link
+            href={connectProvider ? `/onboarding/connect?provider=${connectProvider}` : '/onboarding/connect'}
+            className="text-sm font-bold text-white whitespace-nowrap hover:underline shrink-0"
+          >
+            Get started →
+          </Link>
+          <button
+            onClick={() => {
+              localStorage.setItem('inbox_banner_dismissed', '1')
+              setBannerDismissed(true)
+            }}
+            className="p-1 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition-colors shrink-0"
+            title="Dismiss"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       )}
 
       {/* ── 4 Donut cards ──────────────────────────────────────────────── */}
