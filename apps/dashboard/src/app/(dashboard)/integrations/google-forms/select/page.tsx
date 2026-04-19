@@ -1,6 +1,6 @@
-import { redirect }           from 'next/navigation'
+import { redirect }                      from 'next/navigation'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import { FormsPickerClient } from './forms-picker-client'
+import { FormsPickerClient }               from './forms-picker-client'
 
 type DriveFile = {
   id:           string
@@ -9,32 +9,34 @@ type DriveFile = {
   modifiedTime: string
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyAdmin = any
+
 async function getValidToken(
-  admin: ReturnType<typeof createAdminClient>,
+  admin: AnyAdmin,
   userId: string,
   workspaceId: string,
 ): Promise<string | null> {
-  const { data } = await (admin as unknown as {
-    from: (t: string) => { select: (s: string) => { eq: (...a: unknown[]) => { eq: (...a: unknown[]) => { eq: (...a: unknown[]) => { maybeSingle: () => Promise<{ data: { config: Record<string, string>; status: string } | null }> } } } } }
-  }).from('sage_integrations')
+  const { data } = await admin
+    .from('sage_integrations')
     .select('config, status')
     .eq('workspace_id', workspaceId)
     .eq('user_id', userId)
     .eq('provider', 'google_forms')
-    .maybeSingle()
+    .maybeSingle() as { data: { config: Record<string, string>; status: string } | null }
 
   if (!data || data.status !== 'connected') return null
   const cfg = data.config
   if (!cfg?.access_token || !cfg?.refresh_token) return null
 
-  // Still valid (5-min buffer)?
+  // Still valid? (5-min buffer)
   if (Date.now() < new Date(cfg.expires_at ?? 0).getTime() - 5 * 60 * 1000) {
     return cfg.access_token
   }
 
   // Refresh
   try {
-    const res  = await fetch('https://oauth2.googleapis.com/token', {
+    const res = await fetch('https://oauth2.googleapis.com/token', {
       method:  'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body:    new URLSearchParams({
@@ -48,7 +50,7 @@ async function getValidToken(
     if (!tok.access_token || tok.error) return null
 
     const expiresAt = new Date(Date.now() + (tok.expires_in ?? 3600) * 1000).toISOString()
-    await (admin as unknown as { from: (t: string) => { update: (d: unknown) => { eq: (...a: unknown[]) => { eq: (...a: unknown[]) => { eq: (...a: unknown[]) => unknown } } } } })
+    await admin
       .from('sage_integrations')
       .update({ config: { ...cfg, access_token: tok.access_token, expires_at: expiresAt } })
       .eq('workspace_id', workspaceId)
@@ -79,30 +81,30 @@ export default async function GoogleFormsSelectPage() {
   const admin       = createAdminClient()
   const accessToken = await getValidToken(admin, user.id, membership.workspace_id)
 
-  // If no valid token, OAuth wasn't completed — send back to connect
   if (!accessToken) redirect('/integrations?error=gforms_error')
 
   // Fetch forms via Drive API
   let forms: DriveFile[] = []
   try {
     const params = new URLSearchParams({
-      q:       "mimeType='application/vnd.google-apps.form'",
-      fields:  'files(id,name,webViewLink,modifiedTime)',
-      orderBy: 'modifiedTime desc',
+      q:        "mimeType='application/vnd.google-apps.form'",
+      fields:   'files(id,name,webViewLink,modifiedTime)',
+      orderBy:  'modifiedTime desc',
       pageSize: '100',
     })
     const res  = await fetch(
       `https://www.googleapis.com/drive/v3/files?${params}`,
       { headers: { Authorization: `Bearer ${accessToken}` } },
     )
-    const data = await res.json() as { files?: DriveFile[] }
-    forms = data.files ?? []
+    const json = await res.json() as { files?: DriveFile[] }
+    forms = json.files ?? []
   } catch { /* render with empty list */ }
 
   return (
     <div className="max-w-3xl mx-auto py-10 px-6">
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/integrations/google-forms.png" alt="Google Forms" className="w-8 h-8 object-contain" />
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">Choose a Google Form</h1>
         </div>
