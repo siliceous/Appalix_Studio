@@ -6,21 +6,22 @@ import { Plug } from 'lucide-react'
 import { disconnectSageIntegration } from '@/app/actions/sage'
 
 interface Props {
-  id:               string
-  name:             string
-  desc:             string
-  logo:             string
-  connectHref:      string
-  isConnected:      boolean
-  connectedEmail?:  string
-  connectedByName?: string
-  guide?:           string
+  id:                  string
+  name:                string
+  desc:                string
+  logo:                string
+  connectHref:         string
+  isConnected:         boolean
+  connectedEmail?:     string
+  connectedByName?:    string
+  connectedFormTitle?: string
+  guide?:              string
   /** Set for Google Chat — uses platform integrations, no sage disconnect */
-  noDisconnect?:    boolean
+  noDisconnect?:       boolean
 }
 
 export function GoogleWorkspaceCard({
-  id, name, desc, logo, connectHref, isConnected, connectedEmail, connectedByName, guide, noDisconnect,
+  id, name, desc, logo, connectHref, isConnected, connectedEmail, connectedByName, connectedFormTitle, guide, noDisconnect,
 }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -49,6 +50,9 @@ export function GoogleWorkspaceCard({
         {isConnected && connectedEmail && (
           <p className="text-[11px] text-gray-400 mt-1 font-medium truncate">{connectedEmail}</p>
         )}
+        {isConnected && connectedFormTitle && (
+          <p className="text-[11px] text-[#15A4AE] mt-0.5 font-medium truncate">📋 {connectedFormTitle}</p>
+        )}
         {isConnected && connectedByName && (
           <p className="text-[11px] text-gray-400 mt-0.5">Connected by {connectedByName}</p>
         )}
@@ -62,12 +66,21 @@ export function GoogleWorkspaceCard({
               >
                 Disconnect
               </button>
-              <a
-                href={connectHref}
-                className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-              >
-                Reconnect
-              </a>
+              {id === 'google_forms' ? (
+                <a
+                  href="/integrations/google-forms/select"
+                  className="text-xs text-[#15A4AE] hover:underline transition-colors"
+                >
+                  Change form
+                </a>
+              ) : (
+                <a
+                  href={connectHref}
+                  className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  Reconnect
+                </a>
+              )}
             </>
           ) : (
             <a

@@ -44,6 +44,7 @@ export async function GET(req: NextRequest) {
   url.searchParams.set('scope', [
     'https://www.googleapis.com/auth/forms.body.readonly',
     'https://www.googleapis.com/auth/forms.responses.readonly',
+    'https://www.googleapis.com/auth/drive.metadata.readonly',
     'email',
     'profile',
   ].join(' '))

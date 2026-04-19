@@ -163,12 +163,16 @@ export default async function IntegrationsPage({
     connectedProviderUserId[row.provider] = row.user_id
   }
 
-  // Google account email per OAuth provider (calendar, drive, forms)
+  // Google account email + selected form per OAuth provider (calendar, drive, forms)
   type GoogleOAuthRow = { provider: string; config: Record<string, string> }
   const googleEmailByProvider: Record<string, string> = {}
+  const googleFormsTitleByProvider: Record<string, string> = {}
   for (const row of (googleOAuthConfigsRaw ?? []) as GoogleOAuthRow[]) {
     const email = row.config?.google_email
     if (email) googleEmailByProvider[row.provider] = email
+    if (row.provider === 'google_forms' && row.config?.form_title) {
+      googleFormsTitleByProvider['google_forms'] = row.config.form_title
+    }
   }
 
   // Enrich email integrations with connected-by info for EmailPlatformCard
@@ -334,6 +338,7 @@ export default async function IntegrationsPage({
             isConnected={sageConnected.has('google_forms')}
             connectedEmail={googleEmailByProvider['google_forms']}
             connectedByName={connectedProviderInfo['google_forms']?.userName}
+            connectedFormTitle={googleFormsTitleByProvider['google_forms']}
             guide="/resources/connect-google-forms"
           />
           <GoogleWorkspaceCard

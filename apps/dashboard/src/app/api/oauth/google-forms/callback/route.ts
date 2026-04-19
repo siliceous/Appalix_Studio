@@ -115,5 +115,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${appUrl}/integrations?error=gforms_save_failed`)
   }
 
-  return NextResponse.redirect(`${appUrl}${returnPath}?gforms=connected`)
+  // Redirect to form picker so user can choose which form to connect
+  return NextResponse.redirect(`${appUrl}/integrations/google-forms/select`)
 }
