@@ -49,16 +49,18 @@ export async function resolveWorkspaceByNumber(e164: string): Promise<{
   workspaceId:        string
   phoneNumberId:      string
   messagingProfileId: string | null
+  botId:              string | null
 } | null> {
   const { data } = await supabase
     .from('workspace_phone_numbers' as never)
-    .select('id, workspace_id, messaging_profile_id')
+    .select('id, workspace_id, messaging_profile_id, bot_id')
     .eq('e164', e164)
     .is('released_at', null)
     .maybeSingle() as { data: {
       id: string
       workspace_id: string
       messaging_profile_id: string | null
+      bot_id: string | null
     } | null }
 
   if (!data) return null
@@ -66,6 +68,7 @@ export async function resolveWorkspaceByNumber(e164: string): Promise<{
     workspaceId:        data.workspace_id,
     phoneNumberId:      data.id,
     messagingProfileId: data.messaging_profile_id,
+    botId:              data.bot_id,
   }
 }
 

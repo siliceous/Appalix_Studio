@@ -13,6 +13,12 @@ export type ProvisionedNumber = {
   capabilities:         { sms: boolean; voice: boolean; mms: boolean }
   messaging_profile_id: string | null
   purchased_at:         string | null
+  bot_id:               string | null
+}
+
+export type BotOption = {
+  id:   string
+  name: string
 }
 
 export default async function SmsSetupPage() {
@@ -38,10 +44,17 @@ export default async function SmsSetupPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: numbersRaw } = await (admin as any)
     .from('workspace_phone_numbers')
-    .select('id, e164, country_code, capabilities, messaging_profile_id, purchased_at')
+    .select('id, e164, country_code, capabilities, messaging_profile_id, purchased_at, bot_id')
     .eq('workspace_id', membership.workspace_id)
     .is('released_at', null)
     .order('purchased_at', { ascending: false }) as { data: ProvisionedNumber[] | null }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: botsRaw } = await (admin as any)
+    .from('bots')
+    .select('id, name')
+    .eq('workspace_id', membership.workspace_id)
+    .order('name', { ascending: true }) as { data: BotOption[] | null }
 
   return (
     <div className="-m-8 flex flex-col flex-1 min-h-0">
@@ -53,6 +66,7 @@ export default async function SmsSetupPage() {
           />
           <NumberPickerClient
             existingNumbers={numbersRaw ?? []}
+            bots={botsRaw ?? []}
             isAdmin={isAdmin}
             workspaceId={membership.workspace_id}
           />

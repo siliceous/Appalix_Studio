@@ -9,6 +9,53 @@ function telnyxHeaders() {
   return { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }
 }
 
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params
+  const body = await req.json() as { bot_id?: string | null }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: membershipRaw } = await (supabase as any)
+    .from('workspace_members')
+    .select('workspace_id, role')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single()
+  const membership = membershipRaw as { workspace_id: string; role: string } | null
+
+  if (!membership) return NextResponse.json({ error: 'No workspace' }, { status: 403 })
+
+  const admin = createAdminClient()
+
+  // Verify ownership
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: row } = await (admin as any)
+    .from('workspace_phone_numbers')
+    .select('workspace_id')
+    .eq('id', id)
+    .maybeSingle() as { data: { workspace_id: string } | null }
+
+  if (!row) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (row.workspace_id !== membership.workspace_id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (admin as any)
+    .from('workspace_phone_numbers')
+    .update({ bot_id: body.bot_id ?? null })
+    .eq('id', id)
+
+  return NextResponse.json({ ok: true })
+}
+
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },

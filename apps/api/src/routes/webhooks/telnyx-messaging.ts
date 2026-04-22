@@ -6,11 +6,15 @@ import {
   findOrCreateContact,
   findOrCreateConversation,
   insertInboundMessage,
+  insertOutboundMessage,
   handleOptOutKeyword,
+  sendSms,
 } from '../../services/telnyx-messaging.service.js'
 import {
   recordSmsInbound,
+  recordSmsOutbound,
 } from '../../services/usage-ledger.service.js'
+import { processMessage } from '../../services/processor.js'
 
 // ── Signature verification ────────────────────────────────────────────────────
 // Telnyx signs webhooks with Ed25519. The signed payload is:
@@ -198,6 +202,51 @@ async function handleInbound(payload: TelnyxMessagePayload) {
   }
 
   console.info(`[telnyx-webhook] inbound SMS from ${fromE164} → workspace ${ws.workspaceId}`)
+
+  // ── Bot auto-reply ───────────────────────────────────────────────────────
+  if (ws.botId && optResult !== 'opted_out') {
+    try {
+      const { reply, botPaused } = await processMessage({
+        platform:        'sms',
+        integrationId:   '',
+        workspaceId:     ws.workspaceId,
+        botId:           ws.botId,
+        platformThreadId: fromE164,
+        platformUserId:  fromE164,
+        text:            payload.text ?? '',
+      })
+
+      if (reply && !botPaused) {
+        const sendResult = await sendSms({
+          from:               toE164,
+          to:                 fromE164,
+          body:               reply,
+          messagingProfileId: ws.messagingProfileId ?? undefined,
+        })
+
+        if ('messageId' in sendResult) {
+          const outId = await insertOutboundMessage({
+            workspaceId:     ws.workspaceId,
+            conversationId,
+            telnyxMessageId: sendResult.messageId,
+            body:            reply,
+          })
+          if (outId) {
+            await recordSmsOutbound({
+              workspaceId:     ws.workspaceId,
+              sourceId:        outId,
+              segments:        sendResult.segments,
+              occurredAt:      new Date(),
+              toE164:          fromE164,
+              telnyxMessageId: sendResult.messageId,
+            })
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[telnyx-webhook] bot auto-reply failed:', err)
+    }
+  }
 }
 
 async function handleDeliveryUpdate(payload: TelnyxMessagePayload, eventType: string) {

@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { Phone, Plus, Trash2, Copy, Check, Search, RefreshCw, MessageSquare } from 'lucide-react'
-import type { ProvisionedNumber } from './page'
+import type { ProvisionedNumber, BotOption } from './page'
 
 const COUNTRIES = [
   { code: 'AU', label: 'Australia (+61)' },
@@ -27,12 +27,14 @@ interface MessagingProfile {
 
 interface Props {
   existingNumbers: ProvisionedNumber[]
+  bots:            BotOption[]
   isAdmin:         boolean
   workspaceId:     string
 }
 
-export function NumberPickerClient({ existingNumbers, isAdmin }: Props) {
+export function NumberPickerClient({ existingNumbers, bots, isAdmin }: Props) {
   const [numbers, setNumbers]               = useState<ProvisionedNumber[]>(existingNumbers)
+  const [savingBot, setSavingBot]           = useState<string | null>(null)
   const [country, setCountry]               = useState('AU')
   const [areaCode, setAreaCode]             = useState('')
   const [available, setAvailable]           = useState<AvailableNumber[]>([])
@@ -101,6 +103,7 @@ export function NumberPickerClient({ existingNumbers, isAdmin }: Props) {
         capabilities:         { sms: true, voice: false, mms: false },
         messaging_profile_id: selectedProfile || null,
         purchased_at:         new Date().toISOString(),
+        bot_id:               null,
       }, ...prev])
       setAvailable(prev => prev.filter(n => n.phone_number !== phoneNumber))
     } catch (err) {
@@ -123,6 +126,24 @@ export function NumberPickerClient({ existingNumbers, isAdmin }: Props) {
       setError(String(err))
     } finally {
       setReleasing(null)
+    }
+  }, [])
+
+  const saveBot = useCallback(async (id: string, botId: string | null) => {
+    setSavingBot(id)
+    try {
+      const res  = await fetch(`/api/telnyx/numbers/${id}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ bot_id: botId || null }),
+      })
+      const data = await res.json() as { ok?: boolean; error?: string }
+      if (data.error) { setError(data.error); return }
+      setNumbers(prev => prev.map(n => n.id === id ? { ...n, bot_id: botId || null } : n))
+    } catch (err) {
+      setError(String(err))
+    } finally {
+      setSavingBot(null)
     }
   }, [])
 
@@ -213,6 +234,23 @@ export function NumberPickerClient({ existingNumbers, isAdmin }: Props) {
                     {num.messaging_profile_id ? `Profile: ${num.messaging_profile_id.slice(0, 8)}…` : 'No messaging profile'}
                     {num.purchased_at && ` · Added ${new Date(num.purchased_at).toLocaleDateString()}`}
                   </p>
+                  {bots.length > 0 && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <label className="text-[10px] text-gray-400 shrink-0">Bot reply:</label>
+                      <select
+                        value={num.bot_id ?? ''}
+                        onChange={(e) => void saveBot(num.id, e.target.value || null)}
+                        disabled={savingBot === num.id}
+                        className="flex-1 max-w-[220px] px-2 py-1 text-xs rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:opacity-60"
+                      >
+                        <option value="">No bot (manual only)</option>
+                        {bots.map(b => (
+                          <option key={b.id} value={b.id}>{b.name}</option>
+                        ))}
+                      </select>
+                      {savingBot === num.id && <RefreshCw className="w-3 h-3 animate-spin text-gray-400" />}
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => copyToClipboard(num.e164, num.id)}
