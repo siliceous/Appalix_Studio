@@ -35,17 +35,31 @@ alter table voice_agents           enable row level security;
 alter table voice_knowledge_entries enable row level security;
 
 -- workspace-scoped access
-create policy "workspace members can manage voice agents"
-  on voice_agents for all
-  using (workspace_id in (
-    select workspace_id from workspace_members where user_id = auth.uid()
-  ));
+do $$ begin
+  if not exists (
+    select 1 from pg_policies where tablename = 'voice_agents'
+      and policyname = 'workspace members can manage voice agents'
+  ) then
+    create policy "workspace members can manage voice agents"
+      on voice_agents for all
+      using (workspace_id in (
+        select workspace_id from workspace_members where user_id = auth.uid()
+      ));
+  end if;
+end $$;
 
-create policy "workspace members can manage voice knowledge"
-  on voice_knowledge_entries for all
-  using (workspace_id in (
-    select workspace_id from workspace_members where user_id = auth.uid()
-  ));
+do $$ begin
+  if not exists (
+    select 1 from pg_policies where tablename = 'voice_knowledge_entries'
+      and policyname = 'workspace members can manage voice knowledge'
+  ) then
+    create policy "workspace members can manage voice knowledge"
+      on voice_knowledge_entries for all
+      using (workspace_id in (
+        select workspace_id from workspace_members where user_id = auth.uid()
+      ));
+  end if;
+end $$;
 
 -- Timestamp trigger
 create or replace function touch_updated_at()
@@ -53,10 +67,22 @@ returns trigger language plpgsql as $$
 begin new.updated_at = now(); return new; end;
 $$;
 
-create trigger voice_agents_updated_at
-  before update on voice_agents
-  for each row execute procedure touch_updated_at();
+do $$ begin
+  if not exists (
+    select 1 from pg_trigger where tgname = 'voice_agents_updated_at'
+  ) then
+    create trigger voice_agents_updated_at
+      before update on voice_agents
+      for each row execute procedure touch_updated_at();
+  end if;
+end $$;
 
-create trigger voice_knowledge_updated_at
-  before update on voice_knowledge_entries
-  for each row execute procedure touch_updated_at();
+do $$ begin
+  if not exists (
+    select 1 from pg_trigger where tgname = 'voice_knowledge_updated_at'
+  ) then
+    create trigger voice_knowledge_updated_at
+      before update on voice_knowledge_entries
+      for each row execute procedure touch_updated_at();
+  end if;
+end $$;

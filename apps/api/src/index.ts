@@ -17,7 +17,9 @@ import { wordpressRoutes }   from './routes/webhooks/wordpress.js'
 import { telegramRoutes }    from './routes/webhooks/telegram.js'
 import { shopifyRoutes }     from './routes/webhooks/shopify.js'
 import { instagramRoutes }   from './routes/webhooks/instagram.js'
-import { smsRoutes }         from './routes/webhooks/sms.js'
+import { smsRoutes }                from './routes/webhooks/sms.js'
+import { telnyxMessagingRoutes }   from './routes/webhooks/telnyx-messaging.js'
+import { telnyxSmsRoutes }         from './routes/telnyx-sms.js'
 import { shopifyOAuthRoutes } from './routes/shopify-oauth.js'
 import { chatRoutes }        from './routes/chat/index.js'
 import { copilotRoutes }     from './routes/copilot/index.js'
@@ -34,6 +36,8 @@ import { liveRoutes }                               from './routes/live/index.js
 import { internalTrackRoutes }                      from './routes/internal/track.js'
 import { handleLiveWsConnection }                   from './live/session-manager.js'
 import { handleWidgetVoiceWs }                      from './live/widget-voice-handler.js'
+import { telnyxVoiceRoutes }                        from './routes/webhooks/telnyx-voice.js'
+import { handleTelnyxCallWs }                       from './live/telnyx-call-handler.js'
 
 const server = Fastify({
   logger: {
@@ -114,7 +118,10 @@ await server.register(wordpressRoutes,  { prefix: '/webhooks' })
 await server.register(telegramRoutes,   { prefix: '/webhooks' })
 await server.register(shopifyRoutes,    { prefix: '/webhooks' })
 await server.register(instagramRoutes,  { prefix: '/webhooks' })
-await server.register(smsRoutes,        { prefix: '/webhooks' })
+await server.register(smsRoutes,              { prefix: '/webhooks' })
+await server.register(telnyxMessagingRoutes,  { prefix: '/webhooks' })
+await server.register(telnyxVoiceRoutes,      { prefix: '/webhooks' })
+await server.register(telnyxSmsRoutes,        { prefix: '/telnyx' })
 await server.register(shopifyOAuthRoutes)
 
 // Chat + ingestion endpoints
@@ -188,6 +195,9 @@ try {
     // Second WSS for widget voice — separate server so connections are routed cleanly
     const wssWidget = new WebSocketServer({ noServer: true })
 
+    // Third WSS for Telnyx call media streaming (Telnyx connects TO us)
+    const wssTelnyx = new WebSocketServer({ noServer: true })
+
     server.server.on('upgrade', (request: import('http').IncomingMessage, socket: import('net').Socket, head: Buffer) => {
       const url = new URL(request.url ?? '/', `http://localhost:${port}`)
       if (url.pathname === '/live/ws') {
@@ -198,6 +208,10 @@ try {
         wssWidget.handleUpgrade(request, socket, head, (ws) => {
           wssWidget.emit('connection', ws, request)
         })
+      } else if (url.pathname === '/telnyx/call-ws') {
+        wssTelnyx.handleUpgrade(request, socket, head, (ws) => {
+          wssTelnyx.emit('connection', ws, request)
+        })
       } else {
         socket.destroy()
       }
@@ -205,6 +219,7 @@ try {
 
     wss.on('connection', handleLiveWsConnection)
     wssWidget.on('connection', (ws, req) => { void handleWidgetVoiceWs(ws, req) })
+    wssTelnyx.on('connection', (ws, req) => { void handleTelnyxCallWs(ws, req) })
 
     // Keep-alive: ping every 30 s so Render's 55 s idle timeout never fires
     function keepAlive(server: InstanceType<typeof WebSocketServer>) {
@@ -222,9 +237,11 @@ try {
     }
     keepAlive(wss)
     keepAlive(wssWidget)
+    keepAlive(wssTelnyx)
 
     console.log(`   WS   /live/ws               (Sage Voice gateway)`)
     console.log(`   WS   /chat/voice-ws          (Widget Voice gateway)`)
+    console.log(`   WS   /telnyx/call-ws         (Telnyx inbound call bridge)`)
   } catch {
     console.warn('[live-gateway] ws package not found — voice disabled. Run: npm i ws @google/genai in apps/api')
   }

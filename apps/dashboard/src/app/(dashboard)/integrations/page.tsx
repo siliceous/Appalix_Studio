@@ -98,6 +98,16 @@ export default async function IntegrationsPage({
   ])
   const [crmConnections, crmHistory] = await Promise.all([getCrmConnections(), getImportHistory()])
 
+  // SMS phone numbers
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: phoneNumbersRaw } = await (admin as any)
+    .from('workspace_phone_numbers')
+    .select('id, e164, country_code, capabilities')
+    .eq('workspace_id', membership.workspace_id)
+    .is('released_at', null)
+    .order('purchased_at', { ascending: false })
+  const phoneNumbers = (phoneNumbersRaw ?? []) as Array<{ id: string; e164: string; country_code: string | null; capabilities: { sms: boolean } }>
+
   const integrations      = (rawIntegrations ?? []) as IntegrationRow[]
   const adSources         = (sourcesRaw ?? []) as LeadAdSource[]
   const emailIntegrationsRawTyped = (emailIntegrationsRaw ?? []) as Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at' | 'sync_enabled' | 'last_synced_at' | 'last_sync_count'>[]
@@ -313,6 +323,48 @@ export default async function IntegrationsPage({
           <span>Connection failed: {decodeURIComponent(error)}. Please try again.</span>
         </div>
       )}
+
+      {/* SMS & Phone */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">SMS & Phone</h2>
+        <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-[#15A4AE]/30 p-4 flex items-start gap-3">
+          <div className="w-12 h-12 rounded-xl bg-[#15A4AE]/10 flex items-center justify-center shrink-0">
+            <svg className="w-6 h-6 text-[#15A4AE]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Telnyx SMS</p>
+              {phoneNumbers.length > 0
+                ? <span className="text-xs text-green-600 dark:text-green-400 font-medium">{phoneNumbers.length} number{phoneNumbers.length !== 1 ? 's' : ''} active</span>
+                : <span className="text-xs text-gray-400 font-medium">Not configured</span>
+              }
+            </div>
+            <p className="text-xs text-gray-500 leading-relaxed mb-2">
+              Send and receive SMS via Telnyx — buy numbers for AU, US, GB and let your bots auto-reply.
+            </p>
+            {phoneNumbers.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {phoneNumbers.slice(0, 4).map(n => (
+                  <span key={n.id} className="text-xs font-mono px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300">
+                    {n.e164}
+                  </span>
+                ))}
+                {phoneNumbers.length > 4 && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500">+{phoneNumbers.length - 4} more</span>
+                )}
+              </div>
+            )}
+            <a
+              href="/integrations/sms/setup"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
+            >
+              {phoneNumbers.length > 0 ? 'Manage numbers' : 'Set up SMS'}
+            </a>
+          </div>
+        </div>
+      </section>
 
       {/* Google Workspace */}
       <section className="mb-8">
