@@ -89,22 +89,6 @@ export default async function SmsPage({
   const { from: dateFrom, to: dateTo } = getDateRange(preset, params.from, params.to)
   const viewAsUserId = (params.viewAs && callerRank >= ROLE_RANK.manager) ? params.viewAs : null
 
-  const isRestricted = viewAsUserId ? true : callerRank < ROLE_RANK.admin
-  let visibleUserIds: string[] = []
-  if (viewAsUserId) {
-    visibleUserIds = [viewAsUserId]
-  } else if (isRestricted) {
-    if (callerRank >= ROLE_RANK.manager) {
-      const allMembers = (membersRes.data ?? []) as MRow[]
-      const employeeIds = allMembers
-        .filter(m => (ROLE_RANK[m.role] ?? 0) < ROLE_RANK.manager && m.user_id !== user.id)
-        .map(m => m.user_id)
-      visibleUserIds = [user.id, ...employeeIds]
-    } else {
-      visibleUserIds = [user.id]
-    }
-  }
-
   // Use admin client so the bots foreign-key embed doesn't inner-join away
   // conversations that have no bot assigned (bot_id = null).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -116,12 +100,6 @@ export default async function SmsPage({
     .is('deleted_at', null)
     .order('last_activity_at', { ascending: false })
     .limit(150)
-
-  if (isRestricted && visibleUserIds.length > 0) {
-    query = visibleUserIds.length === 1
-      ? query.eq('assigned_to', visibleUserIds[0])
-      : query.in('assigned_to', visibleUserIds)
-  }
 
   if (params.status && params.status !== 'trash') query = query.eq('status', params.status)
   if (dateFrom) query = query.gte('last_activity_at', dateFrom)
