@@ -105,12 +105,14 @@ export default async function SmsPage({
     }
   }
 
+  // Use admin client so the bots foreign-key embed doesn't inner-join away
+  // conversations that have no bot assigned (bot_id = null).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query: any = supabase
+  let query: any = admin
     .from('conversations')
-    .select('id, title, platform, status, sentiment, message_count, last_activity_at, ai_priority, ai_summary, ai_entities, bot_id, assigned_to, bots(id, name)')
+    .select('id, title, platform, status, sentiment, message_count, last_activity_at, ai_priority, ai_summary, ai_entities, bot_id, assigned_to')
     .eq('workspace_id', workspaceId)
-    .eq('platform', 'sms')          // ← locked to SMS only
+    .eq('platform', 'sms')
     .is('deleted_at', null)
     .order('last_activity_at', { ascending: false })
     .limit(150)
@@ -130,9 +132,9 @@ export default async function SmsPage({
   const conversations = (rawConversations ?? []) as ConvRow[]
 
   const [activeCountRes, completedCountRes, archivedCountRes] = await Promise.all([
-    supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('platform', 'sms').eq('status', 'active').is('deleted_at', null),
-    supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('platform', 'sms').eq('status', 'completed').is('deleted_at', null),
-    supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('platform', 'sms').eq('status', 'archived').is('deleted_at', null),
+    admin.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('platform', 'sms').eq('status', 'active').is('deleted_at', null),
+    admin.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('platform', 'sms').eq('status', 'completed').is('deleted_at', null),
+    admin.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('platform', 'sms').eq('status', 'archived').is('deleted_at', null),
   ])
   const statusCounts = {
     active:    activeCountRes.count    ?? 0,
