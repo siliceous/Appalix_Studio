@@ -1,6 +1,10 @@
 import type { FastifyInstance } from 'fastify'
 import { supabase }             from '../../lib/supabase.js'
-import { resolveWorkspaceByNumber } from '../../services/telnyx-messaging.service.js'
+import {
+  resolveWorkspaceByNumber,
+  findOrCreateConversation,
+  findOrCreateContact,
+} from '../../services/telnyx-messaging.service.js'
 
 const TELNYX_API = 'https://api.telnyx.com/v2'
 
@@ -168,9 +172,18 @@ async function handleHangup(payload: TelnyxCallPayload) {
 
   const { data: session } = await supabase
     .from('call_sessions' as never)
-    .select('id, answered_at')
+    .select('id, workspace_id, from_e164, to_e164, answered_at, transcript')
     .eq('telnyx_call_control_id', call_control_id)
-    .maybeSingle() as { data: { id: string; answered_at: string | null } | null }
+    .maybeSingle() as {
+      data: {
+        id:            string
+        workspace_id:  string
+        from_e164:     string
+        to_e164:       string
+        answered_at:   string | null
+        transcript:    Array<{ role: string; text: string; ts: string }>
+      } | null
+    }
 
   if (!session) return
 
@@ -189,4 +202,41 @@ async function handleHangup(payload: TelnyxCallPayload) {
     .eq('id', session.id)
 
   console.info(`[telnyx-voice] call ended — duration=${duration}s cause=${hangup_cause}`)
+
+  // ── Post-call: surface transcript in conversations inbox ─────────────────
+  if (session.workspace_id && session.from_e164) {
+    try {
+      const contactId = await findOrCreateContact(session.workspace_id, session.from_e164)
+
+      const conversationId = await findOrCreateConversation({
+        workspaceId: session.workspace_id,
+        fromE164:    session.from_e164,
+        toE164:      session.to_e164,
+        contactId,
+        platform:    'phone',
+      })
+
+      if (conversationId) {
+        // Insert each transcript turn as a message
+        const turns = session.transcript ?? []
+        for (const turn of turns) {
+          if (!turn.text?.trim()) continue
+          await supabase.from('messages').insert({
+            workspace_id:    session.workspace_id,
+            conversation_id: conversationId,
+            role:            turn.role === 'user' ? 'user' : 'assistant',
+            content:         turn.text.trim(),
+          })
+        }
+
+        // Link session to conversation
+        await supabase
+          .from('call_sessions' as never)
+          .update({ conversation_id: conversationId })
+          .eq('id', session.id)
+      }
+    } catch (err) {
+      console.error('[telnyx-voice] post-call conversation link failed:', err)
+    }
+  }
 }

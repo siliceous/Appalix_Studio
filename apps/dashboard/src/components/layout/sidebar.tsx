@@ -82,7 +82,8 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Phone',
     items: [
-      { href: '/phone/voice-agents', label: 'Voice Agents', icon: PhoneCall, adminOnly: true },
+      { href: '/phone/voice-agents', label: 'Voice Agents', icon: PhoneCall,   adminOnly: true },
+      { href: '/phone/calls',        label: 'Call History', icon: Phone,       adminOnly: true },
       { href: '/settings/wallet',     label: 'Wallet',      icon: Wallet,       adminOnly: true },
       { href: '/settings/compliance', label: 'Compliance',  icon: ShieldCheck,  adminOnly: true },
     ],

@@ -110,12 +110,15 @@ export async function findOrCreateConversation(params: {
   fromE164:     string   // caller / sender — becomes the thread key
   toE164:       string   // our Telnyx number
   contactId:    string | null
+  platform?:    'sms' | 'phone'   // defaults to 'sms'
 }): Promise<string | null> {
+  const platform = params.platform ?? 'sms'
+
   const { data: existing } = await supabase
     .from('conversations')
     .select('id')
     .eq('workspace_id', params.workspaceId)
-    .eq('platform', 'sms')
+    .eq('platform', platform)
     .eq('platform_thread_id', params.fromE164)
     .maybeSingle()
 
@@ -132,7 +135,7 @@ export async function findOrCreateConversation(params: {
     .from('conversations')
     .insert({
       workspace_id:       params.workspaceId,
-      platform:           'sms',
+      platform,
       platform_thread_id: params.fromE164,
       platform_user_id:   params.fromE164,
       status:             'active',

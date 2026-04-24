@@ -69,6 +69,7 @@ export const PLATFORM_META: Record<Platform, { label: string; color: string }> =
   telegram:            { label: 'Telegram',            color: 'bg-sky-100 text-sky-700' },
   shopify:             { label: 'eCommerce',            color: 'bg-green-100 text-green-800' },
   sms:                 { label: 'SMS',                   color: 'bg-teal-100 text-teal-700' },
+  phone:               { label: 'Phone',                 color: 'bg-violet-100 text-violet-700' },
 }
 
 /** Subscription status badge colours */
