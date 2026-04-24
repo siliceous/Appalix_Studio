@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect }     from 'next/navigation'
+import Link             from 'next/link'
 import type { Metadata } from 'next'
 import { ConversationsClient } from '@/app/(dashboard)/conversations/conversations-client'
 import { SageToolbar, type TriagePreset } from '@/components/dashboard/sage-toolbar'
@@ -151,6 +152,14 @@ export default async function SmsPage({
             detailBasePath="/dashboard/sms"
             pageTitle="SMS"
             pageSubtitle={`All SMS conversations — ${conversations.length} shown`}
+            headerAction={
+              <Link
+                href="/integrations/sms/setup"
+                className="flex items-center gap-1.5 px-3 py-2 bg-[#15A4AE] hover:bg-[#128a94] text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
+              >
+                + Add number
+              </Link>
+            }
           />
         </div>
         <ActivitySidebar

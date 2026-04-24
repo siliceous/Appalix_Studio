@@ -117,9 +117,10 @@ interface Props {
   detailBasePath?: string
   pageTitle?: string
   pageSubtitle?: string
+  headerAction?: React.ReactNode
 }
 
-export function ConversationsClient({ conversations, bots, filters, teamMembers = [], canAssign = false, readonly = false, showNewBotButton = false, statusCounts, detailBasePath = '/conversations', pageTitle = 'Conversations', pageSubtitle }: Props) {
+export function ConversationsClient({ conversations, bots, filters, teamMembers = [], canAssign = false, readonly = false, showNewBotButton = false, statusCounts, detailBasePath = '/conversations', pageTitle = 'Conversations', pageSubtitle, headerAction }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [localAssign,    setLocalAssign]    = React.useState<Record<string, string | null>>({})
@@ -257,6 +258,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {headerAction}
           {!readonly && selectedIds.size > 0 && (
             <>
               <button
