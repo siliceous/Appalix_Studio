@@ -122,7 +122,7 @@ export function NumberPickerClient({ existingNumbers, bots, isAdmin }: Props) {
   }, [country, selectedProfile])
 
   const releaseNumber = useCallback(async (id: string) => {
-    if (!confirm('Release this number? It will be returned to Telnyx and cannot be recovered.')) return
+    if (!confirm('Release this number? It will be permanently deactivated and cannot be recovered.')) return
     setReleasing(id)
     setError(null)
     try {
@@ -161,7 +161,7 @@ export function NumberPickerClient({ existingNumbers, bots, isAdmin }: Props) {
   return (
     <div className="space-y-6">
 
-      {/* ── Telnyx balance / Add funds ── */}
+      {/* ── Appalix Wallet balance ── */}
       <section className={`flex items-center justify-between gap-4 px-5 py-4 rounded-xl border ${
         lowBalance
           ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30'
@@ -173,19 +173,17 @@ export function NumberPickerClient({ existingNumbers, bots, isAdmin }: Props) {
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
               {balance
                 ? `${balance.currency} ${parseFloat(balance.balance).toFixed(2)} available`
-                : 'Telnyx account balance'}
+                : 'Appalix wallet balance'}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               {lowBalance
                 ? 'Low balance — add funds before purchasing a number'
-                : 'Funds are required to purchase and maintain phone numbers'}
+                : 'Wallet funds are used for phone numbers, SMS, and calling'}
             </p>
           </div>
         </div>
         <a
-          href="https://portal.telnyx.com/#/billing"
-          target="_blank"
-          rel="noopener noreferrer"
+          href="/settings/wallet"
           className={`shrink-0 flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
             lowBalance
               ? 'bg-amber-500 hover:bg-amber-600 text-white'
@@ -207,9 +205,9 @@ export function NumberPickerClient({ existingNumbers, bots, isAdmin }: Props) {
 
       {/* Webhook URL */}
       <section className="bg-[#15A4AE]/5 border border-[#15A4AE]/30 rounded-xl p-5">
-        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">Telnyx configuration</h2>
+        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">Appalix SMS configuration</h2>
         <div className="space-y-2">
-          <p className="text-xs text-gray-500">Set this as your messaging profile webhook URL in the Telnyx portal:</p>
+          <p className="text-xs text-gray-500">Set this as your webhook URL in your SMS profile settings:</p>
           <div className="flex items-center gap-2">
             <code className="flex-1 bg-gray-100 dark:bg-white/5 rounded-lg px-3 py-2 text-xs font-mono text-gray-800 dark:text-gray-200 break-all">
               {webhookUrl}
@@ -223,7 +221,7 @@ export function NumberPickerClient({ existingNumbers, bots, isAdmin }: Props) {
             </button>
           </div>
           <p className="text-xs text-gray-400">
-            Telnyx Portal → Messaging → Messaging Profiles → your profile → Webhooks → Webhook API version: <strong>2</strong>
+            Copy this URL and paste it as the webhook URL in your SMS profile settings. Webhook API version: <strong>2</strong>
           </p>
         </div>
       </section>
@@ -279,7 +277,7 @@ export function NumberPickerClient({ existingNumbers, bots, isAdmin }: Props) {
                     )}
                   </div>
                   <p className="text-xs text-gray-400">
-                    {num.messaging_profile_id ? `Profile: ${num.messaging_profile_id.slice(0, 8)}…` : 'No messaging profile'}
+                    {num.messaging_profile_id ? `SMS profile: ${num.messaging_profile_id.slice(0, 8)}…` : 'No SMS profile linked'}
                     {num.purchased_at && ` · Added ${new Date(num.purchased_at).toLocaleDateString()}`}
                   </p>
                   {bots.length > 0 && (

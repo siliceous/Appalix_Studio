@@ -64,7 +64,7 @@ export default async function SmsSetupPage() {
         <div className="max-w-3xl mx-auto">
           <Header
             title="SMS & Phone Numbers"
-            description="Provision Telnyx numbers to send and receive SMS with your bots"
+            description="Manage your Appalix phone numbers for SMS and messaging"
           />
           <NumberPickerClient
             existingNumbers={numbersRaw ?? []}
