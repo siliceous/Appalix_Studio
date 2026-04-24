@@ -91,6 +91,7 @@ export async function findOrCreateContact(
     .from('sage_contacts')
     .insert({
       workspace_id: workspaceId,
+      name:         phoneE164,   // placeholder; overwritten when contact provides their name
       phone:        phoneE164,
       source:       'chat',
       name_source:  'sms_auto',
@@ -191,35 +192,57 @@ export async function insertOutboundMessage(params: {
 
 // ── Opt-out keyword handling ──────────────────────────────────────────────────
 // Carrier-mandated STOP/START/HELP handling (TCPA / ACMA compliance).
+// Auto-reply text is required by TCPA (US) and ACMA (AU) for these keywords.
 
 const STOP_WORDS  = new Set(['STOP', 'STOPALL', 'UNSUBSCRIBE', 'CANCEL', 'END', 'QUIT'])
 const START_WORDS = new Set(['START', 'YES', 'UNSTOP'])
+const HELP_WORDS  = new Set(['HELP', 'INFO'])
+
+export interface ComplianceResult {
+  action:    'opted_out' | 'opted_in' | 'help'
+  replyText: string
+}
 
 export async function handleOptOutKeyword(
   workspaceId: string,
   contactId:   string | null,
   body:        string,
-): Promise<'opted_out' | 'opted_in' | null> {
-  if (!contactId) return null
-
+): Promise<ComplianceResult | null> {
   const word = body.trim().toUpperCase()
 
   if (STOP_WORDS.has(word)) {
-    await supabase
-      .from('sage_contacts')
-      .update({ sms_opt_out: true, sms_opted_out_at: new Date().toISOString() })
-      .eq('id', contactId)
-      .eq('workspace_id', workspaceId)
-    return 'opted_out'
+    if (contactId) {
+      await supabase
+        .from('sage_contacts')
+        .update({ sms_opt_out: true, sms_opted_out_at: new Date().toISOString() })
+        .eq('id', contactId)
+        .eq('workspace_id', workspaceId)
+    }
+    return {
+      action:    'opted_out',
+      replyText: 'You have been unsubscribed and will receive no further messages. Reply START to resubscribe.',
+    }
   }
 
   if (START_WORDS.has(word)) {
-    await supabase
-      .from('sage_contacts')
-      .update({ sms_opt_out: false, sms_opted_out_at: null })
-      .eq('id', contactId)
-      .eq('workspace_id', workspaceId)
-    return 'opted_in'
+    if (contactId) {
+      await supabase
+        .from('sage_contacts')
+        .update({ sms_opt_out: false, sms_opted_out_at: null })
+        .eq('id', contactId)
+        .eq('workspace_id', workspaceId)
+    }
+    return {
+      action:    'opted_in',
+      replyText: 'You have been resubscribed and will receive messages again. Reply STOP at any time to unsubscribe.',
+    }
+  }
+
+  if (HELP_WORDS.has(word)) {
+    return {
+      action:    'help',
+      replyText: 'For support contact support@appalix.ai. Reply STOP to unsubscribe, START to resubscribe.',
+    }
   }
 
   return null

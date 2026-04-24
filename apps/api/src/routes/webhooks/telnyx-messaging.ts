@@ -177,11 +177,10 @@ async function handleInbound(payload: TelnyxMessagePayload) {
   })
   if (!conversationId) return
 
-  // Handle STOP/START before storing the message
+  // Handle STOP/START/HELP before storing the message
   const optResult = await handleOptOutKeyword(ws.workspaceId, contactId, payload.text ?? '')
-  if (optResult === 'opted_out') {
-    console.info(`[telnyx-webhook] contact ${fromE164} opted out`)
-    // Still store the message for audit purposes
+  if (optResult) {
+    console.info(`[telnyx-webhook] compliance keyword from ${fromE164}: ${optResult.action}`)
   }
 
   const messageId = await insertInboundMessage({
@@ -201,10 +200,43 @@ async function handleInbound(payload: TelnyxMessagePayload) {
     })
   }
 
+  // ── Compliance auto-reply (TCPA / ACMA mandatory) ────────────────────────
+  if (optResult?.replyText) {
+    try {
+      const autoReply = await sendSms({
+        from:               toE164,
+        to:                 fromE164,
+        body:               optResult.replyText,
+        messagingProfileId: ws.messagingProfileId ?? undefined,
+      })
+      if ('messageId' in autoReply) {
+        const replyMsgId = await insertOutboundMessage({
+          workspaceId:     ws.workspaceId,
+          conversationId,
+          telnyxMessageId: autoReply.messageId,
+          body:            optResult.replyText,
+        })
+        if (replyMsgId) {
+          await recordSmsOutbound({
+            workspaceId:     ws.workspaceId,
+            sourceId:        replyMsgId,
+            segments:        autoReply.segments,
+            occurredAt:      new Date(),
+            toE164:          fromE164,
+            telnyxMessageId: autoReply.messageId,
+          })
+        }
+      }
+    } catch (err) {
+      console.error('[telnyx-webhook] compliance auto-reply failed:', err)
+    }
+    return   // don't run bot on compliance keywords
+  }
+
   console.info(`[telnyx-webhook] inbound SMS from ${fromE164} → workspace ${ws.workspaceId}`)
 
   // ── Bot auto-reply ───────────────────────────────────────────────────────
-  if (ws.botId && optResult !== 'opted_out') {
+  if (ws.botId) {
     try {
       const { reply, botPaused } = await processMessage({
         platform:        'sms',
