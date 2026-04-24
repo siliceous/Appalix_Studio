@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { Phone, Plus, Trash2, Copy, Check, Search, RefreshCw, MessageSquare } from 'lucide-react'
+import { useState, useCallback, useEffect } from 'react'
+import { Phone, Plus, Trash2, Copy, Check, Search, RefreshCw, MessageSquare, Wallet, ExternalLink } from 'lucide-react'
 import type { ProvisionedNumber, BotOption } from './page'
 
 const COUNTRIES = [
@@ -46,6 +46,14 @@ export function NumberPickerClient({ existingNumbers, bots, isAdmin }: Props) {
   const [error, setError]                   = useState<string | null>(null)
   const [copied, setCopied]                 = useState<string | null>(null)
   const [showSearch, setShowSearch]         = useState(false)
+  const [balance, setBalance]               = useState<{ balance: string; currency: string } | null>(null)
+
+  useEffect(() => {
+    fetch('/api/telnyx/balance')
+      .then(r => r.json() as Promise<{ balance?: string; currency?: string }>)
+      .then(d => { if (d.balance) setBalance({ balance: d.balance, currency: d.currency ?? 'USD' }) })
+      .catch(() => {/* silent */})
+  }, [])
 
   const webhookUrl = 'https://appalix-api.onrender.com/webhooks/telnyx/messaging'
 
@@ -147,8 +155,48 @@ export function NumberPickerClient({ existingNumbers, bots, isAdmin }: Props) {
     }
   }, [])
 
+  const balanceFloat = balance ? parseFloat(balance.balance) : null
+  const lowBalance   = balanceFloat !== null && balanceFloat < 5
+
   return (
     <div className="space-y-6">
+
+      {/* ── Telnyx balance / Add funds ── */}
+      <section className={`flex items-center justify-between gap-4 px-5 py-4 rounded-xl border ${
+        lowBalance
+          ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30'
+          : 'bg-white dark:bg-white/5 border-gray-200 dark:border-white/10'
+      }`}>
+        <div className="flex items-center gap-3">
+          <Wallet className={`w-5 h-5 shrink-0 ${lowBalance ? 'text-amber-500' : 'text-[#15A4AE]'}`} />
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+              {balance
+                ? `${balance.currency} ${parseFloat(balance.balance).toFixed(2)} available`
+                : 'Telnyx account balance'}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              {lowBalance
+                ? 'Low balance — add funds before purchasing a number'
+                : 'Funds are required to purchase and maintain phone numbers'}
+            </p>
+          </div>
+        </div>
+        <a
+          href="https://portal.telnyx.com/#/billing"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`shrink-0 flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+            lowBalance
+              ? 'bg-amber-500 hover:bg-amber-600 text-white'
+              : 'bg-[#15A4AE] hover:bg-[#128a94] text-white'
+          }`}
+        >
+          Add funds
+          <ExternalLink className="w-3.5 h-3.5" />
+        </a>
+      </section>
+
       {error && (
         <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-sm text-red-700 dark:text-red-400">
           <span className="text-base">⚠️</span>

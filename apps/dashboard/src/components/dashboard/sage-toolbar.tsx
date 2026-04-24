@@ -10,7 +10,7 @@ import {
   Settings, TrendingUp, BarChart2, CreditCard,
   Mail, MessageSquare, FileText, Ticket as TicketIcon,
   Calendar, ChevronDown, Zap, Loader2, Palette,
-  Smartphone, Phone, LayoutTemplate,
+  Smartphone, Phone, LayoutTemplate, Wallet,
 } from 'lucide-react'
 import { useUserAvatar } from '@/contexts/user-avatar-context'
 import { updateAutoSetting, type AutoSettings } from '@/app/actions/sage-auto-settings'
@@ -134,6 +134,7 @@ export function SageToolbar({ pageKey, preset, autoEnabled, customFrom, customTo
   const [showProfile,     setShowProfile]     = useState(false)
   const [showSageMenu,    setShowSageMenu]    = useState(false)
   const [showOverviewMenu, setShowOverviewMenu] = useState(false)
+  const [telnyxBalance,   setTelnyxBalance]   = useState<{ balance: string; currency: string } | null>(null)
   const calRef         = useRef<HTMLDivElement>(null)
   const profileRef     = useRef<HTMLDivElement>(null)
   const sageMenuRef    = useRef<HTMLDivElement>(null)
@@ -153,6 +154,13 @@ export function SageToolbar({ pageKey, preset, autoEnabled, customFrom, customTo
   useEffect(() => { setFromDate(customFrom ?? '') }, [customFrom])
   useEffect(() => { setToDate(customTo ?? '') }, [customTo])
   useEffect(() => { setLoadingKey(null) }, [pathname])
+
+  useEffect(() => {
+    fetch('/api/telnyx/balance')
+      .then(r => r.json() as Promise<{ balance?: string; currency?: string; error?: string }>)
+      .then(d => { if (d.balance) setTelnyxBalance({ balance: d.balance, currency: d.currency ?? 'USD' }) })
+      .catch(() => {/* silent */})
+  }, [])
 
   useEffect(() => {
     if (!showCal) return
@@ -501,6 +509,18 @@ export function SageToolbar({ pageKey, preset, autoEnabled, customFrom, customTo
           </div>
         )}
 
+        {/* Telnyx balance pill */}
+        {telnyxBalance && (
+          <Link
+            href="/integrations/sms/setup"
+            title="Telnyx account balance — click to manage SMS numbers"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 transition-colors text-xs font-medium text-white/80 whitespace-nowrap"
+          >
+            <Wallet className="w-3 h-3 text-[#15A4AE] shrink-0" />
+            {telnyxBalance.currency} {parseFloat(telnyxBalance.balance).toFixed(2)}
+          </Link>
+        )}
+
         {/* Notification bell */}
         {workspaceId && <NotificationBell workspaceId={workspaceId} dark />}
 
@@ -527,6 +547,12 @@ export function SageToolbar({ pageKey, preset, autoEnabled, customFrom, customTo
                   <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none mt-0.5 ${planBadgeCls}`}>
                     {plan}
                   </span>
+                  {telnyxBalance && (
+                    <p className="text-[10px] text-gray-400 dark:text-white/40 mt-1 flex items-center gap-1">
+                      <Wallet className="w-2.5 h-2.5 shrink-0" />
+                      Balance: <span className="font-semibold text-gray-600 dark:text-white/70">{telnyxBalance.currency} {parseFloat(telnyxBalance.balance).toFixed(2)}</span>
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="py-1.5">

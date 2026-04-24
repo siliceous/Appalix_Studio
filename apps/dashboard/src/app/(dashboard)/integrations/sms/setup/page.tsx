@@ -2,6 +2,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect }                        from 'next/navigation'
 import { Header }                          from '@/components/layout/header'
 import { NumberPickerClient }              from './number-picker-client'
+import { SageToolbar }                     from '@/components/dashboard/sage-toolbar'
 import type { Metadata }                   from 'next'
 
 export const metadata: Metadata = { title: 'SMS & Phone Setup' }
@@ -57,8 +58,9 @@ export default async function SmsSetupPage() {
     .order('name', { ascending: true }) as { data: BotOption[] | null }
 
   return (
-    <div className="-m-8 flex flex-col flex-1 min-h-0">
-      <div className="p-8 pb-16 flex-1 overflow-y-auto">
+    <div className="-m-8 flex flex-col h-screen overflow-hidden">
+      <SageToolbar pageKey="sms" />
+      <div className="flex-1 overflow-y-auto p-8 pb-16">
         <div className="max-w-3xl mx-auto">
           <Header
             title="SMS & Phone Numbers"
