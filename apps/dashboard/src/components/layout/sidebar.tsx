@@ -31,6 +31,7 @@ import {
   PhoneCall,
   Library,
   CalendarDays,
+  Wallet,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -81,6 +82,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Phone',
     items: [
       { href: '/phone/voice-agents', label: 'Voice Agents', icon: PhoneCall, adminOnly: true },
+      { href: '/settings/wallet',    label: 'Wallet',       icon: Wallet,    adminOnly: true },
     ],
   },
   {

@@ -131,6 +131,32 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return
   }
 
+  // ── Appalix Wallet top-up ─────────────────────────────────────────────────
+  if (metadata.type === 'wallet_topup' && metadata.workspace_id) {
+    const amountCents = parseInt(metadata.amount_cents ?? '0', 10)
+    const currency    = metadata.currency ?? 'AUD'
+    if (amountCents > 0) {
+      const amountDecimal = amountCents / 100
+      const { error } = await supabase.rpc('wallet_credit' as never, {
+        p_workspace_id:   metadata.workspace_id,
+        p_amount:         amountDecimal,
+        p_type:           'topup',
+        p_description:    `Wallet top-up via Stripe — ${currency} ${amountDecimal.toFixed(2)}`,
+        p_reference_id:   session.payment_intent
+          ? (typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent.id)
+          : session.id,
+        p_reference_type: 'stripe_session',
+        p_created_by:     metadata.user_id ?? null,
+      })
+      if (error) {
+        console.error('[stripe] wallet_credit RPC failed:', (error as { message: string }).message)
+      } else {
+        console.log(`[stripe] Wallet +${currency} ${amountDecimal.toFixed(2)} → workspace ${metadata.workspace_id}`)
+      }
+    }
+    return
+  }
+
   if (!email) {
     console.error('[stripe] checkout.session.completed — no email in session')
     return

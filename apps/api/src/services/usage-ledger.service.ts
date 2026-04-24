@@ -1,4 +1,5 @@
-import { supabase } from '../lib/supabase.js'
+import { supabase }       from '../lib/supabase.js'
+import { walletDeduct }  from '../modules/telco/walletService.js'
 
 type UsageEventType =
   | 'sms_outbound_segment'
@@ -69,7 +70,9 @@ export async function recordSmsOutbound(params: {
     getProviderRate('telnyx', 'sms_outbound_segment', params.occurredAt),
   ])
 
-  const { error } = await supabase.from('usage_events' as never).insert({
+  const sellTotal = sellRate * params.segments
+
+  const { data: usageRow, error } = await supabase.from('usage_events' as never).insert({
     workspace_id:        params.workspaceId,
     source_table:        'messages',
     source_id:           params.sourceId,
@@ -81,16 +84,31 @@ export async function recordSmsOutbound(params: {
     provider_unit_cost:  providerRate,
     provider_cost_total: providerRate * params.segments,
     sell_unit_price:     sellRate,
-    sell_total:          sellRate * params.segments,
+    sell_total:          sellTotal,
     currency,
     rating_status:       sellRate > 0 ? 'rated' : 'unrated',
     meta: {
       to:                params.toE164,
       telnyx_message_id: params.telnyxMessageId,
     },
-  })
+  }).select('id').single() as { data: { id: string } | null; error: { message: string } | null }
 
-  if (error) console.error('[usage-ledger] recordSmsOutbound:', error.message)
+  if (error) {
+    console.error('[usage-ledger] recordSmsOutbound:', error.message)
+    return
+  }
+
+  if (sellTotal > 0) {
+    void walletDeduct({
+      workspaceId:   params.workspaceId,
+      amount:        sellTotal,
+      type:          'usage_deduction',
+      description:   `SMS outbound — ${params.segments} segment${params.segments !== 1 ? 's' : ''} to ${params.toE164}`,
+      referenceId:   usageRow?.id,
+      referenceType: 'usage_event',
+      allowNegative: true, // don't block sends if wallet hits zero; alert separately
+    }).catch(err => console.error('[usage-ledger] wallet deduct failed:', err))
+  }
 }
 
 export async function recordSmsInbound(params: {
@@ -107,7 +125,7 @@ export async function recordSmsInbound(params: {
     getProviderRate('telnyx', 'sms_inbound_message', params.occurredAt),
   ])
 
-  const { error } = await supabase.from('usage_events' as never).insert({
+  const { data: usageRow, error } = await supabase.from('usage_events' as never).insert({
     workspace_id:        params.workspaceId,
     source_table:        'messages',
     source_id:           params.sourceId,
@@ -126,9 +144,24 @@ export async function recordSmsInbound(params: {
       from:              params.fromE164,
       telnyx_message_id: params.telnyxMessageId,
     },
-  })
+  }).select('id').single() as { data: { id: string } | null; error: { message: string } | null }
 
-  if (error) console.error('[usage-ledger] recordSmsInbound:', error.message)
+  if (error) {
+    console.error('[usage-ledger] recordSmsInbound:', error.message)
+    return
+  }
+
+  if (sellRate > 0) {
+    void walletDeduct({
+      workspaceId:   params.workspaceId,
+      amount:        sellRate,
+      type:          'usage_deduction',
+      description:   `SMS inbound from ${params.fromE164}`,
+      referenceId:   usageRow?.id,
+      referenceType: 'usage_event',
+      allowNegative: true,
+    }).catch(err => console.error('[usage-ledger] wallet deduct failed:', err))
+  }
 }
 
 export async function recordPhoneNumberMonth(params: {
