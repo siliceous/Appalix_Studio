@@ -12,9 +12,40 @@ function getTwilioClient() {
   return twilio(accountSid, authToken)
 }
 
+async function sendViaTelnyx(params: {
+  from:               string
+  to:                 string
+  body:               string
+  messagingProfileId?: string | null
+}): Promise<{ messageId: string; segments: number } | { error: string }> {
+  const apiKey = process.env.TELNYX_API_KEY
+  if (!apiKey) return { error: 'TELNYX_API_KEY not configured' }
+
+  const payload: Record<string, string> = { from: params.from, to: params.to, text: params.body }
+  if (params.messagingProfileId) payload.messaging_profile_id = params.messagingProfileId
+
+  const res  = await fetch('https://api.telnyx.com/v2/messages', {
+    method:  'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body:    JSON.stringify(payload),
+  })
+  const data = await res.json() as {
+    data?:   { id: string; parts: number }
+    errors?: Array<{ title: string; detail: string }>
+  }
+
+  if (!res.ok || !data.data?.id) {
+    const msg = data.errors?.[0]?.detail ?? `Telnyx error ${res.status}`
+    return { error: msg }
+  }
+  return { messageId: data.data.id, segments: data.data.parts ?? 1 }
+}
+
 /**
  * Send an outbound SMS reply from the conversations view.
  * Called by the conversation reply box when platform === 'sms'.
+ * Routes via Telnyx (workspace_phone_numbers) when integration_id is null,
+ * or via Twilio when integration_id is set.
  */
 export async function sendSms(
   conversationId: string,
@@ -54,16 +85,77 @@ export async function sendSms(
   const conv = convRaw as {
     id: string
     platform: string
-    platform_thread_id: string  // E.164 recipient number
+    platform_thread_id: string
     integration_id: string | null
   }
 
   const toNumber = conv.platform_thread_id
   if (!toNumber) return { error: 'No recipient phone number on this conversation' }
 
-  // ── Load integration to get the sending number ────────────────────────────
-  if (!conv.integration_id) return { error: 'No integration linked to this SMS conversation' }
+  // ── Check opt-out before sending ──────────────────────────────────────────
+  const { data: contactRaw } = await admin
+    .from('sage_contacts')
+    .select('sms_opt_out')
+    .eq('workspace_id', workspaceId)
+    .eq('phone', toNumber)
+    .maybeSingle()
 
+  if ((contactRaw as { sms_opt_out: boolean } | null)?.sms_opt_out) {
+    return { error: 'This contact has opted out of SMS messages (STOP)' }
+  }
+
+  // ── Route: Telnyx (no integration_id) or Twilio ───────────────────────────
+  if (!conv.integration_id) {
+    // Telnyx path — find the workspace's provisioned number
+    const { data: phoneRaw } = await admin
+      .from('workspace_phone_numbers' as never)
+      .select('e164, messaging_profile_id')
+      .eq('workspace_id', workspaceId)
+      .is('released_at', null)
+      .limit(1)
+      .maybeSingle() as { data: { e164: string; messaging_profile_id: string | null } | null }
+
+    if (!phoneRaw) return { error: 'No Telnyx number provisioned for this workspace' }
+
+    const result = await sendViaTelnyx({
+      from:               phoneRaw.e164,
+      to:                 toNumber,
+      body:               content,
+      messagingProfileId: phoneRaw.messaging_profile_id,
+    })
+
+    if ('error' in result) {
+      console.error('[sms/send] Telnyx error:', result.error)
+      return { error: `Failed to send SMS: ${result.error}` }
+    }
+
+    await admin.from('messages').insert({
+      workspace_id:        workspaceId,
+      conversation_id:     conversationId,
+      role:                'assistant',
+      content,
+      platform_message_id: result.messageId,
+    } as never)
+
+    await admin
+      .from('conversations')
+      .update({ last_activity_at: new Date().toISOString() } as never)
+      .eq('id', conversationId)
+
+    await admin.from('sage_activity_log').insert({
+      workspace_id: workspaceId,
+      entity_type:  'conversation',
+      entity_id:    conversationId,
+      event_type:   'sms_sent',
+      payload:      { to: toNumber, from: phoneRaw.e164, telnyx_message_id: result.messageId },
+      user_id:      user.id,
+    })
+
+    console.info(`[sms/send] Telnyx sent to ${toNumber} from ${phoneRaw.e164} — ${result.messageId}`)
+    return {}
+  }
+
+  // ── Twilio path (legacy integration_id) ───────────────────────────────────
   const { data: integRaw } = await admin
     .from('integrations')
     .select('id, config, status')
@@ -79,27 +171,11 @@ export async function sendSms(
   const fromNumber = config.phone_number ?? config.from_number
   if (!fromNumber) return { error: 'Integration has no phone_number configured' }
 
-  // ── Check opt-out before sending ──────────────────────────────────────────
-  if (toNumber) {
-    const { data: contactRaw } = await admin
-      .from('sage_contacts')
-      .select('sms_opt_out')
-      .eq('workspace_id', workspaceId)
-      .eq('phone', toNumber)
-      .maybeSingle()
-
-    const contact = contactRaw as { sms_opt_out: boolean } | null
-    if (contact?.sms_opt_out) {
-      return { error: 'This contact has opted out of SMS messages (STOP)' }
-    }
-  }
-
-  // ── Send via Twilio REST ───────────────────────────────────────────────────
   let messageSid: string
   let numSegments: number = 1
 
   try {
-    const appUrl        = process.env.NEXT_PUBLIC_APP_URL ?? ''
+    const appUrl         = process.env.NEXT_PUBLIC_APP_URL ?? ''
     const statusCallback = `${appUrl}/api/webhooks/twilio/status`
 
     const message = await getTwilioClient().messages.create({
@@ -109,15 +185,14 @@ export async function sendSms(
       statusCallback,
     })
 
-    messageSid   = message.sid
-    numSegments  = parseInt(String(message.numSegments ?? '1'), 10)
+    messageSid  = message.sid
+    numSegments = parseInt(String(message.numSegments ?? '1'), 10)
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('[sms/send] Twilio error:', msg)
     return { error: `Failed to send SMS: ${msg}` }
   }
 
-  // ── Save message to DB ────────────────────────────────────────────────────
   await admin.from('messages').insert({
     workspace_id:        workspaceId,
     conversation_id:     conversationId,
@@ -126,13 +201,11 @@ export async function sendSms(
     platform_message_id: messageSid,
   } as never)
 
-  // Touch conversation updated_at
   await admin
     .from('conversations')
     .update({ updated_at: new Date().toISOString() } as never)
     .eq('id', conversationId)
 
-  // ── Activity log ─────────────────────────────────────────────────────────
   await admin.from('sage_activity_log').insert({
     workspace_id: workspaceId,
     entity_type:  'conversation',
@@ -142,7 +215,6 @@ export async function sendSms(
     user_id:      user.id,
   })
 
-  // ── Usage log ─────────────────────────────────────────────────────────────
   await admin.from('sms_usage_log').insert({
     workspace_id:    workspaceId,
     integration_id:  conv.integration_id,
@@ -155,7 +227,7 @@ export async function sendSms(
     status:          'queued',
   } as never)
 
-  console.info(`[sms/send] Sent to ${toNumber} from ${fromNumber} — SID ${messageSid}`)
+  console.info(`[sms/send] Twilio sent to ${toNumber} from ${fromNumber} — SID ${messageSid}`)
   return {}
 }
 
