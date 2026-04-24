@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { NewIntegrationForm } from './new-integration-form'
 import type { Metadata } from 'next'
@@ -21,14 +21,15 @@ export default async function NewIntegrationPage({
   const membership = membershipRaw as { workspace_id: string } | null
   if (!membership) redirect('/login')
 
+  const admin = createAdminClient()
   const [{ data: rawBots }, { data: wsRaw }] = await Promise.all([
-    supabase.from('bots').select('id, name').eq('workspace_id', membership.workspace_id).order('created_at', { ascending: false }),
+    admin.from('bots').select('id, name').eq('workspace_id', membership.workspace_id).order('created_at', { ascending: false }),
     supabase.from('workspaces').select('plan').eq('id', membership.workspace_id).single(),
   ])
   const bots = (rawBots ?? []) as { id: string; name: string }[]
   const plan = ((wsRaw as { plan: string } | null)?.plan ?? 'individual') as 'individual' | 'pro' | 'team' | 'enterprise'
 
-  const validPlatforms = ['web_widget','custom_api','slack','wordpress','facebook_messenger','whatsapp','instagram','google_chat','telegram','shopify']
+  const validPlatforms = ['sms','web_widget','custom_api','slack','wordpress','facebook_messenger','whatsapp','instagram','google_chat','telegram','shopify']
   const selected = (validPlatforms.includes(qp ?? '') ? qp : 'web_widget') as Platform
 
   return (
