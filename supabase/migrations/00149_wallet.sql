@@ -35,13 +35,16 @@ comment on table wallet_accounts is
 -- ── wallet_transactions ───────────────────────────────────────────────────────
 -- Immutable ledger — one row per credit or debit. Never updated, only inserted.
 
-create type if not exists wallet_transaction_type as enum (
-  'topup',             -- customer adds funds via Stripe
-  'usage_deduction',   -- SMS segment / call minute / number month charged
-  'refund',            -- manual or automated refund
-  'admin_adjustment',  -- admin credit or write-off
-  'auto_recharge'      -- automatic Stripe charge triggered by low balance
-);
+do $$ begin
+  create type wallet_transaction_type as enum (
+    'topup',
+    'usage_deduction',
+    'refund',
+    'admin_adjustment',
+    'auto_recharge'
+  );
+exception when duplicate_object then null;
+end $$;
 
 create table if not exists wallet_transactions (
   id                  uuid        primary key default gen_random_uuid(),
