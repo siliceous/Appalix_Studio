@@ -258,7 +258,6 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {headerAction}
           {!readonly && selectedIds.size > 0 && (
             <>
               <button
@@ -328,6 +327,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
             </>
           )}
           <CsvExportButton action={exportConversations} />
+          {headerAction}
           {showNewBotButton && (
             <Link
               href="/bots/new"
