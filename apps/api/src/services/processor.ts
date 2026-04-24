@@ -27,6 +27,7 @@ import type { IncomingMessage } from '../adapters/types.js'
  */
 export async function processMessage(
   msg: IncomingMessage,
+  options?: { skipUserMessage?: boolean },
 ): Promise<{ reply: string; conversationId: string; botPaused?: boolean }> {
   const {
     workspaceId,
@@ -110,8 +111,9 @@ export async function processMessage(
     .eq('id', conversationId)
     .single()
   if (convMeta?.bot_paused) {
-    // Save the user message so the agent sees it in the dashboard, then stop.
-    await appendMessage({ conversationId, workspaceId, role: 'user', content: text })
+    if (!options?.skipUserMessage) {
+      await appendMessage({ conversationId, workspaceId, role: 'user', content: text })
+    }
     console.log(`[processor] bot_paused — skipping AI for conversation=${conversationId}`)
     return { reply: '', conversationId, botPaused: true }
   }
@@ -123,14 +125,16 @@ export async function processMessage(
   const internalPlatform = isInternalPlatform(platform)
 
   // ---------------------------------------------------------------
-  // 3. Save user message
+  // 3. Save user message (skip if caller already stored it)
   // ---------------------------------------------------------------
-  await appendMessage({
-    conversationId,
-    workspaceId,
-    role:    'user',
-    content: text,
-  })
+  if (!options?.skipUserMessage) {
+    await appendMessage({
+      conversationId,
+      workspaceId,
+      role:    'user',
+      content: text,
+    })
+  }
 
   // ---------------------------------------------------------------
   // 4. CRM lead capture (fire-and-forget, runs in parallel)
