@@ -16,14 +16,22 @@ export async function GET() {
 
   const { data: memberRaw } = await supabase
     .from('workspace_members')
-    .select('workspace_id')
+    .select('workspace_id, workspaces(currency, country)')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true })
     .limit(1)
     .single()
 
   if (!memberRaw) return NextResponse.json({ error: 'No workspace' }, { status: 403 })
-  const workspaceId = (memberRaw as { workspace_id: string }).workspace_id
+
+  type MemberRow = {
+    workspace_id: string
+    workspaces: { currency: string | null; country: string | null }
+  }
+  const member            = memberRaw as unknown as MemberRow
+  const workspaceId       = member.workspace_id
+  const workspaceCurrency = member.workspaces.currency ?? 'AUD'
+  const workspaceCountry  = member.workspaces.country  ?? 'AU'
 
   const admin = getAdmin()
 
@@ -54,7 +62,8 @@ export async function GET() {
 
   return NextResponse.json({
     balance:                  Number(wallet?.balance ?? 0),
-    currency:                 wallet?.currency ?? 'AUD',
+    currency:                 wallet?.currency ?? workspaceCurrency,
+    country:                  workspaceCountry,
     auto_recharge_enabled:    wallet?.auto_recharge_enabled ?? false,
     auto_recharge_threshold:  Number(wallet?.auto_recharge_threshold ?? 10),
     auto_recharge_amount:     Number(wallet?.auto_recharge_amount ?? 50),

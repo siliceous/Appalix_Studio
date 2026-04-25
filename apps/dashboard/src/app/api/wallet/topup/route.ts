@@ -6,8 +6,8 @@ function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!)
 }
 
-// Preset top-up amounts in cents (AUD)
-const VALID_AMOUNTS_CENTS = [1000, 2000, 5000, 10000, 20000, 50000] // $10,$20,$50,$100,$200,$500
+// Preset top-up amounts in cents — same tiers for all currencies
+const VALID_AMOUNTS_CENTS = [1000, 2000, 5000, 10000, 20000, 50000]
 
 export async function POST(req: Request) {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
 
   const { data: memberRaw } = await supabase
     .from('workspace_members')
-    .select('workspace_id, workspaces(stripe_customer_id, billing_email)')
+    .select('workspace_id, workspaces(stripe_customer_id, billing_email, currency)')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true })
     .limit(1)
@@ -30,10 +30,16 @@ export async function POST(req: Request) {
 
   type MemberRow = {
     workspace_id: string
-    workspaces: { stripe_customer_id: string | null; billing_email: string | null }
+    workspaces: {
+      stripe_customer_id: string | null
+      billing_email:      string | null
+      currency:           string | null
+    }
   }
-  const member = memberRaw as unknown as MemberRow
+  const member      = memberRaw as unknown as MemberRow
   const workspaceId = member.workspace_id
+  const currency    = (member.workspaces.currency ?? 'AUD').toUpperCase()
+  const stripeCurrency = currency.toLowerCase()  // Stripe requires lowercase
 
   const body = await req.json() as { amountCents?: number }
   const amountCents = body.amountCents ?? 5000
@@ -44,6 +50,7 @@ export async function POST(req: Request) {
 
   const stripe = getStripe()
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const amountDisplay = (amountCents / 100).toFixed(2)
 
   const session = await stripe.checkout.sessions.create({
     mode:                 'payment',
@@ -54,11 +61,11 @@ export async function POST(req: Request) {
       {
         quantity: 1,
         price_data: {
-          currency:     'aud',
+          currency:     stripeCurrency,
           unit_amount:  amountCents,
           product_data: {
             name:        'Appalix Communications Credit',
-            description: `Add ${(amountCents / 100).toFixed(2)} AUD to your Appalix wallet`,
+            description: `Add ${currency} ${amountDisplay} to your Appalix wallet`,
           },
         },
       },
@@ -67,12 +74,12 @@ export async function POST(req: Request) {
       type:         'wallet_topup',
       workspace_id: workspaceId,
       amount_cents: String(amountCents),
-      currency:     'AUD',
+      currency,
       user_id:      user.id,
     },
     success_url: `${appUrl}/settings/wallet?topup=success&amount=${amountCents}`,
     cancel_url:  `${appUrl}/settings/wallet?topup=cancelled`,
   })
 
-  return NextResponse.json({ url: session.url })
+  return NextResponse.json({ url: session.url, currency })
 }
