@@ -158,5 +158,31 @@ export async function GET(req: NextRequest) {
     return closeWithError(`Failed to save: ${saveError.message}`)
   }
 
+  // ── 5. Register lead webhook with TikTok (fire-and-forget) ───────────────
+  if (advertiserId && accessToken) {
+    const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.appalix.ai'}/api/webhooks/tiktok`
+    fetch('https://business-api.tiktok.com/open_api/v1.3/webhook/create/', {
+      method:  'POST',
+      headers: {
+        'Access-Token': accessToken,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        advertiser_id: advertiserId,
+        webhook_url:   webhookUrl,
+        webhook_type:  'LEAD',
+      }),
+    })
+      .then(r => r.json())
+      .then(d => {
+        if ((d as { code?: number }).code !== 0) {
+          console.warn('[oauth/tiktok/callback] webhook register failed:', JSON.stringify(d))
+        } else {
+          console.log('[oauth/tiktok/callback] webhook registered for advertiser', advertiserId)
+        }
+      })
+      .catch(e => console.warn('[oauth/tiktok/callback] webhook register error:', e))
+  }
+
   return new NextResponse(CLOSE_OK, { headers: { 'Content-Type': 'text/html' } })
 }
