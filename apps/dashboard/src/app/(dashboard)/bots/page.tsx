@@ -509,40 +509,41 @@ export default async function BotsPage({
           <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <div className="p-8 max-w-5xl mx-auto">
 
-              {/* Sub-tab nav */}
-              <div className="flex items-center gap-1 mb-6 p-1 bg-gray-100 dark:bg-white/5 rounded-xl w-fit flex-wrap">
-                {KB_SUBTABS.map(st => (
-                  <Link
-                    key={st.key}
-                    href={`/bots?tab=knowledge-base&subtab=${st.key}`}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      activeSubtab === st.key
-                        ? 'bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-gray-100 shadow-sm'
-                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                    }`}
-                  >
-                    {st.label}
-                  </Link>
-                ))}
-              </div>
+              {/* Card with dark header bar */}
+              <div className="rounded-2xl overflow-hidden shadow-sm border dark:border-white/8 mb-6">
+                {/* Dark bar: subtabs + action */}
+                <div className="bg-[#141c2b] px-4 py-2.5 flex items-center gap-2">
+                  {KB_SUBTABS.map(st => (
+                    <Link
+                      key={st.key}
+                      href={`/bots?tab=knowledge-base&subtab=${st.key}`}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-colors whitespace-nowrap text-white ${
+                        activeSubtab === st.key ? 'bg-white/20' : 'hover:bg-white/10'
+                      }`}
+                    >
+                      {st.label}
+                    </Link>
+                  ))}
+                  {activeSubtab === 'sources' && (
+                    <a
+                      href="/sources/new"
+                      className="ml-auto flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium rounded-xl transition-colors whitespace-nowrap"
+                    >
+                      <Plus className="w-3.5 h-3.5" />Add source
+                    </a>
+                  )}
+                </div>
+
+              {/* Card body */}
+              <div className="bg-white dark:bg-[#232323]">
 
               {/* Sub-tab: Sources */}
               {activeSubtab === 'sources' && (
                 <>
                   {hasActiveJobs && <SourcesPoller />}
-                  <div className="flex items-center justify-between mb-6">
-                    <div />
-                    <a
-                      href="/sources/new"
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add source
-                    </a>
-                  </div>
 
                   {sources.length === 0 ? (
-                    <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col items-center justify-center py-16 text-center">
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
                       <BookOpen className="w-10 h-10 text-gray-300 dark:text-gray-600 mb-3" />
                       <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">No sources yet</p>
                       <p className="text-xs text-gray-400 mb-5">Add a website URL or text to give your bot custom knowledge.</p>
@@ -551,7 +552,7 @@ export default async function BotsPage({
                       </a>
                     </div>
                   ) : (
-                    <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 divide-y dark:divide-white/5">
+                    <div className="divide-y dark:divide-white/5">
                       {sources.map(source => {
                         const status = STATUS_META[source.status] ?? STATUS_META.pending
                         return (
@@ -771,6 +772,10 @@ export default async function BotsPage({
                   </div>
                 </div>
               )}
+
+              </div>{/* end card body */}
+              </div>{/* end card wrapper */}
+
           </div>
           </div>
         </>
