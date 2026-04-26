@@ -1,22 +1,20 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
-import { Header } from '@/components/layout/header'
 import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 import { SourcesPoller } from '@/app/(dashboard)/sources/sources-poller'
 import { IconSubmitButton } from '@/components/ui/submit-button'
 import { deleteSource, resyncSource } from '@/app/actions/source'
 import { createVoiceKnowledgeEntry, deleteVoiceKnowledgeEntry } from '@/app/actions/voice'
 import {
-  Bot, Plus, Plug, MessageSquare, TrendingUp, Mic, CheckCircle,
-  Phone, PhoneCall, PhoneIncoming, PhoneOutgoing, Zap,
-  BookOpen, RefreshCw, Trash2, Pencil, CheckCircle2, Clock, AlertCircle, Loader2,
+  Plus, PhoneCall, PhoneIncoming, PhoneOutgoing, Zap,
+  BookOpen, RefreshCw, Trash2, Pencil, CheckCircle2, Clock, AlertCircle, Loader2, Mic, Phone,
   Link as LinkIcon, FileText, AlignLeft, Cloud, HardDrive, ChevronRight,
 } from 'lucide-react'
-import { formatDate, formatTokens, formatCost, timeAgo, PLATFORM_META, formatDateTime } from '@/lib/utils'
+import { formatDateTime } from '@/lib/utils'
 import type { Metadata } from 'next'
 import type { Bot as BotRow, Conversation, UsageEvent, Source, VoiceKnowledgeEntry, VoiceAgent } from '@/lib/types'
+import { BotsTabClient } from './bots-tab-client'
 
 export const metadata: Metadata = { title: 'Bots' }
 
@@ -265,13 +263,6 @@ export default async function BotsPage({
   const totalTokens = usageSummary.reduce((s, e) => s + e.tokens_input + e.tokens_output, 0)
   const totalCost   = usageSummary.reduce((s, e) => s + Number(e.cost_usd), 0)
 
-  const stats = [
-    { label: 'Total Conversations', value: totalConversations,         icon: MessageSquare, color: 'text-blue-600',   bg: 'bg-blue-50 dark:bg-blue-500/10' },
-    { label: 'Active Bots',         value: totalBots,                  icon: Bot,           color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-500/10' },
-    { label: 'Active Integrations', value: totalIntegrations,          icon: Plug,          color: 'text-green-600',  bg: 'bg-green-50 dark:bg-green-500/10' },
-    { label: 'Tokens (30d)',        value: formatTokens(totalTokens),  icon: TrendingUp,    color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-500/10' },
-  ]
-
   const selectedTrainingBot = params.bot ? trainingBots.find(b => b.id === params.bot) : null
 
   const phoneFilter     = params.filter ?? 'all'
@@ -289,210 +280,62 @@ export default async function BotsPage({
   const activeKbCategory = params.category as VoiceKnowledgeEntry['category'] | undefined
   const activeKbBotId    = activeTab === 'knowledge-base' && activeSubtab === 'voice' ? params.bot : undefined
 
+  // Dark bar shared for non-bots tabs
+  const darkBar = (
+    <div className="bg-gray-900 px-3 py-2 flex items-center gap-2 shrink-0 border-b border-white/8">
+      <div className="flex items-center gap-0.5">
+        {TABS.map(tab => (
+          <Link
+            key={tab.key}
+            href={`/bots?tab=${tab.key}`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
+              activeTab === tab.key
+                ? 'bg-white/12 text-white'
+                : 'text-gray-400 hover:text-white hover:bg-white/6'
+            }`}
+          >
+            {tab.label}
+          </Link>
+        ))}
+      </div>
+      <div className="ml-auto">
+        <a
+          href="/bots/new"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium rounded-lg transition-colors"
+        >
+          <Plus className="w-3.5 h-3.5" />New bot
+        </a>
+      </div>
+    </div>
+  )
+
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+    <div className="-m-8 flex flex-col h-screen overflow-hidden">
       <SageToolbar pageKey="bots" />
-      <div className="p-8 flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto">
 
-          <Header
-            title="Bots"
-            description="Your AI agents, training, knowledge and phone configuration — all in one place"
-            action={
-              <a href="/bots/new" className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors">
-                <Plus className="w-4 h-4" /> New bot
-              </a>
-            }
+      {/* ── TAB 1: BOTS — 3-panel client layout ─────────────────────── */}
+      {activeTab === 'bots' && (
+        <div className="flex flex-1 overflow-hidden">
+          <BotsTabClient
+            bots={bots as any}
+            recentConversations={recentConversations as any}
+            totalTokens={totalTokens}
+            totalCost={totalCost}
+            totalConversations={totalConversations}
+            totalBots={totalBots}
+            totalIntegrations={totalIntegrations}
+            showNewBotBanner={params.new === '1'}
           />
+        </div>
+      )}
 
-          {params.new === '1' && (
-            <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded-xl text-sm text-green-700 dark:text-green-400">
-              <CheckCircle className="w-4 h-4 shrink-0" />
-              Bot created! Add knowledge so it can answer questions — or set up voice training below.
-            </div>
-          )}
-
-          {/* Tab nav */}
-          <div className="flex items-center gap-1 mb-8 p-1 bg-gray-100 dark:bg-white/5 rounded-xl w-fit flex-wrap">
-            {TABS.map(tab => (
-              <Link
-                key={tab.key}
-                href={`/bots?tab=${tab.key}`}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === tab.key
-                    ? 'bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-gray-100 shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                }`}
-              >
-                {tab.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* ── TAB 1: BOTS ──────────────────────────────────────────────── */}
-          {activeTab === 'bots' && (
-            <>
-              {/* Performance Overview */}
-              <div className="mb-6">
-                <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Performance Overview</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Your workspace activity at a glance</p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-                {stats.map(s => (
-                  <div key={s.label} className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-5">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">{s.label}</span>
-                      <div className={`${s.bg} ${s.color} p-2 rounded-lg`}>
-                        <s.icon className="w-4 h-4" />
-                      </div>
-                    </div>
-                    <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{s.value}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Bot cards */}
-              {bots.length === 0 ? (
-                <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col items-center justify-center py-16 text-center">
-                  <Image src="/favicon.png" alt="Bots" width={40} height={40} className="w-10 h-10 mb-3 opacity-30 dark:opacity-20" />
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">No bots yet</p>
-                  <p className="text-xs text-gray-400 mb-5">Create your first bot to start handling conversations.</p>
-                  <a href="/bots/new" className="px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:bg-brand-700 transition-colors">
-                    Create bot
-                  </a>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {bots.map(bot => (
-                    <div key={bot.id} className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-5 hover:shadow-sm transition-shadow flex flex-col">
-                      <a href={`/bots/${bot.id}`} className="flex-1 group block">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-white dark:bg-white/5">
-                            <Image src="/favicon.png" alt="Bot" width={22} height={22} className="w-5 h-5 object-contain" />
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            {bot.enable_voice && (
-                              <span className="text-[10px] bg-[#15A4AE]/10 text-[#15A4AE] px-1.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
-                                <Mic className="w-2.5 h-2.5" />Voice
-                              </span>
-                            )}
-                            {bot.bot_type === 'internal' && (
-                              <span className="text-[10px] bg-[#15A4AE]/10 text-[#15A4AE] px-1.5 py-0.5 rounded-full font-semibold">
-                                Sage
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1 group-hover:text-brand-700 dark:group-hover:text-[#ec732e] transition-colors">
-                          {bot.name}
-                        </h3>
-                        <p className="text-xs text-gray-400 line-clamp-2 mb-4">
-                          {bot.description ?? bot.system_prompt?.slice(0, 100) ?? 'No description'}
-                        </p>
-                        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                          <span className="flex items-center gap-1">
-                            <Plug className="w-3.5 h-3.5" />
-                            {/* @ts-expect-error — aggregate count */}
-                            {bot.integrations?.[0]?.count ?? 0} integrations
-                          </span>
-                          <span>·</span>
-                          <span>{formatDate(bot.created_at)}</span>
-                          {bot.enable_rag && (
-                            <>
-                              <span>·</span>
-                              <span className="text-green-600 font-medium">RAG</span>
-                            </>
-                          )}
-                        </div>
-                      </a>
-                      <div className="mt-3 pt-3 border-t dark:border-white/8 flex items-center justify-between">
-                        {bot.enable_voice ? (
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            {bot.voice_preset && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 font-medium">
-                                {bot.voice_preset}
-                              </span>
-                            )}
-                            {bot.voice_goal && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium">
-                                {bot.voice_goal.replace('_', ' ')}
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-[10px] text-gray-400">Text only</span>
-                        )}
-                        <a
-                          href={`/agent/bots/${bot.id}`}
-                          className="text-[10px] font-medium text-[#15A4AE] hover:text-[#0e8f99] transition-colors whitespace-nowrap"
-                        >
-                          {bot.enable_voice ? 'Voice config →' : 'Enable voice →'}
-                        </a>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Recent conversations + Usage */}
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-10">
-                <div className="xl:col-span-2 bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8">
-                  <div className="px-5 py-4 border-b dark:border-white/8 flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Recent Conversations</h2>
-                    <a href="/dashboard/bots" className="text-xs text-brand-600 dark:text-[#15A4AE] hover:underline">View all</a>
-                  </div>
-                  <div className="divide-y dark:divide-white/5">
-                    {recentConversations.length === 0 && (
-                      <p className="px-5 py-8 text-sm text-gray-400 text-center">No conversations yet.</p>
-                    )}
-                    {recentConversations.map(c => (
-                      <a key={c.id} href={`/conversations/${c.id}`} className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                            {c.title ?? 'Untitled conversation'}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-0.5">
-                            {c.message_count} messages · {timeAgo(c.last_activity_at)}
-                          </p>
-                        </div>
-                        {c.platform && (
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PLATFORM_META[c.platform as keyof typeof PLATFORM_META]?.color}`}>
-                            {PLATFORM_META[c.platform as keyof typeof PLATFORM_META]?.label}
-                          </span>
-                        )}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8">
-                  <div className="px-5 py-4 border-b dark:border-white/8">
-                    <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Usage (last 30 days)</h2>
-                  </div>
-                  <div className="px-5 py-5 space-y-4">
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Tokens consumed</p>
-                      <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{formatTokens(totalTokens)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Estimated cost</p>
-                      <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{formatCost(totalCost)}</p>
-                    </div>
-                    <a
-                      href="/analytics"
-                      className="block mt-4 text-center text-xs text-brand-600 bg-brand-50 hover:bg-brand-100 dark:bg-[#ec732e]/10 dark:hover:bg-[#ec732e]/15 dark:text-[#ec732e] rounded-lg py-2 transition-colors"
-                    >
-                      View detailed analytics →
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* ── TAB 2: TRAINING ──────────────────────────────────────────── */}
-          {activeTab === 'training' && (
+      {/* ── TAB 2: TRAINING ──────────────────────────────────────────── */}
+      {activeTab === 'training' && (
+        <>
+          {darkBar}
+          <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="p-8 max-w-5xl mx-auto">
+          {true && (
             <>
               {/* Bot selector */}
               {trainingBots.length > 0 && (
@@ -638,10 +481,18 @@ export default async function BotsPage({
               </div>
             </>
           )}
+          </div>
+          </div>
+        </>
+      )}
 
-          {/* ── TAB 3: KNOWLEDGE BASE ─────────────────────────────────────── */}
-          {activeTab === 'knowledge-base' && (
-            <>
+      {/* ── TAB 3: KNOWLEDGE BASE ─────────────────────────────────────── */}
+      {activeTab === 'knowledge-base' && (
+        <>
+          {darkBar}
+          <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="p-8 max-w-5xl mx-auto">
+
               {/* Sub-tab nav */}
               <div className="flex items-center gap-1 mb-6 p-1 bg-gray-100 dark:bg-white/5 rounded-xl w-fit flex-wrap">
                 {KB_SUBTABS.map(st => (
@@ -904,12 +755,17 @@ export default async function BotsPage({
                   </div>
                 </div>
               )}
-            </>
-          )}
+          </div>
+          </div>
+        </>
+      )}
 
-          {/* ── TAB 4: PHONE AGENTS ──────────────────────────────────────── */}
-          {activeTab === 'phone-agents' && (
-            <>
+      {/* ── TAB 4: PHONE AGENTS ──────────────────────────────────────── */}
+      {activeTab === 'phone-agents' && (
+        <>
+          {darkBar}
+          <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="p-8 max-w-5xl mx-auto">
               {/* Stats strip */}
               <div className="grid grid-cols-4 gap-4 mb-6">
                 {[
@@ -1042,11 +898,11 @@ export default async function BotsPage({
                   })}
                 </div>
               )}
-            </>
-          )}
+          </div>
+          </div>
+        </>
+      )}
 
-        </div>
-      </div>
     </div>
   )
 }
