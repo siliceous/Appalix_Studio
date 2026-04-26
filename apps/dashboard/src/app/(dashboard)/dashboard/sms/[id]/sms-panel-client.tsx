@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   MessageSquare, Download, Search, X, Pencil, Trash2, Loader2,
-  UserPlus, Ticket, Send, CheckCircle, Bot,
+  UserPlus, Ticket, Send, CheckCircle, UserCheck, Phone,
   ChevronUp, ChevronDown,
 } from 'lucide-react'
 import { EmailComposeModal } from '@/components/dashboard/email-compose-modal'
@@ -14,8 +14,9 @@ import { PLATFORM_META, timeAgo, formatDate } from '@/lib/utils'
 import {
   updateConversationPriority, updateConversationStatus,
   assignConversation, renameConversation, deleteConversation,
-  conversationCreateTicket, toggleBotPause, sendAgentReply,
+  conversationCreateTicket, toggleBotPause,
 } from '@/app/actions/conversation'
+import { sendSms, confirmSmsContactName, dismissSmsContactSuggestion } from '@/app/actions/sms'
 import { createClient } from '@/lib/supabase/client'
 import type { ConvRow } from '@/app/(dashboard)/conversations/page'
 
@@ -72,31 +73,29 @@ function msgTime(iso: string) {
 
 
 // ── Props ─────────────────────────────────────────────────────────────────────
+interface SmsContact { id: string; name: string; phone: string }
+
 interface Props {
   conversations:        ConvRow[]
   current:              ConvRow & { bots?: { id: string; name: string } | null }
   messages:             PanelMessage[]
   teamMembers?:         TeamMember[]
   canAssign?:           boolean
-  readonly?:            boolean
+  smsSuggestedContact?: SmsContact | null
   prevId?:              string | null
   nextId?:              string | null
-  listBasePath?:        string
-  listTitle?:           string
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function ConversationPanelClient({
+export function SmsPanelClient({
   conversations, current, messages,
-  teamMembers = [], canAssign = false, readonly = false,
+  teamMembers = [], canAssign = false,
+  smsSuggestedContact = null,
   prevId = null, nextId = null,
-  listBasePath = '/conversations',
-  listTitle = 'Conversations',
 }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [search,      setSearch]      = React.useState('')
-  const [botFilter,   setBotFilter]   = React.useState('')
   const [localPriority, setLocalPriority] = React.useState(current.ai_priority ?? '')
   const [localStatus,   setLocalStatus]   = React.useState(current.status ?? 'active')
   const [localAssign,   setLocalAssign]   = React.useState<string | null>(current.assigned_to ?? null)
@@ -168,6 +167,36 @@ export function ConversationPanelClient({
   const minutesSinceActivity = Math.floor((now - new Date(lastActivity).getTime()) / 60_000)
   const isUserActive = minutesSinceActivity < 5
 
+  // SMS reply state
+  const [smsDraft,    setSmsDraft]    = React.useState('')
+  const [smsSending,  setSmsSending]  = React.useState(false)
+  const [smsError,    setSmsError]    = React.useState<string | null>(null)
+
+  // SMS name suggestion state
+  const [suggestion,        setSuggestion]        = React.useState<SmsContact | null>(smsSuggestedContact)
+  const [editingName,       setEditingName]        = React.useState(false)
+  const [editNameValue,     setEditNameValue]      = React.useState(smsSuggestedContact?.name ?? '')
+  const [suggestionWorking, setSuggestionWorking]  = React.useState(false)
+
+  async function handleConfirmName() {
+    if (!suggestion) return
+    setSuggestionWorking(true)
+    const result = await confirmSmsContactName(suggestion.id, editNameValue || suggestion.name, current.id)
+    if (!result.error) {
+      setSuggestion(null)
+      router.refresh()
+    }
+    setSuggestionWorking(false)
+  }
+
+  async function handleDismissSuggestion() {
+    if (!suggestion) return
+    setSuggestionWorking(true)
+    await dismissSmsContactSuggestion(suggestion.id, suggestion.phone)
+    setSuggestion(null)
+    setSuggestionWorking(false)
+  }
+
   async function handleToggleTakeover() {
     setTakingOver(true)
     const next = !isBotPaused
@@ -185,13 +214,27 @@ export function ConversationPanelClient({
     if (!text || agentSending) return
     setAgentSending(true)
     setAgentError(null)
-    const result = await sendAgentReply(current.id, text)
+    const result = await sendSms(current.id, text)
     if (result.error) {
       setAgentError(result.error)
     } else {
       setAgentDraft('')
     }
     setAgentSending(false)
+  }
+
+  async function handleSmsSend() {
+    if (!smsDraft.trim() || smsSending) return
+    setSmsSending(true)
+    setSmsError(null)
+    const result = await sendSms(current.id, smsDraft.trim())
+    if (result.error) {
+      setSmsError(result.error)
+    } else {
+      setSmsDraft('')
+      router.refresh()
+    }
+    setSmsSending(false)
   }
 
   async function handlePriorityChange(val: string) {
@@ -227,7 +270,7 @@ export function ConversationPanelClient({
     if (!window.confirm('Delete this conversation? This cannot be undone.')) return
     startTransition(async () => {
       await deleteConversation(current.id)
-      router.push(listBasePath)
+      router.push('/dashboard/sms')
     })
   }
   function showNotification(msg: string) {
@@ -242,14 +285,6 @@ export function ConversationPanelClient({
     router.refresh()
   }
 
-  // Derive unique bots from the conversations list
-  const bots = React.useMemo(() => {
-    const map = new Map<string, string>()
-    for (const c of conversations) {
-      if (c.bots?.id && c.bots?.name) map.set(c.bots.id, c.bots.name)
-    }
-    return Array.from(map.entries()).map(([id, name]) => ({ id, name }))
-  }, [conversations])
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -261,7 +296,6 @@ export function ConversationPanelClient({
   }, [liveMessages])
 
   const filtered = conversations.filter(c => {
-    if (botFilter && c.bots?.id !== botFilter) return false
     if (search) {
       const q = search.toLowerCase()
       return (
@@ -294,8 +328,8 @@ export function ConversationPanelClient({
         <div key={msg.id} className={`flex flex-col gap-0.5 ${isBot ? 'items-end' : 'items-start'}`}>
           <span className="text-[10px] text-gray-400 px-1">
             {isBot
-              ? 'Bot'
-              : (current.ai_entities?.name ?? 'User')
+              ? 'You'
+              : (current.ai_entities?.name ?? (current as any).platform_thread_id)
             }
           </span>
           <div className={`max-w-[72%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
@@ -332,8 +366,8 @@ export function ConversationPanelClient({
         {/* Header */}
         <div className="px-3 py-2.5 bg-[#141c2b] border-b border-white/10 shrink-0 space-y-2">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white">{listTitle}</h2>
-            <Link href={listBasePath} className="text-sm text-white hover:opacity-70 transition-opacity">← Back</Link>
+            <h2 className="text-sm font-semibold text-white">SMS</h2>
+            <Link href="/dashboard/sms" className="text-sm text-white hover:opacity-70 transition-opacity">← Back</Link>
           </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
@@ -350,16 +384,6 @@ export function ConversationPanelClient({
               </button>
             )}
           </div>
-          {bots.length > 1 && (
-            <select
-              value={botFilter}
-              onChange={e => setBotFilter(e.target.value)}
-              className="dark-bar-select w-full text-sm border border-white/20 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40"
-            >
-              <option value="">All bots</option>
-              {bots.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-            </select>
-          )}
         </div>
 
         {/* List */}
@@ -376,21 +400,16 @@ export function ConversationPanelClient({
             return (
               <Link
                 key={c.id}
-                href={`${listBasePath}/${c.id}`}
+                href={`/dashboard/sms/${c.id}`}
                 className={`flex items-start gap-3 px-3 py-3 border-b dark:border-white/5 transition-colors ${
                   isActive
                     ? 'bg-[#15A4AE]/10 dark:bg-[#15A4AE]/15'
                     : 'hover:bg-white dark:hover:bg-white/5'
                 }`}
               >
-                {c.bot_id
-                  ? <div className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center bg-purple-500">
-                      <Bot className="w-5 h-5 text-white" />
-                    </div>
-                  : <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${getAvatarColor(c.id)}`}>
-                      {getInitials(c.ai_entities?.name ?? c.title)}
-                    </div>
-                }
+                <div className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center bg-green-500">
+                  <Phone className="w-5 h-5 text-white" />
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1">
                     <div className="flex items-center gap-1 min-w-0">
@@ -434,23 +453,16 @@ export function ConversationPanelClient({
         <div className="shrink-0 bg-[#141c2b] border-b border-white/10 px-4 py-2.5 flex items-center gap-3">
           {/* Left: avatar + name */}
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            {current.bots?.name
-              ? <div className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center bg-purple-500">
-                  <Bot className="w-4 h-4 text-white" />
-                </div>
-              : <div className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-xs font-bold text-white ${getAvatarColor(current.id)}`}>
-                  {getInitials(current.ai_entities?.name ?? current.title)}
-                </div>
-            }
+            <div className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center bg-green-500">
+              <Phone className="w-4 h-4 text-white" />
+            </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <span className="text-sm font-semibold text-white truncate leading-tight">
                   {current.ai_entities?.name ?? current.title ?? '(no title)'}
                 </span>
               </div>
-              {current.bots?.name && (
-                <p className="text-sm text-white leading-tight">via {current.bots.name}</p>
-              )}
+              <p className="text-sm text-white leading-tight">{(current as any).platform_thread_id}</p>
               {/* Online / inactive indicator */}
               <div className="flex items-center gap-1 mt-0.5">
                 <span className={`relative flex w-2 h-2 shrink-0 ${isUserActive ? '' : 'items-center justify-center'}`}>
@@ -474,7 +486,7 @@ export function ConversationPanelClient({
             <select
               value={localPriority}
               onChange={e => handlePriorityChange(e.target.value)}
-              disabled={readonly || saving === 'priority'}
+              disabled={saving === 'priority'}
               className="dark-bar-select text-xs border border-white/20 rounded-full px-2 py-0.5 focus:outline-none disabled:opacity-60 cursor-pointer"
             >
               <option value="">Pri</option>
@@ -488,7 +500,7 @@ export function ConversationPanelClient({
             <select
               value={localStatus}
               onChange={e => handleStatusChange(e.target.value)}
-              disabled={readonly || saving === 'status'}
+              disabled={saving === 'status'}
               className="dark-bar-select text-xs border border-white/20 rounded-full px-2 py-0.5 focus:outline-none disabled:opacity-60 cursor-pointer"
             >
               <option value="active">Active</option>
@@ -502,7 +514,7 @@ export function ConversationPanelClient({
               <>
                 <select
                   value={localAssign ?? ''}
-                  disabled={saving === 'assign' || readonly}
+                  disabled={saving === 'assign'}
                   onChange={e => handleAssign(e.target.value || null)}
                   className="dark-bar-select text-xs border border-white/20 rounded-full px-2 py-0.5 focus:outline-none disabled:opacity-60 cursor-pointer max-w-[90px]"
                 >
@@ -529,25 +541,21 @@ export function ConversationPanelClient({
               className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
               <Download className="w-3.5 h-3.5" />
             </a>
-            {!readonly && (
-              <>
-                <button onClick={handleRename} title="Rename"
-                  className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={handleDelete} title="Delete conversation"
-                  className="p-1.5 text-white/60 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </>
-            )}
+            <button onClick={handleRename} title="Rename"
+              className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={handleDelete} title="Delete conversation"
+              className="p-1.5 text-white/60 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
 
             {/* Prev / Next navigation */}
             <div className="flex items-center border border-white/20 rounded-lg overflow-hidden ml-0.5">
-              <button onClick={() => prevId && router.push(`${listBasePath}/${prevId}`)} disabled={!prevId} title="Previous conversation" className="p-1.5 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border-r border-white/20">
+              <button onClick={() => prevId && router.push(`/dashboard/sms/${prevId}`)} disabled={!prevId} title="Previous conversation" className="p-1.5 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border-r border-white/20">
                 <ChevronUp className="w-3.5 h-3.5" />
               </button>
-              <button onClick={() => nextId && router.push(`${listBasePath}/${nextId}`)} disabled={!nextId} title="Next conversation" className="p-1.5 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+              <button onClick={() => nextId && router.push(`/dashboard/sms/${nextId}`)} disabled={!nextId} title="Next conversation" className="p-1.5 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                 <ChevronDown className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -563,6 +571,44 @@ export function ConversationPanelClient({
           </div>
         )}
 
+        {/* Maybe banner — shown when an auto-suggested name is pending confirmation */}
+        {suggestion && (
+          <div className="shrink-0 mx-4 mt-3 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25">
+            <UserCheck className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span className="text-xs text-amber-800 dark:text-amber-300 font-medium shrink-0">Maybe:</span>
+            {editingName ? (
+              <input
+                autoFocus
+                value={editNameValue}
+                onChange={e => setEditNameValue(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleConfirmName(); if (e.key === 'Escape') setEditingName(false) }}
+                className="flex-1 text-xs border border-amber-300 dark:border-amber-500/40 rounded-lg px-2 py-1 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-400/40 min-w-0"
+              />
+            ) : (
+              <span className="flex-1 text-xs font-semibold text-gray-800 dark:text-gray-100 truncate">{suggestion.name}</span>
+            )}
+            <button
+              onClick={() => { setEditingName(true); setEditNameValue(suggestion.name) }}
+              disabled={suggestionWorking}
+              className="text-[10px] text-amber-600 dark:text-amber-400 hover:underline disabled:opacity-50 shrink-0"
+            >Edit</button>
+            <button
+              onClick={handleConfirmName}
+              disabled={suggestionWorking}
+              className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-50 shrink-0"
+            >
+              {suggestionWorking ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
+              Confirm
+            </button>
+            <button
+              onClick={handleDismissSuggestion}
+              disabled={suggestionWorking}
+              className="text-gray-400 hover:text-gray-600 disabled:opacity-50 shrink-0"
+              title="Dismiss"
+            ><X className="w-3.5 h-3.5" /></button>
+          </div>
+        )}
+
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
           {liveMessages.length === 0 ? (
@@ -575,78 +621,86 @@ export function ConversationPanelClient({
         </div>
 
         {/* Reply box — always visible */}
-        {!readonly && (
-          isBotPaused ? (
-            /* ── Human takeover mode — fully active reply box ── */
-            <div className="shrink-0 border-t dark:border-white/8 bg-white dark:bg-[#232323] p-3 space-y-2">
-              {agentError && <p className="text-xs text-red-500 px-1">{agentError}</p>}
-              <div className="flex items-end gap-2">
-                <button
-                  onClick={handleToggleTakeover}
-                  disabled={takingOver}
-                  title="Return to Bot"
-                  className="shrink-0 flex items-center gap-1.5 px-2.5 py-2 text-xs font-semibold rounded-xl border transition-colors disabled:opacity-60 whitespace-nowrap bg-amber-500/20 border-amber-400/50 text-amber-600 dark:text-amber-300 hover:bg-amber-500/30"
-                >
-                  {takingOver ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />}
-                  Return to Bot
-                </button>
-                <textarea
-                  value={agentDraft}
-                  onChange={e => setAgentDraft(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAgentSend() }
-                  }}
-                  placeholder="Type your reply… (Enter to send, Shift+Enter for new line)"
-                  rows={2}
-                  disabled={agentSending}
-                  className="flex-1 resize-none text-sm border border-amber-300/60 dark:border-amber-500/40 rounded-xl px-3 py-2 bg-amber-50/50 dark:bg-amber-500/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40 disabled:opacity-60"
-                />
-                <button
-                  onClick={handleAgentSend}
-                  disabled={agentSending || !agentDraft.trim()}
-                  className="shrink-0 flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-amber-500 text-white hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {agentSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                  Send
-                </button>
-              </div>
-              <p className="text-[10px] text-amber-600 dark:text-amber-400 px-1 font-medium">
-                You are handling this conversation — bot is paused
-              </p>
+        {isBotPaused ? (
+          /* ── Human takeover mode — fully active reply box ── */
+          <div className="shrink-0 border-t dark:border-white/8 bg-white dark:bg-[#232323] p-3 space-y-2">
+            {agentError && <p className="text-xs text-red-500 px-1">{agentError}</p>}
+            <div className="flex items-end gap-2">
+              <button
+                onClick={handleToggleTakeover}
+                disabled={takingOver}
+                title="Return to Bot"
+                className="shrink-0 flex items-center gap-1.5 px-2.5 py-2 text-xs font-semibold rounded-xl border transition-colors disabled:opacity-60 whitespace-nowrap bg-amber-500/20 border-amber-400/50 text-amber-600 dark:text-amber-300 hover:bg-amber-500/30"
+              >
+                {takingOver ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />}
+                Return to Bot
+              </button>
+              <textarea
+                value={agentDraft}
+                onChange={e => setAgentDraft(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAgentSend() }
+                }}
+                placeholder="Type your reply… (Enter to send, Shift+Enter for new line)"
+                rows={2}
+                disabled={agentSending}
+                className="flex-1 resize-none text-sm border border-amber-300/60 dark:border-amber-500/40 rounded-xl px-3 py-2 bg-amber-50/50 dark:bg-amber-500/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40 disabled:opacity-60"
+              />
+              <button
+                onClick={handleAgentSend}
+                disabled={agentSending || !agentDraft.trim()}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-amber-500 text-white hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {agentSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                Send
+              </button>
             </div>
-          ) : (
-            /* ── Bot mode — reply box locked, greyed when user inactive ── */
-            <div className={`shrink-0 border-t dark:border-white/8 bg-white dark:bg-[#232323] p-3 space-y-2 transition-opacity duration-500 ${isUserActive ? 'opacity-100' : 'opacity-40'}`}>
-              <div className="flex items-end gap-2">
-                <button
-                  onClick={handleToggleTakeover}
-                  disabled={takingOver}
-                  title="Take Over from Bot"
-                  className="shrink-0 flex items-center gap-1.5 px-2.5 py-2 text-xs font-semibold rounded-xl border transition-colors disabled:opacity-60 whitespace-nowrap bg-[#15A4AE]/20 border-[#15A4AE]/50 text-[#15A4AE] hover:bg-[#15A4AE]/30"
-                >
-                  {takingOver ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />}
-                  Take Over
-                </button>
-                <textarea
-                  value=''
-                  onChange={() => {}}
-                  onKeyDown={() => {}}
-                  placeholder={
-                    !isUserActive
-                      ? 'User is not active…'
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      : `Bot is handling this via ${current.platform ? ((PLATFORM_META as any)[current.platform]?.label ?? current.platform) : 'chat'} — click Take Over to reply manually`
-                  }
-                  rows={2}
-                  disabled
-                  className="flex-1 resize-none text-sm border dark:border-white/10 rounded-xl px-3 py-2 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:cursor-not-allowed"
-                />
-              </div>
-              <p className="text-[10px] text-gray-400 px-1">
-                {isUserActive ? 'Bot is handling this conversation' : 'User inactive — reply box locked'}
-              </p>
+            <p className="text-[10px] text-amber-600 dark:text-amber-400 px-1 font-medium">
+              You are handling this conversation — bot is paused
+            </p>
+          </div>
+        ) : (
+          /* ── Bot mode — reply box locked, greyed when user inactive ── */
+          <div className={`shrink-0 border-t dark:border-white/8 bg-white dark:bg-[#232323] p-3 space-y-2 transition-opacity duration-500 ${isUserActive ? 'opacity-100' : 'opacity-40'}`}>
+            {smsError && <p className="text-xs text-red-500 px-1">{smsError}</p>}
+            <div className="flex items-end gap-2">
+              <button
+                onClick={handleToggleTakeover}
+                disabled={takingOver}
+                title="Take Over from Bot"
+                className="shrink-0 flex items-center gap-1.5 px-2.5 py-2 text-xs font-semibold rounded-xl border transition-colors disabled:opacity-60 whitespace-nowrap bg-[#15A4AE]/20 border-[#15A4AE]/50 text-[#15A4AE] hover:bg-[#15A4AE]/30"
+              >
+                {takingOver ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />}
+                Take Over
+              </button>
+              <textarea
+                value={smsDraft}
+                onChange={e => setSmsDraft(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSmsSend() }
+                }}
+                placeholder={
+                  !isUserActive
+                    ? 'User is not active…'
+                    : 'Reply via SMS… (Enter to send, Shift+Enter for new line)'
+                }
+                rows={2}
+                disabled={smsSending || !isUserActive}
+                className="flex-1 resize-none text-sm border dark:border-white/10 rounded-xl px-3 py-2 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 disabled:cursor-not-allowed"
+              />
+              <button
+                onClick={handleSmsSend}
+                disabled={smsSending || !smsDraft.trim() || !isUserActive}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-[#15A4AE] text-white hover:bg-[#1290a0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {smsSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                Send
+              </button>
             </div>
-          )
+            <p className="text-[10px] text-gray-400 px-1">
+              {`SMS · ${(current as any).platform_thread_id}`}
+            </p>
+          </div>
         )}
         </div>{/* end inner flex */}
       </div>{/* end middle panel */}
@@ -710,13 +764,11 @@ export function ConversationPanelClient({
             </button>
           )}
 
-          {/* Bot badge */}
-          {current.bots?.name && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 text-xs text-purple-700 dark:text-purple-400">
-              <Bot className="w-3.5 h-3.5 shrink-0" />
-              Bot: {current.bots.name}
-            </div>
-          )}
+          {/* SMS badge */}
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/20 text-xs text-teal-700 dark:text-teal-400">
+            <Phone className="w-3.5 h-3.5 shrink-0" />
+            SMS conversation — use reply box below
+          </div>
 
           <hr className="border-gray-100 dark:border-white/8" />
 
@@ -724,7 +776,6 @@ export function ConversationPanelClient({
           <div>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Conversation Details</p>
             <div className="space-y-2.5">
-              {current.bots?.name && <DetailRow label="Bot"      value={current.bots.name} />}
               <DetailRow label="Platform"     value={
                 current.platform
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any

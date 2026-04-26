@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import type { Conversation } from '@/lib/types'
 import type { ConvRow } from '@/app/(dashboard)/conversations/page'
-import { ConversationPanelClient, type PanelMessage, type TeamMember } from '@/app/(dashboard)/conversations/[id]/conversation-panel-client'
+import { SmsPanelClient, type PanelMessage, type TeamMember } from './sms-panel-client'
 import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 import { ROLE_RANK } from '@/lib/types'
@@ -103,7 +103,7 @@ export default async function SmsDetailPage({
         autoEnabled={autoSettings.bots_auto_enabled}
       />
       <div className="flex flex-1 overflow-hidden">
-        <ConversationPanelClient
+        <SmsPanelClient
           conversations={convList}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           current={conversation as any}
@@ -113,8 +113,6 @@ export default async function SmsDetailPage({
           smsSuggestedContact={smsSuggestedContact}
           prevId={prevId}
           nextId={nextId}
-          listBasePath="/dashboard/sms"
-          listTitle="SMS"
         />
       </div>
     </div>
