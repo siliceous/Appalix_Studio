@@ -92,7 +92,7 @@ export function BotsTabClient({
         {/* Left: Usage stats — floating card, full height */}
         <div className="w-[210px] shrink-0 flex flex-col rounded-2xl overflow-hidden shadow-lg border dark:border-white/8">
           <div className="bg-[#141c2b] px-4 py-3 shrink-0">
-            <p className="text-[10px] font-semibold text-white/70 uppercase tracking-wider">Usage · 30 days</p>
+            <p className="text-[10px] font-semibold text-white uppercase tracking-wider">Usage · 30 days</p>
           </div>
           <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-[#191919] p-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div className="space-y-2">
@@ -254,8 +254,8 @@ export function BotsTabClient({
         {/* Right: Recent conversations — floating card */}
         <div className="w-[260px] shrink-0 flex flex-col rounded-2xl overflow-hidden shadow-lg border dark:border-white/8">
           <div className="bg-[#141c2b] px-4 py-3 shrink-0 flex items-center justify-between">
-            <p className="text-[10px] font-semibold text-white/70 uppercase tracking-wider">Recent Convos</p>
-            <a href="/conversations" className="text-[10px] text-white/50 hover:text-white/80 transition-colors">View all</a>
+            <p className="text-[10px] font-semibold text-white uppercase tracking-wider">Recent Convos</p>
+            <a href="/conversations" className="text-[10px] text-white hover:text-white/80 transition-colors">View all</a>
           </div>
           <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-[#191919] divide-y dark:divide-white/5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {recentConversations.length === 0 ? (
