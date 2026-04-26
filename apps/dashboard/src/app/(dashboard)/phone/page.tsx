@@ -94,14 +94,14 @@ export default async function PhonePage() {
 
   return (
     <div className="-m-8 flex flex-col h-screen overflow-hidden">
-      <SageToolbar pageKey="phone" />
+      <SageToolbar pageKey="calls" />
 
       {/* ── Header ─────────────────────────────────────────────────── */}
       <div className="px-8 shrink-0">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center justify-between pt-4 pb-1">
             <div>
-              <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">Phone Numbers</h1>
+              <h1 className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">Phone Numbers</h1>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 Manage numbers, voice agents, SMS, and call activity
               </p>

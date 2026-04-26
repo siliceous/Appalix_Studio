@@ -244,7 +244,7 @@ export default async function BotsPage({
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between pt-4 pb-1">
           <div>
-            <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            <h1 className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">
               {TAB_META[activeTab]?.title ?? 'Bots'}
             </h1>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -267,7 +267,7 @@ export default async function BotsPage({
             </a>
           )}
         </div>
-        <div className="bg-[#141c2b] rounded-2xl px-3 py-2 flex items-center gap-2 mb-2 shadow-lg">
+        <div className="bg-[#141c2b] rounded-xl border border-white/10 px-3 py-2 flex items-center gap-2 mb-2">
           <div className="ml-auto flex items-center gap-0.5">
             {TABS.map(tab => (
               <Link
@@ -364,9 +364,9 @@ export default async function BotsPage({
           <div className="max-w-5xl mx-auto">
 
               {/* Card with dark header bar */}
-              <div className="rounded-2xl overflow-hidden shadow-sm border dark:border-white/8 mb-6">
+              <div className="mb-6 space-y-1">
                 {/* Dark bar: subtabs + action */}
-                <div className="bg-[#141c2b] px-4 py-2.5 flex items-center gap-2">
+                <div className="bg-[#141c2b] rounded-xl border border-white/10 px-4 py-2.5 flex items-center gap-2">
                   {KB_SUBTABS.map(st => (
                     <Link
                       key={st.key}
@@ -389,7 +389,7 @@ export default async function BotsPage({
                 </div>
 
               {/* Card body */}
-              <div className="bg-white dark:bg-[#232323]">
+              <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-hidden">
 
               {/* Sub-tab: Sources */}
               {activeSubtab === 'sources' && (
@@ -620,10 +620,10 @@ export default async function BotsPage({
             </div>
 
             {/* Dark-header card: filter tabs + agent grid */}
-            <div className="rounded-2xl overflow-hidden shadow-sm border dark:border-white/8">
+            <div className="space-y-1">
 
               {/* Dark bar */}
-              <div className="bg-[#141c2b] px-4 py-2.5 flex items-center gap-2">
+              <div className="bg-[#141c2b] rounded-xl border border-white/10 px-4 py-2.5 flex items-center gap-2">
                 {[
                   { key: 'all',      label: 'All agents' },
                   { key: 'active',   label: 'Active' },
@@ -653,7 +653,7 @@ export default async function BotsPage({
               </div>
 
               {/* Card body */}
-              <div className="bg-white dark:bg-[#232323] p-4">
+              <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-4">
                 {filteredAgents.length === 0 ? (
                   <div className="py-16 flex flex-col items-center justify-center text-center">
                     <div className="w-12 h-12 rounded-full bg-[#15A4AE]/10 flex items-center justify-center mb-4">

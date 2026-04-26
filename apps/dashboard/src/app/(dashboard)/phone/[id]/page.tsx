@@ -173,8 +173,9 @@ export default async function PhoneNumberDetailPage({
       <SageToolbar pageKey="calls" />
 
       {/* ── Dark top bar ───────────────────────────────────────────────────── */}
-      <div className="bg-[#141c2b] px-8 shrink-0">
-        <div className="max-w-5xl mx-auto">
+      <div className="px-8 pt-4 shrink-0">
+        <div className="max-w-5xl mx-auto bg-[#141c2b] rounded-2xl">
+          <div className="px-6">
 
           {/* Back + number identity */}
           <div className="flex items-center gap-4 pt-4 pb-3">
@@ -186,7 +187,7 @@ export default async function PhoneNumberDetailPage({
             <div className="flex items-center gap-3 min-w-0">
               <span className="text-2xl shrink-0">{toFlag(num.country_code)}</span>
               <div>
-                <p className="text-base font-mono font-bold text-white leading-tight">{num.e164}</p>
+                <p className="text-[15px] font-mono font-bold text-white leading-tight">{num.e164}</p>
                 <p className="text-xs text-white/50">{COUNTRY_NAMES[num.country_code] ?? num.country_code}</p>
               </div>
             </div>
@@ -234,6 +235,7 @@ export default async function PhoneNumberDetailPage({
               </Link>
             ))}
           </div>
+          </div>{/* /px-6 */}
         </div>
       </div>
 
@@ -384,7 +386,7 @@ export default async function PhoneNumberDetailPage({
           <div className="rounded-2xl overflow-hidden shadow-sm border dark:border-white/8">
             <div className="bg-[#141c2b] px-5 py-2.5 flex items-center gap-2.5">
               <Phone className="w-3.5 h-3.5 text-white shrink-0" />
-              <p className="text-sm font-semibold text-white">Call history</p>
+              <p className="text-[15px] font-semibold text-white">Call history</p>
               <span className="text-white/30 text-sm">·</span>
               <p className="text-sm text-white/60">{num.e164}</p>
               {calls.length > 0 && <span className="ml-auto text-xs text-white/40">{calls.length} records</span>}
@@ -400,7 +402,7 @@ export default async function PhoneNumberDetailPage({
           <div className="rounded-2xl overflow-hidden shadow-sm border dark:border-white/8">
             <div className="bg-[#141c2b] px-5 py-2.5 flex items-center gap-2.5">
               <MessageSquare className="w-3.5 h-3.5 text-white shrink-0" />
-              <p className="text-sm font-semibold text-white">SMS conversations</p>
+              <p className="text-[15px] font-semibold text-white">SMS conversations</p>
               <span className="text-white/30 text-sm">·</span>
               <p className="text-sm text-white/60">{num.e164}</p>
               <Link href="/dashboard/sms"
@@ -456,7 +458,7 @@ export default async function PhoneNumberDetailPage({
             <div className="rounded-2xl overflow-hidden shadow-sm border dark:border-white/8">
               <div className="bg-[#141c2b] px-5 py-2.5 flex items-center gap-2.5">
                 <Phone className="w-3.5 h-3.5 text-white shrink-0" />
-                <p className="text-sm font-semibold text-white">Number details</p>
+                <p className="text-[15px] font-semibold text-white">Number details</p>
               </div>
               <div className="bg-white dark:bg-[#232323] p-6">
                 <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
@@ -481,7 +483,7 @@ export default async function PhoneNumberDetailPage({
             <div className="rounded-2xl overflow-hidden shadow-sm border dark:border-white/8">
               <div className="bg-[#141c2b] px-5 py-2.5 flex items-center gap-2.5">
                 <Bot className="w-3.5 h-3.5 text-white shrink-0" />
-                <p className="text-sm font-semibold text-white">SMS Auto-reply Bot</p>
+                <p className="text-[15px] font-semibold text-white">SMS Auto-reply Bot</p>
                 <span className="text-white/30 text-sm">·</span>
                 <p className="text-sm text-white/60">Responds automatically to inbound SMS</p>
               </div>
@@ -509,7 +511,7 @@ export default async function PhoneNumberDetailPage({
             <div className="rounded-2xl overflow-hidden shadow-sm border dark:border-white/8">
               <div className="bg-[#141c2b] px-5 py-2.5 flex items-center gap-2.5">
                 <Mic className="w-3.5 h-3.5 text-white shrink-0" />
-                <p className="text-sm font-semibold text-white">Voice Agent</p>
+                <p className="text-[15px] font-semibold text-white">Voice Agent</p>
                 <span className="text-white/30 text-sm">·</span>
                 <p className="text-sm text-white/60">Handles inbound & outbound calls</p>
               </div>
@@ -545,7 +547,7 @@ export default async function PhoneNumberDetailPage({
             <div className="rounded-2xl overflow-hidden shadow-sm border dark:border-white/8">
               <div className="bg-[#141c2b] px-5 py-2.5 flex items-center gap-2.5">
                 <Phone className="w-3.5 h-3.5 text-white shrink-0" />
-                <p className="text-sm font-semibold text-white">Voice Settings</p>
+                <p className="text-[15px] font-semibold text-white">Voice Settings</p>
                 <span className="text-white/30 text-sm">·</span>
                 <p className="text-sm text-white/60">Recording, voicemail & text-back for this number</p>
               </div>

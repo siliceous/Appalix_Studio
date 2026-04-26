@@ -209,14 +209,14 @@ export default async function AgentBotVoicePage({
             {/* ── Goal ── */}
             <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5 space-y-4">
               <div>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Primary goal</p>
-                <p className="text-xs text-gray-400 mt-0.5">The bot will guide every conversation toward this outcome.</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Goals</p>
+                <p className="text-xs text-gray-400 mt-0.5">The bot will guide every conversation toward these outcomes.</p>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {GOALS.map(g => (
                   <label key={g.value} className="relative cursor-pointer">
-                    <input type="radio" name="voice_goal" value={g.value}
-                      defaultChecked={bot.voice_goal === g.value}
+                    <input type="checkbox" name="voice_goal" value={g.value}
+                      defaultChecked={(bot.voice_goal as string[] | null)?.includes(g.value) ?? false}
                       className="peer sr-only" />
                     <div className="p-3 rounded-xl border-2 border-gray-200 dark:border-white/10 peer-checked:border-[#15A4AE]/60 peer-checked:bg-[#15A4AE]/5 transition-colors">
                       <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{g.label}</p>
