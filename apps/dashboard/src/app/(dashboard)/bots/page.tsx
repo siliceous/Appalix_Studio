@@ -280,37 +280,53 @@ export default async function BotsPage({
   const activeKbCategory = params.category as VoiceKnowledgeEntry['category'] | undefined
   const activeKbBotId    = activeTab === 'knowledge-base' && activeSubtab === 'voice' ? params.bot : undefined
 
-  // Dark bar shared for non-bots tabs
+  const TAB_META: Record<string, { title: string; subtitle: string }> = {
+    training:        { title: 'Training',       subtitle: 'Voice presets, personality controls, and goal settings' },
+    'knowledge-base': { title: 'Knowledge Base', subtitle: 'Sources and voice scripts for your bots' },
+    'phone-agents':  { title: 'Phone Agents',   subtitle: 'Manage inbound and outbound voice agents' },
+  }
+
+  // Header + dark bar shared for non-bots tabs
   const darkBar = (
-    <div className="bg-gray-900 px-3 py-2 flex items-center gap-2 shrink-0 border-b border-white/8">
-      <div className="flex items-center gap-0.5">
-        {TABS.map(tab => (
-          <Link
-            key={tab.key}
-            href={`/bots?tab=${tab.key}`}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
-              activeTab === tab.key
-                ? 'bg-white/12 text-white'
-                : 'text-gray-400 hover:text-white hover:bg-white/6'
-            }`}
-          >
-            {tab.label}
-          </Link>
-        ))}
-      </div>
-      <div className="ml-auto">
+    <>
+      <div className="flex items-center justify-between px-6 pt-3 pb-2 shrink-0">
+        <div>
+          <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            {TAB_META[activeTab]?.title ?? 'Bots'}
+          </h1>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            {TAB_META[activeTab]?.subtitle ?? ''}
+          </p>
+        </div>
         <a
           href="/bots/new"
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium rounded-lg transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
         >
-          <Plus className="w-3.5 h-3.5" />New bot
+          <Plus className="w-4 h-4" />New bot
         </a>
       </div>
-    </div>
+      <div className="bg-[#141c2b] mx-3 mb-2 rounded-2xl px-3 py-2 flex items-center gap-2 shrink-0 shadow-lg">
+        <div className="ml-auto flex items-center gap-0.5">
+          {TABS.map(tab => (
+            <Link
+              key={tab.key}
+              href={`/bots?tab=${tab.key}`}
+              className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-colors whitespace-nowrap ${
+                activeTab === tab.key
+                  ? 'bg-white/15 text-white'
+                  : 'text-white/60 hover:text-white hover:bg-white/8'
+              }`}
+            >
+              {tab.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </>
   )
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden">
+    <>
       <SageToolbar pageKey="bots" />
 
       {/* ── TAB 1: BOTS — 3-panel client layout ─────────────────────── */}
@@ -903,6 +919,6 @@ export default async function BotsPage({
         </>
       )}
 
-    </div>
+    </>
   )
 }

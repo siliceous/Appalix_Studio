@@ -72,63 +72,36 @@ export function BotsTabClient({
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      {/* ── Dark top bar ────────────────────────────────────────────────── */}
-      <div className="bg-gray-900 px-3 py-2 flex items-center gap-2 shrink-0 border-b border-white/8">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500 pointer-events-none" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search bots…"
-            className="pl-8 pr-3 py-1.5 bg-white/8 border border-white/10 rounded-lg text-xs text-white placeholder-gray-500 focus:outline-none focus:border-white/25 w-40"
-          />
+      {/* ── Page header (above all 3 panels) ────────────────────────────── */}
+      <div className="flex items-center justify-between px-6 pt-5 pb-2 shrink-0">
+        <div>
+          <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">Bots</h1>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Configure AI agents and connect them to platforms</p>
         </div>
-
-        {/* Tab links */}
-        <div className="flex items-center gap-0.5 ml-1">
-          {TABS.map(tab => (
-            <Link
-              key={tab.key}
-              href={`/bots?tab=${tab.key}`}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
-                tab.key === 'bots'
-                  ? 'bg-white/12 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-white/6'
-              }`}
-            >
-              {tab.label}
-            </Link>
-          ))}
-        </div>
-
-        <div className="ml-auto">
-          <a
-            href="/bots/new"
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
-          >
-            <Plus className="w-3.5 h-3.5" />New bot
-          </a>
-        </div>
+        <a
+          href="/bots/new"
+          className="flex items-center gap-1.5 px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
+        >
+          <Plus className="w-4 h-4" />New bot
+        </a>
       </div>
 
       {/* ── 3-panel body ────────────────────────────────────────────────── */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden gap-3 px-3 py-3">
 
-        {/* Left: Usage stats */}
-        <div className="w-[220px] shrink-0 border-r dark:border-white/8 overflow-y-auto bg-gray-50 dark:bg-[#191919] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] self-stretch">
-          <div className="p-4">
-            <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-              Usage · 30 days
-            </p>
+        {/* Left: Usage stats — floating card, full height */}
+        <div className="w-[210px] shrink-0 flex flex-col rounded-2xl overflow-hidden shadow-lg border dark:border-white/8">
+          <div className="bg-[#141c2b] px-4 py-3 shrink-0">
+            <p className="text-[10px] font-semibold text-white/70 uppercase tracking-wider">Usage · 30 days</p>
+          </div>
+          <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-[#191919] p-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div className="space-y-2">
               {[
-                { label: 'Tokens',        value: formatTokens(totalTokens), icon: TrendingUp, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-500/10' },
-                { label: 'Est. cost',     value: formatCost(totalCost),     icon: TrendingUp, color: 'text-green-600',  bg: 'bg-green-50 dark:bg-green-500/10' },
-                { label: 'Active bots',   value: totalBots,                 icon: Bot,        color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-500/10' },
-                { label: 'Integrations',  value: totalIntegrations,         icon: Plug,       color: 'text-blue-600',   bg: 'bg-blue-50 dark:bg-blue-500/10' },
-                { label: 'Conversations', value: totalConversations,        icon: MessageSquare, color: 'text-[#15A4AE]', bg: 'bg-[#15A4AE]/10' },
+                { label: 'Tokens',        value: formatTokens(totalTokens), icon: TrendingUp,    color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-500/10' },
+                { label: 'Est. cost',     value: formatCost(totalCost),     icon: TrendingUp,    color: 'text-green-600',  bg: 'bg-green-50 dark:bg-green-500/10' },
+                { label: 'Active bots',   value: totalBots,                 icon: Bot,           color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-500/10' },
+                { label: 'Integrations',  value: totalIntegrations,         icon: Plug,          color: 'text-blue-600',   bg: 'bg-blue-50 dark:bg-blue-500/10' },
+                { label: 'Conversations', value: totalConversations,        icon: MessageSquare, color: 'text-[#15A4AE]',  bg: 'bg-[#15A4AE]/10' },
               ].map(s => (
                 <div key={s.label} className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-3 flex items-center gap-3">
                   <div className={`${s.bg} p-1.5 rounded-lg shrink-0`}>
@@ -150,23 +123,36 @@ export function BotsTabClient({
           </div>
         </div>
 
-        {/* Center: Bot cards */}
-        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          <div className="p-5">
-
-            {/* Page header */}
-            <div className="flex items-start justify-between mb-5">
-              <div>
-                <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">Bots</h1>
-                <p className="text-xs text-gray-400 mt-0.5">Configure AI agents and connect them to platforms</p>
-              </div>
-              <a
-                href="/bots/new"
-                className="flex items-center gap-1.5 px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
-              >
-                <Plus className="w-4 h-4" />New bot
-              </a>
+        {/* Center: dark bar + bot cards */}
+        <div className="flex-1 flex flex-col min-h-0 gap-3">
+          {/* Dark bar — aligned with sidebar dark headers */}
+          <div className="bg-[#141c2b] rounded-2xl px-3 py-2 flex items-center gap-3 shrink-0 shadow-lg">
+            <div className="relative w-[40%]">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search bots…"
+                className="pl-8 pr-3 h-8 w-full bg-white text-gray-800 placeholder-gray-400 rounded-xl text-xs focus:outline-none"
+              />
             </div>
+            <div className="ml-auto flex items-center gap-0.5">
+              {TABS.map(tab => (
+                <Link
+                  key={tab.key}
+                  href={`/bots?tab=${tab.key}`}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-colors whitespace-nowrap text-white ${
+                    tab.key === 'bots' ? 'bg-white/20' : 'hover:bg-white/10'
+                  }`}
+                >
+                  {tab.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+          {/* Scrollable cards */}
+          <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
             {showNewBotBanner && (
               <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded-xl text-sm text-green-700 dark:text-green-400">
@@ -265,13 +251,13 @@ export function BotsTabClient({
           </div>
         </div>
 
-        {/* Right: Recent conversations */}
-        <div className="w-[270px] shrink-0 border-l dark:border-white/8 flex flex-col bg-gray-50 dark:bg-[#191919] self-stretch">
-          <div className="px-4 py-3 border-b dark:border-white/8 flex items-center justify-between shrink-0">
-            <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Recent Convos</p>
-            <a href="/dashboard/bots" className="text-[10px] text-brand-600 dark:text-[#15A4AE] hover:underline">View all</a>
+        {/* Right: Recent conversations — floating card */}
+        <div className="w-[260px] shrink-0 flex flex-col rounded-2xl overflow-hidden shadow-lg border dark:border-white/8">
+          <div className="bg-[#141c2b] px-4 py-3 shrink-0 flex items-center justify-between">
+            <p className="text-[10px] font-semibold text-white/70 uppercase tracking-wider">Recent Convos</p>
+            <a href="/conversations" className="text-[10px] text-white/50 hover:text-white/80 transition-colors">View all</a>
           </div>
-          <div className="flex-1 overflow-y-auto divide-y dark:divide-white/5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-[#191919] divide-y dark:divide-white/5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {recentConversations.length === 0 ? (
               <p className="px-4 py-8 text-xs text-gray-400 text-center">No conversations yet.</p>
             ) : (
