@@ -72,22 +72,8 @@ export function BotsTabClient({
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      {/* ── Page header (above all 3 panels) ────────────────────────────── */}
-      <div className="flex items-center justify-between px-6 pt-5 pb-2 shrink-0">
-        <div>
-          <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">Bots</h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Configure AI agents and connect them to platforms</p>
-        </div>
-        <a
-          href="/bots/new"
-          className="flex items-center gap-1.5 px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
-        >
-          <Plus className="w-4 h-4" />New bot
-        </a>
-      </div>
-
       {/* ── 3-panel body ────────────────────────────────────────────────── */}
-      <div className="flex flex-1 overflow-hidden gap-3 px-3 py-3">
+      <div className="flex flex-1 overflow-hidden gap-3 px-3 pt-4 pb-3">
 
         {/* Left: Usage stats — floating card, full height */}
         <div className="w-[210px] shrink-0 flex flex-col rounded-2xl overflow-hidden shadow-lg border dark:border-white/8">
@@ -123,9 +109,22 @@ export function BotsTabClient({
           </div>
         </div>
 
-        {/* Center: dark bar + bot cards */}
-        <div className="flex-1 flex flex-col min-h-0 gap-3">
-          {/* Dark bar — aligned with sidebar dark headers */}
+        {/* Center: header + dark bar + bot cards */}
+        <div className="flex-1 flex flex-col min-h-0 gap-1.5">
+          {/* Page header — same width as dark bar */}
+          <div className="flex items-center justify-between shrink-0">
+            <div>
+              <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">Bots</h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Configure AI agents and connect them to platforms</p>
+            </div>
+            <a
+              href="/bots/new"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
+            >
+              <Plus className="w-4 h-4" />New bot
+            </a>
+          </div>
+          {/* Dark bar */}
           <div className="bg-[#141c2b] rounded-2xl px-3 py-2 flex items-center gap-3 shrink-0 shadow-lg">
             <div className="relative w-[40%]">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />

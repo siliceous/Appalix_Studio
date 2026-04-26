@@ -290,7 +290,7 @@ export default async function BotsPage({
   const darkBar = (
     <div className="px-8 shrink-0">
       <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between pt-5 pb-2">
+        <div className="flex items-center justify-between pt-4 pb-1">
           <div>
             <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">
               {TAB_META[activeTab]?.title ?? 'Bots'}
