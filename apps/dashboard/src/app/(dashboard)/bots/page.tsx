@@ -288,41 +288,41 @@ export default async function BotsPage({
 
   // Header + dark bar shared for non-bots tabs
   const darkBar = (
-    <>
-      <div className="flex items-center justify-between px-6 pt-3 pb-2 shrink-0">
-        <div>
-          <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-            {TAB_META[activeTab]?.title ?? 'Bots'}
-          </h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            {TAB_META[activeTab]?.subtitle ?? ''}
-          </p>
+    <div className="px-8 shrink-0">
+      <div className="max-w-5xl mx-auto">
+        <div className="flex items-center justify-between pt-5 pb-2">
+          <div>
+            <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+              {TAB_META[activeTab]?.title ?? 'Bots'}
+            </h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              {TAB_META[activeTab]?.subtitle ?? ''}
+            </p>
+          </div>
+          <a
+            href="/bots/new"
+            className="flex items-center gap-1.5 px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
+          >
+            <Plus className="w-4 h-4" />New bot
+          </a>
         </div>
-        <a
-          href="/bots/new"
-          className="flex items-center gap-1.5 px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
-        >
-          <Plus className="w-4 h-4" />New bot
-        </a>
-      </div>
-      <div className="bg-[#141c2b] mx-3 mb-2 rounded-2xl px-3 py-2 flex items-center gap-2 shrink-0 shadow-lg">
-        <div className="ml-auto flex items-center gap-0.5">
-          {TABS.map(tab => (
-            <Link
-              key={tab.key}
-              href={`/bots?tab=${tab.key}`}
-              className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-colors whitespace-nowrap ${
-                activeTab === tab.key
-                  ? 'bg-white/15 text-white'
-                  : 'text-white/60 hover:text-white hover:bg-white/8'
-              }`}
-            >
-              {tab.label}
-            </Link>
-          ))}
+        <div className="bg-[#141c2b] rounded-2xl px-3 py-2 flex items-center gap-2 mb-2 shadow-lg">
+          <div className="ml-auto flex items-center gap-0.5">
+            {TABS.map(tab => (
+              <Link
+                key={tab.key}
+                href={`/bots?tab=${tab.key}`}
+                className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-colors whitespace-nowrap text-white ${
+                  activeTab === tab.key ? 'bg-white/20' : 'hover:bg-white/10'
+                }`}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
-    </>
+    </div>
   )
 
   return (
