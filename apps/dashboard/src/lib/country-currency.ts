@@ -1,0 +1,33 @@
+export const COUNTRY_CURRENCY: Record<string, string> = {
+  AU: 'AUD',
+  US: 'USD',
+  GB: 'GBP',
+  NZ: 'NZD',
+  CA: 'CAD',
+  SG: 'SGD',
+  IN: 'INR',
+  DE: 'EUR',
+  FR: 'EUR',
+  ES: 'EUR',
+  IT: 'EUR',
+  NL: 'EUR',
+  BE: 'EUR',
+  AT: 'EUR',
+  PT: 'EUR',
+  IE: 'EUR',
+  FI: 'EUR',
+}
+
+export const SUPPORTED_COUNTRIES = [
+  { code: 'AU', name: 'Australia',      currency: 'AUD' },
+  { code: 'NZ', name: 'New Zealand',    currency: 'NZD' },
+  { code: 'US', name: 'United States',  currency: 'USD' },
+  { code: 'CA', name: 'Canada',         currency: 'CAD' },
+  { code: 'GB', name: 'United Kingdom', currency: 'GBP' },
+  { code: 'IE', name: 'Ireland',        currency: 'EUR' },
+  { code: 'DE', name: 'Germany',        currency: 'EUR' },
+  { code: 'FR', name: 'France',         currency: 'EUR' },
+  { code: 'NL', name: 'Netherlands',    currency: 'EUR' },
+  { code: 'SG', name: 'Singapore',      currency: 'SGD' },
+  { code: 'IN', name: 'India',          currency: 'INR' },
+]
