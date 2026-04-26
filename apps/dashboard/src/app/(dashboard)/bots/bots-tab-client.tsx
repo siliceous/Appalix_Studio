@@ -10,8 +10,8 @@ import { formatTokens, formatCost, timeAgo, PLATFORM_META } from '@/lib/utils'
 
 const TABS = [
   { key: 'bots',           label: 'Bots' },
-  { key: 'training',       label: 'Training' },
   { key: 'knowledge-base', label: 'Knowledge Base' },
+  { key: 'training',       label: 'Voice Training' },
   { key: 'phone-agents',   label: 'Phone Agents' },
 ]
 
@@ -71,9 +71,28 @@ export function BotsTabClient({
   }, [bots, search])
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-3 pt-4 pb-3 gap-1.5">
+
+      {/* ── Header row — aligned with center column only ─────────────── */}
+      <div className="flex gap-3 shrink-0">
+        <div className="w-[210px] shrink-0" />
+        <div className="flex-1 flex items-center justify-between">
+          <div>
+            <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">Bots</h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Configure AI agents and connect them to platforms</p>
+          </div>
+          <a
+            href="/bots/new"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
+          >
+            <Plus className="w-4 h-4" />New bot
+          </a>
+        </div>
+        <div className="w-[260px] shrink-0" />
+      </div>
+
       {/* ── 3-panel body ────────────────────────────────────────────────── */}
-      <div className="flex flex-1 overflow-hidden gap-3 px-3 pt-4 pb-3">
+      <div className="flex flex-1 overflow-hidden gap-3">
 
         {/* Left: Usage stats — floating card, full height */}
         <div className="w-[210px] shrink-0 flex flex-col rounded-2xl overflow-hidden shadow-lg border dark:border-white/8">
@@ -109,21 +128,8 @@ export function BotsTabClient({
           </div>
         </div>
 
-        {/* Center: header + dark bar + bot cards */}
+        {/* Center: dark bar + bot cards */}
         <div className="flex-1 flex flex-col min-h-0 gap-1.5">
-          {/* Page header — same width as dark bar */}
-          <div className="flex items-center justify-between shrink-0">
-            <div>
-              <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">Bots</h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Configure AI agents and connect them to platforms</p>
-            </div>
-            <a
-              href="/bots/new"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
-            >
-              <Plus className="w-4 h-4" />New bot
-            </a>
-          </div>
           {/* Dark bar */}
           <div className="bg-[#141c2b] rounded-2xl px-3 py-2 flex items-center gap-3 shrink-0 shadow-lg">
             <div className="relative w-[40%]">
@@ -227,11 +233,11 @@ export function BotsTabClient({
                               {bot.voice_preset}
                             </span>
                           )}
-                          {bot.voice_goal && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium">
-                              {bot.voice_goal.replace('_', ' ')}
+                          {bot.voice_goal && (Array.isArray(bot.voice_goal) ? bot.voice_goal : [bot.voice_goal]).map(g => (
+                            <span key={g} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium">
+                              {String(g).replace(/_/g, ' ')}
                             </span>
-                          )}
+                          ))}
                         </div>
                       ) : (
                         <span className="text-[10px] text-gray-400">Text only</span>

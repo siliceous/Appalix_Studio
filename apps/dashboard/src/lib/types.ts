@@ -182,10 +182,39 @@ export interface Bot {
   voice_mode:    VoiceMode
   voice_name:    string | null
   voice_preset:  VoicePreset | null
-  voice_goal:    VoiceGoal | null
+  voice_goal:    VoiceGoal[] | null
   voice_config:  VoiceConfig | null
   created_at: string
   updated_at: string
+}
+
+export interface WorkspacePhoneNumber {
+  id:                    string
+  workspace_id:          string
+  provider:              string
+  provider_number_id:    string | null
+  e164:                  string
+  country_code:          string
+  capabilities:          { sms: boolean; voice: boolean; mms?: boolean }
+  messaging_profile_id:  string | null
+  connection_id:         string | null
+  bot_id:                string | null
+  purchased_at:          string
+  released_at:           string | null
+  monthly_cost_override: number | null
+  metadata:              Record<string, unknown> | null
+  // Voice / call settings (migration 00154)
+  call_recording_enabled:         boolean
+  call_transcription_enabled:     boolean
+  auto_delete_recordings_enabled: boolean
+  recording_retention_days:       number | null
+  voicemail_enabled:              boolean
+  voicemail_greeting:             string | null
+  missed_call_textback_enabled:   boolean
+  missed_call_textback_message:   string | null
+  call_timeout_seconds:           number
+  created_at:            string
+  updated_at:            string
 }
 
 export interface VoiceAgent {
@@ -196,7 +225,7 @@ export interface VoiceAgent {
   phone_number: string | null
   bot_id:       string | null
   preset:       VoicePreset | null
-  goal:         VoiceGoal | null
+  goal:         VoiceGoal[] | null
   is_active:    boolean
   config:       VoiceConfig | null
   created_at:   string
@@ -204,18 +233,19 @@ export interface VoiceAgent {
 }
 
 export interface VoiceKnowledgeEntry {
-  id:             string
-  workspace_id:   string
-  bot_id:         string | null
-  voice_agent_id: string | null
-  category:       'faq' | 'objection' | 'booking' | 'escalation' | 'script' | 'compliance' | 'fallback' | 'greeting'
-  title:          string
-  content:        string
-  usage_type:     'auto' | 'manual' | 'always'
-  is_active:      boolean
-  sort_order:     number
-  created_at:     string
-  updated_at:     string
+  id:               string
+  workspace_id:     string
+  bot_id:           string | null
+  voice_agent_id:   string | null
+  category:         'faq' | 'objection' | 'booking' | 'escalation' | 'script' | 'compliance' | 'fallback' | 'greeting'
+  title:            string
+  trigger_phrases:  string[]
+  content:          string
+  usage_type:       'auto' | 'manual' | 'always'
+  is_active:        boolean
+  sort_order:       number
+  created_at:       string
+  updated_at:       string
 }
 
 export interface Conversation {

@@ -26,7 +26,6 @@ import {
   Palette,
   LayoutTemplate,
   GitBranch,
-  PhoneCall,
   CalendarDays,
   Wallet,
   ShieldCheck,
@@ -71,7 +70,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/bots',          label: 'Bots',         icon: Bot,      adminOnly: true },
       { href: '/integrations',  label: 'Integrations', icon: Plug,     adminOnly: true },
-      { href: '/phone/calls',   label: 'Call History', icon: PhoneCall, adminOnly: true },
+      { href: '/phone',          label: 'Phone Numbers', icon: Phone,     adminOnly: true },
       { href: '/settings/wallet',     label: 'Wallet',     icon: Wallet,      adminOnly: true },
       { href: '/settings/compliance', label: 'Compliance', icon: ShieldCheck, adminOnly: true },
     ],

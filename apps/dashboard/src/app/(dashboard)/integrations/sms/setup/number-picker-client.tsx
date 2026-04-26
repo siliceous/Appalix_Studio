@@ -278,7 +278,7 @@ export function NumberPickerClient({ existingNumbers, bots, isAdmin }: Props) {
                   </div>
                   <p className="text-xs text-gray-400">
                     {num.messaging_profile_id ? `SMS profile: ${num.messaging_profile_id.slice(0, 8)}…` : 'No SMS profile linked'}
-                    {num.purchased_at && ` · Added ${new Date(num.purchased_at).toLocaleDateString()}`}
+                    {num.purchased_at && ` · Added ${new Date(num.purchased_at).toLocaleDateString('en-AU')}`}
                   </p>
                   {bots.length > 0 && (
                     <div className="mt-2 flex items-center gap-2">
