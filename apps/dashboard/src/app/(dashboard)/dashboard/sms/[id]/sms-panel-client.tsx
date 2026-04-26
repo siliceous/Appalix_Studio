@@ -46,19 +46,6 @@ const STATUS_PILL: Record<string, string> = {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const AVATAR_COLORS = [
-  'bg-purple-500', 'bg-blue-500', 'bg-[#15A4AE]', 'bg-yellow-500',
-  'bg-red-500', 'bg-pink-500', 'bg-indigo-500', 'bg-orange-500',
-]
-function getAvatarColor(id: string) {
-  let hash = 0
-  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash)
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
-}
-function getInitials(name: string | null | undefined) {
-  if (!name) return '?'
-  return name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2)
-}
 function dayLabel(iso: string) {
   const d = new Date(iso)
   const today = new Date()
@@ -328,7 +315,7 @@ export function SmsPanelClient({
         <div key={msg.id} className={`flex flex-col gap-0.5 ${isBot ? 'items-end' : 'items-start'}`}>
           <span className="text-[10px] text-gray-400 px-1">
             {isBot
-              ? 'You'
+              ? (isBotPaused ? 'You' : (current.bots?.name ?? 'Bot'))
               : (current.ai_entities?.name ?? (current as any).platform_thread_id)
             }
           </span>
