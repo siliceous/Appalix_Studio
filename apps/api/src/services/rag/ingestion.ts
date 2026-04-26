@@ -310,7 +310,7 @@ async function fetchSourceContent(source: {
           if (ct.includes('spreadsheetml') || ct.includes('ms-excel') || source.url.match(/\.xlsx?$/i)) {
             const ExcelJS = (await import('exceljs')).default
             const workbook = new ExcelJS.Workbook()
-            await workbook.xlsx.load(await res.arrayBuffer() as unknown as Buffer)
+            await workbook.xlsx.load(await res.arrayBuffer() as any)
             const texts: string[] = []
             for (const worksheet of workbook.worksheets) {
               const rows: string[] = []
@@ -449,7 +449,7 @@ async function fetchSourceContent(source: {
       if (isExcel) {
         const ExcelJS = (await import('exceljs')).default
         const workbook = new ExcelJS.Workbook()
-        await workbook.xlsx.load(arrayBuffer as unknown as Buffer)
+        await workbook.xlsx.load(arrayBuffer as any)
         const texts: string[] = []
         for (const worksheet of workbook.worksheets) {
           const rows: string[] = []
