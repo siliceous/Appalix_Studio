@@ -71,7 +71,7 @@ export function BotsTabClient({
   }, [bots, search])
 
   return (
-    <div className="flex flex-col flex-1 h-full overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* ── Dark top bar ────────────────────────────────────────────────── */}
       <div className="bg-gray-900 px-3 py-2 flex items-center gap-2 shrink-0 border-b border-white/8">
         {/* Search */}

@@ -310,7 +310,7 @@ export default async function BotsPage({
   )
 
   return (
-    <div className="-m-8 flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col flex-1 overflow-hidden">
       <SageToolbar pageKey="bots" />
 
       {/* ── TAB 1: BOTS — 3-panel client layout ─────────────────────── */}
