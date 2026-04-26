@@ -308,12 +308,17 @@ async function fetchSourceContent(source: {
 
           // Excel (.xlsx / .xls) — convert sheets to CSV text
           if (ct.includes('spreadsheetml') || ct.includes('ms-excel') || source.url.match(/\.xlsx?$/i)) {
-            const { read, utils } = await import('xlsx')
-            const workbook = read(Buffer.from(await res.arrayBuffer()))
+            const ExcelJS = (await import('exceljs')).default
+            const workbook = new ExcelJS.Workbook()
+            await workbook.xlsx.load(await res.arrayBuffer() as unknown as Buffer)
             const texts: string[] = []
-            for (const sheetName of workbook.SheetNames) {
-              const csv = utils.sheet_to_csv(workbook.Sheets[sheetName] as never)
-              if (csv.trim()) texts.push(`## Sheet: ${sheetName}\n\n${csv}`)
+            for (const worksheet of workbook.worksheets) {
+              const rows: string[] = []
+              worksheet.eachRow({ includeEmpty: false }, (row) => {
+                const vals = (row.values as (unknown)[]).slice(1)
+                rows.push(vals.map(v => v == null ? '' : String(v)).join(','))
+              })
+              if (rows.length > 0) texts.push(`## Sheet: ${worksheet.name}\n\n${rows.join('\n')}`)
             }
             if (texts.length > 0) return texts.join('\n\n')
           }
@@ -442,12 +447,17 @@ async function fetchSourceContent(source: {
 
       // Excel (.xlsx / .xls) — convert each sheet to CSV text
       if (isExcel) {
-        const { read, utils } = await import('xlsx')
-        const workbook = read(Buffer.from(arrayBuffer))
+        const ExcelJS = (await import('exceljs')).default
+        const workbook = new ExcelJS.Workbook()
+        await workbook.xlsx.load(arrayBuffer as unknown as Buffer)
         const texts: string[] = []
-        for (const sheetName of workbook.SheetNames) {
-          const csv = utils.sheet_to_csv(workbook.Sheets[sheetName] as never)
-          if (csv.trim()) texts.push(`## Sheet: ${sheetName}\n\n${csv}`)
+        for (const worksheet of workbook.worksheets) {
+          const rows: string[] = []
+          worksheet.eachRow({ includeEmpty: false }, (row) => {
+            const vals = (row.values as (unknown)[]).slice(1)
+            rows.push(vals.map(v => v == null ? '' : String(v)).join(','))
+          })
+          if (rows.length > 0) texts.push(`## Sheet: ${worksheet.name}\n\n${rows.join('\n')}`)
         }
         return texts.join('\n\n') || 'Excel workbook contains no data.'
       }
