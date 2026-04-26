@@ -72,20 +72,6 @@ export default async function ConversationDetailPage({
   const prevId = idx > 0 ? allIds[idx - 1] : null
   const nextId = idx < allIds.length - 1 ? allIds[idx + 1] : null
 
-  // For SMS threads: fetch the contact to check for an auto-suggested name
-  type SmsContact = { id: string; name: string; phone: string } | null
-  let smsSuggestedContact: SmsContact = null
-  if (conversation.platform === 'sms' && (conversation as any).platform_thread_id) {
-    const { data: contactData } = await admin
-      .from('sage_contacts')
-      .select('id, name, phone')
-      .eq('workspace_id', workspaceId)
-      .eq('phone', (conversation as any).platform_thread_id)
-      .eq('name_source', 'sms_auto')
-      .maybeSingle()
-    if (contactData) smsSuggestedContact = contactData as SmsContact
-  }
-
   // Build team members list for assign dropdown
   type PRow = { user_id: string; first_name: string; last_name: string | null }
   type MRow = { user_id: string; role: WorkspaceMemberRole }
@@ -112,7 +98,6 @@ export default async function ConversationDetailPage({
           messages={messages}
           teamMembers={teamMembers}
           canAssign={canAssign}
-          smsSuggestedContact={smsSuggestedContact}
           prevId={prevId}
           nextId={nextId}
         />
