@@ -32,10 +32,12 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
   const code     = searchParams.get('code')
   const rawState = searchParams.get('state') ?? ''
-  const clientKey    = process.env.TIKTOK_CLIENT_KEY    ?? ''
   const clientSecret = process.env.TIKTOK_CLIENT_SECRET ?? ''
+  // Numeric App ID (e.g. 7627013716740522001) — required by the token exchange API
+  // Falls back to TIKTOK_CLIENT_KEY for legacy setups where the same value was used
+  const appId = process.env.TIKTOK_APP_ID ?? process.env.TIKTOK_CLIENT_KEY ?? ''
 
-  if (!clientKey || !clientSecret) return closeWithError('TikTok OAuth not configured on server')
+  if (!appId || !clientSecret) return closeWithError('TikTok OAuth not configured on server')
 
   if (searchParams.get('error') || !code) {
     return closeWithError(searchParams.get('error_description') ?? 'OAuth cancelled or denied')
@@ -60,7 +62,7 @@ export async function GET(req: NextRequest) {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({
-        app_id:     clientKey,
+        app_id:     appId,
         secret:     clientSecret,
         auth_code:  code,
       }),
