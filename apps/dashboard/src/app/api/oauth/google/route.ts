@@ -50,7 +50,12 @@ export async function GET(req: NextRequest) {
   url.searchParams.set('client_id',     clientId)
   url.searchParams.set('redirect_uri',  redirectUri)
   url.searchParams.set('response_type', 'code')
-  url.searchParams.set('scope',         'https://www.googleapis.com/auth/gmail.modify email profile')
+  url.searchParams.set('scope', [
+    'https://www.googleapis.com/auth/gmail.readonly',
+    'https://www.googleapis.com/auth/gmail.send',
+    'email',
+    'profile',
+  ].join(' '))
   url.searchParams.set('access_type',   'offline')
   url.searchParams.set('prompt',        'consent')
   url.searchParams.set('state',         state)

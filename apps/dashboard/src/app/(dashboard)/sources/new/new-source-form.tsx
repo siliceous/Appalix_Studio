@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { createSource } from '@/app/actions/source'
-import { Link2, FileText, AlignLeft, Upload, X, Lock, BookOpen, Cloud, HardDrive, Loader2, CheckCircle2, Search, FolderOpen } from 'lucide-react'
+import { Link2, FileText, AlignLeft, Upload, X, Lock, BookOpen, Cloud, HardDrive, Loader2, CheckCircle2, FolderOpen } from 'lucide-react'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { createClient } from '@/lib/supabase/client'
 
@@ -121,6 +121,7 @@ interface Props {
   allowedTypes:    SourceType[]
   gdriveConnected: boolean
   gdriveEmail:     string | null
+  initialType?:    SourceType
 }
 
 const inputCls = 'w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500'
@@ -152,9 +153,11 @@ function driveTypeBadge(mimeType: string): string {
   return 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-400'
 }
 
-export function NewSourceForm({ allowedTypes, gdriveConnected, gdriveEmail }: Props) {
+export function NewSourceForm({ allowedTypes, gdriveConnected, gdriveEmail, initialType }: Props) {
   const firstAllowed = allowedTypes[0] ?? 'url'
-  const [type, setType]             = useState<SourceType>(firstAllowed)
+  const [type, setType]             = useState<SourceType>(
+    initialType && allowedTypes.includes(initialType) ? initialType : firstAllowed
+  )
   const [tutorialUrl, setTutorialUrl] = useState<string | null>(null)
   const [fileName, setFileName]     = useState<string | null>(null)
   const [fileError, setFileError]   = useState<string | null>(null)
@@ -165,42 +168,82 @@ export function NewSourceForm({ allowedTypes, gdriveConnected, gdriveEmail }: Pr
   const fileRef  = useRef<HTMLInputElement>(null)
   const nameRef  = useRef<HTMLInputElement>(null)
 
-  // Google Drive file picker state
-  const [driveFiles, setDriveFiles]         = useState<DriveFile[] | null>(null)
-  const [driveLoading, setDriveLoading]     = useState(false)
-  const [drivePickerOpen, setDrivePickerOpen] = useState(false)
-  const [driveSearch, setDriveSearch]       = useState('')
-  const [driveUrl, setDriveUrl]             = useState('')
+  // Google Drive file picker state (uses Google Picker API with drive.file scope)
+  const [driveLoading, setDriveLoading]           = useState(false)
+  const [driveUrl, setDriveUrl]                   = useState('')
   const [selectedDriveFile, setSelectedDriveFile] = useState<DriveFile | null>(null)
-
-  async function loadDriveFiles() {
-    setDrivePickerOpen(true)
-    if (driveFiles !== null) return          // already loaded
-    setDriveLoading(true)
-    try {
-      const res  = await fetch('/api/google-drive/files')
-      const data = res.ok ? (await res.json() as { files: DriveFile[] }) : { files: [] }
-      setDriveFiles(data.files)
-    } catch {
-      setDriveFiles([])
-    }
-    setDriveLoading(false)
-  }
 
   function selectDriveFile(file: DriveFile) {
     setSelectedDriveFile(file)
     setDriveUrl(file.webViewLink)
-    setDrivePickerOpen(false)
-    setDriveSearch('')
-    // Auto-populate source name if still empty
     if (nameRef.current && !nameRef.current.value) {
       nameRef.current.value = file.name
     }
   }
 
-  const filteredDriveFiles = (driveFiles ?? []).filter(f =>
-    f.name.toLowerCase().includes(driveSearch.toLowerCase()),
-  )
+  async function openGooglePicker() {
+    setDriveLoading(true)
+    try {
+      const res = await fetch('/api/google-drive/token')
+      if (!res.ok) throw new Error('Drive not connected')
+      const { accessToken } = await res.json() as { accessToken: string }
+
+      await loadPickerScript()
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const google = (window as any).google
+      const view = new google.picker.DocsView()
+        .setIncludeFolders(false)
+        .setSelectFolderEnabled(false)
+
+      new google.picker.PickerBuilder()
+        .addView(view)
+        .setOAuthToken(accessToken)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .setCallback((data: any) => {
+          if (data.action === google.picker.Action.PICKED && data.docs?.[0]) {
+            const f = data.docs[0]
+            selectDriveFile({
+              id:           f.id,
+              name:         f.name,
+              mimeType:     f.mimeType,
+              webViewLink:  f.url,
+              modifiedTime: f.lastEditedUtc
+                ? new Date(f.lastEditedUtc).toISOString()
+                : new Date().toISOString(),
+            })
+          }
+        })
+        .build()
+        .setVisible(true)
+    } catch (err) {
+      console.error('[openGooglePicker]', err)
+    } finally {
+      setDriveLoading(false)
+    }
+  }
+
+  function loadPickerScript(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((window as any).google?.picker) { resolve(); return }
+      const existing = document.querySelector('script[src="https://apis.google.com/js/api.js"]')
+      if (existing) {
+        // script loaded but picker not ready yet — wait for gapi
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(window as any).gapi.load('picker', () => resolve())
+        return
+      }
+      const s = document.createElement('script')
+      s.src = 'https://apis.google.com/js/api.js'
+      s.onload = () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(window as any).gapi.load('picker', () => resolve())
+      }
+      s.onerror = () => reject(new Error('Failed to load Google API script'))
+      document.head.appendChild(s)
+    })
+  }
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -518,70 +561,21 @@ export function NewSourceForm({ allowedTypes, gdriveConnected, gdriveEmail }: Pr
                   </a>
                 </div>
 
-                {/* Browse button */}
+                {/* Google Picker button */}
                 <button
                   type="button"
-                  onClick={loadDriveFiles}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-gray-300 dark:border-white/20 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                  onClick={openGooglePicker}
+                  disabled={driveLoading}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-gray-300 dark:border-white/20 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors disabled:opacity-60"
                 >
-                  <FolderOpen className="w-4 h-4 text-gray-400" />
-                  Browse Google Drive
+                  {driveLoading
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Opening picker…</>
+                    : <><FolderOpen className="w-4 h-4 text-gray-400" /> Browse Google Drive</>
+                  }
                 </button>
 
-                {/* Inline file picker */}
-                {drivePickerOpen && (
-                  <div className="rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden">
-                    {/* Search bar */}
-                    <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5">
-                      <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                      <input
-                        type="text"
-                        value={driveSearch}
-                        onChange={e => setDriveSearch(e.target.value)}
-                        placeholder="Search files…"
-                        className="flex-1 bg-transparent text-sm text-gray-800 dark:text-gray-200 placeholder:text-gray-400 outline-none"
-                        autoFocus
-                      />
-                      <button type="button" onClick={() => setDrivePickerOpen(false)} className="text-gray-400 hover:text-gray-600 shrink-0">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    {/* File list */}
-                    <div className="max-h-60 overflow-y-auto divide-y divide-gray-100 dark:divide-white/5">
-                      {driveLoading ? (
-                        <div className="flex items-center justify-center gap-2 py-8 text-sm text-gray-400">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Loading files…
-                        </div>
-                      ) : filteredDriveFiles.length === 0 ? (
-                        <p className="py-8 text-center text-sm text-gray-400">
-                          {driveSearch ? 'No files match your search.' : 'No files found in your Drive.'}
-                        </p>
-                      ) : (
-                        filteredDriveFiles.map(file => (
-                          <button
-                            key={file.id}
-                            type="button"
-                            onClick={() => selectDriveFile(file)}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
-                          >
-                            <span className={`shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded ${driveTypeBadge(file.mimeType)}`}>
-                              {driveTypeLabel(file.mimeType)}
-                            </span>
-                            <span className="flex-1 text-sm text-gray-800 dark:text-gray-200 truncate">{file.name}</span>
-                            <span className="shrink-0 text-xs text-gray-400">
-                              {new Date(file.modifiedTime).toLocaleDateString()}
-                            </span>
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
-
                 {/* Selected file indicator */}
-                {selectedDriveFile && !drivePickerOpen && (
+                {selectedDriveFile && (
                   <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-50 dark:bg-[#15A4AE]/10 border border-brand-200 dark:border-[#15A4AE]/30">
                     <span className={`shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded ${driveTypeBadge(selectedDriveFile.mimeType)}`}>
                       {driveTypeLabel(selectedDriveFile.mimeType)}

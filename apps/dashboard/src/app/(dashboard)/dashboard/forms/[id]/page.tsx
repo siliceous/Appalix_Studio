@@ -137,7 +137,7 @@ export default async function SubmissionDetailPage({
   }
 
   return (
-    <div className="-m-8 flex flex-col h-screen overflow-hidden">
+    <>
       <SageToolbar pageKey="forms" preset="all" autoEnabled={autoSettings.forms_auto_enabled} />
       <div className="flex-1 overflow-hidden flex">
         <SubmissionPanelClient
@@ -151,6 +151,6 @@ export default async function SubmissionDetailPage({
           nextId={nextId}
         />
       </div>
-    </div>
+    </>
   )
 }

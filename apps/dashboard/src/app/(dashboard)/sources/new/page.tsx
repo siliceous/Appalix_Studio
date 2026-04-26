@@ -15,7 +15,12 @@ const PLAN_ALLOWED: Record<string, SourceType[]> = {
   enterprise: ['url', 'text', 'file', 'excel', 'csv', 'notion', 'gitbook', 'google_drive', 'dropbox', 'onedrive', 'sharepoint'],
 }
 
-export default async function NewSourcePage() {
+export default async function NewSourcePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string }>
+}) {
+  const { type: typeParam } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -67,6 +72,7 @@ export default async function NewSourcePage() {
         allowedTypes={allowedTypes}
         gdriveConnected={gdriveConnected}
         gdriveEmail={gdriveEmail}
+        initialType={typeParam as SourceType | undefined}
       />
     </div>
   )

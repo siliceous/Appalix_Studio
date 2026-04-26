@@ -3,8 +3,8 @@ import { createClient }              from '@/lib/supabase/server'
 
 /**
  * Initiates Google Drive OAuth2 flow.
- * Requests drive.readonly scope so Appalix can read files the user
- * selects for indexing into the knowledge base.
+ * Requests drive.file scope (non-sensitive) so Appalix can read files
+ * the user explicitly selects via Google Picker for knowledge-base indexing.
  * Separate from /api/oauth/google (Gmail) — different scopes.
  */
 export async function GET(req: NextRequest) {
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
   url.searchParams.set('redirect_uri',  redirectUri)
   url.searchParams.set('response_type', 'code')
   url.searchParams.set('scope', [
-    'https://www.googleapis.com/auth/drive.readonly',
+    'https://www.googleapis.com/auth/drive.file',
     'email',
     'profile',
   ].join(' '))

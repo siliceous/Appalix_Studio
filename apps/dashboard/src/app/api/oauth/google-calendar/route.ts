@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
   url.searchParams.set('redirect_uri',  redirectUri)
   url.searchParams.set('response_type', 'code')
   url.searchParams.set('scope', [
-    'https://www.googleapis.com/auth/calendar',
+    'https://www.googleapis.com/auth/calendar.events',
     'https://www.googleapis.com/auth/calendar.freebusy',
     'email',
     'profile',

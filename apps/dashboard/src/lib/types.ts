@@ -1282,3 +1282,74 @@ export interface SageDocument {
   company?: { id: string; name: string } | null
   project?: { id: string; name: string } | null
 }
+
+// ── Compliance ────────────────────────────────────────────────────────────────
+
+export type ComplianceBrandStatus    = 'draft' | 'submitted' | 'pending' | 'approved' | 'rejected'
+export type ComplianceCampaignStatus = 'draft' | 'submitted' | 'pending' | 'approved' | 'rejected'
+export type ComplianceRegStatus      = 'not_started' | 'pending' | 'active' | 'rejected'
+
+export interface ComplianceBrandProfile {
+  id:               string
+  workspace_id:     string
+  status:           ComplianceBrandStatus
+  legal_name:       string | null
+  ein:              string | null
+  company_type:     string | null
+  vertical:         string | null
+  website_url:      string | null
+  street:           string | null
+  city:             string | null
+  state:            string | null
+  postal_code:      string | null
+  country:          string
+  contact_first:    string | null
+  contact_last:     string | null
+  contact_email:    string | null
+  contact_phone:    string | null
+  stock_symbol:     string | null
+  stock_exchange:   string | null
+  telnyx_brand_id:  string | null
+  rejection_reason: string | null
+  submitted_at:     string | null
+  reviewed_at:      string | null
+  created_at:       string
+  updated_at:       string
+}
+
+export interface ComplianceCampaign {
+  id:                  string
+  workspace_id:        string
+  brand_profile_id:    string | null
+  name:                string | null
+  status:              ComplianceCampaignStatus
+  use_case:            string | null
+  description:         string | null
+  sample_message_1:    string | null
+  sample_message_2:    string | null
+  opt_in_description:  string | null
+  opt_out_keywords:    string | null
+  help_message:        string | null
+  embedded_links:      boolean
+  embedded_phone:      boolean
+  affiliate_marketing: boolean
+  age_gated:           boolean
+  telnyx_campaign_id:  string | null
+  rejection_reason:    string | null
+  submitted_at:        string | null
+  reviewed_at:         string | null
+  created_at:          string
+  updated_at:          string
+}
+
+export interface ComplianceRegistration {
+  id:           string
+  workspace_id: string
+  type:         string
+  status:       ComplianceRegStatus
+  data:         Record<string, unknown>
+  provider_id:  string | null
+  submitted_at: string | null
+  created_at:   string
+  updated_at:   string
+}

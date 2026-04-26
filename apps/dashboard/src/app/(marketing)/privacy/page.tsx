@@ -3,10 +3,10 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy — Appalix',
-  description: 'Appalix Privacy Policy. Learn how we collect, use, and protect your personal data including Gmail and Microsoft email access.',
+  description: 'Appalix Privacy Policy. Learn how we collect, use, and protect your personal data including Gmail, Google Calendar, Google Forms, Google Drive, and Microsoft email access.',
 }
 
-const LAST_UPDATED = 'March 2026'
+const LAST_UPDATED = 'April 2026'
 
 export default function PrivacyPage() {
   return (
@@ -110,6 +110,57 @@ export default function PrivacyPage() {
               </p>
             </SubSection>
 
+            <SubSection title="Google Forms access">
+              <p>
+                Appalix offers an optional Google Forms integration that captures form responses as
+                sales leads. When you connect Google Forms, we request:
+              </p>
+              <ul className="mt-3 space-y-2 list-disc list-inside text-white/65">
+                <li><strong className="text-white/90">Forms (read-only):</strong> <code className="text-brand-400 text-xs">https://www.googleapis.com/auth/forms.body.readonly</code> — read form structure and questions</li>
+                <li><strong className="text-white/90">Forms responses (read-only):</strong> <code className="text-brand-400 text-xs">https://www.googleapis.com/auth/forms.responses.readonly</code> — read submitted responses</li>
+                <li><strong className="text-white/90">Drive metadata (read-only):</strong> <code className="text-brand-400 text-xs">https://www.googleapis.com/auth/drive.metadata.readonly</code> — list your Google Forms files so you can select which form to connect</li>
+              </ul>
+              <p className="mt-4 p-4 rounded-xl bg-brand-600/10 border border-brand-600/20 text-sm">
+                <strong className="text-white">How we use your Forms data:</strong> Appalix reads
+                form responses from the specific form you choose to connect. Response data is used
+                to create and enrich lead records in your Appalix workspace. We do not write to,
+                modify, or delete your forms or responses. We do not share form response data with
+                third parties or use it for advertising.
+              </p>
+              <p className="mt-3">
+                You can revoke access at any time via{' '}
+                <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" className="text-brand-400 hover:text-brand-300">
+                  Google Account Permissions
+                </a>
+                . Revoking access removes all stored tokens immediately.
+              </p>
+            </SubSection>
+
+            <SubSection title="Google Calendar access">
+              <p>
+                Appalix offers an optional Google Calendar integration that displays your calendar
+                events alongside your sales pipeline. When you connect Google Calendar, we request:
+              </p>
+              <ul className="mt-3 space-y-2 list-disc list-inside text-white/65">
+                <li><strong className="text-white/90">Calendar events:</strong> <code className="text-brand-400 text-xs">https://www.googleapis.com/auth/calendar.events</code> — read and create calendar events</li>
+                <li><strong className="text-white/90">Free/busy:</strong> <code className="text-brand-400 text-xs">https://www.googleapis.com/auth/calendar.freebusy</code> — check availability for scheduling</li>
+              </ul>
+              <p className="mt-4 p-4 rounded-xl bg-brand-600/10 border border-brand-600/20 text-sm">
+                <strong className="text-white">How we use your Calendar data:</strong> Appalix reads
+                your calendar events to display them in the Appalix calendar view and checks
+                availability to assist with scheduling meetings. Events may be created on your
+                behalf when you use the scheduling features. We do not share calendar data with
+                third parties or use it for advertising.
+              </p>
+              <p className="mt-3">
+                You can revoke access at any time via{' '}
+                <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" className="text-brand-400 hover:text-brand-300">
+                  Google Account Permissions
+                </a>
+                . Revoking access removes all stored tokens immediately.
+              </p>
+            </SubSection>
+
             <SubSection title="Usage data">
               We collect standard server logs including IP addresses, browser type, pages visited,
               and timestamps for security monitoring and service improvement. We do not use this
@@ -132,6 +183,8 @@ export default function PrivacyPage() {
               <li>To read, triage, and display emails in your Appalix inbox (only when you have connected an email account)</li>
               <li>To generate AI-powered email replies and lead prioritisation using your email content</li>
               <li>To send emails on your behalf when you use the reply feature</li>
+              <li>To read Google Form responses and create lead records from them (only when you have connected a Google Form)</li>
+              <li>To display Google Calendar events and create calendar entries on your behalf (only when you have connected Google Calendar)</li>
               <li>To send transactional emails (invite links, password resets) via Resend</li>
               <li>To enforce seat limits, billing, and plan restrictions</li>
               <li>To detect and prevent fraud and abuse</li>
@@ -150,25 +203,74 @@ export default function PrivacyPage() {
 
           <Divider />
 
-          {/* 3. Data sharing */}
-          <Section title="3. Data sharing and third parties">
-            <p>We do not sell your personal data. We share data only with the following categories of service providers, strictly for operating the platform:</p>
-            <ul className="mt-4 space-y-3 list-disc list-inside text-white/65">
-              <li><strong className="text-white/90">Supabase</strong> — database and authentication infrastructure</li>
-              <li><strong className="text-white/90">Anthropic (Claude)</strong> — AI model inference for email triage and reply suggestions. Email content sent to Claude is subject to Anthropic&apos;s data processing agreement and is not used to train models</li>
-              <li><strong className="text-white/90">Resend</strong> — transactional email delivery (invite links, notifications)</li>
-              <li><strong className="text-white/90">Vercel</strong> — hosting and edge infrastructure</li>
-            </ul>
-            <p className="mt-4">
-              We do not share email content or personal data with any advertising networks,
-              analytics brokers, or data resellers.
+          {/* 3. AI processing */}
+          <Section title="3. Artificial intelligence and machine learning processing">
+            <p>
+              Appalix uses AI models to power features including email triage, reply drafting, lead
+              scoring, conversation summaries, and AI-assisted responses in chat widgets. When you
+              use these features, relevant data (such as email content, conversation messages, or
+              form responses) is sent to our AI provider to generate a response.
+            </p>
+
+            <div className="mt-5 p-5 rounded-xl bg-brand-600/10 border border-brand-600/20 space-y-3 text-sm">
+              <p>
+                <strong className="text-white">AI provider:</strong> We use{' '}
+                <strong className="text-white/90">Anthropic (Claude)</strong> as our AI model provider.
+                Data sent to Anthropic is processed solely to generate the response you requested.
+              </p>
+              <p>
+                <strong className="text-white">Your data is never used to train AI models.</strong>{' '}
+                Neither Appalix nor Anthropic uses your personal data, email content, conversation
+                history, form responses, or any other user-provided content to train, fine-tune, or
+                improve AI models. This applies to all data from all connected integrations, including
+                Gmail, Google Drive, Google Forms, and Google Calendar.
+              </p>
+              <p>
+                <strong className="text-white">Minimum necessary data:</strong> We send only the
+                minimum data required to generate a useful AI response. For example, when suggesting
+                an email reply, only the relevant email thread is sent — not your entire inbox.
+              </p>
+              <p>
+                <strong className="text-white">No AI-based autonomous decisions:</strong> AI outputs
+                are presented as suggestions or summaries for your review. No automated decision with
+                legal or significant effect is made solely by AI without human review.
+              </p>
+            </div>
+
+            <p className="mt-4 text-sm text-white/65">
+              For details on how Anthropic handles data, see the{' '}
+              <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener noreferrer" className="text-brand-400 hover:text-brand-300">
+                Anthropic Privacy Policy
+              </a>
+              {' '}and their{' '}
+              <a href="https://www.anthropic.com/legal/data-privacy" target="_blank" rel="noopener noreferrer" className="text-brand-400 hover:text-brand-300">
+                Data Privacy commitments
+              </a>.
             </p>
           </Section>
 
           <Divider />
 
-          {/* 4. Data retention */}
-          <Section title="4. Data retention and deletion">
+          {/* 5. Data sharing */}
+          <Section title="5. Data sharing and third parties">
+            <p>We do not sell your personal data. We share data only with the following categories of service providers, strictly for operating the platform:</p>
+            <ul className="mt-4 space-y-3 list-disc list-inside text-white/65">
+              <li><strong className="text-white/90">Supabase</strong> — database and authentication infrastructure</li>
+              <li><strong className="text-white/90">Anthropic (Claude)</strong> — AI model inference for features including email triage, reply drafting, lead scoring, and conversation summaries. User data sent to Anthropic is never used to train AI models. See Section 3 for full AI processing details.</li>
+              <li><strong className="text-white/90">Stripe</strong> — payment processing for subscription billing. We do not store card details.</li>
+              <li><strong className="text-white/90">Resend</strong> — transactional email delivery (invite links, notifications)</li>
+              <li><strong className="text-white/90">Vercel</strong> — hosting and edge infrastructure</li>
+            </ul>
+            <p className="mt-4">
+              We do not share your personal data, email content, calendar data, or form responses
+              with any advertising networks, analytics brokers, or data resellers.
+            </p>
+          </Section>
+
+          <Divider />
+
+          {/* 6. Data retention */}
+          <Section title="6. Data retention and deletion">
             <p>
               We retain your account data for as long as your account is active or as needed to
               provide services. When you delete your account:
@@ -188,8 +290,8 @@ export default function PrivacyPage() {
 
           <Divider />
 
-          {/* 5. Security */}
-          <Section title="5. Security">
+          {/* 7. Security */}
+          <Section title="7. Security">
             <p>
               We protect your data using industry-standard measures including TLS 1.2+ encryption
               in transit, encryption at rest, row-level security policies on all database tables,
@@ -210,8 +312,8 @@ export default function PrivacyPage() {
 
           <Divider />
 
-          {/* 6. GDPR */}
-          <Section title="6. Your rights (GDPR)">
+          {/* 8. GDPR */}
+          <Section title="8. Your rights (GDPR)">
             <p>
               If you are located in the European Economic Area (EEA) or UK, you have the following
               rights regarding your personal data:
@@ -234,8 +336,8 @@ export default function PrivacyPage() {
 
           <Divider />
 
-          {/* 7. Cookies */}
-          <Section title="7. Cookies">
+          {/* 9. Cookies */}
+          <Section title="9. Cookies">
             <p>
               Appalix uses only essential session cookies required for authentication. We do not
               use advertising cookies, tracking pixels, or third-party analytics cookies. No cookie
@@ -245,8 +347,8 @@ export default function PrivacyPage() {
 
           <Divider />
 
-          {/* 8. Changes */}
-          <Section title="8. Changes to this policy">
+          {/* 10. Changes */}
+          <Section title="10. Changes to this policy">
             <p>
               We may update this Privacy Policy from time to time. We will notify users of material
               changes by email or by displaying a notice in the dashboard. Continued use of the
@@ -256,8 +358,8 @@ export default function PrivacyPage() {
 
           <Divider />
 
-          {/* 9. Contact */}
-          <Section title="9. Contact">
+          {/* 11. Contact */}
+          <Section title="11. Contact">
             <p>
               For privacy questions, data requests, or to report a concern:
             </p>
