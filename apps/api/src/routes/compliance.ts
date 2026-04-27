@@ -51,13 +51,13 @@ export async function complianceRoutes(fastify: FastifyInstance) {
           .eq('compliance_profile_id', profile['id'])
           .order('created_at', { ascending: false })
           .limit(1)
-          .maybeSingle() as Promise<{ data: Record<string, unknown> | null }>,
+          .maybeSingle() as unknown as Promise<{ data: Record<string, unknown> | null }>,
         supabase
           .from('sms_10dlc_campaigns' as never)
           .select('id, campaign_name, use_case, campaign_status, rejection_reason, submitted_at, approved_at, campaign_description, message_flow, sample_message_1, sample_message_2, sample_message_3, opt_in_message, opt_out_message, help_message, has_embedded_links, has_embedded_phone_numbers, age_gated_content')
           .eq('workspace_id', workspaceId)
           .eq('compliance_profile_id', profile['id'])
-          .order('created_at', { ascending: false }) as Promise<{ data: Record<string, unknown>[] | null }>,
+          .order('created_at', { ascending: false }) as unknown as Promise<{ data: Record<string, unknown>[] | null }>,
       ])
 
       return reply.send({
@@ -283,13 +283,13 @@ export async function complianceRoutes(fastify: FastifyInstance) {
           .from('sms_compliance_profiles' as never)
           .select('id, status, country_code, compliance_type, legal_business_name, submitted_at, approved_at, rejection_reason')
           .eq('workspace_id', workspaceId)
-          .maybeSingle() as Promise<{ data: Record<string, unknown> | null }>,
+          .maybeSingle() as unknown as Promise<{ data: Record<string, unknown> | null }>,
         supabase
           .from('sms_compliance_status_events' as never)
           .select('entity_type, old_status, new_status, reason, actor_type, created_at')
           .eq('workspace_id', workspaceId)
           .order('created_at', { ascending: false })
-          .limit(5) as Promise<{ data: Record<string, unknown>[] | null }>,
+          .limit(5) as unknown as Promise<{ data: Record<string, unknown>[] | null }>,
       ])
 
       return reply.send({ profile, recentEvents: events ?? [] })

@@ -13,13 +13,13 @@ export async function isOptedOut(workspaceId: string, phoneE164: string): Promis
       .eq('workspace_id', workspaceId)
       .eq('phone_e164', phoneE164)
       .eq('channel', 'sms')
-      .maybeSingle() as Promise<{ data: { id: string } | null }>,
+      .maybeSingle() as unknown as Promise<{ data: { id: string } | null }>,
     supabase
       .from('sage_contacts')
       .select('sms_opt_out')
       .eq('workspace_id', workspaceId)
       .eq('phone', phoneE164)
-      .maybeSingle() as Promise<{ data: { sms_opt_out: boolean } | null }>,
+      .maybeSingle() as unknown as Promise<{ data: { sms_opt_out: boolean } | null }>,
   ])
 
   return optOutRow !== null || contact?.sms_opt_out === true
