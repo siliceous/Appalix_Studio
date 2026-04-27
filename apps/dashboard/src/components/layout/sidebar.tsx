@@ -71,6 +71,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/bots',          label: 'Bots',         icon: Bot,      adminOnly: true },
       { href: '/integrations',  label: 'Integrations', icon: Plug,     adminOnly: true },
       { href: '/phone',          label: 'Phone Numbers', icon: Phone,     adminOnly: true },
+      { href: '/settings/billing',    label: 'Billing',    icon: Receipt,     adminOnly: true },
       { href: '/settings/wallet',     label: 'Wallet',     icon: Wallet,      adminOnly: true },
       { href: '/settings/compliance', label: 'Compliance', icon: ShieldCheck, adminOnly: true },
     ],

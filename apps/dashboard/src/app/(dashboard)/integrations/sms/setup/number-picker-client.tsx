@@ -49,9 +49,11 @@ export function NumberPickerClient({ existingNumbers, bots, isAdmin }: Props) {
   const [balance, setBalance]               = useState<{ balance: string; currency: string } | null>(null)
 
   useEffect(() => {
-    fetch('/api/telnyx/balance')
-      .then(r => r.json() as Promise<{ balance?: string; currency?: string }>)
-      .then(d => { if (d.balance) setBalance({ balance: d.balance, currency: d.currency ?? 'USD' }) })
+    fetch('/api/wallet/balance')
+      .then(r => r.json() as Promise<{ balance?: number; currency?: string }>)
+      .then(d => {
+        if (d.balance !== undefined) setBalance({ balance: String(d.balance), currency: d.currency ?? 'AUD' })
+      })
       .catch(() => {/* silent */})
   }, [])
 
