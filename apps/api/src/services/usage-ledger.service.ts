@@ -177,7 +177,7 @@ export async function recordPhoneNumberMonth(params: {
     getProviderRate('telnyx', 'phone_number_month', params.occurredAt),
   ])
 
-  const { error } = await supabase.from('usage_events' as never).insert({
+  const { data: usageRow, error } = await supabase.from('usage_events' as never).insert({
     workspace_id:        params.workspaceId,
     source_table:        'workspace_phone_numbers',
     source_id:           params.phoneNumberId,
@@ -193,7 +193,87 @@ export async function recordPhoneNumberMonth(params: {
     currency,
     rating_status:       sellRate > 0 ? 'rated' : 'unrated',
     meta: { e164: params.e164 },
-  })
+  }).select('id').single() as { data: { id: string } | null; error: { message: string } | null }
 
-  if (error) console.error('[usage-ledger] recordPhoneNumberMonth:', error.message)
+  if (error) { console.error('[usage-ledger] recordPhoneNumberMonth:', error.message); return }
+
+  if (sellRate > 0) {
+    void walletDeduct({
+      workspaceId:   params.workspaceId,
+      amount:        sellRate,
+      type:          'usage_deduction',
+      description:   `Phone number rental — ${params.e164}`,
+      referenceId:   usageRow?.id,
+      referenceType: 'usage_event',
+      allowNegative: false, // don't renew a number if wallet is empty
+    }).catch(err => console.error('[usage-ledger] phone number wallet deduct failed:', err))
+  }
+}
+
+// Billable minutes = ceil(seconds / 60), minimum 1 minute
+function billableMinutes(durationSeconds: number): number {
+  return Math.max(1, Math.ceil(durationSeconds / 60))
+}
+
+export async function recordVoiceCall(params: {
+  workspaceId:     string
+  callSessionId:   string   // call_sessions.id
+  durationSeconds: number
+  direction:       'inbound' | 'outbound'
+  isAiCall?:       boolean   // true when a voice_agent handled the call → ai_stream rate
+  occurredAt:      Date
+  currency?:       string
+}) {
+  if (params.durationSeconds <= 0) return
+
+  const currency  = params.currency ?? 'AUD'
+  const usageType = params.isAiCall
+    ? 'voice_ai_stream_minute' as const
+    : params.direction === 'inbound'
+      ? 'voice_inbound_minute' as const
+      : 'voice_outbound_minute' as const
+  const minutes   = billableMinutes(params.durationSeconds)
+
+  const [sellRate, providerRate] = await Promise.all([
+    getWorkspaceRate(params.workspaceId, usageType, params.occurredAt),
+    getProviderRate('telnyx', usageType, params.occurredAt),
+  ])
+
+  const sellTotal = sellRate * minutes
+
+  const { data: usageRow, error } = await supabase.from('usage_events' as never).insert({
+    workspace_id:        params.workspaceId,
+    source_table:        'call_sessions',
+    source_id:           params.callSessionId,
+    provider:            'telnyx',
+    usage_type:          usageType,
+    quantity:            minutes,
+    unit:                'minute',
+    occurred_at:         params.occurredAt.toISOString(),
+    provider_unit_cost:  providerRate,
+    provider_cost_total: providerRate * minutes,
+    sell_unit_price:     sellRate,
+    sell_total:          sellTotal,
+    currency,
+    rating_status:       sellRate > 0 ? 'rated' : 'unrated',
+    meta: {
+      duration_seconds: params.durationSeconds,
+      direction:        params.direction,
+      ai_call:          params.isAiCall ?? false,
+    },
+  }).select('id').single() as { data: { id: string } | null; error: { message: string } | null }
+
+  if (error) { console.error('[usage-ledger] recordVoiceCall:', error.message); return }
+
+  if (sellTotal > 0) {
+    void walletDeduct({
+      workspaceId:   params.workspaceId,
+      amount:        sellTotal,
+      type:          'usage_deduction',
+      description:   `Voice call (${params.isAiCall ? 'AI agent' : params.direction}) — ${minutes} min`,
+      referenceId:   usageRow?.id,
+      referenceType: 'usage_event',
+      allowNegative: true, // allow slight negative; alert separately
+    }).catch(err => console.error('[usage-ledger] voice wallet deduct failed:', err))
+  }
 }

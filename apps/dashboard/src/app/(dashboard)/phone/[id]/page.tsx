@@ -465,10 +465,8 @@ export default async function PhoneNumberDetailPage({
                   {[
                     { label: 'E.164 number',      value: num.e164 },
                     { label: 'Country',            value: `${toFlag(num.country_code)} ${COUNTRY_NAMES[num.country_code] ?? num.country_code}` },
-                    { label: 'Provider',           value: num.provider },
                     { label: 'Purchased',          value: new Date(num.purchased_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }) },
                     { label: 'Capabilities',       value: [num.capabilities?.sms && 'SMS', num.capabilities?.voice && 'Voice', num.capabilities?.mms && 'MMS'].filter(Boolean).join(' · ') || '—' },
-                    { label: 'Messaging profile',  value: num.messaging_profile_id ?? '—' },
                   ].map(row => (
                     <div key={row.label}>
                       <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">{row.label}</p>

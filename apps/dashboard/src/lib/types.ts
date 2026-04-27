@@ -1283,63 +1283,98 @@ export interface SageDocument {
   project?: { id: string; name: string } | null
 }
 
-// ── Compliance ────────────────────────────────────────────────────────────────
+// ── Compliance v2 ─────────────────────────────────────────────────────────────
 
-export type ComplianceBrandStatus    = 'draft' | 'submitted' | 'pending' | 'approved' | 'rejected'
-export type ComplianceCampaignStatus = 'draft' | 'submitted' | 'pending' | 'approved' | 'rejected'
-export type ComplianceRegStatus      = 'not_started' | 'pending' | 'active' | 'rejected'
+export type SmsProfileStatus   = 'draft' | 'ready_for_review' | 'submitted' | 'pending_carrier_review' | 'approved' | 'rejected' | 'suspended' | 'expired'
+export type SmsBrandStatus     = 'not_submitted' | 'submitted' | 'pending' | 'approved' | 'rejected' | 'suspended'
+export type SmsCampaignStatus  = 'draft' | 'ready_for_review' | 'submitted' | 'pending_carrier_review' | 'approved' | 'rejected' | 'suspended' | 'expired'
+export type ComplianceRegStatus = 'not_started' | 'pending' | 'active' | 'rejected'
 
-export interface ComplianceBrandProfile {
-  id:               string
-  workspace_id:     string
-  status:           ComplianceBrandStatus
-  legal_name:       string | null
-  ein:              string | null
-  company_type:     string | null
-  vertical:         string | null
-  website_url:      string | null
-  street:           string | null
-  city:             string | null
-  state:            string | null
-  postal_code:      string | null
-  country:          string
-  contact_first:    string | null
-  contact_last:     string | null
-  contact_email:    string | null
-  contact_phone:    string | null
-  stock_symbol:     string | null
-  stock_exchange:   string | null
-  telnyx_brand_id:  string | null
-  rejection_reason: string | null
-  submitted_at:     string | null
-  reviewed_at:      string | null
-  created_at:       string
-  updated_at:       string
+export interface SmsComplianceProfile {
+  id:                           string
+  workspace_id:                 string
+  country_code:                 string
+  compliance_type:              string
+  status:                       SmsProfileStatus
+  legal_business_name:          string | null
+  trading_name:                 string | null
+  business_type:                string | null
+  business_registration_number: string | null
+  tax_id_country:               string | null
+  business_address_line1:       string | null
+  business_address_line2:       string | null
+  business_city:                string | null
+  business_state_region:        string | null
+  business_postcode:            string | null
+  business_country:             string | null
+  website_url:                  string | null
+  industry:                     string | null
+  privacy_policy_url:           string | null
+  terms_url:                    string | null
+  business_contact_name:        string | null
+  business_contact_email:       string | null
+  business_contact_phone:       string | null
+  support_email:                string | null
+  support_phone:                string | null
+  is_overseas_business:         boolean
+  rejection_reason:             string | null
+  approved_at:                  string | null
+  submitted_at:                 string | null
+  created_at:                   string
+  updated_at:                   string
 }
 
-export interface ComplianceCampaign {
-  id:                  string
-  workspace_id:        string
-  brand_profile_id:    string | null
-  name:                string | null
-  status:              ComplianceCampaignStatus
-  use_case:            string | null
-  description:         string | null
-  sample_message_1:    string | null
-  sample_message_2:    string | null
-  opt_in_description:  string | null
-  opt_out_keywords:    string | null
-  help_message:        string | null
-  embedded_links:      boolean
-  embedded_phone:      boolean
-  affiliate_marketing: boolean
-  age_gated:           boolean
-  telnyx_campaign_id:  string | null
-  rejection_reason:    string | null
-  submitted_at:        string | null
-  reviewed_at:         string | null
-  created_at:          string
-  updated_at:          string
+export interface Sms10DlcBrand {
+  id:           string
+  workspace_id: string
+  brand_status: SmsBrandStatus
+  vetting_score: number | null
+  rejection_reason: string | null
+  submitted_at: string | null
+  approved_at:  string | null
+}
+
+export interface Sms10DlcCampaign {
+  id:                                 string
+  workspace_id:                       string
+  compliance_profile_id:              string | null
+  campaign_name:                      string
+  use_case:                           string
+  campaign_description:               string | null
+  message_flow:                       string | null
+  expected_message_frequency:         string | null
+  opt_in_keywords:                    string[] | null
+  opt_out_keywords:                   string[] | null
+  help_keywords:                      string[] | null
+  opt_in_message:                     string | null
+  opt_out_message:                    string | null
+  help_message:                       string | null
+  sample_message_1:                   string | null
+  sample_message_2:                   string | null
+  sample_message_3:                   string | null
+  has_embedded_links:                 boolean
+  has_embedded_phone_numbers:         boolean
+  age_gated_content:                  boolean
+  direct_lending_or_financial_content: boolean
+  campaign_status:                    SmsCampaignStatus
+  rejection_reason:                   string | null
+  submitted_at:                       string | null
+  approved_at:                        string | null
+  created_at:                         string
+  updated_at:                         string
+}
+
+export interface SmsComplianceDocument {
+  id:                    string
+  workspace_id:          string
+  compliance_profile_id: string | null
+  document_type:         string
+  file_url:              string
+  file_name:             string | null
+  mime_type:             string | null
+  size_bytes:            number | null
+  uploaded_by:           string | null
+  created_at:            string
 }
 
 export interface ComplianceRegistration {

@@ -5,6 +5,7 @@ import {
   findOrCreateConversation,
   findOrCreateContact,
 } from '../../services/telnyx-messaging.service.js'
+import { recordVoiceCall } from '../../services/usage-ledger.service.js'
 
 const TELNYX_API = 'https://api.telnyx.com/v2'
 
@@ -172,36 +173,51 @@ async function handleHangup(payload: TelnyxCallPayload) {
 
   const { data: session } = await supabase
     .from('call_sessions' as never)
-    .select('id, workspace_id, from_e164, to_e164, answered_at, transcript')
+    .select('id, workspace_id, from_e164, to_e164, answered_at, direction, voice_agent_id, transcript')
     .eq('telnyx_call_control_id', call_control_id)
     .maybeSingle() as {
       data: {
-        id:            string
-        workspace_id:  string
-        from_e164:     string
-        to_e164:       string
-        answered_at:   string | null
-        transcript:    Array<{ role: string; text: string; ts: string }>
+        id:             string
+        workspace_id:   string
+        from_e164:      string
+        to_e164:        string
+        answered_at:    string | null
+        direction:      'inbound' | 'outbound'
+        voice_agent_id: string | null
+        transcript:     Array<{ role: string; text: string; ts: string }>
       } | null
     }
 
   if (!session) return
 
+  const endedAt  = new Date()
   const duration = session.answered_at
-    ? Math.round((Date.now() - new Date(session.answered_at).getTime()) / 1000)
+    ? Math.round((endedAt.getTime() - new Date(session.answered_at).getTime()) / 1000)
     : null
 
   await supabase
     .from('call_sessions' as never)
     .update({
       status:           'ended',
-      ended_at:         new Date().toISOString(),
+      ended_at:         endedAt.toISOString(),
       hangup_cause:     hangup_cause ?? null,
       ...(duration != null ? { duration_seconds: duration } : {}),
     })
     .eq('id', session.id)
 
   console.info(`[telnyx-voice] call ended — duration=${duration}s cause=${hangup_cause}`)
+
+  // ── Wallet billing ────────────────────────────────────────────────────────
+  if (duration && duration > 0 && session.workspace_id) {
+    void recordVoiceCall({
+      workspaceId:     session.workspace_id,
+      callSessionId:   session.id,
+      durationSeconds: duration,
+      direction:       session.direction ?? 'inbound',
+      isAiCall:        !!session.voice_agent_id,
+      occurredAt:      endedAt,
+    }).catch(err => console.error('[telnyx-voice] recordVoiceCall failed:', err))
+  }
 
   // ── Post-call: surface transcript in conversations inbox ─────────────────
   if (session.workspace_id && session.from_e164) {

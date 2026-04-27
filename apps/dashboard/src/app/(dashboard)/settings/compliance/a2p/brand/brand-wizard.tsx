@@ -3,7 +3,8 @@
 import { useState, useTransition } from 'react'
 import { CheckCircle2, ChevronRight, ChevronLeft, Building2, MapPin, User, ClipboardCheck } from 'lucide-react'
 import { saveA2PBrand, type BrandData } from '@/app/actions/compliance'
-import type { ComplianceBrandProfile } from '@/lib/types'
+
+type ComplianceBrandProfile = Record<string, unknown>
 
 const COMPANY_TYPES = [
   { value: 'sole_prop',   label: 'Sole Proprietor',   desc: 'Individual / freelancer' },
@@ -65,23 +66,24 @@ function ReviewRow({ label, value }: { label: string; value: string | undefined 
 export function BrandWizard({ existing }: { existing: ComplianceBrandProfile | null }) {
   const [step, setStep] = useState(1)
   const [isPending, startTransition] = useTransition()
+  const e = existing as Record<string, string> | null
   const [form, setForm] = useState<FormState>({
-    company_type:   existing?.company_type  ?? '',
-    legal_name:     existing?.legal_name    ?? '',
-    ein:            existing?.ein           ?? '',
-    vertical:       existing?.vertical      ?? '',
-    website_url:    existing?.website_url   ?? '',
-    street:         existing?.street        ?? '',
-    city:           existing?.city          ?? '',
-    state:          existing?.state         ?? '',
-    postal_code:    existing?.postal_code   ?? '',
-    country:        existing?.country       ?? 'US',
-    contact_first:  existing?.contact_first ?? '',
-    contact_last:   existing?.contact_last  ?? '',
-    contact_email:  existing?.contact_email ?? '',
-    contact_phone:  existing?.contact_phone ?? '',
-    stock_symbol:   existing?.stock_symbol  ?? '',
-    stock_exchange: existing?.stock_exchange ?? '',
+    company_type:   e?.company_type   ?? '',
+    legal_name:     e?.legal_name     ?? '',
+    ein:            e?.ein            ?? '',
+    vertical:       e?.vertical       ?? '',
+    website_url:    e?.website_url    ?? '',
+    street:         e?.street         ?? '',
+    city:           e?.city           ?? '',
+    state:          e?.state          ?? '',
+    postal_code:    e?.postal_code    ?? '',
+    country:        e?.country        ?? 'US',
+    contact_first:  e?.contact_first  ?? '',
+    contact_last:   e?.contact_last   ?? '',
+    contact_email:  e?.contact_email  ?? '',
+    contact_phone:  e?.contact_phone  ?? '',
+    stock_symbol:   e?.stock_symbol   ?? '',
+    stock_exchange: e?.stock_exchange ?? '',
   })
 
   function set(key: keyof FormState, value: string) {
@@ -287,7 +289,7 @@ export function BrandWizard({ existing }: { existing: ComplianceBrandProfile | n
               </div>
             </div>
             <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-lg p-3 text-xs text-blue-700 dark:text-blue-400">
-              Saving creates a draft. You&apos;ll then submit to Telnyx from the A2P overview page to initiate TCR review.
+              Saving creates a draft. You&apos;ll then submit for registration from the A2P overview page to initiate TCR review.
             </div>
           </div>
         )}

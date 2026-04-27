@@ -10,6 +10,7 @@ import {
   handleOptOutKeyword,
   sendSms,
 } from '../../services/telnyx-messaging.service.js'
+import { recordOptOut, recordOptIn } from '../../modules/compliance/smsOptOutService.js'
 import {
   recordSmsInbound,
   recordSmsOutbound,
@@ -181,6 +182,12 @@ async function handleInbound(payload: TelnyxMessagePayload) {
   const optResult = await handleOptOutKeyword(ws.workspaceId, contactId, payload.text ?? '')
   if (optResult) {
     console.info(`[telnyx-webhook] compliance keyword from ${fromE164}: ${optResult.action}`)
+    // Mirror to new sms_opt_outs / consent tables
+    if (optResult.action === 'opted_out') {
+      await recordOptOut({ workspaceId: ws.workspaceId, phoneE164: fromE164, source: 'stop_keyword' })
+    } else if (optResult.action === 'opted_in') {
+      await recordOptIn(ws.workspaceId, fromE164)
+    }
   }
 
   const messageId = await insertInboundMessage({

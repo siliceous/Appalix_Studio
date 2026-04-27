@@ -335,14 +335,14 @@ export default async function IntegrationsPage({
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-0.5">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Telnyx SMS</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">SMS</p>
               {phoneNumbers.length > 0
                 ? <span className="text-xs text-green-600 dark:text-green-400 font-medium">{phoneNumbers.length} number{phoneNumbers.length !== 1 ? 's' : ''} active</span>
                 : <span className="text-xs text-gray-400 font-medium">Not configured</span>
               }
             </div>
             <p className="text-xs text-gray-500 leading-relaxed mb-2">
-              Send and receive SMS via Telnyx — buy numbers for AU, US, GB and let your bots auto-reply.
+              Send and receive SMS — buy numbers for AU, US, GB and let your bots auto-reply.
             </p>
             {phoneNumbers.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-2">

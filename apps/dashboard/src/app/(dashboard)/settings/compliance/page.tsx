@@ -5,7 +5,7 @@ import {
   ShieldCheck, MessageSquare, Phone, Mic, AlertTriangle,
   CheckCircle2, Clock, ChevronRight, Circle,
 } from 'lucide-react'
-import type { ComplianceBrandProfile, ComplianceRegistration } from '@/lib/types'
+import type { SmsProfileStatus, ComplianceRegistration } from '@/lib/types'
 import { OptedOutContacts } from './opted-out-contacts'
 import type { Metadata } from 'next'
 
@@ -45,13 +45,13 @@ export default async function CompliancePage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const admin = createAdminClient() as any
 
-  const [{ data: brandRaw }, { data: regsRaw }, { data: campaignsCountRaw }] = await Promise.all([
-    admin.from('compliance_brand_profiles').select('*').eq('workspace_id', workspaceId).maybeSingle(),
+  const [{ data: profileRaw }, { data: regsRaw }, { data: campaignsCountRaw }] = await Promise.all([
+    admin.from('sms_compliance_profiles').select('id, status').eq('workspace_id', workspaceId).eq('country_code', 'US').eq('compliance_type', 'A2P_10DLC').maybeSingle(),
     admin.from('compliance_registrations').select('*').eq('workspace_id', workspaceId),
-    admin.from('compliance_campaigns').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('status', 'approved'),
+    admin.from('sms_10dlc_campaigns').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('campaign_status', 'approved'),
   ])
 
-  const brand      = brandRaw as ComplianceBrandProfile | null
+  const smsProfile = profileRaw as { id: string; status: SmsProfileStatus } | null
   const regs       = (regsRaw ?? []) as ComplianceRegistration[]
   const approvedCampaignCount = (campaignsCountRaw as unknown as number | null) ?? 0
 
@@ -60,18 +60,18 @@ export default async function CompliancePage() {
   const cnamReg   = getReg('cnam')
   const viReg     = getReg('voice_integrity')
 
-  const a2pStatus = brand?.status ?? 'not_started'
+  const a2pStatus = smsProfile?.status ?? 'not_started'
 
   const cards = [
     {
       key:      'a2p',
-      title:    'A2P 10DLC',
+      title:    'US SMS Verification',
       subtitle: 'Required to send business SMS in the United States via mobile carriers.',
       icon:     <MessageSquare className="w-5 h-5 text-[#15A4AE]" />,
       bg:       'bg-[#15A4AE]/10',
       status:   a2pStatus,
-      href:     '/settings/compliance/a2p',
-      cta:      a2pStatus === 'not_started' ? 'Start registration' : a2pStatus === 'draft' ? 'Continue' : 'Manage',
+      href:     '/settings/compliance/sms-verification',
+      cta:      a2pStatus === 'not_started' ? 'Start verification' : a2pStatus === 'draft' ? 'Continue' : 'Manage',
       meta:     a2pStatus === 'approved' ? `${approvedCampaignCount} active campaign${approvedCampaignCount === 1 ? '' : 's'}` : null,
     },
     {
@@ -81,8 +81,8 @@ export default async function CompliancePage() {
       icon:     <Phone className="w-5 h-5 text-purple-600 dark:text-purple-400" />,
       bg:       'bg-purple-50 dark:bg-purple-500/10',
       status:   shakenReg?.status ?? 'not_started',
-      href:     '/settings/compliance/a2p',
-      cta:      'Register',
+      href:     '/settings/compliance/shaken-stir',
+      cta:      shakenReg?.status === 'active' ? 'Manage' : 'Register',
       meta:     null,
     },
     {
@@ -92,8 +92,8 @@ export default async function CompliancePage() {
       icon:     <Mic className="w-5 h-5 text-blue-600 dark:text-blue-400" />,
       bg:       'bg-blue-50 dark:bg-blue-500/10',
       status:   cnamReg?.status ?? 'not_started',
-      href:     '/settings/compliance/a2p',
-      cta:      'Register',
+      href:     '/settings/compliance/cnam',
+      cta:      cnamReg?.status === 'active' ? 'Manage' : 'Register',
       meta:     null,
     },
     {
@@ -103,8 +103,8 @@ export default async function CompliancePage() {
       icon:     <ShieldCheck className="w-5 h-5 text-green-600 dark:text-green-400" />,
       bg:       'bg-green-50 dark:bg-green-500/10',
       status:   viReg?.status ?? 'not_started',
-      href:     '/settings/compliance/a2p',
-      cta:      'Enable',
+      href:     '/settings/compliance/voice-integrity',
+      cta:      viReg?.status === 'active' ? 'Manage' : 'Enable',
       meta:     null,
     },
   ]
@@ -158,12 +158,12 @@ export default async function CompliancePage() {
         <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl p-4 mb-8 flex items-start gap-3">
           <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">A2P registration required for US SMS delivery</p>
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">US SMS verification required for delivery</p>
             <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5 leading-relaxed">
-              US mobile carriers block unregistered business SMS. Complete A2P 10DLC registration to ensure your messages are delivered.
+              US mobile carriers block unregistered business SMS. Complete US SMS verification to ensure your messages are delivered.
             </p>
-            <Link href="/settings/compliance/a2p" className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline">
-              Start registration <ChevronRight className="w-3 h-3" />
+            <Link href="/settings/compliance/sms-verification" className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline">
+              Start verification <ChevronRight className="w-3 h-3" />
             </Link>
           </div>
         </div>

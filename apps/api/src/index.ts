@@ -34,6 +34,8 @@ import { notificationRoutes }                       from './routes/notifications
 import { pollDueNotifications }                     from './services/sage-notifications.js'
 import { liveRoutes }                               from './routes/live/index.js'
 import { internalTrackRoutes }                      from './routes/internal/track.js'
+import { billingRenewNumbersRoute }                 from './routes/internal/billing-renew-numbers.js'
+import { complianceRoutes }                         from './routes/compliance.js'
 import { handleLiveWsConnection }                   from './live/session-manager.js'
 import { handleWidgetVoiceWs }                      from './live/widget-voice-handler.js'
 import { telnyxVoiceRoutes }                        from './routes/webhooks/telnyx-voice.js'
@@ -144,7 +146,9 @@ await server.register(notificationRoutes, { prefix: '/notifications' })
 await server.register(liveRoutes, { prefix: '/live' })
 
 // Internal tracking endpoint — behavioral events from tracker.js
-await server.register(internalTrackRoutes, { prefix: '/internal' })
+await server.register(internalTrackRoutes,        { prefix: '/internal' })
+await server.register(billingRenewNumbersRoute,   { prefix: '/internal' })
+await server.register(complianceRoutes)
 
 // ---------------------------------------------------------------
 // Error handler

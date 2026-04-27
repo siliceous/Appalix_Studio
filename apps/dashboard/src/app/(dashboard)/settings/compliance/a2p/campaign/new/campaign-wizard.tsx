@@ -266,7 +266,7 @@ export function CampaignWizard({ brandProfileId }: { brandProfileId: string }) {
           <div className="space-y-5">
             <div>
               <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Review your campaign</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Check everything before saving. You&apos;ll submit to Telnyx from the A2P overview page.</p>
+              <p className="text-sm text-gray-500 mt-0.5">Check everything before saving. You&apos;ll submit for review from the A2P overview page.</p>
             </div>
             <div className="space-y-3">
               <div className="bg-gray-50 dark:bg-white/[0.03] rounded-xl p-4">

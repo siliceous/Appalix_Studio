@@ -3,8 +3,9 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { NextResponse }                    from 'next/server'
 
-const TELNYX_API = 'https://api.telnyx.com/v2'
-const MIN_WALLET_BALANCE = 1.00   // AUD — must have at least this before buying a number
+const TELNYX_API         = 'https://api.telnyx.com/v2'
+const MIN_WALLET_BALANCE = 1.00   // wallet must have at least this before buying a number
+const FALLBACK_RATE      = 5.00   // used if no rate card row exists yet
 
 function telnyxHeaders() {
   const key = process.env.TELNYX_API_KEY
@@ -14,7 +15,7 @@ function telnyxHeaders() {
 
 interface ProvisionBody {
   phoneNumber:         string   // E.164
-  country:             string   // AU, US, GB
+  country:             string   // AU, US, GB …
   messagingProfileId?: string
 }
 
@@ -45,6 +46,21 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient()
+  const now   = new Date()
+
+  // ── Look up the rate card price for phone_number_month ─────────────────────
+  // This is the same rate used for renewals — purchase and renewal are always
+  // identical so customers see a consistent monthly cost.
+  const { data: rateRaw } = await admin
+    .from('billing_rate_cards' as never)
+    .select('rates')
+    .is('workspace_id', null)
+    .lte('effective_from', now.toISOString())
+    .order('effective_from', { ascending: false })
+    .limit(1)
+    .maybeSingle() as { data: { rates: Record<string, { unit_price: number }> } | null }
+
+  const chargeAmount = rateRaw?.rates?.phone_number_month?.unit_price ?? FALLBACK_RATE
 
   // ── Wallet balance check ───────────────────────────────────────────────────
   const { data: walletRaw } = await admin
@@ -53,14 +69,31 @@ export async function POST(req: Request) {
     .eq('workspace_id', membership.workspace_id)
     .maybeSingle() as { data: { balance: string; currency: string } | null }
 
-  const balance  = Number(walletRaw?.balance ?? 0)
-  const currency = walletRaw?.currency ?? 'AUD'
+  const walletBalance  = Number(walletRaw?.balance ?? 0)
+  const walletCurrency = walletRaw?.currency ?? 'AUD'
 
-  if (balance < MIN_WALLET_BALANCE) {
+  if (walletBalance < MIN_WALLET_BALANCE) {
     return NextResponse.json({
-      error: `Insufficient wallet balance (${currency} ${balance.toFixed(2)}). Add at least ${currency} ${MIN_WALLET_BALANCE.toFixed(2)} to your Appalix wallet before purchasing a number.`,
+      error: `Insufficient wallet balance (${walletCurrency} ${walletBalance.toFixed(2)}). Add at least ${walletCurrency} ${MIN_WALLET_BALANCE.toFixed(2)} to your Appalix wallet before purchasing a number.`,
       code:  'insufficient_balance',
     }, { status: 402 })
+  }
+
+  // ── US A2P compliance check ───────────────────────────────────────────────
+  let complianceWarning: string | undefined
+  if (country.toUpperCase() === 'US') {
+    const { data: complianceRaw } = await admin
+      .from('sms_compliance_profiles' as never)
+      .select('status')
+      .eq('workspace_id', membership.workspace_id)
+      .eq('country_code', 'US')
+      .eq('compliance_type', 'A2P_10DLC')
+      .maybeSingle() as { data: { status: string } | null }
+    if (complianceRaw?.status !== 'approved') {
+      complianceWarning = complianceRaw?.status
+        ? `US A2P verification is ${complianceRaw.status.replace(/_/g, ' ')} — SMS delivery may be blocked until approved.`
+        : 'US A2P 10DLC verification is required. Complete it at Settings → Compliance → US SMS Verification.'
+    }
   }
 
   // ── Purchase via carrier ───────────────────────────────────────────────────
@@ -93,6 +126,8 @@ export async function POST(req: Request) {
   }
 
   // ── Save to DB ────────────────────────────────────────────────────────────
+  const billingNextAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+
   const { data: saved, error: dbErr } = await admin
     .from('workspace_phone_numbers' as never)
     .insert({
@@ -102,7 +137,8 @@ export async function POST(req: Request) {
       e164:                 phoneNumber,
       country_code:         country,
       messaging_profile_id: messagingProfileId ?? null,
-      purchased_at:         new Date().toISOString(),
+      purchased_at:         now.toISOString(),
+      billing_next_at:      billingNextAt.toISOString(),
       capabilities:         { sms: true, voice: false, mms: false },
     })
     .select('id')
@@ -113,18 +149,43 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Number purchased but failed to save — contact support' }, { status: 500 })
   }
 
-  // ── Deduct first-month number cost from wallet (fire-and-forget) ──────────
-  void admin.rpc('wallet_deduct' as never, {
-    p_workspace_id:   membership.workspace_id,
-    p_amount:         1.00,   // first month holding fee; rate card can override later
-    p_type:           'usage_deduction',
-    p_description:    `Phone number activation — ${phoneNumber}`,
-    p_reference_id:   saved.id,
-    p_reference_type: 'workspace_phone_number',
-    p_allow_negative: false,
-  }).then(({ error }: { error: { message: string } | null }) => {
-    if (error) console.warn('[provision] wallet deduct skipped:', error.message)
-  })
+  // ── Record first-month charge: usage_event + wallet deduction ─────────────
+  // Same rate as monthly renewals — customers always pay the rate card price.
+  void Promise.all([
+    admin.from('usage_events' as never).insert({
+      workspace_id:        membership.workspace_id,
+      source_table:        'workspace_phone_numbers',
+      source_id:           saved.id,
+      provider:            'telnyx',
+      usage_type:          'phone_number_month',
+      quantity:            1,
+      unit:                'number_month',
+      occurred_at:         now.toISOString(),
+      sell_unit_price:     chargeAmount,
+      sell_total:          chargeAmount,
+      currency:            walletCurrency,
+      rating_status:       'rated',
+      meta:                { e164: phoneNumber, month: 1 },
+    }),
+    admin.rpc('wallet_deduct' as never, {
+      p_workspace_id:   membership.workspace_id,
+      p_amount:         chargeAmount,
+      p_type:           'usage_deduction',
+      p_description:    `Phone number — ${phoneNumber} (month 1)`,
+      p_reference_id:   saved.id,
+      p_reference_type: 'workspace_phone_number',
+      p_allow_negative: false,
+    }),
+  ]).then(([, { error }]: [unknown, { error: { message: string } | null }]) => {
+    if (error) console.warn('[provision] wallet deduct skipped:', (error as { message: string }).message)
+  }).catch(err => console.error('[provision] billing failed:', err))
 
-  return NextResponse.json({ ok: true, id: saved.id, phoneNumber })
+  return NextResponse.json({
+    ok:               true,
+    id:               saved.id,
+    phoneNumber,
+    monthlyRate:      chargeAmount,
+    currency:         walletCurrency,
+    complianceWarning,
+  })
 }

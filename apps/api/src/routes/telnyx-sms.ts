@@ -4,10 +4,10 @@ import {
   findOrCreateContact,
   findOrCreateConversation,
   insertOutboundMessage,
-  isOptedOut,
   resolveWorkspaceByNumber,
 } from '../services/telnyx-messaging.service.js'
-import { recordSmsOutbound } from '../services/usage-ledger.service.js'
+import { recordSmsOutbound }   from '../services/usage-ledger.service.js'
+import { checkSendAllowed }    from '../modules/telco/smsSendGatekeeperService.js'
 
 interface SendSmsBody {
   workspaceId: string
@@ -41,9 +41,10 @@ export async function telnyxSmsRoutes(fastify: FastifyInstance) {
         return reply.code(403).send({ error: 'from number not authorised for this workspace' })
       }
 
-      // Guard: check opt-out
-      if (await isOptedOut(workspaceId, to)) {
-        return reply.code(422).send({ error: 'recipient has opted out of SMS' })
+      // Compliance + opt-out gatekeeper
+      const gate = await checkSendAllowed({ workspaceId, fromE164: from, toE164: to })
+      if (!gate.allowed) {
+        return reply.code(422).send({ error: gate.reason, code: gate.code })
       }
 
       // Send via Telnyx
