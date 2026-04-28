@@ -108,6 +108,16 @@ function formatMoney(amount: number, currency: string) {
   }).format(Math.abs(amount))
 }
 
+function formatRate(amount: number, currency: string) {
+  const decimals = amount < 0.01 ? 4 : amount < 0.1 ? 3 : 2
+  return new Intl.NumberFormat('en-US', {
+    style:                 'currency',
+    currency,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(amount)
+}
+
 function txIcon(type: string) {
   if (type === 'topup' || type === 'refund' || type === 'admin_adjustment' || type === 'auto_recharge') {
     return <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-500" />
@@ -523,7 +533,7 @@ export default function WalletPage() {
                       <div key={key} className="flex items-center justify-between px-5 py-2">
                         <p className="text-xs text-gray-700 dark:text-gray-300">{label}</p>
                         <p className="text-xs font-medium tabular-nums text-gray-500 dark:text-gray-400">
-                          {formatMoney(unitPrice, wallet!.rate_currency)} / {unit}
+                          {formatRate(unitPrice, wallet!.rate_currency)} / {unit}
                         </p>
                       </div>
                     )
@@ -531,7 +541,7 @@ export default function WalletPage() {
               )}
             </div>
             <div className="px-5 py-3 bg-gray-50 dark:bg-white/3 border-t border-gray-100 dark:border-white/8">
-              <p className="text-[10px] text-gray-400 leading-relaxed">{wallet?.rate_currency ?? 'AUD'}. Voice billed in 60-second increments (1 min min). SMS segments vary by message length.</p>
+              <p className="text-[10px] text-gray-400 leading-relaxed">Shown in {wallet?.rate_currency ?? 'AUD'}. Voice billed in 60-second increments (1 min min). SMS segments vary by message length. Non-AUD rates are approximate conversions.</p>
             </div>
           </div>
 

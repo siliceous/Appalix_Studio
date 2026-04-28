@@ -96,6 +96,22 @@ export async function GET() {
     rateCard = globalCard as RateCardRow | null
   }
 
+  // Convert rates from rate card currency → workspace wallet currency
+  const walletCurrency  = wallet?.currency ?? workspaceCurrency
+  const rateCardCurrency = rateCard?.currency ?? 'AUD'
+  const AUD_TO: Record<string, number> = {
+    AUD: 1.00, USD: 0.64, NZD: 1.09, GBP: 0.50,
+    EUR: 0.59, CAD: 0.88, SGD: 0.88, INR: 54.00,
+  }
+  const conversionFactor =
+    rateCardCurrency === walletCurrency
+      ? 1
+      : (AUD_TO[walletCurrency] ?? 1) / (AUD_TO[rateCardCurrency] ?? 1)
+  const convertedRates: Record<string, { unit_price: number }> = {}
+  for (const [k, v] of Object.entries(rateCard?.rates ?? {})) {
+    convertedRates[k] = { ...v, unit_price: v.unit_price * conversionFactor }
+  }
+
   // Aggregate usage by type for the last 30 days
   type UsageRow = { usage_type: string; sell_total: string; quantity: number }
   const usageRows = (usageRes.data ?? []) as UsageRow[]
@@ -118,7 +134,7 @@ export async function GET() {
     stripe_payment_method_id: wallet?.stripe_payment_method_id ?? null,
     transactions:             txRes.data ?? [],
     usage_summary:            usageSummary,
-    rate_card:                rateCard?.rates   ?? {},
-    rate_currency:            rateCard?.currency ?? 'AUD',
+    rate_card:                convertedRates,
+    rate_currency:            walletCurrency,
   })
 }
