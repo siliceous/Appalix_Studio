@@ -1,0 +1,28 @@
+name: Nightly phone number renewal
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # 2 AM UTC daily
+  workflow_dispatch:       # allow manual trigger from GitHub UI
+
+jobs:
+  renew:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call renewal endpoint
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            https://appalix-api.onrender.com/internal/billing/renew-numbers \
+            -H "x-internal-secret: ${{ secrets.INTERNAL_API_SECRET }}" \
+            -H "Content-Type: application/json")
+
+          body=$(echo "$response" | head -n -1)
+          status=$(echo "$response" | tail -n 1)
+
+          echo "HTTP $status"
+          echo "$body"
+
+          if [ "$status" != "200" ]; then
+            echo "Renewal failed with HTTP $status"
+            exit 1
+          fi
