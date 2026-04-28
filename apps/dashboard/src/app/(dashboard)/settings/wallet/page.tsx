@@ -504,7 +504,7 @@ export default function WalletPage() {
               ))}
             </div>
             <div className="px-5 py-3 bg-gray-50 dark:bg-white/3 border-t border-gray-100 dark:border-white/8">
-              <p className="text-[10px] text-gray-400 leading-relaxed">AUD. Voice billed in 60-second increments (1 min min). SMS segments vary by message length.</p>
+              <p className="text-[10px] text-gray-400 leading-relaxed">{currency}. Voice billed in 60-second increments (1 min min). SMS segments vary by message length.</p>
             </div>
           </div>
 

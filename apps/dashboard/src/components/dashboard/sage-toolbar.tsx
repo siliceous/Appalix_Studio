@@ -21,6 +21,7 @@ export type SagePageKey =
   | 'prospects' | 'contacts' | 'pipelines' | 'projects' | 'quotes' | 'rules' | 'automations' | 'automation-builder' | 'templates'
   | 'email' | 'conversations' | 'sms' | 'calls' | 'forms' | 'tickets' | 'my-activity'
   | 'branding'
+  | 'settings' | 'analytics'
 
 export type TriagePreset = 'all' | 'today' | 'yesterday' | '7d' | '30d' | 'custom'
 

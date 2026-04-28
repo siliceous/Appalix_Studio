@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { Header } from '@/components/layout/header'
+import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 import { formatTokens, formatCost, PLATFORM_META } from '@/lib/utils'
 import type { Metadata } from 'next'
 import type { UsageEvent, Conversation, AgentRun, Lead } from '@/lib/types'
@@ -121,9 +121,12 @@ export default async function AnalyticsPage() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto -m-8 p-8">
+    <div className="-m-8 flex flex-col h-screen overflow-hidden">
+      <SageToolbar pageKey="analytics" />
+    <div className="flex-1 overflow-y-auto p-8">
     <div className="max-w-5xl mx-auto">
-      <Header title="Analytics" description="Usage and performance over the last 30 days" />
+      <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-1">Analytics</h1>
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Usage and performance over the last 30 days</p>
 
       {/* Top stats */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
@@ -323,6 +326,7 @@ export default async function AnalyticsPage() {
           </>
         )}
       </div>
+    </div>
     </div>
     </div>
   )
