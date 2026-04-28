@@ -95,7 +95,12 @@ const RATE_DISPLAY: Record<string, { label: string; unit: string }> = {
 
 // ── Top-up amounts ────────────────────────────────────────────────────────────
 
-const TOPUP_AMOUNTS_CENTS = [1000, 2000, 5000, 10000, 20000, 50000]
+const TOPUP_AMOUNTS_CENTS     = [1000,  2000,  5000,  10000,  20000,  50000]
+const TOPUP_AMOUNTS_CENTS_INR = [10000, 20000, 50000, 100000, 200000, 500000]
+
+function topupAmounts(currency: string) {
+  return currency === 'INR' ? TOPUP_AMOUNTS_CENTS_INR : TOPUP_AMOUNTS_CENTS
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -143,7 +148,7 @@ export default function WalletPage() {
   const topupStatus    = searchParams.get('topup')
   const [wallet, setWallet]         = useState<WalletData | null>(null)
   const [loading, setLoading]       = useState(true)
-  const [selected, setSelected]     = useState(5000)
+  const [selected, setSelected]     = useState(5000)  // reset after load if INR
   const [, startTransition]         = useTransition()
   const [redirecting, setRedirecting] = useState(false)
   const [savingCountry, setSavingCountry]       = useState(false)
@@ -160,6 +165,7 @@ export default function WalletPage() {
       const res  = await fetch('/api/wallet/balance')
       const data = await res.json() as WalletData
       setWallet(data)
+      setSelected(topupAmounts(data.currency)[2]) // default to middle amount
       setRechargeEnabled(data.auto_recharge_enabled ?? false)
       setRechargeThreshold(data.auto_recharge_threshold ?? 10)
       setRechargeAmount(data.auto_recharge_amount ?? 50)
@@ -308,7 +314,7 @@ export default function WalletPage() {
               Payments processed securely via Stripe.
             </p>
             <div className="grid grid-cols-3 gap-1.5 mb-3">
-              {TOPUP_AMOUNTS_CENTS.map(cents => (
+              {topupAmounts(currency).map(cents => (
                 <button
                   key={cents}
                   onClick={() => setSelected(cents)}
