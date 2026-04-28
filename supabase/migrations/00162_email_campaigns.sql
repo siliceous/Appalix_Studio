@@ -66,7 +66,7 @@ create table if not exists email_campaign_recipients (
   workspace_id    uuid not null references workspaces(id) on delete cascade,
   campaign_id     uuid not null references email_campaigns(id) on delete cascade,
   batch_id        uuid references email_send_batches(id) on delete set null,
-  contact_id      uuid references contacts(id) on delete set null,
+  contact_id      uuid references sage_contacts(id) on delete set null,
   email           text not null,
   name            text,
   status          text not null default 'pending',

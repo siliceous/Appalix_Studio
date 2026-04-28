@@ -90,7 +90,7 @@ export async function emailCampaignRoutes(fastify: FastifyInstance) {
           })
 
         if (recipient.contact_id) {
-          await supabase.from('contacts').update({ email_opt_out: true }).eq('id', recipient.contact_id)
+          await supabase.from('sage_contacts').update({ email_opt_out: true }).eq('id', recipient.contact_id)
         }
       }
 
@@ -145,7 +145,7 @@ async function dispatchCampaign(campaign: Record<string, unknown>) {
 
   // Build contacts query — exclude opted-out and hard-bounced
   let query = supabase
-    .from('contacts')
+    .from('sage_contacts')
     .select('id, email, name, tags')
     .eq('workspace_id', workspaceId)
     .eq('email_opt_out', false)

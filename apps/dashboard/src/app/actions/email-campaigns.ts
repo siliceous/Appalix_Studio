@@ -207,7 +207,7 @@ export async function getContactCount(tags?: string[]) {
   const admin       = createAdminClient()
 
   let query = admin
-    .from('contacts')
+    .from('sage_contacts')
     .select('id', { count: 'exact', head: true })
     .eq('workspace_id', workspaceId)
     .eq('email_opt_out', false)

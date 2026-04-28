@@ -225,7 +225,7 @@ export async function processResendWebhook(payload: ResendWebhookPayload): Promi
       if (batch_id) await incrementBatchCounter(batch_id, 'bounced_count')
       // Hard bounce → mark contact as bounced to suppress future sends
       if (bounceType === 'hard' && contact_id) {
-        await supabase.from('contacts').update({
+        await supabase.from('sage_contacts').update({
           email_deliverability: 'bounced',
           email_bounced_at:     now,
           email_bounce_reason:  bounceReason,
@@ -239,7 +239,7 @@ export async function processResendWebhook(payload: ResendWebhookPayload): Promi
       if (batch_id) await incrementBatchCounter(batch_id, 'complained_count')
       // Spam complaint → suppress contact
       if (contact_id) {
-        await supabase.from('contacts').update({
+        await supabase.from('sage_contacts').update({
           email_deliverability: 'complained',
           email_opt_out:        true,
         }).eq('id', contact_id)
