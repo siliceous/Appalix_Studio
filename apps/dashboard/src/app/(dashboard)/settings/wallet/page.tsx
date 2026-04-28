@@ -64,6 +64,7 @@ const USAGE_TYPE_LABELS: Record<string, string> = {
   voice_ai_stream_minute:'Voice AI agent',
   phone_number_month:    'Phone number rental',
   ai_analysis:           'AI analysis (email / chat / forms)',
+  gemini_live_minute:    'Gemini Live voice (widget / Sage)',
 }
 
 const USAGE_TYPE_UNITS: Record<string, string> = {
@@ -74,6 +75,7 @@ const USAGE_TYPE_UNITS: Record<string, string> = {
   voice_ai_stream_minute:'minutes',
   phone_number_month:    'numbers',
   ai_analysis:           'analyses',
+  gemini_live_minute:    'minutes',
 }
 
 // ── Top-up amounts ────────────────────────────────────────────────────────────

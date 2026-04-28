@@ -9,6 +9,7 @@ type UsageEventType =
   | 'voice_ai_stream_minute'
   | 'phone_number_month'
   | 'ai_analysis'
+  | 'gemini_live_minute'
 
 interface RateEntry {
   unit_price: number
@@ -329,5 +330,62 @@ export async function recordAiAnalysis(params: {
       referenceType: 'usage_event',
       allowNegative: true, // don't block AI analysis if wallet is low; alert separately
     }).catch(err => console.error('[usage-ledger] ai analysis wallet deduct failed:', err))
+  }
+}
+
+export async function recordGeminiVoice(params: {
+  workspaceId:     string
+  sessionId:       string   // live session identifier (for dedup / audit)
+  durationSeconds: number
+  sessionType:     'sage_dashboard' | 'widget'
+  occurredAt:      Date
+  currency?:       string
+}) {
+  if (params.durationSeconds <= 0) return
+
+  const currency = params.currency ?? 'AUD'
+  const minutes  = billableMinutes(params.durationSeconds)
+
+  const [sellRate, providerRate] = await Promise.all([
+    getWorkspaceRate(params.workspaceId, 'gemini_live_minute', params.occurredAt),
+    getProviderRate('google', 'gemini_live_minute', params.occurredAt),
+  ])
+
+  const sellTotal = sellRate * minutes
+
+  const { data: usageRow, error } = await supabase.from('usage_events' as never).insert({
+    workspace_id:        params.workspaceId,
+    source_table:        'gemini_voice_sessions',
+    source_id:           params.sessionId,
+    provider:            'google',
+    usage_type:          'gemini_live_minute',
+    quantity:            minutes,
+    unit:                'minute',
+    occurred_at:         params.occurredAt.toISOString(),
+    provider_unit_cost:  providerRate,
+    provider_cost_total: providerRate * minutes,
+    sell_unit_price:     sellRate,
+    sell_total:          sellTotal,
+    currency,
+    rating_status:       sellRate > 0 ? 'rated' : 'unrated',
+    meta: {
+      duration_seconds: params.durationSeconds,
+      session_type:     params.sessionType,
+      session_id:       params.sessionId,
+    },
+  }).select('id').single() as { data: { id: string } | null; error: { message: string } | null }
+
+  if (error) { console.error('[usage-ledger] recordGeminiVoice:', error.message); return }
+
+  if (sellTotal > 0) {
+    void walletDeduct({
+      workspaceId:   params.workspaceId,
+      amount:        sellTotal,
+      type:          'usage_deduction',
+      description:   `Gemini voice (${params.sessionType === 'sage_dashboard' ? 'Sage assistant' : 'widget'}) — ${minutes} min`,
+      referenceId:   usageRow?.id,
+      referenceType: 'usage_event',
+      allowNegative: true,
+    }).catch(err => console.error('[usage-ledger] gemini voice wallet deduct failed:', err))
   }
 }

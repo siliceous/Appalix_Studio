@@ -107,6 +107,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
 
       const sessionId = createWidgetVoiceSession({
         integrationId: integration.id,
+        workspaceId:   integration.workspace_id,
         botName:       b.name,
         systemPrompt:  b.system_prompt ?? '',
         voiceName:     b.voice_name   ?? 'Aoede',

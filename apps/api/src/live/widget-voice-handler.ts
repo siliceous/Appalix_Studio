@@ -19,6 +19,7 @@
 import { randomUUID } from 'crypto'
 import { WebSocket } from 'ws'
 import type { IncomingMessage } from 'http'
+import { recordGeminiVoice } from '../services/usage-ledger.service.js'
 
 // ── Model & endpoint ────────────────────────────────────────────────────────
 
@@ -53,6 +54,7 @@ function geminiWsUrl(apiKey: string) {
 
 interface WidgetVoiceSession {
   integrationId: string
+  workspaceId:   string
   botName:       string
   systemPrompt:  string
   voiceName:     string
@@ -152,8 +154,9 @@ export async function handleWidgetVoiceWs(
     `"${openingLine}". Speak it immediately when the conversation begins.` +
     historyBlock
 
-  let closed    = false
-  let geminiWs: WebSocket | null = null
+  let closed      = false
+  let geminiWs:   WebSocket | null = null
+  const startedAt = new Date()
 
   // ── Open raw WebSocket to Gemini ──────────────────────────────────────────
 
@@ -290,6 +293,16 @@ export async function handleWidgetVoiceWs(
   ws.on('close', () => {
     closed = true
     try { geminiWs?.close() } catch {}
+    const durationSeconds = Math.round((Date.now() - startedAt.getTime()) / 1000)
+    if (durationSeconds >= 5) {
+      void recordGeminiVoice({
+        workspaceId: meta.workspaceId,
+        sessionId,
+        durationSeconds,
+        sessionType: 'widget',
+        occurredAt: new Date(),
+      }).catch(err => console.error('[widget-voice] recordGeminiVoice failed:', err))
+    }
   })
 
   ws.on('error', (err) => {

@@ -23,6 +23,7 @@ import type { IncomingMessage }      from 'http'
 import { supabase }                  from '../lib/supabase.js'
 import { routeToolCall, type ToolContext } from './tool-router.js'
 import { SAGE_LIVE_FUNCTION_DECLARATIONS } from './tool-schema.js'
+import { recordGeminiVoice }         from '../services/usage-ledger.service.js'
 
 // ── In-memory session store (one-time tokens) ───────────────────────────────
 
@@ -277,8 +278,9 @@ export async function handleLiveWsConnection(ws: WebSocket, req: IncomingMessage
     `forms — Typeform, Gravity Forms, Google Forms, Fluent Forms; ` +
     `lead ads — Google, Meta, LinkedIn, TikTok. Which one would you like to set up?"`
 
-  let geminiWs: WebSocket | null = null
-  let closed = false
+  let geminiWs:  WebSocket | null = null
+  let closed     = false
+  const startedAt = new Date()
 
   function send(data: unknown) {
     if (ws.readyState === WebSocket.OPEN) {
@@ -587,6 +589,17 @@ export async function handleLiveWsConnection(ws: WebSocket, req: IncomingMessage
   ws.on('close', () => {
     closed = true
     try { geminiWs?.close() } catch {}
+
+    const durationSeconds = Math.round((Date.now() - startedAt.getTime()) / 1000)
+    if (durationSeconds >= 5) {
+      void recordGeminiVoice({
+        workspaceId:     meta.workspaceId,
+        sessionId:       sessionId,
+        durationSeconds,
+        sessionType:     'sage_dashboard',
+        occurredAt:      new Date(),
+      }).catch(err => console.error('[live-gateway] recordGeminiVoice failed:', err))
+    }
   })
 
   ws.on('error', (err) => {
