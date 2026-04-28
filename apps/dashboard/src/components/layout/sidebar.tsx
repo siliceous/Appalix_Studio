@@ -24,11 +24,10 @@ import {
   Target,
   Zap,
   Palette,
-  LayoutTemplate,
-  GitBranch,
   CalendarDays,
   Wallet,
   ShieldCheck,
+  Send,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -71,8 +70,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/bots',          label: 'Bots',         icon: Bot,      adminOnly: true },
       { href: '/integrations',  label: 'Integrations', icon: Plug,     adminOnly: true },
       { href: '/phone',          label: 'Phone Numbers', icon: Phone,     adminOnly: true },
-      { href: '/settings/billing',    label: 'Billing',    icon: Receipt,     adminOnly: true },
-      { href: '/settings/wallet',     label: 'Wallet',     icon: Wallet,      adminOnly: true },
+
       { href: '/settings/compliance', label: 'Compliance', icon: ShieldCheck, adminOnly: true },
     ],
   },
@@ -80,12 +78,16 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Sage',
     pro: true,
     items: [
-      { href: '/sage/branding',    label: 'Branding',        icon: Palette,        permissionKey: 'can_view_pipelines' },
-      { href: '/sage/prospects',   label: 'Lead Enrichment', icon: Target,         permissionKey: 'can_view_pipelines' },
-      { href: '/sage/automations',        label: 'Automations',    icon: Zap,            permissionKey: 'can_view_pipelines' },
-      { href: '/sage/automation-builder', label: 'Flow Builder',   icon: GitBranch,      permissionKey: 'can_view_pipelines' },
-      { href: '/sage/templates',          label: 'Templates',      icon: LayoutTemplate, permissionKey: 'can_view_pipelines' },
-      { href: '/sage/rules',       label: 'Rules',           icon: ListFilter,     adminOnly: true                     },
+      { href: '/sage/branding',           label: 'Branding',        icon: Palette,    permissionKey: 'can_view_pipelines' },
+      { href: '/sage/prospects',          label: 'Lead Enrichment', icon: Target,     permissionKey: 'can_view_pipelines' },
+      { href: '/sage/automation-builder', label: 'Automations',     icon: Zap,        permissionKey: 'can_view_pipelines' },
+      { href: '/sage/rules',              label: 'Rules',            icon: ListFilter, adminOnly: true                     },
+    ],
+  },
+  {
+    label: 'Email Marketing',
+    items: [
+      { href: '/email/campaigns', label: 'Campaigns', icon: Send, adminOnly: true },
     ],
   },
   {
@@ -138,8 +140,10 @@ export function Sidebar({ workspace, callerRole, userPermissions, branding }: Si
 
   function isActive(href: string) {
     if (href === '/dashboard') return pathname === '/dashboard'
-    // /bots also covers /agent/bots/[id] (voice config pages for a bot)
     if (href === '/bots') return pathname.startsWith('/bots') || pathname.startsWith('/agent/bots/')
+    // Consolidates automation-builder, automations list, and templates under one sidebar item
+    if (href === '/sage/automation-builder')
+      return pathname.startsWith('/sage/automation-builder') || pathname.startsWith('/sage/automations') || pathname.startsWith('/sage/templates')
     return pathname.startsWith(href)
   }
 
