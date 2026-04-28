@@ -14,7 +14,8 @@ jobs:
           response=$(curl -s -w "\n%{http_code}" -X POST \
             https://appalix-api.onrender.com/internal/billing/renew-numbers \
             -H "x-internal-secret: ${{ secrets.INTERNAL_API_SECRET }}" \
-            -H "Content-Type: application/json")
+            -H "Content-Type: application/json" \
+            -d '{}')
 
           body=$(echo "$response" | head -n -1)
           status=$(echo "$response" | tail -n 1)
