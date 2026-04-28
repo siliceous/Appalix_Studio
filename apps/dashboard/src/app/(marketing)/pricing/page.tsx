@@ -126,6 +126,50 @@ export default function PricingPage() {
         </div>
       </section>
 
+      {/* Usage-based charges */}
+      <section className="py-16 px-6 border-t border-white/5">
+        <div className="max-w-3xl mx-auto">
+          <ScrollReveal>
+            <div className="text-center mb-10">
+              <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-3">Usage</p>
+              <h2 className="text-2xl font-bold mb-3">Pay only for what you use</h2>
+              <p className="text-white/65 text-sm">
+                SMS, voice calls, and AI voice are billed per use from your prepaid wallet balance — no surprise bills, no lock-in.
+              </p>
+            </div>
+          </ScrollReveal>
+          <ScrollReveal delay={0.1}>
+            <div className="rounded-2xl border border-white/10 overflow-hidden">
+              <div className="grid grid-cols-2 text-xs font-semibold text-white/40 uppercase tracking-widest px-6 py-3 border-b border-white/8 bg-white/3">
+                <span>Feature</span>
+                <span className="text-right">Rate (AUD)</span>
+              </div>
+              {([
+                { category: 'SMS',   label: 'Outbound SMS',               rate: '$0.02 / segment'    },
+                { category: 'SMS',   label: 'Inbound SMS',                rate: '$0.01 / message'    },
+                { category: 'Voice', label: 'Inbound call',               rate: '$0.05 / min'        },
+                { category: 'Voice', label: 'Outbound call',              rate: '$0.06 / min'        },
+                { category: 'Voice', label: 'AI voice agent (phone)',     rate: '$0.20 / min'        },
+                { category: 'Voice', label: 'Gemini Live voice (widget)', rate: '$0.10 / min'        },
+                { category: 'Phone', label: 'Phone number rental',        rate: '$5.00 / number / mo'},
+                { category: 'AI',    label: 'AI analysis (email/chat)',   rate: '$0.001 / event'     },
+              ] as { category: string; label: string; rate: string }[]).map(({ label, rate }, i, arr) => (
+                <div
+                  key={label}
+                  className={`grid grid-cols-2 px-6 py-3 text-sm ${i < arr.length - 1 ? 'border-b border-white/6' : ''}`}
+                >
+                  <span className="text-white/80">{label}</span>
+                  <span className="text-right text-white/55 tabular-nums">{rate}</span>
+                </div>
+              ))}
+              <div className="px-6 py-3 bg-white/3 border-t border-white/8">
+                <p className="text-xs text-white/40">Voice minutes billed in 60-second increments, 1 min minimum. SMS segments depend on message length. Wallet top-ups never expire.</p>
+              </div>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
       {/* FAQ */}
       <section className="py-20 px-6 border-t border-white/5">
         <div className="max-w-3xl mx-auto">

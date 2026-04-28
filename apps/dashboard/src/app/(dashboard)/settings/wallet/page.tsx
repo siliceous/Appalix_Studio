@@ -459,6 +459,34 @@ export default function WalletPage() {
         </div>
       )}
 
+      {/* Usage rate card */}
+      <div className="bg-white dark:bg-[#1e2535] rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-white/8">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Usage rates</h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Charges are deducted from your wallet balance as you use each feature.</p>
+        </div>
+        <div className="divide-y divide-gray-100 dark:divide-white/6">
+          {([
+            { label: 'SMS outbound',                   rate: '$0.02 / segment'   },
+            { label: 'SMS inbound',                    rate: '$0.01 / message'   },
+            { label: 'Voice inbound',                  rate: '$0.05 / min'       },
+            { label: 'Voice outbound',                 rate: '$0.06 / min'       },
+            { label: 'Voice AI agent',                 rate: '$0.20 / min'       },
+            { label: 'Phone number rental',            rate: '$5.00 / number / mo'},
+            { label: 'AI analysis (email/chat/forms)', rate: '$0.001 / event'    },
+            { label: 'Gemini Live voice',              rate: '$0.10 / min'       },
+          ] as { label: string; rate: string }[]).map(({ label, rate }) => (
+            <div key={label} className="flex items-center justify-between px-6 py-2.5">
+              <p className="text-sm text-gray-700 dark:text-gray-300">{label}</p>
+              <p className="text-sm font-medium tabular-nums text-gray-500 dark:text-gray-400">{rate}</p>
+            </div>
+          ))}
+        </div>
+        <div className="px-6 py-3 bg-gray-50 dark:bg-white/3 border-t border-gray-100 dark:border-white/8">
+          <p className="text-xs text-gray-400">Rates shown in AUD. Voice minutes billed in 60-second increments (1 min minimum). SMS segments depend on message length and encoding.</p>
+        </div>
+      </div>
+
       {/* Billing region */}
       <div className="bg-white dark:bg-[#1e2535] rounded-2xl border border-gray-200 dark:border-white/10 p-6">
         <div className="flex items-center gap-2 mb-1">
