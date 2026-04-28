@@ -56,6 +56,58 @@ export async function emailCampaignRoutes(fastify: FastifyInstance) {
   )
 
   /**
+   * GET /email/unsubscribe
+   * Public one-click unsubscribe link included in every campaign email.
+   * ?rid=<recipientId> — marks the contact opted-out and shows a confirmation page.
+   */
+  fastify.get<{ Querystring: { rid?: string } }>(
+    '/unsubscribe',
+    async (request, reply) => {
+      const recipientId = request.query.rid
+      if (!recipientId) return reply.status(400).send('Invalid unsubscribe link.')
+
+      const { data: recipient } = await supabase
+        .from('email_campaign_recipients')
+        .select('id, contact_id, campaign_id, workspace_id')
+        .eq('id', recipientId)
+        .maybeSingle()
+
+      if (recipient) {
+        const now = new Date().toISOString()
+        await supabase.from('email_campaign_recipients').update({
+          status:          'unsubscribed',
+          unsubscribed_at: now,
+        }).eq('id', recipientId)
+
+        await supabase.from('email_campaigns').select('unsubscribed_count').eq('id', recipient.campaign_id).single()
+          .then(async ({ data }) => {
+            if (data) {
+              await supabase.from('email_campaigns').update({
+                unsubscribed_count: ((data as { unsubscribed_count: number }).unsubscribed_count ?? 0) + 1,
+                updated_at:         now,
+              }).eq('id', recipient.campaign_id)
+            }
+          })
+
+        if (recipient.contact_id) {
+          await supabase.from('contacts').update({ email_opt_out: true }).eq('id', recipient.contact_id)
+        }
+      }
+
+      // Return a simple confirmation page
+      return reply.type('text/html').send(`<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Unsubscribed</title>
+<style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f9fafb;}
+.box{text-align:center;padding:48px 32px;max-width:400px;}
+h1{font-size:1.25rem;color:#111;margin-bottom:8px;}p{color:#666;font-size:.875rem;}</style></head>
+<body><div class="box">
+<h1>You've been unsubscribed</h1>
+<p>You won't receive any more emails from this sender. If this was a mistake, please contact them directly.</p>
+</div></body></html>`)
+    },
+  )
+
+  /**
    * GET /email/campaigns/:id/stats
    * Returns live aggregate stats for a campaign.
    */

@@ -151,7 +151,6 @@ export async function sendCampaignBatch(params: SendBatchParams): Promise<{ sent
 export type ResendEventType =
   | 'email.sent' | 'email.delivered' | 'email.delivery_delayed'
   | 'email.bounced' | 'email.complained' | 'email.clicked' | 'email.opened'
-  | 'email.unsubscribed'
 
 export interface ResendWebhookPayload {
   type: ResendEventType
@@ -247,14 +246,6 @@ export async function processResendWebhook(payload: ResendWebhookPayload): Promi
       }
       break
     }
-    case 'email.unsubscribed': {
-      await supabase.from('email_campaign_recipients').update({ status: 'unsubscribed', unsubscribed_at: now }).eq('id', recipientId)
-      await incrementCampaignCounter(campaign_id, 'unsubscribed_count')
-      if (contact_id) {
-        await supabase.from('contacts').update({ email_opt_out: true }).eq('id', contact_id)
-      }
-      break
-    }
     default:
       break
   }
@@ -275,35 +266,32 @@ export async function processResendWebhook(payload: ResendWebhookPayload): Promi
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function personalise(template: string, r: CampaignRecipient): string {
+  const apiBase       = process.env.API_BASE_URL ?? 'http://localhost:3001'
+  const unsubscribeUrl = `${apiBase}/email/unsubscribe?rid=${r.recipientId}`
   return template
-    .replace(/\{\{first_name\}\}/gi, r.name?.split(' ')[0] ?? '')
-    .replace(/\{\{full_name\}\}/gi,  r.name ?? '')
-    .replace(/\{\{email\}\}/gi,      r.email)
+    .replace(/\{\{first_name\}\}/gi,      r.name?.split(' ')[0] ?? '')
+    .replace(/\{\{full_name\}\}/gi,       r.name ?? '')
+    .replace(/\{\{email\}\}/gi,           r.email)
+    .replace(/\{\{unsubscribe_link\}\}/gi, unsubscribeUrl)
 }
 
 async function incrementCampaignCounter(campaignId: string, column: string) {
-  await supabase.rpc('increment_campaign_counter', { p_campaign_id: campaignId, p_column: column })
-    .then(({ error }) => {
-      if (error) {
-        // Fallback: manual increment if RPC doesn't exist yet
-        supabase.from('email_campaigns')
-          .select(column)
-          .eq('id', campaignId)
-          .single()
-          .then(({ data }) => {
-            if (data) {
-              supabase.from('email_campaigns').update({ [column]: ((data as Record<string,number>)[column] ?? 0) + 1, updated_at: new Date().toISOString() }).eq('id', campaignId)
-            }
-          })
-      }
-    })
+  const { data } = await supabase.from('email_campaigns').select(column).eq('id', campaignId).single()
+  if (data) {
+    const row = data as unknown as Record<string, unknown>
+    await supabase.from('email_campaigns').update({
+      [column]:   ((row[column] as number) ?? 0) + 1,
+      updated_at: new Date().toISOString(),
+    }).eq('id', campaignId)
+  }
 }
 
 async function incrementBatchCounter(batchId: string, column: string) {
   const { data } = await supabase.from('email_send_batches').select(column).eq('id', batchId).single()
   if (data) {
+    const row = data as unknown as Record<string, unknown>
     await supabase.from('email_send_batches').update({
-      [column]:   ((data as Record<string, number>)[column] ?? 0) + 1,
+      [column]:   ((row[column] as number) ?? 0) + 1,
       updated_at: new Date().toISOString(),
     }).eq('id', batchId)
   }
