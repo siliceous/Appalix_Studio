@@ -85,7 +85,7 @@ const TOPUP_AMOUNTS_CENTS = [1000, 2000, 5000, 10000, 20000, 50000]
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatMoney(amount: number, currency: string) {
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat('en-US', {
     style:                 'currency',
     currency,
     minimumFractionDigits: 2,
