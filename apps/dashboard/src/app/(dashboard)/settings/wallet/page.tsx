@@ -215,6 +215,11 @@ export default function WalletPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-4 px-1">
 
+      <div>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Wallet</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage your balance, top-ups, and usage charges.</p>
+      </div>
+
       {/* Full-width banners */}
       {topupStatus === 'success' && (
         <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-sm text-emerald-700 dark:text-emerald-400">
