@@ -150,7 +150,7 @@ export default function PricingPage() {
                 { category: 'Voice', label: 'Inbound call',               rate: '$0.05 / min'        },
                 { category: 'Voice', label: 'Outbound call',              rate: '$0.06 / min'        },
                 { category: 'Voice', label: 'AI voice agent (phone)',     rate: '$0.20 / min'        },
-                { category: 'Voice', label: 'Gemini Live voice (widget)', rate: '$0.10 / min'        },
+                { category: 'Voice', label: 'Live voice (widget)',        rate: '$0.10 / min'        },
                 { category: 'Phone', label: 'Phone number rental',        rate: '$5.00 / number / mo'},
                 { category: 'AI',    label: 'AI analysis (email/chat)',   rate: '$0.001 / event'     },
               ] as { category: string; label: string; rate: string }[]).map(({ label, rate }, i, arr) => (
