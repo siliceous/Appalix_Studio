@@ -37,7 +37,9 @@ export async function GET() {
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
-  const [walletRes, txRes, usageRes] = await Promise.all([
+  const now = new Date().toISOString()
+
+  const [walletRes, txRes, usageRes, rateCardRes] = await Promise.all([
     admin
       .from('wallet_accounts' as never)
       .select('balance, currency, auto_recharge_enabled, auto_recharge_threshold, auto_recharge_amount, low_balance_threshold, stripe_payment_method_id')
@@ -54,6 +56,16 @@ export async function GET() {
       .select('usage_type, sell_total, quantity')
       .eq('workspace_id', workspaceId)
       .gte('occurred_at', thirtyDaysAgo),
+    // Workspace-specific rate card (falls back to global below)
+    admin
+      .from('billing_rate_cards' as never)
+      .select('rates, currency')
+      .eq('workspace_id', workspaceId)
+      .lte('effective_from', now)
+      .or('effective_to.is.null,effective_to.gt.' + now)
+      .order('effective_from', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ])
 
   type WalletRow = {
@@ -67,6 +79,22 @@ export async function GET() {
   }
 
   const wallet = walletRes.data as WalletRow | null
+
+  // Rate card: workspace-specific or global fallback
+  type RateCardRow = { rates: Record<string, { unit_price: number }>; currency: string }
+  let rateCard = rateCardRes.data as RateCardRow | null
+  if (!rateCard?.rates) {
+    const { data: globalCard } = await admin
+      .from('billing_rate_cards' as never)
+      .select('rates, currency')
+      .is('workspace_id', null)
+      .lte('effective_from', now)
+      .or('effective_to.is.null,effective_to.gt.' + now)
+      .order('effective_from', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    rateCard = globalCard as RateCardRow | null
+  }
 
   // Aggregate usage by type for the last 30 days
   type UsageRow = { usage_type: string; sell_total: string; quantity: number }
@@ -90,5 +118,7 @@ export async function GET() {
     stripe_payment_method_id: wallet?.stripe_payment_method_id ?? null,
     transactions:             txRes.data ?? [],
     usage_summary:            usageSummary,
+    rate_card:                rateCard?.rates   ?? {},
+    rate_currency:            rateCard?.currency ?? 'AUD',
   })
 }

@@ -30,6 +30,8 @@ interface WalletData {
   stripe_payment_method_id: string | null
   transactions:             Transaction[]
   usage_summary:            Record<string, { total: number; quantity: number }>
+  rate_card:                Record<string, { unit_price: number }>
+  rate_currency:            string
 }
 
 interface CountryOption {
@@ -76,6 +78,19 @@ const USAGE_TYPE_UNITS: Record<string, string> = {
   phone_number_month:    'numbers',
   ai_analysis:           'analyses',
   gemini_live_minute:    'minutes',
+}
+
+// ── Rate card display config ──────────────────────────────────────────────────
+
+const RATE_DISPLAY: Record<string, { label: string; unit: string }> = {
+  sms_outbound_segment:  { label: 'SMS outbound',   unit: 'seg'   },
+  sms_inbound_message:   { label: 'SMS inbound',    unit: 'msg'   },
+  voice_inbound_minute:  { label: 'Voice inbound',  unit: 'min'   },
+  voice_outbound_minute: { label: 'Voice outbound', unit: 'min'   },
+  voice_ai_stream_minute:{ label: 'Voice AI agent', unit: 'min'   },
+  phone_number_month:    { label: 'Phone number',   unit: 'mo'    },
+  ai_analysis:           { label: 'AI analysis',    unit: 'event' },
+  gemini_live_minute:    { label: 'Live voice',     unit: 'min'   },
 }
 
 // ── Top-up amounts ────────────────────────────────────────────────────────────
@@ -492,24 +507,31 @@ export default function WalletPage() {
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Deducted from your balance as you use each feature.</p>
             </div>
             <div className="divide-y divide-gray-100 dark:divide-white/6">
-              {([
-                { label: 'SMS outbound',                   rate: '$0.02 / seg'   },
-                { label: 'SMS inbound',                    rate: '$0.01 / msg'   },
-                { label: 'Voice inbound',                  rate: '$0.05 / min'   },
-                { label: 'Voice outbound',                 rate: '$0.06 / min'   },
-                { label: 'Voice AI agent',                 rate: '$0.20 / min'   },
-                { label: 'Phone number',                   rate: '$5.00 / mo'    },
-                { label: 'AI analysis',                    rate: '$0.001 / event'},
-                { label: 'Live voice',                      rate: '$0.10 / min'   },
-              ] as { label: string; rate: string }[]).map(({ label, rate }) => (
-                <div key={label} className="flex items-center justify-between px-5 py-2">
-                  <p className="text-xs text-gray-700 dark:text-gray-300">{label}</p>
-                  <p className="text-xs font-medium tabular-nums text-gray-500 dark:text-gray-400">{rate}</p>
-                </div>
-              ))}
+              {loading ? (
+                [...Array(8)].map((_, i) => (
+                  <div key={i} className="flex items-center justify-between px-5 py-2">
+                    <div className="h-3 w-24 bg-gray-100 dark:bg-white/5 rounded animate-pulse" />
+                    <div className="h-3 w-16 bg-gray-100 dark:bg-white/5 rounded animate-pulse" />
+                  </div>
+                ))
+              ) : (
+                Object.entries(RATE_DISPLAY)
+                  .filter(([key]) => wallet?.rate_card?.[key] !== undefined)
+                  .map(([key, { label, unit }]) => {
+                    const unitPrice = wallet!.rate_card[key].unit_price
+                    return (
+                      <div key={key} className="flex items-center justify-between px-5 py-2">
+                        <p className="text-xs text-gray-700 dark:text-gray-300">{label}</p>
+                        <p className="text-xs font-medium tabular-nums text-gray-500 dark:text-gray-400">
+                          {formatMoney(unitPrice, wallet!.rate_currency)} / {unit}
+                        </p>
+                      </div>
+                    )
+                  })
+              )}
             </div>
             <div className="px-5 py-3 bg-gray-50 dark:bg-white/3 border-t border-gray-100 dark:border-white/8">
-              <p className="text-[10px] text-gray-400 leading-relaxed">{currency}. Voice billed in 60-second increments (1 min min). SMS segments vary by message length.</p>
+              <p className="text-[10px] text-gray-400 leading-relaxed">{wallet?.rate_currency ?? 'AUD'}. Voice billed in 60-second increments (1 min min). SMS segments vary by message length.</p>
             </div>
           </div>
 
