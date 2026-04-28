@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Wallet, Plus, ArrowDownLeft, ArrowUpRight, RefreshCw, CheckCircle, AlertTriangle, Clock, Globe } from 'lucide-react'
+import { Wallet, Plus, ArrowDownLeft, ArrowUpRight, RefreshCw, CheckCircle, AlertTriangle, Clock, Globe, Zap, CreditCard } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -20,14 +20,16 @@ interface Transaction {
 }
 
 interface WalletData {
-  balance:                 number
-  currency:                string
-  country:                 string
-  auto_recharge_enabled:   boolean
-  auto_recharge_threshold: number
-  auto_recharge_amount:    number
-  low_balance_threshold:   number
-  transactions:            Transaction[]
+  balance:                  number
+  currency:                 string
+  country:                  string
+  auto_recharge_enabled:    boolean
+  auto_recharge_threshold:  number
+  auto_recharge_amount:     number
+  low_balance_threshold:    number
+  stripe_payment_method_id: string | null
+  transactions:             Transaction[]
+  usage_summary:            Record<string, { total: number; quantity: number }>
 }
 
 interface CountryOption {
@@ -51,6 +53,26 @@ const SUPPORTED_COUNTRIES: CountryOption[] = [
   { code: 'SG', name: 'Singapore',      currency: 'SGD' },
   { code: 'IN', name: 'India',          currency: 'INR' },
 ]
+
+// ── Usage type labels ─────────────────────────────────────────────────────────
+
+const USAGE_TYPE_LABELS: Record<string, string> = {
+  sms_outbound_segment:  'SMS outbound',
+  sms_inbound_message:   'SMS inbound',
+  voice_inbound_minute:  'Voice inbound',
+  voice_outbound_minute: 'Voice outbound',
+  voice_ai_stream_minute:'Voice AI agent',
+  phone_number_month:    'Phone number rental',
+}
+
+const USAGE_TYPE_UNITS: Record<string, string> = {
+  sms_outbound_segment:  'segments',
+  sms_inbound_message:   'messages',
+  voice_inbound_minute:  'minutes',
+  voice_outbound_minute: 'minutes',
+  voice_ai_stream_minute:'minutes',
+  phone_number_month:    'numbers',
+}
 
 // ── Top-up amounts ────────────────────────────────────────────────────────────
 
@@ -95,8 +117,13 @@ export default function WalletPage() {
   const [selected, setSelected]     = useState(5000)
   const [, startTransition]         = useTransition()
   const [redirecting, setRedirecting] = useState(false)
-  const [savingCountry, setSavingCountry] = useState(false)
-  const [countryError, setCountryError]   = useState<string | null>(null)
+  const [savingCountry, setSavingCountry]       = useState(false)
+  const [countryError, setCountryError]         = useState<string | null>(null)
+  const [savingRecharge, setSavingRecharge]     = useState(false)
+  const [rechargeEnabled, setRechargeEnabled]   = useState(false)
+  const [rechargeThreshold, setRechargeThreshold] = useState(10)
+  const [rechargeAmount, setRechargeAmount]     = useState(50)
+  const [rechargeSaved, setRechargeSaved]       = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -104,8 +131,31 @@ export default function WalletPage() {
       const res  = await fetch('/api/wallet/balance')
       const data = await res.json() as WalletData
       setWallet(data)
+      setRechargeEnabled(data.auto_recharge_enabled ?? false)
+      setRechargeThreshold(data.auto_recharge_threshold ?? 10)
+      setRechargeAmount(data.auto_recharge_amount ?? 50)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleSaveRechargeSettings = async () => {
+    setSavingRecharge(true)
+    setRechargeSaved(false)
+    try {
+      await fetch('/api/wallet/auto-recharge-settings', {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          auto_recharge_enabled:   rechargeEnabled,
+          auto_recharge_threshold: rechargeThreshold,
+          auto_recharge_amount:    rechargeAmount,
+        }),
+      })
+      setRechargeSaved(true)
+      setTimeout(() => setRechargeSaved(false), 3000)
+    } finally {
+      setSavingRecharge(false)
     }
   }
 
@@ -246,6 +296,86 @@ export default function WalletPage() {
         </button>
       </div>
 
+      {/* Auto-recharge */}
+      <div className="bg-white dark:bg-[#1e2535] rounded-2xl border border-gray-200 dark:border-white/10 p-6">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-gray-400" />
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Auto-recharge</h2>
+          </div>
+          <button
+            role="switch"
+            aria-checked={rechargeEnabled}
+            onClick={() => setRechargeEnabled(v => !v)}
+            className={`relative w-10 h-5 rounded-full transition-colors ${rechargeEnabled ? 'bg-[#15A4AE]' : 'bg-gray-200 dark:bg-white/10'}`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${rechargeEnabled ? 'translate-x-5' : ''}`} />
+          </button>
+        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+          Automatically charge your saved card when your balance drops below the threshold.
+        </p>
+
+        {/* Card status */}
+        <div className={`flex items-center gap-2 mb-4 px-3 py-2 rounded-lg text-xs ${
+          wallet?.stripe_payment_method_id
+            ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+            : 'bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400'
+        }`}>
+          <CreditCard className="w-3.5 h-3.5 shrink-0" />
+          {wallet?.stripe_payment_method_id
+            ? 'Card saved — auto-recharge is ready to use'
+            : 'No card saved yet. Complete a top-up and your card will be saved automatically.'}
+        </div>
+
+        {rechargeEnabled && (
+          <div className="space-y-3 mb-4">
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                Recharge when balance drops below ({currency})
+              </label>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                value={rechargeThreshold}
+                onChange={e => setRechargeThreshold(Number(e.target.value))}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                Top up amount ({currency})
+              </label>
+              <input
+                type="number"
+                min={10}
+                step={10}
+                value={rechargeAmount}
+                onChange={e => setRechargeAmount(Number(e.target.value))}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-[#15A4AE]"
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => void handleSaveRechargeSettings()}
+            disabled={savingRecharge}
+            className="flex items-center gap-2 px-4 py-2 bg-[#15A4AE] hover:bg-[#128a94] disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition-colors"
+          >
+            {savingRecharge ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : null}
+            Save
+          </button>
+          {rechargeSaved && (
+            <span className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+              <CheckCircle className="w-3.5 h-3.5" /> Saved
+            </span>
+          )}
+        </div>
+      </div>
+
       {/* Transaction history */}
       <div className="bg-white dark:bg-[#1e2535] rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 dark:border-white/8 flex items-center justify-between">
@@ -300,6 +430,30 @@ export default function WalletPage() {
           </div>
         )}
       </div>
+
+      {/* Usage breakdown — last 30 days */}
+      {wallet?.usage_summary && Object.keys(wallet.usage_summary).length > 0 && (
+        <div className="bg-white dark:bg-[#1e2535] rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-white/8">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Usage — last 30 days</h2>
+          </div>
+          <div className="divide-y divide-gray-100 dark:divide-white/6">
+            {Object.entries(wallet.usage_summary)
+              .sort((a, b) => b[1].total - a[1].total)
+              .map(([type, { total, quantity }]) => (
+                <div key={type} className="flex items-center justify-between px-6 py-3">
+                  <div>
+                    <p className="text-sm text-gray-800 dark:text-gray-200">{USAGE_TYPE_LABELS[type] ?? type}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{quantity.toLocaleString()} {USAGE_TYPE_UNITS[type] ?? 'units'}</p>
+                  </div>
+                  <p className="text-sm font-semibold tabular-nums text-gray-700 dark:text-gray-300">
+                    {formatMoney(total, currency)}
+                  </p>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
 
       {/* Billing region */}
       <div className="bg-white dark:bg-[#1e2535] rounded-2xl border border-gray-200 dark:border-white/10 p-6">

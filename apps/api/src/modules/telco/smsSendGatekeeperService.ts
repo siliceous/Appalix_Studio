@@ -1,6 +1,7 @@
 import { supabase }               from '../../lib/supabase.js'
 import { isOptedOut }             from '../compliance/smsOptOutService.js'
 import { detectCountryFromE164, getCountryRules } from '../compliance/countrySmsRulesService.js'
+import { getWalletBalance }       from './walletService.js'
 
 export type GatekeeperResult =
   | { allowed: true }
@@ -17,7 +18,17 @@ export async function checkSendAllowed(params: {
   const destCountry = detectCountryFromE164(toE164)
   const rules       = getCountryRules(destCountry)
 
-  // 2. Opt-out check (always enforced regardless of country)
+  // 2. Wallet balance check — block sends if balance is zero or negative
+  const { balance, currency } = await getWalletBalance(workspaceId)
+  if (balance <= 0) {
+    return {
+      allowed: false,
+      reason:  `Your Appalix wallet is empty (${currency} ${balance.toFixed(2)}). Add funds at Settings → Wallet to resume sending.`,
+      code:    'INSUFFICIENT_WALLET_BALANCE',
+    }
+  }
+
+  // 3. Opt-out check (always enforced regardless of country)
   if (await isOptedOut(workspaceId, toE164)) {
     return {
       allowed: false,
@@ -26,7 +37,7 @@ export async function checkSendAllowed(params: {
     }
   }
 
-  // 3. US A2P 10DLC enforcement
+  // 4. US A2P 10DLC enforcement
   if (rules.requiresA2P10DLC) {
     // Check approved compliance profile
     const { data: profile } = await supabase

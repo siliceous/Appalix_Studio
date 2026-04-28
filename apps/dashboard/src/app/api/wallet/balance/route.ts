@@ -35,10 +35,12 @@ export async function GET() {
 
   const admin = getAdmin()
 
-  const [walletRes, txRes] = await Promise.all([
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+
+  const [walletRes, txRes, usageRes] = await Promise.all([
     admin
       .from('wallet_accounts' as never)
-      .select('balance, currency, auto_recharge_enabled, auto_recharge_threshold, auto_recharge_amount, low_balance_threshold')
+      .select('balance, currency, auto_recharge_enabled, auto_recharge_threshold, auto_recharge_amount, low_balance_threshold, stripe_payment_method_id')
       .eq('workspace_id', workspaceId)
       .maybeSingle(),
     admin
@@ -47,6 +49,11 @@ export async function GET() {
       .eq('workspace_id', workspaceId)
       .order('created_at', { ascending: false })
       .limit(20),
+    admin
+      .from('usage_events' as never)
+      .select('usage_type, sell_total, quantity')
+      .eq('workspace_id', workspaceId)
+      .gte('occurred_at', thirtyDaysAgo),
   ])
 
   type WalletRow = {
@@ -56,9 +63,21 @@ export async function GET() {
     auto_recharge_threshold: string
     auto_recharge_amount: string
     low_balance_threshold: string
+    stripe_payment_method_id: string | null
   }
 
   const wallet = walletRes.data as WalletRow | null
+
+  // Aggregate usage by type for the last 30 days
+  type UsageRow = { usage_type: string; sell_total: string; quantity: number }
+  const usageRows = (usageRes.data ?? []) as UsageRow[]
+  const usageSummary: Record<string, { total: number; quantity: number }> = {}
+  for (const row of usageRows) {
+    const key = row.usage_type
+    if (!usageSummary[key]) usageSummary[key] = { total: 0, quantity: 0 }
+    usageSummary[key].total    += Number(row.sell_total)
+    usageSummary[key].quantity += Number(row.quantity)
+  }
 
   return NextResponse.json({
     balance:                  Number(wallet?.balance ?? 0),
@@ -68,6 +87,8 @@ export async function GET() {
     auto_recharge_threshold:  Number(wallet?.auto_recharge_threshold ?? 10),
     auto_recharge_amount:     Number(wallet?.auto_recharge_amount ?? 50),
     low_balance_threshold:    Number(wallet?.low_balance_threshold ?? 5),
+    stripe_payment_method_id: wallet?.stripe_payment_method_id ?? null,
     transactions:             txRes.data ?? [],
+    usage_summary:            usageSummary,
   })
 }

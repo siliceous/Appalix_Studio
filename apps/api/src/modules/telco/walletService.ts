@@ -118,5 +118,43 @@ export async function walletDeduct(params: {
     throw new Error(`[walletService] deduct failed: ${error.message}`)
   }
 
-  return data ?? 0
+  const newBalance = data ?? 0
+
+  // Fire auto-recharge check async — don't block the caller
+  void checkAndFireAutoRecharge(params.workspaceId, newBalance).catch(err =>
+    console.error('[walletService] auto-recharge check failed:', err)
+  )
+
+  return newBalance
+}
+
+async function checkAndFireAutoRecharge(workspaceId: string, newBalance: number): Promise<void> {
+  // Quick DB check — only proceed if auto_recharge is enabled and threshold crossed
+  const { data: walletRaw } = await supabase
+    .from('wallet_accounts' as never)
+    .select('auto_recharge_enabled, auto_recharge_threshold, stripe_payment_method_id')
+    .eq('workspace_id', workspaceId)
+    .maybeSingle() as {
+      data: {
+        auto_recharge_enabled:   boolean
+        auto_recharge_threshold: string
+        stripe_payment_method_id: string | null
+      } | null
+    }
+
+  if (!walletRaw?.auto_recharge_enabled)      return
+  if (!walletRaw.stripe_payment_method_id)     return
+  if (newBalance >= Number(walletRaw.auto_recharge_threshold)) return
+
+  const dashboardUrl = process.env.DASHBOARD_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const secret       = process.env.INTERNAL_API_SECRET ?? ''
+
+  await fetch(`${dashboardUrl}/api/wallet/trigger-auto-recharge`, {
+    method:  'POST',
+    headers: {
+      'Content-Type':      'application/json',
+      'x-internal-secret': secret,
+    },
+    body: JSON.stringify({ workspaceId }),
+  })
 }

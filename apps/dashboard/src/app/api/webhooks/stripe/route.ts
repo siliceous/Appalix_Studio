@@ -137,14 +137,16 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     const currency    = metadata.currency ?? 'AUD'
     if (amountCents > 0) {
       const amountDecimal = amountCents / 100
+      const paymentIntentId = session.payment_intent
+        ? (typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent.id)
+        : null
+
       const { error } = await supabase.rpc('wallet_credit' as never, {
         p_workspace_id:   metadata.workspace_id,
         p_amount:         amountDecimal,
         p_type:           'topup',
         p_description:    `Wallet top-up via Stripe — ${currency} ${amountDecimal.toFixed(2)}`,
-        p_reference_id:   session.payment_intent
-          ? (typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent.id)
-          : session.id,
+        p_reference_id:   paymentIntentId ?? session.id,
         p_reference_type: 'stripe_session',
         p_created_by:     metadata.user_id ?? null,
       })
@@ -152,6 +154,28 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         console.error('[stripe] wallet_credit RPC failed:', (error as { message: string }).message)
       } else {
         console.log(`[stripe] Wallet +${currency} ${amountDecimal.toFixed(2)} → workspace ${metadata.workspace_id}`)
+      }
+
+      // Capture payment method + stripe customer for auto-recharge
+      if (paymentIntentId) {
+        try {
+          const stripe = getStripe()
+          const pi = await stripe.paymentIntents.retrieve(paymentIntentId)
+          const pmId         = typeof pi.payment_method === 'string' ? pi.payment_method : pi.payment_method?.id
+          const customerId   = typeof pi.customer === 'string' ? pi.customer : pi.customer?.id
+          const updates: Record<string, string> = {}
+          if (pmId) updates['stripe_payment_method_id'] = pmId
+          if (Object.keys(updates).length > 0) {
+            await supabase.from('wallet_accounts' as never).update(updates).eq('workspace_id', metadata.workspace_id)
+          }
+          // Also save customer ID to workspace if not already set
+          if (customerId) {
+            await supabase.from('workspaces').update({ stripe_customer_id: customerId }).eq('id', metadata.workspace_id).is('stripe_customer_id', null)
+          }
+          console.log(`[stripe] Saved payment method ${pmId} for workspace ${metadata.workspace_id}`)
+        } catch (err) {
+          console.error('[stripe] Failed to save payment method:', err)
+        }
       }
     }
     return

@@ -70,6 +70,9 @@ export async function POST(req: Request) {
         },
       },
     ],
+    payment_intent_data: {
+      setup_future_usage: 'off_session',  // saves card for auto-recharge
+    },
     metadata: {
       type:         'wallet_topup',
       workspace_id: workspaceId,
