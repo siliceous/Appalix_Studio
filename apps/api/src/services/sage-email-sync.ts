@@ -15,6 +15,7 @@ import { callClaude }                                  from './ai/claude.js'
 import { getWorkspaceAutoSettings, isFullAutomation }  from '../lib/auto-settings.js'
 import { executeAutoAction }                           from './sage-auto-execute.js'
 import { getValidAccessToken }                         from './oauth-token-refresh.js'
+import { recordAiAnalysis }                            from './usage-ledger.service.js'
 
 // ---------------------------------------------------------------------------
 // Internal AI review trigger — fire-and-forget HTTP call to dashboard service
@@ -374,6 +375,7 @@ async function analyzeEmail(
   priorSummaries: string[] = [],
   crmContext?: { contactName?: string; dealTitle?: string; dealStage?: string },
   businessDescription?: string | null,
+  billing?: { workspaceId: string; emailId: string },
 ): Promise<EmailAnalysis | null> {
   const threadContext = priorSummaries.length > 0
     ? `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nPREVIOUS EMAILS IN THIS THREAD (actual content, newest first):\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n${priorSummaries.map((s, i) => `[Prior email ${i + 1}]\n${s}`).join('\n\n')}\n\n⚠️ CRITICAL INSTRUCTION: You are analysing the LATEST email below in the context of this full thread. Your summary MUST include all relevant details mentioned across ALL prior emails — including specific numbers (e.g. SKU counts, quantities), timelines, budgets, company details, or intent signals — even if those details are NOT repeated in the latest email. Do NOT write "No timeline mentioned" if a timeline was stated in a prior email.\n`
@@ -545,6 +547,19 @@ ${bodyText.slice(0, 3000)}`
     if (!json.extracted) json.extracted = { intent_signals: [], urgency_signals: [] }
     if (!json.extracted.intent_signals)  json.extracted.intent_signals  = []
     if (!json.extracted.urgency_signals) json.extracted.urgency_signals = []
+
+    if (billing) {
+      void recordAiAnalysis({
+        workspaceId:  billing.workspaceId,
+        sourceTable:  'sage_emails',
+        sourceId:     billing.emailId,
+        subtype:      'email',
+        tokensInput:  result.tokensInput,
+        tokensOutput: result.tokensOutput,
+        occurredAt:   new Date(),
+      }).catch(err => console.error('[email-sync] recordAiAnalysis failed:', err))
+    }
+
     return json
   } catch {
     return null
@@ -918,6 +933,7 @@ async function syncGmailEmailsViaAPI(opts: {
           priorSummaries,
           crmContext,
           businessDescription,
+          { workspaceId, emailId: inserted.id },
         )
 
         if (analysis) {
@@ -1281,6 +1297,7 @@ async function syncMicrosoftEmailsViaGraph(opts: {
           priorSummaries,
           crmContext,
           businessDescription,
+          { workspaceId, emailId: inserted.id },
         )
 
         if (analysis) {
@@ -1850,6 +1867,7 @@ export async function syncEmailsForWorkspace(workspaceId: string, userId: string
               priorSummaries,
               crmContext,
               businessDescription,
+              { workspaceId, emailId: inserted.id },
             )
 
             if (analysis) {
@@ -2079,6 +2097,7 @@ export async function reanalyzePendingEmails(workspaceId: string, batchSize = 50
         priorSummaries,
         crmContext,
         businessDescription,
+        { workspaceId, emailId: email.id },
       )
 
       if (analysis) {

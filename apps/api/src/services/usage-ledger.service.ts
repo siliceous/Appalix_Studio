@@ -8,6 +8,7 @@ type UsageEventType =
   | 'voice_outbound_minute'
   | 'voice_ai_stream_minute'
   | 'phone_number_month'
+  | 'ai_analysis'
 
 interface RateEntry {
   unit_price: number
@@ -275,5 +276,58 @@ export async function recordVoiceCall(params: {
       referenceType: 'usage_event',
       allowNegative: true, // allow slight negative; alert separately
     }).catch(err => console.error('[usage-ledger] voice wallet deduct failed:', err))
+  }
+}
+
+export async function recordAiAnalysis(params: {
+  workspaceId:  string
+  sourceTable:  string   // 'conversations' | 'sage_emails' | 'sage_form_submissions'
+  sourceId:     string
+  subtype:      'conversation' | 'email' | 'form' | 'brand'
+  tokensInput:  number
+  tokensOutput: number
+  occurredAt:   Date
+  currency?:    string
+}) {
+  const currency = params.currency ?? 'AUD'
+  const [sellRate, providerRate] = await Promise.all([
+    getWorkspaceRate(params.workspaceId, 'ai_analysis', params.occurredAt),
+    getProviderRate('anthropic', 'ai_analysis', params.occurredAt),
+  ])
+
+  const { data: usageRow, error } = await supabase.from('usage_events' as never).insert({
+    workspace_id:        params.workspaceId,
+    source_table:        params.sourceTable,
+    source_id:           params.sourceId,
+    provider:            'anthropic',
+    usage_type:          'ai_analysis',
+    quantity:            1,
+    unit:                'analysis',
+    occurred_at:         params.occurredAt.toISOString(),
+    provider_unit_cost:  providerRate,
+    provider_cost_total: providerRate,
+    sell_unit_price:     sellRate,
+    sell_total:          sellRate,
+    currency,
+    rating_status:       sellRate > 0 ? 'rated' : 'unrated',
+    meta: {
+      subtype:       params.subtype,
+      tokens_input:  params.tokensInput,
+      tokens_output: params.tokensOutput,
+    },
+  }).select('id').single() as { data: { id: string } | null; error: { message: string } | null }
+
+  if (error) { console.error('[usage-ledger] recordAiAnalysis:', error.message); return }
+
+  if (sellRate > 0) {
+    void walletDeduct({
+      workspaceId:   params.workspaceId,
+      amount:        sellRate,
+      type:          'usage_deduction',
+      description:   `AI analysis (${params.subtype})`,
+      referenceId:   usageRow?.id,
+      referenceType: 'usage_event',
+      allowNegative: true, // don't block AI analysis if wallet is low; alert separately
+    }).catch(err => console.error('[usage-ledger] ai analysis wallet deduct failed:', err))
   }
 }

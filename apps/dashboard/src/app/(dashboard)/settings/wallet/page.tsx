@@ -63,6 +63,7 @@ const USAGE_TYPE_LABELS: Record<string, string> = {
   voice_outbound_minute: 'Voice outbound',
   voice_ai_stream_minute:'Voice AI agent',
   phone_number_month:    'Phone number rental',
+  ai_analysis:           'AI analysis (email / chat / forms)',
 }
 
 const USAGE_TYPE_UNITS: Record<string, string> = {
@@ -72,6 +73,7 @@ const USAGE_TYPE_UNITS: Record<string, string> = {
   voice_outbound_minute: 'minutes',
   voice_ai_stream_minute:'minutes',
   phone_number_month:    'numbers',
+  ai_analysis:           'analyses',
 }
 
 // ── Top-up amounts ────────────────────────────────────────────────────────────

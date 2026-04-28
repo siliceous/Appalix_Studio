@@ -6,6 +6,7 @@ import { supabase }                                   from '../lib/supabase.js'
 import { callClaude }                                 from './ai/claude.js'
 import { getWorkspaceAutoSettings, isFullAutomation } from '../lib/auto-settings.js'
 import { executeAutoAction }                          from './sage-auto-execute.js'
+import { recordAiAnalysis }                           from './usage-ledger.service.js'
 
 interface FormAnalysis {
   priority: 'high' | 'medium' | 'low'
@@ -84,6 +85,16 @@ OUTPUT — return ONLY this JSON, nothing else:
     if (!jsonMatch) return
 
     const analysis = JSON.parse(jsonMatch[0]) as FormAnalysis
+
+    void recordAiAnalysis({
+      workspaceId,
+      sourceTable:  'sage_form_submissions',
+      sourceId:     submissionId,
+      subtype:      'form',
+      tokensInput:  result.tokensInput,
+      tokensOutput: result.tokensOutput,
+      occurredAt:   new Date(),
+    }).catch(err => console.error('[form-analyze] recordAiAnalysis failed:', err))
 
     await supabase
       .from('sage_form_submissions')

@@ -8,6 +8,7 @@ import { supabase }                                   from '../lib/supabase.js'
 import { callClaude }                                 from './ai/claude.js'
 import { getWorkspaceAutoSettings, isFullAutomation } from '../lib/auto-settings.js'
 import { executeAutoAction }                          from './sage-auto-execute.js'
+import { recordAiAnalysis }                           from './usage-ledger.service.js'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -30,7 +31,7 @@ interface ConvAnalysis {
 // Single conversation analysis
 // ---------------------------------------------------------------------------
 
-async function analyzeConversation(conversationId: string): Promise<ConvAnalysis | null> {
+async function analyzeConversation(conversationId: string, workspaceId: string): Promise<ConvAnalysis | null> {
   // Fetch last 30 user + assistant messages
   const { data: msgs } = await supabase
     .from('messages')
@@ -108,6 +109,17 @@ ${transcript.slice(0, 3000)}`
       .replace(/\s*```\s*$/, '')
     const json = JSON.parse(cleaned) as ConvAnalysis
     if (!json.priority || !json.action) return null
+
+    void recordAiAnalysis({
+      workspaceId,
+      sourceTable:  'conversations',
+      sourceId:     conversationId,
+      subtype:      'conversation',
+      tokensInput:  result.tokensInput,
+      tokensOutput: result.tokensOutput,
+      occurredAt:   new Date(),
+    }).catch(err => console.error('[conversation-analyze] recordAiAnalysis failed:', err))
+
     return json
   } catch (err) {
     console.error('[conversation-analyze] parse error:', err)
@@ -144,7 +156,7 @@ export async function analyzeConversationsForWorkspace(
 
   let analysed = 0
   for (const row of rows as { id: string }[]) {
-    const result = await analyzeConversation(row.id)
+    const result = await analyzeConversation(row.id, workspaceId)
     if (!result) continue
 
     const { error } = await supabase
