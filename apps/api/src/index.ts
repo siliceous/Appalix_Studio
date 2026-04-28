@@ -40,6 +40,8 @@ import { handleLiveWsConnection }                   from './live/session-manager
 import { handleWidgetVoiceWs }                      from './live/widget-voice-handler.js'
 import { telnyxVoiceRoutes }                        from './routes/webhooks/telnyx-voice.js'
 import { handleTelnyxCallWs }                       from './live/telnyx-call-handler.js'
+import { resendWebhookRoutes }                      from './routes/webhooks/resend.js'
+import { emailCampaignRoutes }                      from './routes/email/campaigns.js'
 
 const server = Fastify({
   logger: {
@@ -123,6 +125,7 @@ await server.register(instagramRoutes,  { prefix: '/webhooks' })
 await server.register(smsRoutes,              { prefix: '/webhooks' })
 await server.register(telnyxMessagingRoutes,  { prefix: '/webhooks' })
 await server.register(telnyxVoiceRoutes,      { prefix: '/webhooks' })
+await server.register(resendWebhookRoutes,    { prefix: '/webhooks' })
 await server.register(telnyxSmsRoutes,        { prefix: '/telnyx' })
 await server.register(shopifyOAuthRoutes)
 
@@ -149,6 +152,9 @@ await server.register(liveRoutes, { prefix: '/live' })
 await server.register(internalTrackRoutes,        { prefix: '/internal' })
 await server.register(billingRenewNumbersRoute,   { prefix: '/internal' })
 await server.register(complianceRoutes)
+
+// Email marketing — campaigns, send, stats (service-key auth)
+await server.register(emailCampaignRoutes, { prefix: '/email' })
 
 // ---------------------------------------------------------------
 // Error handler
