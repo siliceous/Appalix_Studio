@@ -451,7 +451,7 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
                 {canAllocate && col('assigned_to') && (
                   <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Assigned to</th>
                 )}
-                <th className="sticky right-0 z-10 bg-[#141c2b] px-4 py-3 text-right text-xs font-semibold text-white/70 uppercase tracking-wide min-w-[160px] whitespace-nowrap shadow-[-8px_0_8px_-4px_rgba(0,0,0,0.06)]">Actions</th>
+                <th className="sticky right-0 z-10 bg-[#141c2b] px-4 py-3 text-right text-xs font-semibold text-white/70 uppercase tracking-wide min-w-[220px] whitespace-nowrap shadow-[-8px_0_8px_-4px_rgba(0,0,0,0.06)]">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-white/5">
@@ -599,7 +599,7 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
                   )}
 
                   {/* Actions */}
-                  <td className={`sticky right-0 z-10 px-4 py-3.5 min-w-[160px] whitespace-nowrap shadow-[-8px_0_8px_-4px_rgba(0,0,0,0.08)] transition-colors ${selectedIds.has(lead.id) ? 'bg-brand-50 dark:bg-[#1a2436]' : 'bg-[#ffffff] dark:bg-[#232323] group-hover:bg-gray-50 dark:group-hover:bg-[#2a2a2a]'}`} onClick={e => e.stopPropagation()}>
+                  <td className={`sticky right-0 z-10 px-4 py-3.5 min-w-[220px] whitespace-nowrap shadow-[-8px_0_8px_-4px_rgba(0,0,0,0.08)] transition-colors ${selectedIds.has(lead.id) ? 'bg-brand-50 dark:bg-[#1a2436]' : 'bg-[#ffffff] dark:bg-[#232323] group-hover:bg-gray-50 dark:group-hover:bg-[#2a2a2a]'}`} onClick={e => e.stopPropagation()}>
                     <div className="flex items-center gap-1 justify-end">
                       <AutomationTriggerButton
                         state={automationStates.get(lead.id) ?? null}
