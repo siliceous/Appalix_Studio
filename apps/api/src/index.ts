@@ -42,6 +42,7 @@ import { telnyxVoiceRoutes }                        from './routes/webhooks/teln
 import { handleTelnyxCallWs }                       from './live/telnyx-call-handler.js'
 import { resendWebhookRoutes }                      from './routes/webhooks/resend.js'
 import { emailCampaignRoutes }                      from './routes/email/campaigns.js'
+import { startAutomationScheduler }                 from './modules/automations/automationScheduler.js'
 
 const server = Fastify({
   logger: {
@@ -298,6 +299,12 @@ try {
   // Run once on startup then every 30 s
   void pollPendingSources()
   setInterval(pollPendingSources, 30_000)
+
+  // ---------------------------------------------------------------
+  // Automation execution scheduler
+  // Polls automation_executions for steps due to run.
+  // ---------------------------------------------------------------
+  startAutomationScheduler()
 
   // ---------------------------------------------------------------
   // IMAP IDLE manager

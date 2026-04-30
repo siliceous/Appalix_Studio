@@ -16,13 +16,20 @@ import {
   deleteAsset,
   getBrandAssetUploadUrl,
   registerBrandAsset,
-  registerScannedAsset,
-  scanWebsiteForBrand,
   createClientBrandProfile,
   renameBrandProfile,
   deleteClientBrandProfile,
+  startBrandScan,
+  collectMoreImages,
+  saveCandidateAsset,
+  saveColorCandidate,
+  saveAllColorCandidates,
+  ignoreCandidate,
+  deleteColor,
+  saveFonts,
   type BrandProfileFormData,
-  type ScanResult,
+  type ScanSessionRow,
+  type CandidateRow,
 } from '@/app/actions/branding'
 import { EmailTemplatesTab } from './email-templates-tab'
 import { useUserAvatar } from '@/contexts/user-avatar-context'
@@ -75,9 +82,11 @@ interface BrandAssetRow {
 }
 
 interface Props {
-  userId?:  string
-  profiles: BrandProfileRow[]
-  assets:   BrandAssetRow[]
+  userId?:    string
+  profiles:   BrandProfileRow[]
+  assets:     BrandAssetRow[]
+  sessions:   ScanSessionRow[]
+  candidates: CandidateRow[]
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -168,6 +177,15 @@ function BrandSelector({
       setNewName(''); setNewCompany(''); setShowNew(false)
       onCreated(newId); router.refresh()
     } catch (e) { setCreateErr(e instanceof Error ? e.message : 'Failed to create') }
+    finally { setCreating(false) }
+  }
+
+  async function handleCreatePrimary() {
+    setCreating(true)
+    try {
+      await saveBrandProfile({})
+      router.refresh()
+    } catch (e) { alert(e instanceof Error ? e.message : 'Failed to create primary brand') }
     finally { setCreating(false) }
   }
 
@@ -302,6 +320,13 @@ function BrandSelector({
       {/* Brand list */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
         {workspaceBrand && <BrandCard p={workspaceBrand} />}
+        {!workspaceBrand && (
+          <button onClick={handleCreatePrimary} disabled={creating}
+            className="w-full flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium rounded-xl border border-dashed border-brand-300 dark:border-brand-600/40 text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-600/5 disabled:opacity-60 transition-colors">
+            {creating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+            {creating ? 'Creating…' : 'Create Primary Brand'}
+          </button>
+        )}
         {clientBrands.length > 0 && (
           <>
             <div className="px-2 pt-2 pb-0.5">
@@ -328,26 +353,6 @@ function BrandSelector({
 }
 
 // ── Shared form primitives ────────────────────────────────────────────────────
-
-function ColorField({ label, name, value, onChange }: {
-  label: string; name: string; value: string; onChange: (v: string) => void
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-medium text-gray-600 dark:text-gray-400">{label}</label>
-      <div className="flex items-center gap-2">
-        <div className="relative w-8 h-8 rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden shrink-0 cursor-pointer">
-          <input type="color" value={value || '#000000'} onChange={e => onChange(e.target.value)}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-          <div className="w-full h-full rounded-lg" style={{ backgroundColor: value || '#e5e7eb' }} />
-        </div>
-        <input type="text" name={name} value={value} onChange={e => onChange(e.target.value)}
-          placeholder="#000000" maxLength={7}
-          className="flex-1 px-3 py-1.5 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-600 font-mono" />
-      </div>
-    </div>
-  )
-}
 
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
@@ -401,17 +406,16 @@ function AssetCard({ asset, onApprove, onArchive, onDelete }: {
       </div>
       <p className="text-[10px] font-medium text-gray-600 dark:text-gray-300 truncate leading-tight">{asset.label ?? asset.file_name ?? 'Untitled'}</p>
       <div className="flex items-center gap-1">
-        {!asset.is_approved && (
-          <button onClick={() => onApprove(asset.id, !asset.is_primary)}
-            className="flex-1 flex items-center justify-center gap-0.5 py-1 text-[10px] font-medium rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors">
-            <Check className="w-2.5 h-2.5" /> Ok
-          </button>
-        )}
-        {asset.is_approved && !asset.is_primary && (
+        {!asset.is_primary && (
           <button onClick={() => onApprove(asset.id, true)}
             className="flex-1 flex items-center justify-center gap-0.5 py-1 text-[10px] font-medium rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-colors">
             <Star className="w-2.5 h-2.5" /> Main
           </button>
+        )}
+        {asset.is_primary && (
+          <span className="flex-1 flex items-center justify-center gap-0.5 py-1 text-[10px] font-medium text-amber-500">
+            <Star className="w-2.5 h-2.5 fill-current" /> Primary
+          </span>
         )}
         <button onClick={() => onArchive(asset.id)} title="Archive"
           className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors">
@@ -471,6 +475,7 @@ function UploadZone({ role, profileId, onUploaded }: { role: string; profileId: 
 function AssetsTab({
   profile, assets,
   profiles, selectedProfileId, onSelectProfile, onCreated,
+  sessions, candidates,
 }: {
   profile:           BrandProfileRow | null
   assets:            BrandAssetRow[]
@@ -478,21 +483,26 @@ function AssetsTab({
   selectedProfileId: string | null
   onSelectProfile:   (id: string) => void
   onCreated:         (id: string) => void
+  sessions:          ScanSessionRow[]
+  candidates:        CandidateRow[]
 }) {
   const router = useRouter()
   const [, startTransition] = useTransition()
-  const [saving, setSaving] = useState(false)
-  const [saved,  setSaved]  = useState(false)
-
-  const [scanning,        setScanning]        = useState(false)
   const { brandColor } = useUserAvatar()
-  const [scanError,       setScanError]       = useState<string | null>(null)
-  const [scanResult,      setScanResult]      = useState<ScanResult | null>(null)
-  const [applyingAssets,  setApplyingAssets]  = useState<Record<string, boolean>>({})
-  const [showLogoUpload,  setShowLogoUpload]  = useState(false)
-  const [appliedAssets,   setAppliedAssets]   = useState<Record<string, boolean>>({})
-  const [dupeModal,       setDupeModal]       = useState(false)
-  const justSavedRef = useRef(false)
+
+  const [scanning,       setScanning]      = useState(false)
+  const [scanError,      setScanError]     = useState<string | null>(null)
+  const [scanMessage,    setScanMessage]   = useState<string | null>(null)
+  const [fontHeading,    setFontHeading]   = useState(profile?.font_heading     ?? '')
+  const [fontSub,        setFontSub]       = useState(profile?.font_heading_sub ?? '')
+  const [fontBody,       setFontBody]      = useState(profile?.font_body        ?? '')
+  const [savingFonts,    setSavingFonts]   = useState(false)
+  const [savedFonts,     setSavedFonts]    = useState(false)
+  const [actionBusy,     setActionBusy]    = useState<Record<string, boolean>>({})
+  const [collectingMore, setCollectingMore]= useState(false)
+  const [saving,         setSaving]        = useState(false)
+  const [saved,          setSaved]         = useState(false)
+  const [showLogoUpload, setShowLogoUpload]= useState(false)
 
   const [form, setForm] = useState<BrandProfileFormData>({
     company_name:      profile?.company_name      ?? '',
@@ -504,20 +514,37 @@ function AssetsTab({
     color_accent:      profile?.color_accent      ?? '',
     color_background:  profile?.color_background  ?? '',
     color_text:        profile?.color_text        ?? '',
-    font_heading:      profile?.font_heading      ?? '',
-    font_heading_sub:  profile?.font_heading_sub  ?? '',
-    font_body:         profile?.font_body         ?? '',
-    brand_palette_json: profile?.brand_palette_json ?? undefined,
     brand_tone:        profile?.brand_tone        ?? '',
     brand_style:       profile?.brand_style       ?? '',
     cta_style:         profile?.cta_style         ?? '',
     brand_voice_notes: profile?.brand_voice_notes ?? '',
   })
 
-  const profileId = profile?.id
+  // Most recent completed scan session for this profile
+  const latestSession = sessions
+    .filter(s => s.brand_profile_id === profile?.id)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0] ?? null
+
+  const profileCandidates = candidates.filter(c => c.brand_profile_id === profile?.id)
+  const colorCandidates   = profileCandidates.filter(c => c.asset_type === 'color')
+  const logoCandidates    = profileCandidates.filter(c => c.asset_type === 'logo')
+  const faviconCandidates = profileCandidates.filter(c => c.asset_type === 'favicon')
+  const imageCandidates   = profileCandidates.filter(c => c.asset_type === 'image' || c.asset_type === 'product_image')
+
+  const savedPalette  = profile?.brand_palette_json ?? []
+  const profileAssets = assets.filter(a => a.brand_profile_id === profile?.id)
+  const savedLogos    = profileAssets.filter(a => ['primary_logo', 'secondary_logo', 'logo_mark'].includes(a.asset_role))
+  const savedFavicons = profileAssets.filter(a => a.asset_role === 'favicon')
+  const savedImages   = profileAssets.filter(a => !['primary_logo', 'secondary_logo', 'logo_mark', 'favicon'].includes(a.asset_role))
+  const hasMoreImages = (latestSession?.scan_summary?.allImageUrls?.length ?? 0) > 0
+  const isEcommerce   = latestSession?.is_ecommerce ?? false
+
+  // Sync form and font cards when profile or latest session changes
   useEffect(() => {
-    // After a save we deliberately cleared the form — don't repopulate it
-    if (justSavedRef.current) { justSavedRef.current = false; return }
+    const scanFonts = latestSession?.scan_summary?.fonts
+    setFontHeading(scanFonts?.heading    || profile?.font_heading     || '')
+    setFontSub(    scanFonts?.headingSub || profile?.font_heading_sub || '')
+    setFontBody(   scanFonts?.body       || profile?.font_body        || '')
     setForm({
       company_name:      profile?.company_name      ?? '',
       tagline:           profile?.tagline           ?? '',
@@ -528,85 +555,86 @@ function AssetsTab({
       color_accent:      profile?.color_accent      ?? '',
       color_background:  profile?.color_background  ?? '',
       color_text:        profile?.color_text        ?? '',
-      font_heading:      profile?.font_heading      ?? '',
-      font_heading_sub:  profile?.font_heading_sub  ?? '',
-      font_body:          profile?.font_body          ?? '',
-      brand_tone:         profile?.brand_tone         ?? '',
-      brand_style:        profile?.brand_style        ?? '',
-      cta_style:          profile?.cta_style          ?? '',
-      brand_voice_notes:  profile?.brand_voice_notes  ?? '',
-      brand_palette_json: profile?.brand_palette_json ?? undefined,
+      brand_tone:        profile?.brand_tone        ?? '',
+      brand_style:       profile?.brand_style       ?? '',
+      cta_style:         profile?.cta_style         ?? '',
+      brand_voice_notes: profile?.brand_voice_notes ?? '',
     })
-    setSaved(false); setScanResult(null)
+    setSaved(false)
+    setScanMessage(null)
+    setScanError(null)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileId])
+  }, [profile?.id, profile?.updated_at, latestSession?.id])
 
-  function set(key: keyof BrandProfileFormData, val: string) {
-    setForm(f => ({ ...f, [key]: val })); setSaved(false); setScanResult(null)
+  function setField(key: keyof BrandProfileFormData, val: string) {
+    setForm(f => ({ ...f, [key]: val })); setSaved(false)
   }
 
-  const emptyForm: BrandProfileFormData = {
-    company_name: '', tagline: '', website_url: '', footer_text: '',
-    color_primary: '', color_secondary: '', color_accent: '', color_background: '', color_text: '',
-    font_heading: '', font_heading_sub: '', font_body: '',
-    brand_tone: '', brand_style: '', cta_style: '', brand_voice_notes: '',
-    brand_palette_json: undefined,
+  function setBusy(id: string, busy: boolean) {
+    setActionBusy(prev => ({ ...prev, [id]: busy }))
   }
 
-  function resetScanState() {
-    justSavedRef.current = true
-    setScanResult(null)
-    setAppliedAssets({})
-    setApplyingAssets({})
-    setShowLogoUpload(false)
-    setForm(emptyForm)
-  }
-
-  // Auto-import all discovered assets from the scan into a profile
-  async function importScanAssets(brandProfileId: string) {
-    if (!scanResult?.discoveredAssets?.length) return
-    const pending = scanResult.discoveredAssets.filter(a => !appliedAssets[a.url])
-    await Promise.allSettled(
-      pending.map(a =>
-        registerScannedAsset({ brandProfileId, sourceUrl: a.url, assetRole: a.role, label: a.label })
-      )
-    )
-  }
-
-  async function handleSave(confirmed = false) {
-    const profileHasData = !!profile?.company_name
-    const scanBroughtNewCompany = !!scanResult?.company_name && scanResult.company_name !== profile?.company_name
-    if (!confirmed && profileHasData && scanBroughtNewCompany) {
-      setDupeModal(true)
-      return
-    }
-    setDupeModal(false)
-    setSaving(true); setSaved(false)
+  async function handleScan() {
+    const url = form.website_url?.trim()
+    if (!url || !profile) return
+    setScanning(true); setScanError(null); setScanMessage(null)
     try {
-      await saveBrandProfile(form, profile?.id)
-      if (profile?.id) await importScanAssets(profile.id)
-      setSaved(true)
-      resetScanState()
-      setTimeout(() => setSaved(false), 2500)
+      const result = await startBrandScan(profile.id, url)
+      setScanMessage(result.message)
       router.refresh()
-    } finally { setSaving(false) }
+    } catch (e) {
+      setScanError(e instanceof Error ? e.message : 'Scan failed')
+    } finally { setScanning(false) }
   }
 
-  async function handleSaveAsNew() {
-    setDupeModal(false)
-    setSaving(true); setSaved(false)
+  async function handleSaveFonts() {
+    if (!profile) return
+    setSavingFonts(true)
     try {
-      const newId = await createClientBrandProfile({
-        name: form.company_name?.trim() || scanResult?.company_name?.trim() || 'New Brand',
-        companyName: form.company_name?.trim() || scanResult?.company_name?.trim(),
-      })
-      await saveBrandProfile(form, newId)
-      await importScanAssets(newId)
-      setSaved(true)
-      resetScanState()
-      setTimeout(() => setSaved(false), 2500)
-      onCreated(newId)
-    } finally { setSaving(false) }
+      await saveFonts(profile.id, { heading: fontHeading, headingSub: fontSub, body: fontBody })
+      setSavedFonts(true)
+      setTimeout(() => setSavedFonts(false), 2000)
+      router.refresh()
+    } finally { setSavingFonts(false) }
+  }
+
+  async function handleSaveColor(id: string) {
+    setBusy(id, true)
+    try { await saveColorCandidate(id); router.refresh() }
+    finally { setBusy(id, false) }
+  }
+
+  async function handleSaveAllColors() {
+    if (!profile) return
+    setSaving(true)
+    try { await saveAllColorCandidates(profile.id); router.refresh() }
+    finally { setSaving(false) }
+  }
+
+  async function handleDeleteColor(hex: string) {
+    if (!profile) return
+    await deleteColor(profile.id, hex)
+    router.refresh()
+  }
+
+  async function handleSaveCandidate(id: string) {
+    setBusy(id, true)
+    try { await saveCandidateAsset(id); router.refresh() }
+    catch (e) { alert(e instanceof Error ? e.message : 'Could not save asset') }
+    finally { setBusy(id, false) }
+  }
+
+  async function handleIgnoreCandidate(id: string) {
+    setBusy(id, true)
+    try { await ignoreCandidate(id); router.refresh() }
+    finally { setBusy(id, false) }
+  }
+
+  async function handleCollectMore() {
+    if (!latestSession || !profile) return
+    setCollectingMore(true)
+    try { await collectMoreImages(latestSession.id, profile.id); router.refresh() }
+    finally { setCollectingMore(false) }
   }
 
   function handleApprove(id: string, primary: boolean) {
@@ -619,54 +647,25 @@ function AssetsTab({
     startTransition(async () => { await deleteAsset(id); router.refresh() })
   }
 
-  async function handleScan() {
-    const url = form.website_url?.trim(); if (!url) return
-    setScanning(true); setScanError(null); setScanResult(null)
-    try {
-      const result = await scanWebsiteForBrand(url)
-      if ('error' in result) { setScanError(result.error); return }
-      setScanResult(result)
-      setForm(f => ({
-        ...f,
-        company_name:      result.company_name      || f.company_name,
-        tagline:           result.tagline           || f.tagline,
-        footer_text:       result.footer_text       || f.footer_text,
-        color_primary:     result.color_primary     || f.color_primary,
-        color_secondary:   result.color_secondary   || f.color_secondary,
-        color_background:  result.color_background  || f.color_background,
-        color_text:        result.color_text        || f.color_text,
-        color_accent:      result.color_button      || result.color_accent || f.color_accent,
-        font_heading:      result.font_heading      || f.font_heading,
-        font_heading_sub:  result.font_heading_sub  || f.font_heading_sub,
-        font_body:         result.font_body         || f.font_body,
-        brand_tone:        result.brand_tone        || f.brand_tone,
-        brand_style:       result.brand_style       || f.brand_style,
-        brand_voice_notes:  result.brand_voice_notes || f.brand_voice_notes,
-        social_links_json:  result.social_links      || f.social_links_json,
-        brand_palette_json: result.color_palette     || f.brand_palette_json,
-      }))
-    } finally { setScanning(false) }
-  }
-
-  async function handleImportAsset(asset: ScanResult['discoveredAssets'][number]) {
+  async function handleSave() {
     if (!profile) return
-    const key = asset.url
-    setApplyingAssets(a => ({ ...a, [key]: true }))
+    setSaving(true)
     try {
-      await registerScannedAsset({ brandProfileId: profile.id, sourceUrl: asset.url, assetRole: asset.role, label: asset.label })
-      setAppliedAssets(a => ({ ...a, [key]: true }))
+      await Promise.all([
+        saveBrandProfile(form, profile.id),
+        saveFonts(profile.id, { heading: fontHeading, headingSub: fontSub, body: fontBody }),
+      ])
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
       router.refresh()
-    } catch (e) { console.error('Asset import failed', e) }
-    finally { setApplyingAssets(a => ({ ...a, [key]: false })) }
+    } finally { setSaving(false) }
   }
 
-  const logoAssets    = assets.filter(a => ['primary_logo', 'secondary_logo', 'logo_mark'].includes(a.asset_role))
-  const faviconAssets = assets.filter(a => a.asset_role === 'favicon')
-  const imageAssets   = assets.filter(a => !['primary_logo', 'secondary_logo', 'logo_mark', 'favicon'].includes(a.asset_role))
+  const fontPreviewFonts = [fontHeading, fontSub, fontBody].filter(Boolean)
+  const gfQuery = fontPreviewFonts.map(f => `family=${encodeURIComponent(f)}:wght@400;700`).join('&')
 
   return (
     <div className="flex-1 min-h-0 bg-[#f5f4f1] dark:bg-gray-950 overflow-hidden flex flex-col">
-
       <div className="flex gap-5 flex-1 min-h-0 px-6 py-5">
 
         {/* ── Column 1: Brand IDs ── */}
@@ -682,264 +681,310 @@ function AssetsTab({
         {/* ── Column 2: Assets (center) ── */}
         <div className="flex-1 min-w-0 flex flex-col rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
 
-          {/* Header */}
           <div className="shrink-0 px-4 py-2.5" style={{ background: brandColor }}>
             <span className="text-sm font-semibold text-white">Assets</span>
           </div>
 
-          {/* URL scan row — white bar, centered */}
-          <div className="shrink-0 px-4 py-2 border-b border-gray-100 dark:border-white/8 bg-white dark:bg-gray-900 flex justify-center">
-            <div className="flex items-center gap-2 w-full max-w-sm">
+          {/* Scan bar */}
+          <div className="shrink-0 px-4 py-2 border-b border-gray-100 dark:border-white/8 bg-white dark:bg-gray-900">
+            <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5 flex-1 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/15 bg-white dark:bg-gray-800 min-w-0">
                 <Globe className="w-3 h-3 text-gray-400 shrink-0" />
-                <input
-                  type="url"
-                  value={form.website_url ?? ''}
-                  onChange={e => set('website_url', e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && form.website_url?.trim()) handleScan() }}
+                <input type="url" value={form.website_url ?? ''}
+                  onChange={e => setField('website_url', e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && form.website_url?.trim() && profile) handleScan() }}
                   placeholder="Enter your URL here"
-                  className="flex-1 text-xs bg-transparent outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 min-w-0"
-                />
+                  className="flex-1 text-xs bg-transparent outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 min-w-0" />
               </div>
-              <button onClick={handleScan} disabled={scanning || !form.website_url?.trim()}
+              <button onClick={handleScan} disabled={scanning || !form.website_url?.trim() || !profile}
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-40 text-white transition-colors shrink-0">
                 {scanning ? <><Loader2 className="w-3 h-3 animate-spin" /> Scanning…</> : <><Scan className="w-3 h-3" /> Scan</>}
               </button>
             </div>
           </div>
           {scanError && (
-            <div className="shrink-0 flex items-center gap-1 px-3 py-1 bg-red-500/10 border-b border-red-200/20">
+            <div className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-red-500/10 border-b border-red-200/20">
               <AlertCircle className="w-3 h-3 text-red-400 shrink-0" />
               <span className="text-[10px] text-red-400">{scanError}</span>
             </div>
           )}
+          {scanMessage && !scanError && (
+            <div className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-emerald-500/10 border-b border-emerald-200/20">
+              <Check className="w-3 h-3 text-emerald-500 shrink-0" />
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400">{scanMessage}</span>
+            </div>
+          )}
 
           {/* Scrollable body */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
 
+            {/* ── Colours ── */}
+            {(savedPalette.length > 0 || colorCandidates.length > 0) && (
+              <section className="space-y-2">
+                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Colours</h2>
 
-            {/* ── Color Palette — 5×2 circles, from scan or saved profile ── */}
-            {(() => {
-              const src = scanResult ? form : profile
-              const palette: string[] = (src?.brand_palette_json as Array<{ hex: string }> | undefined)?.map(c => c.hex)
-                ?? [src?.color_primary, src?.color_secondary, src?.color_accent, src?.color_background, src?.color_text].filter(Boolean) as string[]
-              if (!palette.length) return null
-              const capped = [...new Set(palette)].slice(0, 10)
-              return (
-                <section className="space-y-2">
-                  <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Palette</h2>
-                  {[capped.slice(0, 5), capped.slice(5)].filter(r => r.length > 0).map((row, ri) => (
-                    <div key={ri} className="flex gap-2">
-                      {row.map((hex, ci) => (
-                        <button key={`${ri}-${ci}`} onClick={() => navigator.clipboard?.writeText(hex)}
-                          title={hex} className="group shrink-0">
-                          <div className="w-7 h-7 rounded-full border border-gray-200 dark:border-white/10 shadow-sm group-hover:scale-110 transition-transform"
-                            style={{ backgroundColor: hex }} />
-                        </button>
+                {savedPalette.length > 0 && (
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-gray-400">Saved</span>
+                    <div className="flex flex-wrap gap-2">
+                      {savedPalette.map(c => (
+                        <div key={c.hex} className="group flex flex-col items-center gap-0.5">
+                          <div className="relative">
+                            <div className="w-7 h-7 rounded-full border border-gray-200 dark:border-white/10 shadow-sm cursor-pointer group-hover:scale-110 transition-transform"
+                              style={{ backgroundColor: c.hex }} onClick={() => navigator.clipboard?.writeText(c.hex)} title={c.hex} />
+                            <button onClick={() => handleDeleteColor(c.hex)}
+                              className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500 text-white items-center justify-center hidden group-hover:flex">
+                              <X className="w-2 h-2" />
+                            </button>
+                          </div>
+                        </div>
                       ))}
                     </div>
-                  ))}
-                </section>
-              )
-            })()}
+                  </div>
+                )}
 
-            {/* ── Fonts — 2 per row, pangram preview ── */}
-            {(() => {
-              // When a scan is active use form state (live); otherwise use saved profile data
-              const src = scanResult ? form : profile
-              const fonts = [
-                { label: 'Primary',   value: src?.font_heading     },
-                { label: 'Secondary', value: src?.font_heading_sub },
-                { label: 'Body',      value: src?.font_body        },
-              ].filter(f => f.value) as { label: string; value: string }[]
-              if (!fonts.length) return null
-
-              const gfQuery = fonts.map(f => `family=${encodeURIComponent(f.value)}:wght@400;700`).join('&')
-              return (
-                <section className="space-y-2">
-                  {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-                  <link rel="stylesheet" href={`https://fonts.googleapis.com/css2?${gfQuery}&display=swap`} />
-                  <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Fonts</h2>
-                  <div className="grid grid-cols-2 gap-2">
-                    {fonts.map(({ label, value }) => (
-                      <div key={label} className="flex flex-col gap-1.5 p-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/3">
-                        <div className="flex items-center justify-between gap-1">
-                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate">{value}</p>
-                          <button onClick={() => navigator.clipboard?.writeText(value)} title="Copy font name"
-                            className="p-0.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors shrink-0">
-                            <FileText className="w-3 h-3" />
-                          </button>
+                {colorCandidates.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-gray-400">New from scan ({colorCandidates.length})</span>
+                      <button onClick={handleSaveAllColors} disabled={saving}
+                        className="text-[10px] font-medium text-brand-600 dark:text-brand-400 hover:underline disabled:opacity-60">
+                        Save All
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {colorCandidates.map(c => (
+                        <div key={c.id} className="group flex flex-col items-center gap-0.5">
+                          <div className="relative">
+                            <div className="w-7 h-7 rounded-full border-2 border-dashed border-brand-300 dark:border-brand-600/50 shadow-sm cursor-pointer"
+                              style={{ backgroundColor: c.value ?? '#ccc' }}
+                              onClick={() => navigator.clipboard?.writeText(c.value ?? '')} title={c.value ?? ''} />
+                            <button onClick={() => handleSaveColor(c.id)} disabled={!!actionBusy[c.id]}
+                              className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-brand-600 text-white items-center justify-center hidden group-hover:flex disabled:opacity-60">
+                              {actionBusy[c.id] ? <Loader2 className="w-2 h-2 animate-spin" /> : <Plus className="w-2 h-2" />}
+                            </button>
+                          </div>
                         </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug line-clamp-2"
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* ── Fonts ── */}
+            {profile && (
+              <section className="space-y-2">
+                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Fonts</h2>
+                {fontPreviewFonts.length > 0 && (
+                  // eslint-disable-next-line @next/next/no-page-custom-font
+                  <link rel="stylesheet" href={`https://fonts.googleapis.com/css2?${gfQuery}&display=swap`} />
+                )}
+                <div className="flex flex-col gap-2">
+                  {([
+                    { label: 'Primary',   value: fontHeading, onChange: setFontHeading, placeholder: 'e.g. Playfair Display' },
+                    { label: 'Secondary', value: fontSub,     onChange: setFontSub,     placeholder: 'e.g. Lato' },
+                    { label: 'Body',      value: fontBody,    onChange: setFontBody,     placeholder: 'e.g. Inter' },
+                  ]).map(({ label, value, onChange, placeholder }) => (
+                    <div key={label} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/3">
+                      <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide w-16 shrink-0">{label}</span>
+                      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+                        className="w-28 shrink-0 text-xs border border-gray-200 dark:border-white/10 rounded px-1.5 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-600" />
+                      {value ? (
+                        <p className="flex-1 text-sm text-gray-600 dark:text-gray-300 truncate"
                           style={{ fontFamily: `"${value}", sans-serif` }}>
                           The quick brown fox jumps over the lazy dog
                         </p>
-                        <span className="text-[10px] text-gray-400">{label} font</span>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )
-            })()}
+                      ) : (
+                        <p className="flex-1 text-xs text-gray-300 dark:text-gray-600 italic">No font set</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
-            {/* ── Logos + Favicon — saved + scanned, single row ── */}
-            {(() => {
-              const savedLogos = [...logoAssets, ...faviconAssets]
-              const logoRoles  = new Set(['primary_logo', 'secondary_logo', 'logo_mark', 'favicon'])
-              const scannedLogos = scanResult?.discoveredAssets.filter(a => logoRoles.has(a.role)) ?? []
-              const hasAny = savedLogos.length > 0 || scannedLogos.length > 0 || !!profile
-              if (!hasAny) return null
-              return (
-                <section className="space-y-2">
-                  <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Logos &amp; Favicon</h2>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {/* Saved / uploaded logos */}
-                    {savedLogos.map(a => (
-                      <div key={a.id} className="group relative shrink-0" title={a.label ?? a.asset_role}>
-                        <div className="w-20 h-20 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 flex items-center justify-center overflow-hidden">
+            {/* ── Logos & Favicons ── */}
+            {(savedLogos.length > 0 || savedFavicons.length > 0 || logoCandidates.length > 0 || faviconCandidates.length > 0 || !!profile) && (
+              <section className="space-y-2">
+                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Logos &amp; Favicons</h2>
+
+                {(savedLogos.length > 0 || savedFavicons.length > 0) && (
+                  <div className="flex flex-wrap gap-2">
+                    {[...savedLogos, ...savedFavicons].map(a => (
+                      <div key={a.id} className="group relative shrink-0">
+                        <div className="relative w-20 h-20 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 flex items-center justify-center overflow-hidden">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={a.file_url} alt={a.label ?? ''} className="max-w-full max-h-full object-contain p-2"
                             onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 rounded-xl">
+                            <button onClick={() => handleArchive(a.id)}
+                              className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors">
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => handleDelete(a.id)}
+                              className="w-7 h-7 rounded-full bg-red-500/80 hover:bg-red-500 text-white flex items-center justify-center transition-colors">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
-                        {/* X to delete — always visible on hover */}
-                        <button onClick={() => handleArchive(a.id)}
-                          className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white items-center justify-center hidden group-hover:flex shadow-sm">
+                        <p className="text-[9px] text-gray-400 text-center mt-0.5 truncate max-w-[5rem]">{a.label ?? a.asset_role}</p>
+                      </div>
+                    ))}
+                    <button onClick={() => setShowLogoUpload(v => !v)} title="Add logo"
+                      className="w-20 h-20 rounded-xl border border-dashed border-gray-300 dark:border-white/20 flex items-center justify-center text-gray-400 hover:border-brand-400 hover:text-brand-500 transition-colors shrink-0">
+                      <Plus className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+
+                {(logoCandidates.length > 0 || faviconCandidates.length > 0) && (
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-gray-400">New from scan</span>
+                    <div className="flex flex-wrap gap-3">
+                      {[...logoCandidates, ...faviconCandidates].map(c => (
+                        <div key={c.id} className="flex flex-col items-center gap-1">
+                          <div className="w-20 h-20 rounded-xl border border-dashed border-brand-300 dark:border-brand-600/50 bg-brand-50/30 dark:bg-brand-600/5 flex items-center justify-center overflow-hidden">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={c.value ?? ''} alt={c.title ?? ''} className="max-w-full max-h-full object-contain p-2"
+                              onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                          </div>
+                          <p className="text-[9px] text-gray-400 truncate max-w-[5rem] text-center">{c.title ?? c.asset_type}</p>
+                          <div className="flex gap-1">
+                            <button onClick={() => handleSaveCandidate(c.id)} disabled={!!actionBusy[c.id]}
+                              className="px-2 py-0.5 text-[10px] font-medium rounded bg-brand-600 hover:bg-brand-700 text-white disabled:opacity-60 transition-colors">
+                              {actionBusy[c.id] ? <Loader2 className="w-2.5 h-2.5 animate-spin inline" /> : 'Save'}
+                            </button>
+                            <button onClick={() => handleIgnoreCandidate(c.id)} disabled={!!actionBusy[c.id]}
+                              className="px-1.5 py-0.5 text-[10px] rounded border border-gray-200 dark:border-white/10 text-gray-400 hover:text-red-500 disabled:opacity-60 transition-colors">
+                              <X className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {profile && savedLogos.length === 0 && savedFavicons.length === 0 && logoCandidates.length === 0 && faviconCandidates.length === 0 && (
+                  <div className="grid grid-cols-4 gap-1.5">
+                    <UploadZone role="primary_logo"   profileId={profile.id} onUploaded={() => router.refresh()} />
+                    <UploadZone role="secondary_logo" profileId={profile.id} onUploaded={() => router.refresh()} />
+                    <UploadZone role="logo_mark"      profileId={profile.id} onUploaded={() => router.refresh()} />
+                    <UploadZone role="favicon"        profileId={profile.id} onUploaded={() => router.refresh()} />
+                  </div>
+                )}
+                {profile && showLogoUpload && (savedLogos.length > 0 || savedFavicons.length > 0) && (
+                  <div className="grid grid-cols-4 gap-1.5">
+                    <UploadZone role="primary_logo"   profileId={profile.id} onUploaded={() => { router.refresh(); setShowLogoUpload(false) }} />
+                    <UploadZone role="secondary_logo" profileId={profile.id} onUploaded={() => { router.refresh(); setShowLogoUpload(false) }} />
+                    <UploadZone role="logo_mark"      profileId={profile.id} onUploaded={() => { router.refresh(); setShowLogoUpload(false) }} />
+                    <UploadZone role="favicon"        profileId={profile.id} onUploaded={() => { router.refresh(); setShowLogoUpload(false) }} />
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* ── Images ── */}
+            {(savedImages.length > 0 || imageCandidates.length > 0 || !!profile) && (
+              <section className="space-y-2">
+                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Images</h2>
+                <div className="grid grid-cols-3 gap-2">
+                  {savedImages.map(a => (
+                    <AssetCard key={a.id} asset={a} onApprove={handleApprove} onArchive={handleArchive} onDelete={handleDelete} />
+                  ))}
+                  {imageCandidates.map(c => (
+                    <div key={c.id} className="relative flex flex-col gap-1.5 p-2 rounded-lg border border-dashed border-brand-300 dark:border-brand-600/50 bg-brand-50/20 dark:bg-brand-600/5">
+                      <div className="w-full h-24 rounded bg-gray-50 dark:bg-white/5 flex items-center justify-center overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={c.value ?? ''} alt={c.title ?? ''} className="max-w-full max-h-full object-cover"
+                          onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                      </div>
+                      <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 truncate">{c.title}</p>
+                      <div className="flex gap-1">
+                        <button onClick={() => handleSaveCandidate(c.id)} disabled={!!actionBusy[c.id]}
+                          className="flex-1 flex items-center justify-center gap-0.5 py-1 text-[10px] font-medium rounded bg-brand-600 hover:bg-brand-700 text-white disabled:opacity-60 transition-colors">
+                          {actionBusy[c.id] ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Plus className="w-2.5 h-2.5" />}
+                          {actionBusy[c.id] ? 'Saving…' : 'Save'}
+                        </button>
+                        <button onClick={() => handleIgnoreCandidate(c.id)} disabled={!!actionBusy[c.id]}
+                          className="p-1 rounded border border-gray-200 dark:border-white/10 text-gray-400 hover:text-red-500 disabled:opacity-60 transition-colors">
                           <X className="w-3 h-3" />
                         </button>
                       </div>
-                    ))}
-                    {/* Scanned logos not yet imported */}
-                    {scannedLogos.map(a => {
-                      const applied  = appliedAssets[a.url]
-                      const applying = applyingAssets[a.url]
-                      return (
-                        <div key={a.url} className="group relative shrink-0" title={`${a.label} (scan)`}>
-                          <div className="w-20 h-20 rounded-xl border border-dashed border-brand-300 dark:border-brand-600/50 bg-brand-50/30 dark:bg-brand-600/5 flex items-center justify-center overflow-hidden">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={a.url} alt={a.label} className="max-w-full max-h-full object-contain p-2"
-                              onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                          </div>
-                          {!applied && profile && (
-                            <button onClick={() => handleImportAsset(a)} disabled={applying}
-                              className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-brand-600 text-white items-center justify-center hidden group-hover:flex shadow-sm disabled:opacity-60">
-                              {applying ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-                            </button>
-                          )}
-                          {applied && (
-                            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm">
-                              <Check className="w-3 h-3" />
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                    {/* Upload button — only shown when no logos exist yet, or explicitly toggled */}
-                    {profile && savedLogos.length === 0 && scannedLogos.length === 0 && (
-                      <button onClick={() => setShowLogoUpload(v => !v)}
-                        className="w-20 h-20 rounded-xl border border-dashed border-gray-300 dark:border-white/20 flex items-center justify-center text-gray-400 hover:border-brand-400 hover:text-brand-500 transition-colors shrink-0">
-                        <Plus className="w-5 h-5" />
-                      </button>
-                    )}
-                    {profile && (savedLogos.length > 0 || scannedLogos.length > 0) && (
-                      <button onClick={() => setShowLogoUpload(v => !v)} title="Add logo"
-                        className="w-8 h-8 self-center rounded-lg border border-dashed border-gray-300 dark:border-white/20 flex items-center justify-center text-gray-400 hover:border-brand-400 hover:text-brand-500 transition-colors shrink-0">
-                        <Plus className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                  {showLogoUpload && profile && (
-                    <div className="grid grid-cols-4 gap-1.5 pt-1">
-                      <UploadZone role="primary_logo"   profileId={profile.id} onUploaded={() => { router.refresh(); setShowLogoUpload(false) }} />
-                      <UploadZone role="secondary_logo" profileId={profile.id} onUploaded={() => { router.refresh(); setShowLogoUpload(false) }} />
-                      <UploadZone role="logo_mark"      profileId={profile.id} onUploaded={() => { router.refresh(); setShowLogoUpload(false) }} />
-                      <UploadZone role="favicon"        profileId={profile.id} onUploaded={() => { router.refresh(); setShowLogoUpload(false) }} />
                     </div>
+                  ))}
+                  {profile && (
+                    <>
+                      <UploadZone role="hero_image"       profileId={profile.id} onUploaded={() => router.refresh()} />
+                      <UploadZone role="background_image" profileId={profile.id} onUploaded={() => router.refresh()} />
+                      <UploadZone role="general"          profileId={profile.id} onUploaded={() => router.refresh()} />
+                    </>
                   )}
-                </section>
-              )
-            })()}
+                </div>
+                {hasMoreImages && (
+                  <button onClick={handleCollectMore} disabled={collectingMore}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium rounded-lg border border-dashed border-gray-300 dark:border-white/20 text-gray-500 hover:border-brand-400 hover:text-brand-600 disabled:opacity-60 transition-colors">
+                    {collectingMore ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                    {collectingMore ? 'Loading…' : 'Collect More Images'}
+                  </button>
+                )}
+              </section>
+            )}
 
-            {/* ── Images — saved + scanned + upload ── */}
-            {(() => {
-              const scannedImages = scanResult?.discoveredAssets.filter(a => a.role === 'general') ?? []
-              const hasAny = imageAssets.length > 0 || scannedImages.length > 0 || !!profile
-              if (!hasAny) return null
-              return (
-                <section className="space-y-1.5">
-                  <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Images</h2>
-                  <div className="grid grid-cols-3 gap-2">
-                    {/* Saved images */}
-                    {imageAssets.map(a => <AssetCard key={a.id} asset={a} onApprove={handleApprove} onArchive={handleArchive} onDelete={handleDelete} />)}
-                    {/* Scanned general images */}
-                    {scannedImages.map(a => {
-                      const applied  = appliedAssets[a.url]
-                      const applying = applyingAssets[a.url]
-                      return (
-                        <div key={a.url} className="group relative flex flex-col gap-1.5 p-2 rounded-lg border border-dashed border-brand-300 dark:border-brand-600/50 bg-brand-50/20 dark:bg-brand-600/5">
-                          <div className="w-full h-24 rounded bg-gray-50 dark:bg-white/5 flex items-center justify-center overflow-hidden">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={a.url} alt={a.label} className="max-w-full max-h-full object-cover"
-                              onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                          </div>
-                          <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 truncate">{a.label}</p>
-                          {!applied && profile && (
-                            <button onClick={() => handleImportAsset(a)} disabled={applying}
-                              className="flex items-center justify-center gap-0.5 py-1 text-[10px] font-medium rounded bg-brand-600 hover:bg-brand-700 text-white disabled:opacity-60 transition-colors">
-                              {applying ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Plus className="w-2.5 h-2.5" />}
-                              {applying ? 'Saving…' : 'Import'}
-                            </button>
-                          )}
-                          {applied && (
-                            <div className="flex items-center justify-center gap-0.5 py-1 text-[10px] font-medium rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
-                              <Check className="w-2.5 h-2.5" /> Saved
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                    {/* Upload zones */}
-                    {profile && (
-                      <>
-                        <UploadZone role="hero_image"       profileId={profile.id} onUploaded={() => router.refresh()} />
-                        <UploadZone role="background_image" profileId={profile.id} onUploaded={() => router.refresh()} />
-                        <UploadZone role="general"          profileId={profile.id} onUploaded={() => router.refresh()} />
-                      </>
-                    )}
-                  </div>
-                </section>
-              )
-            })()}
+            {/* ── Products (ecommerce only) ── */}
+            {isEcommerce && imageCandidates.filter(c => c.asset_type === 'product_image').length > 0 && (
+              <section className="space-y-2">
+                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Products</h2>
+                <div className="grid grid-cols-3 gap-2">
+                  {imageCandidates.filter(c => c.asset_type === 'product_image').map(c => (
+                    <div key={c.id} className="relative flex flex-col gap-1.5 p-2 rounded-lg border border-dashed border-brand-300 dark:border-brand-600/50 bg-brand-50/20 dark:bg-brand-600/5">
+                      <div className="w-full h-24 rounded bg-gray-50 dark:bg-white/5 flex items-center justify-center overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={c.value ?? ''} alt={c.title ?? ''} className="max-w-full max-h-full object-contain"
+                          onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                      </div>
+                      <p className="text-[10px] font-medium text-gray-500 truncate">{c.title}</p>
+                      <div className="flex gap-1">
+                        <button onClick={() => handleSaveCandidate(c.id)} disabled={!!actionBusy[c.id]}
+                          className="flex-1 flex items-center justify-center gap-0.5 py-1 text-[10px] font-medium rounded bg-brand-600 hover:bg-brand-700 text-white disabled:opacity-60 transition-colors">
+                          {actionBusy[c.id] ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : 'Save'}
+                        </button>
+                        <button onClick={() => handleIgnoreCandidate(c.id)} disabled={!!actionBusy[c.id]}
+                          className="p-1 rounded border border-gray-200 dark:border-white/10 text-gray-400 hover:text-red-500 disabled:opacity-60 transition-colors">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
+            {!profile && (
+              <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
+                <Palette className="w-8 h-8 text-gray-200 dark:text-white/10" />
+                <p className="text-sm font-medium text-gray-400">Select a brand profile to get started</p>
+              </div>
+            )}
+
+          </div>{/* end scrollable body */}
+
+          {/* Sticky footer Save bar */}
+          <div className="shrink-0 flex items-center gap-3 px-4 py-3 border-t border-gray-200 dark:border-white/10">
+            <button onClick={handleSave} disabled={saving || !profile}
+              className="inline-flex items-center gap-2 px-4 py-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : saved ? <Check className="w-3.5 h-3.5" /> : null}
+              {saving ? 'Saving…' : saved ? 'Saved' : 'Save'}
+            </button>
+            {saved && <span className="text-xs text-emerald-500">Saved</span>}
           </div>
-
-          {/* Assets footer — save actions, only when a profile is selected */}
-          {profile && (
-            <div className="shrink-0 flex items-center gap-2 px-4 py-3 border-t border-gray-200 dark:border-white/10">
-              {scanResult ? (
-                <>
-                  <button onClick={() => handleSave()} disabled={saving}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white transition-colors shadow-sm">
-                    {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                    {saving ? 'Saving…' : 'Save Changes'}
-                  </button>
-                  <button onClick={handleSaveAsNew} disabled={saving}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-60 transition-colors">
-                    <Plus className="w-3 h-3" />
-                    Save as New
-                  </button>
-                </>
-              ) : (
-                <span className="text-[10px] text-gray-400">Select a profile or scan a URL to begin</span>
-              )}
-            </div>
-          )}
 
         </div>{/* end Assets card */}
 
         {/* ── Column 3: Brand Identity (right) ── */}
         <div className="w-80 shrink-0 flex flex-col rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
 
-          {/* Header */}
           <div className="shrink-0 px-4 py-2.5" style={{ background: brandColor }}>
             <div className="flex items-center gap-3">
               <span className="text-sm font-semibold text-white shrink-0">Identity</span>
@@ -958,215 +1003,69 @@ function AssetsTab({
             </div>
           </div>
 
-          {/* Scrollable body */}
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
-
-            {/* ── Scan result summary ── */}
-            {scanResult && (() => {
-              const palette: string[] = scanResult.color_palette?.length
-                ? scanResult.color_palette.map((c: { hex: string }) => c.hex)
-                : [scanResult.color_primary, scanResult.color_secondary, scanResult.color_accent].filter(Boolean) as string[]
-              const capped = [...new Set(palette)].slice(0, 10)
-              const logoRoles = new Set(['primary_logo', 'secondary_logo', 'logo_mark', 'favicon', 'hero_image'])
-              const assetItems = scanResult.discoveredAssets.filter(a => logoRoles.has(a.role))
-              return (
-                <div className="space-y-3 rounded-xl border border-brand-200 dark:border-brand-600/30 bg-brand-50/40 dark:bg-brand-600/5 p-3">
-                  {/* Header */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <Check className="w-3.5 h-3.5 text-brand-600 shrink-0" />
-                      <span className="text-xs font-semibold text-brand-700 dark:text-brand-400">Scan complete — fields pre-filled</span>
-                    </div>
-                    <button onClick={() => setScanResult(null)} className="text-gray-400 hover:text-gray-600 shrink-0">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+            {!profile ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
+                <Globe className="w-7 h-7 text-gray-300 dark:text-white/20" />
+                <p className="text-xs font-medium text-gray-400 dark:text-gray-500">Select a brand profile</p>
+              </div>
+            ) : (
+              <>
+                <section className="space-y-3">
+                  <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Identity</h2>
+                  <div className="grid grid-cols-1 gap-3">
+                    <Field label="Company Name"><Input value={form.company_name ?? ''} onChange={e => setField('company_name', e.target.value)} placeholder="Acme Ltd" /></Field>
+                    <Field label="Tagline"><Input value={form.tagline ?? ''} onChange={e => setField('tagline', e.target.value)} placeholder="Short, punchy one-liner" /></Field>
+                    <Field label="Footer Text"><Input value={form.footer_text ?? ''} onChange={e => setField('footer_text', e.target.value)} placeholder="© 2025 Acme Ltd." /></Field>
                   </div>
+                </section>
 
-                  {/* Key fields */}
-                  <div className="space-y-1">
-                    {[
-                      { label: 'Company',      value: scanResult.company_name },
-                      { label: 'Tagline',      value: scanResult.tagline },
-                      { label: 'Tone',         value: scanResult.brand_tone },
-                      { label: 'Style',        value: scanResult.brand_style },
-                      { label: 'Primary font', value: scanResult.font_heading },
-                    ].filter(r => r.value).map(({ label, value }) => (
-                      <div key={label} className="flex items-baseline gap-2">
-                        <span className="text-[10px] font-medium text-gray-400 w-20 shrink-0">{label}:</span>
-                        <span className="text-xs text-gray-700 dark:text-gray-200 truncate">{value}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Colors — 5×2 grid */}
-                  {capped.length > 0 && (
-                    <div className="space-y-1.5">
-                      <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-                        Colors ({capped.length})
-                      </span>
-                      <div className="space-y-1.5">
-                        {[capped.slice(0, 5), capped.slice(5)].filter(r => r.length > 0).map((row, ri) => (
-                          <div key={ri} className="grid grid-cols-5 gap-2">
-                            {row.map((hex, ci) => (
-                              <button key={`${ri}-${ci}`} onClick={() => navigator.clipboard?.writeText(hex)} title={`Copy ${hex}`}
-                                className="flex flex-col items-center gap-1 group">
-                                <div className="w-8 h-8 rounded-full border border-gray-200 dark:border-white/10 shadow-sm group-hover:scale-110 transition-transform"
-                                  style={{ backgroundColor: hex }} />
-                                <span className="text-[9px] font-mono text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200 w-full text-center truncate leading-tight">
-                                  {hex}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Assets found */}
-                  {assetItems.length > 0 && (
-                    <div className="space-y-1.5">
-                      <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Assets found</span>
-                      <div className="space-y-1.5">
-                        {assetItems.map(a => {
-                          const key = a.url
-                          const applied  = !!appliedAssets[key]
-                          const applying = !!applyingAssets[key]
-                          return (
-                            <div key={key} className="flex items-center gap-2 p-1.5 rounded-lg bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10">
-                              <div className="w-10 h-10 rounded-lg border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/5 flex items-center justify-center overflow-hidden shrink-0">
-                                <img src={a.url} alt={a.label} className="max-w-full max-h-full object-contain p-0.5" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-gray-700 dark:text-gray-200 capitalize truncate">{a.label}</p>
-                                <p className="text-[9px] text-gray-400 capitalize">{a.role.replace(/_/g, ' ')}</p>
-                              </div>
-                              {profile && (
-                                <button onClick={() => handleImportAsset(a)} disabled={applying || applied}
-                                  className={cn(
-                                    'shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-md transition-colors',
-                                    applied
-                                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                      : 'bg-brand-600 hover:bg-brand-700 text-white disabled:opacity-60',
-                                  )}>
-                                  {applying ? <Loader2 className="w-2.5 h-2.5 animate-spin inline" /> : applied ? 'Saved' : 'Import'}
-                                </button>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  <p className="text-[10px] text-gray-400 leading-snug">Review, adjust, then click Save Brand Profile.</p>
-                </div>
-              )
-            })()}
-
-            {/* Form sections — only shown when a scan is active or user has entered data */}
-            {(() => {
-              const hasData = !!(form.company_name || form.tagline || form.color_primary || form.font_heading || form.brand_tone)
-              if (!scanResult && !hasData) {
-                return (
-                  <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
-                    <Globe className="w-7 h-7 text-gray-300 dark:text-white/20" />
-                    <p className="text-xs font-medium text-gray-400 dark:text-gray-500">Scan a URL to populate identity</p>
-                    <p className="text-[10px] text-gray-300 dark:text-gray-600">or enter details manually below</p>
-                  </div>
-                )
-              }
-              return (
-                <>
-                  {/* Identity */}
-                  <section className="space-y-3">
-                    <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Identity</h2>
-                    <div className="grid grid-cols-1 gap-3">
-                      <Field label="Company Name"><Input value={form.company_name ?? ''} onChange={e => set('company_name', e.target.value)} placeholder="Acme Ltd" /></Field>
-                      <Field label="Tagline"><Input value={form.tagline ?? ''} onChange={e => set('tagline', e.target.value)} placeholder="Short, punchy one-liner" /></Field>
-                      <Field label="Footer Text"><Input value={form.footer_text ?? ''} onChange={e => set('footer_text', e.target.value)} placeholder="© 2025 Acme Ltd." /></Field>
-                    </div>
-                  </section>
-
-                  {/* Colors — read-only circles, 5×2 */}
-                  {(() => {
-                    const colors = [form.color_primary, form.color_secondary, form.color_accent, form.color_background, form.color_text].filter(Boolean) as string[]
-                    if (!colors.length) return null
-                    return (
-                      <section className="space-y-2">
-                        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Colors</h2>
-                        <div className="flex gap-2 flex-wrap">
-                          {colors.map((hex, i) => (
-                            <button key={i} onClick={() => navigator.clipboard?.writeText(hex)} title={hex} className="group shrink-0">
-                              <div className="w-7 h-7 rounded-full border border-gray-200 dark:border-white/10 shadow-sm group-hover:scale-110 transition-transform"
-                                style={{ backgroundColor: hex }} />
-                            </button>
-                          ))}
-                        </div>
-                      </section>
-                    )
-                  })()}
-
-                  {/* Typography */}
-                  <section className="space-y-3">
-                    <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Typography</h2>
-                    <div className="grid grid-cols-1 gap-3">
-                      <Field label="Primary Font"><Input value={form.font_heading ?? ''} onChange={e => set('font_heading', e.target.value)} placeholder="Playfair Display" /></Field>
-                      <Field label="Secondary Font"><Input value={form.font_heading_sub ?? ''} onChange={e => set('font_heading_sub', e.target.value)} placeholder="Same as primary" /></Field>
-                      <Field label="Body Font"><Input value={form.font_body ?? ''} onChange={e => set('font_body', e.target.value)} placeholder="Inter" /></Field>
-                    </div>
-                  </section>
-
-                  {/* Brand Voice */}
-                  <section className="space-y-3">
-                    <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Brand Voice</h2>
-                    <div className="grid grid-cols-3 gap-3">
-                      <Field label="Tone">
-                        <Select value={form.brand_tone ?? ''} onChange={e => set('brand_tone', e.target.value)}>
-                          <option value="">Tone…</option>
-                          <option value="professional">Professional</option>
-                          <option value="friendly">Friendly</option>
-                          <option value="premium">Premium</option>
-                          <option value="direct">Direct</option>
-                          <option value="playful">Playful</option>
-                          <option value="authoritative">Authoritative</option>
-                          <option value="conversational">Conversational</option>
-                        </Select>
-                      </Field>
-                      <Field label="Style">
-                        <Select value={form.brand_style ?? ''} onChange={e => set('brand_style', e.target.value)}>
-                          <option value="">Style…</option>
-                          <option value="minimal">Minimal</option>
-                          <option value="corporate">Corporate</option>
-                          <option value="bold">Bold</option>
-                          <option value="modern">Modern</option>
-                          <option value="storytelling">Storytelling</option>
-                          <option value="data-driven">Data-driven</option>
-                        </Select>
-                      </Field>
-                      <Field label="CTA">
-                        <Select value={form.cta_style ?? ''} onChange={e => set('cta_style', e.target.value)}>
-                          <option value="">CTA…</option>
-                          <option value="soft">Soft</option>
-                          <option value="consultative">Consultative</option>
-                          <option value="assertive">Assertive</option>
-                        </Select>
-                      </Field>
-                    </div>
-                    <Field label="Voice Notes">
-                      <Textarea value={form.brand_voice_notes ?? ''} onChange={e => set('brand_voice_notes', e.target.value)}
-                        placeholder="Audience, words to avoid, sample copy…" rows={3} />
+                <section className="space-y-3">
+                  <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Brand Voice</h2>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Field label="Tone">
+                      <Select value={form.brand_tone ?? ''} onChange={e => setField('brand_tone', e.target.value)}>
+                        <option value="">Tone…</option>
+                        <option value="professional">Professional</option>
+                        <option value="friendly">Friendly</option>
+                        <option value="premium">Premium</option>
+                        <option value="direct">Direct</option>
+                        <option value="playful">Playful</option>
+                        <option value="authoritative">Authoritative</option>
+                        <option value="conversational">Conversational</option>
+                      </Select>
                     </Field>
-                  </section>
-                </>
-              )
-            })()}
+                    <Field label="Style">
+                      <Select value={form.brand_style ?? ''} onChange={e => setField('brand_style', e.target.value)}>
+                        <option value="">Style…</option>
+                        <option value="minimal">Minimal</option>
+                        <option value="corporate">Corporate</option>
+                        <option value="bold">Bold</option>
+                        <option value="modern">Modern</option>
+                        <option value="storytelling">Storytelling</option>
+                        <option value="data-driven">Data-driven</option>
+                      </Select>
+                    </Field>
+                    <Field label="CTA">
+                      <Select value={form.cta_style ?? ''} onChange={e => setField('cta_style', e.target.value)}>
+                        <option value="">CTA…</option>
+                        <option value="soft">Soft</option>
+                        <option value="consultative">Consultative</option>
+                        <option value="assertive">Assertive</option>
+                      </Select>
+                    </Field>
+                  </div>
+                  <Field label="Voice Notes">
+                    <Textarea value={form.brand_voice_notes ?? ''} onChange={e => setField('brand_voice_notes', e.target.value)}
+                      placeholder="Audience, words to avoid, sample copy…" rows={3} />
+                  </Field>
+                </section>
+              </>
+            )}
+          </div>
 
-          </div>{/* end scrollable body */}
-
-          {/* Fixed footer — save bar */}
           <div className="flex items-center gap-3 px-4 py-3 border-t border-gray-200 dark:border-white/10 shrink-0">
-            <button onClick={() => handleSave()} disabled={saving}
+            <button onClick={handleSave} disabled={saving || !profile}
               className="inline-flex items-center gap-2 px-4 py-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : saved ? <Check className="w-3.5 h-3.5" /> : null}
               {saving ? 'Saving…' : saved ? 'Saved' : 'Save'}
@@ -1177,48 +1076,6 @@ function AssetsTab({
         </div>{/* end Brand Identity card */}
 
       </div>
-
-      {/* ── Duplicate profile modal ── */}
-      {dupeModal && profile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-sm mx-4 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 shadow-xl p-6 space-y-4">
-            <div className="space-y-1">
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Profile already has data</h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                The scan found a different brand. Save as a new profile, or replace the existing one.
-              </p>
-            </div>
-            <div className="space-y-1.5 rounded-lg border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2.5">
-              <div className="flex items-baseline gap-2">
-                <span className="text-[10px] font-medium text-gray-400 w-10 shrink-0">Name:</span>
-                <span className="text-xs text-gray-700 dark:text-gray-200 truncate">{profile.company_name}</span>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-[10px] font-medium text-gray-400 w-10 shrink-0">Date:</span>
-                <span className="text-xs text-gray-700 dark:text-gray-200">
-                  {new Date(profile.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
-                </span>
-              </div>
-            </div>
-            <div className="flex flex-col gap-2 pt-1">
-              <button onClick={handleSaveAsNew} disabled={saving}
-                className="w-full px-3 py-2 text-xs font-medium rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white transition-colors flex items-center justify-center gap-1.5">
-                {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-                Save as New Profile
-              </button>
-              <button onClick={() => handleSave(true)} disabled={saving}
-                className="w-full px-3 py-2 text-xs font-medium rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/8 disabled:opacity-60 transition-colors">
-                Replace Existing
-              </button>
-              <button onClick={() => setDupeModal(false)}
-                className="w-full px-3 py-2 text-xs text-gray-400 hover:text-gray-600 transition-colors">
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   )
 }
@@ -1239,7 +1096,7 @@ function ComingSoonTab({ label }: { label: string }) {
 
 // ── Main client ───────────────────────────────────────────────────────────────
 
-export function BrandingClient({ profiles, assets }: Props) {
+export function BrandingClient({ profiles, assets, sessions, candidates }: Props) {
   const router = useRouter()
 
   const defaultId = profiles.find(p => p.brand_type === 'workspace')?.id ?? profiles[0]?.id ?? null
@@ -1289,6 +1146,8 @@ export function BrandingClient({ profiles, assets }: Props) {
             selectedProfileId={selectedProfileId}
             onSelectProfile={id => { setSelectedProfileId(id); setActiveTab('assets') }}
             onCreated={newId => { setPendingSelectId(newId); router.refresh() }}
+            sessions={sessions}
+            candidates={candidates}
           />
         )}
         {activeTab === 'email-templates' && (

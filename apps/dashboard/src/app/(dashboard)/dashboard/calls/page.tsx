@@ -9,6 +9,7 @@ import { ROLE_RANK } from '@/lib/types'
 import type { WorkspaceMemberRole } from '@/lib/types'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
+import { getActiveAutomationStates } from '@/app/actions/automation-executions'
 import { ActivitySidebar } from '@/components/team/activity-sidebar'
 
 export const metadata: Metadata = { title: 'Phone Calls' }
@@ -142,9 +143,10 @@ export default async function CallsPage({
 
   const activityDate   = params.activityDate ?? new Date().toISOString().slice(0, 10)
   const activityUserId = viewAsUserId ?? user.id
-  const [activity, viewingAs] = await Promise.all([
+  const [activity, viewingAs, automationStates] = await Promise.all([
     getActivityFeed(activityUserId, workspaceId, activityDate),
     resolveViewingAs(params.viewAs, workspaceId),
+    getActiveAutomationStates(),
   ])
 
   return (
@@ -170,6 +172,7 @@ export default async function CallsPage({
             statusCounts={statusCounts}
             detailBasePath="/dashboard/calls"
             pageTitle="Phone Calls"
+            initialAutomationStates={automationStates}
             pageSubtitle={`All phone call records — ${conversations.length} shown`}
           />
         </div>

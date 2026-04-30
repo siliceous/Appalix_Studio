@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { SageToolbar } from '@/components/dashboard/sage-toolbar'
+import { AutomationTabBar } from '@/components/dashboard/automation-side-tabs'
 import { AutomationsClient } from './automations-client'
 import { listAutomationTemplates, listExecutions } from '@/app/actions/automation-templates-service'
 import { getAutomationInsights } from '@/app/actions/automations'
@@ -23,6 +24,7 @@ export default async function AutomationsPage() {
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <SageToolbar pageKey="automations" />
+      <AutomationTabBar />
       <div className="flex-1 min-h-0 overflow-hidden">
         <AutomationsClient
           templates={templates}

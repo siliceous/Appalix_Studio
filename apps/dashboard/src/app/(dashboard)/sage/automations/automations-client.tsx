@@ -30,6 +30,13 @@ const TYPE_LABEL: Record<string, string> = {
   meeting_conversion: 'Meeting',
   nurture:            'Nurturing',
   custom:             'Custom',
+  welcome:            'Welcome',
+  abandoned_cart:     'Abandoned Cart',
+  abandoned_checkout: 'Abandoned Checkout',
+  product_review:     'Product Review',
+  wheel_of_fortune:   'Wheel of Fortune',
+  ticket_registered:  'Ticket Registered',
+  purchase_followup:  'Purchase Follow-up',
 }
 
 const EXEC_STATUS: Record<string, { label: string; dot: string; badge: string }> = {
@@ -116,6 +123,26 @@ function TemplateRow({ tpl, onEdit, onDuplicate, onToggle, onDelete }: {
 
       {/* Actions */}
       <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Play / Pause — always visible on hover, even for system templates (system templates can be activated/deactivated) */}
+        <button
+          onClick={() => run(() => onToggle(tpl.id, !tpl.is_active))}
+          disabled={busy}
+          title={tpl.is_active ? 'Pause automation' : 'Activate automation'}
+          className={cn(
+            'p-1.5 rounded-lg transition-colors',
+            tpl.is_active
+              ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10'
+              : 'text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10',
+          )}
+        >
+          {busy
+            ? <span className="w-3.5 h-3.5 block rounded-full border-2 border-current border-t-transparent animate-spin" />
+            : tpl.is_active
+              ? <Pause className="w-3.5 h-3.5" />
+              : <Play  className="w-3.5 h-3.5" />
+          }
+        </button>
+
         {!tpl.is_system && (
           <button
             onClick={() => onEdit(tpl.id)}
@@ -140,13 +167,6 @@ function TemplateRow({ tpl, onEdit, onDuplicate, onToggle, onDelete }: {
                   className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors">
                   <Copy className="w-3.5 h-3.5 text-gray-400" /> Duplicate
                 </button>
-                {!tpl.is_system && (
-                  <button onClick={() => run(() => onToggle(tpl.id, !tpl.is_active))}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/8 transition-colors">
-                    {tpl.is_active ? <Pause className="w-3.5 h-3.5 text-gray-400" /> : <Play className="w-3.5 h-3.5 text-gray-400" />}
-                    {tpl.is_active ? 'Deactivate' : 'Activate'}
-                  </button>
-                )}
                 {!tpl.is_system && (
                   <>
                     <div className="mx-3 border-t border-gray-100 dark:border-white/8" />

@@ -4,6 +4,8 @@ import { useState, useTransition, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Ticket, Plus, Trash2, Mail, Pencil, Merge, X, Loader2, Search, ChevronDown } from 'lucide-react'
+import { AutomationTriggerButton, RunAutomationModal } from '@/components/automation/run-automation-modal'
+import type { AutomationRunState } from '@/components/automation/run-automation-modal'
 import { TicketModal } from '@/components/sage/ticket-modal'
 import { TicketSlideOver } from '@/components/dashboard/ticket-slide-over'
 import { updateTicketStatus, updateTicketPriority, deleteTicket, deleteTickets, mergeTickets, assignTicket } from '@/app/actions/sage'
@@ -46,9 +48,10 @@ interface TicketsClientProps {
   callerRole?: string
   members?:   WorkspaceMemberSummary[]
   readonly?:  boolean
+  initialAutomationStates?: Record<string, AutomationRunState>
 }
 
-export function TicketsClient({ tickets: initialTickets, contacts, callerRole, members = [], readonly = false }: TicketsClientProps) {
+export function TicketsClient({ tickets: initialTickets, contacts, callerRole, members = [], readonly = false, initialAutomationStates }: TicketsClientProps) {
   const canWrite  = !readonly && callerRole !== 'viewer'
   const canAssign = members.length > 0
   const [tickets,      setTickets]      = useState(initialTickets)
@@ -69,6 +72,10 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
   const [priorityMap,  setPriorityMap]  = useState<Record<string, string>>(() =>
     Object.fromEntries(initialTickets.map(t => [t.id, t.priority ?? 'medium']))
   )
+  const [automationStates,    setAutomationStates]    = useState<Map<string, AutomationRunState>>(
+    () => new Map(Object.entries(initialAutomationStates ?? {}))
+  )
+  const [automationModalFor,  setAutomationModalFor]  = useState<string | null>(null)
 
   function toggleSelect(id: string) {
     setSelectedIds(prev => {
@@ -345,33 +352,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
       ) : (
       <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 flex flex-col flex-1 overflow-hidden">
 
-        {/* ── Static header — outside scroll ── */}
-        <table className="w-full text-sm table-fixed shrink-0">
-          <colgroup>
-            {canWrite && <col className="w-10" />}
-            <col className="w-24" />
-            <col />
-            <col className="w-28" />
-            <col className="w-28" />
-            <col className="w-28" />
-            {canAssign && <col className="w-32" />}
-            <col className="w-24" />
-          </colgroup>
-          <thead>
-            <tr className="bg-[#141c2b]">
-              {canWrite && <th className="bg-[#141c2b] px-4 py-3 rounded-tl-xl"><input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="w-4 h-4 rounded border-white/30 accent-[#15A4AE] cursor-pointer" /></th>}
-              <th className={`bg-[#141c2b] text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide${!canWrite ? ' rounded-tl-xl' : ''}`}>Priority</th>
-              <th className="bg-[#141c2b] text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Name</th>
-              <th className="bg-[#141c2b] text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Source</th>
-              <th className="bg-[#141c2b] text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Submitted</th>
-              <th className="bg-[#141c2b] text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Status</th>
-              {canAssign && <th className="bg-[#141c2b] text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Assigned to</th>}
-              <th className="bg-[#141c2b] text-right px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide rounded-tr-xl">Actions</th>
-            </tr>
-          </thead>
-        </table>
-
-        {/* ── Scrollable body ── */}
+        {/* ── Single table with sticky header ── */}
         {filtered.length === 0 ? (
           <div className="py-20 text-center flex-1">
             <Ticket className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
@@ -385,18 +366,20 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
             )}
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto">
-            <table className="w-full text-sm table-fixed">
-              <colgroup>
-                {canWrite && <col className="w-10" />}
-                <col className="w-24" />
-                <col />
-                <col className="w-28" />
-                <col className="w-28" />
-                <col className="w-28" />
-                {canAssign && <col className="w-32" />}
-                <col className="w-24" />
-              </colgroup>
+          <div className="flex-1 overflow-y-auto overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-[#141c2b]">
+                  {canWrite && <th className="bg-[#141c2b] px-4 py-3"><input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="w-4 h-4 rounded border-white/30 accent-[#15A4AE] cursor-pointer" /></th>}
+                  <th className="bg-[#141c2b] text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap">Priority</th>
+                  <th className="bg-[#141c2b] text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Name</th>
+                  <th className="bg-[#141c2b] text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap">Source</th>
+                  <th className="bg-[#141c2b] text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap">Submitted</th>
+                  <th className="bg-[#141c2b] text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap">Status</th>
+                  {canAssign && <th className="bg-[#141c2b] text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap">Assigned to</th>}
+                  <th className="bg-[#141c2b] text-right px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide w-px whitespace-nowrap">Actions</th>
+                </tr>
+              </thead>
               <tbody className="divide-y dark:divide-white/5">
                 {paginated.map(ticket => {
                   const sc = STATUS_CONFIG[ticket.status] ?? STATUS_CONFIG.open
@@ -470,7 +453,7 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
                       </td>
                       {canAssign && (
                         <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
-                          <div className="relative">
+                          <div className="relative w-fit">
                             <select value={assignedMap[ticket.id] ?? ''} onChange={e => handleAssign(ticket.id, e.target.value)} disabled={assigning}
                               className="appearance-none pl-2 pr-6 py-1 text-xs border dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/8 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 transition-colors disabled:opacity-50 max-w-[120px]">
                               <option value="">Unassigned</option>
@@ -480,8 +463,12 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
                           </div>
                         </td>
                       )}
-                      <td className="px-4 py-3.5 text-right" onClick={e => e.stopPropagation()}>
+                      <td className="px-4 py-3.5 w-px whitespace-nowrap text-right" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
+                          <AutomationTriggerButton
+                            state={automationStates.get(ticket.id) ?? null}
+                            onClick={() => setAutomationModalFor(ticket.id)}
+                          />
                           <button onClick={() => setSlideTicket(ticket)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors" title="Open detail">
                             <Pencil className="w-3.5 h-3.5 text-gray-400" />
                           </button>
@@ -530,6 +517,25 @@ export function TicketsClient({ tickets: initialTickets, contacts, callerRole, m
       </div>{/* end padding wrapper */}
 
       {showModal && <TicketModal contacts={contacts} onClose={() => setShowModal(false)} />}
+
+      {(() => {
+        const t = automationModalFor ? tickets.find(x => x.id === automationModalFor) : null
+        return (
+          <RunAutomationModal
+            open={!!automationModalFor}
+            onClose={() => setAutomationModalFor(null)}
+            contactName={t?.contact?.name ?? null}
+            contactId={t?.contact?.id ?? null}
+            sourceType="ticket"
+            sourceRefId={automationModalFor ?? ''}
+            existingState={automationModalFor ? (automationStates.get(automationModalFor) ?? null) : null}
+            onStateChange={state => {
+              if (!automationModalFor) return
+              setAutomationStates(prev => new Map(prev).set(automationModalFor, state))
+            }}
+          />
+        )
+      })()}
 
       <TicketSlideOver
         ticket={slideTicket}

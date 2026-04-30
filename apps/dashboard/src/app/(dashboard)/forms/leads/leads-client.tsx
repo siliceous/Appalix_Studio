@@ -1,13 +1,45 @@
 'use client'
 
-import { useState, useTransition, useEffect } from 'react'
+import { useState, useTransition, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Trash2, ArrowRight, Search, ChevronDown, Inbox, Loader2 } from 'lucide-react'
+import { Trash2, ArrowRight, Search, ChevronDown, Inbox, Loader2, SlidersHorizontal, Check } from 'lucide-react'
+import { AutomationTriggerButton, RunAutomationModal } from '@/components/automation/run-automation-modal'
+import type { AutomationRunState } from '@/components/automation/run-automation-modal'
 import { deleteLead, deleteLeads, moveLeadToPipeline, updateLeadScore, updateLeadStatus } from '@/app/actions/leads'
 import { exportLeads } from '@/app/actions/csv-export'
 import { CsvExportButton } from '@/components/ui/csv-export-button'
 import type { Lead, LeadScore, WorkspaceMemberRole } from '@/lib/types'
+
+// ---------------------------------------------------------------------------
+// Column visibility
+// ---------------------------------------------------------------------------
+
+const TOGGLEABLE_COLUMNS = [
+  { key: 'priority',    label: 'Priority'    },
+  { key: 'email',       label: 'Email'       },
+  { key: 'phone',       label: 'Phone'       },
+  { key: 'company',     label: 'Company'     },
+  { key: 'city',        label: 'City'        },
+  { key: 'form',        label: 'Form'        },
+  { key: 'submitted',   label: 'Submitted'   },
+  { key: 'status',      label: 'Status'      },
+  { key: 'assigned_to', label: 'Assigned to' },
+] as const
+
+type ColumnKey = typeof TOGGLEABLE_COLUMNS[number]['key']
+
+const DEFAULT_VISIBLE: ColumnKey[] = ['priority', 'email', 'phone', 'status', 'assigned_to']
+const STORAGE_KEY = 'leads_visible_columns_v1'
+
+function loadVisibleColumns(): Set<ColumnKey> {
+  if (typeof window === 'undefined') return new Set(DEFAULT_VISIBLE)
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) return new Set(JSON.parse(stored) as ColumnKey[])
+  } catch {}
+  return new Set(DEFAULT_VISIBLE)
+}
 
 // ---------------------------------------------------------------------------
 // Priority (lead_score)
@@ -59,13 +91,14 @@ interface LeadsClientProps {
   canAllocate:   boolean
   teamMembers:   TeamMember[]
   memberNameMap: Record<string, string>
+  initialAutomationStates?: Record<string, AutomationRunState>
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNameMap }: LeadsClientProps) {
+export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNameMap, initialAutomationStates }: LeadsClientProps) {
   const router = useRouter()
   const [leads, setLeads]             = useState<Lead[]>(initial)
   const [search, setSearch]           = useState('')
@@ -77,11 +110,42 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
   const [bulkSaving,       setBulkSaving]       = useState(false)
   const [, startTransition]           = useTransition()
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [automationStates,    setAutomationStates]    = useState<Map<string, AutomationRunState>>(
+    () => new Map(Object.entries(initialAutomationStates ?? {}))
+  )
+  const [automationModalFor,  setAutomationModalFor]  = useState<string | null>(null)
+  const [visibleCols,         setVisibleCols]         = useState<Set<ColumnKey>>(loadVisibleColumns)
+  const [colPickerOpen,       setColPickerOpen]       = useState(false)
+  const colPickerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const interval = setInterval(() => router.refresh(), 60_000)
     return () => clearInterval(interval)
   }, [router])
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([...visibleCols]))
+  }, [visibleCols])
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (colPickerRef.current && !colPickerRef.current.contains(e.target as Node)) {
+        setColPickerOpen(false)
+      }
+    }
+    if (colPickerOpen) document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [colPickerOpen])
+
+  function toggleColumn(key: ColumnKey) {
+    setVisibleCols(prev => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      return next
+    })
+  }
+
+  const col = (key: ColumnKey) => visibleCols.has(key)
 
   function toggleSelect(id: string) {
     setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
@@ -325,6 +389,32 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
               {bulkSaving && <Loader2 className="w-4 h-4 animate-spin text-[#15A4AE]" />}
             </>
           )}
+          {/* Column picker */}
+          <div className="relative" ref={colPickerRef}>
+            <button
+              onClick={() => setColPickerOpen(v => !v)}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-[#232323] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              Columns
+            </button>
+            {colPickerOpen && (
+              <div className="absolute right-0 top-full mt-1.5 z-50 w-44 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/10 rounded-xl shadow-lg py-1.5">
+                {TOGGLEABLE_COLUMNS.filter(c => c.key !== 'assigned_to' || canAllocate).map(c => (
+                  <button
+                    key={c.key}
+                    onClick={() => toggleColumn(c.key)}
+                    className="w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                  >
+                    <span className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 border transition-colors ${visibleCols.has(c.key) ? 'bg-[#15A4AE] border-[#15A4AE]' : 'border-gray-300 dark:border-white/20'}`}>
+                      {visibleCols.has(c.key) && <Check className="w-2.5 h-2.5 text-white" />}
+                    </span>
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <CsvExportButton action={exportLeads} />
           <Link
             href="/forms/sources"
@@ -337,9 +427,8 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+      <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-x-auto">
+          <table className="w-full min-w-max text-sm">
             <thead>
               <tr className="bg-[#141c2b]">
                 <th className="px-5 py-3 w-8">
@@ -350,26 +439,26 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
                     className="w-4 h-4 rounded border-white/30 accent-brand-600 cursor-pointer"
                   />
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Priority</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Name</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Email</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Phone</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Company</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">City</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Form</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Submitted</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Status</th>
-                {canAllocate && (
+                {col('priority')    && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Priority</th>}
+                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide max-w-[200px]">Name</th>
+                {col('email')      && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Email</th>}
+                {col('phone')      && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Phone</th>}
+                {col('company')    && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Company</th>}
+                {col('city')       && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">City</th>}
+                {col('form')       && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Form</th>}
+                {col('submitted')  && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Submitted</th>}
+                {col('status')     && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Status</th>}
+                {canAllocate && col('assigned_to') && (
                   <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Assigned to</th>
                 )}
-                <th className="px-4 py-3" />
+                <th className="sticky right-0 z-10 bg-[#141c2b] px-4 py-3 whitespace-nowrap shadow-[-8px_0_8px_-4px_rgba(0,0,0,0.06)]" />
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-white/5">
               {filtered.map(lead => (
                 <tr
                   key={lead.id}
-                  className={`transition-colors ${selectedIds.has(lead.id) ? 'bg-brand-50 dark:bg-[#15A4AE]/8' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}
+                  className={`transition-colors group ${selectedIds.has(lead.id) ? 'bg-brand-50 dark:bg-[#15A4AE]/8' : 'hover:bg-gray-50 dark:hover:bg-white/3'}`}
                 >
                   {/* Checkbox */}
                   <td className="px-5 py-3.5" onClick={e => e.stopPropagation()}>
@@ -382,13 +471,14 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
                   </td>
 
                   {/* Priority */}
+                  {col('priority') && (
                   <td className="px-4 py-3.5">
                     {updatingPriority === lead.id ? (
                       <div className="flex items-center h-[26px] w-[90px]">
                         <Loader2 className="w-4 h-4 animate-spin text-[#15A4AE]" />
                       </div>
                     ) : (
-                      <div className="relative">
+                      <div className="relative w-fit">
                         <select
                           value={lead.lead_score ?? ''}
                           onChange={e => handlePriorityChange(lead.id, e.target.value)}
@@ -402,50 +492,68 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
                       </div>
                     )}
                   </td>
+                  )}
 
                   {/* Name */}
-                  <td className="px-4 py-3.5">
-                    <p className="font-medium text-gray-900 dark:text-gray-100 truncate max-w-[140px]">{lead.name}</p>
+                  <td className="px-4 py-3.5 max-w-[200px]">
+                    <div className="w-[200px] overflow-hidden">
+                      <p className="font-medium text-gray-900 dark:text-gray-100 truncate" title={lead.name}>
+                        {lead.name.length > 30 ? lead.name.slice(0, 30) + '…' : lead.name}
+                      </p>
+                    </div>
                   </td>
 
                   {/* Email */}
+                  {col('email') && (
                   <td className="px-4 py-3.5">
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[160px]">{lead.email ?? '—'}</p>
                   </td>
+                  )}
 
                   {/* Phone */}
+                  {col('phone') && (
                   <td className="px-4 py-3.5">
                     <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{lead.phone ?? '—'}</p>
                   </td>
+                  )}
 
                   {/* Company */}
+                  {col('company') && (
                   <td className="px-4 py-3.5">
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]">{lead.company ?? '—'}</p>
                   </td>
+                  )}
 
                   {/* City */}
+                  {col('city') && (
                   <td className="px-4 py-3.5">
                     <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{getCity(lead)}</p>
                   </td>
+                  )}
 
                   {/* Form */}
+                  {col('form') && (
                   <td className="px-4 py-3.5">
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]">{lead.form_name ?? '—'}</p>
                   </td>
+                  )}
 
                   {/* Submitted */}
+                  {col('submitted') && (
                   <td className="px-4 py-3.5 whitespace-nowrap">
                     <p className="text-xs text-gray-400">{formatDate(lead.created_at)}</p>
                   </td>
+                  )}
 
                   {/* Status */}
+                  {col('status') && (
                   <td className="px-4 py-3.5">
                     {updatingStatus === lead.id ? (
                       <div className="flex items-center h-[26px] w-[100px]">
                         <Loader2 className="w-4 h-4 animate-spin text-[#15A4AE]" />
                       </div>
                     ) : (
-                      <div className="relative">
+                      <div className="relative w-fit">
                         <select
                           value={lead.pipeline_stage}
                           onChange={e => handleStatusChange(lead.id, e.target.value)}
@@ -459,16 +567,17 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
                       </div>
                     )}
                   </td>
+                  )}
 
                   {/* Assigned to */}
-                  {canAllocate && (
+                  {canAllocate && col('assigned_to') && (
                     <td className="px-4 py-3.5">
                       {assigning === lead.id ? (
                         <div className="flex items-center justify-center h-[26px] w-[120px]">
                           <Loader2 className="w-4 h-4 animate-spin text-[#15A4AE]" />
                         </div>
                       ) : teamMembers.length > 0 ? (
-                        <div className="relative">
+                        <div className="relative w-fit">
                           <select
                             value={lead.assigned_to ?? ''}
                             onChange={e => handleAssign(lead.id, e.target.value || null)}
@@ -490,27 +599,30 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
                   )}
 
                   {/* Actions */}
-                  <td className="px-4 py-3.5">
+                  <td className={`sticky right-0 z-10 px-4 py-3.5 whitespace-nowrap shadow-[-8px_0_8px_-4px_rgba(0,0,0,0.08)] transition-colors ${selectedIds.has(lead.id) ? 'bg-brand-50 dark:bg-[#1a2436]' : 'bg-[#ffffff] dark:bg-[#232323] group-hover:bg-gray-50 dark:group-hover:bg-[#2a2a2a]'}`} onClick={e => e.stopPropagation()}>
                     <div className="flex items-center gap-1 justify-end">
+                      <AutomationTriggerButton
+                        state={automationStates.get(lead.id) ?? null}
+                        onClick={() => setAutomationModalFor(lead.id)}
+                      />
                       {lead.pipeline_stage !== 'crm_pipeline' && (
                         <button
                           onClick={() => handleMoveToPipeline(lead.id)}
                           disabled={moving === lead.id}
                           title="Move to CRM Pipeline"
-                          className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-[#3d9585] dark:text-[#15A4AE] hover:bg-[#15A4AE]/10 rounded-md transition-colors disabled:opacity-50"
+                          className="p-1.5 rounded-lg text-[#15A4AE] hover:bg-[#15A4AE]/10 transition-colors disabled:opacity-50"
                         >
                           {moving === lead.id
-                            ? <Loader2 className="w-3 h-3 animate-spin" />
-                            : <ArrowRight className="w-3 h-3" />
+                            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            : <ArrowRight className="w-3.5 h-3.5" />
                           }
-                          {moving === lead.id ? 'Moving…' : 'Pipeline'}
                         </button>
                       )}
                       <button
                         onClick={() => handleDelete(lead.id)}
                         disabled={deleting === lead.id}
                         title="Delete lead"
-                        className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10 text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors disabled:opacity-40"
+                        className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10 text-gray-400 dark:text-gray-500 hover:text-red-500 transition-colors disabled:opacity-40"
                       >
                         {deleting === lead.id
                           ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -529,8 +641,25 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
               <p className="text-sm text-gray-400">No leads match your search.</p>
             </div>
           )}
-        </div>
       </div>
+
+      {(() => {
+        const lead = automationModalFor ? leads.find(x => x.id === automationModalFor) : null
+        return (
+          <RunAutomationModal
+            open={!!automationModalFor}
+            onClose={() => setAutomationModalFor(null)}
+            contactName={lead ? (lead.name || lead.email || null) : null}
+            sourceType="form"
+            sourceRefId={automationModalFor ?? ''}
+            existingState={automationModalFor ? (automationStates.get(automationModalFor) ?? null) : null}
+            onStateChange={state => {
+              if (!automationModalFor) return
+              setAutomationStates(prev => new Map(prev).set(automationModalFor, state))
+            }}
+          />
+        )
+      })()}
     </div>
   )
 }

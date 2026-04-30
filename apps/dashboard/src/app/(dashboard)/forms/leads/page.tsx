@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Header } from '@/components/layout/header'
 import { LeadsClient } from './leads-client'
+import { getActiveAutomationStates } from '@/app/actions/automation-executions'
 import { getUserPermissions } from '@/lib/permissions'
 import { ROLE_RANK } from '@/lib/types'
 import type { WorkspaceMember, Lead, WorkspaceMemberRole } from '@/lib/types'
@@ -107,6 +108,8 @@ export default async function AllLeadsPage() {
     memberNameMap[p.user_id] = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.user_id
   }
 
+  const automationStates = await getActiveAutomationStates()
+
   return (
     <div className="max-w-5xl mx-auto p-8">
       <Header
@@ -127,6 +130,7 @@ export default async function AllLeadsPage() {
         canAllocate={userPermissions.can_allocate_leads || callerRank >= ROLE_RANK.manager}
         teamMembers={teamMembers}
         memberNameMap={memberNameMap}
+        initialAutomationStates={automationStates}
       />
     </div>
   )

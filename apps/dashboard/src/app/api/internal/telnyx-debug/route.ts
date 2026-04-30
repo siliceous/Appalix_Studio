@@ -73,8 +73,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Admin required' }, { status: 403 })
   }
 
-  const url    = new URL(req.url)
-  const dryRun = url.searchParams.get('dry') !== 'false'   // default: dry run (no actual POST)
+  const url         = new URL(req.url)
+  const dryRun      = url.searchParams.get('dry') !== 'false'
+  const emailOverride = url.searchParams.get('email') ?? null
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const admin = createAdminClient() as any
@@ -110,7 +111,7 @@ export async function GET(req: Request) {
     state:                profile.business_state_region,
     postal_code:          profile.business_postcode,
     country:      toIsoAlpha2(profile.business_country),
-    email:                profile.business_contact_email,
+    email:        emailOverride ?? profile.business_contact_email,
     website:              profile.website_url,
     vertical: VERTICAL[profile.industry] ?? 'PROFESSIONAL',
     ...(profile.is_overseas_business

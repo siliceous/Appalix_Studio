@@ -593,8 +593,18 @@ export interface CreateAutomationInput {
 
 // ── Automation Templates ──────────────────────────────────────────────────────
 
-export type AutomationType       = 'warm_introduction' | 'qualification' | 'reengagement' | 'meeting_conversion' | 'nurture' | 'custom'
-export type AutomationTriggerType = 'manual' | 'prospect_converted' | 'form_submit' | 'inbound_email' | 'inbound_sms' | 'deal_stage_change'
+export type AutomationType =
+  | 'warm_introduction' | 'qualification' | 'reengagement' | 'meeting_conversion' | 'nurture' | 'custom'
+  | 'welcome' | 'abandoned_cart' | 'abandoned_checkout' | 'product_review'
+  | 'wheel_of_fortune' | 'ticket_registered' | 'purchase_followup'
+
+export type AutomationTriggerType =
+  | 'manual' | 'prospect_converted' | 'form_submit' | 'inbound_email' | 'inbound_sms' | 'deal_stage_change'
+  | 'newsletter_signup' | 'contact_created' | 'purchase_completed'
+  | 'cart_abandoned' | 'checkout_abandoned'
+  | 'ticket_created' | 'ticket_resolved'
+  | 'conversation_started' | 'conversation_interested'
+  | 'wheel_submitted'
 export type AutomationTemplateChannel = 'email' | 'sms' | 'call' | 'multi'
 
 export type AutomationStepType =

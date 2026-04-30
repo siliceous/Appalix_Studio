@@ -37,6 +37,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SageToolbar } from '@/components/dashboard/sage-toolbar'
+import { AutomationTabBar } from '@/components/dashboard/automation-side-tabs'
 import {
   createAutomationTemplate, updateAutomationTemplate, saveBuilderGraph,
 } from '@/app/actions/automation-templates-service'
@@ -89,10 +90,11 @@ const TAXONOMY: TaxonomyCategory[] = [
   {
     id: 'contact', label: 'Contact', icon: User, color: 'bg-sky-500',
     triggers: [
-      { label: 'Prospect converted', desc: 'Fires when a prospect becomes a contact',   type: 'prospect_converted' },
-      { label: 'Contact created',    desc: 'Fires when a new contact is added'          },
-      { label: 'Tag added',          desc: 'Fires when a tag is applied to a contact'   },
-      { label: 'Field updated',      desc: 'Fires when a contact field value changes'   },
+      { label: 'Prospect converted',  desc: 'Fires when a prospect becomes a contact',         type: 'prospect_converted' },
+      { label: 'Contact created',     desc: 'Fires when a new contact is added',               type: 'contact_created'    },
+      { label: 'Newsletter signup',   desc: 'Fires when a contact signs up for the newsletter', type: 'newsletter_signup'  },
+      { label: 'Tag added',           desc: 'Fires when a tag is applied to a contact'          },
+      { label: 'Field updated',       desc: 'Fires when a contact field value changes'          },
     ],
     actions: NODE_SPECS.filter(s => ['update_contact', 'assign'].includes(s.type)),
   },
@@ -147,10 +149,11 @@ const TAXONOMY: TaxonomyCategory[] = [
   {
     id: 'ecommerce', label: 'Ecommerce', icon: ShoppingBag, color: 'bg-orange-500',
     triggers: [
-      { label: 'Order placed',         desc: 'Contact completes a purchase'        },
-      { label: 'Cart abandoned',       desc: 'Contact leaves items in cart'        },
-      { label: 'Product purchased',    desc: 'A specific product is bought'        },
-      { label: 'Refund requested',     desc: 'Contact requests a refund'           },
+      { label: 'Order placed / Purchase completed', desc: 'Contact completes a purchase',                     type: 'purchase_completed'  },
+      { label: 'Cart abandoned',                    desc: 'Contact leaves items in cart without purchasing',  type: 'cart_abandoned'      },
+      { label: 'Checkout abandoned',                desc: 'Contact starts checkout but does not pay',        type: 'checkout_abandoned'  },
+      { label: 'Wheel of fortune submitted',        desc: 'Contact spins the wheel and submits their email', type: 'wheel_submitted'     },
+      { label: 'Refund requested',                  desc: 'Contact requests a refund'                                                    },
     ],
     actions: [],
   },
@@ -194,9 +197,9 @@ const TAXONOMY: TaxonomyCategory[] = [
   {
     id: 'tickets', label: 'Tickets', icon: Tag, color: 'bg-orange-500',
     triggers: [
-      { label: 'Ticket created', desc: 'A new support ticket is opened'     },
-      { label: 'Ticket replied', desc: 'A reply is added to a ticket'       },
-      { label: 'Ticket closed',  desc: 'A ticket is resolved or closed'     },
+      { label: 'Ticket created',  desc: 'A new support ticket is opened',   type: 'ticket_created'  },
+      { label: 'Ticket resolved', desc: 'A ticket is marked resolved',      type: 'ticket_resolved' },
+      { label: 'Ticket replied',  desc: 'A reply is added to a ticket'                              },
     ],
     actions: NODE_SPECS.filter(s => s.type === 'create_ticket'),
   },
@@ -1810,6 +1813,7 @@ function BuilderInner({ template, systemTemplates }: {
 
       {/* ── SageToolbar (top menu bar) ────────────────────── */}
       <SageToolbar pageKey="automations" />
+      <AutomationTabBar />
 
       {/* ── Page heading row ─────────────────────────────── */}
       <div className="shrink-0 px-8 pt-4 pb-3 flex items-center justify-between">

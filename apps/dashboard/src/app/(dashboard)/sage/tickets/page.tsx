@@ -4,6 +4,7 @@ import { TicketsClient } from './tickets-client'
 import { SageToolbar, type TriagePreset } from '@/components/dashboard/sage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
+import { getActiveAutomationStates } from '@/app/actions/automation-executions'
 import { ActivitySidebar } from '@/components/team/activity-sidebar'
 
 import type { Metadata } from 'next'
@@ -95,9 +96,10 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
   }
 
   const activityDate = params.activityDate ?? new Date().toISOString().slice(0, 10)
-  const [activity, viewingAs] = await Promise.all([
+  const [activity, viewingAs, automationStates] = await Promise.all([
     getActivityFeed(user.id, workspaceId, activityDate),
     resolveViewingAs(undefined, workspaceId),
+    getActiveAutomationStates(),
   ])
 
   return (
@@ -109,6 +111,7 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
             contacts={contacts}
             callerRole={membership.role as WorkspaceMember['role']}
             members={assignableMembers}
+            initialAutomationStates={automationStates}
           />
         <ActivitySidebar
           activity={activity}

@@ -10,6 +10,7 @@ import { ROLE_RANK } from '@/lib/types'
 import type { WorkspaceMemberRole } from '@/lib/types'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
+import { getActiveAutomationStates } from '@/app/actions/automation-executions'
 import { ActivitySidebar } from '@/components/team/activity-sidebar'
 
 export const metadata: Metadata = { title: 'SMS' }
@@ -123,9 +124,10 @@ export default async function SmsPage({
 
   const activityDate  = params.activityDate ?? new Date().toISOString().slice(0, 10)
   const activityUserId = viewAsUserId ?? user.id
-  const [activity, viewingAs] = await Promise.all([
+  const [activity, viewingAs, automationStates] = await Promise.all([
     getActivityFeed(activityUserId, workspaceId, activityDate),
     resolveViewingAs(params.viewAs, workspaceId),
+    getActiveAutomationStates(),
   ])
 
   return (
@@ -151,6 +153,7 @@ export default async function SmsPage({
             statusCounts={statusCounts}
             detailBasePath="/dashboard/sms"
             pageTitle="SMS"
+            initialAutomationStates={automationStates}
             pageSubtitle={`All SMS conversations — ${conversations.length} shown`}
             headerAction={
               <Link

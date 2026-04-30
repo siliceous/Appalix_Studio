@@ -10,7 +10,7 @@ import {
   Settings, TrendingUp, BarChart2, CreditCard,
   Mail, MessageSquare, FileText, Ticket as TicketIcon,
   Calendar, ChevronDown, Zap, Loader2, Palette,
-  Smartphone, Phone, LayoutTemplate, Wallet,
+  Smartphone, Phone, Wallet,
 } from 'lucide-react'
 import { useUserAvatar } from '@/contexts/user-avatar-context'
 import { updateAutoSetting, type AutoSettings } from '@/app/actions/sage-auto-settings'
@@ -41,8 +41,7 @@ const TRIAGE_PAGES: PageDef[] = [
 const SAGE_PAGES: PageDef[] = [
   { key: 'branding',    label: 'Branding',     href: '/sage/branding',    icon: Palette        },
   { key: 'prospects',   label: 'Enrichment',   href: '/sage/prospects',   icon: Target         },
-  { key: 'automations', label: 'Automations',  href: '/sage/automations', icon: Zap            },
-  { key: 'templates',   label: 'Templates',    href: '/sage/templates',   icon: LayoutTemplate },
+  { key: 'automations', label: 'Automations', href: '/sage/automation-builder', icon: Zap },
   { key: 'contacts',    label: 'Contacts',     href: '/sage/contacts',    icon: Users          },
   { key: 'pipelines',   label: 'Pipelines',    href: '/sage/pipelines',   icon: Kanban         },
   { key: 'projects',    label: 'Projects',     href: '/sage/projects',    icon: FolderOpen     },
@@ -75,6 +74,8 @@ const TRIAGE_SOURCE_LABEL: Record<string, string> = {
 
 const PROFILE_LINKS = [
   { href: '/settings',         label: 'Settings',       Icon: Settings   },
+  { href: '/settings/wallet',  label: 'Wallet',         Icon: Wallet     },
+  { href: '/settings/billing', label: 'Billing',        Icon: Receipt    },
   { href: '/sage/roi',         label: 'ROI',            Icon: TrendingUp },
   { href: '/analytics',        label: 'Analytics',      Icon: BarChart2  },
   { href: '/settings/upgrade', label: 'Plan (Upgrade)', Icon: CreditCard },

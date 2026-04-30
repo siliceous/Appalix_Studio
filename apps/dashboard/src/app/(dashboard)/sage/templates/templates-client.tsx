@@ -38,6 +38,13 @@ const AUTOMATION_TYPE_LABELS: Record<AutomationType, string> = {
   meeting_conversion: 'Meeting',
   nurture:            'Nurture',
   custom:             'Custom',
+  welcome:            'Welcome',
+  abandoned_cart:     'Abandoned Cart',
+  abandoned_checkout: 'Abandoned Checkout',
+  product_review:     'Product Review',
+  wheel_of_fortune:   'Wheel of Fortune',
+  ticket_registered:  'Ticket Registered',
+  purchase_followup:  'Purchase Follow-up',
 }
 
 const CATEGORY_OPTIONS: EmailTemplateCategory[] = [
@@ -47,6 +54,8 @@ const CATEGORY_OPTIONS: EmailTemplateCategory[] = [
 
 const AUTOMATION_TYPE_OPTIONS: (AutomationType | '')[] = [
   '', 'warm_introduction', 'qualification', 'reengagement', 'meeting_conversion', 'nurture', 'custom',
+  'welcome', 'abandoned_cart', 'abandoned_checkout', 'product_review',
+  'wheel_of_fortune', 'ticket_registered', 'purchase_followup',
 ]
 
 // ── Types ─────────────────────────────────────────────────────────────────────

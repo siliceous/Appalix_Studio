@@ -7,6 +7,8 @@ import {
   MessageSquare, Search, ChevronDown, Download,
   Pencil, X, Trash2, Loader2, UserPlus, Ticket,
 } from 'lucide-react'
+import { AutomationTriggerButton, RunAutomationModal } from '@/components/automation/run-automation-modal'
+import type { AutomationRunState } from '@/components/automation/run-automation-modal'
 import { PLATFORM_META, timeAgo } from '@/lib/utils'
 import { renameConversation, assignConversation, deleteConversation, updateConversationPriority, updateConversationStatus, conversationCreateDeal, conversationCreateTicket } from '@/app/actions/conversation'
 import { deleteConversations } from '@/app/actions/bot-conversations'
@@ -118,9 +120,10 @@ interface Props {
   pageTitle?: string
   pageSubtitle?: string
   headerAction?: React.ReactNode
+  initialAutomationStates?: Record<string, AutomationRunState>
 }
 
-export function ConversationsClient({ conversations, bots, filters, teamMembers = [], canAssign = false, readonly = false, showNewBotButton = false, statusCounts, detailBasePath = '/conversations', pageTitle = 'Conversations', pageSubtitle, headerAction }: Props) {
+export function ConversationsClient({ conversations, bots, filters, teamMembers = [], canAssign = false, readonly = false, showNewBotButton = false, statusCounts, detailBasePath = '/conversations', pageTitle = 'Conversations', pageSubtitle, headerAction, initialAutomationStates }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [localAssign,    setLocalAssign]    = React.useState<Record<string, string | null>>({})
@@ -130,6 +133,10 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
   const [saving,         setSaving]         = React.useState<{ id: string; field: string } | null>(null)
   const [bulkSaving,     setBulkSaving]     = React.useState(false)
   const [quickAction,    setQuickAction]    = React.useState<Record<string, 'deal' | 'ticket' | 'loading-deal' | 'loading-ticket'>>({})
+  const [automationStates,    setAutomationStates]    = React.useState<Map<string, AutomationRunState>>(
+    () => new Map(Object.entries(initialAutomationStates ?? {}))
+  )
+  const [automationModalFor,  setAutomationModalFor]  = React.useState<string | null>(null)
 
   // Pagination
   const [pageSize, setPageSize] = useState(20)
@@ -432,7 +439,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
         <TrashTab type="conversation" />
       ) : (
       <div className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-max text-sm">
             <thead>
               <tr className="bg-[#141c2b]">
                 {!readonly && (
@@ -503,16 +510,18 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                     </td>
 
                     {/* Conversation title + contact name */}
-                    <td className="px-5 py-3.5 max-w-[220px]">
-                      <ClickOrEditCell
-                        value={title}
-                        href={`${detailBasePath}/${c.id}`}
-                        onSave={val => handleRename(c.id, val)}
-                        readonly={readonly}
-                      />
-                      {contactName && (
-                        <p className="text-xs text-gray-400 mt-0.5 truncate">{contactName}</p>
-                      )}
+                    <td className="px-5 py-3.5">
+                      <div className="w-[200px]">
+                        <ClickOrEditCell
+                          value={title}
+                          href={`${detailBasePath}/${c.id}`}
+                          onSave={val => handleRename(c.id, val)}
+                          readonly={readonly}
+                        />
+                        {contactName && (
+                          <p className="text-xs text-gray-400 mt-0.5 truncate">{contactName}</p>
+                        )}
+                      </div>
                     </td>
 
                     {/* Bot name */}
@@ -590,6 +599,13 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                     {/* Actions */}
                     <td className="px-5 py-3.5 w-px whitespace-nowrap">
                       <div className="flex items-center gap-1 justify-end">
+                        {/* Automation */}
+                        {!readonly && (
+                          <AutomationTriggerButton
+                            state={automationStates.get(c.id) ?? null}
+                            onClick={() => setAutomationModalFor(c.id)}
+                          />
+                        )}
                         {/* Create deal */}
                         {!readonly && (
                           quickAction[c.id] === 'loading-deal' ? (
@@ -672,6 +688,24 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
           Showing first 150 results — use filters to narrow down.
         </p>
       )}
+
+      {(() => {
+        const c = automationModalFor ? paginated.find(x => x.id === automationModalFor) ?? conversations.find(x => x.id === automationModalFor) : null
+        return (
+          <RunAutomationModal
+            open={!!automationModalFor}
+            onClose={() => setAutomationModalFor(null)}
+            contactName={c?.ai_entities?.['name'] ?? c?.title ?? null}
+            sourceType="conversation"
+            sourceRefId={automationModalFor ?? ''}
+            existingState={automationModalFor ? (automationStates.get(automationModalFor) ?? null) : null}
+            onStateChange={state => {
+              if (!automationModalFor) return
+              setAutomationStates(prev => new Map(prev).set(automationModalFor, state))
+            }}
+          />
+        )
+      })()}
     </div>
   )
 }

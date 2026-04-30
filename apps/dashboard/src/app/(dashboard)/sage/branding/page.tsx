@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 import { BrandingClient } from './branding-client'
@@ -23,24 +23,44 @@ export default async function BrandingPage() {
   if (!membership) redirect('/login')
 
   const workspaceId = membership.workspace_id
+  const admin = createAdminClient()
 
-  // Fetch all brand profiles for this workspace (workspace brand + client brands)
-  const { data: profilesRaw } = await supabase
-    .from('brand_profiles')
-    .select('*')
-    .eq('workspace_id', workspaceId)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: true })
+  const [
+    { data: profilesRaw },
+    { data: assetsRaw },
+    { data: sessionsRaw },
+    { data: candidatesRaw },
+  ] = await Promise.all([
+    supabase
+      .from('brand_profiles')
+      .select('*')
+      .eq('workspace_id', workspaceId)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: true }),
 
-  // Fetch all brand assets for this workspace (non-archived, non-deleted)
-  // The client filters by brand_profile_id when rendering each profile
-  const { data: assetsRaw } = await supabase
-    .from('brand_assets')
-    .select('*')
-    .eq('workspace_id', workspaceId)
-    .eq('is_archived', false)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false })
+    supabase
+      .from('brand_assets')
+      .select('*')
+      .eq('workspace_id', workspaceId)
+      .eq('is_archived', false)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false }),
+
+    admin
+      .from('brand_scan_sessions')
+      .select('id, brand_profile_id, website_url, status, is_ecommerce, new_asset_count, scan_summary, created_at, completed_at')
+      .eq('workspace_id', workspaceId)
+      .eq('status', 'completed')
+      .order('created_at', { ascending: false })
+      .limit(30),
+
+    admin
+      .from('brand_asset_candidates')
+      .select('id, brand_profile_id, scan_session_id, asset_type, asset_role, title, value, source_url, metadata, status, created_at')
+      .eq('workspace_id', workspaceId)
+      .eq('status', 'candidate')
+      .order('created_at', { ascending: false }),
+  ])
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
@@ -50,6 +70,8 @@ export default async function BrandingPage() {
           userId={user.id}
           profiles={profilesRaw ?? []}
           assets={assetsRaw ?? []}
+          sessions={(sessionsRaw ?? []) as Parameters<typeof BrandingClient>[0]['sessions']}
+          candidates={(candidatesRaw ?? []) as Parameters<typeof BrandingClient>[0]['candidates']}
         />
       </div>
     </div>
