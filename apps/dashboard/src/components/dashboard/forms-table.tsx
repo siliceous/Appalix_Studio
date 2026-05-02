@@ -8,6 +8,8 @@ import {
   ClipboardList, Search, ChevronDown, X,
   UserPlus, Ticket, Download, Loader2, Trash2, Sparkles, Columns3, RefreshCw,
 } from 'lucide-react'
+import { AutomationTriggerButton, RunAutomationModal } from '@/components/automation/run-automation-modal'
+import type { AutomationRunState } from '@/components/automation/run-automation-modal'
 import { timeAgo } from '@/lib/utils'
 import {
   formSubmissionCreateLead,
@@ -68,6 +70,7 @@ interface Props {
   connectedLeadAdProviders?: string[]
   teamMembers?:              Array<{ user_id: string; name: string }>
   canAllocate?:              boolean
+  initialAutomationStates?:  Record<string, AutomationRunState>
 }
 
 const EMAIL_PLATFORM_META: Record<string, { name: string; logo?: string; pill: string }> = {
@@ -343,6 +346,7 @@ export function FormsTable({
   connectedFormProviders = [],
   connectedLeadAdProviders = [],
   teamMembers = [], canAllocate = false,
+  initialAutomationStates,
 }: Props) {
   const router = useRouter()
 
@@ -457,6 +461,12 @@ export function FormsTable({
 
   // Per-row quick action loading state
   const [quickAction, setQuickAction] = useState<Record<string, 'loading-deal' | 'loading-ticket' | 'loading-delete'>>({})
+
+  // Automation
+  const [automationStates,   setAutomationStates]   = useState<Map<string, AutomationRunState>>(
+    () => new Map(Object.entries(initialAutomationStates ?? {}))
+  )
+  const [automationModalFor, setAutomationModalFor] = useState<string | null>(null)
 
   // ── Filter navigation ────────────────────────────────────────────────────
   const pushFilter = useCallback((patch: Partial<FormFilters>) => {
@@ -896,7 +906,7 @@ export function FormsTable({
               {show('submitted') && <th className="bg-[#141c2b] text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Submitted</th>}
               {show('status')    && <th className="bg-[#141c2b] text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Status</th>}
               {show('assigned')  && <th className="bg-[#141c2b] text-left px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide">Assigned to</th>}
-              <th className="bg-[#141c2b] text-right px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide rounded-tr-xl">Actions</th>
+              <th className="sticky right-0 z-10 bg-[#141c2b] text-right px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap rounded-tr-xl shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.08)]">Actions</th>
             </tr>
           </thead>
         </table>
@@ -924,7 +934,7 @@ export function FormsTable({
               {show('submitted') && <col className="w-28" />}
               {show('status')    && <col className="w-28" />}
               {show('assigned')  && <col className="w-32" />}
-              <col className="w-20" />
+              <col className="w-[220px]" />
             </colgroup>
               <tbody className="divide-y dark:divide-white/5">
                 {paginated.map(sub => {
@@ -1141,8 +1151,14 @@ export function FormsTable({
                       )}
 
                       {/* Actions */}
-                      <td className="sticky right-0 px-4 py-3.5 whitespace-nowrap bg-white dark:bg-[#1e1e1e] group-hover:bg-gray-50 dark:group-hover:bg-[#1e1e1e] z-10 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.08)]">
+                      <td className="sticky right-0 z-20 px-4 py-3.5 whitespace-nowrap bg-white dark:bg-[#1e1e1e] group-hover:bg-gray-50 dark:group-hover:bg-[#222222] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.10)]">
                         <div className="flex items-center gap-1 justify-end">
+                          {!readonly && (
+                            <AutomationTriggerButton
+                              state={automationStates.get(sub.id) ?? null}
+                              onClick={() => setAutomationModalFor(sub.id)}
+                            />
+                          )}
                           {!readonly && (
                             qa === 'loading-deal' ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
@@ -1233,6 +1249,24 @@ export function FormsTable({
       )}
 
       </div>{/* end padding wrapper */}
+
+      {(() => {
+        const sub = automationModalFor ? submissions.find(x => x.id === automationModalFor) : null
+        return (
+          <RunAutomationModal
+            open={!!automationModalFor}
+            onClose={() => setAutomationModalFor(null)}
+            contactName={sub ? (getName(sub) || getEmail(sub) || null) : null}
+            sourceType="form"
+            sourceRefId={automationModalFor ?? ''}
+            existingState={automationModalFor ? (automationStates.get(automationModalFor) ?? null) : null}
+            onStateChange={state => {
+              if (!automationModalFor) return
+              setAutomationStates(prev => new Map(prev).set(automationModalFor, state))
+            }}
+          />
+        )
+      })()}
     </div>
   )
 }

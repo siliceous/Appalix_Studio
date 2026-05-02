@@ -439,19 +439,20 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
                     className="w-4 h-4 rounded border-white/30 accent-brand-600 cursor-pointer"
                   />
                 </th>
-                {col('priority')    && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Priority</th>}
-                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide max-w-[200px]">Name</th>
-                {col('email')      && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Email</th>}
-                {col('phone')      && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Phone</th>}
-                {col('company')    && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Company</th>}
-                {col('city')       && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">City</th>}
-                {col('form')       && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Form</th>}
-                {col('submitted')  && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Submitted</th>}
-                {col('status')     && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Status</th>}
+                {col('priority')    && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide w-px whitespace-nowrap">Priority</th>}
+                <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide w-px whitespace-nowrap">Name</th>
+                {col('email')      && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide w-px whitespace-nowrap">Email</th>}
+                {col('phone')      && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide w-px whitespace-nowrap">Phone</th>}
+                {col('company')    && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide w-px whitespace-nowrap">Company</th>}
+                {col('city')       && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide w-px whitespace-nowrap">City</th>}
+                {col('form')       && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide w-px whitespace-nowrap">Form</th>}
+                {col('submitted')  && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide w-px whitespace-nowrap">Submitted</th>}
+                {col('status')     && <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide w-px whitespace-nowrap">Status</th>}
                 {canAllocate && col('assigned_to') && (
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide">Assigned to</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 uppercase tracking-wide w-px whitespace-nowrap">Assigned to</th>
                 )}
-                <th className="sticky right-0 z-10 bg-[#141c2b] px-4 py-3 text-right text-xs font-semibold text-white/70 uppercase tracking-wide min-w-[220px] whitespace-nowrap shadow-[-8px_0_8px_-4px_rgba(0,0,0,0.06)]">Actions</th>
+                <th className="w-full" />{/* spacer — absorbs leftover width so data columns stay compact */}
+                <th className="sticky right-0 z-10 bg-[#141c2b] px-4 py-3 text-right text-xs font-semibold text-white/70 uppercase tracking-wide whitespace-nowrap shadow-[-8px_0_8px_-4px_rgba(0,0,0,0.06)]">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-white/5">
@@ -472,7 +473,7 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
 
                   {/* Priority */}
                   {col('priority') && (
-                  <td className="px-4 py-3.5">
+                  <td className="px-4 py-3.5 w-px">
                     {updatingPriority === lead.id ? (
                       <div className="flex items-center h-[26px] w-[90px]">
                         <Loader2 className="w-4 h-4 animate-spin text-[#15A4AE]" />
@@ -495,7 +496,7 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
                   )}
 
                   {/* Name */}
-                  <td className="px-4 py-3.5 max-w-[200px]">
+                  <td className="px-4 py-3.5 w-px">
                     <div className="w-[200px] overflow-hidden">
                       <p className="font-medium text-gray-900 dark:text-gray-100 truncate" title={lead.name}>
                         {lead.name.length > 30 ? lead.name.slice(0, 30) + '…' : lead.name}
@@ -505,49 +506,49 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
 
                   {/* Email */}
                   {col('email') && (
-                  <td className="px-4 py-3.5">
+                  <td className="px-4 py-3.5 w-px">
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[160px]">{lead.email ?? '—'}</p>
                   </td>
                   )}
 
                   {/* Phone */}
                   {col('phone') && (
-                  <td className="px-4 py-3.5">
+                  <td className="px-4 py-3.5 w-px">
                     <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{lead.phone ?? '—'}</p>
                   </td>
                   )}
 
                   {/* Company */}
                   {col('company') && (
-                  <td className="px-4 py-3.5">
+                  <td className="px-4 py-3.5 w-px">
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]">{lead.company ?? '—'}</p>
                   </td>
                   )}
 
                   {/* City */}
                   {col('city') && (
-                  <td className="px-4 py-3.5">
+                  <td className="px-4 py-3.5 w-px">
                     <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{getCity(lead)}</p>
                   </td>
                   )}
 
                   {/* Form */}
                   {col('form') && (
-                  <td className="px-4 py-3.5">
+                  <td className="px-4 py-3.5 w-px">
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]">{lead.form_name ?? '—'}</p>
                   </td>
                   )}
 
                   {/* Submitted */}
                   {col('submitted') && (
-                  <td className="px-4 py-3.5 whitespace-nowrap">
+                  <td className="px-4 py-3.5 w-px whitespace-nowrap">
                     <p className="text-xs text-gray-400">{formatDate(lead.created_at)}</p>
                   </td>
                   )}
 
                   {/* Status */}
                   {col('status') && (
-                  <td className="px-4 py-3.5">
+                  <td className="px-4 py-3.5 w-px">
                     {updatingStatus === lead.id ? (
                       <div className="flex items-center h-[26px] w-[100px]">
                         <Loader2 className="w-4 h-4 animate-spin text-[#15A4AE]" />
@@ -571,7 +572,7 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
 
                   {/* Assigned to */}
                   {canAllocate && col('assigned_to') && (
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3.5 w-px">
                       {assigning === lead.id ? (
                         <div className="flex items-center justify-center h-[26px] w-[120px]">
                           <Loader2 className="w-4 h-4 animate-spin text-[#15A4AE]" />
@@ -598,8 +599,11 @@ export function LeadsClient({ leads: initial, canAllocate, teamMembers, memberNa
                     </td>
                   )}
 
+                  {/* Spacer */}
+                  <td className="w-full" />
+
                   {/* Actions */}
-                  <td className={`sticky right-0 z-10 px-4 py-3.5 min-w-[220px] whitespace-nowrap shadow-[-8px_0_8px_-4px_rgba(0,0,0,0.08)] transition-colors ${selectedIds.has(lead.id) ? 'bg-brand-50 dark:bg-[#1a2436]' : 'bg-[#ffffff] dark:bg-[#232323] group-hover:bg-gray-50 dark:group-hover:bg-[#2a2a2a]'}`} onClick={e => e.stopPropagation()}>
+                  <td className={`sticky right-0 z-10 px-4 py-3.5 whitespace-nowrap shadow-[-8px_0_8px_-4px_rgba(0,0,0,0.08)] transition-colors ${selectedIds.has(lead.id) ? 'bg-brand-50 dark:bg-[#1a2436]' : 'bg-[#ffffff] dark:bg-[#232323] group-hover:bg-gray-50 dark:group-hover:bg-[#2a2a2a]'}`} onClick={e => e.stopPropagation()}>
                     <div className="flex items-center gap-1 justify-end">
                       <AutomationTriggerButton
                         state={automationStates.get(lead.id) ?? null}

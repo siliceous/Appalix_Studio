@@ -456,7 +456,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                 <th className="text-right px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide w-[160px]">Last active</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Status</th>
                 {canAssign && <th className="text-left px-4 py-3 text-xs font-semibold text-white uppercase tracking-wide">Assigned to</th>}
-                <th className="sticky right-0 z-10 bg-[#141c2b] text-right px-5 py-3 text-xs font-semibold text-white uppercase tracking-wide min-w-[220px] whitespace-nowrap shadow-[-8px_0_8px_-4px_rgba(0,0,0,0.06)]">Actions</th>
+                <th className="text-right px-5 py-3 text-xs font-semibold text-white uppercase tracking-wide w-px whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-white/5">
@@ -576,8 +576,8 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
 
                     {/* Assign to */}
                     {canAssign && (
-                      <td className="px-4 py-3.5 max-w-[180px]">
-                        <div className="flex items-center gap-1 min-w-[140px] max-w-[180px]">
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-1">
                           <select
                             value={localAssign[c.id] !== undefined ? (localAssign[c.id] ?? '') : (c.assigned_to ?? '')}
                             disabled={saving?.id === c.id && saving?.field === 'assign'}
@@ -597,7 +597,7 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                     )}
 
                     {/* Actions */}
-                    <td className={`sticky right-0 z-10 px-5 py-3.5 min-w-[220px] whitespace-nowrap shadow-[-8px_0_8px_-4px_rgba(0,0,0,0.08)] transition-colors ${selectedIds.has(c.id) ? 'bg-red-50 dark:bg-red-500/5' : 'bg-white dark:bg-[#232323] group-hover:bg-gray-50 dark:group-hover:bg-white/[0.03]'}`} onClick={e => e.stopPropagation()}>
+                    <td className="px-5 py-3.5 w-px whitespace-nowrap">
                       <div className="flex items-center gap-1 justify-end">
                         {/* Automation */}
                         {!readonly && (

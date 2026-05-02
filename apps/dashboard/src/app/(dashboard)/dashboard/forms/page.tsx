@@ -8,6 +8,7 @@ import { FormsTable, type FormFilters } from '@/components/dashboard/forms-table
 import { SageToolbar, type TriagePreset } from '@/components/dashboard/sage-toolbar'
 import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
+import { getActiveAutomationStates } from '@/app/actions/automation-executions'
 import { ActivitySidebar } from '@/components/team/activity-sidebar'
 
 
@@ -201,9 +202,10 @@ export default async function FormsPage({
 
   const activityDate = params.activityDate ?? new Date().toISOString().slice(0, 10)
   const activityUserId = viewAsUserId ?? user.id
-  const [activity, viewingAs] = await Promise.all([
+  const [activity, viewingAs, automationStates] = await Promise.all([
     getActivityFeed(activityUserId, workspaceId, activityDate),
     resolveViewingAs(params.viewAs, workspaceId),
+    getActiveAutomationStates(),
   ])
 
   return (
@@ -229,6 +231,7 @@ export default async function FormsPage({
             connectedLeadAdProviders={connectedLeadAdProviders}
             teamMembers={teamMembersForPicker}
             canAllocate={callerRank >= ROLE_RANK.manager}
+            initialAutomationStates={automationStates}
           />
         <ActivitySidebar
           activity={activity}

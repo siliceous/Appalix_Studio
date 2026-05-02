@@ -147,34 +147,36 @@ export async function submitBrandToTelnyx(
   const lastName  = nameParts.slice(1).join(' ') || firstName
 
   const payload = {
-    entity_type:  ENTITY_TYPE[profile.business_type] ?? 'PRIVATE_PROFIT',
-    first_name:   firstName,
-    last_name:    lastName,
-    display_name: profile.trading_name || profile.legal_business_name,
-    company_name: profile.legal_business_name,
-    ...(!profile.is_overseas_business && profile.business_registration_number
+    entityType:  ENTITY_TYPE[profile.business_type] ?? 'PRIVATE_PROFIT',
+    firstName:   firstName,
+    lastName:    lastName,
+    displayName: profile.trading_name || profile.legal_business_name,
+    companyName: profile.legal_business_name,
+    // Telnyx requires ein for all entity types; for non-US businesses this is the local
+    // business registration number (e.g. ABN for Australia).
+    ...(profile.business_registration_number
       ? { ein: profile.business_registration_number }
       : {}),
     phone:        profile.business_contact_phone,
     street:       profile.business_address_line1,
     city:         profile.business_city,
     state:        profile.business_state_region,
-    postal_code:  profile.business_postcode,
+    postalCode:  profile.business_postcode,
     country:      toIsoAlpha2(profile.business_country),
     email:        profile.business_contact_email,
     website:      profile.website_url,
     vertical:     VERTICAL[profile.industry] ?? 'PROFESSIONAL',
-    // TCR only recognises EIN (US), DUNS, GIIN, LEI — omit alt_business_id for overseas
+    // TCR only recognises EIN (US), DUNS, GIIN, LEI — omit altBusinessId for overseas
     // entities whose registration number (e.g. ABN) doesn't map to those types.
     ...(profile.is_overseas_business
       ? {}
       : {
-          alt_business_id:      profile.business_registration_number ?? undefined,
-          alt_business_id_type: profile.business_registration_number ? 'NONE' : undefined,
+          altBusinessId:     profile.business_registration_number ?? undefined,
+          altBusinessIdType: profile.business_registration_number ? 'NONE' : undefined,
         }),
   }
 
-  const resp = await fetch(`${TELNYX}/10dlc/brands`, {
+  const resp = await fetch(`${TELNYX}/10dlc/brand`, {
     method: 'POST', headers: headers(), body: JSON.stringify(payload),
   })
   const body = await resp.json()
@@ -240,31 +242,31 @@ export async function submitCampaignToTelnyx(
   }
 
   const payload = {
-    brand_id:          brand.provider_brand_id,
-    usecase:           USE_CASE_CODE[campaign.use_case] ?? 'MIXED',
-    description:       campaign.campaign_description,
-    embedded_link:     campaign.has_embedded_links,
-    embedded_phone:    campaign.has_embedded_phone_numbers,
-    age_gated:         campaign.age_gated_content,
-    direct_lending:    campaign.direct_lending_or_financial_content,
-    subscriber_optin:  true,
-    subscriber_optout: true,
-    subscriber_help:   true,
-    sample1:           campaign.sample_message_1,
-    sample2:           campaign.sample_message_2,
+    brandId:          brand.provider_brand_id,
+    usecase:          USE_CASE_CODE[campaign.use_case] ?? 'MIXED',
+    description:      campaign.campaign_description,
+    embeddedLink:     campaign.has_embedded_links,
+    embeddedPhone:    campaign.has_embedded_phone_numbers,
+    ageGated:         campaign.age_gated_content,
+    directLending:    campaign.direct_lending_or_financial_content,
+    subscriberOptin:  true,
+    subscriberOptout: true,
+    subscriberHelp:   true,
+    sample1:          campaign.sample_message_1,
+    sample2:          campaign.sample_message_2,
     ...(campaign.sample_message_3 ? { sample3: campaign.sample_message_3 } : {}),
-    message_flow:      campaign.message_flow,
-    help_message:      campaign.help_message,
-    optin_keywords:    (campaign.opt_in_keywords  ?? ['YES', 'START']).join(','),
-    optout_keywords:   (campaign.opt_out_keywords ?? ['STOP', 'UNSUBSCRIBE']).join(','),
-    help_keywords:     (campaign.help_keywords    ?? ['HELP']).join(','),
-    optin_message:     campaign.opt_in_message,
-    optout_message:    campaign.opt_out_message,
-    affiliate_marketing: false,
-    number_pool:         false,
+    messageFlow:      campaign.message_flow,
+    helpMessage:      campaign.help_message,
+    optinKeywords:    (campaign.opt_in_keywords  ?? ['YES', 'START']).join(','),
+    optoutKeywords:   (campaign.opt_out_keywords ?? ['STOP', 'UNSUBSCRIBE']).join(','),
+    helpKeywords:     (campaign.help_keywords    ?? ['HELP']).join(','),
+    optinMessage:     campaign.opt_in_message,
+    optoutMessage:    campaign.opt_out_message,
+    affiliateMarketing: false,
+    numberPool:         false,
   }
 
-  const resp = await fetch(`${TELNYX}/10dlc/campaigns`, {
+  const resp = await fetch(`${TELNYX}/10dlc/campaignBuilder`, {
     method: 'POST', headers: headers(), body: JSON.stringify(payload),
   })
   const body = await resp.json()

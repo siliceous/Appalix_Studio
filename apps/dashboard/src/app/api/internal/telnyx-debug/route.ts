@@ -69,8 +69,8 @@ export async function GET(req: Request) {
     .limit(1)
     .single()
   const member = memberRaw as { workspace_id: string; role: string } | null
-  if (!member || !['admin', 'owner'].includes(member.role)) {
-    return NextResponse.json({ error: 'Admin required' }, { status: 403 })
+  if (!member) {
+    return NextResponse.json({ error: 'Workspace not found' }, { status: 403 })
   }
 
   const url         = new URL(req.url)
@@ -97,32 +97,32 @@ export async function GET(req: Request) {
   const lastName  = nameParts.slice(1).join(' ') || firstName
 
   const payload = {
-    entity_type:  ENTITY_TYPE[profile.business_type] ?? 'PRIVATE_PROFIT',
-    first_name:   firstName,
-    last_name:    lastName,
-    display_name: profile.trading_name || profile.legal_business_name,
-    company_name: profile.legal_business_name,
-    ...(!profile.is_overseas_business && profile.business_registration_number
+    entityType:  ENTITY_TYPE[profile.business_type] ?? 'PRIVATE_PROFIT',
+    firstName:   firstName,
+    lastName:    lastName,
+    displayName: profile.trading_name || profile.legal_business_name,
+    companyName: profile.legal_business_name,
+    ...(profile.business_registration_number
       ? { ein: profile.business_registration_number }
       : {}),
-    phone:                profile.business_contact_phone,
-    street:               profile.business_address_line1,
-    city:                 profile.business_city,
-    state:                profile.business_state_region,
-    postal_code:          profile.business_postcode,
-    country:      toIsoAlpha2(profile.business_country),
-    email:        emailOverride ?? profile.business_contact_email,
-    website:              profile.website_url,
+    phone:    profile.business_contact_phone,
+    street:   profile.business_address_line1,
+    city:     profile.business_city,
+    state:    profile.business_state_region,
+    postalCode: profile.business_postcode,
+    country:  toIsoAlpha2(profile.business_country),
+    email:    emailOverride ?? profile.business_contact_email,
+    website:  profile.website_url,
     vertical: VERTICAL[profile.industry] ?? 'PROFESSIONAL',
     ...(profile.is_overseas_business
       ? {}
       : {
-          alt_business_id:      profile.business_registration_number ?? undefined,
-          alt_business_id_type: profile.business_registration_number ? 'NONE' : undefined,
+          altBusinessId:     profile.business_registration_number ?? undefined,
+          altBusinessIdType: profile.business_registration_number ? 'NONE' : undefined,
         }),
   }
 
-  const endpoint = `${TELNYX}/10dlc/brands`
+  const endpoint = `${TELNYX}/10dlc/brand`
 
   if (dryRun) {
     // Return the request we WOULD send without actually sending it
