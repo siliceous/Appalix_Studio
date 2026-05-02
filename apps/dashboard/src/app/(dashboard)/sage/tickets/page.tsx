@@ -103,7 +103,7 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
   ])
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
       <SageToolbar pageKey="tickets" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.tickets_auto_enabled} />
       <div className="flex flex-1 overflow-hidden min-h-0">
           <TicketsClient

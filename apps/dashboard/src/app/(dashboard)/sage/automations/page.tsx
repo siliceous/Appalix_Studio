@@ -22,10 +22,10 @@ export default async function AutomationsPage() {
   ])
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
       <SageToolbar pageKey="automations" />
       <AutomationTabBar />
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
         <AutomationsClient
           templates={templates}
           running={running}

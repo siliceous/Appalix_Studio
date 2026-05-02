@@ -33,7 +33,7 @@ export default async function ProspectsPage() {
   ])
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
       <SageToolbar pageKey="prospects" />
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
         <ProspectsClient

@@ -117,7 +117,7 @@ export default async function ContactsPage({
   }))
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
       <SageToolbar pageKey="contacts" />
       <div className="flex-1 overflow-hidden flex flex-col min-h-0">
         <ContactsClient
