@@ -807,11 +807,11 @@ function PaletteItem({ id, label, icon: Icon }: { id: string; label: string; ico
       {...attributes}
       {...listeners}
       style={{ opacity: isDragging ? 0.4 : 1, touchAction: 'none' }}
-      className="flex flex-col items-center gap-1 py-2 px-1 rounded-lg border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/5 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-100 dark:hover:bg-white/10 transition-all cursor-grab active:cursor-grabbing group"
+      className="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 dark:border-white/8 bg-gray-50 dark:bg-white/[0.02] hover:border-brand-300 dark:hover:border-brand-500/30 hover:bg-brand-50/40 dark:hover:bg-brand-500/5 transition-colors cursor-grab active:cursor-grabbing group"
     >
-      {Icon ? <Icon className="w-4 h-4 text-gray-400 group-hover:text-gray-700 transition-colors" />
-             : <Columns className="w-4 h-4 text-gray-400 group-hover:text-gray-700 transition-colors" />}
-      <span className="text-[9px] font-semibold text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 text-center leading-tight">{label}</span>
+      {Icon ? <Icon className="w-6 h-6 text-gray-400 group-hover:text-brand-500 transition-colors" />
+             : <Columns className="w-6 h-6 text-gray-400 group-hover:text-brand-500 transition-colors" />}
+      <span className="text-[11px] text-gray-500 dark:text-gray-400 group-hover:text-brand-600 dark:group-hover:text-brand-400 text-center leading-tight transition-colors">{label}</span>
     </div>
   )
 }
