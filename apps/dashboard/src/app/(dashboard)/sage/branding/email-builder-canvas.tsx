@@ -16,7 +16,7 @@
  *   - DragOverlay renders via React portal — never clipped.
  */
 
-import React, { useState, useRef, useMemo } from 'react'
+import React, { useState, useRef, useMemo, useEffect } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -205,6 +205,16 @@ const CORE_PALETTE: { id: string; label: string; icon: React.ElementType }[] = [
   { id: 'new::divider',      label: 'Divider',  icon: Minus             },
   { id: 'new::spacer',       label: 'Spacer',   icon: Space             },
   { id: 'new::footer_block', label: 'Footer',   icon: Mail              },
+]
+
+const QUICK_ADD_PALETTE: { id: string; label: string; icon: React.ElementType }[] = [
+  { id: 'new::headline',     label: 'Heading', icon: Heading1          },
+  { id: 'new::text',         label: 'Text',    icon: Type              },
+  { id: 'new::image',        label: 'Image',   icon: ImageIcon         },
+  { id: 'new::button',       label: 'Button',  icon: MousePointerClick },
+  { id: 'new::divider',      label: 'Divider', icon: Minus             },
+  { id: 'new::spacer',       label: 'Spacer',  icon: Space             },
+  { id: 'new::columns::1:1', label: '2 Col',   icon: Columns           },
 ]
 
 const COLUMN_PALETTE: { id: string; label: string }[] = [
@@ -600,7 +610,7 @@ const IMG_CORNERS: { key: string; style: React.CSSProperties; cursor: string; si
 ]
 
 function CanvasBlock({
-  block, selected, isDropTarget, onSelect, onDelete, onChange, primary, selectedSubPath, onSelectSub,
+  block, selected, isDropTarget, onSelect, onDelete, onChange, primary, selectedSubPath, onSelectSub, onAddBelow,
 }: {
   block:           ContentBlock
   selected:        boolean
@@ -611,13 +621,18 @@ function CanvasBlock({
   primary:         string
   selectedSubPath: SubPath | null
   onSelectSub:     (p: SubPath) => void
+  onAddBelow:      (paletteId: string) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: block.id })
 
   const [imgResizing,  setImgResizing]  = useState(false)
   const [imgLiveWidth, setImgLiveWidth] = useState<number | null>(null)
+  const [hovered,      setHovered]      = useState(false)
+  const [showAddMenu,  setShowAddMenu]  = useState(false)
   const imgWrapRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => { if (!selected && !hovered) setShowAddMenu(false) }, [selected, hovered])
 
   const isTextType = ['headline', 'text', 'button'].includes(block.type)
 
@@ -668,7 +683,9 @@ function CanvasBlock({
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.3 : 1, position: 'relative', background: block.blockBgColor ?? 'transparent' }}
-      onClick={onSelect}
+      onClick={() => { onSelect(); setShowAddMenu(false) }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       {/* Text format toolbar */}
       {selected && isTextType && (
@@ -696,10 +713,7 @@ function CanvasBlock({
       }} />
 
       {/* Drag + delete controls */}
-      <div style={{ position: 'absolute', top: 4, right: 4, zIndex: 20, display: 'flex', gap: 4, opacity: selected ? 1 : 0, transition: 'opacity 0.15s' }}
-        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
-        onMouseLeave={e => { if (!selected) (e.currentTarget as HTMLElement).style.opacity = '0' }}
-      >
+      <div style={{ position: 'absolute', top: 4, right: 4, zIndex: 20, display: 'flex', gap: 4, opacity: (selected || hovered) ? 1 : 0, transition: 'opacity 0.15s' }}>
         <button {...attributes} {...listeners} onClick={e => e.stopPropagation()}
           style={{ width: 26, height: 26, borderRadius: 6, background: '#fff', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'grab', color: '#6b7280', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}
           title="Drag to reorder">
@@ -747,6 +761,37 @@ function CanvasBlock({
         <InlineTextEditor block={block} onChange={onChange} />
       ) : (
         <BlockVisual block={block} primary={primary} />
+      )}
+
+      {/* ── Add block below ── */}
+      {(selected || hovered) && (
+        <div
+          style={{ position: 'absolute', bottom: -14, left: '50%', transform: 'translateX(-50%)', zIndex: 40, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+          onClick={e => e.stopPropagation()}
+        >
+          {showAddMenu && (
+            <div style={{ position: 'absolute', bottom: 28, left: '50%', transform: 'translateX(-50%)', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, boxShadow: '0 4px 16px rgba(0,0,0,0.14)', padding: 5, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 3, width: 192, whiteSpace: 'nowrap' }}>
+              {QUICK_ADD_PALETTE.map(item => (
+                <button key={item.id}
+                  onClick={() => { onAddBelow(item.id); setShowAddMenu(false) }}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '6px 3px', borderRadius: 6, border: 'none', cursor: 'pointer', background: 'transparent', fontSize: 9, color: '#374151', fontWeight: 600 }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f3f4f6' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                >
+                  <item.icon style={{ width: 13, height: 13, color: '#6b7280' }} />
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <button
+            onClick={() => setShowAddMenu(v => !v)}
+            style={{ width: 22, height: 22, borderRadius: '50%', background: showAddMenu ? primary : '#fff', border: `2px solid ${primary}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.15)', color: showAddMenu ? '#fff' : primary, padding: 0, transition: 'background 0.15s, color 0.15s' }}
+            title="Add block below"
+          >
+            <Plus style={{ width: 11, height: 11 }} />
+          </button>
+        </div>
       )}
     </div>
   )
@@ -2056,6 +2101,16 @@ export function EmailBuilderCanvas({
                       primary={primary}
                       selectedSubPath={selectedId === block.id ? selectedSubPath : null}
                       onSelectSub={p => { setSelectedId(block.id); setSelectedSubPath(p) }}
+                      onAddBelow={paletteId => {
+                        const newBlock = makeBlock(paletteId, defaults)
+                        const idx = blocks.findIndex(b => b.id === block.id)
+                        const next = [...blocks]
+                        if (idx >= 0) next.splice(idx + 1, 0, newBlock)
+                        else next.push(newBlock)
+                        onChange(next)
+                        setSelectedId(newBlock.id)
+                        setSelectedSubPath(null)
+                      }}
                     />
                   ))}
                 </SortableContext>
