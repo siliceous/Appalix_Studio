@@ -2028,7 +2028,7 @@ export function EmailBuilderCanvas({
             <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: headerColor, textTransform: 'none', letterSpacing: 0.2, margin: '-10px -10px 8px', padding: '10px 12px' }}>Blocks</p>
 
             {/* Core blocks — always show first 2 rows (6 items), chevron for 3rd */}
-            <div className="grid grid-cols-3 gap-1.5 mb-1">
+            <div className="grid grid-cols-2 gap-1.5 mb-1">
               {CORE_PALETTE.slice(0, 6).map(p => (
                 <div key={p.id} onClick={() => quickAdd(p.id)} className="cursor-pointer">
                   <PaletteItem id={p.id} label={p.label} icon={p.icon} />
@@ -2036,7 +2036,7 @@ export function EmailBuilderCanvas({
               ))}
             </div>
             {showMoreBlocks && (
-              <div className="grid grid-cols-3 gap-1.5 mb-1">
+              <div className="grid grid-cols-2 gap-1.5 mb-1">
                 {CORE_PALETTE.slice(6).map(p => (
                   <div key={p.id} onClick={() => quickAdd(p.id)} className="cursor-pointer">
                     <PaletteItem id={p.id} label={p.label} icon={p.icon} />
@@ -2059,7 +2059,7 @@ export function EmailBuilderCanvas({
               <span>Columns</span>
               <ChevronDown className={`w-3 h-3 transition-transform ${showColumns ? 'rotate-180' : ''}`} />
             </button>
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-2 gap-1.5">
               {COLUMN_PALETTE.slice(0, 6).map(p => (
                 <div key={p.id} onClick={() => quickAdd(p.id)} className="cursor-pointer">
                   <PaletteItem id={p.id} label={p.label} />
@@ -2067,7 +2067,7 @@ export function EmailBuilderCanvas({
               ))}
             </div>
             {showColumns && COLUMN_PALETTE.length > 6 && (
-              <div className="grid grid-cols-3 gap-1.5 mt-1.5">
+              <div className="grid grid-cols-2 gap-1.5 mt-1.5">
                 {COLUMN_PALETTE.slice(6).map(p => (
                   <div key={p.id} onClick={() => quickAdd(p.id)} className="cursor-pointer">
                     <PaletteItem id={p.id} label={p.label} />
