@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { updateForm, publishForm, pauseForm } from '@/app/actions/forms'
+import { nanoid } from 'nanoid'
 import type { Form, FormStep, FormBlock, FormBehaviour, FormTheme, SaveState, RightTab } from '@/features/forms/types'
 import { FormBlocksSidebar }  from './FormBlocksSidebar'
 import { FormCanvas }         from './FormCanvas'
@@ -75,6 +76,17 @@ export function FormEditorShell({ initialForm }: Props) {
   function addBlock(block: FormBlock) {
     setForm(f => ({ ...f, blocks: [...f.blocks, { ...block, stepId: selectedStepId }] }))
     setSelectedBlockId(block.id)
+  }
+
+  function addBlockAfter(afterBlockId: string, type: FormBlock['type'], defaultProps: FormBlock['props']) {
+    const newBlock: FormBlock = { id: `b_${nanoid(8)}`, stepId: selectedStepId, type, props: { ...defaultProps } }
+    setForm(f => {
+      const idx = f.blocks.findIndex(b => b.id === afterBlockId)
+      const next = [...f.blocks]
+      next.splice(idx >= 0 ? idx + 1 : next.length, 0, newBlock)
+      return { ...f, blocks: next }
+    })
+    setSelectedBlockId(newBlock.id)
   }
 
   function updateBlock(blockId: string, props: Partial<FormBlock['props']>) {
@@ -336,6 +348,7 @@ export function FormEditorShell({ initialForm }: Props) {
             onDeleteBlock={deleteBlock}
             onMoveBlock={moveBlock}
             onAddToColumn={addBlockToColumn}
+            onAddBelow={addBlockAfter}
             theme={form.theme}
             formType={form.type}
             previewDevice={previewDevice}

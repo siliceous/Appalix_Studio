@@ -5,6 +5,7 @@ import {
   Trash2, ChevronUp, ChevronDown, X,
   GripVertical, Plus, AlignLeft, AlignCenter, AlignRight,
   RotateCcw, RotateCw,
+  Mail, Phone, Type, MousePointerClick, Image as ImageIcon, Minus,
 } from 'lucide-react'
 import { nanoid } from 'nanoid'
 import { cn } from '@/lib/utils'
@@ -814,8 +815,18 @@ function ColumnBlock({
 
 // ── Block wrapper (top-level, non-column) ─────────────────────────────────────
 
+const FORM_QUICK_ADD: { type: BlockType; label: string; icon: React.ElementType; defaultProps: FormBlock['props'] }[] = [
+  { type: 'text',       label: 'Text',    icon: Type,              defaultProps: { content: 'Add your text here', variant: 'body' } },
+  { type: 'email',      label: 'Email',   icon: Mail,              defaultProps: { label: 'Email address', placeholder: 'Enter your email', required: true } },
+  { type: 'phone',      label: 'Phone',   icon: Phone,             defaultProps: { label: 'Phone number', placeholder: '+1 555 000 0000', required: false } },
+  { type: 'text_input', label: 'Input',   icon: Type,              defaultProps: { label: 'Your answer', placeholder: 'Type here…', required: false } },
+  { type: 'button',     label: 'Button',  icon: MousePointerClick, defaultProps: { label: 'Submit', action: 'submit' } },
+  { type: 'image',      label: 'Image',   icon: ImageIcon,         defaultProps: { src: '', alt: '' } },
+  { type: 'divider',    label: 'Divider', icon: Minus,             defaultProps: {} },
+]
+
 function BlockPreview({
-  block, theme, isSelected, onClick, onDelete, onMoveUp, onMoveDown, onUpdateProps,
+  block, theme, isSelected, onClick, onDelete, onMoveUp, onMoveDown, onUpdateProps, onAddBelow,
 }: {
   block:         FormBlock
   theme:         FormTheme
@@ -825,12 +836,16 @@ function BlockPreview({
   onMoveUp:      () => void
   onMoveDown:    () => void
   onUpdateProps: (props: Partial<FormBlock['props']>) => void
+  onAddBelow:    (type: BlockType, defaultProps: FormBlock['props']) => void
 }) {
   const fontFam = theme.typography?.fontFamily ?? 'Inter'
+  const [showAddMenu, setShowAddMenu] = useState(false)
+
+  useEffect(() => { if (!isSelected) setShowAddMenu(false) }, [isSelected])
 
   return (
     <div
-      onClick={onClick}
+      onClick={() => { onClick(); setShowAddMenu(false) }}
       className={cn(
         'relative group rounded-lg transition-all',
         isSelected ? 'ring-2 ring-brand-400 dark:ring-brand-500' : 'hover:ring-1 hover:ring-gray-300 dark:hover:ring-gray-600',
@@ -893,6 +908,34 @@ function BlockPreview({
           <button onClick={onDelete}   className="p-1 text-gray-400 hover:text-red-500 rounded"><Trash2 className="w-3 h-3" /></button>
         </div>
       )}
+
+      {/* ── Add block below ── */}
+      <div
+        className={cn('absolute -bottom-3.5 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center transition-opacity', (isSelected) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')}
+        onClick={e => e.stopPropagation()}
+      >
+        {showAddMenu && (
+          <div className="absolute bottom-7 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-1.5 grid grid-cols-4 gap-1 w-48 whitespace-nowrap">
+            {FORM_QUICK_ADD.map(item => (
+              <button
+                key={item.type + item.label}
+                onClick={() => { onAddBelow(item.type, item.defaultProps); setShowAddMenu(false) }}
+                className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-500/10 hover:text-brand-600 dark:hover:text-brand-400 text-gray-500 dark:text-gray-400 transition-colors"
+              >
+                <item.icon className="w-3.5 h-3.5" />
+                <span className="text-[9px] font-semibold leading-tight">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <button
+          onClick={() => setShowAddMenu(v => !v)}
+          className={cn('w-6 h-6 rounded-full border-2 border-white flex items-center justify-center shadow-md transition-colors', showAddMenu ? 'bg-brand-500 text-white' : 'bg-white dark:bg-gray-800 text-brand-500 dark:text-brand-400 ring-1 ring-brand-300')}
+          title="Add block below"
+        >
+          <Plus className="w-3 h-3" />
+        </button>
+      </div>
     </div>
   )
 }
@@ -907,6 +950,7 @@ interface Props {
   onDeleteBlock:   (id: string) => void
   onMoveBlock:     (id: string, dir: 'up' | 'down') => void
   onAddToColumn:   (columnBlockId: string, colIdx: number, block: FormBlock) => void
+  onAddBelow:      (afterBlockId: string, type: BlockType, defaultProps: FormBlock['props']) => void
   theme:           FormTheme
   formType:        FormType
   previewDevice:   'desktop' | 'mobile'
@@ -916,7 +960,7 @@ const SYSTEM_FONTS = new Set(['Inter', 'Georgia'])
 
 export function FormCanvas({
   blocks, selectedBlockId, onSelectBlock, onUpdateBlock, onDeleteBlock, onMoveBlock,
-  onAddToColumn, theme, formType, previewDevice,
+  onAddToColumn, onAddBelow, theme, formType, previewDevice,
 }: Props) {
   const bg      = theme.colors?.background      ?? '#ffffff'
   const bgImage = theme.colors?.backgroundImage ?? ''
@@ -991,6 +1035,7 @@ export function FormCanvas({
                   onMoveUp={() => onMoveBlock(block.id, 'up')}
                   onMoveDown={() => onMoveBlock(block.id, 'down')}
                   onUpdateProps={props => onUpdateBlock(block.id, props)}
+                  onAddBelow={(type, defaultProps) => onAddBelow(block.id, type, defaultProps)}
                 />
               )
             )
