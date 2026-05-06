@@ -14,7 +14,7 @@ import { FormCanvas }         from './FormCanvas'
 import { FormStepController } from './FormStepController'
 import { FormBehaviourPanel } from './FormBehaviourPanel'
 import { FormThemePanel }     from './FormThemePanel'
-import { FormEmbedPanel }     from './FormEmbedPanel'
+import { FormImagesPanel }    from './FormImagesPanel'
 
 const AUTOSAVE_DELAY = 800
 
@@ -280,7 +280,7 @@ export function FormEditorShell({ initialForm }: Props) {
 
         {/* Preview */}
         <a
-          href={form.public_slug ? `/forms/${form.public_slug}` : undefined}
+          href={form.public_slug ? `/f/${form.public_slug}` : undefined}
           target="_blank"
           rel="noopener noreferrer"
           className={cn(
@@ -353,7 +353,7 @@ export function FormEditorShell({ initialForm }: Props) {
         <div className="w-[280px] shrink-0 border-l border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden bg-white dark:bg-gray-900">
           {/* Tab header */}
           <div className="shrink-0 flex border-b border-gray-200 dark:border-gray-700">
-            {(['behaviour', 'theme', 'embed'] as RightTab[]).map(tab => (
+            {(['behaviour', 'theme', 'images'] as RightTab[]).map(tab => (
               <button
                 key={tab}
                 onClick={() => setRightTab(tab)}
@@ -364,7 +364,7 @@ export function FormEditorShell({ initialForm }: Props) {
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 )}
               >
-                {tab === 'behaviour' ? 'Behaviour' : tab === 'theme' ? 'Theme' : 'Embed'}
+                {tab === 'behaviour' ? 'Behaviour' : tab === 'theme' ? 'Theme' : 'Images'}
               </button>
             ))}
           </div>
@@ -372,7 +372,15 @@ export function FormEditorShell({ initialForm }: Props) {
           <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden">
             {rightTab === 'behaviour' && <FormBehaviourPanel behaviour={form.behaviour} onChange={updateBehaviour} />}
             {rightTab === 'theme'     && <FormThemePanel     theme={form.theme}         onChange={updateTheme} />}
-            {rightTab === 'embed'     && <FormEmbedPanel     form={form} />}
+            {rightTab === 'images'    && (
+              <FormImagesPanel
+                theme={form.theme}
+                onUpdateTheme={updateTheme}
+                selectedBlockId={selectedBlockId}
+                blocks={form.blocks}
+                onUpdateBlock={updateBlock}
+              />
+            )}
           </div>
         </div>
 

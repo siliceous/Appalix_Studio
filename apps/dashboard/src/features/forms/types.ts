@@ -12,6 +12,8 @@ export type BlockType =
   | 'checkbox'
   | 'dropdown'
   | 'radio'
+  | 'wheel_of_fortune'
+  | 'countdown_timer'
   | 'columns'
 
 export type ColumnRatio = '1:1' | '2:1' | '1:2' | '1:1:1'
@@ -20,6 +22,11 @@ export interface BlockProps {
   // text / heading
   content?:     string
   variant?:     'heading' | 'body' | 'link' | 'legal'
+  textAlign?:   'left' | 'center' | 'right'
+  textColor?:   string
+  bold?:        boolean
+  italic?:      boolean
+  underline?:   boolean
   // input fields
   label?:       string
   placeholder?: string
@@ -30,11 +37,17 @@ export interface BlockProps {
   // image
   src?:         string
   alt?:         string
-  // dropdown / radio
+  imageWidth?:  string
+  imageRotate?: number
+  // dropdown / radio / wheel
   options?:     string[]
+  // countdown timer
+  timerTarget?: string
+  timerLabel?:  string
   // columns layout
   ratio?:       ColumnRatio
   columns?:     FormBlock[][]
+  columnWidths?: number[]
   [key: string]: unknown
 }
 
@@ -100,10 +113,12 @@ export interface FormBehaviour {
 
 export interface FormTheme {
   colors?: {
-    primary?:    string
-    background?: string
-    text?:       string
-    muted?:      string
+    primary?:         string
+    background?:      string
+    backgroundImage?: string
+    text?:            string
+    muted?:           string
+    fieldText?:       string
   }
   typography?: {
     fontFamily?:   string
@@ -205,7 +220,7 @@ export interface FormSubmission {
 
 // ── Editor state ──────────────────────────────────────────────────────────────
 
-export type RightTab = 'behaviour' | 'theme' | 'embed'
+export type RightTab = 'behaviour' | 'theme' | 'images'
 export type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 
 export interface EditorState {

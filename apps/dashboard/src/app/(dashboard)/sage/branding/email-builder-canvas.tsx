@@ -40,6 +40,7 @@ import { CSS } from '@dnd-kit/utilities'
 import {
   GripVertical, Trash2, Plus,
   AlignLeft, AlignCenter, AlignRight,
+  RotateCcw, RotateCw,
   Heading1, Type, ImageIcon, MousePointerClick,
   Minus, Space, Share2, Mail, Layout, Columns,
   ChevronDown, Upload, Check, Palette,
@@ -245,7 +246,7 @@ function BlockVisual({ block, primary }: { block: ContentBlock; primary: string 
     case 'headline':
       return (
         <div style={{ padding: '20px 32px 8px', textAlign: block.align ?? 'center' }}>
-          <div style={{ fontSize: block.fontSize ?? 26, fontWeight: 700, color: block.textColor ?? '#111827', lineHeight: 1.3, fontFamily: block.fontFamily ?? undefined }}>
+          <div style={{ fontSize: block.fontSize ?? 26, fontWeight: 700, fontStyle: block.italic ? 'italic' : 'normal', textDecoration: block.underline ? 'underline' : 'none', color: block.textColor ?? '#111827', lineHeight: 1.3, fontFamily: block.fontFamily ?? undefined }}>
             {block.text || <span style={{ color: '#d1d5db' }}>Your headline here</span>}
           </div>
         </div>
@@ -254,7 +255,7 @@ function BlockVisual({ block, primary }: { block: ContentBlock; primary: string 
     case 'text':
       return (
         <div style={{ padding: '8px 32px', textAlign: block.align ?? 'left' }}>
-          <p style={{ margin: 0, fontSize: block.fontSize ?? 14, lineHeight: 1.75, color: block.textColor ?? '#374151', whiteSpace: 'pre-wrap', fontFamily: block.fontFamily ?? undefined }}>
+          <p style={{ margin: 0, fontSize: block.fontSize ?? 14, lineHeight: 1.75, fontWeight: block.bold ? 700 : 400, fontStyle: block.italic ? 'italic' : 'normal', textDecoration: block.underline ? 'underline' : 'none', color: block.textColor ?? '#374151', whiteSpace: 'pre-wrap', fontFamily: block.fontFamily ?? undefined }}>
             {block.text || <span style={{ color: '#d1d5db' }}>Your text goes here.</span>}
           </p>
         </div>
@@ -264,7 +265,7 @@ function BlockVisual({ block, primary }: { block: ContentBlock; primary: string 
       return (
         <div style={{ padding: block.align === 'center' ? '12px 0' : '12px 32px', textAlign: block.align ?? 'center' }}>
           {block.url
-            ? <img src={block.url} alt={block.alt ?? ''} style={{ maxWidth: '100%', borderRadius: 8, display: 'block', margin: 'auto' }} />
+            ? <img src={block.url} alt={block.alt ?? ''} style={{ width: block.imageWidth ?? '100%', maxWidth: '100%', borderRadius: 8, display: 'block', margin: 'auto', transform: block.imageRotate ? `rotate(${block.imageRotate}deg)` : undefined }} />
             : <div style={{ width: '100%', height: 180, background: '#f3f4f6', border: '2px dashed #d1d5db', borderRadius: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 <ImageIcon style={{ width: 28, height: 28, color: '#d1d5db' }} />
                 <span style={{ fontSize: 11, color: '#9ca3af' }}>No image — set URL in properties or pick from Brand Assets →</span>
@@ -278,7 +279,7 @@ function BlockVisual({ block, primary }: { block: ContentBlock; primary: string 
       const justifyMap = { left: 'flex-start', center: 'center', right: 'flex-end' } as const
       return (
         <div style={{ padding: '12px 32px', display: 'flex', justifyContent: justifyMap[align] }}>
-          <div style={{ background: block.bgColor ?? primary, color: block.textColor ?? '#fff', padding: '11px 26px', borderRadius: 7, fontWeight: 600, fontSize: block.fontSize ?? 14, cursor: 'default', letterSpacing: 0.2, fontFamily: block.fontFamily ?? undefined }}>
+          <div style={{ background: block.bgColor ?? primary, color: block.textColor ?? '#fff', padding: '11px 26px', borderRadius: 7, fontWeight: block.bold ? 700 : 600, fontStyle: block.italic ? 'italic' : 'normal', textDecoration: block.underline ? 'underline' : 'none', fontSize: block.fontSize ?? 14, cursor: 'default', letterSpacing: 0.2, fontFamily: block.fontFamily ?? undefined }}>
             {block.text || 'Get Started'}
           </div>
         </div>
@@ -378,6 +379,38 @@ function BlockVisual({ block, primary }: { block: ContentBlock; primary: string 
   }
 }
 
+// ── Column cell drop zone (for palette-item drops into columns) ───────────────
+
+function ColumnCellDropZone({
+  id, primary, children,
+}: {
+  id:       string
+  primary:  string
+  children: React.ReactNode
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id })
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        flex: 1, minHeight: 72,
+        border: `2px dashed ${isOver ? primary : '#e5e7eb'}`,
+        borderRadius: 8, padding: 2,
+        background: isOver ? `${primary}08` : 'transparent',
+        display: 'flex', flexDirection: 'column', gap: 2,
+        transition: 'border-color 0.15s, background 0.15s',
+      }}
+    >
+      {children}
+      {isOver && (
+        <div style={{ height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: primary, fontWeight: 600 }}>
+          Drop here
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Sub-path type ─────────────────────────────────────────────────────────────
 
 type SubPath = { outerBlockId: string; colIdx: number; subIdx: number }
@@ -386,14 +419,16 @@ type SubPath = { outerBlockId: string; colIdx: number; subIdx: number }
 // Each sub-block registers itself with useDroppable so brand-asset drags land here.
 
 function ColumnSubBlockDroppable({
-  sub, isSub, primary, onSelect,
+  sub, isSub, primary, onSelect, onUpdate,
 }: {
   sub:      ContentBlock
   isSub:    boolean
   primary:  string
   onSelect: () => void
+  onUpdate: (patch: Partial<ContentBlock>) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: sub.id })
+  const isTextType = ['headline', 'text', 'button'].includes(sub.type)
   return (
     <div
       ref={setNodeRef}
@@ -404,16 +439,59 @@ function ColumnSubBlockDroppable({
         borderRadius: 4,
         background: sub.blockBgColor ?? 'transparent',
         transition: 'outline 0.1s',
+        paddingTop: isSub && isTextType ? 36 : 0,
       }}
       onMouseEnter={e => { if (!isSub && !isOver) (e.currentTarget as HTMLElement).style.outline = '1px dashed #d1d5db' }}
       onMouseLeave={e => { if (!isSub && !isOver) (e.currentTarget as HTMLElement).style.outline = '1px dashed transparent' }}
     >
-      {isSub && (
+      {isSub && isTextType && (
+        <div style={{ position: 'absolute', top: 2, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 20, overflow: 'visible' }} onClick={e => e.stopPropagation()}>
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 1,
+              background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8,
+              padding: '2px 5px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {(['bold','italic','underline'] as const).map(prop => {
+              const active = (sub[prop] as boolean | undefined) ?? false
+              const label = prop === 'bold' ? 'B' : prop === 'italic' ? 'I' : 'U'
+              const extra: React.CSSProperties = prop === 'italic' ? { fontStyle: 'italic' } : prop === 'underline' ? { textDecoration: 'underline' } : {}
+              return (
+                <button key={prop} onClick={() => onUpdate({ [prop]: !active })}
+                  style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, border: 'none', cursor: 'pointer', padding: 0, background: active ? `${primary}22` : 'transparent', color: active ? primary : '#6b7280', fontSize: 10, fontWeight: 700, ...extra }}>
+                  {label}
+                </button>
+              )
+            })}
+            <label style={{ position: 'relative', width: 14, height: 14, cursor: 'pointer', borderRadius: 3, border: '1px solid #e5e7eb', overflow: 'hidden', flexShrink: 0, display: 'block' }}>
+              <div style={{ position: 'absolute', inset: 0, background: sub.textColor ?? '#111827' }} />
+              <input type="color" value={sub.textColor ?? '#111827'} onChange={e => onUpdate({ textColor: e.target.value })} style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
+            </label>
+            <div style={{ width: 1, height: 12, background: '#e5e7eb', margin: '0 1px', flexShrink: 0 }} />
+            {(['left','center','right'] as const).map(a => {
+              const Icon = a === 'left' ? AlignLeft : a === 'center' ? AlignCenter : AlignRight
+              return (
+                <button key={a} onClick={() => onUpdate({ align: a })}
+                  style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, border: 'none', cursor: 'pointer', padding: 0, background: (sub.align ?? 'left') === a ? `${primary}22` : 'transparent', color: (sub.align ?? 'left') === a ? primary : '#6b7280' }}>
+                  <Icon style={{ width: 11, height: 11 }} />
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+      {isSub && !isTextType && (
         <div style={{ position: 'absolute', top: 2, left: 2, zIndex: 15, fontSize: 8, background: primary, color: '#fff', padding: '1px 5px', borderRadius: 3, pointerEvents: 'none' }}>
           editing
         </div>
       )}
-      <BlockVisual block={sub} primary={primary} />
+      {isSub && isTextType
+        ? <InlineTextEditor block={sub} onChange={onUpdate} />
+        : <BlockVisual block={sub} primary={primary} />
+      }
     </div>
   )
 }
@@ -421,26 +499,69 @@ function ColumnSubBlockDroppable({
 // ── Columns block canvas renderer (sub-blocks are clickable + droppable) ──────
 
 function ColumnsBlockCanvas({
-  block, primary, selectedSubPath, onSelectSub,
+  block, primary, selectedSubPath, onSelectSub, onUpdateSub, onUpdateBlock,
 }: {
-  block:             ContentBlock
-  primary:           string
-  selectedSubPath:   SubPath | null
-  onSelectSub:       (p: SubPath) => void
+  block:           ContentBlock
+  primary:         string
+  selectedSubPath: SubPath | null
+  onSelectSub:     (p: SubPath) => void
+  onUpdateSub:     (colIdx: number, subIdx: number, patch: Partial<ContentBlock>) => void
+  onUpdateBlock:   (patch: Partial<ContentBlock>) => void
 }) {
-  const ratio = block.ratio ?? '1:1'
-  const parts = ratio.split(':').map(Number)
-  const total = parts.reduce((a, b) => a + b, 0)
-  const cols  = block.columns ?? parts.map(() => [])
+  const containerRef = useRef<HTMLDivElement>(null)
+  const divDragRef   = useRef<{ divIdx: number; startX: number; startWidths: number[]; containerW: number } | null>(null)
+
+  const ratio  = block.ratio ?? '1:1'
+  const fracs  = ratio.split(':').map(Number)
+  const total  = fracs.reduce((a, b) => a + b, 0)
+  const cols   = block.columns ?? fracs.map(() => [])
+  const colWidths = block.columnWidths ?? fracs.map(f => Math.round((f / total) * 100))
+
+  function onDividerDown(e: React.PointerEvent<HTMLDivElement>, divIdx: number) {
+    e.preventDefault(); e.stopPropagation()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    divDragRef.current = {
+      divIdx, startX: e.clientX,
+      startWidths: [...colWidths],
+      containerW: containerRef.current?.offsetWidth ?? 500,
+    }
+  }
+  function onDividerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!divDragRef.current || !e.buttons) return
+    const { divIdx, startX, startWidths, containerW } = divDragRef.current
+    const totalW = startWidths.reduce((a, b) => a + b, 0)
+    const dPct   = ((e.clientX - startX) / containerW) * totalW
+    const next   = [...startWidths]
+    next[divIdx]     = Math.max(10, Math.round(startWidths[divIdx]     + dPct))
+    next[divIdx + 1] = Math.max(10, Math.round(startWidths[divIdx + 1] - dPct))
+    onUpdateBlock({ columnWidths: next })
+  }
+  function onDividerUp(e: React.PointerEvent<HTMLDivElement>) {
+    e.currentTarget.releasePointerCapture(e.pointerId)
+    divDragRef.current = null
+  }
 
   return (
-    <div style={{ padding: '8px 16px', display: 'flex', gap: 12 }}>
-      {parts.map((w, colIdx) => {
+    <div ref={containerRef} style={{ padding: '8px 16px', display: 'flex', gap: 0 }}>
+      {colWidths.map((w, colIdx) => {
         const colBlocks = cols[colIdx] ?? []
         return (
-          <div key={colIdx} style={{ flex: w / total, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-            {colBlocks.length > 0
-              ? colBlocks.map((sub, subIdx) => {
+          <React.Fragment key={colIdx}>
+            {/* Draggable divider between columns */}
+            {colIdx > 0 && (
+              <div
+                onPointerDown={e => onDividerDown(e, colIdx - 1)}
+                onPointerMove={onDividerMove}
+                onPointerUp={onDividerUp}
+                onClick={e => e.stopPropagation()}
+                style={{ width: 10, flexShrink: 0, alignSelf: 'stretch', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'col-resize', zIndex: 10, touchAction: 'none', userSelect: 'none' }}
+              >
+                <div style={{ width: 3, height: 32, borderRadius: 2, background: '#d1d5db' }} />
+              </div>
+            )}
+            <div style={{ flex: `${w} 1 0%`, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+              <ColumnCellDropZone id={`colcell::${block.id}::${colIdx}`} primary={primary}>
+                {colBlocks.map((sub, subIdx) => {
                   const isSub = selectedSubPath?.outerBlockId === block.id
                     && selectedSubPath.colIdx === colIdx
                     && selectedSubPath.subIdx === subIdx
@@ -451,14 +572,18 @@ function ColumnsBlockCanvas({
                       isSub={isSub}
                       primary={primary}
                       onSelect={() => onSelectSub({ outerBlockId: block.id, colIdx, subIdx })}
+                      onUpdate={(patch) => onUpdateSub(colIdx, subIdx, patch)}
                     />
                   )
-                })
-              : <div style={{ minHeight: 72, border: '2px dashed #e5e7eb', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 10, color: '#d1d5db' }}>Empty column</span>
-                </div>
-            }
-          </div>
+                })}
+                {colBlocks.length === 0 && (
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 60 }}>
+                    <span style={{ fontSize: 10, color: '#d1d5db' }}>Drag blocks here</span>
+                  </div>
+                )}
+              </ColumnCellDropZone>
+            </div>
+          </React.Fragment>
         )
       })}
     </div>
@@ -467,14 +592,22 @@ function ColumnsBlockCanvas({
 
 // ── Sortable canvas block ─────────────────────────────────────────────────────
 
+const IMG_CORNERS: { key: string; style: React.CSSProperties; cursor: string; sign: number }[] = [
+  { key: 'tl', style: { top: -5, left: -5 },     cursor: 'nwse-resize', sign: -1 },
+  { key: 'tr', style: { top: -5, right: -5 },    cursor: 'nesw-resize', sign:  1 },
+  { key: 'bl', style: { bottom: -5, left: -5 },  cursor: 'nesw-resize', sign: -1 },
+  { key: 'br', style: { bottom: -5, right: -5 }, cursor: 'nwse-resize', sign:  1 },
+]
+
 function CanvasBlock({
-  block, selected, isDropTarget, onSelect, onDelete, primary, selectedSubPath, onSelectSub,
+  block, selected, isDropTarget, onSelect, onDelete, onChange, primary, selectedSubPath, onSelectSub,
 }: {
   block:           ContentBlock
   selected:        boolean
   isDropTarget:    boolean
   onSelect:        () => void
   onDelete:        () => void
+  onChange:        (patch: Partial<ContentBlock>) => void
   primary:         string
   selectedSubPath: SubPath | null
   onSelectSub:     (p: SubPath) => void
@@ -482,12 +615,79 @@ function CanvasBlock({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: block.id })
 
+  const [imgResizing,  setImgResizing]  = useState(false)
+  const [imgLiveWidth, setImgLiveWidth] = useState<number | null>(null)
+  const imgWrapRef = useRef<HTMLDivElement>(null)
+
+  const isTextType = ['headline', 'text', 'button'].includes(block.type)
+
+  function updateSubBlock(colIdx: number, subIdx: number, patch: Partial<ContentBlock>) {
+    const cols = (block.columns ?? []).map(c => [...c])
+    if (!cols[colIdx]) return
+    cols[colIdx][subIdx] = { ...cols[colIdx][subIdx], ...patch }
+    onChange({ columns: cols })
+  }
+
+  function startImgResize(e: React.MouseEvent, sign: number) {
+    e.preventDefault(); e.stopPropagation()
+    const imgEl = imgWrapRef.current
+    if (!imgEl) return
+    const startX     = e.clientX
+    const startPx    = imgEl.offsetWidth
+    const containerW = imgEl.parentElement?.offsetWidth ?? startPx
+    setImgResizing(true)
+    function onMove(ev: MouseEvent) {
+      const newPx = Math.max(40, Math.min(containerW, startPx + (ev.clientX - startX) * sign))
+      const pct   = Math.round((newPx / containerW) * 100)
+      setImgLiveWidth(pct)
+      onChange({ imageWidth: `${pct}%` })
+    }
+    function onUp() {
+      setImgResizing(false); setImgLiveWidth(null)
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
+
+  const btnStyle = (active = false): React.CSSProperties => ({
+    width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    borderRadius: 4, border: 'none', cursor: 'pointer', padding: 0,
+    background: active ? `${primary}22` : 'transparent', color: active ? primary : '#6b7280',
+  })
+  const sep = <div style={{ width: 1, height: 14, background: '#e5e7eb', margin: '0 2px', flexShrink: 0 }} />
+  const toolbarWrap: React.CSSProperties = {
+    position: 'absolute', top: -38, left: '50%', transform: 'translateX(-50%)', zIndex: 30,
+    display: 'flex', alignItems: 'center', gap: 1,
+    background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8,
+    padding: '3px 6px', boxShadow: '0 2px 10px rgba(0,0,0,0.13)', whiteSpace: 'nowrap',
+  }
+
   return (
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.3 : 1, position: 'relative', background: block.blockBgColor ?? 'transparent' }}
       onClick={onSelect}
     >
+      {/* Text format toolbar */}
+      {selected && isTextType && (
+        <TextFormatToolbar block={block} onChange={onChange} primary={primary} />
+      )}
+
+      {/* Image toolbar — rotate + alignment */}
+      {selected && block.type === 'image' && (
+        <div onClick={e => e.stopPropagation()} style={toolbarWrap}>
+          <button onClick={() => onChange({ imageRotate: ((block.imageRotate ?? 0) - 90 + 360) % 360 })} style={btnStyle()} title="Rotate left"><RotateCcw style={{ width: 12, height: 12 }} /></button>
+          <button onClick={() => onChange({ imageRotate: ((block.imageRotate ?? 0) + 90) % 360 })}       style={btnStyle()} title="Rotate right"><RotateCw  style={{ width: 12, height: 12 }} /></button>
+          {sep}
+          {(['left','center','right'] as const).map(a => {
+            const Icon = a === 'left' ? AlignLeft : a === 'center' ? AlignCenter : AlignRight
+            return <button key={a} onClick={() => onChange({ align: a })} style={btnStyle((block.align ?? 'center') === a)}><Icon style={{ width: 12, height: 12 }} /></button>
+          })}
+        </div>
+      )}
+
       {/* Selection / drop-target border */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10,
@@ -495,38 +695,59 @@ function CanvasBlock({
         borderRadius: 4, transition: 'border-color 0.1s',
       }} />
 
-      {/* Controls — always visible when selected, fade in on hover */}
-      <div style={{
-        position: 'absolute', top: 4, right: 4, zIndex: 20,
-        display: 'flex', gap: 4,
-        opacity: selected ? 1 : 0,
-        transition: 'opacity 0.15s',
-      }}
+      {/* Drag + delete controls */}
+      <div style={{ position: 'absolute', top: 4, right: 4, zIndex: 20, display: 'flex', gap: 4, opacity: selected ? 1 : 0, transition: 'opacity 0.15s' }}
         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
         onMouseLeave={e => { if (!selected) (e.currentTarget as HTMLElement).style.opacity = '0' }}
       >
-        <button
-          {...attributes} {...listeners}
-          onClick={e => e.stopPropagation()}
+        <button {...attributes} {...listeners} onClick={e => e.stopPropagation()}
           style={{ width: 26, height: 26, borderRadius: 6, background: '#fff', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'grab', color: '#6b7280', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}
-          title="Drag to reorder"
-        >
+          title="Drag to reorder">
           <GripVertical style={{ width: 13, height: 13 }} />
         </button>
-        <button
-          onClick={e => { e.stopPropagation(); onDelete() }}
+        <button onClick={e => { e.stopPropagation(); onDelete() }}
           style={{ width: 26, height: 26, borderRadius: 6, background: '#fff', border: '1px solid #fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#ef4444', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}
-          title="Delete block"
-        >
+          title="Delete block">
           <Trash2 style={{ width: 12, height: 12 }} />
         </button>
       </div>
 
-      {/* Block visual — columns get the interactive renderer, others get BlockVisual */}
-      {block.type === 'columns'
-        ? <ColumnsBlockCanvas block={block} primary={primary} selectedSubPath={selectedSubPath} onSelectSub={onSelectSub} />
-        : <BlockVisual block={block} primary={primary} />
-      }
+      {/* Block content */}
+      {block.type === 'columns' ? (
+        <ColumnsBlockCanvas
+          block={block} primary={primary}
+          selectedSubPath={selectedSubPath} onSelectSub={onSelectSub}
+          onUpdateSub={updateSubBlock} onUpdateBlock={onChange}
+        />
+      ) : block.type === 'image' ? (
+        <div style={{ padding: (block.align ?? 'center') === 'center' ? '12px 0' : '12px 32px', textAlign: block.align ?? 'center' }}>
+          <div ref={imgWrapRef} style={{ position: 'relative', display: 'inline-block', width: block.imageWidth ?? '100%', maxWidth: '100%' }}>
+            {block.url
+              ? <img src={block.url} alt={block.alt ?? ''} style={{ width: '100%', borderRadius: 8, display: 'block', transform: block.imageRotate ? `rotate(${block.imageRotate}deg)` : undefined }} />
+              : <div style={{ width: '100%', height: 180, background: '#f3f4f6', border: '2px dashed #d1d5db', borderRadius: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  <ImageIcon style={{ width: 28, height: 28, color: '#d1d5db' }} />
+                  <span style={{ fontSize: 11, color: '#9ca3af' }}>No image — set URL in properties or Brand Assets →</span>
+                </div>
+            }
+            {/* 4-corner resize handles */}
+            {selected && IMG_CORNERS.map(c => (
+              <div key={c.key} onMouseDown={e => startImgResize(e, c.sign)}
+                style={{ position: 'absolute', ...c.style, cursor: c.cursor, zIndex: 25, width: 10, height: 10, background: '#fff', border: `2px solid ${primary}`, borderRadius: 2, boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
+              />
+            ))}
+            {/* Width badge while resizing */}
+            {imgResizing && imgLiveWidth !== null && (
+              <div style={{ position: 'absolute', top: -20, left: '50%', transform: 'translateX(-50%)', background: '#1f2937', color: '#fff', fontSize: 9, fontFamily: 'monospace', padding: '2px 6px', borderRadius: 4, whiteSpace: 'nowrap', zIndex: 30 }}>
+                {imgLiveWidth}%
+              </div>
+            )}
+          </div>
+        </div>
+      ) : selected && isTextType ? (
+        <InlineTextEditor block={block} onChange={onChange} />
+      ) : (
+        <BlockVisual block={block} primary={primary} />
+      )}
     </div>
   )
 }
@@ -570,6 +791,134 @@ function AlignButtons({ value, onChange, primary }: {
       })}
     </div>
   )
+}
+
+// ── Inline text format toolbar (shown above selected text blocks) ─────────────
+
+function TextFormatToolbar({
+  block,
+  onChange,
+  primary,
+}: {
+  block:    ContentBlock
+  onChange: (patch: Partial<ContentBlock>) => void
+  primary:  string
+}) {
+  const bold      = block.bold      ?? false
+  const italic    = block.italic    ?? false
+  const underline = block.underline ?? false
+  const textColor = block.textColor ?? '#111827'
+  const align     = block.align     ?? 'left'
+
+  const btn = (active: boolean, extra?: React.CSSProperties): React.CSSProperties => ({
+    width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    borderRadius: 4, border: 'none', cursor: 'pointer', padding: 0,
+    background: active ? `${primary}22` : 'transparent',
+    color: active ? primary : '#6b7280',
+    fontSize: 11, fontWeight: 700,
+    ...extra,
+  })
+  const sep = <div style={{ width: 1, height: 14, background: '#e5e7eb', margin: '0 2px', flexShrink: 0 }} />
+
+  return (
+    <div
+      onClick={e => e.stopPropagation()}
+      style={{
+        position: 'absolute', top: -38, left: '50%', transform: 'translateX(-50%)', zIndex: 30,
+        display: 'flex', alignItems: 'center', gap: 1,
+        background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8,
+        padding: '3px 6px', boxShadow: '0 2px 10px rgba(0,0,0,0.13)',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      <button onClick={() => onChange({ bold: !bold })} style={btn(bold)}>B</button>
+      <button onClick={() => onChange({ italic: !italic })} style={btn(italic, { fontStyle: 'italic' })}>I</button>
+      <button onClick={() => onChange({ underline: !underline })} style={btn(underline, { textDecoration: 'underline' })}>U</button>
+      <label style={{ position: 'relative', width: 16, height: 16, cursor: 'pointer', borderRadius: 3, border: '1px solid #e5e7eb', overflow: 'hidden', flexShrink: 0, display: 'block' }} title="Text colour">
+        <div style={{ position: 'absolute', inset: 0, background: textColor }} />
+        <input type="color" value={textColor} onChange={e => onChange({ textColor: e.target.value })} style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
+      </label>
+      {sep}
+      <button onClick={() => onChange({ align: 'left' })}   style={btn(align === 'left')}  ><AlignLeft   style={{ width: 12, height: 12 }} /></button>
+      <button onClick={() => onChange({ align: 'center' })} style={btn(align === 'center')}><AlignCenter style={{ width: 12, height: 12 }} /></button>
+      <button onClick={() => onChange({ align: 'right' })}  style={btn(align === 'right')} ><AlignRight  style={{ width: 12, height: 12 }} /></button>
+    </div>
+  )
+}
+
+// ── Inline text editor (replaces BlockVisual when block is selected) ───────────
+
+function InlineTextEditor({
+  block,
+  onChange,
+}: {
+  block:    ContentBlock
+  onChange: (patch: Partial<ContentBlock>) => void
+}) {
+  const bold      = block.bold      ?? false
+  const italic    = block.italic    ?? false
+  const underline = block.underline ?? false
+
+  const base: React.CSSProperties = {
+    fontStyle:      italic    ? 'italic'    : 'normal',
+    textDecoration: underline ? 'underline' : 'none',
+    fontFamily:     block.fontFamily ?? undefined,
+    textAlign:      (block.align ?? 'left') as React.CSSProperties['textAlign'],
+    background:     'transparent',
+    border:         'none',
+    outline:        'none',
+    resize:         'none',
+    width:          '100%',
+    padding:        0,
+    display:        'block',
+  }
+
+  if (block.type === 'headline') {
+    return (
+      <div style={{ padding: '20px 32px 8px' }}>
+        <textarea
+          value={block.text ?? ''}
+          onChange={e => onChange({ text: e.target.value })}
+          onClick={e => e.stopPropagation()}
+          rows={2}
+          style={{ ...base, fontSize: block.fontSize ?? 26, fontWeight: 700, color: block.textColor ?? '#111827', lineHeight: 1.3 } as React.CSSProperties}
+        />
+      </div>
+    )
+  }
+
+  if (block.type === 'text') {
+    return (
+      <div style={{ padding: '8px 32px' }}>
+        <textarea
+          value={block.text ?? ''}
+          onChange={e => onChange({ text: e.target.value })}
+          onClick={e => e.stopPropagation()}
+          rows={4}
+          style={{ ...base, fontSize: block.fontSize ?? 14, fontWeight: bold ? 700 : 400, color: block.textColor ?? '#374151', lineHeight: 1.75 } as React.CSSProperties}
+        />
+      </div>
+    )
+  }
+
+  if (block.type === 'button') {
+    const justifyMap = { left: 'flex-start', center: 'center', right: 'flex-end' } as const
+    const align = block.align ?? 'center'
+    return (
+      <div style={{ padding: '12px 32px', display: 'flex', justifyContent: justifyMap[align] }}>
+        <div style={{ background: block.bgColor ?? '#6366f1', borderRadius: 7 }}>
+          <input
+            value={block.text ?? ''}
+            onChange={e => onChange({ text: e.target.value })}
+            onClick={e => e.stopPropagation()}
+            style={{ ...base, fontSize: block.fontSize ?? 14, fontWeight: bold ? 700 : 600, color: block.textColor ?? '#fff', padding: '11px 26px', letterSpacing: 0.2, borderRadius: 7, width: 'auto', minWidth: 80 } as React.CSSProperties}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  return null
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -1281,12 +1630,18 @@ export function EmailBuilderCanvas({
   }
 
   function handleDragEnd({ active, over }: DragEndEvent) {
+    // Capture before clearing — DragOverEvent correctly tracks nested drop zones;
+    // DragEndEvent's `over` can miss them if the outer sortable block wins collision.
+    const lastDragOverTarget = dropTargetId
     setDragActiveId(null)
     setDropTargetId(null)
     if (!over) return
 
     const activeId = active.id as string
-    const overId   = over.id  as string
+    // For palette drops, prefer the last drag-over target when it was a colcell zone
+    const overId = (
+      activeId.startsWith('new::') && lastDragOverTarget?.startsWith('colcell::')
+    ) ? lastDragOverTarget : (over.id as string)
 
     if (activeId.startsWith('brand-asset::')) {
       // Right-panel image dragged onto a canvas block — search top-level AND inside columns
@@ -1340,16 +1695,59 @@ export function EmailBuilderCanvas({
       }
     } else if (activeId.startsWith('new::')) {
       const newBlock = makeBlock(activeId, defaults)
+
       if (overId === 'canvas-empty') {
         onChange([...blocks, newBlock])
-      } else {
-        const overIndex = blocks.findIndex(b => b.id === overId)
-        const next = [...blocks]
-        if (overIndex >= 0) next.splice(overIndex + 1, 0, newBlock)
-        else next.push(newBlock)
+        setSelectedId(newBlock.id)
+        setSelectedSubPath(null)
+      } else if (overId.startsWith('colcell::')) {
+        // Dropped onto a column cell drop zone: colcell::{outerBlockId}::{colIdx}
+        const [, outerBlockId, colIdxStr] = overId.split('::')
+        const colIdx = parseInt(colIdxStr)
+        let newSubIdx = 0
+        const next = blocks.map(b => {
+          if (b.id !== outerBlockId) return b
+          const cols = (b.columns ?? []).map(c => [...c])
+          if (!cols[colIdx]) cols[colIdx] = []
+          cols[colIdx] = [...cols[colIdx], { ...newBlock }]
+          newSubIdx = cols[colIdx].length - 1
+          return { ...b, columns: cols }
+        })
         onChange(next)
+        setSelectedId(outerBlockId)
+        setSelectedSubPath({ outerBlockId, colIdx, subIdx: newSubIdx })
+      } else {
+        // Check if overId is a sub-block inside a column → insert after it
+        let foundInColumn: SubPath | null = null
+        const colNext = blocks.map(b => {
+          if (b.type !== 'columns' || !b.columns) return b
+          for (let ci = 0; ci < b.columns.length; ci++) {
+            const si = b.columns[ci].findIndex(sub => sub.id === overId)
+            if (si >= 0) {
+              const cols = b.columns.map(c => [...c])
+              cols[ci].splice(si + 1, 0, { ...newBlock })
+              foundInColumn = { outerBlockId: b.id, colIdx: ci, subIdx: si + 1 }
+              return { ...b, columns: cols }
+            }
+          }
+          return b
+        })
+
+        if (foundInColumn) {
+          onChange(colNext)
+          setSelectedId((foundInColumn as SubPath).outerBlockId)
+          setSelectedSubPath(foundInColumn)
+        } else {
+          // Top-level insertion — insert after the hovered block
+          const overIndex = blocks.findIndex(b => b.id === overId)
+          const next = [...blocks]
+          if (overIndex >= 0) next.splice(overIndex + 1, 0, newBlock)
+          else next.push(newBlock)
+          onChange(next)
+          setSelectedId(newBlock.id)
+          setSelectedSubPath(null)
+        }
       }
-      setSelectedId(newBlock.id)
     } else {
       if (activeId !== overId) {
         const from = blocks.findIndex(b => b.id === activeId)
@@ -1633,6 +2031,7 @@ export function EmailBuilderCanvas({
                       isDropTarget={isDraggingFromPalette && dropTargetId === block.id}
                       onSelect={() => { setSelectedId(block.id); setSelectedSubPath(null) }}
                       onDelete={() => deleteBlock(block.id)}
+                      onChange={patch => { setSelectedId(block.id); updateSelected(patch) }}
                       primary={primary}
                       selectedSubPath={selectedId === block.id ? selectedSubPath : null}
                       onSelectSub={p => { setSelectedId(block.id); setSelectedSubPath(p) }}

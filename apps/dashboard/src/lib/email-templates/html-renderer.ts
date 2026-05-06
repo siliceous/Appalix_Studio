@@ -92,6 +92,12 @@ export interface ContentBlock {
   textColor?:   string   // override text / headline color
   fontFamily?:  string   // override font-family
   fontSize?:    number   // override font size (px)
+  bold?:        boolean
+  italic?:      boolean
+  underline?:   boolean
+  imageWidth?:  string   // e.g. '80%', '100%'
+  imageRotate?: number   // degrees: 0 | 90 | 180 | 270
+  columnWidths?: number[] // flex-grow units, same length as columns array
   blockBgColor?: string  // block-level background (behind all content)
   // social
   socialLinks?: Record<string, string>
@@ -163,7 +169,9 @@ function renderBlocksHtml(blocks: ContentBlock[], c: Ctx): string {
         const color    = block.textColor   || c.headColor
         const ff       = block.fontFamily  ? `'${block.fontFamily}',${c.fontFamily}` : c.fontFamily
         const fs       = block.fontSize    ? `${block.fontSize}px` : c.headSize
-        const inner    = `<h2 style="font-size:${fs};font-weight:700;color:${color};line-height:1.3;margin:0 0 20px;text-align:${align};font-family:${ff};">${text}</h2>`
+        const fi       = block.italic    ? 'italic'    : 'normal'
+        const td       = block.underline ? 'underline' : 'none'
+        const inner    = `<h2 style="font-size:${fs};font-weight:700;font-style:${fi};text-decoration:${td};color:${color};line-height:1.3;margin:0 0 20px;text-align:${align};font-family:${ff};">${text}</h2>`
         return wrap(inner, block.blockBgColor)
       }
       case 'text': {
@@ -171,8 +179,11 @@ function renderBlocksHtml(blocks: ContentBlock[], c: Ctx): string {
         const color  = block.textColor  || c.textColor
         const ff     = block.fontFamily ? `'${block.fontFamily}',${c.bodyFont}` : c.bodyFont
         const fs     = block.fontSize   ? `${block.fontSize}px` : '15px'
+        const fw     = block.bold      ? '700'       : '400'
+        const fi     = block.italic    ? 'italic'    : 'normal'
+        const td     = block.underline ? 'underline' : 'none'
         const paras  = (block.text ?? '').split('\n\n').filter(Boolean)
-          .map(p => `<p style="font-size:${fs};line-height:1.8;color:${color};font-family:${ff};margin:0 0 16px;text-align:${align};">${p.replace(/\n/g, '<br/>')}</p>`)
+          .map(p => `<p style="font-size:${fs};line-height:1.8;color:${color};font-family:${ff};font-weight:${fw};font-style:${fi};text-decoration:${td};margin:0 0 16px;text-align:${align};">${p.replace(/\n/g, '<br/>')}</p>`)
           .join('\n')
         return wrap(paras, block.blockBgColor)
       }
@@ -182,7 +193,9 @@ function renderBlocksHtml(blocks: ContentBlock[], c: Ctx): string {
         const margin = align === 'center' ? 'margin:0 auto 24px;display:block;'
           : align === 'right' ? 'margin:0 0 24px auto;display:block;'
           : 'display:block;margin-bottom:24px;'
-        const inner  = `<img src="${escape(block.url)}" alt="${escape(block.alt ?? '')}" style="max-width:100%;height:auto;border-radius:8px;${margin}" />`
+        const w      = block.imageWidth  ? `width:${block.imageWidth};` : 'max-width:100%;'
+        const rot    = block.imageRotate ? `transform:rotate(${block.imageRotate}deg);` : ''
+        const inner  = `<img src="${escape(block.url)}" alt="${escape(block.alt ?? '')}" style="${w}height:auto;border-radius:8px;${rot}${margin}" />`
         return wrap(inner, block.blockBgColor)
       }
       case 'button': {
@@ -193,7 +206,10 @@ function renderBlocksHtml(blocks: ContentBlock[], c: Ctx): string {
         const btnClr  = block.textColor  || '#ffffff'
         const ff      = block.fontFamily ? `'${block.fontFamily}',${c.fontFamily}` : c.fontFamily
         const fs      = block.fontSize   ? `${block.fontSize}px` : '14px'
-        const inner   = `<div style="text-align:${align};margin:8px 0 24px;"><a href="${escape(href)}" style="display:inline-block;padding:12px 28px;background:${btnBg};color:${btnClr};text-decoration:none;border-radius:6px;font-family:${ff};font-size:${fs};font-weight:600;">${escape(block.text)}</a></div>`
+        const fw      = block.bold      ? '700'       : '600'
+        const fi      = block.italic    ? 'italic'    : 'normal'
+        const td      = block.underline ? 'underline' : 'none'
+        const inner   = `<div style="text-align:${align};margin:8px 0 24px;"><a href="${escape(href)}" style="display:inline-block;padding:12px 28px;background:${btnBg};color:${btnClr};text-decoration:${td};border-radius:6px;font-family:${ff};font-size:${fs};font-weight:${fw};font-style:${fi};">${escape(block.text)}</a></div>`
         return wrap(inner, block.blockBgColor)
       }
       case 'divider':

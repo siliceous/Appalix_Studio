@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid'
 import {
   Mail, Phone, Type, MousePointerClick, Image as ImageIcon,
   Minus, AlignLeft, CheckSquare, ChevronDown, Circle,
+  Zap, Timer,
 } from 'lucide-react'
 import type { FormBlock, BlockType, ColumnRatio } from '@/features/forms/types'
 
@@ -23,7 +24,7 @@ const ITEMS: {
   },
   {
     type: 'phone',
-    label: 'Phone number',
+    label: 'Phone',
     icon: Phone,
     defaultProps: { label: 'Phone number', placeholder: '+1 555 000 0000', required: false },
   },
@@ -73,13 +74,25 @@ const ITEMS: {
     type: 'dropdown',
     label: 'Dropdown',
     icon: ChevronDown,
-    defaultProps: { label: 'Select an option', options: ['Option 1', 'Option 2'], required: false },
+    defaultProps: { label: 'Select an option', options: ['Option 1', 'Option 2', 'Option 3'], required: false },
   },
   {
     type: 'radio',
     label: 'Radio',
     icon: Circle,
-    defaultProps: { label: 'Choose one', options: ['Option A', 'Option B'], required: false },
+    defaultProps: { label: 'Choose one', options: ['Option A', 'Option B', 'Option C'], required: false },
+  },
+  {
+    type: 'wheel_of_fortune',
+    label: 'Wheel',
+    icon: Zap,
+    defaultProps: { label: 'Spin to win!', options: ['Prize 1', 'Prize 2', 'Try Again', 'Prize 3', '50% Off', 'Free Gift'] },
+  },
+  {
+    type: 'countdown_timer',
+    label: 'Countdown',
+    icon: Timer,
+    defaultProps: { timerLabel: 'Offer ends in:', timerTarget: '' },
   },
 ]
 
@@ -92,11 +105,10 @@ const COLUMN_LAYOUTS: { ratio: ColumnRatio; label: string; widths: number[] }[] 
   { ratio: '1:1:1', label: '3 Equal', widths: [1, 1, 1] },
 ]
 
-// Visual miniature of column proportions
 function ColumnPreview({ widths }: { widths: number[] }) {
   const total = widths.reduce((a, b) => a + b, 0)
   return (
-    <div className="flex gap-0.5 w-full h-5">
+    <div className="flex gap-0.5 w-full h-4">
       {widths.map((w, i) => (
         <div
           key={i}
@@ -148,7 +160,7 @@ export function FormBlocksSidebar({ selectedStepId, onAddBlock }: Props) {
 
       <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden px-2 py-3">
 
-        {/* Block items */}
+        {/* Block items — 2 per row */}
         <div className="grid grid-cols-2 gap-1.5 mb-5">
           {ITEMS.map(item => (
             <button
@@ -182,7 +194,7 @@ export function FormBlocksSidebar({ selectedStepId, onAddBlock }: Props) {
                 className="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 dark:border-white/8 bg-gray-50 dark:bg-white/[0.02] hover:border-brand-300 dark:hover:border-brand-500/30 hover:bg-brand-50/40 dark:hover:bg-brand-500/5 transition-colors cursor-pointer group"
               >
                 <ColumnPreview widths={layout.widths} />
-                <span className="text-[11px] text-gray-500 dark:text-gray-400 group-hover:text-brand-600 dark:group-hover:text-brand-400 text-center leading-tight transition-colors">
+                <span className="text-[10px] text-gray-500 dark:text-gray-400 group-hover:text-brand-600 dark:group-hover:text-brand-400 text-center leading-tight transition-colors">
                   {layout.label}
                 </span>
               </button>

@@ -364,3 +364,33 @@ export async function getFormStats(formId: string): Promise<{
     conversionRate: v > 0 ? Math.round((s / v) * 100) : 0,
   }
 }
+
+// ── Brand image assets (for form images panel) ────────────────────────────────
+
+export async function getFormImages(): Promise<{
+  profiles: Array<{ id: string; company_name: string | null }>
+  assets:   Array<{ id: string; brand_profile_id: string; file_url: string; asset_role: string }>
+}> {
+  const ctx = await getWorkspaceAndUser()
+  if (!ctx) return { profiles: [], assets: [] }
+  const supabase = await createClient()
+  const [{ data: profiles }, { data: assets }] = await Promise.all([
+    supabase
+      .from('brand_profiles')
+      .select('id, company_name')
+      .eq('workspace_id', ctx.workspaceId)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: true }),
+    supabase
+      .from('brand_assets')
+      .select('id, brand_profile_id, file_url, asset_role')
+      .eq('workspace_id', ctx.workspaceId)
+      .eq('is_archived', false)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false }),
+  ])
+  return {
+    profiles: (profiles ?? []) as Array<{ id: string; company_name: string | null }>,
+    assets:   (assets   ?? []) as Array<{ id: string; brand_profile_id: string; file_url: string; asset_role: string }>,
+  }
+}

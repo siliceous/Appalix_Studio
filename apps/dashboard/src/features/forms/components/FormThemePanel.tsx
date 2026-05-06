@@ -164,6 +164,12 @@ export function FormThemePanel({ theme: t, onChange }: Props) {
             onChange={v => onChange({ colors: { ...colors, muted: v } })}
           />
         </Row>
+        <Row label="Field text">
+          <ColorSwatch
+            value={colors.fieldText ?? '#111827'}
+            onChange={v => onChange({ colors: { ...colors, fieldText: v } })}
+          />
+        </Row>
       </div>
 
       <div className="border-t border-gray-100 dark:border-gray-700/60" />
