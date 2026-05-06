@@ -512,14 +512,28 @@ export function ConversationsClient({ conversations, bots, filters, teamMembers 
                     {/* Conversation title + contact name */}
                     <td className="px-5 py-3.5">
                       <div className="w-[200px]">
-                        <ClickOrEditCell
-                          value={title}
-                          href={`${detailBasePath}/${c.id}`}
-                          onSave={val => handleRename(c.id, val)}
-                          readonly={readonly}
-                        />
-                        {contactName && (
-                          <p className="text-xs text-gray-400 mt-0.5 truncate">{contactName}</p>
+                        {c.platform === 'sms' && contactName ? (
+                          <>
+                            <Link
+                              href={`${detailBasePath}/${c.id}`}
+                              className="text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-[#15A4AE] transition-colors truncate block"
+                            >
+                              {contactName}
+                            </Link>
+                            <p className="text-xs text-gray-400 mt-0.5 truncate">{title}</p>
+                          </>
+                        ) : (
+                          <>
+                            <ClickOrEditCell
+                              value={title}
+                              href={`${detailBasePath}/${c.id}`}
+                              onSave={val => handleRename(c.id, val)}
+                              readonly={readonly}
+                            />
+                            {contactName && (
+                              <p className="text-xs text-gray-400 mt-0.5 truncate">{contactName}</p>
+                            )}
+                          </>
                         )}
                       </div>
                     </td>

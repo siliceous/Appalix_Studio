@@ -27,7 +27,7 @@ import type { IncomingMessage } from '../adapters/types.js'
  */
 export async function processMessage(
   msg: IncomingMessage,
-  options?: { skipUserMessage?: boolean },
+  options?: { skipUserMessage?: boolean; skipAssistantMessage?: boolean },
 ): Promise<{ reply: string; conversationId: string; botPaused?: boolean }> {
   const {
     workspaceId,
@@ -268,18 +268,20 @@ export async function processMessage(
   const responseTimeMs = Date.now() - startTime
 
   // ---------------------------------------------------------------
-  // 8. Save assistant message
+  // 8. Save assistant message (skipped when caller saves it with provider message ID)
   // ---------------------------------------------------------------
-  const msgId = await appendMessage({
-    conversationId,
-    workspaceId,
-    role:           'assistant',
-    content:        reply,
-    model:          effectiveModel,
-    tokensInput:    tokensIn,
-    tokensOutput:   tokensOut,
-    responseTimeMs,
-  })
+  const msgId = options?.skipAssistantMessage
+    ? undefined
+    : await appendMessage({
+        conversationId,
+        workspaceId,
+        role:           'assistant',
+        content:        reply,
+        model:          effectiveModel,
+        tokensInput:    tokensIn,
+        tokensOutput:   tokensOut,
+        responseTimeMs,
+      })
 
   // ---------------------------------------------------------------
   // 9. Record usage (only for single-turn; agent loop records its own)

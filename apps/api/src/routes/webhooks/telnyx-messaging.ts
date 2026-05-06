@@ -253,7 +253,7 @@ async function handleInbound(payload: TelnyxMessagePayload) {
         platformThreadId: fromE164,
         platformUserId:  fromE164,
         text:            payload.text ?? '',
-      }, { skipUserMessage: true })
+      }, { skipUserMessage: true, skipAssistantMessage: true })
 
       if (reply && !botPaused) {
         const sendResult = await sendSms({

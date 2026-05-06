@@ -26,6 +26,27 @@ export interface SageForm {
   is_active:         boolean
   created_at:        string
   mailchimp_list_id: string | null
+  brand_profile_id:  string | null
+  form_type:         string
+  fields_config:     BrandFieldsConfig
+}
+
+export interface BrandFieldsConfig {
+  collect_logo:        boolean
+  collect_colors:      boolean
+  collect_fonts:       boolean
+  collect_photos:      boolean
+  collect_social:      boolean
+  collect_guidelines:  boolean
+}
+
+const DEFAULT_BRAND_FIELDS: BrandFieldsConfig = {
+  collect_logo:       true,
+  collect_colors:     true,
+  collect_fonts:      true,
+  collect_photos:     false,
+  collect_social:     false,
+  collect_guidelines: false,
 }
 
 export interface SageFormSubmission {
@@ -50,7 +71,13 @@ export interface SageFormSubmission {
 }
 
 /** Create a new form */
-export async function createForm(data: { name: string; description?: string }): Promise<{ form?: SageForm; error?: string }> {
+export async function createForm(data: {
+  name:             string
+  description?:     string
+  brand_profile_id?: string
+  form_type?:       string
+  fields_config?:   BrandFieldsConfig
+}): Promise<{ form?: SageForm; error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
@@ -63,13 +90,128 @@ export async function createForm(data: { name: string; description?: string }): 
   const admin = createAdminClient()
   const { data: form, error } = await admin
     .from('sage_forms')
-    .insert({ workspace_id: workspaceId, name: data.name.trim(), description: data.description?.trim() || null, created_by: user.id })
-    .select('id, name, description, is_active, created_at')
+    .insert({
+      workspace_id:     workspaceId,
+      name:             data.name.trim(),
+      description:      data.description?.trim() || null,
+      created_by:       user.id,
+      brand_profile_id: data.brand_profile_id ?? null,
+      form_type:        data.form_type ?? 'custom',
+      fields_config:    data.fields_config ?? DEFAULT_BRAND_FIELDS,
+    })
+    .select('id, name, description, is_active, created_at, brand_profile_id, form_type, fields_config')
     .single()
 
   if (error || !form) return { error: error?.message ?? 'Failed to create form' }
   revalidatePath('/dashboard')
+  revalidatePath('/sage/branding')
   return { form: form as SageForm }
+}
+
+/** List forms for a specific brand profile */
+export async function listBrandForms(brandProfileId: string): Promise<SageForm[]> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return []
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('sage_forms')
+    .select('id, name, description, is_active, created_at, brand_profile_id, form_type, fields_config')
+    .eq('workspace_id', workspaceId)
+    .eq('brand_profile_id', brandProfileId)
+    .order('created_at', { ascending: false })
+  return (data ?? []) as SageForm[]
+}
+
+/** List all forms for the workspace */
+export async function listWorkspaceForms(): Promise<SageForm[]> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return []
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('sage_forms')
+    .select('id, name, description, is_active, created_at, brand_profile_id, form_type, fields_config')
+    .eq('workspace_id', workspaceId)
+    .order('created_at', { ascending: false })
+  return (data ?? []) as SageForm[]
+}
+
+/** List all form submissions for the workspace (capped at 500) */
+export async function listWorkspaceFormSubmissions(): Promise<SageFormSubmission[]> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return []
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('sage_form_submissions')
+    .select('id, form_id, source_platform, raw_payload, fields, ai_priority, ai_summary, ai_insights, ai_action, ai_entities, ai_analyzed_at, actioned_at, action_type, assigned_to, created_at, mailchimp_synced_at')
+    .eq('workspace_id', workspaceId)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .limit(500)
+  return (data ?? []) as SageFormSubmission[]
+}
+
+/** Update a form's active status */
+export async function updateFormActive(formId: string, isActive: boolean): Promise<{ error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { error: 'Not authenticated' }
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('sage_forms')
+    .update({ is_active: isActive })
+    .eq('id', formId)
+    .eq('workspace_id', workspaceId)
+  if (error) return { error: error.message }
+  revalidatePath('/sage/branding')
+  return {}
+}
+
+/** Update a form's brand fields config */
+export async function updateBrandFieldsConfig(formId: string, config: BrandFieldsConfig): Promise<{ error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { error: 'Not authenticated' }
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('sage_forms')
+    .update({ fields_config: config })
+    .eq('id', formId)
+    .eq('workspace_id', workspaceId)
+  if (error) return { error: error.message }
+  revalidatePath('/sage/branding')
+  return {}
+}
+
+/** Get submissions for a specific form */
+export async function getFormSubmissions(formId: string): Promise<SageFormSubmission[]> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return []
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('sage_form_submissions')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .eq('form_id', formId)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .limit(50)
+  return (data ?? []) as SageFormSubmission[]
+}
+
+/** Update a form's name or description */
+export async function updateFormMeta(formId: string, updates: { name?: string; description?: string }): Promise<{ error?: string }> {
+  const workspaceId = await getWorkspaceId()
+  if (!workspaceId) return { error: 'Not authenticated' }
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('sage_forms')
+    .update({
+      ...(updates.name        !== undefined ? { name:        updates.name.trim() }        : {}),
+      ...(updates.description !== undefined ? { description: updates.description.trim() || null } : {}),
+    })
+    .eq('id', formId)
+    .eq('workspace_id', workspaceId)
+  if (error) return { error: error.message }
+  revalidatePath('/sage/branding')
+  return {}
 }
 
 /** Set a per-form Mailchimp audience list */

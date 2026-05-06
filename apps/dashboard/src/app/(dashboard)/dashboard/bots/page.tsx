@@ -124,6 +124,8 @@ export default async function BotsPage({
     .from('conversations')
     .select('id, title, platform, status, sentiment, message_count, last_activity_at, ai_priority, ai_summary, ai_entities, bot_id, assigned_to, bots(id, name)')
     .eq('workspace_id', workspaceId)
+    .neq('platform', 'sms')
+    .neq('platform', 'voice')
     .is('deleted_at', null)
     .order('last_activity_at', { ascending: false })
     .limit(150)
@@ -154,9 +156,9 @@ export default async function BotsPage({
 
   // Status counts (workspace-level, for the filter tab badges)
   const [activeCountRes, completedCountRes, archivedCountRes] = await Promise.all([
-    supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('status', 'active').is('deleted_at', null),
-    supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('status', 'completed').is('deleted_at', null),
-    supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('status', 'archived').is('deleted_at', null),
+    supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).neq('platform', 'sms').neq('platform', 'voice').eq('status', 'active').is('deleted_at', null),
+    supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).neq('platform', 'sms').neq('platform', 'voice').eq('status', 'completed').is('deleted_at', null),
+    supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).neq('platform', 'sms').neq('platform', 'voice').eq('status', 'archived').is('deleted_at', null),
   ])
   const statusCounts = {
     active:    activeCountRes.count    ?? 0,

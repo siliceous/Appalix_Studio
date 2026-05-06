@@ -32,6 +32,8 @@ import {
   type CandidateRow,
 } from '@/app/actions/branding'
 import { EmailTemplatesTab } from './email-templates-tab'
+import { FormsTemplateGallery } from '@/features/forms/components/FormsTemplateGallery'
+import { type FormTemplate } from '@/features/forms/types'
 import { useUserAvatar } from '@/contexts/user-avatar-context'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -82,11 +84,12 @@ interface BrandAssetRow {
 }
 
 interface Props {
-  userId?:    string
-  profiles:   BrandProfileRow[]
-  assets:     BrandAssetRow[]
-  sessions:   ScanSessionRow[]
-  candidates: CandidateRow[]
+  userId?:     string
+  profiles:    BrandProfileRow[]
+  assets:      BrandAssetRow[]
+  sessions:    ScanSessionRow[]
+  candidates:  CandidateRow[]
+  templates: FormTemplate[]
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -96,7 +99,7 @@ type Tab = 'assets' | 'email-templates' | 'forms' | 'website'
 const TABS: { key: Tab; label: string; icon: React.ElementType; comingSoon?: boolean }[] = [
   { key: 'assets',          label: 'Assets',          icon: Palette  },
   { key: 'email-templates', label: 'Email Templates', icon: FileText },
-  { key: 'forms',           label: 'Forms',           icon: Layout,   comingSoon: true },
+  { key: 'forms',           label: 'Forms',           icon: Layout   },
   { key: 'website',         label: 'Website',         icon: Globe,    comingSoon: true },
 ]
 
@@ -1096,7 +1099,7 @@ function ComingSoonTab({ label }: { label: string }) {
 
 // ── Main client ───────────────────────────────────────────────────────────────
 
-export function BrandingClient({ profiles, assets, sessions, candidates }: Props) {
+export function BrandingClient({ profiles, assets, sessions, candidates, templates }: Props) {
   const router = useRouter()
 
   const defaultId = profiles.find(p => p.brand_type === 'workspace')?.id ?? profiles[0]?.id ?? null
@@ -1158,7 +1161,9 @@ export function BrandingClient({ profiles, assets, sessions, candidates }: Props
             allAssets={assets}
           />
         )}
-        {activeTab === 'forms'           && <ComingSoonTab label="Forms" />}
+        {activeTab === 'forms' && (
+          <FormsTemplateGallery templates={templates} />
+        )}
         {activeTab === 'website'         && <ComingSoonTab label="Website" />}
       </div>
 

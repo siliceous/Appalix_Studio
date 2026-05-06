@@ -57,7 +57,7 @@ export default async function FormsLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex h-[calc(100vh-0px)] -m-8 overflow-hidden">
-      <div className="flex-1 h-full overflow-hidden flex flex-col bg-[#f5f4f1] dark:bg-[#1c1c1c]">
+      <div className="flex-1 h-full overflow-y-auto flex flex-col bg-[#f5f4f1] dark:bg-[#1c1c1c]">
         {children}
       </div>
       <SageRightPanel workspaceId={workspace.id} />

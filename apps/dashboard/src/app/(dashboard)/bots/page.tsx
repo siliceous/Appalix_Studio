@@ -130,10 +130,10 @@ export default async function BotsPage({
       { data: usageRaw },
     ] = await Promise.all([
       supabase.from('bots').select('*, integrations(count)').eq('workspace_id', workspaceId).order('created_at', { ascending: false }),
-      supabase.from('conversations').select('*', { count: 'exact', head: true }).eq('workspace_id', workspaceId),
+      supabase.from('conversations').select('*', { count: 'exact', head: true }).eq('workspace_id', workspaceId).neq('platform', 'sms').neq('platform', 'voice'),
       supabase.from('bots').select('*', { count: 'exact', head: true }).eq('workspace_id', workspaceId),
       supabase.from('integrations').select('*', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('status', 'active'),
-      supabase.from('conversations').select('id, title, platform, status, message_count, last_activity_at, created_at').eq('workspace_id', workspaceId).order('last_activity_at', { ascending: false }).limit(8),
+      supabase.from('conversations').select('id, title, platform, status, message_count, last_activity_at, created_at').eq('workspace_id', workspaceId).neq('platform', 'sms').neq('platform', 'voice').order('last_activity_at', { ascending: false }).limit(8),
       supabase.from('usage_events').select('tokens_input, tokens_output, cost_usd').eq('workspace_id', workspaceId).gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
     ])
     bots                = (botsRaw   ?? []) as BotRow[]
@@ -206,28 +206,67 @@ export default async function BotsPage({
   }
 
   // ── Tab 4: Phone Agents ───────────────────────────────────────────────────
+  // Built from voice-enabled bots + their workspace_phone_numbers connections.
   let voiceAgents: VoiceAgent[] = []
 
   if (activeTab === 'phone-agents') {
-    const { data: agentsRaw } = await supabase.from('voice_agents').select('*').eq('workspace_id', workspaceId).order('created_at', { ascending: false })
-    voiceAgents = (agentsRaw ?? []) as VoiceAgent[]
+    type PhoneNumRow = { id: string; e164: string; bot_id: string | null; capabilities: { sms: boolean; voice: boolean } | null }
+    type VoiceBotRow = { id: string; name: string; voice_preset: string | null; voice_name: string | null; voice_goal: string | string[] | null; voice_config: Record<string, unknown> | null }
+
+    const [{ data: voiceBotsRaw }, { data: phoneNumsRaw }] = await Promise.all([
+      supabase
+        .from('bots')
+        .select('id,name,voice_preset,voice_name,voice_goal,voice_config')
+        .eq('workspace_id', workspaceId)
+        .eq('enable_voice', true)
+        .order('name', { ascending: true }),
+      supabase
+        .from('workspace_phone_numbers')
+        .select('id,e164,bot_id,capabilities')
+        .eq('workspace_id', workspaceId)
+        .is('released_at', null),
+    ])
+
+    const phoneByBot = new Map<string, PhoneNumRow>()
+    for (const p of (phoneNumsRaw ?? []) as PhoneNumRow[]) {
+      if (p.bot_id) phoneByBot.set(p.bot_id, p)
+    }
+
+    voiceAgents = ((voiceBotsRaw ?? []) as VoiceBotRow[]).map(bot => {
+      const phone   = phoneByBot.get(bot.id) ?? null
+      const hasVoice = phone?.capabilities?.voice ?? false
+      const goals    = bot.voice_goal
+        ? (Array.isArray(bot.voice_goal) ? bot.voice_goal as string[] : [bot.voice_goal as string])
+        : null
+      return {
+        id:           bot.id,
+        workspace_id: workspaceId,
+        name:         bot.name,
+        type:         'inbound' as const,
+        phone_number: phone?.e164 ?? null,
+        bot_id:       bot.id,
+        preset:       bot.voice_preset as VoiceAgent['preset'],
+        goal:         goals as VoiceAgent['goal'],
+        is_active:    hasVoice,
+        config:       bot.voice_config as VoiceAgent['config'],
+        created_at:   '',
+        updated_at:   '',
+      } satisfies VoiceAgent
+    })
   }
 
   // ── Computed ──────────────────────────────────────────────────────────────
   const totalTokens = usageSummary.reduce((s, e) => s + e.tokens_input + e.tokens_output, 0)
   const totalCost   = usageSummary.reduce((s, e) => s + Number(e.cost_usd), 0)
 
-  const phoneFilter     = params.filter ?? 'all'
-  const filteredAgents  = phoneFilter === 'active'
+  const phoneFilter    = params.filter ?? 'all'
+  const filteredAgents = phoneFilter === 'active'
     ? voiceAgents.filter(a => a.is_active)
-    : phoneFilter === 'inbound'
-    ? voiceAgents.filter(a => a.type === 'inbound' || a.type === 'both')
-    : phoneFilter === 'outbound'
-    ? voiceAgents.filter(a => a.type === 'outbound' || a.type === 'both')
+    : phoneFilter === 'no-number'
+    ? voiceAgents.filter(a => !a.phone_number)
     : voiceAgents
-  const activeAgentCount   = voiceAgents.filter(a => a.is_active).length
-  const inboundAgentCount  = voiceAgents.filter(a => a.type === 'inbound' || a.type === 'both').length
-  const outboundAgentCount = voiceAgents.filter(a => a.type === 'outbound' || a.type === 'both').length
+  const activeAgentCount = voiceAgents.filter(a => a.is_active).length
+  const withNumberCount  = voiceAgents.filter(a => !!a.phone_number).length
 
   const activeKbCategory = params.category as VoiceKnowledgeEntry['category'] | undefined
   const activeKbBotId    = activeTab === 'knowledge-base' && activeSubtab === 'voice' ? params.bot : undefined
@@ -600,12 +639,11 @@ export default async function BotsPage({
           <div className="max-w-5xl mx-auto">
 
             {/* Stats strip */}
-            <div className="grid grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-3 gap-4 mb-4">
               {[
-                { label: 'Total agents', value: voiceAgents.length,   icon: Mic,          color: 'text-[#15A4AE]',                      bg: 'bg-[#15A4AE]/10' },
-                { label: 'Active',       value: activeAgentCount,     icon: PhoneCall,     color: 'text-green-600 dark:text-green-400',  bg: 'bg-green-50 dark:bg-green-500/10' },
-                { label: 'Inbound',      value: inboundAgentCount,    icon: PhoneIncoming, color: 'text-blue-600 dark:text-blue-400',    bg: 'bg-blue-50 dark:bg-blue-500/10' },
-                { label: 'Outbound',     value: outboundAgentCount,   icon: PhoneOutgoing, color: 'text-amber-600 dark:text-amber-400',  bg: 'bg-amber-50 dark:bg-amber-500/10' },
+                { label: 'Voice bots',    value: voiceAgents.length,  icon: Mic,       color: 'text-[#15A4AE]',                     bg: 'bg-[#15A4AE]/10' },
+                { label: 'With number',   value: withNumberCount,     icon: PhoneCall, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-500/10' },
+                { label: 'Voice-capable', value: activeAgentCount,    icon: PhoneCall, color: 'text-blue-600 dark:text-blue-400',   bg: 'bg-blue-50 dark:bg-blue-500/10' },
               ].map(s => (
                 <div key={s.label} className="bg-white dark:bg-[#232323] rounded-xl border dark:border-white/8 p-5 flex items-center gap-4">
                   <div className={`${s.bg} p-2.5 rounded-lg`}>
@@ -625,10 +663,9 @@ export default async function BotsPage({
               {/* Dark bar */}
               <div className="bg-[#141c2b] rounded-xl border border-white/10 px-4 py-2.5 flex items-center gap-2">
                 {[
-                  { key: 'all',      label: 'All agents' },
-                  { key: 'active',   label: 'Active' },
-                  { key: 'inbound',  label: 'Inbound' },
-                  { key: 'outbound', label: 'Outbound' },
+                  { key: 'all',       label: 'All bots' },
+                  { key: 'active',    label: 'Voice-capable' },
+                  { key: 'no-number', label: 'No number' },
                 ].map(f => (
                   <Link
                     key={f.key}
@@ -638,17 +675,15 @@ export default async function BotsPage({
                     }`}
                   >
                     {f.label}
-                    {f.key === 'all'      && voiceAgents.length > 0    && <span className="ml-1.5 text-white/50">{voiceAgents.length}</span>}
-                    {f.key === 'active'   && activeAgentCount > 0      && <span className="ml-1.5 text-white/50">{activeAgentCount}</span>}
-                    {f.key === 'inbound'  && inboundAgentCount > 0     && <span className="ml-1.5 text-white/50">{inboundAgentCount}</span>}
-                    {f.key === 'outbound' && outboundAgentCount > 0    && <span className="ml-1.5 text-white/50">{outboundAgentCount}</span>}
+                    {f.key === 'all'       && voiceAgents.length > 0 && <span className="ml-1.5 text-white/50">{voiceAgents.length}</span>}
+                    {f.key === 'active'    && activeAgentCount > 0   && <span className="ml-1.5 text-white/50">{activeAgentCount}</span>}
                   </Link>
                 ))}
                 <Link
-                  href="/phone/voice-agents/new"
+                  href="/integrations/phone/setup"
                   className="ml-auto flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium rounded-xl transition-colors whitespace-nowrap"
                 >
-                  <Plus className="w-3.5 h-3.5" />New Agent
+                  <Plus className="w-3.5 h-3.5" />Assign number
                 </Link>
               </div>
 
@@ -661,11 +696,11 @@ export default async function BotsPage({
                     </div>
                     <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">No voice agents found</p>
                     <p className="text-xs text-gray-400 mb-5">
-                      {phoneFilter !== 'all' ? `No ${phoneFilter} agents yet.` : 'Create your first voice agent to start handling calls.'}
+                      {phoneFilter === 'active' ? 'No bots have a voice-capable number assigned yet.' : phoneFilter === 'no-number' ? 'All your voice bots have a number assigned.' : 'Enable voice on a bot to see it here.'}
                     </p>
-                    <Link href="/phone/voice-agents/new"
+                    <Link href="/bots/new"
                       className="px-4 py-2 bg-[#15A4AE] hover:bg-[#0e8f99] text-white text-sm rounded-lg transition-colors">
-                      Create agent
+                      Create bot
                     </Link>
                   </div>
                 ) : (
@@ -688,9 +723,11 @@ export default async function BotsPage({
                             <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
                               agent.is_active
                                 ? 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400'
+                                : agent.phone_number
+                                ? 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 dark:text-yellow-400'
                                 : 'bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400'
                             }`}>
-                              {agent.is_active ? 'Active' : 'Inactive'}
+                              {agent.is_active ? 'Voice ready' : agent.phone_number ? 'SMS only' : 'No number'}
                             </span>
                           </div>
 
@@ -723,13 +760,13 @@ export default async function BotsPage({
                           )}
 
                           <div className="flex items-center gap-2 pt-1 mt-auto border-t dark:border-white/8">
-                            <Link href={`/phone/voice-agents/${agent.id}`}
+                            <Link href={`/bots?tab=training&bot=${agent.id}`}
                               className="flex-1 text-center text-xs font-medium px-3 py-1.5 rounded-lg bg-[#15A4AE]/10 text-[#15A4AE] hover:bg-[#15A4AE]/20 transition-colors">
                               Configure
                             </Link>
-                            <Link href={`/bots?tab=training&bot=${agent.bot_id ?? ''}`}
+                            <Link href="/integrations/phone/setup"
                               className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg border dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                              <Zap className="w-3 h-3" />Train
+                              <Phone className="w-3 h-3" />Number
                             </Link>
                           </div>
                         </div>

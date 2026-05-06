@@ -116,17 +116,22 @@ export async function findOrCreateConversation(params: {
 
   const { data: existing } = await supabase
     .from('conversations')
-    .select('id')
+    .select('id, deleted_at')
     .eq('workspace_id', params.workspaceId)
     .eq('platform', platform)
     .eq('platform_thread_id', params.fromE164)
     .maybeSingle()
 
   if (existing) {
-    // Touch last_activity_at so the thread floats to the top
+    // Restore if soft-deleted; always float to top on new inbound message
+    const updates: Record<string, unknown> = { last_activity_at: new Date().toISOString() }
+    if ((existing as { id: string; deleted_at: string | null }).deleted_at) {
+      updates.deleted_at = null
+      updates.status     = 'active'
+    }
     await supabase
       .from('conversations')
-      .update({ last_activity_at: new Date().toISOString() })
+      .update(updates)
       .eq('id', existing.id as string)
     return existing.id as string
   }
@@ -138,6 +143,7 @@ export async function findOrCreateConversation(params: {
       platform,
       platform_thread_id: params.fromE164,
       platform_user_id:   params.fromE164,
+      title:              params.fromE164,
       status:             'active',
       last_activity_at:   new Date().toISOString(),
     })
