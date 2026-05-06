@@ -877,6 +877,7 @@ function InlineTextEditor({
     return (
       <div style={{ padding: '20px 32px 8px' }}>
         <textarea
+          autoFocus
           value={block.text ?? ''}
           onChange={e => onChange({ text: e.target.value })}
           onClick={e => e.stopPropagation()}
@@ -891,6 +892,7 @@ function InlineTextEditor({
     return (
       <div style={{ padding: '8px 32px' }}>
         <textarea
+          autoFocus
           value={block.text ?? ''}
           onChange={e => onChange({ text: e.target.value })}
           onClick={e => e.stopPropagation()}
@@ -908,6 +910,7 @@ function InlineTextEditor({
       <div style={{ padding: '12px 32px', display: 'flex', justifyContent: justifyMap[align] }}>
         <div style={{ background: block.bgColor ?? '#6366f1', borderRadius: 7 }}>
           <input
+            autoFocus
             value={block.text ?? ''}
             onChange={e => onChange({ text: e.target.value })}
             onClick={e => e.stopPropagation()}
@@ -1638,10 +1641,9 @@ export function EmailBuilderCanvas({
     if (!over) return
 
     const activeId = active.id as string
-    // For palette drops, prefer the last drag-over target when it was a colcell zone
-    const overId = (
-      activeId.startsWith('new::') && lastDragOverTarget?.startsWith('colcell::')
-    ) ? lastDragOverTarget : (over.id as string)
+    // For both palette AND asset drops, prefer the last drag-over target when it was a colcell zone
+    const resolvedColTarget = lastDragOverTarget?.startsWith('colcell::') ? lastDragOverTarget : null
+    const overId = resolvedColTarget ?? (over.id as string)
 
     if (activeId.startsWith('brand-asset::')) {
       // Right-panel image dragged onto a canvas block — search top-level AND inside columns
@@ -1665,33 +1667,49 @@ export function EmailBuilderCanvas({
         return null
       }
 
-      const found = findBlockInAll(overId)
-      if (found) {
-        const { block: overBlock, path } = found
-        const patch: Partial<ContentBlock> =
-          overBlock.type === 'image' ? { url: assetUrl } :
-          overBlock.type === 'logo'  ? { logoUrl: assetUrl } : {}
-
-        if (Object.keys(patch).length > 0) {
-          if (path) {
-            // Nested sub-block inside a columns block
-            onChange(blocks.map(b => {
-              if (b.id !== path.outerBlockId) return b
-              const cols = b.columns!.map(c => [...c])
-              cols[path.colIdx][path.subIdx] = { ...cols[path.colIdx][path.subIdx], ...patch }
-              return { ...b, columns: cols }
-            }))
-            setSelectedId(path.outerBlockId)
-            setSelectedSubPath(path)
-          } else {
-            onChange(blocks.map(b => b.id === overId ? { ...b, ...patch } : b))
-            setSelectedId(overId)
-            setSelectedSubPath(null)
-          }
-        }
-      } else if (overId === 'canvas-empty') {
+      if (overId === 'canvas-empty') {
         const newBlock = makeBlock('new::image', defaults)
         onChange([...blocks, { ...newBlock, url: assetUrl }])
+      } else if (overId.startsWith('colcell::')) {
+        // Drop brand image onto a column cell — create a new image block there
+        const [, outerBlockId, colIdxStr] = overId.split('::')
+        const colIdx = parseInt(colIdxStr)
+        const newImg: ContentBlock = { id: uid(), type: 'image', url: assetUrl, alt: '', align: 'center' }
+        onChange(blocks.map(b => {
+          if (b.id !== outerBlockId) return b
+          const cols = (b.columns ?? []).map(c => [...c])
+          if (!cols[colIdx]) cols[colIdx] = []
+          cols[colIdx] = [...cols[colIdx], newImg]
+          return { ...b, columns: cols }
+        }))
+        setSelectedId(outerBlockId)
+        setSelectedSubPath(null)
+      } else {
+        const found = findBlockInAll(overId)
+        if (found) {
+          const { block: overBlock, path } = found
+          const patch: Partial<ContentBlock> =
+            overBlock.type === 'image' ? { url: assetUrl } :
+            overBlock.type === 'logo'  ? { logoUrl: assetUrl } : {}
+
+          if (Object.keys(patch).length > 0) {
+            if (path) {
+              // Nested sub-block inside a columns block
+              onChange(blocks.map(b => {
+                if (b.id !== path.outerBlockId) return b
+                const cols = b.columns!.map(c => [...c])
+                cols[path.colIdx][path.subIdx] = { ...cols[path.colIdx][path.subIdx], ...patch }
+                return { ...b, columns: cols }
+              }))
+              setSelectedId(path.outerBlockId)
+              setSelectedSubPath(path)
+            } else {
+              onChange(blocks.map(b => b.id === overId ? { ...b, ...patch } : b))
+              setSelectedId(overId)
+              setSelectedSubPath(null)
+            }
+          }
+        }
       }
     } else if (activeId.startsWith('new::')) {
       const newBlock = makeBlock(activeId, defaults)
@@ -2031,7 +2049,10 @@ export function EmailBuilderCanvas({
                       isDropTarget={isDraggingFromPalette && dropTargetId === block.id}
                       onSelect={() => { setSelectedId(block.id); setSelectedSubPath(null) }}
                       onDelete={() => deleteBlock(block.id)}
-                      onChange={patch => { setSelectedId(block.id); updateSelected(patch) }}
+                      onChange={patch => {
+                        setSelectedId(block.id)
+                        onChange(blocks.map(b => b.id === block.id ? { ...b, ...patch } : b))
+                      }}
                       primary={primary}
                       selectedSubPath={selectedId === block.id ? selectedSubPath : null}
                       onSelectSub={p => { setSelectedId(block.id); setSelectedSubPath(p) }}
