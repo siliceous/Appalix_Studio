@@ -153,9 +153,14 @@ export function FormBlocksSidebar({ selectedStepId, onAddBlock }: Props) {
           {ITEMS.map(item => (
             <button
               key={item.type + item.label}
+              draggable
+              onDragStart={e => {
+                e.dataTransfer.effectAllowed = 'copy'
+                e.dataTransfer.setData('text/plain', JSON.stringify({ type: item.type, props: item.defaultProps }))
+              }}
               onClick={() => handleAdd(item)}
               title={`Add ${item.label}`}
-              className="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 dark:border-white/8 bg-gray-50 dark:bg-white/[0.02] hover:border-brand-300 dark:hover:border-brand-500/30 hover:bg-brand-50/40 dark:hover:bg-brand-500/5 transition-colors cursor-pointer group"
+              className="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 dark:border-white/8 bg-gray-50 dark:bg-white/[0.02] hover:border-brand-300 dark:hover:border-brand-500/30 hover:bg-brand-50/40 dark:hover:bg-brand-500/5 transition-colors cursor-grab active:cursor-grabbing group"
             >
               <item.icon className="w-6 h-6 text-gray-400 group-hover:text-brand-500 transition-colors" />
               <span className="text-[11px] text-gray-500 dark:text-gray-400 group-hover:text-brand-600 dark:group-hover:text-brand-400 text-center leading-tight transition-colors">

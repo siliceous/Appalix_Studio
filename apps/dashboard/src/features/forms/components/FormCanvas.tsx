@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { nanoid } from 'nanoid'
 import { cn } from '@/lib/utils'
-import type { FormBlock, FormTheme, FormType, ColumnRatio } from '@/features/forms/types'
+import type { FormBlock, FormTheme, FormType, ColumnRatio, BlockType } from '@/features/forms/types'
 
 // ── Shared block content renderer ─────────────────────────────────────────────
 
@@ -196,11 +196,30 @@ function ColumnBlock({
   onMoveBlock:     (id: string, dir: 'up' | 'down') => void
   onAddToColumn:   (columnBlockId: string, colIdx: number, block: FormBlock) => void
 }) {
-  const ratio   = (block.props.ratio as ColumnRatio) ?? '1:1'
-  const fracs   = RATIO_FRACS[ratio] ?? [1, 1]
-  const total   = fracs.reduce((a, b) => a + b, 0)
-  const columns = (block.props.columns as FormBlock[][] | undefined) ?? fracs.map(() => [])
+  const ratio      = (block.props.ratio as ColumnRatio) ?? '1:1'
+  const fracs      = RATIO_FRACS[ratio] ?? [1, 1]
+  const total      = fracs.reduce((a, b) => a + b, 0)
+  const columns    = (block.props.columns as FormBlock[][] | undefined) ?? fracs.map(() => [])
   const isSelected = selectedBlockId === block.id
+  const [dragOverCol, setDragOverCol] = useState<number | null>(null)
+
+  function handleDrop(e: React.DragEvent, colIdx: number) {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOverCol(null)
+    try {
+      const raw = e.dataTransfer.getData('text/plain')
+      if (!raw) return
+      const { type, props } = JSON.parse(raw) as { type: BlockType; props: FormBlock['props'] }
+      if (type === 'columns') return
+      onAddToColumn(block.id, colIdx, {
+        id:     `b_${nanoid(8)}`,
+        stepId: block.stepId,
+        type,
+        props:  { ...props },
+      })
+    } catch { /* ignore bad payloads */ }
+  }
 
   return (
     <div
@@ -224,13 +243,28 @@ function ColumnBlock({
 
       <div className="flex gap-2">
         {fracs.map((frac, colIdx) => {
-          const colBlocks = columns[colIdx] ?? []
+          const colBlocks  = columns[colIdx] ?? []
+          const isDropOver = dragOverCol === colIdx
           return (
             <div
               key={colIdx}
-              className="min-h-[80px] rounded-lg border border-dashed border-gray-200 dark:border-gray-700 flex flex-col gap-2 p-2 transition-colors hover:border-gray-300 dark:hover:border-gray-600"
+              onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; setDragOverCol(colIdx) }}
+              onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverCol(null) }}
+              onDrop={e => handleDrop(e, colIdx)}
+              className={cn(
+                'min-h-[80px] rounded-lg border border-dashed flex flex-col gap-2 p-2 transition-colors',
+                isDropOver
+                  ? 'border-brand-400 bg-brand-50/40 dark:border-brand-500/60 dark:bg-brand-500/5'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
+              )}
               style={{ flex: `${(frac / total) * 100}%` }}
             >
+              {colBlocks.length === 0 && !isDropOver && (
+                <div className="flex-1 flex items-center justify-center text-[10px] text-gray-300 dark:text-gray-600 select-none pointer-events-none">
+                  Drop here
+                </div>
+              )}
+
               {/* Sub-blocks inside this column */}
               {colBlocks.map((subBlock, sbIdx) => (
                 <div
@@ -248,7 +282,6 @@ function ColumnBlock({
                     theme={theme}
                     onUpdateProps={props => onUpdateBlock(subBlock.id, props)}
                   />
-                  {/* Sub-block controls */}
                   {selectedBlockId === subBlock.id && (
                     <div
                       className="absolute -top-3 right-0 flex items-center gap-0.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm px-1 py-0.5 z-10"
@@ -284,19 +317,6 @@ function ColumnBlock({
                   )}
                 </div>
               ))}
-
-              {/* Add block to this column */}
-              <AddToColumnButton
-                onAdd={type => {
-                  const newBlock: FormBlock = {
-                    id:     `b_${nanoid(8)}`,
-                    stepId: block.stepId,
-                    type,
-                    props:  COLUMN_BLOCK_DEFAULTS[type] ?? {},
-                  }
-                  onAddToColumn(block.id, colIdx, newBlock)
-                }}
-              />
             </div>
           )
         })}
@@ -304,27 +324,6 @@ function ColumnBlock({
     </div>
   )
 }
-
-// ── Quick-add popover for column cells ────────────────────────────────────────
-
-import type { BlockType } from '@/features/forms/types'
-import {
-  Mail, Phone, Type, MousePointerClick, Image as ImageIcon,
-  Minus, AlignLeft, CheckSquare, ChevronDown as DropIcon,
-} from 'lucide-react'
-
-const COLUMN_BLOCK_OPTIONS: { type: BlockType; label: string; icon: React.ElementType }[] = [
-  { type: 'text',       label: 'Text',     icon: Type            },
-  { type: 'image',      label: 'Image',    icon: ImageIcon       },
-  { type: 'email',      label: 'Email',    icon: Mail            },
-  { type: 'phone',      label: 'Phone',    icon: Phone           },
-  { type: 'text_input', label: 'Input',    icon: Type            },
-  { type: 'textarea',   label: 'Textarea', icon: AlignLeft       },
-  { type: 'button',     label: 'Button',   icon: MousePointerClick },
-  { type: 'checkbox',   label: 'Checkbox', icon: CheckSquare     },
-  { type: 'dropdown',   label: 'Dropdown', icon: DropIcon        },
-  { type: 'divider',    label: 'Divider',  icon: Minus           },
-]
 
 const COLUMN_BLOCK_DEFAULTS: Partial<Record<BlockType, FormBlock['props']>> = {
   text:       { content: 'Add text here', variant: 'body' },
@@ -337,38 +336,6 @@ const COLUMN_BLOCK_DEFAULTS: Partial<Record<BlockType, FormBlock['props']>> = {
   checkbox:   { label: 'I agree', required: false },
   dropdown:   { label: 'Select', options: ['Option 1', 'Option 2'], required: false },
   divider:    {},
-}
-
-function AddToColumnButton({ onAdd }: { onAdd: (type: BlockType) => void }) {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <div className="relative">
-      <button
-        onClick={e => { e.stopPropagation(); setOpen(v => !v) }}
-        className="w-full flex items-center justify-center gap-1 py-1.5 text-[10px] text-gray-300 hover:text-brand-500 hover:bg-brand-50/40 dark:hover:bg-brand-500/5 rounded-md border border-dashed border-gray-200 dark:border-gray-700 hover:border-brand-300 transition-colors"
-      >
-        <Plus className="w-3 h-3" />Add
-      </button>
-      {open && (
-        <div
-          className="absolute top-full left-0 z-50 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-1 w-36"
-          onClick={e => e.stopPropagation()}
-        >
-          {COLUMN_BLOCK_OPTIONS.map(opt => (
-            <button
-              key={opt.type}
-              onClick={() => { onAdd(opt.type); setOpen(false) }}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
-            >
-              <opt.icon className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
 }
 
 // ── Block wrapper (top-level, non-column) ─────────────────────────────────────
