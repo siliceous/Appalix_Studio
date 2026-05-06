@@ -1219,6 +1219,10 @@ function BrandAssetsPanel({
   preheader,
   footerText,
   onMetaChange,
+  imageAssets,
+  onUpload,
+  uploading,
+  uploadDone,
 }: {
   allProfiles:     BrandProfile[]
   allAssets:       BrandAsset[]
@@ -1231,6 +1235,10 @@ function BrandAssetsPanel({
   preheader:       string
   footerText:      string
   onMetaChange:    (patch: { subject?: string; preheader?: string; footer_text?: string }) => void
+  imageAssets:     BrandAsset[]
+  onUpload:        (file: File) => void
+  uploading:       boolean
+  uploadDone:      boolean
 }) {
   const [dropOpen,      setDropOpen]      = useState(false)
   const [textColorVal,  setTextColorVal]  = useState('#333333')
@@ -1238,6 +1246,8 @@ function BrandAssetsPanel({
   const [btnColorVal,   setBtnColorVal]   = useState('#111111')
   const [fontSize,      setFontSize]      = useState<number>(16)
   const [fontFamily,    setFontFamily]    = useState<string>('')
+  const [rightTab,      setRightTab]      = useState<'themes' | 'images'>('themes')
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const { brandColor: headerColor } = useUserAvatar()
 
@@ -1328,7 +1338,60 @@ function BrandAssetsPanel({
         )}
       </div>
 
-      {/* Scrollable content */}
+      {/* Tab switcher */}
+      <div style={{ flexShrink: 0, padding: '6px 10px', borderBottom: '1px solid #f3f4f6', background: '#fff' }}>
+        <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: 8, padding: 2, gap: 0 }}>
+          {(['themes', 'images'] as const).map(tab => (
+            <button key={tab} onClick={() => setRightTab(tab)} style={{ flex: 1, padding: '5px 0', borderRadius: 6, fontSize: 11, fontWeight: 600, border: 'none', cursor: 'pointer', background: rightTab === tab ? '#fff' : 'transparent', color: rightTab === tab ? '#1f2937' : '#6b7280', boxShadow: rightTab === tab ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.15s', textTransform: 'capitalize' }}>
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Images tab ── */}
+      {rightTab === 'images' && (
+        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) onUpload(f) }} />
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            style={{ width: '100%', padding: '8px 10px', border: `1.5px dashed ${primary}66`, borderRadius: 8, background: `${primary}06`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: uploading ? 'wait' : 'pointer', fontSize: 11, fontWeight: 600, color: primary, flexShrink: 0 }}
+          >
+            <Upload style={{ width: 12, height: 12 }} />
+            {uploading ? 'Uploading…' : uploadDone ? '✓ Done!' : 'Upload image'}
+          </button>
+          {imageAssets.length === 0 && !uploading && (
+            <div style={{ textAlign: 'center', padding: '20px 8px' }}>
+              <ImageIcon style={{ width: 24, height: 24, color: '#d1d5db', margin: '0 auto 6px' }} />
+              <p style={{ fontSize: 10, color: '#9ca3af', margin: 0 }}>No images yet — upload one above or add brand assets in the Identity tab.</p>
+            </div>
+          )}
+          {imageAssets.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
+              {imageAssets.map(a => (
+                <DraggableAssetThumb
+                  key={a.id}
+                  url={a.file_url}
+                  role={a.asset_role}
+                  selectedBlock={selectedBlock}
+                  onApply={url => {
+                    if (!selectedBlock) return
+                    if (selectedBlock.type === 'image') onApplyToBlock({ url })
+                    else if (selectedBlock.type === 'logo') onApplyToBlock({ logoUrl: url, logoAlt: activeBrand?.company_name ?? 'Logo' })
+                  }}
+                />
+              ))}
+            </div>
+          )}
+          {!selectedBlock && imageAssets.length > 0 && (
+            <p style={{ fontSize: 9, color: '#9ca3af', textAlign: 'center', margin: 0 }}>Select an image or logo block on the canvas, then click or drag an image to apply it.</p>
+          )}
+        </div>
+      )}
+
+      {/* ── Themes tab (scrollable content) ── */}
+      {rightTab === 'themes' && (
       <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
         {/* Logo */}
@@ -1578,6 +1641,7 @@ function BrandAssetsPanel({
           </div>
         )}
       </div>
+      )}{/* end Themes tab */}
     </div>
   )
 }
@@ -1629,7 +1693,6 @@ export function EmailBuilderCanvas({
   const [extraAssets,     setExtraAssets]     = useState<BrandAsset[]>([])
   const [uploading,       setUploading]       = useState(false)
   const [uploadDone,      setUploadDone]      = useState(false)
-  const leftFileRef = useRef<HTMLInputElement>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -2013,47 +2076,6 @@ export function EmailBuilderCanvas({
               </div>
             )}
 
-            {/* Brand images + upload — right under columns */}
-            {allProfiles.length > 0 && (
-              <div style={{ marginTop: 8, borderTop: '1px solid #f3f4f6', paddingTop: 8 }}>
-                <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, color: '#9ca3af', textTransform: 'uppercase', margin: '0 0 6px' }}>Images — drag or click</p>
-                {imageAssets.length > 0 && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginBottom: 6 }}>
-                    {imageAssets.map(a => (
-                      <DraggableAssetThumb
-                        key={a.id}
-                        url={a.file_url}
-                        role={a.asset_role}
-                        selectedBlock={editingBlock}
-                        onApply={applyImageToBlock}
-                      />
-                    ))}
-                  </div>
-                )}
-                <input
-                  ref={leftFileRef}
-                  type="file"
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f) }}
-                />
-                <button
-                  onClick={() => leftFileRef.current?.click()}
-                  disabled={uploading}
-                  style={{
-                    width: '100%', padding: '7px 10px',
-                    border: `1.5px dashed ${primary}66`,
-                  borderRadius: 8, background: `${primary}06`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  cursor: uploading ? 'wait' : 'pointer',
-                  fontSize: 11, fontWeight: 600, color: primary,
-                }}
-              >
-                <Upload style={{ width: 12, height: 12 }} />
-                {uploading ? 'Uploading…' : uploadDone ? 'Done!' : 'Upload image'}
-              </button>
-            </div>
-          )}
           </div>{/* end palette section */}
 
           {/* Block properties — shows sub-block when one is selected */}
@@ -2135,6 +2157,10 @@ export function EmailBuilderCanvas({
               preheader={preheader}
               footerText={footerText}
               onMetaChange={onMetaChange}
+              imageAssets={imageAssets}
+              onUpload={handleUpload}
+              uploading={uploading}
+              uploadDone={uploadDone}
             />
           </div>
         )}
