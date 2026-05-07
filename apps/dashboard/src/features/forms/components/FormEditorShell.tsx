@@ -211,7 +211,7 @@ export function FormEditorShell({ initialForm }: Props) {
 
         {/* Back */}
         <button
-          onClick={() => router.push('/dashboard/forms')}
+          onClick={() => router.push('/sage/branding?tab=forms')}
           className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />

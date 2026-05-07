@@ -195,6 +195,9 @@ export async function updateForm(
     .eq('workspace_id', ctx.workspaceId)
   if (error) return { error: error.message }
   revalidatePath(`/dashboard/forms/${id}/edit`)
+  // Also revalidate public slug so preview always reflects latest saved state
+  const { data: slug } = await admin.from('forms').select('public_slug').eq('id', id).single()
+  if (slug?.public_slug) revalidatePath(`/f/${slug.public_slug}`)
   return {}
 }
 

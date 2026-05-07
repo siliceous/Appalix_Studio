@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Palette, Image as ImageIcon, FileText, Globe, Layout,
   Upload, Check, X, Trash2, Star, Loader2, Plus,
@@ -1100,12 +1100,16 @@ function ComingSoonTab({ label }: { label: string }) {
 // ── Main client ───────────────────────────────────────────────────────────────
 
 export function BrandingClient({ profiles, assets, sessions, candidates, templates }: Props) {
-  const router = useRouter()
+  const router       = useRouter()
+  const searchParams = useSearchParams()
 
   const defaultId = profiles.find(p => p.brand_type === 'workspace')?.id ?? profiles[0]?.id ?? null
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(defaultId)
   const [pendingSelectId,    setPendingSelectId]   = useState<string | null>(null)
-  const [activeTab,          setActiveTab]          = useState<Tab>('assets')
+  const [activeTab,          setActiveTab]          = useState<Tab>(() => {
+    const p = searchParams.get('tab') as Tab | null
+    return (p && ['assets', 'email-templates', 'forms', 'website'].includes(p)) ? p : 'assets'
+  })
 
   useEffect(() => {
     if (pendingSelectId && profiles.find(p => p.id === pendingSelectId)) {

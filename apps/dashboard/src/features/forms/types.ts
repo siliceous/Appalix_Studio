@@ -138,6 +138,8 @@ export interface FormTheme {
     radius?: string
     shadow?: 'none' | 'small' | 'medium' | 'large'
   }
+  imagePosition?: 'top' | 'left' | 'right' | 'background'
+  imageObjectPosition?: string
 }
 
 // ── Form ──────────────────────────────────────────────────────────────────────

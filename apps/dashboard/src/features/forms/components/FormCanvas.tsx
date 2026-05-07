@@ -610,20 +610,96 @@ const RATIO_FRACS: Record<ColumnRatio, number[]> = {
   '1:1:1': [1, 1, 1],
 }
 
-const COLUMN_BLOCK_DEFAULTS: Partial<Record<BlockType, FormBlock['props']>> = {
-  text:             { content: 'Add text here', variant: 'body' },
-  image:            { src: '', alt: '' },
-  email:            { label: 'Email', placeholder: 'Enter your email', required: false },
-  phone:            { label: 'Phone', placeholder: '+1 555 000 0000', required: false },
-  text_input:       { label: 'Your answer', placeholder: 'Type here…', required: false },
-  textarea:         { label: 'Message', placeholder: 'Tell us more…', required: false },
-  button:           { label: 'Click here', action: 'url' },
-  checkbox:         { label: 'I agree', required: false },
-  dropdown:         { label: 'Select', options: ['Option 1', 'Option 2'], required: false },
-  radio:            { label: 'Choose one', options: ['Option A', 'Option B'], required: false },
-  wheel_of_fortune: { label: 'Spin to win!', options: ['Prize 1', 'Prize 2', 'Try Again'] },
-  countdown_timer:  { timerLabel: 'Offer ends in:', timerTarget: '' },
-  divider:          {},
+
+const FORM_QUICK_ADD: { type: BlockType; label: string; icon: React.ElementType; defaultProps: FormBlock['props'] }[] = [
+  { type: 'text',       label: 'Text',    icon: Type,              defaultProps: { content: 'Add your text here', variant: 'body' } },
+  { type: 'email',      label: 'Email',   icon: Mail,              defaultProps: { label: 'Email address', placeholder: 'Enter your email', required: true } },
+  { type: 'phone',      label: 'Phone',   icon: Phone,             defaultProps: { label: 'Phone number', placeholder: '+1 555 000 0000', required: false } },
+  { type: 'text_input', label: 'Input',   icon: Type,              defaultProps: { label: 'Your answer', placeholder: 'Type here…', required: false } },
+  { type: 'button',     label: 'Button',  icon: MousePointerClick, defaultProps: { label: 'Submit', action: 'submit' } },
+  { type: 'image',      label: 'Image',   icon: ImageIcon,         defaultProps: { src: '', alt: '' } },
+  { type: 'divider',    label: 'Divider', icon: Minus,             defaultProps: {} },
+]
+
+// ── Sub-block inside a column cell ────────────────────────────────────────────
+
+function SubBlockPreview({
+  subBlock, theme, isSelected, onSelect, onMoveUp, onMoveDown, onDelete, onUpdateProps, onAddBelow,
+}: {
+  subBlock:      FormBlock
+  theme:         FormTheme
+  isSelected:    boolean
+  onSelect:      () => void
+  onMoveUp:      () => void
+  onMoveDown:    () => void
+  onDelete:      () => void
+  onUpdateProps: (props: Partial<FormBlock['props']>) => void
+  onAddBelow:    (type: BlockType, defaultProps: FormBlock['props']) => void
+}) {
+  const [showAddMenu, setShowAddMenu] = useState(false)
+  useEffect(() => { if (!isSelected) setShowAddMenu(false) }, [isSelected])
+
+  return (
+    <div
+      onClick={e => { e.stopPropagation(); onSelect(); setShowAddMenu(false) }}
+      className={cn(
+        'relative group/sub rounded transition-all',
+        isSelected ? 'ring-2 ring-brand-400 dark:ring-brand-500' : 'hover:ring-1 hover:ring-gray-300 dark:hover:ring-gray-600',
+      )}
+    >
+      <BlockContent block={subBlock} theme={theme} isSelected={isSelected} onUpdateProps={onUpdateProps} />
+
+      {/* Hover-only delete (not selected) */}
+      {!isSelected && (
+        <button
+          onClick={e => { e.stopPropagation(); onDelete() }}
+          className="absolute top-0.5 right-0.5 w-5 h-5 rounded flex items-center justify-center opacity-0 group-hover/sub:opacity-100 transition-opacity text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
+          title="Delete"
+        >
+          <Trash2 className="w-3 h-3" />
+        </button>
+      )}
+
+      {isSelected && (
+        <div
+          className="absolute -top-3 right-0 flex items-center gap-0.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm px-1 py-0.5 z-10"
+          onClick={e => e.stopPropagation()}
+        >
+          <button onClick={onMoveUp}   className="p-1 text-gray-400 hover:text-gray-600 rounded"><ChevronUp   className="w-3 h-3" /></button>
+          <button onClick={onMoveDown} className="p-1 text-gray-400 hover:text-gray-600 rounded"><ChevronDown className="w-3 h-3" /></button>
+          <button onClick={onDelete}   className="p-1 text-gray-400 hover:text-red-500 rounded"><Trash2 className="w-3 h-3" /></button>
+        </div>
+      )}
+
+      {/* Add block below (inside column) */}
+      <div
+        className={cn('absolute -bottom-3.5 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center transition-opacity', isSelected ? 'opacity-100' : 'opacity-0 group-hover/sub:opacity-100')}
+        onClick={e => e.stopPropagation()}
+      >
+        {showAddMenu && (
+          <div className="absolute bottom-7 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-1.5 grid grid-cols-4 gap-1 w-48 whitespace-nowrap">
+            {FORM_QUICK_ADD.map(item => (
+              <button
+                key={item.type + item.label}
+                onClick={() => { onAddBelow(item.type, item.defaultProps); setShowAddMenu(false) }}
+                className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-500/10 hover:text-brand-600 dark:hover:text-brand-400 text-gray-500 dark:text-gray-400 transition-colors"
+              >
+                <item.icon className="w-3.5 h-3.5" />
+                <span className="text-[9px] font-semibold leading-tight">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <button
+          onClick={() => setShowAddMenu(v => !v)}
+          className={cn('w-6 h-6 rounded-full border-2 border-white flex items-center justify-center shadow-md transition-colors', showAddMenu ? 'bg-brand-500 text-white' : 'bg-white dark:bg-gray-800 text-brand-500 dark:text-brand-400 ring-1 ring-brand-300')}
+          title="Add block below"
+        >
+          <Plus className="w-3 h-3" />
+        </button>
+      </div>
+    </div>
+  )
 }
 
 function ColumnBlock({
@@ -753,56 +829,39 @@ function ColumnBlock({
                 )}
 
                 {colBlocks.map((subBlock, sbIdx) => (
-                  <div
+                  <SubBlockPreview
                     key={subBlock.id}
-                    onClick={e => { e.stopPropagation(); onSelectBlock(subBlock.id) }}
-                    className={cn(
-                      'relative group/sub rounded transition-all',
-                      selectedBlockId === subBlock.id
-                        ? 'ring-2 ring-brand-400 dark:ring-brand-500'
-                        : 'hover:ring-1 hover:ring-gray-300 dark:hover:ring-gray-600',
-                    )}
-                  >
-                    <BlockContent
-                      block={subBlock}
-                      theme={theme}
-                      isSelected={selectedBlockId === subBlock.id}
-                      onUpdateProps={props => onUpdateBlock(subBlock.id, props)}
-                    />
-                    {selectedBlockId === subBlock.id && (
-                      <div
-                        className="absolute -top-3 right-0 flex items-center gap-0.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm px-1 py-0.5 z-10"
-                        onClick={e => e.stopPropagation()}
-                      >
-                        <button
-                          onClick={() => {
-                            const updated = [...colBlocks]
-                            if (sbIdx > 0) { [updated[sbIdx - 1], updated[sbIdx]] = [updated[sbIdx], updated[sbIdx - 1]] }
-                            const newCols = [...columns]; newCols[colIdx] = updated
-                            onUpdateBlock(block.id, { columns: newCols })
-                          }}
-                          className="p-1 text-gray-400 hover:text-gray-600 rounded"
-                        ><ChevronUp className="w-3 h-3" /></button>
-                        <button
-                          onClick={() => {
-                            const updated = [...colBlocks]
-                            if (sbIdx < updated.length - 1) { [updated[sbIdx], updated[sbIdx + 1]] = [updated[sbIdx + 1], updated[sbIdx]] }
-                            const newCols = [...columns]; newCols[colIdx] = updated
-                            onUpdateBlock(block.id, { columns: newCols })
-                          }}
-                          className="p-1 text-gray-400 hover:text-gray-600 rounded"
-                        ><ChevronDown className="w-3 h-3" /></button>
-                        <button
-                          onClick={() => {
-                            const newCols = [...columns]
-                            newCols[colIdx] = colBlocks.filter(b => b.id !== subBlock.id)
-                            onUpdateBlock(block.id, { columns: newCols })
-                          }}
-                          className="p-1 text-gray-400 hover:text-red-500 rounded"
-                        ><Trash2 className="w-3 h-3" /></button>
-                      </div>
-                    )}
-                  </div>
+                    subBlock={subBlock}
+                    theme={theme}
+                    isSelected={selectedBlockId === subBlock.id}
+                    onSelect={() => onSelectBlock(subBlock.id)}
+                    onMoveUp={() => {
+                      const updated = [...colBlocks]
+                      if (sbIdx > 0) { [updated[sbIdx - 1], updated[sbIdx]] = [updated[sbIdx], updated[sbIdx - 1]] }
+                      const newCols = [...columns]; newCols[colIdx] = updated
+                      onUpdateBlock(block.id, { columns: newCols })
+                    }}
+                    onMoveDown={() => {
+                      const updated = [...colBlocks]
+                      if (sbIdx < updated.length - 1) { [updated[sbIdx], updated[sbIdx + 1]] = [updated[sbIdx + 1], updated[sbIdx]] }
+                      const newCols = [...columns]; newCols[colIdx] = updated
+                      onUpdateBlock(block.id, { columns: newCols })
+                    }}
+                    onDelete={() => {
+                      const newCols = [...columns]
+                      newCols[colIdx] = colBlocks.filter(b => b.id !== subBlock.id)
+                      onUpdateBlock(block.id, { columns: newCols })
+                    }}
+                    onUpdateProps={props => onUpdateBlock(subBlock.id, props)}
+                    onAddBelow={(type, defaultProps) => {
+                      const newBlock: FormBlock = { id: `b_${nanoid(8)}`, stepId: block.stepId, type, props: { ...defaultProps } }
+                      const updated = [...colBlocks]
+                      updated.splice(sbIdx + 1, 0, newBlock)
+                      const newCols = [...columns]; newCols[colIdx] = updated
+                      onUpdateBlock(block.id, { columns: newCols })
+                      onSelectBlock(newBlock.id)
+                    }}
+                  />
                 ))}
               </div>
             </React.Fragment>
@@ -814,16 +873,6 @@ function ColumnBlock({
 }
 
 // ── Block wrapper (top-level, non-column) ─────────────────────────────────────
-
-const FORM_QUICK_ADD: { type: BlockType; label: string; icon: React.ElementType; defaultProps: FormBlock['props'] }[] = [
-  { type: 'text',       label: 'Text',    icon: Type,              defaultProps: { content: 'Add your text here', variant: 'body' } },
-  { type: 'email',      label: 'Email',   icon: Mail,              defaultProps: { label: 'Email address', placeholder: 'Enter your email', required: true } },
-  { type: 'phone',      label: 'Phone',   icon: Phone,             defaultProps: { label: 'Phone number', placeholder: '+1 555 000 0000', required: false } },
-  { type: 'text_input', label: 'Input',   icon: Type,              defaultProps: { label: 'Your answer', placeholder: 'Type here…', required: false } },
-  { type: 'button',     label: 'Button',  icon: MousePointerClick, defaultProps: { label: 'Submit', action: 'submit' } },
-  { type: 'image',      label: 'Image',   icon: ImageIcon,         defaultProps: { src: '', alt: '' } },
-  { type: 'divider',    label: 'Divider', icon: Minus,             defaultProps: {} },
-]
 
 function BlockPreview({
   block, theme, isSelected, onClick, onDelete, onMoveUp, onMoveDown, onUpdateProps, onAddBelow,
@@ -858,6 +907,17 @@ function BlockPreview({
       <div style={{ fontFamily: `"${fontFam}", sans-serif` }}>
         <BlockContent block={block} theme={theme} isSelected={isSelected} onUpdateProps={onUpdateProps} />
       </div>
+
+      {/* Hover-only delete icon (not selected state) */}
+      {!isSelected && (
+        <button
+          onClick={e => { e.stopPropagation(); onDelete() }}
+          className="absolute top-0.5 right-0.5 w-5 h-5 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
+          title="Delete block"
+        >
+          <Trash2 className="w-3 h-3" />
+        </button>
+      )}
 
       {isSelected && (
         <div
@@ -965,10 +1025,13 @@ export function FormCanvas({
   const bg      = theme.colors?.background      ?? '#ffffff'
   const bgImage = theme.colors?.backgroundImage ?? ''
   const radius  = theme.modal?.radius            ?? '8px'
-  const width   = previewDevice === 'mobile' ? '360px' : (theme.modal?.width ?? '520px')
   const fontFam = theme.typography?.fontFamily  ?? 'Inter'
+  const imgPos  = theme.imagePosition           ?? 'top'
+  // Side-image layouts need full width; all others use a comfortable reading width
+  const width   = previewDevice === 'mobile'
+    ? '360px'
+    : (imgPos === 'left' || imgPos === 'right') ? '70%' : '680px'
 
-  // Dynamically load Google Fonts when the selected font changes
   useEffect(() => {
     if (SYSTEM_FONTS.has(fontFam)) return
     const id = `gfont-${fontFam.replace(/\s+/g, '-')}`
@@ -980,68 +1043,260 @@ export function FormCanvas({
     document.head.appendChild(link)
   }, [fontFam])
 
-  return (
-    <div
-      className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden flex items-start justify-center p-8"
-      onClick={() => onSelectBlock(null)}
-    >
-      <div
-        className="w-full shadow-xl relative overflow-hidden"
-        style={{
-          maxWidth:            width,
-          backgroundColor:     bg,
-          backgroundImage:     bgImage ? `url(${bgImage})` : undefined,
-          backgroundSize:      'cover',
-          backgroundPosition:  'center',
-          borderRadius:        radius,
-          boxShadow:           '0 20px 60px rgba(0,0,0,0.15)',
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        {(formType === 'popup' || formType === 'flyout') && (
-          <button className="absolute top-3 right-3 w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400 text-xs font-bold z-10">×</button>
-        )}
+  // Extract layout image block (the first image block with a src) for non-stacked layouts
+  const layoutImgIdx   = blocks.findIndex(b => b.type === 'image' && b.props.src)
+  const layoutImgBlock = layoutImgIdx >= 0 ? blocks[layoutImgIdx] : null
+  const layoutImgSrc   = layoutImgBlock ? (layoutImgBlock.props.src as string) : null
+  // Content blocks = everything except the layout image
+  const contentBlocks  = layoutImgBlock ? blocks.filter((_, i) => i !== layoutImgIdx) : blocks
+  const isImgSel       = layoutImgBlock ? selectedBlockId === layoutImgBlock.id : false
 
-        <div className="px-6 py-6 space-y-3">
-          {blocks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-              <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-center">
-                <Plus className="w-4 h-4 text-gray-300" />
-              </div>
-              <p className="text-sm text-gray-400">Click an item in the left panel to add it here</p>
-            </div>
-          ) : (
-            blocks.map(block =>
-              block.type === 'columns' ? (
-                <ColumnBlock
-                  key={block.id}
-                  block={block}
-                  theme={theme}
-                  selectedBlockId={selectedBlockId}
-                  onSelectBlock={onSelectBlock}
-                  onUpdateBlock={onUpdateBlock}
-                  onDeleteBlock={onDeleteBlock}
-                  onMoveBlock={onMoveBlock}
-                  onAddToColumn={onAddToColumn}
-                />
-              ) : (
-                <BlockPreview
-                  key={block.id}
-                  block={block}
-                  theme={theme}
-                  isSelected={selectedBlockId === block.id}
-                  onClick={() => onSelectBlock(block.id)}
-                  onDelete={() => onDeleteBlock(block.id)}
-                  onMoveUp={() => onMoveBlock(block.id, 'up')}
-                  onMoveDown={() => onMoveBlock(block.id, 'down')}
-                  onUpdateProps={props => onUpdateBlock(block.id, props)}
-                  onAddBelow={(type, defaultProps) => onAddBelow(block.id, type, defaultProps)}
-                />
-              )
-            )
+  // ── Drag-to-reposition for side image panels ──────────────────────────────
+  const imgPanelRef = useRef<HTMLDivElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const dragState = useRef<{
+    startX: number; startY: number
+    startObjX: number; startObjY: number
+    containerW: number; containerH: number
+  } | null>(null)
+
+  const storedObjPos = (layoutImgBlock?.props.objectPosition as string | undefined)
+    ?? theme.imageObjectPosition
+    ?? 'center top'
+
+  // Parse "55% 20%" → [55, 20]; handle keywords like "center top"
+  function parseObjPos(pos: string): [number, number] {
+    const kw: Record<string, number> = { left: 0, center: 50, right: 100, top: 0, bottom: 100 }
+    const parts = pos.trim().split(/\s+/)
+    const x = parts[0] in kw ? kw[parts[0]] : parseFloat(parts[0]) || 50
+    const y = parts[1] !== undefined
+      ? (parts[1] in kw ? kw[parts[1]] : parseFloat(parts[1]) || 50)
+      : 50
+    return [x, y]
+  }
+
+  function onImgPanelMouseDown(e: React.MouseEvent) {
+    e.stopPropagation()
+    e.preventDefault()
+    onSelectBlock(layoutImgBlock!.id)
+    const [ox, oy] = parseObjPos(storedObjPos)
+    dragState.current = {
+      startX: e.clientX, startY: e.clientY,
+      startObjX: ox, startObjY: oy,
+      containerW: imgPanelRef.current?.offsetWidth  ?? 200,
+      containerH: imgPanelRef.current?.offsetHeight ?? 400,
+    }
+    setIsDragging(true)
+  }
+
+  useEffect(() => {
+    if (!isDragging || !dragState.current || !layoutImgBlock) return
+    function onMove(e: MouseEvent) {
+      if (!dragState.current) return
+      const { startX, startY, startObjX, startObjY, containerW, containerH } = dragState.current
+      // Dragging right reveals the left portion → subtract from X
+      const newX = Math.max(0, Math.min(100, startObjX - ((e.clientX - startX) / containerW) * 100))
+      const newY = Math.max(0, Math.min(100, startObjY - ((e.clientY - startY) / containerH) * 100))
+      if (layoutImgBlock) onUpdateBlock(layoutImgBlock.id, { objectPosition: `${Math.round(newX)}% ${Math.round(newY)}%` })
+    }
+    function onUp() {
+      setIsDragging(false)
+      dragState.current = null
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+  }, [isDragging, layoutImgBlock, onUpdateBlock])
+
+  function renderBlock(block: FormBlock) {
+    return block.type === 'columns' ? (
+      <ColumnBlock
+        key={block.id}
+        block={block}
+        theme={theme}
+        selectedBlockId={selectedBlockId}
+        onSelectBlock={onSelectBlock}
+        onUpdateBlock={onUpdateBlock}
+        onDeleteBlock={onDeleteBlock}
+        onMoveBlock={onMoveBlock}
+        onAddToColumn={onAddToColumn}
+      />
+    ) : (
+      <BlockPreview
+        key={block.id}
+        block={block}
+        theme={theme}
+        isSelected={selectedBlockId === block.id}
+        onClick={() => onSelectBlock(block.id)}
+        onDelete={() => onDeleteBlock(block.id)}
+        onMoveUp={() => onMoveBlock(block.id, 'up')}
+        onMoveDown={() => onMoveBlock(block.id, 'down')}
+        onUpdateProps={props => onUpdateBlock(block.id, props)}
+        onAddBelow={(type, defaultProps) => onAddBelow(block.id, type, defaultProps)}
+      />
+    )
+  }
+
+  // × button rendered OUTSIDE the card (above overflow-hidden boundary)
+  const closeBtn = (formType === 'popup' || formType === 'flyout') ? (
+    <button className="absolute -top-3.5 -right-3.5 z-40 w-7 h-7 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-md flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 text-sm font-bold transition-colors">
+      ×
+    </button>
+  ) : null
+
+  const emptyState = (
+    <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+      <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-center">
+        <Plus className="w-4 h-4 text-gray-300" />
+      </div>
+      <p className="text-sm text-gray-400">Click an item in the left panel to add it here</p>
+    </div>
+  )
+
+  const outerCls = "flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden flex items-start justify-center p-6"
+  // cardBase no longer carries maxWidth — that lives on the wrapper so closeBtn can sit outside
+  const cardBase: React.CSSProperties = { borderRadius: radius, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }
+
+  // ── BACKGROUND layout ──────────────────────────────────────────────────────
+  if (imgPos === 'background' && layoutImgSrc) {
+    return (
+      <div className={outerCls} onClick={() => onSelectBlock(null)}>
+        <div className="relative" style={{ maxWidth: width, width: '100%' }} onClick={e => e.stopPropagation()}>
+          {closeBtn}
+          <div className="w-full shadow-xl relative overflow-hidden" style={cardBase}>
+          <img src={layoutImgSrc} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.42)' }} />
+          {/* Clickable overlay to select the background image block */}
+          <div
+            onClick={e => { e.stopPropagation(); onSelectBlock(layoutImgBlock!.id) }}
+            className={cn('absolute inset-0 z-10 cursor-pointer transition-all', isImgSel ? 'ring-2 ring-inset ring-brand-400' : 'hover:bg-white/5')}
+            title="Click to select background image"
+          />
+          {isImgSel && (
+            <button
+              onClick={e => { e.stopPropagation(); onDeleteBlock(layoutImgBlock!.id) }}
+              className="absolute top-10 right-3 z-20 w-6 h-6 rounded bg-white/90 flex items-center justify-center text-red-400 hover:text-red-600 shadow"
+              title="Remove background image"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
           )}
+          <div className="relative z-20 px-6 py-6 space-y-3" style={{ backgroundColor: bg }}>
+            {contentBlocks.length === 0 ? emptyState : contentBlocks.map(renderBlock)}
+          </div>
+          </div>{/* end card */}
+        </div>{/* end wrapper */}
+      </div>
+    )
+  }
+
+  // ── LEFT / RIGHT layout ────────────────────────────────────────────────────
+  if ((imgPos === 'left' || imgPos === 'right') && layoutImgSrc) {
+    const imgPanel = (
+      <div
+        ref={imgPanelRef}
+        className={cn(
+          'w-[40%] shrink-0 relative self-stretch overflow-hidden select-none',
+          isDragging ? 'cursor-grabbing' : 'cursor-grab',
+          isImgSel && 'ring-2 ring-inset ring-brand-400',
+        )}
+        onMouseDown={onImgPanelMouseDown}
+        title="Drag to reposition image"
+      >
+        <img
+          src={layoutImgSrc}
+          alt=""
+          draggable={false}
+          className="w-full h-full object-cover pointer-events-none"
+          style={{ objectPosition: storedObjPos }}
+        />
+        {isImgSel && !isDragging && (
+          <div className="absolute inset-0 bg-brand-500/5 pointer-events-none" />
+        )}
+        {/* Hint label */}
+        {!isDragging && (
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/55 text-white text-[10px] font-medium px-2.5 py-1 rounded-full pointer-events-none whitespace-nowrap opacity-0 group-hover/img:opacity-100 transition-opacity">
+            Drag to reposition
+          </div>
+        )}
+        {isDragging && (
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[10px] font-medium px-2.5 py-1 rounded-full pointer-events-none whitespace-nowrap">
+            {storedObjPos}
+          </div>
+        )}
+      </div>
+    )
+
+    const formPanel = (
+      <div className="w-[60%] shrink-0 px-6 py-6 space-y-3 min-w-0 relative overflow-y-auto" style={{ backgroundColor: bg }}>
+        {contentBlocks.length === 0 ? emptyState : contentBlocks.map(renderBlock)}
+      </div>
+    )
+
+    return (
+      <div className={outerCls} onClick={() => onSelectBlock(null)}>
+        <div className="relative" style={{ maxWidth: width, width: '100%' }} onClick={e => e.stopPropagation()}>
+          {closeBtn}
+          <div className="group/img w-full shadow-xl overflow-hidden flex" style={cardBase}>
+            {imgPos === 'left'  && imgPanel}
+            {formPanel}
+            {imgPos === 'right' && imgPanel}
+          </div>
         </div>
       </div>
+    )
+  }
+
+  // ── TOP layout (default) ───────────────────────────────────────────────────
+  // Render the first image with a src as a full-bleed header, remaining blocks below
+  return (
+    <div className={outerCls} onClick={() => onSelectBlock(null)}>
+      <div className="relative" style={{ maxWidth: width, width: '100%' }} onClick={e => e.stopPropagation()}>
+        {closeBtn}
+        <div
+          className="w-full shadow-xl relative overflow-hidden"
+          style={{
+            ...cardBase,
+            backgroundColor:    bg,
+            backgroundImage:    bgImage ? `url(${bgImage})` : undefined,
+            backgroundSize:     'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+
+        {/* Full-bleed top image */}
+        {layoutImgSrc && (
+          <div
+            className={cn('relative overflow-hidden cursor-pointer', isImgSel && 'ring-2 ring-inset ring-brand-400')}
+            style={{ height: 200 }}
+            onClick={e => { e.stopPropagation(); onSelectBlock(layoutImgBlock!.id) }}
+            title="Click to select image"
+          >
+            <img src={layoutImgSrc} alt="" className="w-full h-full object-cover" />
+            {isImgSel && <div className="absolute inset-0 bg-brand-500/10" />}
+            {isImgSel && (
+              <button
+                onClick={e => { e.stopPropagation(); onDeleteBlock(layoutImgBlock!.id) }}
+                className="absolute top-2 right-2 z-10 w-6 h-6 rounded bg-white/90 flex items-center justify-center text-red-400 hover:text-red-600 shadow"
+                title="Remove image"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="px-6 py-6 space-y-3" style={{ backgroundColor: bg }}>
+          {blocks.length === 0
+            ? emptyState
+            : contentBlocks.map(renderBlock)
+          }
+        </div>
+        </div>{/* end card */}
+      </div>{/* end wrapper */}
     </div>
   )
 }

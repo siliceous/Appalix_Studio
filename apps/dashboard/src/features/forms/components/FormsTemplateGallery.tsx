@@ -3,7 +3,7 @@
 import { useState, useTransition, useMemo } from 'react'
 import { useRouter }  from 'next/navigation'
 import {
-  Search, Loader2, ArrowRight, Layers, Mail, MessageSquare,
+  Search, Loader2, Layers, Mail, MessageSquare,
   PanelRight, Globe, Maximize2, LayoutTemplate, Check,
   SlidersHorizontal, X, Zap, ShoppingBag, RotateCcw,
 } from 'lucide-react'
@@ -35,73 +35,185 @@ const CHANNELS: { value: ChannelMode; label: string; icon: React.ElementType }[]
 
 // ── Template card mockup ──────────────────────────────────────────────────────
 
-function TemplateMockup({ template }: { template: FormTemplate }) {
-  const primary = template.theme?.colors?.primary    ?? '#6366f1'
-  const bg      = template.theme?.colors?.background ?? '#ffffff'
-  const text    = template.theme?.colors?.text       ?? '#111827'
-  const radius  = template.theme?.modal?.radius      ?? '8px'
-
-
-  const hasEmail  = template.config.blocks?.some(b => b.type === 'email')
-  const hasPhone  = template.config.blocks?.some(b => b.type === 'phone')
+// size='compact' → small overlay (top/background layouts)
+// size='side'    → side panel (left/right layouts)
+// size='full'    → no-image full-card (large, readable text)
+type CardSize = 'compact' | 'side' | 'full'
+function MiniFormCard({ template, size = 'compact' }: { template: FormTemplate; size?: CardSize }) {
+  const primary   = template.theme?.colors?.primary    ?? '#6366f1'
+  const bg        = template.theme?.colors?.background ?? '#ffffff'
+  const text      = template.theme?.colors?.text       ?? '#111827'
+  const btnRadius = template.theme?.buttons?.radius    ?? '6px'
+  const fRadius   = template.theme?.fields?.radius     ?? '5px'
   const isMulti   = template.is_multi_step
+
+  const blocks = template.config.blocks ?? []
+
+  const heading     = blocks.find(b => b.type === 'text' && b.props.variant === 'heading')
+  const bodyText    = blocks.find(b => b.type === 'text' && b.props.variant === 'body')
+  const emailBlock  = blocks.find(b => b.type === 'email')
+  const phoneBlock  = blocks.find(b => b.type === 'phone')
+  const inputBlock  = blocks.find(b => b.type === 'text_input')
+  const buttonBlock = blocks.find(b => b.type === 'button')
+  const wheelBlock  = blocks.find(b => b.type === 'wheel_of_fortune')
+
+  const headingText = (heading?.props.content  as string | undefined) ?? template.name
+  const bodyStr     = (bodyText?.props.content  as string | undefined) ?? ''
+  const btnLabel    = (buttonBlock?.props.label as string | undefined) ?? 'Submit'
+  const emailPh     = (emailBlock?.props.placeholder as string | undefined) ?? 'Enter your email'
+  const phonePh     = (phoneBlock?.props.placeholder as string | undefined) ?? 'Phone number'
+  const inputPh     = (inputBlock?.props.placeholder as string | undefined) ?? 'Your answer'
+
+  const hSize  = size === 'full' ? '15px' : size === 'side' ? '12px' : '9px'
+  const bSize  = size === 'full' ? '11px' : size === 'side' ? '9px'  : '7px'
+  const iH     = size === 'full' ? 32     : size === 'side' ? 26     : 18
+  const btnH   = size === 'full' ? 36     : size === 'side' ? 28     : 20
+  const btnTxt = size === 'full' ? '11px' : size === 'side' ? '10px' : '8px'
+  const gap    = size === 'full' ? 'gap-2' : size === 'side' ? 'gap-2.5' : 'gap-1.5'
+  const pad    = size === 'full' ? 'px-5 py-4' : size === 'side' ? 'px-4 py-4' : 'px-3 py-2.5'
 
   return (
     <div
-      className="w-full h-full flex items-center justify-center p-3"
-      style={{ background: template.type === 'popup' ? '#e5e7eb' : bg }}
+      className={`flex flex-col ${gap} ${pad} w-full`}
+      style={{ background: bg, color: text }}
     >
-      <div
-        className="w-full max-w-[160px] overflow-hidden shadow-md flex flex-col"
-        style={{ background: bg, borderRadius: radius, border: `1px solid rgba(0,0,0,0.08)` }}
-      >
-        {/* Heading strip */}
-        <div className="px-3 pt-3 pb-2">
-          <div
-            className="h-2.5 rounded mb-1.5"
-            style={{ background: text, opacity: 0.85, width: '80%' }}
-          />
-          <div
-            className="h-1.5 rounded"
-            style={{ background: text, opacity: 0.25, width: '60%' }}
-          />
-        </div>
+      <p className="font-bold leading-tight"
+        style={{ fontSize: hSize, color: text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {headingText}
+      </p>
 
-        {/* Fields */}
-        <div className="px-3 pb-2 space-y-1.5">
-          {hasEmail && (
-            <div className="h-5 rounded border flex items-center px-1.5"
-              style={{ borderColor: '#e5e7eb', background: '#f9fafb' }}>
-              <div className="h-1 rounded w-3/4" style={{ background: '#9ca3af' }} />
-            </div>
-          )}
-          {hasPhone && (
-            <div className="h-5 rounded border flex items-center px-1.5"
-              style={{ borderColor: '#e5e7eb', background: '#f9fafb' }}>
-              <div className="h-1 rounded w-2/3" style={{ background: '#9ca3af' }} />
-            </div>
-          )}
-          {/* Button */}
-          <div
-            className="h-6 rounded flex items-center justify-center mt-1"
-            style={{ background: primary, borderRadius: template.theme?.buttons?.radius ?? '6px' }}
-          >
-            <div className="h-1.5 rounded w-1/2" style={{ background: 'rgba(255,255,255,0.8)' }} />
-          </div>
-        </div>
+      {bodyStr && (
+        <p style={{ fontSize: bSize, color: text, opacity: 0.55, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+          {bodyStr}
+        </p>
+      )}
 
-        {/* Multi-step indicator */}
-        {isMulti && (
-          <div className="flex items-center justify-center gap-1 pb-2">
-            {[0, 1].map(i => (
-              <div
-                key={i}
-                className="h-1 rounded-full"
-                style={{ width: i === 0 ? '12px' : '6px', background: i === 0 ? primary : '#d1d5db' }}
-              />
-            ))}
-          </div>
-        )}
+      {wheelBlock && (
+        <div className="flex items-center justify-center gap-1 py-0.5">
+          {[...Array(6)].map((_, i) => (
+            <div key={i}
+              className="rounded-full"
+              style={{
+                width:  size === 'full' ? 16 : size === 'side' ? 12 : 8,
+                height: size === 'full' ? 16 : size === 'side' ? 12 : 8,
+                background: ['#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444'][i],
+              }} />
+          ))}
+        </div>
+      )}
+
+      {inputBlock && (
+        <div className="flex items-center px-2"
+          style={{ height: iH, border: '1px solid #e5e7eb', borderRadius: fRadius, background: '#f9fafb' }}>
+          <span style={{ fontSize: bSize, color: '#9ca3af', whiteSpace: 'nowrap', overflow: 'hidden' }}>{inputPh}</span>
+        </div>
+      )}
+
+      {emailBlock && (
+        <div className="flex items-center px-2"
+          style={{ height: iH, border: '1px solid #e5e7eb', borderRadius: fRadius, background: '#f9fafb' }}>
+          <span style={{ fontSize: bSize, color: '#9ca3af', whiteSpace: 'nowrap', overflow: 'hidden' }}>{emailPh}</span>
+        </div>
+      )}
+
+      {phoneBlock && (
+        <div className="flex items-center px-2"
+          style={{ height: iH, border: '1px solid #e5e7eb', borderRadius: fRadius, background: '#f9fafb' }}>
+          <span style={{ fontSize: bSize, color: '#9ca3af', whiteSpace: 'nowrap', overflow: 'hidden' }}>{phonePh}</span>
+        </div>
+      )}
+
+      <div className="flex items-center justify-center"
+        style={{ height: btnH, background: primary, borderRadius: btnRadius }}>
+        <span style={{ fontSize: btnTxt, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '90%' }}>
+          {btnLabel}
+        </span>
+      </div>
+
+      {isMulti && (
+        <div className="flex items-center justify-center gap-1 pt-0.5">
+          {[0, 1].map(i => (
+            <div key={i} className="rounded-full"
+              style={{
+                width:  i === 0 ? (size === 'full' ? 18 : size === 'side' ? 14 : 10) : (size === 'full' ? 9 : size === 'side' ? 7 : 5),
+                height: size === 'full' ? 5 : size === 'side' ? 4 : 3,
+                background: i === 0 ? primary : '#d1d5db',
+              }} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function TemplateMockup({ template }: { template: FormTemplate }) {
+  const bg       = template.theme?.colors?.background   ?? '#ffffff'
+  const radius   = template.theme?.modal?.radius        ?? '8px'
+  const imgPos   = template.theme?.imagePosition        ?? 'top'
+  const objPos   = template.theme?.imageObjectPosition  ?? 'center top'
+
+  const firstImgBlock = template.config.blocks?.find(b => b.type === 'image' && b.props.src)
+  const previewImg    = template.preview_image_url ?? (firstImgBlock?.props.src as string | undefined)
+
+  if (!previewImg) {
+    return (
+      <div className="w-full h-full flex items-center justify-center"
+        style={{ background: template.type === 'popup' ? '#e5e7eb' : bg }}>
+        <div className="overflow-hidden shadow-xl"
+          style={{ width: '80%', background: bg, borderRadius: radius, border: '1px solid rgba(0,0,0,0.08)' }}>
+          <MiniFormCard template={template} size="full" />
+        </div>
+      </div>
+    )
+  }
+
+  if (imgPos === 'background') {
+    return (
+      <div className="w-full h-full relative overflow-hidden">
+        <img src={previewImg} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.42)' }} />
+        <div className="absolute inset-3 overflow-hidden"
+          style={{ borderRadius: radius, border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 6px 28px rgba(0,0,0,0.35)', background: bg }}>
+          <MiniFormCard template={template} size="full" />
+        </div>
+      </div>
+    )
+  }
+
+  if (imgPos === 'left') {
+    return (
+      <div className="w-full h-full flex overflow-hidden">
+        <div className="w-[40%] shrink-0 overflow-hidden">
+          <img src={previewImg} alt="" className="w-full h-full object-cover" style={{ objectPosition: objPos }} />
+        </div>
+        <div className="w-[60%] shrink-0 overflow-hidden flex flex-col justify-center" style={{ background: bg }}>
+          <MiniFormCard template={template} size="side" />
+        </div>
+      </div>
+    )
+  }
+
+  if (imgPos === 'right') {
+    return (
+      <div className="w-full h-full flex overflow-hidden">
+        <div className="w-[60%] shrink-0 overflow-hidden flex flex-col justify-center" style={{ background: bg }}>
+          <MiniFormCard template={template} size="side" />
+        </div>
+        <div className="w-[40%] shrink-0 overflow-hidden">
+          <img src={previewImg} alt="" className="w-full h-full object-cover" style={{ objectPosition: objPos }} />
+        </div>
+      </div>
+    )
+  }
+
+  // default: 'top'
+  return (
+    <div className="w-full h-full relative overflow-hidden" style={{ background: bg }}>
+      <img src={previewImg} alt="" className="w-full object-cover" style={{ height: '45%' }} />
+      <div className="absolute inset-x-0" style={{ top: '26%', height: '26%', background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.38))' }} />
+      <div className="absolute inset-x-2 bottom-2 overflow-hidden"
+        style={{ top: '38%', borderRadius: radius, border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 4px 20px rgba(0,0,0,0.18)', background: bg }}>
+        <MiniFormCard template={template} size="side" />
       </div>
     </div>
   )
@@ -382,19 +494,27 @@ export function FormsTemplateGallery({ templates }: Props) {
               <button onClick={clearAll} className="text-xs text-brand-600 hover:underline">Clear filters</button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-3 gap-5">
               {filtered.map(template => (
                 <div
                   key={template.id}
-                  className="group relative flex flex-col rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all"
+                  onClick={() => !isPending && handleUseTemplate(template.id)}
+                  className="group relative flex flex-col rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden hover:border-brand-300 dark:hover:border-brand-600 hover:shadow-lg transition-all cursor-pointer"
                 >
+                  {/* Loading overlay */}
+                  {creatingId === template.id && isPending && (
+                    <div className="absolute inset-0 z-10 bg-white/80 dark:bg-gray-900/80 flex items-center justify-center rounded-2xl">
+                      <Loader2 className="w-7 h-7 animate-spin text-brand-600" />
+                    </div>
+                  )}
+
                   {/* Preview area */}
-                  <div className="h-[160px] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                  <div className="h-[280px] bg-gray-100 dark:bg-gray-800 overflow-hidden">
                     <TemplateMockup template={template} />
                   </div>
 
                   {/* Info */}
-                  <div className="flex-1 flex flex-col p-4 gap-2">
+                  <div className="flex flex-col p-4 gap-2">
                     <div className="flex items-start gap-2">
                       <p className="flex-1 text-sm font-semibold text-gray-900 dark:text-gray-100 leading-snug">{template.name}</p>
                       {template.is_multi_step && (
@@ -404,7 +524,7 @@ export function FormsTemplateGallery({ templates }: Props) {
                       )}
                     </div>
 
-                    <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed line-clamp-2 flex-1">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed line-clamp-2">
                       {template.description}
                     </p>
 
@@ -420,21 +540,6 @@ export function FormsTemplateGallery({ templates }: Props) {
                         {CHANNEL_LABELS[template.channel_mode]}
                       </span>
                     </div>
-                  </div>
-
-                  {/* CTA — slides up on hover */}
-                  <div className="px-4 pb-4">
-                    <button
-                      onClick={() => handleUseTemplate(template.id)}
-                      disabled={isPending}
-                      className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition-colors disabled:opacity-60"
-                    >
-                      {creatingId === template.id && isPending ? (
-                        <><Loader2 className="w-3.5 h-3.5 animate-spin" />Creating…</>
-                      ) : (
-                        <>Use template <ArrowRight className="w-3.5 h-3.5" /></>
-                      )}
-                    </button>
                   </div>
                 </div>
               ))}
