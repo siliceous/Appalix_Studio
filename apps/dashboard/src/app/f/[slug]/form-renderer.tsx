@@ -204,8 +204,10 @@ function BlockInput({
     return null // handled separately as submit/next trigger
   }
 
+  const inputId = `field-${block.id}`
   const labelEl = block.props.label && (
     <label
+      htmlFor={inputId}
       className="block text-xs font-medium mb-1"
       style={{ color: textCol, fontFamily: `"${fontFam}", sans-serif` }}
     >
@@ -219,6 +221,7 @@ function BlockInput({
       <div>
         {labelEl}
         <input
+          id={inputId}
           type={block.type === 'email' ? 'email' : block.type === 'phone' ? 'tel' : 'text'}
           value={value}
           onChange={e => onChange(e.target.value)}
@@ -236,6 +239,7 @@ function BlockInput({
       <div>
         {labelEl}
         <textarea
+          id={inputId}
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={block.props.placeholder ?? ''}
@@ -272,6 +276,7 @@ function BlockInput({
       <div>
         {labelEl}
         <select
+          id={inputId}
           value={value}
           onChange={e => onChange(e.target.value)}
           className={inputCls}
