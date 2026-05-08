@@ -35,6 +35,10 @@ export async function middleware(request: NextRequest) {
   // Public paths that never require auth
   const isPublic =
     pathname === '/' ||
+    pathname === '/embed.js' ||
+    pathname === '/test-embed.html' ||
+    pathname.startsWith('/integrations/') ||
+    pathname.startsWith('/f/') ||
     pathname.startsWith('/features') ||
     pathname.startsWith('/platforms') ||
     pathname.startsWith('/pricing') ||
@@ -57,6 +61,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/slack') ||
     pathname.startsWith('/api/widget-chat') ||
     pathname.startsWith('/api/widget-config') ||
+    pathname.startsWith('/api/embed/') ||
     pathname.startsWith('/api/sage/automation-scheduler')
 
   if (!user && !isPublic) {
