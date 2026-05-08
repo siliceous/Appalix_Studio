@@ -402,6 +402,14 @@ export function FormRenderer({ form, sourceUrl }: Props) {
   const [isMobile,   setIsMobile]   = useState(false)
 
   useEffect(() => {
+    // When loaded inside an embed iframe, the parent's embed.js passes ?vw=<viewport>
+    // so we can reflect the actual device size, not the (often narrow) iframe.
+    const params = new URLSearchParams(window.location.search)
+    const parentVw = Number(params.get('vw'))
+    if (parentVw > 0) {
+      setIsMobile(parentVw <= 640)
+      return
+    }
     const mq = window.matchMedia('(max-width: 640px)')
     const update = () => setIsMobile(mq.matches)
     update()

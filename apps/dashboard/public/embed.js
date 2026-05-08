@@ -48,9 +48,14 @@
       var formUrl = origin + '/f/' + form.slug
       console.log(TAG, 'rendering', form.type, '·', form.name)
 
-      if (form.type === 'embedded') return mountInline(formUrl)
-      if (form.type === 'flyout')   return mountFlyout(formUrl, form.behaviour)
-      if (form.type === 'popup')    return mountPopup(formUrl, form.behaviour)
+      // Pass parent viewport width so the form's mobile detection reflects
+      // the actual device, not the (potentially narrow) iframe width.
+      var sep = formUrl.indexOf('?') === -1 ? '?' : '&'
+      var fullUrl = formUrl + sep + 'vw=' + (window.innerWidth || 1024)
+
+      if (form.type === 'embedded') return mountInline(fullUrl)
+      if (form.type === 'flyout')   return mountFlyout(fullUrl, form.behaviour)
+      if (form.type === 'popup')    return mountPopup(fullUrl, form.behaviour)
       console.warn(TAG, 'no auto-render for type', form.type, '— share the link instead')
     })
     .catch(function (err) { console.warn(TAG, 'fetch error', err) })
