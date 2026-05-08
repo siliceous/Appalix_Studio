@@ -237,14 +237,24 @@ function BlockContent({
           <textarea
             autoFocus
             value={textDraft}
-            rows={3}
+            rows={1}
+            ref={el => {
+              if (!el) return
+              el.style.height = 'auto'
+              el.style.height = el.scrollHeight + 'px'
+            }}
             onChange={e => setTextDraft(e.target.value)}
+            onInput={e => {
+              const el = e.currentTarget
+              el.style.height = 'auto'
+              el.style.height = el.scrollHeight + 'px'
+            }}
             onBlur={() => { onUpdateProps({ content: textDraft }); setTextEditing(false) }}
             onKeyDown={e => {
               if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onUpdateProps({ content: textDraft }); setTextEditing(false) }
               if (e.key === 'Escape') { onUpdateProps({ content: textDraft }); setTextEditing(false) }
             }}
-            className="focus:ring-0 focus:outline-none w-full"
+            className="focus:ring-0 focus:outline-none w-full block overflow-hidden"
             style={{
               fontFamily:       `"${fontFam}", sans-serif`,
               color:            blockColor,
@@ -253,6 +263,7 @@ function BlockContent({
               border:           'none',
               boxShadow:        'none',
               padding:          '0',
+              margin:           '0',
               resize:           'none',
               outline:          'none',
               WebkitAppearance: 'none',
