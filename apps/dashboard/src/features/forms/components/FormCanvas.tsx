@@ -745,14 +745,17 @@ function ColumnBlock({
   const colWidths     = storedWidths ?? fracs.map(f => Math.round((f / total) * 100))
 
   function handleDrop(e: React.DragEvent, colIdx: number) {
-    e.preventDefault(); e.stopPropagation(); setDragOverCol(null)
+    e.preventDefault()
+    setDragOverCol(null)
     try {
       const raw = e.dataTransfer.getData('text/plain')
       if (!raw) return
-      const { type, props } = JSON.parse(raw) as { type: BlockType; props: FormBlock['props'] }
-      if (type === 'columns') return
-      onAddToColumn(block.id, colIdx, { id: `b_${nanoid(8)}`, stepId: block.stepId, type, props: { ...props } })
-    } catch { /* ignore bad payloads */ }
+      const data = JSON.parse(raw) as { type?: BlockType; props?: FormBlock['props'] }
+      if (data.type && data.type !== 'columns' && data.props) {
+        e.stopPropagation()
+        onAddToColumn(block.id, colIdx, { id: `b_${nanoid(8)}`, stepId: block.stepId, type: data.type, props: { ...data.props } })
+      }
+    } catch { /* not JSON (e.g. block reorder) — let event bubble */ }
   }
 
   function onDividerDown(e: React.PointerEvent<HTMLDivElement>, divIdx: number) {
@@ -1052,7 +1055,8 @@ export function FormCanvas({
   const radius         = theme.modal?.radius            ?? '8px'
   const fontFam        = theme.typography?.fontFamily        ?? 'Inter'
   const headingFontFam = theme.typography?.headingFontFamily ?? fontFam
-  const imgPos         = theme.imagePosition           ?? 'top'
+  const themeImgPos    = theme.imagePosition           ?? 'top'
+  const imgPos         = previewDevice === 'mobile' ? 'top' : themeImgPos
   const themeWidth     = theme.modal?.width            ?? '520px'
   const width          = previewDevice === 'mobile' ? '360px' : themeWidth
 

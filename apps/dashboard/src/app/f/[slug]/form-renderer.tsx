@@ -392,6 +392,15 @@ export function FormRenderer({ form, sourceUrl }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const [submitted,  setSubmitted]  = useState(false)
   const [submitErr,  setSubmitErr]  = useState<string | null>(null)
+  const [isMobile,   setIsMobile]   = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 640px)')
+    const update = () => setIsMobile(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
 
   // Gating — early returns after all hooks
   if (gate === 'loading' || gate === 'waiting_trigger') return null
@@ -415,7 +424,8 @@ export function FormRenderer({ form, sourceUrl }: Props) {
   const contentBlocks = stepBlocks.filter(b => b.type !== 'button')
 
   // ── Layout image extraction (mirrors FormCanvas) ──────────────────────────
-  const imgPos       = theme.imagePosition ?? 'top'
+  const themeImgPos  = theme.imagePosition ?? 'top'
+  const imgPos       = isMobile ? 'top' : themeImgPos
   const layoutImgIdx = contentBlocks.findIndex(b => b.type === 'image' && b.props.src)
   const layoutImg    = layoutImgIdx >= 0 ? contentBlocks[layoutImgIdx] : null
   const layoutImgSrc = layoutImg ? (layoutImg.props.src as string) : null
