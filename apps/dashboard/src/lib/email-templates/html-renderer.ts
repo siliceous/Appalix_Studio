@@ -407,11 +407,6 @@ a{color:${c.linkColor}}
 </style></head>
 <body>
 <div class="wrap">
-  <!-- View in browser -->
-  <div style="text-align:center;padding:10px 20px;font-size:11px;color:#9ca3af;">
-    <a href="#" style="color:#9ca3af;text-decoration:underline;">View this email in your browser</a>
-  </div>
-
   <div style="${c.cardStyle};margin:0 0 8px;">
     <!-- Logo header -->
     ${c.logoBlock ? `<div style="text-align:center;padding:${pad.v}px ${pad.h}px ${pad.v * 0.75}px;background:${c.headerBg};border-bottom:1px solid rgba(0,0,0,.06);">${c.logoBlock}</div>` : ''}

@@ -875,17 +875,23 @@ function ColumnBlock({
 // ── Block wrapper (top-level, non-column) ─────────────────────────────────────
 
 function BlockPreview({
-  block, theme, isSelected, onClick, onDelete, onMoveUp, onMoveDown, onUpdateProps, onAddBelow,
+  block, theme, isSelected, isDragging, onClick, onDelete, onMoveUp, onMoveDown,
+  onUpdateProps, onAddBelow, onDragStart, onDragEnd, onDragOver, onDrop,
 }: {
   block:         FormBlock
   theme:         FormTheme
   isSelected:    boolean
+  isDragging:    boolean
   onClick:       () => void
   onDelete:      () => void
   onMoveUp:      () => void
   onMoveDown:    () => void
   onUpdateProps: (props: Partial<FormBlock['props']>) => void
   onAddBelow:    (type: BlockType, defaultProps: FormBlock['props']) => void
+  onDragStart:   () => void
+  onDragEnd:     () => void
+  onDragOver:    (e: React.DragEvent) => void
+  onDrop:        () => void
 }) {
   const fontFam = theme.typography?.fontFamily ?? 'Inter'
   const [showAddMenu, setShowAddMenu] = useState(false)
@@ -894,13 +900,21 @@ function BlockPreview({
 
   return (
     <div
+      draggable
       onClick={() => { onClick(); setShowAddMenu(false) }}
+      onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', block.id); onDragStart() }}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+      onDrop={e => { e.preventDefault(); onDrop() }}
       className={cn(
         'relative group rounded-lg transition-all',
         isSelected ? 'ring-2 ring-brand-400 dark:ring-brand-500' : 'hover:ring-1 hover:ring-gray-300 dark:hover:ring-gray-600',
+        isDragging && 'opacity-30',
       )}
     >
-      <div className={cn('absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab', isSelected && 'opacity-100')}>
+      <div
+        className={cn('absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing', isSelected && 'opacity-100')}
+      >
         <GripVertical className="w-3 h-3 text-gray-300" />
       </div>
 
@@ -1009,6 +1023,7 @@ interface Props {
   onUpdateBlock:   (id: string, props: Partial<FormBlock['props']>) => void
   onDeleteBlock:   (id: string) => void
   onMoveBlock:     (id: string, dir: 'up' | 'down') => void
+  onReorderBlock:  (draggedId: string, insertBeforeId: string | null) => void
   onAddToColumn:   (columnBlockId: string, colIdx: number, block: FormBlock) => void
   onAddBelow:      (afterBlockId: string, type: BlockType, defaultProps: FormBlock['props']) => void
   theme:           FormTheme
@@ -1020,7 +1035,7 @@ const SYSTEM_FONTS = new Set(['Inter', 'Georgia'])
 
 export function FormCanvas({
   blocks, selectedBlockId, onSelectBlock, onUpdateBlock, onDeleteBlock, onMoveBlock,
-  onAddToColumn, onAddBelow, theme, formType, previewDevice,
+  onReorderBlock, onAddToColumn, onAddBelow, theme, formType, previewDevice,
 }: Props) {
   const bg      = theme.colors?.background      ?? '#ffffff'
   const bgImage = theme.colors?.backgroundImage ?? ''
@@ -1030,7 +1045,7 @@ export function FormCanvas({
   // Side-image layouts need full width; all others use a comfortable reading width
   const width   = previewDevice === 'mobile'
     ? '360px'
-    : (imgPos === 'left' || imgPos === 'right') ? '70%' : '680px'
+    : (imgPos === 'left' || imgPos === 'right') ? '50%' : '680px'
 
   useEffect(() => {
     if (SYSTEM_FONTS.has(fontFam)) return
@@ -1051,7 +1066,52 @@ export function FormCanvas({
   const contentBlocks  = layoutImgBlock ? blocks.filter((_, i) => i !== layoutImgIdx) : blocks
   const isImgSel       = layoutImgBlock ? selectedBlockId === layoutImgBlock.id : false
 
+  // ── Block reorder drag state ──────────────────────────────────────────────
+  const [draggingBlockId, setDraggingBlockId] = useState<string | null>(null)
+  const [insertBefore,    setInsertBefore]    = useState<string | null>(null) // null = end
+
+  function handleBlockDragStart(id: string) {
+    setDraggingBlockId(id)
+  }
+  function handleBlockDragEnd() {
+    setDraggingBlockId(null)
+    setInsertBefore(null)
+  }
+  function handleBlockDragOver(blockId: string, e: React.DragEvent) {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    if (e.clientY < rect.top + rect.height / 2) {
+      setInsertBefore(blockId)
+    } else {
+      const idx  = contentBlocks.findIndex(b => b.id === blockId)
+      const next = contentBlocks[idx + 1]
+      setInsertBefore(next?.id ?? null)
+    }
+  }
+  function handleBlockDrop() {
+    if (draggingBlockId !== null) onReorderBlock(draggingBlockId, insertBefore)
+    setDraggingBlockId(null)
+    setInsertBefore(null)
+  }
+
   // ── Drag-to-reposition for side image panels ──────────────────────────────
+  const [dragOverLayout, setDragOverLayout] = useState(false)
+
+  function extractDropUrl(e: React.DragEvent): string | null {
+    try {
+      const raw = e.dataTransfer.getData('text/plain')
+      const p = JSON.parse(raw)
+      return p.src ?? p.props?.src ?? null
+    } catch { return null }
+  }
+
+  function handleLayoutDrop(e: React.DragEvent) {
+    e.preventDefault(); setDragOverLayout(false)
+    const url = extractDropUrl(e)
+    if (url && layoutImgBlock) onUpdateBlock(layoutImgBlock.id, { src: url })
+  }
+
   const imgPanelRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const dragState = useRef<{
@@ -1068,12 +1128,14 @@ export function FormCanvas({
   function parseObjPos(pos: string): [number, number] {
     const kw: Record<string, number> = { left: 0, center: 50, right: 100, top: 0, bottom: 100 }
     const parts = pos.trim().split(/\s+/)
-    const x = parts[0] in kw ? kw[parts[0]] : parseFloat(parts[0]) || 50
+    const px = parseFloat(parts[0]); const py = parts[1] !== undefined ? parseFloat(parts[1]) : NaN
+    const x = parts[0] in kw ? kw[parts[0]] : (isNaN(px) ? 50 : px)
     const y = parts[1] !== undefined
-      ? (parts[1] in kw ? kw[parts[1]] : parseFloat(parts[1]) || 50)
+      ? (parts[1] in kw ? kw[parts[1]] : (isNaN(py) ? 50 : py))
       : 50
     return [x, y]
   }
+
 
   function onImgPanelMouseDown(e: React.MouseEvent) {
     e.stopPropagation()
@@ -1083,8 +1145,8 @@ export function FormCanvas({
     dragState.current = {
       startX: e.clientX, startY: e.clientY,
       startObjX: ox, startObjY: oy,
-      containerW: imgPanelRef.current?.offsetWidth  ?? 200,
-      containerH: imgPanelRef.current?.offsetHeight ?? 400,
+      containerW: imgPanelRef.current?.offsetWidth  || 200,
+      containerH: imgPanelRef.current?.offsetHeight || 400,
     }
     setIsDragging(true)
   }
@@ -1125,18 +1187,28 @@ export function FormCanvas({
         onAddToColumn={onAddToColumn}
       />
     ) : (
-      <BlockPreview
-        key={block.id}
-        block={block}
-        theme={theme}
-        isSelected={selectedBlockId === block.id}
-        onClick={() => onSelectBlock(block.id)}
-        onDelete={() => onDeleteBlock(block.id)}
-        onMoveUp={() => onMoveBlock(block.id, 'up')}
-        onMoveDown={() => onMoveBlock(block.id, 'down')}
-        onUpdateProps={props => onUpdateBlock(block.id, props)}
-        onAddBelow={(type, defaultProps) => onAddBelow(block.id, type, defaultProps)}
-      />
+      <>
+        {draggingBlockId && draggingBlockId !== block.id && insertBefore === block.id && (
+          <div className="h-[3px] bg-brand-400 rounded-full mx-1 my-0.5 pointer-events-none" />
+        )}
+        <BlockPreview
+          key={block.id}
+          block={block}
+          theme={theme}
+          isSelected={selectedBlockId === block.id}
+          isDragging={draggingBlockId === block.id}
+          onClick={() => onSelectBlock(block.id)}
+          onDelete={() => onDeleteBlock(block.id)}
+          onMoveUp={() => onMoveBlock(block.id, 'up')}
+          onMoveDown={() => onMoveBlock(block.id, 'down')}
+          onUpdateProps={props => onUpdateBlock(block.id, props)}
+          onAddBelow={(type, defaultProps) => onAddBelow(block.id, type, defaultProps)}
+          onDragStart={() => handleBlockDragStart(block.id)}
+          onDragEnd={handleBlockDragEnd}
+          onDragOver={e => handleBlockDragOver(block.id, e)}
+          onDrop={handleBlockDrop}
+        />
+      </>
     )
   }
 
@@ -1156,7 +1228,7 @@ export function FormCanvas({
     </div>
   )
 
-  const outerCls = "flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden flex items-start justify-center p-6"
+  const outerCls = "flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden flex items-center justify-center px-6 pt-6 pb-[25%]"
   // cardBase no longer carries maxWidth — that lives on the wrapper so closeBtn can sit outside
   const cardBase: React.CSSProperties = { borderRadius: radius, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }
 
@@ -1169,12 +1241,21 @@ export function FormCanvas({
           <div className="w-full shadow-xl relative overflow-hidden" style={cardBase}>
           <img src={layoutImgSrc} alt="" className="absolute inset-0 w-full h-full object-cover" />
           <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.42)' }} />
-          {/* Clickable overlay to select the background image block */}
+          {/* Clickable + droppable overlay to select / replace the background image block */}
           <div
             onClick={e => { e.stopPropagation(); onSelectBlock(layoutImgBlock!.id) }}
-            className={cn('absolute inset-0 z-10 cursor-pointer transition-all', isImgSel ? 'ring-2 ring-inset ring-brand-400' : 'hover:bg-white/5')}
-            title="Click to select background image"
-          />
+            onDragOver={e => { e.preventDefault(); setDragOverLayout(true) }}
+            onDragLeave={() => setDragOverLayout(false)}
+            onDrop={handleLayoutDrop}
+            className={cn('absolute inset-0 z-10 cursor-pointer transition-all', isImgSel ? 'ring-2 ring-inset ring-brand-400' : 'hover:bg-white/5', dragOverLayout && 'ring-2 ring-inset ring-brand-400 bg-brand-500/10')}
+            title="Drop image to replace · Click to select"
+          >
+            {dragOverLayout && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <span className="bg-brand-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">Drop to replace</span>
+              </div>
+            )}
+          </div>
           {isImgSel && (
             <button
               onClick={e => { e.stopPropagation(); onDeleteBlock(layoutImgBlock!.id) }}
@@ -1202,9 +1283,13 @@ export function FormCanvas({
           'w-[40%] shrink-0 relative self-stretch overflow-hidden select-none',
           isDragging ? 'cursor-grabbing' : 'cursor-grab',
           isImgSel && 'ring-2 ring-inset ring-brand-400',
+          dragOverLayout && 'ring-2 ring-inset ring-brand-400',
         )}
         onMouseDown={onImgPanelMouseDown}
-        title="Drag to reposition image"
+        onDragOver={e => { e.preventDefault(); setDragOverLayout(true) }}
+        onDragLeave={() => setDragOverLayout(false)}
+        onDrop={handleLayoutDrop}
+        title="Drop image to replace · Drag to reposition"
       >
         <img
           src={layoutImgSrc}
@@ -1225,6 +1310,11 @@ export function FormCanvas({
         {isDragging && (
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[10px] font-medium px-2.5 py-1 rounded-full pointer-events-none whitespace-nowrap">
             {storedObjPos}
+          </div>
+        )}
+        {dragOverLayout && !isDragging && (
+          <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center pointer-events-none">
+            <span className="bg-brand-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">Drop to replace</span>
           </div>
         )}
       </div>
@@ -1263,20 +1353,28 @@ export function FormCanvas({
             backgroundColor:    bg,
             backgroundImage:    bgImage ? `url(${bgImage})` : undefined,
             backgroundSize:     'cover',
-            backgroundPosition: 'center',
+            backgroundPosition: theme.colors?.backgroundImagePosition ?? 'center center',
           }}
         >
 
         {/* Full-bleed top image */}
         {layoutImgSrc && (
           <div
-            className={cn('relative overflow-hidden cursor-pointer', isImgSel && 'ring-2 ring-inset ring-brand-400')}
+            className={cn('relative overflow-hidden cursor-pointer', isImgSel && 'ring-2 ring-inset ring-brand-400', dragOverLayout && 'ring-2 ring-inset ring-brand-400')}
             style={{ height: 200 }}
             onClick={e => { e.stopPropagation(); onSelectBlock(layoutImgBlock!.id) }}
-            title="Click to select image"
+            onDragOver={e => { e.preventDefault(); setDragOverLayout(true) }}
+            onDragLeave={() => setDragOverLayout(false)}
+            onDrop={handleLayoutDrop}
+            title="Drop image to replace · Click to select"
           >
             <img src={layoutImgSrc} alt="" className="w-full h-full object-cover" />
             {isImgSel && <div className="absolute inset-0 bg-brand-500/10" />}
+            {dragOverLayout && (
+              <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center pointer-events-none">
+                <span className="bg-brand-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">Drop to replace</span>
+              </div>
+            )}
             {isImgSel && (
               <button
                 onClick={e => { e.stopPropagation(); onDeleteBlock(layoutImgBlock!.id) }}

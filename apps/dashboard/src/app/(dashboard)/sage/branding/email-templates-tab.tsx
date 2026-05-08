@@ -654,7 +654,7 @@ function PreviewShell({ html, loading, onBack, backLabel, children }: {
             <div className="relative rounded-2xl overflow-hidden shadow-lg bg-white" style={{ aspectRatio: '1/1.5' }}>
               {loading && <div className="absolute inset-0 flex items-center justify-center z-10 bg-white/80"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>}
               {html
-                ? <iframe srcDoc={html} title="Email preview" className="w-full h-full border-0" sandbox="allow-same-origin" />
+                ? <iframe srcDoc={html} title="Email preview" className="w-full h-full border-0" sandbox="" />
                 : <div className="flex flex-col items-center justify-center h-full gap-2"><Mail className="w-8 h-8 text-gray-200" /><p className="text-xs text-gray-400">Preview loading…</p></div>
               }
             </div>

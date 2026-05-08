@@ -420,11 +420,7 @@ export function FormRenderer({ form, sourceUrl }: Props) {
   const layoutImgSrc = layoutImg ? (layoutImg.props.src as string) : null
   const fieldBlocks  = layoutImg ? contentBlocks.filter((_, i) => i !== layoutImgIdx) : contentBlocks
 
-  // Object-position transform for left/right panels — scale(1.2) forces 10% overflow per side
   const storedObjPos = (layoutImg?.props.objectPosition as string | undefined) ?? theme.imageObjectPosition ?? 'center center'
-  const [ox, oy] = parseObjPos(storedObjPos)
-  const imgTX = ((50 - ox) / 50) * 10
-  const imgTY = ((50 - oy) / 50) * 10
 
   const maxW     = (imgPos === 'left' || imgPos === 'right') ? '700px' : mWidth
   const cardBase: React.CSSProperties = { borderRadius: mRadius, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }
@@ -529,11 +525,7 @@ export function FormRenderer({ form, sourceUrl }: Props) {
           src={layoutImgSrc}
           alt=""
           className="w-full h-full object-cover"
-          style={{
-            objectPosition: 'center center',
-            transform: `translate(${imgTX.toFixed(1)}%, ${imgTY.toFixed(1)}%) scale(1.2)`,
-            transformOrigin: 'center center',
-          }}
+          style={{ objectPosition: storedObjPos }}
         />
       </div>
     )

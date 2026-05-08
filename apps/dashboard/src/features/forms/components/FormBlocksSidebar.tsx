@@ -152,10 +152,10 @@ export function FormBlocksSidebar({ selectedStepId, onAddBlock }: Props) {
   }
 
   return (
-    <div className="w-[160px] shrink-0 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden bg-white dark:bg-gray-900">
+    <div className="w-[160px] h-full flex flex-col overflow-hidden rounded-xl shadow-2xl bg-white dark:bg-gray-900">
 
-      <div className="shrink-0 px-3 py-3 border-b border-gray-200 dark:border-gray-700">
-        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Items</p>
+      <div className="shrink-0 px-3 py-3 bg-black">
+        <p className="text-[10px] font-semibold text-white uppercase tracking-wider">Items</p>
       </div>
 
       <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden px-2 py-3">

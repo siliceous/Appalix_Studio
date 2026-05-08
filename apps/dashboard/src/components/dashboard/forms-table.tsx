@@ -887,7 +887,7 @@ export function FormsTable({
             {show('submitted') && <col className="w-28" />}
             {show('status')    && <col className="w-28" />}
             {show('assigned')  && <col className="w-32" />}
-            <col className="w-20" />
+            <col className="w-[220px]" />
           </colgroup>
           <thead>
             <tr className="bg-[#141c2b]">
