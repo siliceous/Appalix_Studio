@@ -79,16 +79,25 @@
     else document.body.appendChild(iframe)
   }
 
-  // Listen once for close requests posted by the form iframe — every
-  // mount registers itself in this map keyed by iframe contentWindow.
-  var dismissers = []
-  function registerDismisser(iframe, close) {
-    dismissers.push({ win: iframe.contentWindow, close: close })
+  // Listen once for messages posted by form iframes:
+  //   { type: 'appalix-close' }            → dismiss the matching popup/flyout
+  //   { type: 'appalix-resize', height: N } → resize iframe to fit content
+  var registry = []  // { win, iframe, close }
+  function register(iframe, close) {
+    registry.push({ win: iframe.contentWindow, iframe: iframe, close: close })
   }
   window.addEventListener('message', function (e) {
-    if (!e.data || e.data.type !== 'appalix-close') return
-    for (var i = 0; i < dismissers.length; i++) {
-      if (dismissers[i].win === e.source) { dismissers[i].close(); break }
+    if (!e.data || typeof e.data !== 'object') return
+    var entry = null
+    for (var i = 0; i < registry.length; i++) {
+      if (registry[i].win === e.source) { entry = registry[i]; break }
+    }
+    if (!entry) return
+    if (e.data.type === 'appalix-close')  return entry.close()
+    if (e.data.type === 'appalix-resize' && typeof e.data.height === 'number') {
+      // Cap at viewport so we don't overflow the screen
+      var cap = Math.floor(window.innerHeight * 0.9)
+      entry.iframe.style.height = Math.min(e.data.height, cap) + 'px'
     }
   })
 
@@ -99,7 +108,7 @@
       // Wrapper is transparent — form card paints itself. Width follows the
       // form's own modal.width so 'Full' really does mean full viewport.
       var widthCss = modalWidth === '100%'
-        ? 'width:calc(100vw - 32px);max-width:none'
+        ? 'width:60vw;max-width:calc(100vw - 32px)'
         : 'width:100%;max-width:' + (modalWidth || '560px')
       var card = document.createElement('div')
       card.style.cssText = 'position:relative;' + widthCss + ';max-height:90vh;background:transparent;overflow:visible'
@@ -119,14 +128,14 @@
       document.addEventListener('keydown', onKey)
       injectKeyframes()
       document.body.appendChild(overlay)
-      registerDismisser(iframe, close)
+      register(iframe, close)
     })
   }
 
   function mountFlyout(formUrl, behaviour, modalWidth) {
     scheduleTrigger(behaviour, function () {
       var widthCss = modalWidth === '100%'
-        ? 'width:calc(100vw - 40px);max-width:none'
+        ? 'width:60vw;max-width:calc(100vw - 40px)'
         : 'width:' + (modalWidth || '380px') + ';max-width:calc(100vw - 40px)'
       var card = document.createElement('div')
       card.style.cssText = 'position:fixed;right:20px;bottom:20px;z-index:2147483646;' + widthCss + ';max-height:calc(100vh - 40px);background:transparent;overflow:visible;animation:appalix-slide-up .25s ease-out'
@@ -144,7 +153,7 @@
       document.addEventListener('keydown', onKey)
       injectKeyframes()
       document.body.appendChild(card)
-      registerDismisser(iframe, close)
+      register(iframe, close)
     })
   }
 

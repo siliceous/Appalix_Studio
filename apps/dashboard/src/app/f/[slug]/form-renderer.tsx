@@ -423,6 +423,28 @@ export function FormRenderer({ form, sourceUrl }: Props) {
   const closeEmbed = () => {
     try { window.parent.postMessage({ type: 'appalix-close' }, '*') } catch (_) {}
   }
+
+  // Tell the parent embed.js how tall we are so it can size the iframe to fit
+  // the whole form (otherwise the submit button gets cut off on tall forms).
+  useEffect(() => {
+    if (!embedMode) return
+    let last = 0
+    const post = () => {
+      const h = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight,
+      )
+      if (h && h !== last) {
+        last = h
+        try { window.parent.postMessage({ type: 'appalix-resize', height: h }, '*') } catch (_) {}
+      }
+    }
+    post()
+    const ro = new ResizeObserver(post)
+    ro.observe(document.body)
+    window.addEventListener('load', post)
+    return () => { ro.disconnect(); window.removeEventListener('load', post) }
+  }, [embedMode])
   const closeBtnEl = showCloseButton ? (
     <button
       onClick={closeEmbed}
