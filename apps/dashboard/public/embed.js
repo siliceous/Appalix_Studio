@@ -48,14 +48,17 @@
       var formUrl = origin + '/f/' + form.slug
       console.log(TAG, 'rendering', form.type, '·', form.name)
 
-      // Pass parent viewport width so the form's mobile detection reflects
-      // the actual device, not the (potentially narrow) iframe width.
-      var sep = formUrl.indexOf('?') === -1 ? '?' : '&'
-      var fullUrl = formUrl + sep + 'vw=' + (window.innerWidth || 1024)
+      // Pass parent viewport width (so the form's mobile detection reflects
+      // the actual device, not the iframe) and the embed type (so the form
+      // can render its own corner close button for popup/flyout).
+      function withParams(url, embed) {
+        var sep = url.indexOf('?') === -1 ? '?' : '&'
+        return url + sep + 'vw=' + (window.innerWidth || 1024) + '&embed=' + embed
+      }
 
-      if (form.type === 'embedded') return mountInline(fullUrl)
-      if (form.type === 'flyout')   return mountFlyout(fullUrl, form.behaviour)
-      if (form.type === 'popup')    return mountPopup(fullUrl, form.behaviour)
+      if (form.type === 'embedded') return mountInline(withParams(formUrl, 'inline'))
+      if (form.type === 'flyout')   return mountFlyout(withParams(formUrl, 'flyout'), form.behaviour, form.modalWidth)
+      if (form.type === 'popup')    return mountPopup(withParams(formUrl, 'popup'), form.behaviour, form.modalWidth)
       console.warn(TAG, 'no auto-render for type', form.type, '— share the link instead')
     })
     .catch(function (err) { console.warn(TAG, 'fetch error', err) })
@@ -76,52 +79,73 @@
     else document.body.appendChild(iframe)
   }
 
-  function mountPopup(formUrl, behaviour) {
+  // Listen once for close requests posted by the form iframe — every
+  // mount registers itself in this map keyed by iframe contentWindow.
+  var dismissers = []
+  function registerDismisser(iframe, close) {
+    dismissers.push({ win: iframe.contentWindow, close: close })
+  }
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'appalix-close') return
+    for (var i = 0; i < dismissers.length; i++) {
+      if (dismissers[i].win === e.source) { dismissers[i].close(); break }
+    }
+  })
+
+  function mountPopup(formUrl, behaviour, modalWidth) {
     scheduleTrigger(behaviour, function () {
       var overlay = document.createElement('div')
       overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:16px;animation:appalix-fade-in .2s ease-out'
-      // Wrapper is transparent — form card paints itself.
+      // Wrapper is transparent — form card paints itself. Width follows the
+      // form's own modal.width so 'Full' really does mean full viewport.
+      var widthCss = modalWidth === '100%'
+        ? 'width:calc(100vw - 32px);max-width:none'
+        : 'width:100%;max-width:' + (modalWidth || '560px')
       var card = document.createElement('div')
-      card.style.cssText = 'position:relative;width:100%;max-width:560px;height:80vh;max-height:720px;background:transparent;overflow:visible'
+      card.style.cssText = 'position:relative;' + widthCss + ';max-height:90vh;background:transparent;overflow:visible'
       var iframe = document.createElement('iframe')
       iframe.src = formUrl
       iframe.allowTransparency = 'true'
-      iframe.style.cssText = IFRAME_STYLE
+      iframe.style.cssText = IFRAME_STYLE + ';height:auto;min-height:400px;max-height:90vh'
       iframe.setAttribute('title', 'Form')
-      var close = makeCloseButton(function () { document.body.removeChild(overlay) })
+      function close() {
+        if (overlay.parentNode) document.body.removeChild(overlay)
+        document.removeEventListener('keydown', onKey)
+      }
+      function onKey(e) { if (e.key === 'Escape') close() }
       card.appendChild(iframe)
-      card.appendChild(close)
       overlay.appendChild(card)
-      overlay.addEventListener('click', function (e) { if (e.target === overlay) document.body.removeChild(overlay) })
+      overlay.addEventListener('click', function (e) { if (e.target === overlay) close() })
+      document.addEventListener('keydown', onKey)
       injectKeyframes()
       document.body.appendChild(overlay)
+      registerDismisser(iframe, close)
     })
   }
 
-  function mountFlyout(formUrl, behaviour) {
+  function mountFlyout(formUrl, behaviour, modalWidth) {
     scheduleTrigger(behaviour, function () {
+      var widthCss = modalWidth === '100%'
+        ? 'width:calc(100vw - 40px);max-width:none'
+        : 'width:' + (modalWidth || '380px') + ';max-width:calc(100vw - 40px)'
       var card = document.createElement('div')
-      card.style.cssText = 'position:fixed;right:20px;bottom:20px;z-index:2147483646;width:380px;max-width:calc(100vw - 40px);height:560px;max-height:calc(100vh - 40px);background:transparent;overflow:visible;animation:appalix-slide-up .25s ease-out'
+      card.style.cssText = 'position:fixed;right:20px;bottom:20px;z-index:2147483646;' + widthCss + ';max-height:calc(100vh - 40px);background:transparent;overflow:visible;animation:appalix-slide-up .25s ease-out'
       var iframe = document.createElement('iframe')
       iframe.src = formUrl
       iframe.allowTransparency = 'true'
-      iframe.style.cssText = IFRAME_STYLE
+      iframe.style.cssText = IFRAME_STYLE + ';height:auto;min-height:400px;max-height:calc(100vh - 40px)'
       iframe.setAttribute('title', 'Form')
-      var close = makeCloseButton(function () { document.body.removeChild(card) })
+      function close() {
+        if (card.parentNode) document.body.removeChild(card)
+        document.removeEventListener('keydown', onKey)
+      }
+      function onKey(e) { if (e.key === 'Escape') close() }
       card.appendChild(iframe)
-      card.appendChild(close)
+      document.addEventListener('keydown', onKey)
       injectKeyframes()
       document.body.appendChild(card)
+      registerDismisser(iframe, close)
     })
-  }
-
-  function makeCloseButton(onClick) {
-    var btn = document.createElement('button')
-    btn.setAttribute('aria-label', 'Close')
-    btn.innerHTML = '&times;'
-    btn.style.cssText = 'position:absolute;top:-10px;right:-10px;width:26px;height:26px;border-radius:50%;border:none;background:rgba(255,255,255,.98);color:#333;font-size:16px;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);z-index:2'
-    btn.onclick = onClick
-    return btn
   }
 
   function scheduleTrigger(behaviour, fire) {

@@ -400,12 +400,14 @@ export function FormRenderer({ form, sourceUrl }: Props) {
   const [submitted,  setSubmitted]  = useState(false)
   const [submitErr,  setSubmitErr]  = useState<string | null>(null)
   const [isMobile,   setIsMobile]   = useState(false)
+  const [embedMode,  setEmbedMode]  = useState<string | null>(null)
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
     // When loaded inside an embed iframe, the parent's embed.js passes ?vw=<viewport>
     // so we can reflect the actual device size, not the (often narrow) iframe.
-    const params = new URLSearchParams(window.location.search)
     const parentVw = Number(params.get('vw'))
+    setEmbedMode(params.get('embed'))
     if (parentVw > 0) {
       setIsMobile(parentVw <= 640)
       return
@@ -416,6 +418,21 @@ export function FormRenderer({ form, sourceUrl }: Props) {
     mq.addEventListener('change', update)
     return () => mq.removeEventListener('change', update)
   }, [])
+
+  const showCloseButton = embedMode === 'popup' || embedMode === 'flyout'
+  const closeEmbed = () => {
+    try { window.parent.postMessage({ type: 'appalix-close' }, '*') } catch (_) {}
+  }
+  const closeBtnEl = showCloseButton ? (
+    <button
+      onClick={closeEmbed}
+      aria-label="Close"
+      className="absolute -top-2 -right-2 z-30 w-7 h-7 rounded-full bg-white text-gray-600 hover:text-gray-900 flex items-center justify-center text-base leading-none shadow-md ring-1 ring-black/10"
+      style={{ fontFamily: 'system-ui, sans-serif' }}
+    >
+      &times;
+    </button>
+  ) : null
 
   // Gating — early returns after all hooks
   if (gate === 'loading' || gate === 'waiting_trigger') return null
@@ -494,7 +511,8 @@ export function FormRenderer({ form, sourceUrl }: Props) {
 
   if (submitted) {
     return (
-      <div className="mx-auto" style={{ width: maxW, maxWidth: '100%', ...cardBase, background: bg }}>
+      <div className="relative mx-auto" style={{ width: maxW, maxWidth: '100%', ...cardBase, background: bg }}>
+        {closeBtnEl}
         <SuccessScreen step={successStep} theme={theme} title={form.behaviour?.display?.successTitle} body={form.behaviour?.display?.successBody} />
       </div>
     )
@@ -532,7 +550,8 @@ export function FormRenderer({ form, sourceUrl }: Props) {
   // ── Background layout ──────────────────────────────────────────────────────
   if (imgPos === 'background' && layoutImgSrc) {
     return (
-      <div className="mx-auto" style={{ width: maxW, maxWidth: '100%' }}>
+      <div className="relative mx-auto" style={{ width: maxW, maxWidth: '100%' }}>
+        {closeBtnEl}
         <div className="relative overflow-hidden" style={cardBase}>
           <img src={layoutImgSrc} alt="" className="absolute inset-0 w-full h-full object-cover" />
           <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.42)' }} />
@@ -557,7 +576,8 @@ export function FormRenderer({ form, sourceUrl }: Props) {
       </div>
     )
     return (
-      <div className="mx-auto" style={{ width: maxW, maxWidth: '100%' }}>
+      <div className="relative mx-auto" style={{ width: maxW, maxWidth: '100%' }}>
+        {closeBtnEl}
         <div className="overflow-hidden flex" style={cardBase}>
           {imgPos === 'left' && imgPanel}
           <div className="w-[60%] shrink-0 min-w-0" style={{ backgroundColor: bg }}>
@@ -571,7 +591,8 @@ export function FormRenderer({ form, sourceUrl }: Props) {
 
   // ── Top layout (default) ───────────────────────────────────────────────────
   return (
-    <div className="mx-auto" style={{ width: maxW, maxWidth: '100%' }}>
+    <div className="relative mx-auto" style={{ width: maxW, maxWidth: '100%' }}>
+      {closeBtnEl}
       <div
         className="overflow-hidden"
         style={{

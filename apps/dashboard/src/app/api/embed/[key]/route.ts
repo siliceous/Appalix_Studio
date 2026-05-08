@@ -19,7 +19,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await (admin as any)
     .from('forms')
-    .select('public_slug, type, behaviour, name, status')
+    .select('public_slug, type, behaviour, theme, name, status')
     .eq('embed_key', key)
     .eq('status', 'published')
     .maybeSingle()
@@ -28,10 +28,16 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
     return NextResponse.json({ error: 'not_found' }, { status: 404, headers: CORS })
   }
 
+  const theme = data.theme ?? {}
+  const imgPos = theme.imagePosition
+  const isSide = imgPos === 'left' || imgPos === 'right'
+  const modalWidth = theme.modal?.width ?? (isSide ? '680px' : '520px')
+
   return NextResponse.json({
-    slug:      data.public_slug,
-    type:      data.type,
-    name:      data.name,
-    behaviour: data.behaviour ?? {},
+    slug:       data.public_slug,
+    type:       data.type,
+    name:       data.name,
+    behaviour:  data.behaviour ?? {},
+    modalWidth,
   }, { headers: { ...CORS, 'Cache-Control': 'public, max-age=60' } })
 }
