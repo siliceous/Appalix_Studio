@@ -99,6 +99,41 @@ export function FormEmbedPanel({ form }: Props) {
         </div>
       )}
 
+      {/* Platform plugins */}
+      {form.embed_key && (
+        <div>
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Easier install</p>
+          <p className="text-[11px] text-gray-400 mb-2 leading-relaxed">
+            Many CMSs strip <code className="text-gray-500">&lt;script&gt;</code> from regular HTML blocks. Use the right widget below.
+          </p>
+          <div className="space-y-1.5">
+            <a
+              href={`${origin}/integrations/appalix-forms-wordpress.zip`}
+              download
+              className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] hover:border-brand-300 dark:hover:border-brand-500/40 hover:bg-white dark:hover:bg-white/[0.06] transition-colors group"
+            >
+              <div className="flex flex-col">
+                <span className="text-[12px] font-semibold text-gray-700 dark:text-gray-200">WordPress plugin</span>
+                <span className="text-[10px] text-gray-400">Download ZIP · upload via Plugins → Add New</span>
+              </div>
+              <ExternalLink className="w-3.5 h-3.5 text-gray-400 group-hover:text-brand-500" />
+            </a>
+            <a
+              href="https://github.com/siliceous/appalix/blob/main/integrations/shopify/INSTALL.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] hover:border-brand-300 dark:hover:border-brand-500/40 hover:bg-white dark:hover:bg-white/[0.06] transition-colors group"
+            >
+              <div className="flex flex-col">
+                <span className="text-[12px] font-semibold text-gray-700 dark:text-gray-200">Shopify install guide</span>
+                <span className="text-[10px] text-gray-400">5-minute theme.liquid snippet</span>
+              </div>
+              <ExternalLink className="w-3.5 h-3.5 text-gray-400 group-hover:text-brand-500" />
+            </a>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

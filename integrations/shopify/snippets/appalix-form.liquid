@@ -1,0 +1,11 @@
+{% comment %}
+  Appalix Forms — Shopify snippet
+  Usage:
+    {% render 'appalix-form', key: 'YOUR_EMBED_KEY' %}
+    {% render 'appalix-form', key: 'YOUR_EMBED_KEY', origin: 'https://your-dashboard.example.com' %}
+{% endcomment %}
+
+{% assign appalix_origin = origin | default: 'https://app.appalix.ai' %}
+{% if key != blank %}
+  <script src="{{ appalix_origin }}/embed.js" data-form-key="{{ key | escape }}" async></script>
+{% endif %}
