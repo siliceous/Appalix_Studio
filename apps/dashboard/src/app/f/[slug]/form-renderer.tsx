@@ -431,7 +431,9 @@ export function FormRenderer({ form, sourceUrl }: Props) {
   const layoutImgSrc = layoutImg ? (layoutImg.props.src as string) : null
   const fieldBlocks  = layoutImg ? contentBlocks.filter((_, i) => i !== layoutImgIdx) : contentBlocks
 
-  const storedObjPos = (layoutImg?.props.objectPosition as string | undefined) ?? theme.imageObjectPosition ?? 'center center'
+  const desktopObjPos = (layoutImg?.props.objectPosition       as string | undefined) ?? theme.imageObjectPosition ?? 'center center'
+  const mobileObjPos  = (layoutImg?.props.objectPositionMobile as string | undefined) ?? 'center top'
+  const storedObjPos  = isMobile ? mobileObjPos : desktopObjPos
 
   const maxW     = mWidth
   const cardBase: React.CSSProperties = { borderRadius: mRadius, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }
@@ -567,7 +569,7 @@ export function FormRenderer({ form, sourceUrl }: Props) {
         }}
       >
         {layoutImgSrc && (
-          <img src={layoutImgSrc} alt="" className="w-full object-cover" style={{ height: 200, display: 'block' }} />
+          <img src={layoutImgSrc} alt="" className="w-full object-cover" style={{ height: 200, display: 'block', objectPosition: storedObjPos }} />
         )}
         {formContent}
       </div>

@@ -1136,9 +1136,14 @@ export function FormCanvas({
     containerW: number; containerH: number
   } | null>(null)
 
-  const storedObjPos = (layoutImgBlock?.props.objectPosition as string | undefined)
+  const desktopObjPos = (layoutImgBlock?.props.objectPosition       as string | undefined)
     ?? theme.imageObjectPosition
     ?? 'center top'
+  const mobileObjPos  = (layoutImgBlock?.props.objectPositionMobile as string | undefined)
+    ?? 'center top'
+  const isMobilePreview = previewDevice === 'mobile'
+  const storedObjPos    = isMobilePreview ? mobileObjPos : desktopObjPos
+  const objPosField     = isMobilePreview ? 'objectPositionMobile' : 'objectPosition'
 
   // Parse "55% 20%" → [55, 20]; handle keywords like "center top"
   function parseObjPos(pos: string): [number, number] {
@@ -1175,7 +1180,7 @@ export function FormCanvas({
       // Dragging right reveals the left portion → subtract from X
       const newX = Math.max(0, Math.min(100, startObjX - ((e.clientX - startX) / containerW) * 100))
       const newY = Math.max(0, Math.min(100, startObjY - ((e.clientY - startY) / containerH) * 100))
-      if (layoutImgBlock) onUpdateBlock(layoutImgBlock.id, { objectPosition: `${Math.round(newX)}% ${Math.round(newY)}%` })
+      if (layoutImgBlock) onUpdateBlock(layoutImgBlock.id, { [objPosField]: `${Math.round(newX)}% ${Math.round(newY)}%` })
     }
     function onUp() {
       setIsDragging(false)
@@ -1381,16 +1386,28 @@ export function FormCanvas({
         {/* Full-bleed top image */}
         {layoutImgSrc && (
           <div
-            className={cn('relative overflow-hidden cursor-pointer', isImgSel && 'ring-2 ring-inset ring-brand-400', dragOverLayout && 'ring-2 ring-inset ring-brand-400')}
+            ref={imgPanelRef}
+            className={cn('group/img relative overflow-hidden', isImgSel && 'ring-2 ring-inset ring-brand-400', dragOverLayout && 'ring-2 ring-inset ring-brand-400', isDragging ? 'cursor-grabbing' : 'cursor-grab')}
             style={{ height: 200 }}
             onClick={e => { e.stopPropagation(); onSelectBlock(layoutImgBlock!.id) }}
+            onMouseDown={onImgPanelMouseDown}
             onDragOver={e => { e.preventDefault(); setDragOverLayout(true) }}
             onDragLeave={() => setDragOverLayout(false)}
             onDrop={handleLayoutDrop}
-            title="Drop image to replace · Click to select"
+            title="Drag to reposition · Drop image to replace"
           >
-            <img src={layoutImgSrc} alt="" className="w-full h-full object-cover" />
-            {isImgSel && <div className="absolute inset-0 bg-brand-500/10" />}
+            <img src={layoutImgSrc} alt="" draggable={false} className="w-full h-full object-cover pointer-events-none" style={{ objectPosition: storedObjPos }} />
+            {isImgSel && <div className="absolute inset-0 bg-brand-500/10 pointer-events-none" />}
+            {!isDragging && (
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/55 text-white text-[10px] font-medium px-2.5 py-1 rounded-full pointer-events-none whitespace-nowrap opacity-0 group-hover/img:opacity-100 transition-opacity">
+                {isMobilePreview ? 'Drag to reposition (mobile)' : 'Drag to reposition'}
+              </div>
+            )}
+            {isDragging && (
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[10px] font-medium px-2.5 py-1 rounded-full pointer-events-none whitespace-nowrap">
+                {storedObjPos}
+              </div>
+            )}
             {dragOverLayout && (
               <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center pointer-events-none">
                 <span className="bg-brand-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">Drop to replace</span>
