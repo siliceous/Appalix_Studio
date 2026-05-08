@@ -222,6 +222,10 @@ export async function publishForm(id: string): Promise<{
 
   const nextVersion = (f.published_version ?? 0) + 1
 
+  // Ensure slug/key exist — generate if missing (e.g. older forms or direct DB inserts)
+  const embedKey   = f.embed_key   ?? generateEmbedKey()
+  const publicSlug = f.public_slug ?? generatePublicSlug()
+
   // Save snapshot into form_versions
   await admin.from('form_versions').insert({
     form_id:        id,
@@ -238,6 +242,8 @@ export async function publishForm(id: string): Promise<{
       published_version: nextVersion,
       published_at:      new Date().toISOString(),
       updated_at:        new Date().toISOString(),
+      embed_key:         embedKey,
+      public_slug:       publicSlug,
     })
     .eq('id', id)
     .eq('workspace_id', ctx.workspaceId)
@@ -245,8 +251,9 @@ export async function publishForm(id: string): Promise<{
   if (error) return { error: error.message }
   revalidatePath('/dashboard/forms')
   revalidatePath(`/dashboard/forms/${id}/edit`)
+  revalidatePath(`/f/${publicSlug}`)
 
-  return { embedKey: f.embed_key ?? undefined, publicSlug: f.public_slug ?? undefined }
+  return { embedKey, publicSlug }
 }
 
 export async function pauseForm(id: string): Promise<{ error?: string }> {

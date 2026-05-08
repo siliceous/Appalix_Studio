@@ -16,6 +16,7 @@ import { FormStepController } from './FormStepController'
 import { FormBehaviourPanel } from './FormBehaviourPanel'
 import { FormThemePanel }     from './FormThemePanel'
 import { FormImagesPanel }    from './FormImagesPanel'
+import { FormEmbedPanel }     from './FormEmbedPanel'
 
 const AUTOSAVE_DELAY = 800
 
@@ -127,6 +128,25 @@ export function FormEditorShell({ initialForm }: Props) {
     })
   }
 
+  function reorderBlock(draggedId: string, insertBeforeId: string | null) {
+    setForm(f => {
+      const stepBlocks = f.blocks.filter(b => b.stepId === selectedStepId)
+      const others     = f.blocks.filter(b => b.stepId !== selectedStepId)
+      const dragIdx    = stepBlocks.findIndex(b => b.id === draggedId)
+      if (dragIdx === -1) return f
+      const reordered  = [...stepBlocks]
+      const [moved]    = reordered.splice(dragIdx, 1)
+      if (insertBeforeId === null) {
+        reordered.push(moved)
+      } else {
+        const targetIdx = reordered.findIndex(b => b.id === insertBeforeId)
+        if (targetIdx === -1) return f
+        reordered.splice(targetIdx, 0, moved)
+      }
+      return { ...f, blocks: [...others, ...reordered] }
+    })
+  }
+
   // ── Step mutations ────────────────────────────────────────────────────────
 
   function addStep() {
@@ -212,9 +232,10 @@ export function FormEditorShell({ initialForm }: Props) {
         {/* Back */}
         <button
           onClick={() => router.push('/sage/branding?tab=forms')}
-          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+          className="flex items-center gap-1 text-xs font-medium text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors shrink-0"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-3.5 h-3.5" />
+          All forms
         </button>
 
         {/* Form name */}
@@ -333,13 +354,10 @@ export function FormEditorShell({ initialForm }: Props) {
       </div>
 
       {/* ── Three-panel body ──────────────────────────────────────── */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 relative overflow-hidden">
 
-        {/* Left: blocks sidebar */}
-        <FormBlocksSidebar onAddBlock={addBlock} selectedStepId={selectedStepId} />
-
-        {/* Center: canvas + step bar */}
-        <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-gray-100 dark:bg-gray-950">
+        {/* Canvas: full width underneath, padded to stay clear of floating panels */}
+        <div className="absolute inset-0 flex flex-col overflow-hidden bg-gray-100 dark:bg-gray-950 pl-[176px] pr-[340px]">
           <FormCanvas
             blocks={currentStepBlocks}
             selectedBlockId={selectedBlockId}
@@ -347,6 +365,7 @@ export function FormEditorShell({ initialForm }: Props) {
             onUpdateBlock={updateBlock}
             onDeleteBlock={deleteBlock}
             onMoveBlock={moveBlock}
+            onReorderBlock={reorderBlock}
             onAddToColumn={addBlockToColumn}
             onAddBelow={addBlockAfter}
             theme={form.theme}
@@ -362,22 +381,25 @@ export function FormEditorShell({ initialForm }: Props) {
           />
         </div>
 
-        {/* Right: Behaviour / Theme */}
-        <div className="w-[280px] shrink-0 border-l border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden bg-white dark:bg-gray-900">
-          {/* Tab header */}
-          <div className="shrink-0 flex border-b border-gray-200 dark:border-gray-700">
-            {(['behaviour', 'theme', 'images'] as RightTab[]).map(tab => (
+        {/* Left: floating blocks sidebar */}
+        <div className="absolute left-3 top-3 bottom-3 z-10">
+          <FormBlocksSidebar onAddBlock={addBlock} selectedStepId={selectedStepId} />
+        </div>
+
+        {/* Right: floating Behaviour / Theme / Images / Embed */}
+        <div className="absolute right-3 top-3 bottom-3 z-10 w-[322px] flex flex-col overflow-hidden rounded-xl shadow-2xl bg-white dark:bg-gray-900">
+          {/* Tab header — black */}
+          <div className="shrink-0 flex bg-black">
+            {(['behaviour', 'theme', 'images', 'embed'] as RightTab[]).map(tab => (
               <button
                 key={tab}
                 onClick={() => setRightTab(tab)}
                 className={cn(
-                  'flex-1 py-2.5 text-xs font-medium capitalize transition-colors',
-                  rightTab === tab
-                    ? 'text-gray-900 dark:text-gray-100 border-b-2 border-brand-500'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                  'flex-1 py-2.5 text-xs font-semibold capitalize transition-colors text-white border-b-2',
+                  rightTab === tab ? 'border-white' : 'border-transparent hover:border-white/30'
                 )}
               >
-                {tab === 'behaviour' ? 'Behaviour' : tab === 'theme' ? 'Theme' : 'Images'}
+                {tab === 'behaviour' ? 'Behaviour' : tab === 'theme' ? 'Theme' : tab === 'images' ? 'Images' : 'Embed'}
               </button>
             ))}
           </div>
@@ -394,6 +416,7 @@ export function FormEditorShell({ initialForm }: Props) {
                 onUpdateBlock={updateBlock}
               />
             )}
+            {rightTab === 'embed' && <FormEmbedPanel form={form} />}
           </div>
         </div>
 

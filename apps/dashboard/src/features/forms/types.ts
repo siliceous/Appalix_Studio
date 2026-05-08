@@ -73,8 +73,10 @@ export interface FormStep {
 
 export interface FormBehaviour {
   audience?: {
-    tags?:   string[]
-    listId?: string | null
+    tags?:        string[]
+    listId?:      string | null
+    doubleOptIn?: boolean
+    recaptcha?:   boolean
   }
   scheduling?: {
     mode:    'always' | 'scheduled'
@@ -86,11 +88,24 @@ export interface FormBehaviour {
     delaySeconds?:     number
     scrollPercentage?: number
     selector?:         string
+    style?:            'popup' | 'fly_in_below' | 'inline' | 'locked' | 'widget'
+    entryAnimation?:   'none' | 'fade' | 'slide_up' | 'slide_down' | 'slide_left' | 'slide_right' | 'zoom'
+    exitAnimation?:    'none' | 'fade' | 'slide_up' | 'slide_down' | 'slide_left' | 'slide_right' | 'zoom'
+    successTitle?:     string
+    successBody?:      string
   }
   targeting?: {
-    devices:        ('desktop' | 'mobile' | 'tablet')[]
-    hideForSources: string[]
-    urlRules:       { type: 'contains' | 'equals' | 'starts_with'; value: string }[]
+    devices?:         ('desktop' | 'mobile' | 'tablet')[]
+    hideForSources?:  string[]
+    urlRules?:        { type: 'contains' | 'equals' | 'starts_with'; value: string }[]
+    visitorType?:     'all' | 'hide_existing' | 'show_existing' | 'segment'
+    pageRules?:       { type: 'appears_on' | 'not_on' | 'out_of_stock'; match?: 'is' | 'contains' | 'starts_with'; url?: string }[]
+    locationMode?:    'show' | 'hide'
+    locationValues?:  string[]
+    sourceMode?:      'show' | 'hide'
+    sources?:         string[]
+    utmSource?:       string
+    utmParams?:       { key: string; value: string }[]
   }
   frequency?: {
     mode: 'always' | 'once' | 'once_per_day' | 'once_per_session'
@@ -113,12 +128,13 @@ export interface FormBehaviour {
 
 export interface FormTheme {
   colors?: {
-    primary?:         string
-    background?:      string
-    backgroundImage?: string
-    text?:            string
-    muted?:           string
-    fieldText?:       string
+    primary?:                  string
+    background?:               string
+    backgroundImage?:          string
+    backgroundImagePosition?:  string
+    text?:                     string
+    muted?:                    string
+    fieldText?:                string
   }
   typography?: {
     fontFamily?:   string
@@ -222,7 +238,7 @@ export interface FormSubmission {
 
 // ── Editor state ──────────────────────────────────────────────────────────────
 
-export type RightTab = 'behaviour' | 'theme' | 'images'
+export type RightTab = 'behaviour' | 'theme' | 'images' | 'embed'
 export type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 
 export interface EditorState {
