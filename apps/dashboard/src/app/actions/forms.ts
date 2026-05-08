@@ -134,7 +134,7 @@ export async function createFormFromTemplate(
     .single()
 
   if (error || !form) return { error: error?.message ?? 'Failed to create form' }
-  revalidatePath('/dashboard/forms')
+  revalidatePath('/dashboard/forms'); revalidatePath('/dashboard/forms/templates')
   return { form: form as Form }
 }
 
@@ -249,7 +249,7 @@ export async function publishForm(id: string): Promise<{
     .eq('workspace_id', ctx.workspaceId)
 
   if (error) return { error: error.message }
-  revalidatePath('/dashboard/forms')
+  revalidatePath('/dashboard/forms'); revalidatePath('/dashboard/forms/templates')
   revalidatePath(`/dashboard/forms/${id}/edit`)
   revalidatePath(`/f/${publicSlug}`)
 
@@ -266,7 +266,7 @@ export async function pauseForm(id: string): Promise<{ error?: string }> {
     .eq('id', id)
     .eq('workspace_id', ctx.workspaceId)
   if (error) return { error: error.message }
-  revalidatePath('/dashboard/forms')
+  revalidatePath('/dashboard/forms'); revalidatePath('/dashboard/forms/templates')
   return {}
 }
 
@@ -280,7 +280,7 @@ export async function archiveForm(id: string): Promise<{ error?: string }> {
     .eq('id', id)
     .eq('workspace_id', ctx.workspaceId)
   if (error) return { error: error.message }
-  revalidatePath('/dashboard/forms')
+  revalidatePath('/dashboard/forms'); revalidatePath('/dashboard/forms/templates')
   return {}
 }
 
@@ -320,7 +320,7 @@ export async function duplicateForm(id: string): Promise<{ form?: Form; error?: 
     .single()
 
   if (error || !copy) return { error: error?.message ?? 'Failed to duplicate' }
-  revalidatePath('/dashboard/forms')
+  revalidatePath('/dashboard/forms'); revalidatePath('/dashboard/forms/templates')
   return { form: copy as Form }
 }
 

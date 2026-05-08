@@ -47,11 +47,7 @@ export function FormEmbedPanel({ form }: Props) {
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://app.appalix.ai'
   const formUrl = form.public_slug ? `${origin}/f/${form.public_slug}` : null
 
-  const iframeCode = formUrl
-    ? `<iframe\n  src="${formUrl}"\n  width="100%"\n  height="600"\n  style="border:none;border-radius:12px;"\n  loading="lazy"\n></iframe>`
-    : ''
-
-  const scriptCode = form.embed_key
+  const universalCode = form.embed_key
     ? `<script\n  src="${origin}/embed.js"\n  data-form-key="${form.embed_key}"\n  async\n></script>`
     : ''
 
@@ -92,23 +88,14 @@ export function FormEmbedPanel({ form }: Props) {
         </div>
       </div>
 
-      {/* Iframe embed */}
-      <div>
-        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Inline embed</p>
-        <p className="text-[11px] text-gray-400 mb-2 leading-relaxed">
-          Paste this into any webpage to embed the form directly.
-        </p>
-        <CodeBlock code={iframeCode} />
-      </div>
-
-      {/* Popup / script embed */}
+      {/* Universal embed — one snippet handles inline / popup / flyout based on form type */}
       {form.embed_key && (
         <div>
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Popup trigger</p>
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Embed snippet</p>
           <p className="text-[11px] text-gray-400 mb-2 leading-relaxed">
-            Add to your site's <code className="text-brand-400">&lt;head&gt;</code> to show the form as a popup.
+            One tag for everything — paste into your site. Inline forms render where the script is placed; popups & fly-outs use the trigger you set under Behaviour.
           </p>
-          <CodeBlock code={scriptCode} />
+          <CodeBlock code={universalCode} />
         </div>
       )}
 
