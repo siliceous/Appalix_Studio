@@ -1068,7 +1068,8 @@ export function FormCanvas({
   const headingFontFam = theme.typography?.headingFontFamily ?? fontFam
   const themeImgPos    = theme.imagePosition           ?? 'top'
   const imgPos         = previewDevice === 'mobile' ? 'top' : themeImgPos
-  const themeWidth     = theme.modal?.width            ?? '520px'
+  const isSideLayout   = themeImgPos === 'left' || themeImgPos === 'right'
+  const themeWidth     = theme.modal?.width            ?? (isSideLayout ? '680px' : '520px')
   const width          = previewDevice === 'mobile' ? '360px' : themeWidth
 
   useEffect(() => {

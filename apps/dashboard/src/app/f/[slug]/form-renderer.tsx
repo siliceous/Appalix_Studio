@@ -377,7 +377,9 @@ export function FormRenderer({ form, sourceUrl }: Props) {
   const bg       = theme.colors?.background ?? '#ffffff'
   const bgImage  = theme.colors?.backgroundImage ?? ''
   const mRadius  = theme.modal?.radius      ?? '8px'
-  const mWidth   = theme.modal?.width       ?? '520px'
+  const themeImgPos  = theme.imagePosition ?? 'top'
+  const isSideLayout = themeImgPos === 'left' || themeImgPos === 'right'
+  const mWidth   = theme.modal?.width       ?? (isSideLayout ? '680px' : '520px')
   const fontFam  = theme.typography?.fontFamily ?? 'Inter'
   const bodySize = theme.typography?.bodySize   ?? '14px'
 
@@ -424,7 +426,6 @@ export function FormRenderer({ form, sourceUrl }: Props) {
   const contentBlocks = stepBlocks.filter(b => b.type !== 'button')
 
   // ── Layout image extraction (mirrors FormCanvas) ──────────────────────────
-  const themeImgPos  = theme.imagePosition ?? 'top'
   const imgPos       = isMobile ? 'top' : themeImgPos
   const layoutImgIdx = contentBlocks.findIndex(b => b.type === 'image' && b.props.src)
   const layoutImg    = layoutImgIdx >= 0 ? contentBlocks[layoutImgIdx] : null
