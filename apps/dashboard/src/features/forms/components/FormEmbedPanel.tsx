@@ -88,6 +88,22 @@ export function FormEmbedPanel({ form }: Props) {
         </div>
       </div>
 
+      {/* Embed key — for plugins/snippets that ask for just the key */}
+      {form.embed_key && (
+        <div>
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Embed key</p>
+          <p className="text-[11px] text-gray-400 mb-2 leading-relaxed">
+            Paste this into the WordPress plugin settings or Shopify snippet.
+          </p>
+          <div className="flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-white/[0.03] overflow-hidden">
+            <p className="flex-1 px-2.5 py-1.5 text-[11px] font-mono text-gray-700 dark:text-gray-200 truncate">
+              {form.embed_key}
+            </p>
+            <CopyButton text={form.embed_key} />
+          </div>
+        </div>
+      )}
+
       {/* Universal embed — one snippet handles inline / popup / flyout based on form type */}
       {form.embed_key && (
         <div>
