@@ -7,6 +7,7 @@
  */
 (function () {
   'use strict'
+  var TAG = '[Appalix Forms]'
 
   var script = document.currentScript
   if (!script) {
@@ -15,13 +16,19 @@
       if ((all[i].src || '').indexOf('embed.js') !== -1) { script = all[i]; break }
     }
   }
-  if (!script) return
+  if (!script) { console.warn(TAG, 'script tag not found'); return }
+
+  // Snapshot parent before any async work — async scripts may move/detach in some bundlers
+  var anchor = script
+  var parent = script.parentNode
 
   var key = script.getAttribute('data-form-key')
-  if (!key) return
+  if (!key) { console.warn(TAG, 'missing data-form-key on <script>'); return }
 
   var origin
-  try { origin = new URL(script.src).origin } catch (_) { return }
+  try { origin = new URL(script.src).origin } catch (_) {
+    console.warn(TAG, 'cannot parse script src', script.src); return
+  }
 
   // Prevent duplicate boot for the same key on the same page
   if (window.__APPALIX_FORM_KEYS__ && window.__APPALIX_FORM_KEYS__[key]) return
@@ -29,17 +36,24 @@
   window.__APPALIX_FORM_KEYS__[key] = true
 
   fetch(origin + '/api/embed/' + encodeURIComponent(key), { credentials: 'omit' })
-    .then(function (r) { return r.ok ? r.json() : null })
+    .then(function (r) {
+      if (!r.ok) {
+        console.warn(TAG, 'fetch failed', r.status, '— is the form published?')
+        return null
+      }
+      return r.json()
+    })
     .then(function (form) {
       if (!form || !form.slug) return
       var formUrl = origin + '/f/' + form.slug
+      console.log(TAG, 'rendering', form.type, '·', form.name)
 
       if (form.type === 'embedded') return mountInline(formUrl)
       if (form.type === 'flyout')   return mountFlyout(formUrl, form.behaviour)
       if (form.type === 'popup')    return mountPopup(formUrl, form.behaviour)
-      // landing_page → nothing to mount; the shareable link is the experience
+      console.warn(TAG, 'no auto-render for type', form.type, '— share the link instead')
     })
-    .catch(function () {})
+    .catch(function (err) { console.warn(TAG, 'fetch error', err) })
 
   function mountInline(formUrl) {
     var iframe = document.createElement('iframe')
@@ -47,7 +61,8 @@
     iframe.loading = 'lazy'
     iframe.style.cssText = 'width:100%;border:none;border-radius:12px;min-height:600px;display:block'
     iframe.setAttribute('title', 'Form')
-    script.parentNode.insertBefore(iframe, script)
+    if (parent) parent.insertBefore(iframe, anchor)
+    else document.body.appendChild(iframe)
   }
 
   function mountPopup(formUrl, behaviour) {
