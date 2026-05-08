@@ -60,11 +60,17 @@
     })
     .catch(function (err) { console.warn(TAG, 'fetch error', err) })
 
+  // The form page already renders its own card (background, shadow, radius from
+  // theme) so the iframe and any wrappers should be transparent — otherwise we
+  // get a white box around the themed card.
+  var IFRAME_STYLE = 'width:100%;height:100%;border:none;display:block;background:transparent;color-scheme:light'
+
   function mountInline(formUrl) {
     var iframe = document.createElement('iframe')
     iframe.src = formUrl
     iframe.loading = 'lazy'
-    iframe.style.cssText = 'width:100%;border:none;border-radius:12px;min-height:600px;display:block'
+    iframe.allowTransparency = 'true'
+    iframe.style.cssText = 'width:100%;border:none;min-height:600px;display:block;background:transparent;color-scheme:light'
     iframe.setAttribute('title', 'Form')
     if (parent) parent.insertBefore(iframe, anchor)
     else document.body.appendChild(iframe)
@@ -74,11 +80,13 @@
     scheduleTrigger(behaviour, function () {
       var overlay = document.createElement('div')
       overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:16px;animation:appalix-fade-in .2s ease-out'
+      // Wrapper is transparent — form card paints itself.
       var card = document.createElement('div')
-      card.style.cssText = 'position:relative;width:100%;max-width:560px;height:80vh;max-height:720px;background:#fff;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden'
+      card.style.cssText = 'position:relative;width:100%;max-width:560px;height:80vh;max-height:720px;background:transparent;overflow:visible'
       var iframe = document.createElement('iframe')
       iframe.src = formUrl
-      iframe.style.cssText = 'width:100%;height:100%;border:none;display:block'
+      iframe.allowTransparency = 'true'
+      iframe.style.cssText = IFRAME_STYLE
       iframe.setAttribute('title', 'Form')
       var close = makeCloseButton(function () { document.body.removeChild(overlay) })
       card.appendChild(iframe)
@@ -93,10 +101,11 @@
   function mountFlyout(formUrl, behaviour) {
     scheduleTrigger(behaviour, function () {
       var card = document.createElement('div')
-      card.style.cssText = 'position:fixed;right:20px;bottom:20px;z-index:2147483646;width:380px;max-width:calc(100vw - 40px);height:560px;max-height:calc(100vh - 40px);background:#fff;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;animation:appalix-slide-up .25s ease-out'
+      card.style.cssText = 'position:fixed;right:20px;bottom:20px;z-index:2147483646;width:380px;max-width:calc(100vw - 40px);height:560px;max-height:calc(100vh - 40px);background:transparent;overflow:visible;animation:appalix-slide-up .25s ease-out'
       var iframe = document.createElement('iframe')
       iframe.src = formUrl
-      iframe.style.cssText = 'width:100%;height:100%;border:none;display:block'
+      iframe.allowTransparency = 'true'
+      iframe.style.cssText = IFRAME_STYLE
       iframe.setAttribute('title', 'Form')
       var close = makeCloseButton(function () { document.body.removeChild(card) })
       card.appendChild(iframe)
