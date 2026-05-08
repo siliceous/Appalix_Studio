@@ -447,11 +447,17 @@ function BlockContent({
     const imgRotate = (block.props.imageRotate as number | undefined) ?? 0
 
     function handleImgDrop(e: React.DragEvent) {
-      e.preventDefault(); e.stopPropagation(); setImgDragOver(false)
+      e.preventDefault()
+      setImgDragOver(false)
       try {
         const raw = e.dataTransfer.getData('text/plain')
-        const data = JSON.parse(raw) as { type: string; props: { src: string } }
-        if (data.type === 'image' && data.props.src) onUpdateProps({ src: data.props.src })
+        const p = JSON.parse(raw)
+        const src = p.src ?? p.props?.src ?? null
+        if (src) {
+          e.stopPropagation()
+          onUpdateProps({ src })
+        }
+        // If no src found, let event bubble so block reorder can handle it
       } catch {}
     }
 
@@ -496,6 +502,7 @@ function BlockContent({
             <img
               src={block.props.src as string}
               alt={(block.props.alt as string) ?? ''}
+              draggable={false}
               className="w-full block"
               style={{ transform: imgRotate ? `rotate(${imgRotate}deg)` : undefined }}
             />
@@ -1047,9 +1054,7 @@ export function FormCanvas({
   const headingFontFam = theme.typography?.headingFontFamily ?? fontFam
   const imgPos         = theme.imagePosition           ?? 'top'
   const themeWidth     = theme.modal?.width            ?? '520px'
-  const width          = previewDevice === 'mobile'
-    ? '360px'
-    : (imgPos === 'left' || imgPos === 'right') ? '700px' : themeWidth
+  const width          = previewDevice === 'mobile' ? '360px' : themeWidth
 
   useEffect(() => {
     const fontsToLoad = [...new Set([fontFam, headingFontFam])]
@@ -1194,12 +1199,11 @@ export function FormCanvas({
         onAddToColumn={onAddToColumn}
       />
     ) : (
-      <>
+      <React.Fragment key={block.id}>
         {draggingBlockId && draggingBlockId !== block.id && insertBefore === block.id && (
           <div className="h-[3px] bg-brand-400 rounded-full mx-1 my-0.5 pointer-events-none" />
         )}
         <BlockPreview
-          key={block.id}
           block={block}
           theme={theme}
           isSelected={selectedBlockId === block.id}
@@ -1215,7 +1219,7 @@ export function FormCanvas({
           onDragOver={e => handleBlockDragOver(block.id, e)}
           onDrop={handleBlockDrop}
         />
-      </>
+      </React.Fragment>
     )
   }
 
@@ -1235,7 +1239,7 @@ export function FormCanvas({
     </div>
   )
 
-  const outerCls = "flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden flex items-center justify-center px-6 pt-6 pb-[25%]"
+  const outerCls = "flex-1 overflow-auto [&::-webkit-scrollbar]:hidden flex flex-col px-6 pt-8 pb-[25%]"
   const SHADOW_MAP: Record<string, string> = {
     none:   'none',
     small:  '0 2px 8px rgba(0,0,0,0.08)',
@@ -1249,7 +1253,7 @@ export function FormCanvas({
   if (imgPos === 'background' && layoutImgSrc) {
     return (
       <div className={outerCls} onClick={() => onSelectBlock(null)}>
-        <div className="relative" style={{ maxWidth: width, width: '100%' }} onClick={e => e.stopPropagation()}>
+        <div className="relative" style={{ width, margin: 'auto', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
           {closeBtn}
           <div className="w-full shadow-xl relative overflow-hidden" style={cardBase}>
           <img src={layoutImgSrc} alt="" className="absolute inset-0 w-full h-full object-cover" />
@@ -1341,7 +1345,7 @@ export function FormCanvas({
 
     return (
       <div className={outerCls} onClick={() => onSelectBlock(null)}>
-        <div className="relative" style={{ maxWidth: width, width: '100%' }} onClick={e => e.stopPropagation()}>
+        <div className="relative" style={{ width, margin: 'auto', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
           {closeBtn}
           <div className="group/img w-full shadow-xl overflow-hidden flex" style={cardBase}>
             {imgPos === 'left'  && imgPanel}
@@ -1357,7 +1361,7 @@ export function FormCanvas({
   // Render the first image with a src as a full-bleed header, remaining blocks below
   return (
     <div className={outerCls} onClick={() => onSelectBlock(null)}>
-      <div className="relative" style={{ maxWidth: width, width: '100%' }} onClick={e => e.stopPropagation()}>
+      <div className="relative" style={{ width, margin: 'auto', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
         {closeBtn}
         <div
           className="w-full shadow-xl relative overflow-hidden"

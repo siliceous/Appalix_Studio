@@ -398,7 +398,7 @@ export function FormRenderer({ form, sourceUrl }: Props) {
   if (gate === 'wrong_device' || gate === 'page_blocked' || gate === 'source_blocked' || gate === 'utm_blocked') return null
   if (gate === 'scheduled_closed') {
     return (
-      <div className="w-full mx-auto text-center py-16 px-6" style={{ maxWidth: mWidth, fontFamily: `"${fontFam}", sans-serif` }}>
+      <div className="mx-auto text-center py-16 px-6" style={{ width: mWidth, maxWidth: '100%', fontFamily: `"${fontFam}", sans-serif` }}>
         <p className="text-lg font-semibold text-gray-700 mb-2">This form is currently unavailable.</p>
         <p className="text-sm text-gray-400">Please check back later.</p>
       </div>
@@ -423,7 +423,7 @@ export function FormRenderer({ form, sourceUrl }: Props) {
 
   const storedObjPos = (layoutImg?.props.objectPosition as string | undefined) ?? theme.imageObjectPosition ?? 'center center'
 
-  const maxW     = (imgPos === 'left' || imgPos === 'right') ? '700px' : mWidth
+  const maxW     = mWidth
   const cardBase: React.CSSProperties = { borderRadius: mRadius, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }
 
   function setValue(blockId: string, val: string) {
@@ -468,7 +468,7 @@ export function FormRenderer({ form, sourceUrl }: Props) {
 
   if (submitted) {
     return (
-      <div className="w-full mx-auto" style={{ maxWidth: maxW, ...cardBase, background: bg }}>
+      <div className="mx-auto" style={{ width: maxW, maxWidth: '100%', ...cardBase, background: bg }}>
         <SuccessScreen step={successStep} theme={theme} title={form.behaviour?.display?.successTitle} body={form.behaviour?.display?.successBody} />
       </div>
     )
@@ -506,7 +506,7 @@ export function FormRenderer({ form, sourceUrl }: Props) {
   // ── Background layout ──────────────────────────────────────────────────────
   if (imgPos === 'background' && layoutImgSrc) {
     return (
-      <div className="w-full mx-auto" style={{ maxWidth: maxW }}>
+      <div className="mx-auto" style={{ width: maxW, maxWidth: '100%' }}>
         <div className="relative overflow-hidden" style={cardBase}>
           <img src={layoutImgSrc} alt="" className="absolute inset-0 w-full h-full object-cover" />
           <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.42)' }} />
@@ -531,7 +531,7 @@ export function FormRenderer({ form, sourceUrl }: Props) {
       </div>
     )
     return (
-      <div className="w-full mx-auto" style={{ maxWidth: maxW }}>
+      <div className="mx-auto" style={{ width: maxW, maxWidth: '100%' }}>
         <div className="overflow-hidden flex" style={cardBase}>
           {imgPos === 'left' && imgPanel}
           <div className="w-[60%] shrink-0 min-w-0" style={{ backgroundColor: bg }}>
@@ -545,7 +545,7 @@ export function FormRenderer({ form, sourceUrl }: Props) {
 
   // ── Top layout (default) ───────────────────────────────────────────────────
   return (
-    <div className="w-full mx-auto" style={{ maxWidth: maxW }}>
+    <div className="mx-auto" style={{ width: maxW, maxWidth: '100%' }}>
       <div
         className="overflow-hidden"
         style={{

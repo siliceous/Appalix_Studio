@@ -303,7 +303,7 @@ export function FormsTemplateGallery({ templates, forms = [] }: Props) {
   }
 
   return (
-    <div className="flex h-full overflow-hidden bg-[#f5f4f1] dark:bg-gray-950">
+    <div className="flex h-full overflow-hidden bg-[#f0f0f2] dark:bg-gray-950">
 
       {/* ── Left filter sidebar ─────────────────────────────────── */}
       <div className="w-[240px] shrink-0 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col overflow-hidden">
