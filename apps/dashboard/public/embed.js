@@ -103,19 +103,27 @@
 
   function mountPopup(formUrl, behaviour, modalWidth) {
     scheduleTrigger(behaviour, function () {
+      var isMobile = (window.innerWidth || 1024) <= 640
+      var overlayPad = isMobile ? '8px' : '16px'
       var overlay = document.createElement('div')
-      overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:16px;animation:appalix-fade-in .2s ease-out'
-      // Wrapper is transparent — form card paints itself. Width follows the
-      // form's own modal.width so 'Full' really does mean full viewport.
-      var widthCss = modalWidth === '100%'
-        ? 'width:60vw;max-width:calc(100vw - 32px)'
-        : 'width:100%;max-width:' + (modalWidth || '560px')
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:' + overlayPad + ';animation:appalix-fade-in .2s ease-out'
+      // Wrapper is transparent — form card paints itself. On mobile we force
+      // near-full-width so the form is readable. On desktop we follow the
+      // form's modal.width ('Full' = 60vw, otherwise use the pixel value).
+      var widthCss
+      if (isMobile) {
+        widthCss = 'width:calc(100vw - 16px);max-width:none'
+      } else if (modalWidth === '100%') {
+        widthCss = 'width:60vw;max-width:calc(100vw - 32px)'
+      } else {
+        widthCss = 'width:100%;max-width:' + (modalWidth || '560px')
+      }
       var card = document.createElement('div')
-      card.style.cssText = 'position:relative;' + widthCss + ';max-height:90vh;background:transparent;overflow:visible'
+      card.style.cssText = 'position:relative;' + widthCss + ';max-height:' + (isMobile ? 'calc(100vh - 16px)' : '90vh') + ';background:transparent;overflow:visible'
       var iframe = document.createElement('iframe')
       iframe.src = formUrl
       iframe.allowTransparency = 'true'
-      iframe.style.cssText = IFRAME_STYLE + ';height:auto;min-height:400px;max-height:90vh'
+      iframe.style.cssText = IFRAME_STYLE + ';height:auto;min-height:300px;max-height:' + (isMobile ? 'calc(100vh - 16px)' : '90vh')
       iframe.setAttribute('title', 'Form')
       function close() {
         if (overlay.parentNode) document.body.removeChild(overlay)
@@ -134,15 +142,24 @@
 
   function mountFlyout(formUrl, behaviour, modalWidth) {
     scheduleTrigger(behaviour, function () {
-      var widthCss = modalWidth === '100%'
-        ? 'width:60vw;max-width:calc(100vw - 40px)'
-        : 'width:' + (modalWidth || '380px') + ';max-width:calc(100vw - 40px)'
+      var isMobile = (window.innerWidth || 1024) <= 640
+      var posCss, widthCss
+      if (isMobile) {
+        // Bottom sheet style: full width along the bottom
+        posCss   = 'position:fixed;left:0;right:0;bottom:0;z-index:2147483646'
+        widthCss = 'width:100vw;max-width:none'
+      } else {
+        posCss   = 'position:fixed;right:20px;bottom:20px;z-index:2147483646'
+        widthCss = modalWidth === '100%'
+          ? 'width:60vw;max-width:calc(100vw - 40px)'
+          : 'width:' + (modalWidth || '380px') + ';max-width:calc(100vw - 40px)'
+      }
       var card = document.createElement('div')
-      card.style.cssText = 'position:fixed;right:20px;bottom:20px;z-index:2147483646;' + widthCss + ';max-height:calc(100vh - 40px);background:transparent;overflow:visible;animation:appalix-slide-up .25s ease-out'
+      card.style.cssText = posCss + ';' + widthCss + ';max-height:' + (isMobile ? '85vh' : 'calc(100vh - 40px)') + ';background:transparent;overflow:visible;animation:appalix-slide-up .25s ease-out'
       var iframe = document.createElement('iframe')
       iframe.src = formUrl
       iframe.allowTransparency = 'true'
-      iframe.style.cssText = IFRAME_STYLE + ';height:auto;min-height:400px;max-height:calc(100vh - 40px)'
+      iframe.style.cssText = IFRAME_STYLE + ';height:auto;min-height:300px;max-height:' + (isMobile ? '85vh' : 'calc(100vh - 40px)')
       iframe.setAttribute('title', 'Form')
       function close() {
         if (card.parentNode) document.body.removeChild(card)
