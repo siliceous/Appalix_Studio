@@ -137,9 +137,10 @@ export interface FormTheme {
     fieldText?:                string
   }
   typography?: {
-    fontFamily?:   string
-    headingSize?:  string
-    bodySize?:     string
+    fontFamily?:        string
+    headingFontFamily?: string
+    headingSize?:       string
+    bodySize?:          string
   }
   buttons?: {
     radius?: string

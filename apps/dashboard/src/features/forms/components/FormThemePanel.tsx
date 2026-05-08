@@ -28,7 +28,7 @@ function ColorSwatch({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <label className="relative w-7 h-7 rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden cursor-pointer shrink-0 shadow-sm">
+      <label className="relative w-6 h-6 rounded-full border-2 border-white dark:border-gray-700 overflow-hidden cursor-pointer shrink-0 shadow-md ring-1 ring-gray-200 dark:ring-gray-600">
         <div className="absolute inset-0" style={{ background: value }} />
         <input
           type="color"
@@ -177,11 +177,18 @@ export function FormThemePanel({ theme: t, onChange }: Props) {
       {/* Typography */}
       <div>
         <SectionHeader label="Typography" />
-        <Row label="Font">
+        <Row label="Body font">
           <Select
             value={typography.fontFamily ?? 'Inter'}
             options={FONT_OPTIONS}
             onChange={v => onChange({ typography: { ...typography, fontFamily: v } })}
+          />
+        </Row>
+        <Row label="Heading font">
+          <Select
+            value={typography.headingFontFamily ?? typography.fontFamily ?? 'Inter'}
+            options={FONT_OPTIONS}
+            onChange={v => onChange({ typography: { ...typography, headingFontFamily: v } })}
           />
         </Row>
         <Row label="Heading size">

@@ -159,14 +159,15 @@ function BlockInput({
   error:    boolean
   onChange: (v: string) => void
 }) {
-  const primary   = theme.colors?.primary    ?? '#6366f1'
-  const textCol   = theme.colors?.text       ?? '#111827'
-  const fRadius   = theme.fields?.radius     ?? '6px'
-  const fBorder   = error ? '#ef4444' : (theme.fields?.borderColor ?? '#d1d5db')
-  const bRadius   = theme.buttons?.radius    ?? '8px'
-  const fontFam   = theme.typography?.fontFamily ?? 'Inter'
-  const bodySize  = theme.typography?.bodySize   ?? '14px'
-  const headSize  = theme.typography?.headingSize ?? '22px'
+  const primary        = theme.colors?.primary    ?? '#6366f1'
+  const textCol        = theme.colors?.text       ?? '#111827'
+  const fRadius        = theme.fields?.radius     ?? '6px'
+  const fBorder        = error ? '#ef4444' : (theme.fields?.borderColor ?? '#d1d5db')
+  const bRadius        = theme.buttons?.radius    ?? '8px'
+  const fontFam        = theme.typography?.fontFamily        ?? 'Inter'
+  const headingFontFam = theme.typography?.headingFontFamily ?? fontFam
+  const bodySize       = theme.typography?.bodySize          ?? '14px'
+  const headSize       = theme.typography?.headingSize       ?? '22px'
 
   const inputCls = 'w-full px-3 py-2.5 border text-sm focus:outline-none focus:ring-2 transition-shadow'
 
@@ -181,7 +182,7 @@ function BlockInput({
         }
         style={{
           color:      textCol,
-          fontFamily: `"${fontFam}", sans-serif`,
+          fontFamily: block.props.variant === 'heading' ? `"${headingFontFam}", sans-serif` : `"${fontFam}", sans-serif`,
           fontSize:   block.props.variant === 'heading' ? headSize : bodySize,
         }}
       >

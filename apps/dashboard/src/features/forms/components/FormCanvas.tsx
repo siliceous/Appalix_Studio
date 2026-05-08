@@ -190,14 +190,17 @@ function BlockContent({
   const [textareaVal,  setTextareaVal]  = useState('')
   const [checked,      setChecked]      = useState(false)
 
-  const primary    = theme.colors?.primary      ?? '#6366f1'
-  const textCol    = theme.colors?.text         ?? '#111827'
-  const mutedCol   = theme.colors?.muted        ?? '#6b7280'
-  const fieldText  = theme.colors?.fieldText    ?? '#111827'
-  const fRadius    = theme.fields?.radius       ?? '6px'
-  const bRadius    = theme.buttons?.radius      ?? '8px'
-  const fBorder    = theme.fields?.borderColor  ?? '#d1d5db'
-  const fontFam    = theme.typography?.fontFamily ?? 'Inter'
+  const primary        = theme.colors?.primary      ?? '#6366f1'
+  const textCol        = theme.colors?.text         ?? '#111827'
+  const mutedCol       = theme.colors?.muted        ?? '#6b7280'
+  const fieldText      = theme.colors?.fieldText    ?? '#111827'
+  const fRadius        = theme.fields?.radius       ?? '6px'
+  const bRadius        = theme.buttons?.radius      ?? '8px'
+  const fBorder        = theme.fields?.borderColor  ?? '#d1d5db'
+  const fontFam        = theme.typography?.fontFamily        ?? 'Inter'
+  const headingFontFam = theme.typography?.headingFontFamily ?? fontFam
+  const headingSize    = theme.typography?.headingSize       ?? '24px'
+  const bodySize       = theme.typography?.bodySize          ?? '14px'
 
   // Per-block text formatting (shared across all block types)
   const bold       = (block.props.bold      as boolean | undefined) ?? false
@@ -206,10 +209,10 @@ function BlockContent({
   const blockColor = (block.props.textColor as string  | undefined) ?? textCol
 
   const variantStyle: React.CSSProperties =
-    block.props.variant === 'heading' ? { fontSize: '1.2rem', fontWeight: 700, lineHeight: 1.3 } :
+    block.props.variant === 'heading' ? { fontSize: headingSize, fontWeight: 700, lineHeight: 1.3, fontFamily: `"${headingFontFam}", sans-serif` } :
     block.props.variant === 'legal'   ? { fontSize: '0.7rem', opacity: 0.5 } :
-    block.props.variant === 'link'    ? { fontSize: '0.875rem', textDecoration: 'underline' } :
-    { fontSize: '0.875rem', lineHeight: 1.6 }
+    block.props.variant === 'link'    ? { fontSize: bodySize, textDecoration: 'underline' } :
+    { fontSize: bodySize, lineHeight: 1.6 }
 
   const labelStyle: React.CSSProperties = {
     color:          blockColor,
@@ -948,7 +951,7 @@ function BlockPreview({
                 <button onClick={() => onUpdateProps({ bold: !bold })}           className={`p-1 rounded text-xs font-bold w-5 h-5 flex items-center justify-center ${bold      ? 'text-brand-500' : 'text-gray-400 hover:text-gray-600'}`}>B</button>
                 <button onClick={() => onUpdateProps({ italic: !italic })}       className={`p-1 rounded text-xs italic  w-5 h-5 flex items-center justify-center ${italic    ? 'text-brand-500' : 'text-gray-400 hover:text-gray-600'}`}>I</button>
                 <button onClick={() => onUpdateProps({ underline: !underline })} className={`p-1 rounded text-xs underline w-5 h-5 flex items-center justify-center ${underline ? 'text-brand-500' : 'text-gray-400 hover:text-gray-600'}`}>U</button>
-                <label className="relative w-4 h-4 rounded border border-gray-200 dark:border-gray-600 overflow-hidden cursor-pointer shrink-0" title="Text colour">
+                <label className="relative w-4 h-4 rounded-full border border-white dark:border-gray-700 overflow-hidden cursor-pointer shrink-0 shadow ring-1 ring-gray-200 dark:ring-gray-600" title="Text colour">
                   <div className="absolute inset-0" style={{ background: blockCol }} />
                   <input type="color" value={blockCol} onChange={e => onUpdateProps({ textColor: e.target.value })} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
                 </label>
@@ -1037,26 +1040,30 @@ export function FormCanvas({
   blocks, selectedBlockId, onSelectBlock, onUpdateBlock, onDeleteBlock, onMoveBlock,
   onReorderBlock, onAddToColumn, onAddBelow, theme, formType, previewDevice,
 }: Props) {
-  const bg      = theme.colors?.background      ?? '#ffffff'
-  const bgImage = theme.colors?.backgroundImage ?? ''
-  const radius  = theme.modal?.radius            ?? '8px'
-  const fontFam = theme.typography?.fontFamily  ?? 'Inter'
-  const imgPos  = theme.imagePosition           ?? 'top'
-  // Side-image layouts need full width; all others use a comfortable reading width
-  const width   = previewDevice === 'mobile'
+  const bg             = theme.colors?.background      ?? '#ffffff'
+  const bgImage        = theme.colors?.backgroundImage ?? ''
+  const radius         = theme.modal?.radius            ?? '8px'
+  const fontFam        = theme.typography?.fontFamily        ?? 'Inter'
+  const headingFontFam = theme.typography?.headingFontFamily ?? fontFam
+  const imgPos         = theme.imagePosition           ?? 'top'
+  const themeWidth     = theme.modal?.width            ?? '520px'
+  const width          = previewDevice === 'mobile'
     ? '360px'
-    : (imgPos === 'left' || imgPos === 'right') ? '50%' : '680px'
+    : (imgPos === 'left' || imgPos === 'right') ? '700px' : themeWidth
 
   useEffect(() => {
-    if (SYSTEM_FONTS.has(fontFam)) return
-    const id = `gfont-${fontFam.replace(/\s+/g, '-')}`
-    if (document.getElementById(id)) return
-    const link = document.createElement('link')
-    link.id   = id
-    link.rel  = 'stylesheet'
-    link.href = `https://fonts.googleapis.com/css2?family=${fontFam.replace(/ /g, '+')}:wght@400;500;600;700&display=swap`
-    document.head.appendChild(link)
-  }, [fontFam])
+    const fontsToLoad = [...new Set([fontFam, headingFontFam])]
+    fontsToLoad.forEach(font => {
+      if (SYSTEM_FONTS.has(font)) return
+      const id = `gfont-${font.replace(/\s+/g, '-')}`
+      if (document.getElementById(id)) return
+      const link = document.createElement('link')
+      link.id   = id
+      link.rel  = 'stylesheet'
+      link.href = `https://fonts.googleapis.com/css2?family=${font.replace(/ /g, '+')}:wght@400;500;600;700&display=swap`
+      document.head.appendChild(link)
+    })
+  }, [fontFam, headingFontFam])
 
   // Extract layout image block (the first image block with a src) for non-stacked layouts
   const layoutImgIdx   = blocks.findIndex(b => b.type === 'image' && b.props.src)
@@ -1229,8 +1236,14 @@ export function FormCanvas({
   )
 
   const outerCls = "flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden flex items-center justify-center px-6 pt-6 pb-[25%]"
-  // cardBase no longer carries maxWidth — that lives on the wrapper so closeBtn can sit outside
-  const cardBase: React.CSSProperties = { borderRadius: radius, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }
+  const SHADOW_MAP: Record<string, string> = {
+    none:   'none',
+    small:  '0 2px 8px rgba(0,0,0,0.08)',
+    medium: '0 8px 30px rgba(0,0,0,0.14)',
+    large:  '0 20px 60px rgba(0,0,0,0.22)',
+  }
+  const shadowVal = SHADOW_MAP[theme.modal?.shadow ?? 'medium'] ?? SHADOW_MAP.medium
+  const cardBase: React.CSSProperties = { borderRadius: radius, boxShadow: shadowVal }
 
   // ── BACKGROUND layout ──────────────────────────────────────────────────────
   if (imgPos === 'background' && layoutImgSrc) {

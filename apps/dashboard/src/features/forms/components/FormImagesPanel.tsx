@@ -227,7 +227,7 @@ export function FormImagesPanel({ theme, onUpdateTheme, blocks, onUpdateBlock }:
         <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Form background</p>
 
         <div className="flex items-center gap-2 mb-2">
-          <label className="relative w-7 h-7 rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden cursor-pointer shrink-0 shadow-sm">
+          <label className="relative w-6 h-6 rounded-full border-2 border-white dark:border-gray-700 overflow-hidden cursor-pointer shrink-0 shadow-md ring-1 ring-gray-200 dark:ring-gray-600">
             <div className="absolute inset-0" style={{ background: bgColor }} />
             <input type="color" value={bgColor} onChange={e => patchColors({ background: e.target.value })}
               className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
