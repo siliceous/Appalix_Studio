@@ -27,12 +27,12 @@ function CopyButton({ text }: { text: string }) {
 
 function CodeBlock({ code }: { code: string }) {
   return (
-    <div className="relative rounded-lg bg-gray-900 dark:bg-black/40 border border-gray-700 dark:border-white/10 overflow-hidden">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700 dark:border-white/10">
-        <span className="text-[10px] font-mono text-gray-500">HTML</span>
+    <div className="relative rounded-lg bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-white/10 bg-white/60 dark:bg-white/[0.02]">
+        <span className="text-[10px] font-mono font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">HTML</span>
         <CopyButton text={code} />
       </div>
-      <pre className="px-3 py-3 text-[11px] font-mono text-gray-300 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">
+      <pre className="px-3 py-3 text-[11px] font-mono text-gray-800 dark:text-gray-200 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">
         {code}
       </pre>
     </div>

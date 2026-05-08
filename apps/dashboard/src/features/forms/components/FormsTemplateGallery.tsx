@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useMemo } from 'react'
+import { useState, useTransition, useMemo, useRef } from 'react'
 import { useRouter }  from 'next/navigation'
 import {
   Search, Loader2, Layers, Mail, MessageSquare,
@@ -259,6 +259,8 @@ export function FormsTemplateGallery({ templates, forms = [] }: Props) {
   const [multiStep,     setMultiStep]     = useState<boolean | null>(null)
   const [creatingId,    setCreatingId]    = useState<string | null>(null)
   const [createErr,     setCreateErr]     = useState<string | null>(null)
+  const myFormsRef = useRef<HTMLDivElement>(null)
+  const scrollToMyForms = () => myFormsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
   // Filter templates client-side (server pre-fetched all)
   const filtered = useMemo(() => {
@@ -448,6 +450,18 @@ export function FormsTemplateGallery({ templates, forms = [] }: Props) {
               )}
             </div>
 
+            {/* Saved forms — jumps to "My Forms" section */}
+            {forms.length > 0 && (
+              <button
+                onClick={scrollToMyForms}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-500/15 border border-brand-200 dark:border-brand-500/30 rounded-lg hover:bg-brand-100 dark:hover:bg-brand-500/25 transition-colors"
+              >
+                <LayoutTemplate className="w-3.5 h-3.5" />
+                Saved forms
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-brand-200 dark:bg-brand-500/30 text-brand-800 dark:text-brand-200">{forms.length}</span>
+              </button>
+            )}
+
             {/* Start from scratch */}
             <button
               onClick={() => handleUseTemplate(templates.find(t => t.name === 'Blank' || t.tags.includes('blank'))?.id ?? templates[0]?.id ?? '')}
@@ -500,7 +514,7 @@ export function FormsTemplateGallery({ templates, forms = [] }: Props) {
 
           {/* My Forms section */}
           {forms.length > 0 && (
-            <div className="mb-8">
+            <div ref={myFormsRef} className="mb-8 scroll-mt-6">
               <div className="grid grid-cols-3 gap-4 mb-8">
                 {forms.map(form => (
                   <div
