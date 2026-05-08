@@ -119,7 +119,7 @@
     var btn = document.createElement('button')
     btn.setAttribute('aria-label', 'Close')
     btn.innerHTML = '&times;'
-    btn.style.cssText = 'position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;border:none;background:rgba(255,255,255,.95);color:#333;font-size:18px;line-height:1;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.18);z-index:1'
+    btn.style.cssText = 'position:absolute;top:-10px;right:-10px;width:26px;height:26px;border-radius:50%;border:none;background:rgba(255,255,255,.98);color:#333;font-size:16px;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);z-index:2'
     btn.onclick = onClick
     return btn
   }
