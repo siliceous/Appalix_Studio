@@ -284,6 +284,25 @@ export async function archiveForm(id: string): Promise<{ error?: string }> {
   return {}
 }
 
+/**
+ * Bulk-archive every draft form in the workspace. Used to clean up the long
+ * tail of forms that get created every time a user opens a template card.
+ */
+export async function bulkArchiveDrafts(): Promise<{ archived: number; error?: string }> {
+  const ctx = await getWorkspaceAndUser()
+  if (!ctx) return { archived: 0, error: 'Not authenticated' }
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('forms')
+    .update({ status: 'archived', updated_at: new Date().toISOString() })
+    .eq('workspace_id', ctx.workspaceId)
+    .eq('status', 'draft')
+    .select('id')
+  if (error) return { archived: 0, error: error.message }
+  revalidatePath('/dashboard/forms'); revalidatePath('/dashboard/forms/templates')
+  return { archived: (data ?? []).length }
+}
+
 export async function duplicateForm(id: string): Promise<{ form?: Form; error?: string }> {
   const ctx = await getWorkspaceAndUser()
   if (!ctx) return { error: 'Not authenticated' }

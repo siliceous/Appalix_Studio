@@ -6,10 +6,10 @@ import {
   Search, Loader2, Layers, Mail, MessageSquare,
   PanelRight, Globe, Maximize2, LayoutTemplate, Check,
   SlidersHorizontal, X, Zap, ShoppingBag, RotateCcw,
-  Pencil, ExternalLink, Plus,
+  Pencil, ExternalLink, Plus, Trash2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { createFormFromTemplate } from '@/app/actions/forms'
+import { createFormFromTemplate, archiveForm, bulkArchiveDrafts } from '@/app/actions/forms'
 import type { FormTemplate, FormType, FormGoal, ChannelMode, Form, FormStatus } from '@/features/forms/types'
 
 // ── Filter config ─────────────────────────────────────────────────────────────
@@ -262,6 +262,36 @@ export function FormsTemplateGallery({ templates, forms = [] }: Props) {
   const myFormsRef = useRef<HTMLDivElement>(null)
   const scrollToMyForms = () => myFormsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
+  // Optimistic local list of forms — mutated by delete / bulk-clean
+  const [localForms, setLocalForms] = useState<Form[]>(forms)
+  const [cleaning,   setCleaning]   = useState(false)
+
+  function handleDeleteForm(id: string, name: string) {
+    if (!confirm(`Delete "${name}"? This cannot be undone from the UI.`)) return
+    setLocalForms(prev => prev.filter(f => f.id !== id))
+    archiveForm(id).then(r => {
+      if (r.error) {
+        alert(`Couldn't delete: ${r.error}`)
+        // restore on failure
+        setLocalForms(prev => [...prev, forms.find(f => f.id === id)!].filter(Boolean))
+      }
+    })
+  }
+
+  async function handleCleanupDrafts() {
+    const drafts = localForms.filter(f => f.status === 'draft')
+    if (drafts.length === 0) { alert('No draft forms to clean up.'); return }
+    if (!confirm(`Delete all ${drafts.length} draft form${drafts.length === 1 ? '' : 's'}? Published and paused forms are kept.`)) return
+    setCleaning(true)
+    setLocalForms(prev => prev.filter(f => f.status !== 'draft'))
+    const res = await bulkArchiveDrafts()
+    setCleaning(false)
+    if (res.error) {
+      alert(`Cleanup failed: ${res.error}`)
+      setLocalForms(forms)  // restore
+    }
+  }
+
   // Filter templates client-side (server pre-fetched all)
   const filtered = useMemo(() => {
     return templates.filter(t => {
@@ -429,8 +459,8 @@ export function FormsTemplateGallery({ templates, forms = [] }: Props) {
         {/* Top bar */}
         <div className="shrink-0 px-6 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center gap-4">
           <div>
-            <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">{forms.length > 0 ? 'My Forms' : 'Choose a template'}</h1>
-            <p className="text-xs text-gray-400 mt-0.5">{forms.length > 0 ? `${forms.length} form${forms.length !== 1 ? 's' : ''} · scroll down to create a new one from a template` : 'Pick a starting point — you can customise everything in the editor.'}</p>
+            <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">{localForms.length > 0 ? 'Your Forms' : 'Choose a template'}</h1>
+            <p className="text-xs text-gray-400 mt-0.5">{localForms.length > 0 ? `${localForms.length} form${localForms.length !== 1 ? 's' : ''} · scroll down to create a new one from a template` : 'Pick a starting point — you can customise everything in the editor.'}</p>
           </div>
 
           <div className="ml-auto flex items-center gap-3">
@@ -450,15 +480,28 @@ export function FormsTemplateGallery({ templates, forms = [] }: Props) {
               )}
             </div>
 
-            {/* Saved forms — jumps to "My Forms" section */}
-            {forms.length > 0 && (
+            {/* Cleanup drafts — only when there are drafts to clean */}
+            {localForms.some(f => f.status === 'draft') && (
+              <button
+                onClick={handleCleanupDrafts}
+                disabled={cleaning}
+                title="Archive every draft form"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors disabled:opacity-60"
+              >
+                {cleaning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                Clean up drafts
+              </button>
+            )}
+
+            {/* Saved forms — jumps to "Your Forms" section */}
+            {localForms.length > 0 && (
               <button
                 onClick={scrollToMyForms}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-500/15 border border-brand-200 dark:border-brand-500/30 rounded-lg hover:bg-brand-100 dark:hover:bg-brand-500/25 transition-colors"
               >
                 <LayoutTemplate className="w-3.5 h-3.5" />
                 Saved forms
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-brand-200 dark:bg-brand-500/30 text-brand-800 dark:text-brand-200">{forms.length}</span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-brand-200 dark:bg-brand-500/30 text-brand-800 dark:text-brand-200">{localForms.length}</span>
               </button>
             )}
 
@@ -509,14 +552,14 @@ export function FormsTemplateGallery({ templates, forms = [] }: Props) {
           </div>
         )}
 
-        {/* Template grid (+ My Forms at top if any) */}
+        {/* Template grid (+ Your Forms at top if any) */}
         <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden px-6 py-6">
 
-          {/* My Forms section */}
-          {forms.length > 0 && (
+          {/* Your Forms section */}
+          {localForms.length > 0 && (
             <div ref={myFormsRef} className="mb-8 scroll-mt-6">
               <div className="grid grid-cols-3 gap-4 mb-8">
-                {forms.map(form => (
+                {localForms.map(form => (
                   <div
                     key={form.id}
                     className="flex flex-col rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden hover:border-brand-300 dark:hover:border-brand-600 hover:shadow-md transition-all"
@@ -555,6 +598,13 @@ export function FormsTemplateGallery({ templates, forms = [] }: Props) {
                           Preview
                         </a>
                       )}
+                      <button
+                        onClick={() => handleDeleteForm(form.id, form.name)}
+                        title="Delete form"
+                        className="ml-auto flex items-center justify-center w-7 h-7 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 ))}
