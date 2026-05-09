@@ -4,7 +4,7 @@ Tags: forms, popup, lead capture, optin, email capture
 Requires at least: 5.0
 Tested up to: 6.6
 Requires PHP: 7.2
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,9 +39,9 @@ In any post, page, widget, or block, paste:
 
 The embed key is shown under the form's **Embed** tab in your dashboard.
 
-= Site-wide popup / fly-out =
+= Site-wide popups / fly-outs =
 
-Set the embed key in **Settings → Appalix Forms → Site-wide popup / fly-out form**. The script loads in the footer of every page; the trigger you set under the form's Behaviour tab determines when it shows.
+Add one embed key per line (or comma-separated) under **Settings → Appalix Forms → Site-wide popups / fly-outs**. Each form loads in the footer of every page; the trigger you set under each form's Behaviour tab determines when it shows. You can have multiple popups, fly-outs, and inline forms running side by side.
 
 == Frequently Asked Questions ==
 
@@ -55,6 +55,9 @@ No. The script fetches the latest configuration each visit, so behaviour and the
 * Open DevTools → Console — script messages prefixed `[Appalix Forms]` will tell you what's happening.
 
 == Changelog ==
+
+= 1.1.0 =
+* Multiple site-wide form keys — paste any number, one per line. Each renders in the footer with its own Behaviour trigger.
 
 = 1.0.0 =
 * Initial release. Shortcode + site-wide injection.

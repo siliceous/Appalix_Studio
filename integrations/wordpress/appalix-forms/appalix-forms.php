@@ -3,7 +3,7 @@
  * Plugin Name:       Appalix Forms
  * Plugin URI:        https://app.appalix.ai
  * Description:       Embed Appalix forms — popups, fly-outs and inline — anywhere on your WordPress site.
- * Version:           1.0.0
+ * Version:           1.1.0
  * Requires at least: 5.0
  * Requires PHP:      7.2
  * Author:            Appalix
@@ -39,17 +39,51 @@ add_action('admin_init', function () {
     ]);
     register_setting('appalix_forms', 'appalix_forms_site_key', [
         'type'              => 'string',
-        'sanitize_callback' => 'sanitize_text_field',
+        'sanitize_callback' => 'appalix_forms_sanitize_keys',
         'default'           => '',
     ]);
-});
+}
+
+/**
+ * Accept one key per line (or comma-separated). Strip whitespace and bad chars,
+ * dedupe, and store back as newline-separated.
+ */
+function appalix_forms_sanitize_keys($value) {
+    if (!is_string($value)) {
+        return '';
+    }
+    $tokens = preg_split('/[\s,]+/', $value);
+    $clean  = [];
+    foreach ($tokens as $tok) {
+        $tok = sanitize_text_field($tok);
+        if ($tok && !in_array($tok, $clean, true)) {
+            $clean[] = $tok;
+        }
+    }
+    return implode("\n", $clean);
+}
+
+/**
+ * Return the saved site-wide form keys as an array (filtered, deduped).
+ */
+function appalix_forms_get_site_keys() {
+    $raw = (string) get_option('appalix_forms_site_key', '');
+    $tokens = preg_split('/[\s,]+/', $raw);
+    $out = [];
+    foreach ($tokens as $tok) {
+        $tok = trim($tok);
+        if ($tok) $out[] = $tok;
+    }
+    return array_values(array_unique($out));
+}
 
 function appalix_forms_render_settings_page() {
     if (!current_user_can('manage_options')) {
         return;
     }
-    $origin   = get_option('appalix_forms_origin', APPALIX_FORMS_DEFAULT_ORIGIN);
-    $site_key = get_option('appalix_forms_site_key', '');
+    $origin    = get_option('appalix_forms_origin', APPALIX_FORMS_DEFAULT_ORIGIN);
+    $site_keys = appalix_forms_get_site_keys();
+    $site_keys_text = implode("\n", $site_keys);
     ?>
     <div class="wrap">
         <h1><?php echo esc_html__('Appalix Forms', 'appalix-forms'); ?></h1>
@@ -64,11 +98,11 @@ function appalix_forms_render_settings_page() {
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="appalix_forms_site_key"><?php esc_html_e('Site-wide popup / fly-out form', 'appalix-forms'); ?></label></th>
+                    <th scope="row"><label for="appalix_forms_site_key"><?php esc_html_e('Site-wide popups / fly-outs', 'appalix-forms'); ?></label></th>
                     <td>
-                        <input id="appalix_forms_site_key" name="appalix_forms_site_key" type="text" value="<?php echo esc_attr($site_key); ?>" class="regular-text code" placeholder="<?php esc_attr_e('your form embed key', 'appalix-forms'); ?>" />
+                        <textarea id="appalix_forms_site_key" name="appalix_forms_site_key" rows="4" class="large-text code" placeholder="<?php esc_attr_e('embed_key_form_a&#10;embed_key_form_b', 'appalix-forms'); ?>"><?php echo esc_textarea($site_keys_text); ?></textarea>
                         <p class="description">
-                            <?php esc_html_e('Optional — paste a form embed key here to load that form site-wide as a popup or fly-out (uses the trigger you set in the form\'s Behaviour tab). Leave blank to only render forms via shortcode.', 'appalix-forms'); ?>
+                            <?php esc_html_e('Optional — one embed key per line (or comma-separated). Each form loads on every page using its own Behaviour trigger. Leave blank to only render forms via shortcode.', 'appalix-forms'); ?>
                         </p>
                     </td>
                 </tr>
@@ -110,16 +144,18 @@ add_shortcode('appalix_form', function ($atts) {
  * ------------------------------------------------------------------------- */
 
 add_action('wp_footer', function () {
-    $key = get_option('appalix_forms_site_key', '');
-    if (!$key) {
+    $keys = appalix_forms_get_site_keys();
+    if (empty($keys)) {
         return;
     }
     $origin = esc_url(get_option('appalix_forms_origin', APPALIX_FORMS_DEFAULT_ORIGIN));
-    printf(
-        '<script src="%s/embed.js" data-form-key="%s" async></script>' . "\n",
-        $origin,
-        esc_attr(sanitize_text_field($key))
-    );
+    foreach ($keys as $key) {
+        printf(
+            '<script src="%s/embed.js" data-form-key="%s" async></script>' . "\n",
+            $origin,
+            esc_attr($key)
+        );
+    }
 });
 
 /* ------------------------------------------------------------------------- *

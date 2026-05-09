@@ -51,6 +51,15 @@ Use this for **embedded** form types you want to render at a specific spot on a 
 
 If your theme supports app blocks, you can let merchants drop the form into any section via the visual theme editor. That requires publishing a Shopify App; reach out to support@appalix.ai if you'd like that flow rather than copy-pasting code.
 
+## Multiple forms?
+
+Yes — paste as many `<script>` tags as you want. Each one loads its own form on the same page. Inline forms render at the script's location; popups and fly-outs honour their own trigger settings independently.
+
+```html
+<script src="https://app.appalix.ai/embed.js" data-form-key="KEY_FOR_NEWSLETTER" async></script>
+<script src="https://app.appalix.ai/embed.js" data-form-key="KEY_FOR_EXIT_INTENT" async></script>
+```
+
 ## Notes
 
 - Behaviour and theme changes you make in the Appalix dashboard propagate automatically on the next page load (with up to 60 seconds of HTTP caching).
