@@ -1104,6 +1104,7 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
   const [previewLoading, setPreviewLoading] = useState(false)
   const [viewTemplate,   setViewTemplate]   = useState<EmailTemplateRow | null>(null)
   const [editingId,      setEditingId]      = useState<string | null>(null)
+  const [backStep,       setBackStep]       = useState<Step>('gallery')
 
   // Save
   const [saving, setSaving] = useState(false)
@@ -1264,11 +1265,13 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
     setContent(EMPTY_CONTENT)
     setStyleOpts({ ...DEFAULT_STYLE_OPTIONS })
     setPreviewHtml('')
+    setBackStep('gallery')
     setStep('intent')
   }
 
   function onIntentSelected(intent: CampaignIntent) {
     setCampaignIntent(intent)
+    setBackStep('intent')
     setStep('style-pick')
   }
 
@@ -1291,6 +1294,7 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
     const recIdx = campaignIntent ? recommendVariationIndex(campaignIntent) : 1
     setSelectedVar(vars.find(v => v.index === recIdx) ?? vars[0])
     setPreviewHtml('')
+    setBackStep('style-pick')
     setStep('variations')
   }
 
@@ -1606,8 +1610,8 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
     return (
       <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
         <div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-gray-100 dark:border-white/10 bg-white dark:bg-gray-950">
-          <button onClick={() => setStep('style-pick')} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 dark:hover:text-gray-200">
-            <ChevronLeft className="w-3.5 h-3.5" /> Style
+          <button onClick={() => setStep(backStep)} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 dark:hover:text-gray-200">
+            <ChevronLeft className="w-3.5 h-3.5" /> {backStep === 'gallery' ? 'All Templates' : 'Style'}
           </button>
           <FlowProgress current={2} />
           <div className="w-16" />
@@ -1919,6 +1923,7 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
                           const recIdx = 1
                           setSelectedVar(vars.find(v => v.index === recIdx) ?? vars[0])
                           setPreviewHtml('')
+                          setBackStep('gallery')
                           setStep('variations')
                         }} />
                     )
