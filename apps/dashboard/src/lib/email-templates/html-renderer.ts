@@ -189,7 +189,6 @@ function renderBlocksHtml(blocks: ContentBlock[], c: Ctx): string {
         return wrap(paras, block.blockBgColor)
       }
       case 'image': {
-        if (!block.url) return ''
         const align  = block.align ?? 'center'
         const isPercent = block.imageWidth && block.imageWidth.includes('%')
         const displayStyle = isPercent ? 'display:inline-block;vertical-align:top;box-sizing:border-box;font-size:0;' : ''
@@ -199,7 +198,10 @@ function renderBlocksHtml(blocks: ContentBlock[], c: Ctx): string {
           : 'display:block;margin-bottom:24px;'
         const w      = block.imageWidth  ? `width:${block.imageWidth};` : 'max-width:100%;'
         const rot    = block.imageRotate ? `transform:rotate(${block.imageRotate}deg);` : ''
-        const inner  = `<img src="${escape(block.url)}" alt="${escape(block.alt ?? '')}" style="${w}height:auto;border-radius:8px;${rot}${displayStyle}${margin}" />`
+
+        // Use placeholder for empty URLs to show layout structure
+        const src = block.url || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" font-family="sans-serif" font-size="16" fill="%239ca3af" text-anchor="middle" dy="0.3em"%3EImage%3C/text%3E%3C/svg%3E'
+        const inner  = `<img src="${escape(src)}" alt="${escape(block.alt ?? '')}" style="${w}height:auto;border-radius:8px;${rot}${displayStyle}${margin}" />`
         // Don't wrap percentage-width images to preserve inline-block layout
         return isPercent ? inner : wrap(inner, block.blockBgColor)
       }
@@ -503,17 +505,13 @@ function offerHtml(c: Ctx): string {
 <style>*{box-sizing:border-box;margin:0;padding:0}body{background:${c.wrapperBg};font-family:${c.fontFamily};-webkit-font-smoothing:antialiased}.wrap{max-width:560px;margin:32px auto}</style>
 </head><body><div class="wrap">
   <div style="${c.cardStyle}">
-    <div style="height:3px;background:${c.primary};"></div>
-    <div style="background:${c.headerBg};padding:${pad.v * 0.875}px ${pad.h}px ${pad.v * 0.75}px;">
-      ${c.logoBlock}
-      <div style="margin-top:16px;">
-        <span style="display:inline-block;background:${c.primary};color:#fff;font-size:11px;font-weight:700;letter-spacing:1px;padding:3px 12px;border-radius:100px;text-transform:uppercase;margin-bottom:10px;">Limited Offer</span>
-        <h1 style="font-size:${c.headSize};font-weight:800;color:${c.headColor};line-height:1.2;margin:0 0 6px;font-family:${c.fontFamily};">${c.headline}</h1>
-      </div>
-    </div>
-    <div style="background:${c.bodyBg};padding:${pad.v}px ${pad.h}px;">
-      <p style="font-size:15px;line-height:1.7;color:${c.textColor};margin:0 0 24px;">${c.bodyText.replace(/\n/g, '<br/>')}</p>
-      ${c.ctaBlock}
+    <div style="background:${c.bodyBg};padding:${pad.v}px ${pad.h}px;text-align:center;">
+      ${c.hasBlocks ? c.blocksHtml : `
+        <div style="height:3px;background:${c.primary};margin:-${pad.v}px -${pad.h}px ${pad.v}px;"></div>
+        <h1 style="font-size:${c.headSize};font-weight:800;color:${c.headColor};line-height:1.2;margin:0 0 16px;font-family:${c.fontFamily};">${c.headline}</h1>
+        <p style="font-size:15px;line-height:1.7;color:${c.textColor};margin:0 0 24px;">${c.bodyText.replace(/\n/g, '<br/>')}</p>
+        ${c.ctaBlock}
+      `}
     </div>
     <div style="background:${c.footerBg};padding:${pad.v * 0.625}px ${pad.h}px;text-align:center;font-size:11px;color:#9ca3af;">${c.footerText}</div>
   </div>
