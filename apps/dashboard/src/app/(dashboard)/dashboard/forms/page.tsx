@@ -10,6 +10,9 @@ import { getAutoSettings } from '@/app/actions/sage-auto-settings'
 import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
 import { getActiveAutomationStates } from '@/app/actions/automation-executions'
 import { ActivitySidebar } from '@/components/team/activity-sidebar'
+import { listForms } from '@/app/actions/forms'
+import Link from 'next/link'
+import { LayoutTemplate } from 'lucide-react'
 
 
 export const metadata: Metadata = { title: 'Forms' }
@@ -202,11 +205,13 @@ export default async function FormsPage({
 
   const activityDate = params.activityDate ?? new Date().toISOString().slice(0, 10)
   const activityUserId = viewAsUserId ?? user.id
-  const [activity, viewingAs, automationStates] = await Promise.all([
+  const [activity, viewingAs, automationStates, builderForms] = await Promise.all([
     getActivityFeed(activityUserId, workspaceId, activityDate),
     resolveViewingAs(params.viewAs, workspaceId),
     getActiveAutomationStates(),
+    listForms(),
   ])
+  const myFormsCount = builderForms.length
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
@@ -219,6 +224,21 @@ export default async function FormsPage({
         viewAsUserId={viewAsUserId}
         teamMembers={teamMembersForPicker}
       />
+      <div className="shrink-0 px-6 pt-3 pb-2 flex items-center gap-2 border-b border-gray-100 dark:border-gray-800">
+        <Link
+          href="/dashboard/forms/templates"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-500/15 border border-brand-200 dark:border-brand-500/30 rounded-lg hover:bg-brand-100 dark:hover:bg-brand-500/25 transition-colors"
+        >
+          <LayoutTemplate className="w-3.5 h-3.5" />
+          My Forms
+          {myFormsCount > 0 && (
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-brand-200 dark:bg-brand-500/30 text-brand-800 dark:text-brand-200">
+              {myFormsCount}
+            </span>
+          )}
+        </Link>
+        <span className="text-[11px] text-gray-400">Build &amp; embed your own forms</span>
+      </div>
       <div className="flex flex-1 min-h-0 overflow-hidden">
           <FormsTable
             submissions={submissions}
