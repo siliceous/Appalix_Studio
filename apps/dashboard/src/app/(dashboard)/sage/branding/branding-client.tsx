@@ -32,8 +32,8 @@ import {
   type CandidateRow,
 } from '@/app/actions/branding'
 import { EmailTemplatesTab } from './email-templates-tab'
-import { FormsTemplateGallery } from '@/features/forms/components/FormsTemplateGallery'
-import { type FormTemplate } from '@/features/forms/types'
+import { MyFormsAndTemplates } from '@/features/forms/components/MyFormsAndTemplates'
+import { type FormTemplate, type Form } from '@/features/forms/types'
 import { useUserAvatar } from '@/contexts/user-avatar-context'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -89,7 +89,8 @@ interface Props {
   assets:      BrandAssetRow[]
   sessions:    ScanSessionRow[]
   candidates:  CandidateRow[]
-  templates: FormTemplate[]
+  templates:    FormTemplate[]
+  builderForms: Form[]
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -1099,7 +1100,7 @@ function ComingSoonTab({ label }: { label: string }) {
 
 // ── Main client ───────────────────────────────────────────────────────────────
 
-export function BrandingClient({ profiles, assets, sessions, candidates, templates }: Props) {
+export function BrandingClient({ profiles, assets, sessions, candidates, templates, builderForms }: Props) {
   const router       = useRouter()
   const searchParams = useSearchParams()
 
@@ -1166,7 +1167,7 @@ export function BrandingClient({ profiles, assets, sessions, candidates, templat
           />
         )}
         {activeTab === 'forms' && (
-          <FormsTemplateGallery templates={templates} />
+          <MyFormsAndTemplates templates={templates} forms={builderForms} />
         )}
         {activeTab === 'website'         && <ComingSoonTab label="Website" />}
       </div>

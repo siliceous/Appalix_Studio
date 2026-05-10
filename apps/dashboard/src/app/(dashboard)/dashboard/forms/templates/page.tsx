@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect }     from 'next/navigation'
-import { listFormTemplates, listForms } from '@/app/actions/forms'
+import { listFormTemplates } from '@/app/actions/forms'
 import { FormsTemplateGallery } from '@/features/forms/components/FormsTemplateGallery'
 
 export const metadata: Metadata = { title: 'Forms · Builder' }
@@ -12,10 +12,7 @@ export default async function FormTemplatesPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [templates, forms] = await Promise.all([
-    listFormTemplates(),
-    listForms(),
-  ])
+  const templates = await listFormTemplates()
 
-  return <FormsTemplateGallery templates={templates} forms={forms} />
+  return <FormsTemplateGallery templates={templates} />
 }
