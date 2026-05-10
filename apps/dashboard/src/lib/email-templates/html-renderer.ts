@@ -101,6 +101,7 @@ export interface ContentBlock {
   blockBgColor?: string  // block-level background (behind all content)
   // social
   socialLinks?: Record<string, string>
+  socialIconStyle?: 'round' | 'square' | 'rounded'  // icon shape
   // columns
   ratio?:   ColumnRatio
   columns?: ContentBlock[][]
@@ -190,13 +191,17 @@ function renderBlocksHtml(blocks: ContentBlock[], c: Ctx): string {
       case 'image': {
         if (!block.url) return ''
         const align  = block.align ?? 'center'
-        const margin = align === 'center' ? 'margin:0 auto 24px;display:block;'
+        const isPercent = block.imageWidth && block.imageWidth.includes('%')
+        const displayStyle = isPercent ? 'display:inline-block;vertical-align:top;box-sizing:border-box;font-size:0;' : ''
+        const margin = isPercent ? 'margin:0;'
+          : align === 'center' ? 'margin:0 auto 24px;display:block;'
           : align === 'right' ? 'margin:0 0 24px auto;display:block;'
           : 'display:block;margin-bottom:24px;'
         const w      = block.imageWidth  ? `width:${block.imageWidth};` : 'max-width:100%;'
         const rot    = block.imageRotate ? `transform:rotate(${block.imageRotate}deg);` : ''
-        const inner  = `<img src="${escape(block.url)}" alt="${escape(block.alt ?? '')}" style="${w}height:auto;border-radius:8px;${rot}${margin}" />`
-        return wrap(inner, block.blockBgColor)
+        const inner  = `<img src="${escape(block.url)}" alt="${escape(block.alt ?? '')}" style="${w}height:auto;border-radius:8px;${rot}${displayStyle}${margin}" />`
+        // Don't wrap percentage-width images to preserve inline-block layout
+        return isPercent ? inner : wrap(inner, block.blockBgColor)
       }
       case 'button': {
         if (!block.text) return ''
@@ -228,8 +233,10 @@ function renderBlocksHtml(blocks: ContentBlock[], c: Ctx): string {
         const links = block.socialLinks ?? {}
         const platforms = Object.keys(links).filter(k => links[k])
         if (!platforms.length) return ''
+        const iconStyle = block.socialIconStyle ?? 'round'
+        const borderRadius = iconStyle === 'round' ? '50%' : iconStyle === 'square' ? '0' : '4px'
         const icons = platforms.map(p =>
-          `<a href="${escape(links[p])}" style="display:inline-block;margin:0 5px;width:34px;height:34px;border-radius:50%;background:${c.linkColor};color:#fff;text-align:center;line-height:34px;text-decoration:none;font-family:${c.fontFamily};font-size:13px;font-weight:700;">${escape(p[0].toUpperCase())}</a>`
+          `<a href="${escape(links[p])}" style="display:inline-block;margin:0 5px;width:34px;height:34px;border-radius:${borderRadius};background:${c.linkColor};color:#fff;text-align:center;line-height:34px;text-decoration:none;font-family:${c.fontFamily};font-size:13px;font-weight:700;">${escape(p[0].toUpperCase())}</a>`
         ).join('')
         return `<div style="text-align:${block.align ?? 'center'};padding:16px 40px;">${icons}</div>`
       }
@@ -238,8 +245,10 @@ function renderBlocksHtml(blocks: ContentBlock[], c: Ctx): string {
         const cu = block.companyUrl ? safeUrl(block.companyUrl) : '#'
         const uu = block.unsubscribeUrl ? safeUrl(block.unsubscribeUrl) : '#'
         const socialLinks = block.socialLinks ?? {}
+        const iconStyle = block.socialIconStyle ?? 'round'
+        const borderRadius = iconStyle === 'round' ? '50%' : iconStyle === 'square' ? '0' : '4px'
         const socialIcons = Object.keys(socialLinks).filter(k => socialLinks[k]).map(p =>
-          `<a href="${escape(socialLinks[p])}" style="display:inline-block;margin:0 4px;width:30px;height:30px;border-radius:50%;background:${c.linkColor};color:#fff;text-align:center;line-height:30px;text-decoration:none;font-size:12px;font-weight:700;">${escape(p[0].toUpperCase())}</a>`
+          `<a href="${escape(socialLinks[p])}" style="display:inline-block;margin:0 4px;width:30px;height:30px;border-radius:${borderRadius};background:${c.linkColor};color:#fff;text-align:center;line-height:30px;text-decoration:none;font-size:12px;font-weight:700;">${escape(p[0].toUpperCase())}</a>`
         ).join('')
         return `<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td style="padding:24px 40px;background:#f9fafb;border-top:1px solid #e5e7eb;text-align:center;font-family:${c.fontFamily};">
 ${socialIcons ? `<div style="margin-bottom:12px;">${socialIcons}</div>` : ''}
@@ -262,7 +271,7 @@ ${socialIcons ? `<div style="margin-bottom:12px;">${socialIcons}</div>` : ''}
       }
       default: return ''
     }
-  }).join('\n')
+  }).join('')
 }
 
 // ── Main entry ─────────────────────────────────────────────────────────────────
