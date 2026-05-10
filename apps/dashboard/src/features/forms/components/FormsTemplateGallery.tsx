@@ -459,7 +459,7 @@ export function FormsTemplateGallery({ templates, forms = [] }: Props) {
         {/* Top bar */}
         <div className="shrink-0 px-6 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center gap-4">
           <div>
-            <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">{localForms.length > 0 ? 'Your Forms' : 'Choose a template'}</h1>
+            <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">{localForms.length > 0 ? 'My Forms' : 'Choose a template'}</h1>
             <p className="text-xs text-gray-400 mt-0.5">{localForms.length > 0 ? `${localForms.length} form${localForms.length !== 1 ? 's' : ''} · scroll down to create a new one from a template` : 'Pick a starting point — you can customise everything in the editor.'}</p>
           </div>
 
@@ -493,14 +493,14 @@ export function FormsTemplateGallery({ templates, forms = [] }: Props) {
               </button>
             )}
 
-            {/* Saved forms — jumps to "Your Forms" section */}
+            {/* Saved forms — jumps to "My Forms" section */}
             {localForms.length > 0 && (
               <button
                 onClick={scrollToMyForms}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-500/15 border border-brand-200 dark:border-brand-500/30 rounded-lg hover:bg-brand-100 dark:hover:bg-brand-500/25 transition-colors"
               >
                 <LayoutTemplate className="w-3.5 h-3.5" />
-                Saved forms
+                My Forms
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-brand-200 dark:bg-brand-500/30 text-brand-800 dark:text-brand-200">{localForms.length}</span>
               </button>
             )}
@@ -552,10 +552,10 @@ export function FormsTemplateGallery({ templates, forms = [] }: Props) {
           </div>
         )}
 
-        {/* Template grid (+ Your Forms at top if any) */}
+        {/* Template grid (+ My Forms at top if any) */}
         <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden px-6 py-6">
 
-          {/* Your Forms section */}
+          {/* My Forms section */}
           {localForms.length > 0 && (
             <div ref={myFormsRef} className="mb-8 scroll-mt-6">
               <div className="grid grid-cols-3 gap-4 mb-8">
