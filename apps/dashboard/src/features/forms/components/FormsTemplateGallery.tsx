@@ -438,6 +438,15 @@ export function FormsTemplateGallery({ templates }: Props) {
               )}
             </div>
 
+            {/* My Forms — links to the form-format list page */}
+            <button
+              onClick={() => router.push('/dashboard/forms/my-forms')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-500/15 border border-brand-200 dark:border-brand-500/30 rounded-lg hover:bg-brand-100 dark:hover:bg-brand-500/25 transition-colors"
+            >
+              <LayoutTemplate className="w-3.5 h-3.5" />
+              My Forms
+            </button>
+
             {/* Start from scratch */}
             <button
               onClick={() => handleUseTemplate(templates.find(t => t.name === 'Blank' || t.tags.includes('blank'))?.id ?? templates[0]?.id ?? '')}

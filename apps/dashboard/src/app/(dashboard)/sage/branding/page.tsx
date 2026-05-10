@@ -3,7 +3,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 import { BrandingClient } from './branding-client'
-import { listFormTemplates, listForms } from '@/app/actions/forms'
+import { listFormTemplates } from '@/app/actions/forms'
 
 export const metadata: Metadata = { title: 'Branding · Sage' }
 
@@ -32,7 +32,6 @@ export default async function BrandingPage() {
     { data: sessionsRaw },
     { data: candidatesRaw },
     templates,
-    builderForms,
   ] = await Promise.all([
     supabase
       .from('brand_profiles')
@@ -65,7 +64,6 @@ export default async function BrandingPage() {
       .order('created_at', { ascending: false }),
 
     listFormTemplates(),
-    listForms(),
   ])
 
   return (
@@ -79,7 +77,6 @@ export default async function BrandingPage() {
           sessions={(sessionsRaw ?? []) as Parameters<typeof BrandingClient>[0]['sessions']}
           candidates={(candidatesRaw ?? []) as Parameters<typeof BrandingClient>[0]['candidates']}
           templates={templates}
-          builderForms={builderForms}
         />
       </div>
     </div>
