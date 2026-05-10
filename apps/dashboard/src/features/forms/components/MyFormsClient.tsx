@@ -111,7 +111,7 @@ export function MyFormsClient({ initialForms }: Props) {
           </button>
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden px-6 py-6 space-y-6">
+        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden px-6 py-6 grid grid-cols-1 lg:grid-cols-2 gap-5 content-start">
           {forms.map(form => (
             <div
               key={form.id}
