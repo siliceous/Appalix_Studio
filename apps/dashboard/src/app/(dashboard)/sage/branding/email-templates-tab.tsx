@@ -56,6 +56,379 @@ import {
   type AssetDefaults,
 } from './email-builder-canvas'
 
+// ── System template starters (1 per style) ──────────────────────────────────
+
+interface SystemTemplateStarter {
+  style: TemplateStyle
+  name: string  // e.g., "2 per category", "3 column", "2 & 3 mix"
+  heroImage: string
+  makeBlocks: (heroImage: string) => ContentBlock[]
+  makeStyleOptions: (color: string, wrapperBg: string) => Partial<StyleOptions>
+}
+
+function makePromoBlocks(heroImage: string): ContentBlock[] {
+  return [
+    { id: uid(), type: 'logo',     align: 'left',   bgColor: '#ffffff' },
+    { id: uid(), type: 'image',    url: heroImage, alt: 'Promotional offer', imageWidth: '100%', align: 'center' },
+    { id: uid(), type: 'headline', text: 'Your Exclusive Offer Awaits', align: 'center' },
+    { id: uid(), type: 'text',     text: "We've put together something special just for you. For a limited time, enjoy exclusive savings on our most popular products and services.\n\nThis is your chance to get more value and save big.", align: 'center' },
+    { id: uid(), type: 'button',   text: 'Claim Your Offer', url: '', align: 'center' },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'footer_block', companyName: '', unsubscribeUrl: '#' },
+  ]
+}
+
+function makeOfferBlocks2PerCategory(heroImage: string): ContentBlock[] {
+  return [
+    { id: uid(), type: 'logo',     align: 'center', bgColor: '#f8f9fa' },
+    { id: uid(), type: 'headline', text: 'Up to 50% Off', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Flash Sale - Limited Time Offer', align: 'center' },
+    { id: uid(), type: 'text',     text: 'For a limited time, enjoy exclusive savings on our most popular items. Shop curated collections across all categories now.', align: 'center' },
+    { id: uid(), type: 'spacer',   height: 32 },
+    { id: uid(), type: 'button',   text: 'SHOP THE SALE', url: '', align: 'center' },
+    { id: uid(), type: 'spacer',   height: 32 },
+    { id: uid(), type: 'divider'  },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'text',     text: 'WOMEN • 2 PRODUCTS', align: 'center', fontSize: 12, bold: true },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 1', imageWidth: '48%' },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 2', imageWidth: '48%' },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'text',     text: 'MEN • 2 PRODUCTS', align: 'center', fontSize: 12, bold: true },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 1', imageWidth: '48%' },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 2', imageWidth: '48%' },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'text',     text: 'ACCESSORIES • 2 PRODUCTS', align: 'center', fontSize: 12, bold: true },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 1', imageWidth: '48%' },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 2', imageWidth: '48%' },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'text',     text: 'SALE • 2 PRODUCTS', align: 'center', fontSize: 12, bold: true },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 1', imageWidth: '48%' },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 2', imageWidth: '48%' },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'divider'  },
+    { id: uid(), type: 'spacer',   height: 16 },
+    { id: uid(), type: 'social',   socialLinks: {}, align: 'center' },
+    { id: uid(), type: 'spacer',   height: 8 },
+    { id: uid(), type: 'text',     text: 'Offer expires in 48 hours. Shop now and don\'t miss out!', align: 'center', fontSize: 11 },
+    { id: uid(), type: 'footer_block', companyName: '', unsubscribeUrl: '#' },
+  ]
+}
+
+function makeOfferBlocks3Column(heroImage: string): ContentBlock[] {
+  return [
+    { id: uid(), type: 'logo',     align: 'center', bgColor: '#f8f9fa' },
+    { id: uid(), type: 'image',    url: '', alt: 'Product showcase', imageWidth: '100%', align: 'center' },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'text',     text: 'FLASH SALE', align: 'center', fontSize: 11, bold: true },
+    { id: uid(), type: 'headline', text: 'Up to 50% Off', align: 'center' },
+    { id: uid(), type: 'text',     text: 'For a limited time, enjoy exclusive savings on our most popular items. Shop curated collections across all categories now.', align: 'center' },
+    { id: uid(), type: 'spacer',   height: 32 },
+    { id: uid(), type: 'button',   text: 'SHOP THE SALE', url: '', align: 'center' },
+    { id: uid(), type: 'spacer',   height: 32 },
+    { id: uid(), type: 'divider'  },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'text',     text: 'WOMEN', align: 'center', fontSize: 12, bold: true },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 1', imageWidth: '33.33%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'text',     text: 'Price: $XX', align: 'center', fontSize: 9 },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 2', imageWidth: '33.33%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'text',     text: 'Price: $XX', align: 'center', fontSize: 9 },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 3', imageWidth: '33.33%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'text',     text: 'Price: $XX', align: 'center', fontSize: 9 },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'text',     text: 'MEN', align: 'center', fontSize: 12, bold: true },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 1', imageWidth: '33.33%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'text',     text: 'Price: $XX', align: 'center', fontSize: 9 },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 2', imageWidth: '33.33%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'text',     text: 'Price: $XX', align: 'center', fontSize: 9 },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 3', imageWidth: '33.33%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'text',     text: 'Price: $XX', align: 'center', fontSize: 9 },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'text',     text: 'ACCESSORIES', align: 'center', fontSize: 12, bold: true },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 1', imageWidth: '33.33%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'text',     text: 'Price: $XX', align: 'center', fontSize: 9 },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 2', imageWidth: '33.33%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'text',     text: 'Price: $XX', align: 'center', fontSize: 9 },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 3', imageWidth: '33.33%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'text',     text: 'Price: $XX', align: 'center', fontSize: 9 },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'text',     text: 'SALE', align: 'center', fontSize: 12, bold: true },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 1', imageWidth: '33.33%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'text',     text: 'Price: $XX', align: 'center', fontSize: 9 },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 2', imageWidth: '33.33%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'text',     text: 'Price: $XX', align: 'center', fontSize: 9 },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 3', imageWidth: '33.33%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'text',     text: 'Price: $XX', align: 'center', fontSize: 9 },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'divider'  },
+    { id: uid(), type: 'spacer',   height: 16 },
+    { id: uid(), type: 'social',   socialLinks: {}, align: 'center' },
+    { id: uid(), type: 'spacer',   height: 8 },
+    { id: uid(), type: 'text',     text: 'Offer expires in 48 hours. Shop now and don\'t miss out!', align: 'center', fontSize: 11 },
+    { id: uid(), type: 'footer_block', companyName: '', unsubscribeUrl: '#' },
+  ]
+}
+
+function makeOfferBlocks2And3(heroImage: string): ContentBlock[] {
+  return [
+    { id: uid(), type: 'logo',     align: 'center', bgColor: '#f8f9fa' },
+    { id: uid(), type: 'image',    url: '', alt: 'Product showcase', imageWidth: '100%', align: 'center' },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'text',     text: 'FLASH SALE', align: 'center', fontSize: 11, bold: true },
+    { id: uid(), type: 'headline', text: 'Up to 50% Off', align: 'center' },
+    { id: uid(), type: 'text',     text: 'For a limited time, enjoy exclusive savings on our most popular items. Shop curated collections across all categories now.', align: 'center' },
+    { id: uid(), type: 'spacer',   height: 32 },
+    { id: uid(), type: 'button',   text: 'SHOP THE SALE', url: '', align: 'center' },
+    { id: uid(), type: 'spacer',   height: 32 },
+    { id: uid(), type: 'divider'  },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'text',     text: 'WOMEN', align: 'center', fontSize: 12, bold: true },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 1', imageWidth: '50%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 11 },
+    { id: uid(), type: 'text',     text: 'Price: $XX.XX', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'spacer',   height: 16 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 2', imageWidth: '50%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 11 },
+    { id: uid(), type: 'text',     text: 'Price: $XX.XX', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'text',     text: 'MEN', align: 'center', fontSize: 12, bold: true },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 1', imageWidth: '33.33%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'text',     text: 'Price: $XX', align: 'center', fontSize: 9 },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 2', imageWidth: '33.33%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'text',     text: 'Price: $XX', align: 'center', fontSize: 9 },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 3', imageWidth: '33.33%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'text',     text: 'Price: $XX', align: 'center', fontSize: 9 },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'text',     text: 'ACCESSORIES', align: 'center', fontSize: 12, bold: true },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 1', imageWidth: '50%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 11 },
+    { id: uid(), type: 'text',     text: 'Price: $XX.XX', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'spacer',   height: 16 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 2', imageWidth: '50%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 11 },
+    { id: uid(), type: 'text',     text: 'Price: $XX.XX', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'text',     text: 'SALE', align: 'center', fontSize: 12, bold: true },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 1', imageWidth: '33.33%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'text',     text: 'Price: $XX', align: 'center', fontSize: 9 },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 2', imageWidth: '33.33%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'text',     text: 'Price: $XX', align: 'center', fontSize: 9 },
+    { id: uid(), type: 'spacer',   height: 12 },
+    { id: uid(), type: 'image',    url: '', alt: 'Product 3', imageWidth: '33.33%', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Product Name', align: 'center', fontSize: 10 },
+    { id: uid(), type: 'text',     text: 'Price: $XX', align: 'center', fontSize: 9 },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'divider'  },
+    { id: uid(), type: 'spacer',   height: 16 },
+    { id: uid(), type: 'social',   socialLinks: {}, align: 'center' },
+    { id: uid(), type: 'spacer',   height: 8 },
+    { id: uid(), type: 'text',     text: 'Offer expires in 48 hours. Shop now and don\'t miss out!', align: 'center', fontSize: 11 },
+    { id: uid(), type: 'footer_block', companyName: '', unsubscribeUrl: '#' },
+  ]
+}
+
+function makeNewsletterBlocks(heroImage: string): ContentBlock[] {
+  return [
+    { id: uid(), type: 'logo',     align: 'left',   bgColor: '#ffffff' },
+    { id: uid(), type: 'image',    url: heroImage, alt: 'Newsletter', imageWidth: '100%', align: 'center' },
+    { id: uid(), type: 'headline', text: "What's New This Month", align: 'left' },
+    { id: uid(), type: 'text',     text: "Here's a roundup of everything that happened this month — updates, insights, and what's coming next.\n\nWe've been busy building, learning and growing, and we're excited to share it all with you.", align: 'left' },
+    { id: uid(), type: 'divider'  },
+    { id: uid(), type: 'headline', text: 'Featured Story', align: 'left' },
+    { id: uid(), type: 'text',     text: 'Add your featured story or update here. Keep it short, engaging and focused on what matters most to your audience.', align: 'left' },
+    { id: uid(), type: 'button',   text: 'Read More', url: '', align: 'left' },
+    { id: uid(), type: 'spacer',   height: 16 },
+    { id: uid(), type: 'footer_block', companyName: '', unsubscribeUrl: '#' },
+  ]
+}
+
+function makeAnnouncementBlocks(heroImage: string): ContentBlock[] {
+  return [
+    { id: uid(), type: 'logo',     align: 'center', bgColor: '#ffffff' },
+    { id: uid(), type: 'image',    url: heroImage, alt: 'Announcement', imageWidth: '100%', align: 'center' },
+    { id: uid(), type: 'headline', text: 'Big News — We Have an Announcement', align: 'center' },
+    { id: uid(), type: 'text',     text: "We're thrilled to share something we've been working toward for a while. Here's everything you need to know about what's happening and why it matters to you.", align: 'center' },
+    { id: uid(), type: 'button',   text: 'Find Out More', url: '', align: 'center' },
+    { id: uid(), type: 'spacer',   height: 16 },
+    { id: uid(), type: 'footer_block', companyName: '', unsubscribeUrl: '#' },
+  ]
+}
+
+function makeBasicBlocks(heroImage: string): ContentBlock[] {
+  return [
+    { id: uid(), type: 'logo',     align: 'left',   bgColor: '#f8f9fa' },
+    { id: uid(), type: 'headline', text: "It's Time to Connect", align: 'left' },
+    { id: uid(), type: 'image',    url: heroImage, alt: '', imageWidth: '100%', align: 'center' },
+    { id: uid(), type: 'text',     text: "Thank you for being part of our community. We're excited to share something with you today.\n\nFeel free to reach out if you have any questions.", align: 'left' },
+    { id: uid(), type: 'button',   text: 'Get Started', url: '', align: 'left' },
+    { id: uid(), type: 'spacer',   height: 8 },
+    { id: uid(), type: 'social',   socialLinks: {}, align: 'center' },
+    { id: uid(), type: 'footer_block', companyName: '', unsubscribeUrl: '#' },
+  ]
+}
+
+function makeMinimalistBlocks(heroImage: string): ContentBlock[] {
+  return [
+    { id: uid(), type: 'headline', text: 'Keep it simple.', align: 'center' },
+    { id: uid(), type: 'text',     text: 'We believe great communication starts with clarity. Here\'s what you need to know.', align: 'center' },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'button',   text: 'Learn More', url: '', align: 'center' },
+    { id: uid(), type: 'spacer',   height: 32 },
+    { id: uid(), type: 'footer_block', companyName: '', unsubscribeUrl: '#' },
+  ]
+}
+
+function makeCustomBlocks(heroImage: string): ContentBlock[] {
+  return [
+    { id: uid(), type: 'headline', text: 'Your headline here', align: 'center' },
+    { id: uid(), type: 'text',     text: 'Add your message here.', align: 'left' },
+    { id: uid(), type: 'button',   text: 'Get Started', url: '', align: 'center' },
+  ]
+}
+
+const SYSTEM_STARTERS: Record<string, SystemTemplateStarter[]> = {
+  promotional: [
+    {
+      style:      'promotional',
+      name:       'Promotional',
+      heroImage:  '/email-images/promo-hero.png',
+      makeBlocks: makePromoBlocks,
+      makeStyleOptions: (color, wrapperBg) => ({
+        wrapper_bg: wrapperBg, header_bg: color || '', body_bg: '#ffffff',
+        heading_color: color || '', link_color: color || '',
+      }),
+    },
+  ],
+  offer: [
+    {
+      style:      'offer',
+      name:       'Two Column Grid',
+      heroImage:  '/email-images/offer-hero.jpg',
+      makeBlocks: makeOfferBlocks2PerCategory,
+      makeStyleOptions: (color, wrapperBg) => ({
+        wrapper_bg: wrapperBg, header_bg: color || '', body_bg: '#ffffff',
+        heading_color: color || '', link_color: color || '',
+      }),
+    },
+    {
+      style:      'offer',
+      name:       'Three Column Grid',
+      heroImage:  '/email-images/offer-hero.jpg',
+      makeBlocks: makeOfferBlocks3Column,
+      makeStyleOptions: (color, wrapperBg) => ({
+        wrapper_bg: wrapperBg, header_bg: color || '', body_bg: '#ffffff',
+        heading_color: color || '', link_color: color || '',
+      }),
+    },
+    {
+      style:      'offer',
+      name:       'Mixed Grid (2 & 3)',
+      heroImage:  '/email-images/offer-hero.jpg',
+      makeBlocks: makeOfferBlocks2And3,
+      makeStyleOptions: (color, wrapperBg) => ({
+        wrapper_bg: wrapperBg, header_bg: color || '', body_bg: '#ffffff',
+        heading_color: color || '', link_color: color || '',
+      }),
+    },
+  ],
+  newsletter: [
+    {
+      style:      'newsletter',
+      name:       'Newsletter',
+      heroImage:  '/email-images/newsletter-hero.jpg',
+      makeBlocks: makeNewsletterBlocks,
+      makeStyleOptions: (color, wrapperBg) => ({
+        wrapper_bg: wrapperBg, header_bg: '#ffffff', body_bg: '#ffffff',
+        heading_color: color || '', link_color: color || '',
+      }),
+    },
+  ],
+  announcement: [
+    {
+      style:      'announcement',
+      name:       'Announcement',
+      heroImage:  '/email-images/announcement-hero.jpg',
+      makeBlocks: makeAnnouncementBlocks,
+      makeStyleOptions: (color, wrapperBg) => ({
+        wrapper_bg: wrapperBg, header_bg: color || '', body_bg: '#ffffff',
+        heading_color: color || '', link_color: color || '',
+      }),
+    },
+  ],
+  basic: [
+    {
+      style:      'basic',
+      name:       'Basic Layout',
+      heroImage:  '/email-images/basic-hero.jpg',
+      makeBlocks: makeBasicBlocks,
+      makeStyleOptions: (color, wrapperBg) => ({
+        wrapper_bg: wrapperBg, header_bg: '#f8f9fa', body_bg: '#ffffff',
+        heading_color: color || '', link_color: color || '',
+        show_social_icons: true, show_footer_address: false,
+      }),
+    },
+  ],
+  minimalist: [
+    {
+      style:      'minimalist',
+      name:       'Minimalist',
+      heroImage:  '',
+      makeBlocks: makeMinimalistBlocks,
+      makeStyleOptions: (color, wrapperBg) => ({
+        wrapper_bg: '#f4f4f5', header_bg: '#ffffff', body_bg: '#ffffff',
+        heading_color: color || '', link_color: color || '',
+      }),
+    },
+  ],
+  custom: [
+    {
+      style:      'custom',
+      name:       'Custom',
+      heroImage:  '',
+      makeBlocks: makeCustomBlocks,
+      makeStyleOptions: (color, wrapperBg) => ({
+        wrapper_bg: '#f4f4f5', header_bg: '#ffffff', body_bg: '#ffffff',
+        heading_color: color || '', link_color: color || '',
+      }),
+    },
+  ],
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface BrandProfileRow {
@@ -93,7 +466,7 @@ interface Props {
   allAssets:   BrandAssetRow[]
 }
 
-type FlowStep = 'gallery' | 'intent' | 'style-pick' | 'variations' | 'edit' | 'view-saved'
+type FlowStep = 'gallery' | 'intent' | 'style-pick' | 'variations' | 'edit' | 'view-saved' | 'my-templates'
 type EditTab   = 'content' | 'styles'
 
 // ── Block utilities ───────────────────────────────────────────────────────────
@@ -252,10 +625,10 @@ function VariationThumbnail({ style, variation, logoUrl }: {
 
 // ── Gallery template card ─────────────────────────────────────────────────────
 
-function GalleryCard({ style, name, isSaved, primary, logoUrl, onClick, onEdit, onDelete }: {
+function GalleryCard({ style, name, isSaved, primary, logoUrl, onClick, onEdit, onDelete, layoutInfo }: {
   style: TemplateStyle; name: string; isSaved?: boolean
   primary: string; logoUrl?: string | null
-  onClick: () => void; onEdit?: () => void; onDelete?: () => void
+  onClick: () => void; onEdit?: () => void; onDelete?: () => void; layoutInfo?: string
 }) {
   const [hover, setHover] = useState(false)
   const fakeVariation: VariationConfig = {
@@ -293,7 +666,8 @@ function GalleryCard({ style, name, isSaved, primary, logoUrl, onClick, onEdit, 
         )}
       </div>
       <p className="mt-2 text-xs font-medium text-gray-700 dark:text-gray-200 truncate">{name}</p>
-      {!isSaved && <p className="text-[10px] font-semibold text-gray-400">FREE</p>}
+      {layoutInfo && <p className="text-[10px] text-gray-500 dark:text-gray-400">{layoutInfo}</p>}
+      {!isSaved && !layoutInfo && <p className="text-[10px] font-semibold text-gray-400">FREE</p>}
     </div>
   )
 }
@@ -510,6 +884,23 @@ function BlockPropsEditor({ block, onChange }: {
       )}
       {(block.type === 'divider') && (
         <p className="text-xs text-gray-400">Horizontal rule — no properties to edit.</p>
+      )}
+      {block.type === 'social' && (
+        <div className="space-y-2">
+          <label className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Icon Style</label>
+          <div className="flex gap-1.5">
+            {(['round', 'rounded', 'square'] as const).map(style => (
+              <button key={style} onClick={() => onChange({ socialIconStyle: style })}
+                className={`flex-1 py-1.5 text-[10px] font-semibold rounded-lg border capitalize transition-colors ${
+                  (block.socialIconStyle ?? 'round') === style
+                    ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400'
+                    : 'border-gray-200 dark:border-white/10 text-gray-500 hover:border-gray-300'
+                }`}>
+                {style}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   )
@@ -885,11 +1276,15 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
     const preset = TEMPLATE_PRESETS.find(p => p.id === style)!
     setStyle(style)
     const d = preset.defaults
-    const blocks: ContentBlock[] = [
-      { id: uid(), type: 'headline', text: d.headline, align: 'center' },
-      { id: uid(), type: 'text',     text: d.body_text, align: 'left' },
-      { id: uid(), type: 'button',   text: d.cta_text,  url: '',       align: 'center' },
-    ]
+    const starters = SYSTEM_STARTERS[style]
+    const starter = starters?.[0]  // Use first template if multiple exist
+    const blocks: ContentBlock[] = starter
+      ? starter.makeBlocks(starter.heroImage)
+      : [
+          { id: uid(), type: 'headline', text: d.headline, align: 'center' },
+          { id: uid(), type: 'text',     text: d.body_text, align: 'left' },
+          { id: uid(), type: 'button',   text: d.cta_text,  url: '',       align: 'center' },
+        ]
     setContent({ subject: d.subject, preheader: d.preheader, footer_text: d.footer_text, blocks })
     const vars = generateVariations(fakeSnap, style)
     setVariations(vars)
@@ -970,6 +1365,80 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
         <Mail className="w-10 h-10 text-gray-200 dark:text-white/10" />
         <p className="text-sm font-semibold text-gray-400">Select a Brand ID to manage email templates</p>
         <p className="text-xs text-gray-300 dark:text-gray-600">Templates are scoped to a brand profile — colors, logo and fonts apply automatically.</p>
+      </div>
+    )
+  }
+
+  // ── My Templates: list view of all saved templates ────────────────────────
+
+  if (step === 'my-templates') {
+    return (
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        <div className="shrink-0 px-5 py-3 border-b border-gray-100 dark:border-white/10 bg-white dark:bg-gray-950 flex items-center gap-3">
+          <button onClick={() => setStep('gallery')} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 dark:hover:text-gray-200">
+            <ChevronLeft className="w-3.5 h-3.5" /> Gallery
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-6">
+          {templates.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-3 text-center py-16">
+              <Mail className="w-10 h-10 text-gray-200 dark:text-white/10" />
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">No templates yet</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 max-w-xs">Create your first email template using the gallery.</p>
+              <button onClick={() => setStep('gallery')}
+                className="mt-2 px-3 py-1.5 text-xs font-semibold text-white rounded-lg"
+                style={{ background: primary }}>
+                Back to Gallery
+              </button>
+            </div>
+          ) : (
+            <div className="max-w-6xl mx-auto">
+              <div className="mb-4">
+                <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">My Templates</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{templates.length} saved template{templates.length !== 1 ? 's' : ''}</p>
+              </div>
+              <div className="space-y-2">
+                {templates.map(t => (
+                  <div key={t.id}
+                    className="flex items-center justify-between p-4 rounded-lg border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t.name}</h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full capitalize" style={{ background: `${primary}15`, color: primary }}>
+                          {t.template_style}
+                        </span>
+                        {t.variation_name && (
+                          <span className="text-[10px] text-gray-500">Variation: {t.variation_name}</span>
+                        )}
+                        {t.campaign_intent && (
+                          <span className="text-[10px] text-violet-600 dark:text-violet-400 capitalize">{t.campaign_intent.replace('_', ' ')}</span>
+                        )}
+                        <span className="text-[10px] text-gray-400 ml-auto">{new Date(t.created_at).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 ml-4">
+                      <button onClick={() => { setViewTemplate(t); setPreviewHtml(''); setStep('view-saved') }}
+                        className="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+                        title="Preview">
+                        Preview
+                      </button>
+                      <button onClick={() => openSavedForEdit(t)}
+                        className="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+                        title="Edit">
+                        Edit
+                      </button>
+                      <button onClick={() => handleDelete(t.id)}
+                        className="px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                        title="Delete">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     )
   }
@@ -1302,11 +1771,20 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
               <span className="text-[11px] text-gray-400">{templates.length} saved</span>
             )}
           </div>
-          <button onClick={startNewTemplate}
-            className="flex items-center gap-1.5 text-xs font-semibold text-white px-3 py-1.5 rounded-lg"
-            style={{ background: primary }}>
-            <Plus className="w-3.5 h-3.5" /> New Template
-          </button>
+          <div className="flex items-center gap-2">
+            {templates.length > 0 && (
+              <button onClick={() => setStep('my-templates')}
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5"
+                style={{ color: primary }}>
+                My Templates
+              </button>
+            )}
+            <button onClick={startNewTemplate}
+              className="flex items-center gap-1.5 text-xs font-semibold text-white px-3 py-1.5 rounded-lg"
+              style={{ background: primary }}>
+              <Plus className="w-3.5 h-3.5" /> New Template
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-8">
@@ -1395,15 +1873,9 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
           )}
 
 
-          {/* Style sections */}
+          {/* Style sections — 1 card per style */}
           {visibleSections.map(section => {
             const savedHere = templates.filter(t => t.template_style === section.style)
-            const variants  = [
-              { key: 'primary', p: primary    },
-              ...(palette.length > 0 ? [{ key: 'palette', p: palette[0] }] : []),
-              { key: 'dark',    p: '#111827'  },
-              { key: 'muted',   p: secondary  },
-            ]
             return (
               <section key={section.style}>
                 <div className="flex items-center justify-between mb-4">
@@ -1414,18 +1886,43 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
                   </button>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
-                  {savedHere.slice(0, 1).map(t => (
+                  {/* My saved templates for this style */}
+                  {savedHere.map(t => (
                     <GalleryCard key={t.id} style={t.template_style} name={t.name} isSaved
                       primary={primary} logoUrl={logoAsset?.file_url}
                       onClick={() => { setViewTemplate(t); setPreviewHtml(''); setStep('view-saved') }}
                       onDelete={() => handleDelete(t.id)} />
                   ))}
-                  {variants.slice(0, savedHere.length > 0 ? 3 : 4).map(v => (
-                    <GalleryCard key={v.key} style={section.style}
-                      name={`${section.label}${v.key === 'dark' ? ' — Dark' : v.key === 'palette' ? ' — Palette' : v.key === 'muted' ? ' — Muted' : ''}`}
-                      primary={v.p} logoUrl={logoAsset?.file_url}
-                      onClick={startNewTemplate} />
-                  ))}
+                  {/* System template cards — show all for this style */}
+                  {SYSTEM_STARTERS[section.style]?.map(starter => {
+                    // Determine layout info based on template name for Offer templates
+                    let layoutInfo: string | undefined
+                    if (starter.style === 'offer') {
+                      if (starter.name.includes('Two')) layoutInfo = '2 equal columns'
+                      else if (starter.name.includes('Three')) layoutInfo = '3 equal columns'
+                      else if (starter.name.includes('Mixed')) layoutInfo = '2 & 3 mixed layout'
+                    }
+                    return (
+                      <GalleryCard key={`sys-${starter.name}`} style={section.style} name={starter.name}
+                        primary={primary} logoUrl={logoAsset?.file_url} layoutInfo={layoutInfo}
+                        onClick={() => {
+                          const preset = TEMPLATE_PRESETS.find(p => p.id === starter.style)!
+                          const d = preset.defaults
+                          setCampaignIntent(null)
+                          setStyle(starter.style)
+                          setName('')
+                          setEditingId(null)
+                          setContent({ subject: d.subject, preheader: d.preheader, footer_text: d.footer_text, blocks: starter.makeBlocks(starter.heroImage) })
+                          setStyleOpts({ ...DEFAULT_STYLE_OPTIONS, ...starter.makeStyleOptions(primary, '#f4f4f5') })
+                          const vars = generateVariations(fakeSnap, starter.style)
+                          setVariations(vars)
+                          const recIdx = 1
+                          setSelectedVar(vars.find(v => v.index === recIdx) ?? vars[0])
+                          setPreviewHtml('')
+                          setStep('variations')
+                        }} />
+                    )
+                  })}
                 </div>
               </section>
             )
