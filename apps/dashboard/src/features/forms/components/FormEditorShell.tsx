@@ -229,20 +229,12 @@ export function FormEditorShell({ initialForm }: Props) {
       {/* ── Top bar ───────────────────────────────────────────────── */}
       <div className="shrink-0 flex items-center gap-3 px-4 py-2.5 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
 
-        {/* Back to my forms list + all templates — bubble pills, same icon */}
         <button
           onClick={() => router.push('/dashboard/forms/templates')}
           className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-white/8 hover:bg-gray-200 dark:hover:bg-white/12 rounded-full transition-colors shrink-0"
         >
           <ArrowLeft className="w-3 h-3" />
           Back to forms
-        </button>
-        <button
-          onClick={() => router.push('/dashboard/forms/templates#templates')}
-          className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-white/8 hover:bg-gray-200 dark:hover:bg-white/12 rounded-full transition-colors shrink-0"
-        >
-          <ArrowLeft className="w-3 h-3" />
-          All templates
         </button>
 
         {/* Form name */}

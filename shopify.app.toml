@@ -1,0 +1,22 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "185cf61583dfb7a6e22c461759837e3d"
+name = "Appalix Chat"
+application_url = "https://app.appalix.ai"
+embedded = true
+
+[webhooks]
+api_version = "2026-01"
+
+  [[webhooks.subscriptions]]
+  uri = "https://appalix-api.onrender.com/webhooks"
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+
+[access_scopes]
+scopes = "read_customers,read_fulfillments,read_orders,write_script_tags"
+
+[auth]
+redirect_urls = [ "https://api.appalix.ai/shopify/callback", "https://appalix-api.onrender.com/shopify/callback", "https://api.appalix.ai/integrations/shopify/callback", "https://appalix-api.onrender.com/integrations/shopify/callback" ]
+
+[build]
+automatically_update_urls_on_dev = true

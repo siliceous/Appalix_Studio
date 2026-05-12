@@ -226,7 +226,7 @@ export default async function FormsPage({
       />
       <div className="shrink-0 px-6 pt-3 pb-2 flex items-center gap-2 border-b border-gray-100 dark:border-gray-800">
         <Link
-          href="/dashboard/forms/templates"
+          href="/dashboard/forms/my-forms"
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-500/15 border border-brand-200 dark:border-brand-500/30 rounded-lg hover:bg-brand-100 dark:hover:bg-brand-500/25 transition-colors"
         >
           <LayoutTemplate className="w-3.5 h-3.5" />

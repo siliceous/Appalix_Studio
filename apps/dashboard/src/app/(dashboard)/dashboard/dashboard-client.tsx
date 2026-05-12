@@ -232,10 +232,11 @@ export function SageDashboardClient({
   const feedCalRef = useRef<HTMLDivElement>(null)
   const [topType,     setTopType]    = useState<'email' | 'bot' | 'sms' | 'call' | 'form' | 'ticket' | null>(null)
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
-  const [bannerDismissed, setBannerDismissed] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return localStorage.getItem('inbox_banner_dismissed') === '1'
-  })
+  const [bannerDismissed, setBannerDismissed] = useState(false)
+
+  useEffect(() => {
+    setBannerDismissed(localStorage.getItem('inbox_banner_dismissed') === '1')
+  }, [])
   const [donutsCollapsed,  setDonutsCollapsed]  = useState(false)
   const [loadingDonut,     setLoadingDonut]     = useState<string | null>(null)
   const [collapsingCard,   setCollapsingCard]   = useState<string | null>(null)

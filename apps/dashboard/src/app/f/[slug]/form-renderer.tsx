@@ -372,10 +372,17 @@ function parseObjPos(pos: string): [number, number] {
 interface Props {
   form:      Form
   sourceUrl: string
+  /**
+   * When true, skip targeting/scheduling/trigger gating and always render the
+   * form. Used by the My Forms preview page so every form shows regardless of
+   * delay/scroll/exit-intent settings.
+   */
+  preview?: boolean
 }
 
-export function FormRenderer({ form, sourceUrl }: Props) {
-  const gate = useFormGating(form)
+export function FormRenderer({ form, sourceUrl, preview }: Props) {
+  const liveGate = useFormGating(form)
+  const gate: GateResult = preview ? 'visible' : liveGate
 
   const theme    = form.theme ?? {}
   const primary  = theme.colors?.primary    ?? '#6366f1'

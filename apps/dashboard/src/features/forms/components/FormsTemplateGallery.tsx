@@ -146,14 +146,17 @@ function MiniFormCard({ template, size = 'compact' }: { template: FormTemplate; 
   )
 }
 
-function TemplateMockup({ template }: { template: FormTemplate }) {
+export function TemplateMockup({ template }: { template: FormTemplate }) {
   const bg       = template.theme?.colors?.background   ?? '#ffffff'
   const radius   = template.theme?.modal?.radius        ?? '8px'
   const imgPos   = template.theme?.imagePosition        ?? 'top'
   const objPos   = template.theme?.imageObjectPosition  ?? 'center top'
 
+  // Prefer the block image so what shows in the gallery matches what the
+  // editor will render for the new form. preview_image_url is only used as
+  // a fallback for templates that genuinely have no image block.
   const firstImgBlock = template.config.blocks?.find(b => b.type === 'image' && b.props.src)
-  const previewImg    = template.preview_image_url ?? (firstImgBlock?.props.src as string | undefined)
+  const previewImg    = (firstImgBlock?.props.src as string | undefined) ?? template.preview_image_url ?? undefined
 
   if (!previewImg) {
     return (
@@ -250,18 +253,29 @@ export function FormsTemplateGallery({ templates }: Props) {
   const [creatingId,    setCreatingId]    = useState<string | null>(null)
   const [createErr,     setCreateErr]     = useState<string | null>(null)
 
-  // Filter templates client-side (server pre-fetched all)
+  // Filter + sort: templates with images come first, no-image ones at the end.
   const filtered = useMemo(() => {
-    return templates.filter(t => {
-      if (search && !t.name.toLowerCase().includes(search.toLowerCase()) &&
-          !t.description?.toLowerCase().includes(search.toLowerCase()) &&
-          !t.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()))) return false
-      if (selectedGoals.length && !selectedGoals.includes(t.goal)) return false
-      if (selectedTypes.length && !selectedTypes.includes(t.type)) return false
-      if (selectedChs.length   && !selectedChs.includes(t.channel_mode)) return false
-      if (multiStep !== null && t.is_multi_step !== multiStep) return false
-      return true
-    })
+    const hasImage = (t: FormTemplate): boolean =>
+      !!t.preview_image_url ||
+      !!t.config?.blocks?.some(b => b.type === 'image' && typeof b.props.src === 'string' && b.props.src.length > 0)
+
+    return templates
+      .filter(t => {
+        if (search && !t.name.toLowerCase().includes(search.toLowerCase()) &&
+            !t.description?.toLowerCase().includes(search.toLowerCase()) &&
+            !t.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()))) return false
+        if (selectedGoals.length && !selectedGoals.includes(t.goal)) return false
+        if (selectedTypes.length && !selectedTypes.includes(t.type)) return false
+        if (selectedChs.length   && !selectedChs.includes(t.channel_mode)) return false
+        if (multiStep !== null && t.is_multi_step !== multiStep) return false
+        return true
+      })
+      .sort((a, b) => {
+        const aImg = hasImage(a)
+        const bImg = hasImage(b)
+        if (aImg !== bImg) return aImg ? -1 : 1
+        return 0
+      })
   }, [templates, search, selectedGoals, selectedTypes, selectedChs, multiStep])
 
   function toggleGoal(v: FormGoal) {
@@ -438,6 +452,14 @@ export function FormsTemplateGallery({ templates }: Props) {
               )}
             </div>
 
+            {/* Start from scratch */}
+            <button
+              onClick={() => handleUseTemplate(templates.find(t => t.name === 'Blank' || t.tags.includes('blank'))?.id ?? templates[0]?.id ?? '')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              Start from scratch
+            </button>
+
             {/* My Forms — links to the form-format list page */}
             <button
               onClick={() => router.push('/dashboard/forms/my-forms')}
@@ -445,14 +467,6 @@ export function FormsTemplateGallery({ templates }: Props) {
             >
               <LayoutTemplate className="w-3.5 h-3.5" />
               My Forms
-            </button>
-
-            {/* Start from scratch */}
-            <button
-              onClick={() => handleUseTemplate(templates.find(t => t.name === 'Blank' || t.tags.includes('blank'))?.id ?? templates[0]?.id ?? '')}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
-              Start from scratch
             </button>
           </div>
         </div>

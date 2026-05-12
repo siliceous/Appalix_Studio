@@ -55,6 +55,9 @@ import {
   makeHybridNewsletterBlocks,
   type AssetDefaults,
 } from './email-builder-canvas'
+import { EmailTemplateGallery } from '@/features/email/components/EmailTemplateGallery'
+import { EmailVariationSelector } from '@/features/email/components/EmailVariationSelector'
+import { GALLERY_TEMPLATES, type VariationConfig as GalleryVariationConfig } from '@/lib/email-templates/gallery-templates'
 
 // ── System template starters (1 per style) ──────────────────────────────────
 
@@ -93,12 +96,12 @@ function makeOfferBlocks2PerCategory(heroImage: string): ContentBlock[] {
     { id: uid(), type: 'spacer',   height: 12 },
     { id: uid(), type: 'columns',  ratio: '1:1', columns: [
       [
-        { id: uid(), type: 'image', url: '', alt: 'Product 1', imageWidth: '100%' },
+        { id: uid(), type: 'image', url: '/email-images/product-1.jpg', alt: 'Product 1', imageWidth: '100%' },
         { id: uid(), type: 'text',  text: 'Product Name', align: 'center', fontSize: 11 },
         { id: uid(), type: 'text',  text: 'Price: $XX.XX', align: 'center', fontSize: 10 },
       ],
       [
-        { id: uid(), type: 'image', url: '', alt: 'Product 2', imageWidth: '100%' },
+        { id: uid(), type: 'image', url: '/email-images/product-2.jpg', alt: 'Product 2', imageWidth: '100%' },
         { id: uid(), type: 'text',  text: 'Product Name', align: 'center', fontSize: 11 },
         { id: uid(), type: 'text',  text: 'Price: $XX.XX', align: 'center', fontSize: 10 },
       ],
@@ -108,12 +111,12 @@ function makeOfferBlocks2PerCategory(heroImage: string): ContentBlock[] {
     { id: uid(), type: 'spacer',   height: 12 },
     { id: uid(), type: 'columns',  ratio: '1:1', columns: [
       [
-        { id: uid(), type: 'image', url: '', alt: 'Product 1', imageWidth: '100%' },
+        { id: uid(), type: 'image', url: '/email-images/product-3.jpg', alt: 'Product 1', imageWidth: '100%' },
         { id: uid(), type: 'text',  text: 'Product Name', align: 'center', fontSize: 11 },
         { id: uid(), type: 'text',  text: 'Price: $XX.XX', align: 'center', fontSize: 10 },
       ],
       [
-        { id: uid(), type: 'image', url: '', alt: 'Product 2', imageWidth: '100%' },
+        { id: uid(), type: 'image', url: '/email-images/product-4.jpg', alt: 'Product 2', imageWidth: '100%' },
         { id: uid(), type: 'text',  text: 'Product Name', align: 'center', fontSize: 11 },
         { id: uid(), type: 'text',  text: 'Price: $XX.XX', align: 'center', fontSize: 10 },
       ],
@@ -123,12 +126,12 @@ function makeOfferBlocks2PerCategory(heroImage: string): ContentBlock[] {
     { id: uid(), type: 'spacer',   height: 12 },
     { id: uid(), type: 'columns',  ratio: '1:1', columns: [
       [
-        { id: uid(), type: 'image', url: '', alt: 'Product 1', imageWidth: '100%' },
+        { id: uid(), type: 'image', url: '/email-images/product-5.jpg', alt: 'Product 1', imageWidth: '100%' },
         { id: uid(), type: 'text',  text: 'Product Name', align: 'center', fontSize: 11 },
         { id: uid(), type: 'text',  text: 'Price: $XX.XX', align: 'center', fontSize: 10 },
       ],
       [
-        { id: uid(), type: 'image', url: '', alt: 'Product 2', imageWidth: '100%' },
+        { id: uid(), type: 'image', url: '/email-images/product-6.jpg', alt: 'Product 2', imageWidth: '100%' },
         { id: uid(), type: 'text',  text: 'Product Name', align: 'center', fontSize: 11 },
         { id: uid(), type: 'text',  text: 'Price: $XX.XX', align: 'center', fontSize: 10 },
       ],
@@ -138,12 +141,12 @@ function makeOfferBlocks2PerCategory(heroImage: string): ContentBlock[] {
     { id: uid(), type: 'spacer',   height: 12 },
     { id: uid(), type: 'columns',  ratio: '1:1', columns: [
       [
-        { id: uid(), type: 'image', url: '', alt: 'Product 1', imageWidth: '100%' },
+        { id: uid(), type: 'image', url: '/email-images/product-1.jpg', alt: 'Product 1', imageWidth: '100%' },
         { id: uid(), type: 'text',  text: 'Product Name', align: 'center', fontSize: 11 },
         { id: uid(), type: 'text',  text: 'Price: $XX.XX', align: 'center', fontSize: 10 },
       ],
       [
-        { id: uid(), type: 'image', url: '', alt: 'Product 2', imageWidth: '100%' },
+        { id: uid(), type: 'image', url: '/email-images/product-2.jpg', alt: 'Product 2', imageWidth: '100%' },
         { id: uid(), type: 'text',  text: 'Product Name', align: 'center', fontSize: 11 },
         { id: uid(), type: 'text',  text: 'Price: $XX.XX', align: 'center', fontSize: 10 },
       ],
@@ -159,12 +162,18 @@ function makeOfferBlocks2PerCategory(heroImage: string): ContentBlock[] {
 }
 
 function makeOfferBlocks3Column(heroImage: string): ContentBlock[] {
-  const makeProduct3Col = (productNum: string) => ({ id: uid(), type: 'image', url: '', alt: `Product ${productNum}`, imageWidth: '100%' } as ContentBlock)
-  const makeName = () => ({ id: uid(), type: 'text', text: 'Product Name', align: 'center' as const, fontSize: 10 })
-  const makePrice = () => ({ id: uid(), type: 'text', text: 'Price: $XX', align: 'center' as const, fontSize: 9 })
+  const productImages = ['/email-images/product-1.jpg', '/email-images/product-2.jpg', '/email-images/product-3.jpg', '/email-images/product-4.jpg', '/email-images/product-5.jpg', '/email-images/product-6.jpg']
+  let productIndex = 0
+  const makeProduct3Col = (productNum: string) => {
+    const url = productImages[productIndex % productImages.length]
+    productIndex++
+    return { id: uid(), type: 'image', url, alt: `Product ${productNum}`, imageWidth: '100%' } as ContentBlock
+  }
+  const makeName = () => ({ id: uid(), type: 'text', text: 'Product Name', align: 'center' as const, fontSize: 10 } as ContentBlock)
+  const makePrice = () => ({ id: uid(), type: 'text', text: 'Price: $XX', align: 'center' as const, fontSize: 9 } as ContentBlock)
   return [
     { id: uid(), type: 'logo',     align: 'center', bgColor: '#f8f9fa' },
-    { id: uid(), type: 'image',    url: '', alt: 'Product showcase', imageWidth: '100%', align: 'center' },
+    { id: uid(), type: 'image',    url: '/email-images/product-1.jpg', alt: 'Product showcase', imageWidth: '100%', align: 'center' },
     { id: uid(), type: 'spacer',   height: 24 },
     { id: uid(), type: 'text',     text: 'FLASH SALE', align: 'center', fontSize: 11, bold: true },
     { id: uid(), type: 'headline', text: 'Up to 50% Off', align: 'center' },
@@ -172,39 +181,33 @@ function makeOfferBlocks3Column(heroImage: string): ContentBlock[] {
     { id: uid(), type: 'spacer',   height: 32 },
     { id: uid(), type: 'button',   text: 'SHOP THE SALE', url: '', align: 'center' },
     { id: uid(), type: 'spacer',   height: 32 },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'columns',  ratio: '1:1:1', columns: [
+      [makeProduct3Col('1'), makeName(), makePrice()],
+      [makeProduct3Col('2'), makeName(), makePrice()],
+      [makeProduct3Col('3'), makeName(), makePrice()],
+    ] },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'columns',  ratio: '1:1:1', columns: [
+      [makeProduct3Col('4'), makeName(), makePrice()],
+      [makeProduct3Col('5'), makeName(), makePrice()],
+      [makeProduct3Col('6'), makeName(), makePrice()],
+    ] },
+    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'columns',  ratio: '1:1', columns: [
+      [makeProduct3Col('7'), makeName(), makePrice()],
+      [makeProduct3Col('8'), makeName(), makePrice()],
+    ] },
+    { id: uid(), type: 'spacer',   height: 32 },
     { id: uid(), type: 'divider'  },
     { id: uid(), type: 'spacer',   height: 24 },
     { id: uid(), type: 'text',     text: 'WOMEN', align: 'center', fontSize: 12, bold: true },
-    { id: uid(), type: 'spacer',   height: 12 },
-    { id: uid(), type: 'columns',  ratio: '1:1:1', columns: [
-      [makeProduct3Col('1'), makeName(), makePrice()],
-      [makeProduct3Col('2'), makeName(), makePrice()],
-      [makeProduct3Col('3'), makeName(), makePrice()],
-    ] },
-    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'spacer',   height: 16 },
     { id: uid(), type: 'text',     text: 'MEN', align: 'center', fontSize: 12, bold: true },
-    { id: uid(), type: 'spacer',   height: 12 },
-    { id: uid(), type: 'columns',  ratio: '1:1:1', columns: [
-      [makeProduct3Col('1'), makeName(), makePrice()],
-      [makeProduct3Col('2'), makeName(), makePrice()],
-      [makeProduct3Col('3'), makeName(), makePrice()],
-    ] },
-    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'spacer',   height: 16 },
     { id: uid(), type: 'text',     text: 'ACCESSORIES', align: 'center', fontSize: 12, bold: true },
-    { id: uid(), type: 'spacer',   height: 12 },
-    { id: uid(), type: 'columns',  ratio: '1:1:1', columns: [
-      [makeProduct3Col('1'), makeName(), makePrice()],
-      [makeProduct3Col('2'), makeName(), makePrice()],
-      [makeProduct3Col('3'), makeName(), makePrice()],
-    ] },
-    { id: uid(), type: 'spacer',   height: 24 },
+    { id: uid(), type: 'spacer',   height: 16 },
     { id: uid(), type: 'text',     text: 'SALE', align: 'center', fontSize: 12, bold: true },
-    { id: uid(), type: 'spacer',   height: 12 },
-    { id: uid(), type: 'columns',  ratio: '1:1:1', columns: [
-      [makeProduct3Col('1'), makeName(), makePrice()],
-      [makeProduct3Col('2'), makeName(), makePrice()],
-      [makeProduct3Col('3'), makeName(), makePrice()],
-    ] },
     { id: uid(), type: 'spacer',   height: 24 },
     { id: uid(), type: 'divider'  },
     { id: uid(), type: 'spacer',   height: 16 },
@@ -218,7 +221,7 @@ function makeOfferBlocks3Column(heroImage: string): ContentBlock[] {
 function makeOfferBlocks2And3(heroImage: string): ContentBlock[] {
   return [
     { id: uid(), type: 'logo',     align: 'center', bgColor: '#f8f9fa' },
-    { id: uid(), type: 'image',    url: '', alt: 'Product showcase', imageWidth: '100%', align: 'center' },
+    { id: uid(), type: 'image',    url: '/email-images/product-1.jpg', alt: 'Product showcase', imageWidth: '100%', align: 'center' },
     { id: uid(), type: 'spacer',   height: 24 },
     { id: uid(), type: 'text',     text: 'FLASH SALE', align: 'center', fontSize: 11, bold: true },
     { id: uid(), type: 'headline', text: 'Up to 50% Off', align: 'center' },
@@ -232,12 +235,12 @@ function makeOfferBlocks2And3(heroImage: string): ContentBlock[] {
     { id: uid(), type: 'spacer',   height: 12 },
     { id: uid(), type: 'columns',  ratio: '1:1', columns: [
       [
-        { id: uid(), type: 'image', url: '', alt: 'Product 1', imageWidth: '100%' },
+        { id: uid(), type: 'image', url: '/email-images/product-1.jpg', alt: 'Product 1', imageWidth: '100%' },
         { id: uid(), type: 'text',  text: 'Product Name', align: 'center', fontSize: 11 },
         { id: uid(), type: 'text',  text: 'Price: $XX.XX', align: 'center', fontSize: 10 },
       ],
       [
-        { id: uid(), type: 'image', url: '', alt: 'Product 2', imageWidth: '100%' },
+        { id: uid(), type: 'image', url: '/email-images/product-2.jpg', alt: 'Product 2', imageWidth: '100%' },
         { id: uid(), type: 'text',  text: 'Product Name', align: 'center', fontSize: 11 },
         { id: uid(), type: 'text',  text: 'Price: $XX.XX', align: 'center', fontSize: 10 },
       ],
@@ -247,17 +250,17 @@ function makeOfferBlocks2And3(heroImage: string): ContentBlock[] {
     { id: uid(), type: 'spacer',   height: 12 },
     { id: uid(), type: 'columns',  ratio: '1:1:1', columns: [
       [
-        { id: uid(), type: 'image', url: '', alt: 'Product 1', imageWidth: '100%' },
+        { id: uid(), type: 'image', url: '/email-images/product-3.jpg', alt: 'Product 1', imageWidth: '100%' },
         { id: uid(), type: 'text',  text: 'Product Name', align: 'center', fontSize: 10 },
         { id: uid(), type: 'text',  text: 'Price: $XX', align: 'center', fontSize: 9 },
       ],
       [
-        { id: uid(), type: 'image', url: '', alt: 'Product 2', imageWidth: '100%' },
+        { id: uid(), type: 'image', url: '/email-images/product-4.jpg', alt: 'Product 2', imageWidth: '100%' },
         { id: uid(), type: 'text',  text: 'Product Name', align: 'center', fontSize: 10 },
         { id: uid(), type: 'text',  text: 'Price: $XX', align: 'center', fontSize: 9 },
       ],
       [
-        { id: uid(), type: 'image', url: '', alt: 'Product 3', imageWidth: '100%' },
+        { id: uid(), type: 'image', url: '/email-images/product-5.jpg', alt: 'Product 3', imageWidth: '100%' },
         { id: uid(), type: 'text',  text: 'Product Name', align: 'center', fontSize: 10 },
         { id: uid(), type: 'text',  text: 'Price: $XX', align: 'center', fontSize: 9 },
       ],
@@ -267,12 +270,12 @@ function makeOfferBlocks2And3(heroImage: string): ContentBlock[] {
     { id: uid(), type: 'spacer',   height: 12 },
     { id: uid(), type: 'columns',  ratio: '1:1', columns: [
       [
-        { id: uid(), type: 'image', url: '', alt: 'Product 1', imageWidth: '100%' },
+        { id: uid(), type: 'image', url: '/email-images/product-6.jpg', alt: 'Product 1', imageWidth: '100%' },
         { id: uid(), type: 'text',  text: 'Product Name', align: 'center', fontSize: 11 },
         { id: uid(), type: 'text',  text: 'Price: $XX.XX', align: 'center', fontSize: 10 },
       ],
       [
-        { id: uid(), type: 'image', url: '', alt: 'Product 2', imageWidth: '100%' },
+        { id: uid(), type: 'image', url: '/email-images/product-1.jpg', alt: 'Product 2', imageWidth: '100%' },
         { id: uid(), type: 'text',  text: 'Product Name', align: 'center', fontSize: 11 },
         { id: uid(), type: 'text',  text: 'Price: $XX.XX', align: 'center', fontSize: 10 },
       ],
@@ -282,17 +285,17 @@ function makeOfferBlocks2And3(heroImage: string): ContentBlock[] {
     { id: uid(), type: 'spacer',   height: 12 },
     { id: uid(), type: 'columns',  ratio: '1:1:1', columns: [
       [
-        { id: uid(), type: 'image', url: '', alt: 'Product 1', imageWidth: '100%' },
+        { id: uid(), type: 'image', url: '/email-images/product-2.jpg', alt: 'Product 1', imageWidth: '100%' },
         { id: uid(), type: 'text',  text: 'Product Name', align: 'center', fontSize: 10 },
         { id: uid(), type: 'text',  text: 'Price: $XX', align: 'center', fontSize: 9 },
       ],
       [
-        { id: uid(), type: 'image', url: '', alt: 'Product 2', imageWidth: '100%' },
+        { id: uid(), type: 'image', url: '/email-images/product-3.jpg', alt: 'Product 2', imageWidth: '100%' },
         { id: uid(), type: 'text',  text: 'Product Name', align: 'center', fontSize: 10 },
         { id: uid(), type: 'text',  text: 'Price: $XX', align: 'center', fontSize: 9 },
       ],
       [
-        { id: uid(), type: 'image', url: '', alt: 'Product 3', imageWidth: '100%' },
+        { id: uid(), type: 'image', url: '/email-images/product-4.jpg', alt: 'Product 3', imageWidth: '100%' },
         { id: uid(), type: 'text',  text: 'Product Name', align: 'center', fontSize: 10 },
         { id: uid(), type: 'text',  text: 'Price: $XX', align: 'center', fontSize: 9 },
       ],
@@ -511,7 +514,7 @@ interface Props {
   allAssets:   BrandAssetRow[]
 }
 
-type FlowStep = 'gallery' | 'intent' | 'style-pick' | 'variations' | 'edit' | 'view-saved' | 'my-templates'
+type FlowStep = 'gallery' | 'variations' | 'edit' | 'view-saved' | 'my-templates'
 type EditTab   = 'content' | 'styles'
 
 // ── Block utilities ───────────────────────────────────────────────────────────
@@ -1136,10 +1139,9 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
   const [loadingList,    setLoadingList]    = useState(false)
 
   // Creation flow state
-  const [campaignIntent, setCampaignIntent] = useState<CampaignIntent | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<TemplateStyle | null>(null)
+  const [selectedGalleryVariation, setSelectedGalleryVariation] = useState<GalleryVariationConfig | null>(null)
   const [selectedStyle,  setStyle]          = useState<TemplateStyle>('minimalist')
-  const [variations,     setVariations]     = useState<VariationConfig[]>([])
-  const [selectedVar,    setSelectedVar]    = useState<VariationConfig | null>(null)
   const [templateName,   setName]           = useState('')
   const [content,        setContent]        = useState<TemplateContent>(EMPTY_CONTENT)
   const [styleOpts,      setStyleOpts]      = useState<StyleOptions>({ ...DEFAULT_STYLE_OPTIONS })
@@ -1149,7 +1151,7 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
   const [previewLoading, setPreviewLoading] = useState(false)
   const [viewTemplate,   setViewTemplate]   = useState<EmailTemplateRow | null>(null)
   const [editingId,      setEditingId]      = useState<string | null>(null)
-  const [backStep,       setBackStep]       = useState<Step>('gallery')
+  const [backStep,       setBackStep]       = useState<FlowStep>('gallery')
 
   // Save
   const [saving, setSaving] = useState(false)
@@ -1204,17 +1206,17 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
     return () => { if (debounce.current) clearTimeout(debounce.current) }
   }, [step, selectedStyle, content, styleOpts, profile?.id])
 
-  // Render selected variation in variations step
+  // Render selected variation in variations step (OLD - now handled by EmailVariationSelector)
   useEffect(() => {
-    if (step !== 'variations' || !selectedVar || !profile) return
+    if (false && step !== 'variations' || !selectedGalleryVariation || !profile) return
     setPreviewLoading(true)
     renderTemplatePreview({
       style: selectedStyle,
-      content: { ...content, style_options: selectedVar.style_options },
+      content: { ...content, style_options: selectedGalleryVariation?.defaultContent.style_options },
       brandProfileId: profile.id,
     }).then(setPreviewHtml).catch(() => setPreviewHtml(''))
       .finally(() => setPreviewLoading(false))
-  }, [step, selectedVar?.index, selectedStyle, profile?.id])
+  }, [step, selectedGalleryVariation?.index, selectedStyle, profile?.id])
 
   // Render saved template from snapshot
   useEffect(() => {
@@ -1259,7 +1261,7 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
   const recommendation = recommendTemplates({
     brand_tone: profile?.brand_tone ?? null, brand_style: profile?.brand_style ?? null,
     cta_style: profile?.cta_style ?? null, has_logo: !!logoAsset,
-    has_colors: !!profile?.color_primary, campaign_intent: campaignIntent ?? undefined,
+    has_colors: !!profile?.color_primary,
   })
 
   // ── Flow helpers ────────────────────────────────────────────────────────────
@@ -1278,7 +1280,6 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
     })
     setStyle(t.template_style as TemplateStyle)
     setStyleOpts(c.style_options ? { ...DEFAULT_STYLE_OPTIONS, ...c.style_options } : { ...DEFAULT_STYLE_OPTIONS })
-    setSelectedVar(null)
     setPreviewHtml('')
     setStep('edit')
   }
@@ -1301,56 +1302,37 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
   }
 
   function startNewTemplate() {
-    setCampaignIntent(null)
-    setStyle(recommendation.topStyle)
-    setVariations([])
-    setSelectedVar(null)
+    setSelectedCategory(null)
+    setSelectedGalleryVariation(null)
     setName('')
     setEditingId(null)
     setContent(EMPTY_CONTENT)
     setStyleOpts({ ...DEFAULT_STYLE_OPTIONS })
     setPreviewHtml('')
-    setBackStep('gallery')
-    setStep('intent')
+    setStep('gallery')
   }
 
-  function onIntentSelected(intent: CampaignIntent) {
-    setCampaignIntent(intent)
-    setBackStep('intent')
-    setStep('style-pick')
-  }
-
-  function onStyleConfirmed(style: TemplateStyle) {
-    const preset = TEMPLATE_PRESETS.find(p => p.id === style)!
-    setStyle(style)
-    const d = preset.defaults
-    const starters = SYSTEM_STARTERS[style]
-    const starter = starters?.[0]  // Use first template if multiple exist
-    const blocks: ContentBlock[] = starter
-      ? starter.makeBlocks(starter.heroImage)
-      : [
-          { id: uid(), type: 'headline', text: d.headline, align: 'center' },
-          { id: uid(), type: 'text',     text: d.body_text, align: 'left' },
-          { id: uid(), type: 'button',   text: d.cta_text,  url: '',       align: 'center' },
-        ]
-    setContent({ subject: d.subject, preheader: d.preheader, footer_text: d.footer_text, blocks })
-    const vars = generateVariations(fakeSnap, style)
-    setVariations(vars)
-    const recIdx = campaignIntent ? recommendVariationIndex(campaignIntent) : 1
-    setSelectedVar(vars.find(v => v.index === recIdx) ?? vars[0])
-    setPreviewHtml('')
-    setBackStep('style-pick')
+  function onCategorySelected(category: TemplateStyle) {
+    setSelectedCategory(category)
+    setSelectedGalleryVariation(null)
     setStep('variations')
   }
 
-  function onVariationSelected(v: VariationConfig) {
-    setSelectedVar(v)
-    setStyleOpts({ ...v.style_options })
+  function onVariationSelected(variation: GalleryVariationConfig) {
+    setSelectedGalleryVariation(variation)
+    const category = selectedCategory || 'basic'
+    setStyle(category)
+    setContent(variation.defaultContent)
+    setStyleOpts(variation.defaultContent.style_options ? { ...DEFAULT_STYLE_OPTIONS, ...variation.defaultContent.style_options } : { ...DEFAULT_STYLE_OPTIONS })
+    setName('')
+    setEditingId(null)
+    setPreviewHtml('')
+    setStep('edit')
   }
 
   function onVariationConfirmed() {
-    if (!selectedVar) return
-    setStyleOpts({ ...selectedVar.style_options })
+    if (!selectedGalleryVariation) return
+    setStyleOpts(selectedGalleryVariation.defaultContent.style_options ? { ...DEFAULT_STYLE_OPTIONS, ...selectedGalleryVariation.defaultContent.style_options } : { ...DEFAULT_STYLE_OPTIONS })
     setPreviewHtml('')
     setStep('edit')
   }
@@ -1359,7 +1341,7 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
     if (!profile) return
     setSaving(true)
     try {
-      const name = templateName.trim() || `${TEMPLATE_PRESETS.find(p => p.id === selectedStyle)?.label ?? 'Template'} — ${selectedVar?.name ?? new Date().toLocaleDateString()}`.trim()
+      const name = templateName.trim() || `${TEMPLATE_PRESETS.find(p => p.id === selectedStyle)?.label ?? 'Template'} — ${selectedGalleryVariation?.name ?? new Date().toLocaleDateString()}`.trim()
       if (editingId) {
         await updateEmailTemplate({
           templateId: editingId,
@@ -1372,9 +1354,9 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
           name,
           style: selectedStyle,
           content: { ...content, style_options: styleOpts },
-          campaignIntent: campaignIntent ?? undefined,
-          variationName:  selectedVar?.name,
-          variationIndex: selectedVar?.index,
+          campaignIntent: undefined,  // No longer used - always null for gallery-based templates
+          variationName:  selectedGalleryVariation?.name,
+          variationIndex: selectedGalleryVariation?.index,
         })
       }
       setSaved(true)
@@ -1414,6 +1396,52 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
         <Mail className="w-10 h-10 text-gray-200 dark:text-white/10" />
         <p className="text-sm font-semibold text-gray-400">Select a Brand ID to manage email templates</p>
         <p className="text-xs text-gray-300 dark:text-gray-600">Templates are scoped to a brand profile — colors, logo and fonts apply automatically.</p>
+      </div>
+    )
+  }
+
+  // ── Gallery: Select template category ───────────────────────────────────────
+
+  if (step === 'gallery') {
+    return (
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10 bg-white dark:bg-gray-950">
+          <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">Email Templates</h1>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setStep('my-templates')} className="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors">
+              My Templates
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-6">
+          <EmailTemplateGallery onSelectCategory={onCategorySelected} />
+        </div>
+      </div>
+    )
+  }
+
+  // ── Variations: Select template style variant ────────────────────────────────
+
+  if (step === 'variations' && selectedCategory) {
+    return (
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10 bg-white dark:bg-gray-950">
+          <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">Email Templates</h1>
+        </div>
+        <div className="flex-1 overflow-y-auto p-6">
+          <EmailVariationSelector
+            category={selectedCategory}
+            onSelectVariation={onVariationSelected}
+            onBack={() => setStep('gallery')}
+            brandSnapshot={{
+              company_name: profile?.company_name ?? null,
+              tagline: null,
+              logo_url: logoAsset?.file_url ?? null,
+              primary_color: profile?.color_primary ?? null,
+              text_color: profile?.color_text ?? null,
+            }}
+          />
+        </div>
       </div>
     )
   }
@@ -1551,203 +1579,11 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
     )
   }
 
-  // ── Step 1: Campaign intent ─────────────────────────────────────────────────
-
-  if (step === 'intent') {
-    return (
-      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-        <div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-gray-100 dark:border-white/10 bg-white dark:bg-gray-950">
-          <button onClick={() => setStep('gallery')} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 dark:hover:text-gray-200">
-            <ChevronLeft className="w-3.5 h-3.5" /> Gallery
-          </button>
-          <FlowProgress current={0} />
-          <div className="w-16" />
-        </div>
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-lg mx-auto">
-            <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-1">What's the goal of this email?</h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">This helps recommend the right template style and design variation.</p>
-            <div className="grid grid-cols-1 gap-3">
-              {INTENTS.map(intent => {
-                const Icon = intent.icon
-                return (
-                  <button key={intent.key} onClick={() => onIntentSelected(intent.key)}
-                    className="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-100 dark:border-white/10 bg-white dark:bg-gray-900 hover:border-violet-300 dark:hover:border-violet-700 hover:bg-violet-50/40 dark:hover:bg-violet-900/10 text-left transition-all group">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-gray-50 dark:bg-white/5 group-hover:bg-violet-100 dark:group-hover:bg-violet-900/30 transition-colors">
-                      <Icon className="w-5 h-5 text-gray-400 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{intent.label}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{intent.description}</p>
-                    </div>
-                    <ChevronLeft className="w-4 h-4 text-gray-300 rotate-180 ml-auto shrink-0" />
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // ── Step 2: Style selection ─────────────────────────────────────────────────
-
-  if (step === 'style-pick') {
-    const intentLabel = INTENTS.find(i => i.key === campaignIntent)?.label ?? ''
-    return (
-      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-        <div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-gray-100 dark:border-white/10 bg-white dark:bg-gray-950">
-          <button onClick={() => setStep('intent')} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 dark:hover:text-gray-200">
-            <ChevronLeft className="w-3.5 h-3.5" /> Back
-          </button>
-          <FlowProgress current={1} />
-          <div className="w-16" />
-        </div>
-        <div className="flex-1 overflow-y-auto p-5">
-          <div className="max-w-lg mx-auto">
-            <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-1">Choose a template style</h2>
-            {intentLabel && (
-              <p className="text-xs text-gray-500 mb-4">
-                For <span className="font-semibold text-violet-600 dark:text-violet-400">{intentLabel}</span> —
-                {' '}<span className="text-gray-400">recommended style highlighted</span>
-              </p>
-            )}
-            <div className="space-y-2">
-              {recommendation.rankedStyles.map(({ preset, reason }) => {
-                const isRec = preset.id === recommendation.topStyle
-                return (
-                  <button key={preset.id} onClick={() => onStyleConfirmed(preset.id)}
-                    className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 text-left transition-all ${
-                      isRec
-                        ? 'border-violet-400 bg-violet-50/60 dark:bg-violet-900/20 dark:border-violet-700'
-                        : 'border-gray-100 dark:border-white/10 bg-white dark:bg-gray-900 hover:border-violet-200 dark:hover:border-violet-800'
-                    }`}>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-gray-800 dark:text-gray-100">{preset.label}</span>
-                        {isRec && (
-                          <span className="flex items-center gap-0.5 text-[10px] font-semibold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/40 px-1.5 py-0.5 rounded-full">
-                            <Sparkles className="w-2.5 h-2.5" /> Recommended
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">{preset.description}</p>
-                      {reason && reason !== 'general use' && (
-                        <p className="text-[10px] text-violet-500 dark:text-violet-500 mt-1">Why: {reason}</p>
-                      )}
-                    </div>
-                    <ChevronLeft className="w-4 h-4 text-gray-300 rotate-180 shrink-0" />
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // ── Step 3: 4 variations ────────────────────────────────────────────────────
-
-  if (step === 'variations') {
-    const recIdx = campaignIntent ? recommendVariationIndex(campaignIntent) : 1
-    return (
-      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-        <div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-gray-100 dark:border-white/10 bg-white dark:bg-gray-950">
-          <button onClick={() => setStep(backStep)} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 dark:hover:text-gray-200">
-            <ChevronLeft className="w-3.5 h-3.5" /> {backStep === 'gallery' ? 'All Templates' : 'Style'}
-          </button>
-          <FlowProgress current={2} />
-          <div className="w-16" />
-        </div>
-        <div className="flex-1 flex overflow-hidden min-h-0">
-          {/* Left: 2×2 variation grid */}
-          <div className="w-64 shrink-0 overflow-y-auto p-4 border-r border-gray-100 dark:border-white/10 bg-white dark:bg-gray-950">
-            <p className="text-xs font-bold text-gray-800 dark:text-gray-100 mb-1">Choose a design skin</p>
-            <p className="text-[11px] text-gray-400 mb-4">Same layout, 4 intentional styles.</p>
-            <div className="grid grid-cols-2 gap-3">
-              {variations.map(v => {
-                const isSelected = selectedVar?.index === v.index
-                const isRec      = v.index === recIdx
-                return (
-                  <button key={v.index} onClick={() => onVariationSelected(v)}
-                    className={`flex flex-col rounded-xl overflow-hidden transition-all border-2 ${
-                      isSelected
-                        ? 'border-violet-500 shadow-md shadow-violet-200/50 dark:shadow-violet-900/30'
-                        : 'border-gray-100 dark:border-white/10 hover:border-violet-300 dark:hover:border-violet-700'
-                    }`}>
-                    <div className="relative" style={{ aspectRatio: '3/4' }}>
-                      <VariationThumbnail style={selectedStyle} variation={v} logoUrl={logoAsset?.file_url} />
-                      {isRec && (
-                        <div className="absolute top-1.5 left-1.5 flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-500 text-white">
-                          <Sparkles className="w-2 h-2" /> Pick
-                        </div>
-                      )}
-                      {isSelected && (
-                        <div className="absolute bottom-1.5 right-1.5 w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center">
-                          <Check className="w-2.5 h-2.5 text-white" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="px-2 py-1.5 bg-white dark:bg-gray-950">
-                      <p className="text-[10px] font-bold text-gray-700 dark:text-gray-200 leading-tight">{v.name}</p>
-                      <p className="text-[9px] text-gray-400 leading-tight">{v.tagline}</p>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Right: iframe preview of selected */}
-          <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#f0f0f2] dark:bg-gray-950">
-            <div className="flex-1 overflow-auto p-5">
-              {selectedVar && (
-                <div className="mx-auto w-full" style={{ maxWidth: 480 }}>
-                  <div className="relative rounded-2xl overflow-hidden shadow-lg bg-white" style={{ aspectRatio: '1/1.5' }}>
-                    {previewLoading && (
-                      <div className="absolute inset-0 flex items-center justify-center z-10 bg-white/80">
-                        <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
-                      </div>
-                    )}
-                    {previewHtml
-                      ? <iframe srcDoc={previewHtml} title="Variation preview" className="w-full h-full border-0" sandbox="allow-same-origin" />
-                      : <div className="flex flex-col items-center justify-center h-full gap-2">
-                          <Mail className="w-8 h-8 text-gray-200" />
-                          <p className="text-xs text-gray-400">Select a variation</p>
-                        </div>
-                    }
-                  </div>
-                  {selectedVar && (
-                    <div className="mt-4 text-center">
-                      <p className="text-sm font-bold text-gray-800 dark:text-gray-100">{selectedVar.name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{selectedVar.tagline}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-            <div className="shrink-0 flex items-center justify-between px-5 py-4 border-t border-gray-200 dark:border-white/10 bg-white dark:bg-gray-950">
-              <p className="text-xs text-gray-500">
-                {selectedVar?.name ?? 'Select a variation to continue'}
-              </p>
-              <button onClick={onVariationConfirmed} disabled={!selectedVar}
-                className="flex items-center gap-1.5 text-sm font-bold text-white px-5 py-2 rounded-xl disabled:opacity-40 transition-opacity"
-                style={{ background: primary }}>
-                Use this variation →
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   // ── Edit: visual drag-and-drop canvas ─────────────────────────────────────
 
   if (step === 'edit') {
-    const backStep = selectedVar ? 'variations' : 'gallery'
+    const backStep = selectedGalleryVariation ? 'variations' : 'gallery'
     return (
       // flex flex-col so the canvas gets flex: 1 height from its parent
       <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
@@ -1957,19 +1793,12 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
                         onClick={() => {
                           const preset = TEMPLATE_PRESETS.find(p => p.id === starter.style)!
                           const d = preset.defaults
-                          setCampaignIntent(null)
                           setStyle(starter.style)
                           setName('')
                           setEditingId(null)
                           setContent({ subject: d.subject, preheader: d.preheader, footer_text: d.footer_text, blocks: starter.makeBlocks(starter.heroImage) })
                           setStyleOpts({ ...DEFAULT_STYLE_OPTIONS, ...starter.makeStyleOptions(primary, '#f4f4f5') })
-                          const vars = generateVariations(fakeSnap, starter.style)
-                          setVariations(vars)
-                          const recIdx = 1
-                          setSelectedVar(vars.find(v => v.index === recIdx) ?? vars[0])
-                          setPreviewHtml('')
-                          setBackStep('gallery')
-                          setStep('variations')
+                          setStep('edit')
                         }} />
                     )
                   })}

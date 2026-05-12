@@ -1,7 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { buildBusinessDescription } from '@/lib/business-profile'
 
@@ -172,6 +172,51 @@ export async function saveProfile(formData: FormData) {
     currency,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id' })
+
+  // Auto-create a workspace for new users who don't have one yet
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: existingMembership } = await (supabase as any)
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (!existingMembership) {
+    const admin = createAdminClient()
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
+    const suffix = Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * 36)]).join('')
+    const workspaceName = company || `${firstName}'s Workspace`
+    const slug = workspaceName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 48) + '-' + suffix
+
+    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: newWorkspace, error: wsError } = await (admin as any)
+      .from('workspaces')
+      .insert({
+        name: workspaceName,
+        slug,
+        plan: 'starter',
+        subscription_status: 'trialing',
+        trial_ends_at: trialEndsAt,
+      })
+      .select()
+      .single()
+
+    if (newWorkspace && !wsError) {
+      // Add user as owner of the new workspace
+      await (admin as any).from('workspace_members').insert({
+        workspace_id: newWorkspace.id,
+        user_id: user.id,
+        role: 'owner',
+        accepted_at: new Date().toISOString(),
+      })
+    }
+  }
 
   // Save business description to the workspace so AI email analysis uses it
   if (businessDescription) {

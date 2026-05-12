@@ -103,6 +103,31 @@ export async function createFormFromTemplate(
   const embedKey   = generateEmbedKey()
   const publicSlug = generatePublicSlug()
 
+  // Pick a random image so two forms made from the same template don't look
+  // identical in My Forms. Skips images already used by the template's other
+  // blocks so we don't accidentally re-pick the same one.
+  const IMAGE_POOL = [
+    'baby-shower.jpg', 'balloons-beach.jpg', 'bbq-party.jpg', 'bride-beach.jpg',
+    'business-team.jpg', 'cafe-staff.jpg', 'dim-sum.jpg', 'garden-dinner.jpg',
+    'graduation.jpg', 'kids-birthday.jpg', 'runners.jpg', 'shopping-woman.jpg',
+    'solar-couple.jpg', 'summer-fashion.jpg', 'yoga-class.jpg',
+  ]
+  const usedSrcs = new Set<string>()
+  for (const b of t.config.blocks ?? []) {
+    if (b.type === 'image' && typeof b.props.src === 'string') usedSrcs.add(b.props.src)
+  }
+  function randomImage(exclude: Set<string>): string {
+    const candidates = IMAGE_POOL.filter(n => !exclude.has(`/form-images/${n}`))
+    const pool = candidates.length > 0 ? candidates : IMAGE_POOL
+    return `/form-images/${pool[Math.floor(Math.random() * pool.length)]}`
+  }
+  const remappedBlocks = (t.config.blocks ?? []).map(b => {
+    if (b.type !== 'image' || !b.props.src) return b
+    const fresh = randomImage(usedSrcs)
+    usedSrcs.add(fresh)
+    return { ...b, props: { ...b.props, src: fresh } }
+  })
+
   const defaultBehaviour: FormBehaviour = {
     audience:   { tags: [], listId: null },
     scheduling: { mode: 'always', startAt: null, endAt: null },
@@ -123,7 +148,7 @@ export async function createFormFromTemplate(
       type:         t.type,
       channel_mode: t.channel_mode,
       steps:        t.config.steps ?? [],
-      blocks:       t.config.blocks ?? [],
+      blocks:       remappedBlocks,
       behaviour:    defaultBehaviour,
       theme:        t.theme ?? {},
       embed_key:    embedKey,
@@ -282,6 +307,63 @@ export async function archiveForm(id: string): Promise<{ error?: string }> {
   if (error) return { error: error.message }
   revalidatePath('/dashboard/forms'); revalidatePath('/dashboard/forms/templates')
   return {}
+}
+
+/**
+ * Find duplicate forms in the workspace (same template_id + name) and keep
+ * only the most recently updated one per group. Older copies get archived.
+ * Published forms are preferred over drafts — if both exist, the published
+ * one wins regardless of update time.
+ */
+export async function dedupeForms(): Promise<{ archived: number; error?: string }> {
+  const ctx = await getWorkspaceAndUser()
+  if (!ctx) return { archived: 0, error: 'Not authenticated' }
+  const admin = createAdminClient()
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (admin as any)
+    .from('forms')
+    .select('id, name, template_id, status, updated_at')
+    .eq('workspace_id', ctx.workspaceId)
+    .neq('status', 'archived')
+
+  if (error) return { archived: 0, error: error.message }
+
+  type Row = { id: string; name: string; template_id: string | null; status: string; updated_at: string }
+  const rows = (data ?? []) as Row[]
+
+  const groups = new Map<string, Row[]>()
+  for (const r of rows) {
+    const key = `${r.template_id ?? 'no-template'}::${r.name.trim().toLowerCase()}`
+    const list = groups.get(key) ?? []
+    list.push(r)
+    groups.set(key, list)
+  }
+
+  const idsToArchive: string[] = []
+  for (const list of groups.values()) {
+    if (list.length < 2) continue
+    // Sort: published first, then most recently updated
+    list.sort((a, b) => {
+      if (a.status === 'published' && b.status !== 'published') return -1
+      if (b.status === 'published' && a.status !== 'published') return 1
+      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+    })
+    // Keep [0], archive the rest
+    for (let i = 1; i < list.length; i++) idsToArchive.push(list[i].id)
+  }
+
+  if (idsToArchive.length === 0) return { archived: 0 }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error: archiveErr } = await (admin as any)
+    .from('forms')
+    .update({ status: 'archived', updated_at: new Date().toISOString() })
+    .in('id', idsToArchive)
+
+  if (archiveErr) return { archived: 0, error: archiveErr.message }
+  revalidatePath('/dashboard/forms'); revalidatePath('/dashboard/forms/templates')
+  return { archived: idsToArchive.length }
 }
 
 /**

@@ -1838,7 +1838,7 @@ function BuilderInner({ template, systemTemplates }: {
               {tplDropdownOpen && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setTplDropdownOpen(false)} />
-                  <div className="absolute right-0 top-full mt-1.5 z-40 bg-white dark:bg-[#252525] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl overflow-hidden min-w-[312px]">
+                  <div className="absolute right-0 top-full mt-1.5 z-40 bg-white dark:bg-[#252525] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl overflow-y-auto max-h-[480px] min-w-[312px]">
                     {/* Group by track */}
                     {(() => {
                       const trackGroups: Record<string, AutomationTemplate[]> = {}

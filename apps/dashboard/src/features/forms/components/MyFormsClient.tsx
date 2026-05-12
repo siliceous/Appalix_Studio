@@ -2,11 +2,11 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Pencil, ExternalLink, Trash2, ArrowLeft } from 'lucide-react'
+import { Loader2, Pencil, ExternalLink, Trash2, ArrowLeft, Layers } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { archiveForm, bulkArchiveDrafts } from '@/app/actions/forms'
-import { FormRenderer } from '@/app/f/[slug]/form-renderer'
-import type { Form, FormStatus, FormType } from '@/features/forms/types'
+import { archiveForm, bulkArchiveDrafts, dedupeForms } from '@/app/actions/forms'
+import { TemplateMockup } from './FormsTemplateGallery'
+import type { Form, FormStatus, FormType, FormTemplate } from '@/features/forms/types'
 
 const STATUS_STYLES: Record<FormStatus, string> = {
   draft:     'bg-gray-100  dark:bg-white/8  text-gray-500  dark:text-gray-400',
@@ -23,19 +23,31 @@ const TYPE_COLOURS: Record<FormType, string> = {
 }
 
 /**
- * Force the form to render immediately (skip delay/exit-intent triggers) and
- * pin the targeting/scheduling so the preview always paints in this list.
+ * Adapt a Form into the FormTemplate shape that TemplateMockup expects.
+ * Only the fields the mockup reads are populated — the rest are stub values.
  */
-function previewifyForm(f: Form): Form {
+function formAsTemplate(f: Form): FormTemplate {
+  const inputSteps = f.steps.filter(s => s.type !== 'success')
   return {
-    ...f,
-    behaviour: {
-      ...f.behaviour,
-      display:    { ...(f.behaviour?.display ?? {}), trigger: 'immediate' },
-      scheduling: { mode: 'always', startAt: null, endAt: null },
-      targeting:  { ...(f.behaviour?.targeting ?? {}), devices: ['desktop', 'mobile', 'tablet'] },
-      frequency:  { mode: 'always' },
+    id:                 f.id,
+    workspace_id:       f.workspace_id,
+    name:               f.name,
+    description:        '',
+    preview_image_url:  null,
+    type:               f.type,
+    goal:               'collect_subscribers',
+    channel_mode:       f.channel_mode,
+    is_multi_step:      inputSteps.length > 1,
+    is_system_template: false,
+    tags:               [],
+    category:           null,
+    config: {
+      steps:  f.steps,
+      blocks: f.blocks,
     },
+    theme:      f.theme,
+    created_at: f.created_at,
+    updated_at: f.updated_at,
   }
 }
 
@@ -45,6 +57,42 @@ export function MyFormsClient({ initialForms }: Props) {
   const router = useRouter()
   const [forms, setForms] = useState<Form[]>(initialForms)
   const [cleaning, setCleaning] = useState(false)
+  const [deduping, setDeduping] = useState(false)
+
+  async function handleDedupe() {
+    // Group locally to show the user how many copies will be archived
+    const groups = new Map<string, number>()
+    for (const f of forms) {
+      const key = `${f.template_id ?? 'no-template'}::${f.name.trim().toLowerCase()}`
+      groups.set(key, (groups.get(key) ?? 0) + 1)
+    }
+    const dupCount = [...groups.values()].filter(n => n > 1).reduce((sum, n) => sum + (n - 1), 0)
+    if (dupCount === 0) { alert('No duplicates found.'); return }
+    if (!confirm(`Archive ${dupCount} duplicate form${dupCount === 1 ? '' : 's'}? Keeps the most recent (or published) copy of each.`)) return
+
+    setDeduping(true)
+    const res = await dedupeForms()
+    setDeduping(false)
+    if (res.error) { alert(`Couldn't dedupe: ${res.error}`); return }
+    // Locally drop the duplicates so the UI updates immediately
+    const toKeep = new Set<string>()
+    const grouped = new Map<string, Form[]>()
+    for (const f of forms) {
+      const key = `${f.template_id ?? 'no-template'}::${f.name.trim().toLowerCase()}`
+      const list = grouped.get(key) ?? []
+      list.push(f)
+      grouped.set(key, list)
+    }
+    for (const list of grouped.values()) {
+      list.sort((a, b) => {
+        if (a.status === 'published' && b.status !== 'published') return -1
+        if (b.status === 'published' && a.status !== 'published') return 1
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      })
+      toKeep.add(list[0].id)
+    }
+    setForms(prev => prev.filter(f => toKeep.has(f.id)))
+  }
 
   function handleDelete(id: string, name: string) {
     if (!confirm(`Delete "${name}"? This cannot be undone from the UI.`)) return
@@ -86,16 +134,27 @@ export function MyFormsClient({ initialForms }: Props) {
           </h1>
           <p className="text-xs text-gray-400 mt-0.5">Every form you've built — preview, edit, share or delete.</p>
         </div>
-        {forms.some(f => f.status === 'draft') && (
+        <div className="ml-auto flex items-center gap-2">
           <button
-            onClick={handleCleanupDrafts}
-            disabled={cleaning}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors disabled:opacity-60"
+            onClick={handleDedupe}
+            disabled={deduping}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors disabled:opacity-60"
+            title="Archive duplicate forms (same template + name)"
           >
-            {cleaning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-            Clean up drafts
+            {deduping ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Layers className="w-3.5 h-3.5" />}
+            Remove duplicates
           </button>
-        )}
+          {forms.some(f => f.status === 'draft') && (
+            <button
+              onClick={handleCleanupDrafts}
+              disabled={cleaning}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors disabled:opacity-60"
+            >
+              {cleaning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+              Clean up drafts
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Body */}
@@ -111,65 +170,77 @@ export function MyFormsClient({ initialForms }: Props) {
           </button>
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden px-6 py-6 grid grid-cols-1 lg:grid-cols-2 gap-5 content-start">
-          {forms.map(form => (
-            <div
-              key={form.id}
-              className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow"
-            >
-              {/* Card header — meta + actions */}
-              <div className="flex items-start gap-3 px-5 py-3 border-b border-gray-100 dark:border-gray-700/60">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{form.name}</p>
-                  <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                    <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-md capitalize', STATUS_STYLES[form.status])}>
-                      {form.status}
-                    </span>
-                    <span className={cn('text-[10px] font-medium px-1.5 py-0.5 rounded-md capitalize', TYPE_COLOURS[form.type])}>
-                      {form.type.replace(/_/g, ' ')}
-                    </span>
-                    <span className="text-[10px] text-gray-400">
-                      Updated {new Date(form.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </span>
+        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden px-6 py-6">
+          <div className="grid grid-cols-3 gap-5">
+            {forms.map(form => {
+              const asTemplate = formAsTemplate(form)
+              return (
+                <div
+                  key={form.id}
+                  onClick={() => router.push(`/dashboard/forms/${form.id}/edit`)}
+                  className="group relative flex flex-col rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden hover:border-brand-300 dark:hover:border-brand-600 hover:shadow-lg transition-all cursor-pointer"
+                >
+                  {/* Preview area — same mockup the templates use */}
+                  <div className="h-[280px] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                    <TemplateMockup template={asTemplate} />
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex flex-col p-4 gap-2">
+                    <div className="flex items-start gap-2">
+                      <p className="flex-1 text-sm font-semibold text-gray-900 dark:text-gray-100 leading-snug truncate">{form.name}</p>
+                      {asTemplate.is_multi_step && (
+                        <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300">
+                          Multi-step
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-md capitalize', STATUS_STYLES[form.status])}>
+                        {form.status}
+                      </span>
+                      <span className={cn('text-[10px] font-medium px-1.5 py-0.5 rounded-md capitalize', TYPE_COLOURS[form.type])}>
+                        {form.type.replace(/_/g, ' ')}
+                      </span>
+                      <span className="text-[10px] text-gray-400 ml-auto">
+                        {new Date(form.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions footer */}
+                  <div className="shrink-0 flex items-center gap-1 px-3 py-2 border-t border-gray-100 dark:border-gray-700/60" onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => router.push(`/dashboard/forms/${form.id}/edit`)}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+                    >
+                      <Pencil className="w-3 h-3" />
+                      Edit
+                    </button>
+                    {form.status === 'published' && form.public_slug && (
+                      <a
+                        href={`/f/${form.public_slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        Open
+                      </a>
+                    )}
+                    <button
+                      onClick={() => handleDelete(form.id, form.name)}
+                      title="Delete form"
+                      className="ml-auto flex items-center justify-center w-7 h-7 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => router.push(`/dashboard/forms/${form.id}/edit`)}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
-                  >
-                    <Pencil className="w-3 h-3" />
-                    Edit
-                  </button>
-                  {form.status === 'published' && form.public_slug && (
-                    <a
-                      href={`/f/${form.public_slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 rounded-lg hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      Public link
-                    </a>
-                  )}
-                  <button
-                    onClick={() => handleDelete(form.id, form.name)}
-                    title="Delete form"
-                    className="flex items-center justify-center w-7 h-7 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Form-format preview — actual FormRenderer in pointer-events-none mode */}
-              <div className="px-6 py-6 bg-[#f5f4f1] dark:bg-gray-950/40">
-                <div className="pointer-events-none select-none">
-                  <FormRenderer form={previewifyForm(form)} sourceUrl="" />
-                </div>
-              </div>
-            </div>
-          ))}
+              )
+            })}
+          </div>
         </div>
       )}
     </div>
