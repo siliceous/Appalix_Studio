@@ -1664,6 +1664,7 @@ export function EmailBuilderCanvas({
   onSave,
   saving,
   saved,
+  templateStyle = 'newsletter',
 }: {
   blocks:        ContentBlock[]
   onChange:      (blocks: ContentBlock[]) => void
@@ -1680,6 +1681,7 @@ export function EmailBuilderCanvas({
   onSave?:       () => void
   saving?:       boolean
   saved?:        boolean
+  templateStyle?: string
 }) {
   const [selectedId,      setSelectedId]      = useState<string | null>(null)
   const [selectedSubPath, setSelectedSubPath] = useState<SubPath | null>(null)
@@ -1705,7 +1707,7 @@ export function EmailBuilderCanvas({
   const previewDoc = useMemo(() => {
     try {
       return renderEmailHtml(
-        'newsletter',
+        templateStyle as any,
         { subject, preheader, footer_text: footerText, blocks },
         {
           company_name: defaults.companyName ?? null,
@@ -1725,7 +1727,7 @@ export function EmailBuilderCanvas({
       console.error('[EmailBuilderCanvas] renderEmailHtml failed:', e)
       return '<html><body style="font-family:sans-serif;padding:32px;color:#6b7280">Preview unavailable — check console for details.</body></html>'
     }
-  }, [showPreview, blocks, subject, preheader, footerText, defaults])
+  }, [showPreview, blocks, subject, preheader, footerText, defaults, templateStyle])
 
   const isDraggingFromPalette = dragActiveId?.startsWith('new::') ?? false
   const draggingCanvasBlock   = dragActiveId && !isDraggingFromPalette

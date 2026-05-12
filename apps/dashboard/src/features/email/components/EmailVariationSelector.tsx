@@ -31,9 +31,24 @@ export function EmailVariationSelector({ category, onSelectVariation, onBack, br
         company_name: brandSnapshot?.company_name ?? 'Your Company',
         tagline: brandSnapshot?.tagline ?? '',
         logo_url: brandSnapshot?.logo_url ?? '/logo.png',
-        primary_color: brandSnapshot?.primary_color ?? '#0066cc',
-        text_color: brandSnapshot?.text_color ?? '#1f2937',
-      } as any
+        favicon_url: null,
+        colors: {
+          primary: brandSnapshot?.primary_color ?? '#0066cc',
+          secondary: null,
+          accent: null,
+          background: '#ffffff',
+          text: brandSnapshot?.text_color ?? '#1f2937',
+        },
+        palette: [],
+        fonts: {
+          heading: null,
+          body: null,
+        },
+        brand_tone: null,
+        brand_style: null,
+        cta_style: null,
+        assets: [],
+      }
     )
     setPreviewHtml(html)
   }, [selectedVariation, brandSnapshot, category])

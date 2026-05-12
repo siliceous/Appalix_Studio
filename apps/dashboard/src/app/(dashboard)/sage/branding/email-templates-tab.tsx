@@ -1588,6 +1588,7 @@ export function EmailTemplatesTab({ profile, assets, allProfiles, allAssets }: P
       // flex flex-col so the canvas gets flex: 1 height from its parent
       <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
         <EmailBuilderCanvas
+          templateStyle={selectedStyle}
           blocks={content.blocks}
           onChange={blocks => setContent(c => ({ ...c, blocks }))}
           subject={content.subject}
