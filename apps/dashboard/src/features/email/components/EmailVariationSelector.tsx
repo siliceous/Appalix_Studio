@@ -119,13 +119,16 @@ export function EmailVariationSelector({ category, onSelectVariation, onBack, br
             </div>
 
             {/* Email Preview */}
-            <div className="h-96 overflow-y-auto bg-gray-50">
-              <iframe
-                title="Email Preview"
-                srcDoc={previewHtml}
-                className="w-full h-full border-0"
-                sandbox=""
-              />
+            <div className="flex-1 overflow-y-auto bg-gray-50 flex items-center justify-center p-6">
+              <div className="w-full" style={{ maxWidth: '600px' }}>
+                <iframe
+                  title="Email Preview"
+                  srcDoc={previewHtml}
+                  className="w-full border-0 rounded-lg shadow-sm"
+                  style={{ height: '800px' }}
+                  sandbox=""
+                />
+              </div>
             </div>
           </div>
 
