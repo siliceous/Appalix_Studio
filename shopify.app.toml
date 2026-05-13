@@ -6,7 +6,7 @@ application_url = "https://app.appalix.ai"
 embedded = true
 
 [webhooks]
-api_version = "2026-01"
+api_version = "2026-04"
 
 [[webhooks.subscriptions]]
 compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
