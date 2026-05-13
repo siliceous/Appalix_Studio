@@ -32,7 +32,7 @@ export async function shopifyRoutes(fastify: FastifyInstance) {
    *   customers/redact       → https://api.appalix.ai/webhooks/shopify/customers/redact
    *   shop/redact            → https://api.appalix.ai/webhooks/shopify/shop/redact
    */
-  fastify.post('/shopify/customers/data_request', { config: { rawBody: true } }, async (request, reply) => {
+  fastify.post('/shopify/customers-data-request', { config: { rawBody: true } }, async (request, reply) => {
     const rawBody = (request as never as { rawBody?: string }).rawBody ?? JSON.stringify(request.body)
     const hmac    = request.headers['x-shopify-hmac-sha256'] as string | undefined
     if (!verifyGdprHmac(rawBody, hmac, clientSecret)) return reply.status(401).send('Unauthorized')
@@ -40,7 +40,7 @@ export async function shopifyRoutes(fastify: FastifyInstance) {
     return reply.status(200).send()
   })
 
-  fastify.post('/shopify/customers/redact', { config: { rawBody: true } }, async (request, reply) => {
+  fastify.post('/shopify/customers-redact', { config: { rawBody: true } }, async (request, reply) => {
     const rawBody = (request as never as { rawBody?: string }).rawBody ?? JSON.stringify(request.body)
     const hmac    = request.headers['x-shopify-hmac-sha256'] as string | undefined
     if (!verifyGdprHmac(rawBody, hmac, clientSecret)) return reply.status(401).send('Unauthorized')
@@ -49,7 +49,7 @@ export async function shopifyRoutes(fastify: FastifyInstance) {
     return reply.status(200).send()
   })
 
-  fastify.post('/shopify/shop/redact', { config: { rawBody: true } }, async (request, reply) => {
+  fastify.post('/shopify/shop-redact', { config: { rawBody: true } }, async (request, reply) => {
     const rawBody = (request as never as { rawBody?: string }).rawBody ?? JSON.stringify(request.body)
     const hmac    = request.headers['x-shopify-hmac-sha256'] as string | undefined
     if (!verifyGdprHmac(rawBody, hmac, clientSecret)) return reply.status(401).send('Unauthorized')

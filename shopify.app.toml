@@ -8,9 +8,17 @@ embedded = true
 [webhooks]
 api_version = "2026-01"
 
-  [[webhooks.subscriptions]]
-  uri = "https://appalix-api.onrender.com/webhooks"
-  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+[[webhooks.subscriptions]]
+compliance_topics = ["customers/data_request"]
+uri = "https://appalix-api.onrender.com/webhooks/shopify/customers-data-request"
+
+[[webhooks.subscriptions]]
+compliance_topics = ["customers/redact"]
+uri = "https://appalix-api.onrender.com/webhooks/shopify/customers-redact"
+
+[[webhooks.subscriptions]]
+compliance_topics = ["shop/redact"]
+uri = "https://appalix-api.onrender.com/webhooks/shopify/shop-redact"
 
 [access_scopes]
 scopes = "read_customers,read_fulfillments,read_orders,write_script_tags"
