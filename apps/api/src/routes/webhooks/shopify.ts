@@ -26,11 +26,47 @@ export async function shopifyRoutes(fastify: FastifyInstance) {
   const clientSecret = process.env.SHOPIFY_CLIENT_SECRET ?? ''
 
   /**
-   * GDPR mandatory webhooks — required for Shopify App Store review.
-   * Register these URLs in the Shopify Partner Dashboard → App setup → GDPR webhooks:
-   *   customers/data_request → https://api.appalix.ai/webhooks/shopify/customers/data_request
-   *   customers/redact       → https://api.appalix.ai/webhooks/shopify/customers/redact
-   *   shop/redact            → https://api.appalix.ai/webhooks/shopify/shop/redact
+   * Unified GDPR/Compliance webhook endpoint — required for Shopify App Store review.
+   * Configured in shopify.app.toml:
+   *   uri = "https://appalix-api.onrender.com/webhooks/shopify/compliance"
+   *
+   * Handles all three compliance topics:
+   *   - customers/data_request
+   *   - customers/redact
+   *   - shop/redact
+   */
+  fastify.post('/shopify/compliance', { config: { rawBody: true } }, async (request, reply) => {
+    const rawBody = (request as never as { rawBody?: string }).rawBody ?? JSON.stringify(request.body)
+    const hmac    = request.headers['x-shopify-hmac-sha256'] as string | undefined
+    const topic   = request.headers['x-shopify-topic'] as string | undefined
+    const shop    = request.headers['x-shopify-shop-domain'] as string | undefined
+
+    if (!verifyGdprHmac(rawBody, hmac, clientSecret)) {
+      fastify.log.warn({ topic, shop }, '[shopify compliance] HMAC verification failed')
+      return reply.status(401).send('Unauthorized')
+    }
+
+    fastify.log.info({ topic, shop }, '[shopify compliance] webhook received')
+
+    switch (topic) {
+      case 'customers/data_request':
+        fastify.log.info({ topic, shop }, '[shopify compliance] customers/data_request — logging data access request')
+        break
+      case 'customers/redact':
+        fastify.log.info({ topic, shop }, '[shopify compliance] customers/redact — TODO: delete customer data')
+        break
+      case 'shop/redact':
+        fastify.log.info({ topic, shop }, '[shopify compliance] shop/redact — TODO: delete shop data and tokens')
+        break
+      default:
+        fastify.log.warn({ topic, shop }, '[shopify compliance] unknown topic')
+    }
+
+    return reply.status(200).send()
+  })
+
+  /**
+   * Legacy individual endpoints (kept for backward compatibility)
    */
   fastify.post('/shopify/customers-data-request', { config: { rawBody: true } }, async (request, reply) => {
     const rawBody = (request as never as { rawBody?: string }).rawBody ?? JSON.stringify(request.body)
@@ -45,7 +81,6 @@ export async function shopifyRoutes(fastify: FastifyInstance) {
     const hmac    = request.headers['x-shopify-hmac-sha256'] as string | undefined
     if (!verifyGdprHmac(rawBody, hmac, clientSecret)) return reply.status(401).send('Unauthorized')
     fastify.log.info({ body: request.body }, '[shopify gdpr] customers/redact received')
-    // TODO: delete customer data associated with this shop from your database
     return reply.status(200).send()
   })
 
@@ -54,7 +89,6 @@ export async function shopifyRoutes(fastify: FastifyInstance) {
     const hmac    = request.headers['x-shopify-hmac-sha256'] as string | undefined
     if (!verifyGdprHmac(rawBody, hmac, clientSecret)) return reply.status(401).send('Unauthorized')
     fastify.log.info({ body: request.body }, '[shopify gdpr] shop/redact received')
-    // TODO: delete all data associated with this shop from your database
     return reply.status(200).send()
   })
 
