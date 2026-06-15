@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowRight, Zap, Wand2 } from 'lucide-react'
-import type { TalkingActorGeneration } from './types'
+import { ArrowRight, Zap, Wand2, Plus } from 'lucide-react'
+import type { TalkingActorGeneration, Actor } from './types'
 import { ACTORS, BACKGROUNDS, VOICES, EMOTIONS, ASPECT_RATIOS, OUTPUT_QUALITIES, CAMERA_STYLES } from './data'
+import { UGCUploadDialog } from './ugc-upload'
 
 interface TalkingActorComposerProps {
   onGenerate: (data: any) => void
@@ -29,6 +30,8 @@ export function TalkingActorComposer({
   const [speed, setSpeed] = useState(1.0)
   const [energy, setEnergy] = useState(0.75)
   const [confidence, setConfidence] = useState(0.85)
+  const [showUGCDialog, setShowUGCDialog] = useState(false)
+  const [actors, setActors] = useState(ACTORS)
 
   const canGenerate =
     walletBalance >= estimatedCost &&
@@ -102,17 +105,26 @@ export function TalkingActorComposer({
         <div className="w-96 space-y-4 bg-gray-50 dark:bg-white/5 rounded-xl p-4">
           {/* Actor Selection */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-              Actor
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                Actor
+              </label>
+              <button
+                onClick={() => setShowUGCDialog(true)}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 rounded transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Custom
+              </button>
+            </div>
             <select
               value={selectedActor.id}
-              onChange={(e) => setSelectedActor(ACTORS.find(a => a.id === e.target.value) || ACTORS[0])}
+              onChange={(e) => setSelectedActor(actors.find(a => a.id === e.target.value) || actors[0])}
               className="w-full px-3 py-2 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
             >
-              {ACTORS.map(actor => (
+              {actors.map(actor => (
                 <option key={actor.id} value={actor.id}>
-                  {actor.image} {actor.name}
+                  {actor.image} {actor.name} {actor.type !== 'builtin' ? '(Custom)' : ''}
                 </option>
               ))}
             </select>
@@ -264,6 +276,16 @@ export function TalkingActorComposer({
           )}
         </button>
       </div>
+
+      {/* UGC Upload Dialog */}
+      <UGCUploadDialog
+        isOpen={showUGCDialog}
+        onClose={() => setShowUGCDialog(false)}
+        onActorAdded={(newActor: Actor) => {
+          setActors([...actors, newActor])
+          setSelectedActor(newActor)
+        }}
+      />
     </div>
   )
 }

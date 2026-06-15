@@ -11,6 +11,10 @@ export interface Actor {
   image: string
   category: string
   description?: string
+  type: 'builtin' | 'custom' | 'ugc'
+  uploadedBy?: string
+  uploadDate?: Date
+  videoUrl?: string // For UGC actors
 }
 
 export interface Background {

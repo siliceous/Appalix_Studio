@@ -1,26 +1,32 @@
 import type { Actor, Background, Voice } from './types'
 
-export const ACTORS: Actor[] = [
+export const BUILTIN_ACTORS: Actor[] = [
   // Business
-  { id: 'biz-woman', name: 'Business Woman', image: '👩‍💼', category: 'business', description: 'Professional business woman' },
-  { id: 'biz-man', name: 'Business Man', image: '👨‍💼', category: 'business', description: 'Professional business man' },
-  { id: 'ceo', name: 'Corporate Executive', image: '🧑‍💼', category: 'business', description: 'Executive presence' },
+  { id: 'biz-woman', name: 'Business Woman', image: '👩‍💼', category: 'business', description: 'Professional business woman', type: 'builtin' },
+  { id: 'biz-man', name: 'Business Man', image: '👨‍💼', category: 'business', description: 'Professional business man', type: 'builtin' },
+  { id: 'ceo', name: 'Corporate Executive', image: '🧑‍💼', category: 'business', description: 'Executive presence', type: 'builtin' },
 
   // Professional Services
-  { id: 'doctor', name: 'Doctor', image: '👨‍⚕️', category: 'professional', description: 'Medical professional' },
-  { id: 'real-estate', name: 'Real Estate Agent', image: '🏠', category: 'professional', description: 'Property specialist' },
-  { id: 'lawyer', name: 'Lawyer', image: '⚖️', category: 'professional', description: 'Legal expert' },
-  { id: 'solar', name: 'Solar Consultant', image: '☀️', category: 'professional', description: 'Energy consultant' },
+  { id: 'doctor', name: 'Doctor', image: '👨‍⚕️', category: 'professional', description: 'Medical professional', type: 'builtin' },
+  { id: 'real-estate', name: 'Real Estate Agent', image: '🏠', category: 'professional', description: 'Property specialist', type: 'builtin' },
+  { id: 'lawyer', name: 'Lawyer', image: '⚖️', category: 'professional', description: 'Legal expert', type: 'builtin' },
+  { id: 'solar', name: 'Solar Consultant', image: '☀️', category: 'professional', description: 'Energy consultant', type: 'builtin' },
 
   // Service Industry
-  { id: 'restaurant', name: 'Restaurant Owner', image: '👨‍🍳', category: 'service', description: 'Hospitality expert' },
-  { id: 'tradie', name: 'Tradie', image: '🔧', category: 'service', description: 'Trade professional' },
+  { id: 'restaurant', name: 'Restaurant Owner', image: '👨‍🍳', category: 'service', description: 'Hospitality expert', type: 'builtin' },
+  { id: 'tradie', name: 'Tradie', image: '🔧', category: 'service', description: 'Trade professional', type: 'builtin' },
 
   // Media
-  { id: 'influencer', name: 'Influencer', image: '🌟', category: 'media', description: 'Social media personality' },
-  { id: 'presenter', name: 'Presenter', image: '🎙️', category: 'media', description: 'Professional presenter' },
-  { id: 'news-anchor', name: 'News Anchor', image: '📺', category: 'media', description: 'Broadcast professional' },
+  { id: 'influencer', name: 'Influencer', image: '🌟', category: 'media', description: 'Social media personality', type: 'builtin' },
+  { id: 'presenter', name: 'Presenter', image: '🎙️', category: 'media', description: 'Professional presenter', type: 'builtin' },
+  { id: 'news-anchor', name: 'News Anchor', image: '📺', category: 'media', description: 'Broadcast professional', type: 'builtin' },
 ]
+
+// Will be populated from user uploads
+export const UGC_ACTORS: Actor[] = []
+
+// Combined list for use in composer
+export const ACTORS = [...BUILTIN_ACTORS, ...UGC_ACTORS]
 
 export const BACKGROUNDS: Background[] = [
   // Corporate
