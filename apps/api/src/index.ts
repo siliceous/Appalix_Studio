@@ -43,6 +43,9 @@ import { handleTelnyxCallWs }                       from './live/telnyx-call-han
 import { resendWebhookRoutes }                      from './routes/webhooks/resend.js'
 import { emailCampaignRoutes }                      from './routes/email/campaigns.js'
 import { startAutomationScheduler }                 from './modules/automations/automationScheduler.js'
+import { videoRoutes }                             from './routes/videos.js'
+import { klingWebhookRoutes }                      from './routes/webhooks/kling.js'
+import { startVideoJobPolling }                    from './modules/video-generation/job-poller.js'
 
 const server = Fastify({
   logger: {
@@ -127,6 +130,7 @@ await server.register(smsRoutes,              { prefix: '/webhooks' })
 await server.register(telnyxMessagingRoutes,  { prefix: '/webhooks' })
 await server.register(telnyxVoiceRoutes,      { prefix: '/webhooks' })
 await server.register(resendWebhookRoutes,    { prefix: '/webhooks' })
+await server.register(klingWebhookRoutes,     { prefix: '/webhooks' })
 await server.register(telnyxSmsRoutes,        { prefix: '/telnyx' })
 await server.register(shopifyOAuthRoutes)
 
@@ -156,6 +160,9 @@ await server.register(complianceRoutes)
 
 // Email marketing — campaigns, send, stats (service-key auth)
 await server.register(emailCampaignRoutes, { prefix: '/email' })
+
+// Video generation — text-to-video, image-to-video (Pro+ feature)
+await server.register(videoRoutes, { prefix: '/videos' })
 
 // ---------------------------------------------------------------
 // Error handler
@@ -305,6 +312,13 @@ try {
   // Polls automation_executions for steps due to run.
   // ---------------------------------------------------------------
   startAutomationScheduler()
+
+  // ---------------------------------------------------------------
+  // Video generation job poller
+  // Polls pending video generation jobs every 30s
+  // (acts as fallback if webhook not received)
+  // ---------------------------------------------------------------
+  startVideoJobPolling()
 
   // ---------------------------------------------------------------
   // IMAP IDLE manager

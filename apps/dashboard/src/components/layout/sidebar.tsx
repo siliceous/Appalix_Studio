@@ -28,6 +28,7 @@ import {
   Wallet,
   ShieldCheck,
   Send,
+  Video,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -70,7 +71,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/bots',          label: 'Bots',         icon: Bot,      adminOnly: true },
       { href: '/integrations',  label: 'Integrations', icon: Plug,     adminOnly: true },
       { href: '/phone',          label: 'Phone Numbers', icon: Phone,     adminOnly: true },
-
+      { href: '/videos',        label: 'Video Generator', icon: Video,     adminOnly: true },
       { href: '/settings/compliance', label: 'Compliance', icon: ShieldCheck, adminOnly: true },
     ],
   },
@@ -141,6 +142,7 @@ export function Sidebar({ workspace, callerRole, userPermissions, branding }: Si
   function isActive(href: string) {
     if (href === '/dashboard') return pathname === '/dashboard'
     if (href === '/bots') return pathname.startsWith('/bots') || pathname.startsWith('/agent/bots/')
+    if (href === '/videos') return pathname.startsWith('/videos')
     // Consolidates automation-builder, automations list, and templates under one sidebar item
     if (href === '/sage/automation-builder')
       return pathname.startsWith('/sage/automation-builder') || pathname.startsWith('/sage/automations') || pathname.startsWith('/sage/templates')
