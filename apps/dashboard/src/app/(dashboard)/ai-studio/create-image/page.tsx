@@ -67,6 +67,7 @@ export default function CreateImagePage() {
   const [workspaceId, setWorkspaceId] = useState<string>('')
   const [generationHistory, setGenerationHistory] = useState<Array<{ image: string; prompt: string }>>([])
   const [currentImageIndex, setCurrentImageIndex] = useState<number | null>(null)
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null)
 
   useEffect(() => {
     // Get workspace ID from localStorage
@@ -489,40 +490,72 @@ export default function CreateImagePage() {
                 No images yet
               </div>
             ) : (
-              generationHistory.map((item, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => {
-                    setCurrentImageIndex(idx)
-                    setPrompt(item.prompt)
-                  }}
-                  className={`group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all ${
-                    currentImageIndex === idx ? 'ring-2 ring-blue-500' : ''
-                  }`}
-                >
-                  <Image
-                    src={item.image}
-                    alt={`Generated ${idx + 1}`}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                    <button className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors">
-                      <Download className="w-4 h-4 text-gray-700" />
-                    </button>
-                    <button className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors">
-                      <Heart className="w-4 h-4 text-gray-700" />
-                    </button>
-                    <button className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors">
-                      <Trash2 className="w-4 h-4 text-gray-700" />
-                    </button>
+              [...generationHistory].reverse().map((item, idx) => {
+                const actualIdx = generationHistory.length - 1 - idx
+                return (
+                  <div
+                    key={actualIdx}
+                    className={`group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all ${
+                      currentImageIndex === actualIdx ? 'ring-2 ring-blue-500' : ''
+                    }`}
+                  >
+                    <Image
+                      src={item.image}
+                      alt={`Generated ${actualIdx + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                    <div
+                      onClick={() => {
+                        setCurrentImageIndex(actualIdx)
+                        setPrompt(item.prompt)
+                        setFullscreenImage(item.image)
+                      }}
+                      className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100"
+                    >
+                      <button className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors">
+                        <Download className="w-4 h-4 text-gray-700" />
+                      </button>
+                      <button className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors">
+                        <Heart className="w-4 h-4 text-gray-700" />
+                      </button>
+                      <button className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors">
+                        <Trash2 className="w-4 h-4 text-gray-700" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Modal */}
+      {fullscreenImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setFullscreenImage(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] w-full h-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Image
+              src={fullscreenImage}
+              alt="Fullscreen"
+              fill
+              className="object-contain"
+            />
+            <button
+              onClick={() => setFullscreenImage(null)}
+              className="absolute top-4 right-4 p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+            >
+              <span className="text-gray-700 text-xl">×</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
