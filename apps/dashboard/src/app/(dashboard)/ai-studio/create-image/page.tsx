@@ -590,8 +590,65 @@ export default function CreateImagePage() {
             >
               <span className="text-gray-700 text-2xl font-light">×</span>
             </button>
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-sm">
-              Press ESC to close or click outside
+
+            {/* Variant Options */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/80 text-white px-6 py-4 rounded-lg flex gap-3 items-center shadow-xl backdrop-blur-sm">
+              <span className="text-sm font-medium">Create Variants:</span>
+              <button
+                onClick={() => {
+                  setStyle('Cinematic')
+                  setFullscreenImage(null)
+                  setTimeout(() => handleGenerate(), 100)
+                }}
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded text-xs font-medium transition-colors"
+              >
+                Cinematic
+              </button>
+              <button
+                onClick={() => {
+                  setStyle('Anime')
+                  setFullscreenImage(null)
+                  setTimeout(() => handleGenerate(), 100)
+                }}
+                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 rounded text-xs font-medium transition-colors"
+              >
+                Anime
+              </button>
+              <button
+                onClick={() => {
+                  setStyle('Illustration')
+                  setFullscreenImage(null)
+                  setTimeout(() => handleGenerate(), 100)
+                }}
+                className="px-3 py-1.5 bg-pink-600 hover:bg-pink-700 rounded text-xs font-medium transition-colors"
+              >
+                Illustration
+              </button>
+              <button
+                onClick={() => {
+                  setQualityPreset('quality')
+                  setFullscreenImage(null)
+                  setTimeout(() => handleGenerate(), 100)
+                }}
+                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 rounded text-xs font-medium transition-colors"
+              >
+                High Quality
+              </button>
+              <button
+                onClick={() => {
+                  setTemperature(Math.random() * 2)
+                  setFullscreenImage(null)
+                  setTimeout(() => handleGenerate(), 100)
+                }}
+                className="px-3 py-1.5 bg-green-600 hover:bg-green-700 rounded text-xs font-medium transition-colors"
+              >
+                Different Vibe
+              </button>
+              <div className="text-xs text-gray-300 ml-2">or edit prompt below</div>
+            </div>
+
+            <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 text-gray-300 text-xs">
+              Press ESC to close
             </div>
           </div>
         </div>
