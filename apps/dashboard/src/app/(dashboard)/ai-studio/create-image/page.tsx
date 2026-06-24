@@ -122,6 +122,17 @@ export default function CreateImagePage() {
     }
   }, [generationHistory])
 
+  // Handle Escape key to close fullscreen modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && fullscreenImage) {
+        setFullscreenImage(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [fullscreenImage])
+
   const handleGenerate = async () => {
     if (!prompt.trim() || !workspaceId) {
       console.log('Missing prompt or workspace:', { prompt: !!prompt.trim(), workspaceId })
@@ -557,25 +568,31 @@ export default function CreateImagePage() {
       {/* Fullscreen Modal */}
       {fullscreenImage && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 animate-in fade-in duration-200"
           onClick={() => setFullscreenImage(null)}
+          onKeyDown={(e) => e.key === 'Escape' && setFullscreenImage(null)}
         >
           <div
-            className="relative max-w-4xl max-h-[90vh] w-full h-full"
+            className="relative max-w-5xl max-h-[90vh] w-full h-full flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
             <Image
               src={fullscreenImage}
               alt="Fullscreen"
               fill
-              className="object-contain"
+              className="object-contain rounded-lg"
+              priority
             />
             <button
               onClick={() => setFullscreenImage(null)}
-              className="absolute top-4 right-4 p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+              className="absolute top-4 right-4 p-3 bg-white rounded-full hover:bg-gray-200 transition-colors shadow-lg"
+              title="Close (Esc)"
             >
-              <span className="text-gray-700 text-xl">×</span>
+              <span className="text-gray-700 text-2xl font-light">×</span>
             </button>
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-sm">
+              Press ESC to close or click outside
+            </div>
           </div>
         </div>
       )}
