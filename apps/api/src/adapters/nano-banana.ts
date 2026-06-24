@@ -16,9 +16,9 @@ class NanoBananaAdapter {
   private generatedImages: Map<string, string[]> = new Map()
 
   constructor() {
-    this.apiKey = config.GEMINI_API_KEY || ''
+    this.apiKey = config.NANO_BANANA_API_KEY || config.GEMINI_API_KEY || ''
     if (!this.apiKey) {
-      console.warn('[Nano Banana] Gemini API key not configured. Image generation will fail.')
+      console.warn('[Nano Banana] API key not configured. Image generation will fail.')
     }
   }
 
