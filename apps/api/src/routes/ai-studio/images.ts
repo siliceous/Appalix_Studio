@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase.js'
 import { stability } from '../../adapters/stability.js'
 import { gemini } from '../../adapters/gemini.js'
 import { nanoBanana } from '../../adapters/nano-banana.js'
+import { seedence } from '../../adapters/seedence.js'
 import { v4 as uuid } from 'uuid'
 
 interface ImageGenerationRequest {
