@@ -2,6 +2,7 @@ import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
 import fastifyStatic from '@fastify/static'
+import multipart from '@fastify/multipart'
 import { fileURLToPath } from 'url'
 import path from 'path'
 import { config } from './config.js'
@@ -46,6 +47,10 @@ import { startAutomationScheduler }                 from './modules/automations/
 import { videoRoutes }                             from './routes/videos.js'
 import { klingWebhookRoutes }                      from './routes/webhooks/kling.js'
 import { startVideoJobPolling }                    from './modules/video-generation/job-poller.js'
+import { geminiVoiceRoutes }                       from './routes/gemini-voice.js'
+// import { talkingActorsRoutes }                     from './routes/talking-actors.js'
+import { imageRoutes }                             from './routes/ai-studio/images.js'
+import { cleanupRoutes }                           from './routes/ai-studio/cleanup.js'
 
 const server = Fastify({
   logger: {
@@ -62,6 +67,12 @@ const server = Fastify({
 // ---------------------------------------------------------------
 // Plugins
 // ---------------------------------------------------------------
+
+await server.register(multipart, {
+  limits: {
+    fileSize: 104857600, // 100 MB
+  },
+})
 
 await server.register(helmet, {
   contentSecurityPolicy:        false,  // handled by Next.js dashboard
@@ -163,6 +174,16 @@ await server.register(emailCampaignRoutes, { prefix: '/email' })
 
 // Video generation — text-to-video, image-to-video (Pro+ feature)
 await server.register(videoRoutes, { prefix: '/videos' })
+
+// Gemini voice integration — link voices to talking actors with lip-sync
+await server.register(geminiVoiceRoutes, { prefix: '/gemini-voice' })
+
+// Talking actors management — upload and manage custom actors
+// await server.register(talkingActorsRoutes, { prefix: '/talking-actors' })
+
+// AI Studio — image/video/avatar generation
+await server.register(imageRoutes, { prefix: '/api/ai-studio' })
+await server.register(cleanupRoutes, { prefix: '/api/ai-studio' })
 
 // ---------------------------------------------------------------
 // Error handler

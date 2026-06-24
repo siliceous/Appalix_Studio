@@ -13,6 +13,10 @@ const schema = z.object({
   ANTHROPIC_API_KEY:         z.string().startsWith('sk-ant-'),
   OPENAI_API_KEY:            z.string().startsWith('sk-'),  // used for embeddings
   GEMINI_API_KEY:            z.string().optional(),         // used for Sage Voice (Gemini Live)
+  LEONARDO_API_KEY:          z.string().optional(),         // used for image generation
+  STABILITY_API_KEY:         z.string().optional(),         // used for image generation with Stable Diffusion
+  SEEDENCE_API_KEY:          z.string().optional(),         // used for image generation with Seedence
+  NANO_BANANA_API_KEY:       z.string().optional(),         // used for image generation with Nano Banana
 
   // Redis (Upstash) — rate limiting + job queue (optional for local dev)
   UPSTASH_REDIS_REST_URL:    z.string().url().optional(),

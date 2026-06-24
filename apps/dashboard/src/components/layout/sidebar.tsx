@@ -29,6 +29,8 @@ import {
   ShieldCheck,
   Send,
   Video,
+  Users as ActorIcon,
+  Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -66,12 +68,19 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: 'Studio',
+    items: [
+      { href: '/ai-studio', label: 'AI Studio', icon: Sparkles, adminOnly: true },
+      { href: '/studio/actors', label: 'Talking Actors', icon: ActorIcon, adminOnly: true },
+      { href: '/videos', label: 'Video Generator', icon: Video, adminOnly: true },
+    ],
+  },
+  {
     label: 'Agent',
     items: [
       { href: '/bots',          label: 'Bots',         icon: Bot,      adminOnly: true },
       { href: '/integrations',  label: 'Integrations', icon: Plug,     adminOnly: true },
       { href: '/phone',          label: 'Phone Numbers', icon: Phone,     adminOnly: true },
-      { href: '/videos',        label: 'Video Generator', icon: Video,     adminOnly: true },
       { href: '/settings/compliance', label: 'Compliance', icon: ShieldCheck, adminOnly: true },
     ],
   },
@@ -143,6 +152,8 @@ export function Sidebar({ workspace, callerRole, userPermissions, branding }: Si
     if (href === '/dashboard') return pathname === '/dashboard'
     if (href === '/bots') return pathname.startsWith('/bots') || pathname.startsWith('/agent/bots/')
     if (href === '/videos') return pathname.startsWith('/videos')
+    if (href === '/studio/actors') return pathname.startsWith('/studio/actors')
+    if (href === '/ai-studio') return pathname.startsWith('/ai-studio')
     // Consolidates automation-builder, automations list, and templates under one sidebar item
     if (href === '/sage/automation-builder')
       return pathname.startsWith('/sage/automation-builder') || pathname.startsWith('/sage/automations') || pathname.startsWith('/sage/templates')

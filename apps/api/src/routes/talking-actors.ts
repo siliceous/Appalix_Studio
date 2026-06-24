@@ -1,0 +1,265 @@
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
+import { createClient } from '@supabase/supabase-js'
+import { v4 as uuidv4 } from 'uuid'
+
+let supabase: any
+
+function getSupabase() {
+  if (!supabase) {
+    supabase = createClient(
+      process.env.SUPABASE_URL || '',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+    )
+  }
+  return supabase
+}
+
+export async function talkingActorsRoutes(server: FastifyInstance) {
+  /**
+   * List all actors for workspace
+   */
+  server.get<{ Params: { workspaceId: string } }>(
+    '/workspace/:workspaceId',
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const { workspaceId } = req.params
+
+        const { data: actors, error } = await supabase
+          .from('talking_actors')
+          .select('*')
+          .eq('workspace_id', workspaceId)
+          .order('created_at', { ascending: false })
+
+        if (error) throw error
+
+        reply.send({
+          success: true,
+          actors: actors || [],
+          count: actors?.length || 0,
+        })
+      } catch (error) {
+        reply.status(500).send({
+          error: error instanceof Error ? error.message : 'Failed to fetch actors',
+        })
+      }
+    }
+  )
+
+  /**
+   * Get single actor
+   */
+  server.get<{ Params: { actorId: string } }>(
+    '/:actorId',
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const { actorId } = req.params
+
+        const { data: actor, error } = await supabase
+          .from('talking_actors')
+          .select('*')
+          .eq('id', actorId)
+          .single()
+
+        if (error) throw error
+
+        reply.send({
+          success: true,
+          actor,
+        })
+      } catch (error) {
+        reply.status(404).send({
+          error: 'Actor not found',
+        })
+      }
+    }
+  )
+
+  /**
+   * Upload new actor
+   */
+  server.post<{ Body: { workspaceId: string; actorName: string; uploadType: 'image' | 'video' } }>(
+    '/upload',
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const data = await req.file()
+
+        if (!data) {
+          return reply.status(400).send({
+            error: 'No file provided',
+          })
+        }
+
+        const { fields } = data
+        const workspaceId = fields.workspaceId?.value as string
+        const actorName = fields.actorName?.value as string
+        const uploadType = fields.uploadType?.value as 'image' | 'video'
+
+        if (!workspaceId || !actorName || !uploadType) {
+          return reply.status(400).send({
+            error: 'Missing required fields: workspaceId, actorName, uploadType',
+          })
+        }
+
+        // Validate file
+        const buffer = await data.toBuffer()
+        const maxSize = uploadType === 'image' ? 10 * 1024 * 1024 : 100 * 1024 * 1024
+
+        if (buffer.length > maxSize) {
+          return reply.status(400).send({
+            error: `File too large. Max ${uploadType === 'image' ? '10MB' : '100MB'}`,
+          })
+        }
+
+        // Validate MIME type
+        const validMimes =
+          uploadType === 'image'
+            ? ['image/jpeg', 'image/png', 'image/webp']
+            : ['video/mp4', 'video/quicktime', 'video/webm']
+
+        if (!validMimes.includes(data.mimetype)) {
+          return reply.status(400).send({
+            error: `Invalid ${uploadType} format`,
+          })
+        }
+
+        // Upload to Supabase Storage
+        const fileId = uuidv4()
+        const fileExt = data.filename.split('.').pop()
+        const filePath = `${workspaceId}/${fileId}.${fileExt}`
+        const bucketName = uploadType === 'image' ? 'actor-images' : 'actor-videos'
+
+        const { error: uploadError } = await getSupabase().storage
+          .from(bucketName)
+          .upload(filePath, buffer, {
+            contentType: data.mimetype,
+            cacheControl: '3600',
+            upsert: false,
+          })
+
+        if (uploadError) throw uploadError
+
+        // Get signed URL
+        const { data: signedUrlData, error: urlError } = await getSupabase().storage
+          .from(bucketName)
+          .createSignedUrl(filePath, 365 * 24 * 60 * 60) // 1 year
+
+        if (urlError) throw urlError
+
+        const fileUrl = signedUrlData?.signedUrl
+
+        // Create database record
+        const { data: actor, error: dbError } = await supabase
+          .from('talking_actors')
+          .insert({
+            workspace_id: workspaceId,
+            actor_name: actorName,
+            [uploadType === 'image' ? 'image_url' : 'video_url']: fileUrl,
+            type: 'custom',
+          })
+          .select()
+          .single()
+
+        if (dbError) throw dbError
+
+        reply.status(201).send({
+          success: true,
+          actor,
+        })
+      } catch (error) {
+        console.error('Upload error:', error)
+        reply.status(500).send({
+          error: error instanceof Error ? error.message : 'Upload failed',
+        })
+      }
+    }
+  )
+
+  /**
+   * Update actor
+   */
+  server.patch<{
+    Params: { actorId: string }
+    Body: { actorName?: string }
+  }>('/:actorId', async (req: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { actorId } = req.params
+      const { actorName } = req.body
+
+      if (!actorName) {
+        return reply.status(400).send({
+          error: 'Actor name is required',
+        })
+      }
+
+      const { data: actor, error } = await supabase
+        .from('talking_actors')
+        .update({
+          actor_name: actorName,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', actorId)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      reply.send({
+        success: true,
+        actor,
+      })
+    } catch (error) {
+      reply.status(500).send({
+        error: error instanceof Error ? error.message : 'Update failed',
+      })
+    }
+  })
+
+  /**
+   * Delete actor
+   */
+  server.delete<{ Params: { actorId: string } }>(
+    '/:actorId',
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const { actorId } = req.params
+
+        // Get actor to find file paths
+        const { data: actor, error: fetchError } = await supabase
+          .from('talking_actors')
+          .select('image_url, video_url')
+          .eq('id', actorId)
+          .single()
+
+        if (fetchError) throw fetchError
+
+        // Delete files from storage
+        if (actor?.image_url) {
+          const imagePath = actor.image_url.split('/').slice(-2).join('/')
+          await getSupabase().storage.from('actor-images').remove([imagePath])
+        }
+
+        if (actor?.video_url) {
+          const videoPath = actor.video_url.split('/').slice(-2).join('/')
+          await getSupabase().storage.from('actor-videos').remove([videoPath])
+        }
+
+        // Delete database record
+        const { error: deleteError } = await supabase
+          .from('talking_actors')
+          .delete()
+          .eq('id', actorId)
+
+        if (deleteError) throw deleteError
+
+        reply.send({
+          success: true,
+          message: 'Actor deleted',
+        })
+      } catch (error) {
+        reply.status(500).send({
+          error: error instanceof Error ? error.message : 'Delete failed',
+        })
+      }
+    }
+  )
+}

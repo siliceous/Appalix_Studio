@@ -8,11 +8,12 @@ import { TalkingActorComposer } from './composer'
 import { TalkingActorLibrary } from './library'
 
 interface TalkingActorsStudioProps {
+  workspaceId: string
   walletBalance: number
   estimatedCost: number
 }
 
-export function TalkingActorsStudio({ walletBalance, estimatedCost }: TalkingActorsStudioProps) {
+export function TalkingActorsStudio({ workspaceId, walletBalance, estimatedCost }: TalkingActorsStudioProps) {
   const [generations, setGenerations] = useState<TalkingActorGeneration[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
 
@@ -82,6 +83,7 @@ export function TalkingActorsStudio({ walletBalance, estimatedCost }: TalkingAct
 
       {/* Bottom Composer */}
       <TalkingActorComposer
+        workspaceId={workspaceId}
         onGenerate={handleGenerate}
         isGenerating={isGenerating}
         walletBalance={walletBalance}

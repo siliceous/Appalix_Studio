@@ -13,6 +13,7 @@ import { BodyScrollLock } from '@/components/layout/body-scroll-lock'
 import { WorkspaceBgApplier } from '@/components/layout/workspace-bg-applier'
 import { WorkspaceFontApplier } from '@/components/layout/workspace-font-applier'
 import type { Workspace, WorkspaceMemberRole } from '@/lib/types'
+import { WorkspaceProvider } from '@/components/workspace-provider'
 
 // All dashboard pages are user-specific and require live DB access — never statically render.
 export const dynamic = 'force-dynamic'
@@ -111,6 +112,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       workspaceId={workspace.id}
     >
     <WorkspaceBgApplier bgColor={branding?.background_color ?? null} cardColor={branding?.card_color ?? null} />
+    <WorkspaceProvider workspaceId={workspace.id}>
     <WorkspaceFontApplier fontFamily={branding?.font_family ?? null} fontSize={branding?.font_size ?? null} />
     <div className="flex h-screen overflow-hidden bg-[#f5f4f1] dark:bg-[#1c1c1c] relative">
       {/* Subtle green ambient glow in dark mode */}
@@ -146,6 +148,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <ReminderWatcher />
       <BodyScrollLock />
     </div>
+        </WorkspaceProvider>
     </UserAvatarProvider>
   )
 }

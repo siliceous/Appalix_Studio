@@ -87,6 +87,7 @@ export function StudioLayout({ workspaceId, walletBalance, templates }: StudioLa
         {/* Mode-specific content */}
         {mode === 'talking_actors' ? (
           <TalkingActorsStudio
+            workspaceId={workspaceId}
             walletBalance={walletBalance}
             estimatedCost={estimatedCost}
           />

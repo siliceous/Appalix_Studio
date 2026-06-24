@@ -1,16 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ArrowRight, Zap, Wand2, Plus } from 'lucide-react'
 import type { TalkingActorGeneration, Actor } from './types'
 import { ACTORS, BACKGROUNDS, VOICES, EMOTIONS, ASPECT_RATIOS, OUTPUT_QUALITIES, CAMERA_STYLES } from './data'
 import { UGCUploadDialog } from './ugc-upload'
+
+interface Voice {
+  id: string
+  name: string
+  accent?: string
+  voice_name?: string
+  language_code?: string
+}
 
 interface TalkingActorComposerProps {
   onGenerate: (data: any) => void
   isGenerating: boolean
   walletBalance: number
   estimatedCost: number
+  workspaceId?: string
 }
 
 export function TalkingActorComposer({
@@ -18,11 +27,12 @@ export function TalkingActorComposer({
   isGenerating,
   walletBalance,
   estimatedCost,
+  workspaceId,
 }: TalkingActorComposerProps) {
   const [script, setScript] = useState('')
   const [selectedActor, setSelectedActor] = useState(ACTORS[0])
   const [selectedBackground, setSelectedBackground] = useState(BACKGROUNDS[0])
-  const [selectedVoice, setSelectedVoice] = useState(VOICES[0])
+  const [selectedVoice, setSelectedVoice] = useState<Voice>(VOICES[0])
   const [selectedEmotion, setSelectedEmotion] = useState(EMOTIONS[0])
   const [aspectRatio, setAspectRatio] = useState<'9:16' | '16:9' | '1:1' | '4:5'>('16:9')
   const [quality, setQuality] = useState<'standard' | 'hd' | 'full_hd' | '4k'>('hd')
@@ -32,6 +42,47 @@ export function TalkingActorComposer({
   const [confidence, setConfidence] = useState(0.85)
   const [showUGCDialog, setShowUGCDialog] = useState(false)
   const [actors, setActors] = useState(ACTORS)
+  const [voices, setVoices] = useState<Voice[]>(VOICES)
+  const [loadingVoices, setLoadingVoices] = useState(false)
+
+  // Fetch Gemini voices on mount
+  useEffect(() => {
+    async function fetchGeminiVoices() {
+      if (!workspaceId) return
+
+      try {
+        setLoadingVoices(true)
+        const response = await fetch(`/api/gemini-voice/voices/all`)
+
+        if (!response.ok) {
+          console.error('Failed to fetch Gemini voices')
+          return
+        }
+
+        const { voices: geminiVoices } = await response.json()
+
+        // Map Gemini voices to our Voice interface and combine with built-in voices
+        const mappedGeminiVoices: Voice[] = geminiVoices.map((v: any) => ({
+          id: v.id,
+          name: v.voice_name,
+          accent: v.language_code,
+          voice_name: v.voice_name,
+          language_code: v.language_code,
+        }))
+
+        // Combine built-in voices with Gemini voices
+        setVoices([...VOICES, ...mappedGeminiVoices])
+      } catch (error) {
+        console.error('Error fetching Gemini voices:', error)
+        // Fall back to built-in voices only
+        setVoices(VOICES)
+      } finally {
+        setLoadingVoices(false)
+      }
+    }
+
+    fetchGeminiVoices()
+  }, [workspaceId])
 
   const canGenerate =
     walletBalance >= estimatedCost &&
@@ -151,18 +202,30 @@ export function TalkingActorComposer({
           {/* Voice Selection */}
           <div className="space-y-2">
             <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-              Voice
+              Voice {loadingVoices && <span className="text-gray-500 text-xs">(loading...)</span>}
             </label>
             <select
               value={selectedVoice.id}
-              onChange={(e) => setSelectedVoice(VOICES.find(v => v.id === e.target.value) || VOICES[0])}
-              className="w-full px-3 py-2 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              onChange={(e) => setSelectedVoice(voices.find(v => v.id === e.target.value) || voices[0])}
+              disabled={loadingVoices}
+              className="w-full px-3 py-2 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-50"
             >
-              {VOICES.map(voice => (
-                <option key={voice.id} value={voice.id}>
-                  {voice.name} - {voice.accent}
-                </option>
-              ))}
+              <optgroup label="Built-in Voices">
+                {VOICES.map(voice => (
+                  <option key={voice.id} value={voice.id}>
+                    {voice.name} - {voice.accent}
+                  </option>
+                ))}
+              </optgroup>
+              {voices.filter(v => !VOICES.find(bv => bv.id === v.id)).length > 0 && (
+                <optgroup label="Gemini Voices">
+                  {voices.filter(v => !VOICES.find(bv => bv.id === v.id)).map(voice => (
+                    <option key={voice.id} value={voice.id}>
+                      {voice.name} - {voice.accent || 'Multi'}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </div>
 
