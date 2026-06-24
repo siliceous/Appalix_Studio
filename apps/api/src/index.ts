@@ -46,7 +46,7 @@ import { emailCampaignRoutes }                      from './routes/email/campaig
 import { startAutomationScheduler }                 from './modules/automations/automationScheduler.js'
 import { videoRoutes }                             from './routes/videos.js'
 import { klingWebhookRoutes }                      from './routes/webhooks/kling.js'
-import { startVideoJobPolling }                    from './modules/video-generation/job-poller.js'
+// import { startVideoJobPolling }                    from './modules/video-generation/job-poller.js'
 import { geminiVoiceRoutes }                       from './routes/gemini-voice.js'
 // import { talkingActorsRoutes }                     from './routes/talking-actors.js'
 import { imageRoutes }                             from './routes/ai-studio/images.js'
@@ -339,7 +339,7 @@ try {
   // Polls pending video generation jobs every 30s
   // (acts as fallback if webhook not received)
   // ---------------------------------------------------------------
-  startVideoJobPolling()
+  // startVideoJobPolling()
 
   // ---------------------------------------------------------------
   // IMAP IDLE manager
