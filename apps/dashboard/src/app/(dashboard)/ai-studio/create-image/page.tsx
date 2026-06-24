@@ -83,6 +83,9 @@ export default function CreateImagePage() {
         // Update generatedImages count
         if (parsed.length > 0) {
           setGeneratedImages(parsed.map((item: any) => item.image))
+          // Set the latest image (last one in the array) as the current one
+          setCurrentImageIndex(parsed.length - 1)
+          setPrompt(parsed[parsed.length - 1].prompt)
         }
       } catch (error) {
         console.error('Failed to load generation history:', error)
