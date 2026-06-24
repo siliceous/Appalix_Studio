@@ -74,6 +74,21 @@ export default function CreateImagePage() {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
     setWorkspaceId(wId)
 
+    // Load generation history from localStorage
+    const savedHistory = typeof window !== 'undefined' ? localStorage.getItem('imageGenerationHistory') : null
+    if (savedHistory) {
+      try {
+        const parsed = JSON.parse(savedHistory)
+        setGenerationHistory(parsed)
+        // Update generatedImages count
+        if (parsed.length > 0) {
+          setGeneratedImages(parsed.map((item: any) => item.image))
+        }
+      } catch (error) {
+        console.error('Failed to load generation history:', error)
+      }
+    }
+
     const fetchModels = async () => {
       try {
         const response = await fetch('/api/ai-studio/models/image')
@@ -96,6 +111,13 @@ export default function CreateImagePage() {
 
     fetchModels()
   }, [])
+
+  // Save generation history to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && generationHistory.length > 0) {
+      localStorage.setItem('imageGenerationHistory', JSON.stringify(generationHistory))
+    }
+  }, [generationHistory])
 
   const handleGenerate = async () => {
     if (!prompt.trim() || !workspaceId) {
