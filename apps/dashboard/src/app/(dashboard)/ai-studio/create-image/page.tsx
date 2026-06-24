@@ -503,16 +503,14 @@ export default function CreateImagePage() {
                       src={item.image}
                       alt={`Generated ${actualIdx + 1}`}
                       fill
-                      className="object-cover"
-                    />
-                    <div
+                      className="object-cover cursor-pointer"
                       onClick={() => {
                         setCurrentImageIndex(actualIdx)
                         setPrompt(item.prompt)
                         setFullscreenImage(item.image)
                       }}
-                      className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100"
-                    >
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                       <button className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors">
                         <Download className="w-4 h-4 text-gray-700" />
                       </button>
