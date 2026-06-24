@@ -29,6 +29,7 @@ class NanoBananaAdapter {
 
     const prompt = this.buildPrompt(params.prompt, params.style, params.lighting)
     const modelId = params.modelId || 'nano-banana'
+    const numImages = params.numImages || 1
 
     // Map Nano Banana models to Gemini endpoints
     let geminiModel = 'gemini-2.5-flash-image' // Default for nano-banana
@@ -39,82 +40,88 @@ class NanoBananaAdapter {
     }
 
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${this.apiKey}`
+    const allImageUrls: string[] = []
 
-    // Gemini API payload format
-    const payload = {
-      contents: [
-        {
-          parts: [
+    console.log(`[Nano Banana] Generating ${numImages} image(s)`)
+    console.log('[Nano Banana] Model:', modelId, '-> Gemini:', geminiModel)
+
+    for (let i = 0; i < numImages; i++) {
+      try {
+        // Gemini API payload format
+        const payload = {
+          contents: [
             {
-              text: prompt,
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
             },
           ],
-        },
-      ],
-      generationConfig: {
-        responseModalities: ['TEXT', 'IMAGE'],
-        temperature: params.temperature ?? 0.7,
-      },
-    }
+          generationConfig: {
+            responseModalities: ['TEXT', 'IMAGE'],
+            temperature: params.temperature ?? 0.7,
+          },
+        }
 
-    console.log('[Nano Banana] Sending generation request to Gemini endpoint')
-    console.log('[Nano Banana] Model:', modelId, '-> Gemini:', geminiModel)
-    console.log('[Nano Banana] Prompt:', prompt)
+        console.log(`[Nano Banana] Sending request ${i + 1}/${numImages}`)
+        console.log('[Nano Banana] Prompt:', prompt)
 
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      })
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        })
 
-      console.log(`[Nano Banana] Response status: ${response.status}`)
+        console.log(`[Nano Banana] Response status: ${response.status}`)
 
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error(`[Nano Banana] Error response: ${errorText.substring(0, 300)}`)
-        throw new Error(`Gemini API error: ${response.status} - ${errorText.substring(0, 100)}`)
-      }
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error(`[Nano Banana] Error response: ${errorText.substring(0, 300)}`)
+          throw new Error(`Gemini API error: ${response.status}`)
+        }
 
-      const data = await response.json() as any
-      console.log('[Nano Banana] Response received, processing...')
+        const data = await response.json() as any
 
-      // Extract image from candidates[0].content.parts[].inlineData.data
-      let imageUrls: string[] = []
-
-      if (data.candidates && Array.isArray(data.candidates) && data.candidates.length > 0) {
-        const candidate = data.candidates[0]
-        if (candidate.content && candidate.content.parts) {
-          for (const part of candidate.content.parts) {
-            if (part.inlineData && part.inlineData.data) {
-              // Found base64 image data
-              const base64Data = part.inlineData.data
-              const mimeType = part.inlineData.mimeType || 'image/png'
-              const dataUrl = `data:${mimeType};base64,${base64Data}`
-              imageUrls.push(dataUrl)
-              console.log('[Nano Banana] Found image in inlineData')
+        // Extract image from candidates[0].content.parts[].inlineData.data
+        if (data.candidates && Array.isArray(data.candidates) && data.candidates.length > 0) {
+          const candidate = data.candidates[0]
+          if (candidate.content && candidate.content.parts) {
+            for (const part of candidate.content.parts) {
+              if (part.inlineData && part.inlineData.data) {
+                // Found base64 image data
+                const base64Data = part.inlineData.data
+                const mimeType = part.inlineData.mimeType || 'image/png'
+                const dataUrl = `data:${mimeType};base64,${base64Data}`
+                allImageUrls.push(dataUrl)
+                console.log(`[Nano Banana] Found image ${i + 1}/${numImages}`)
+              }
             }
           }
         }
+
+        // Small delay between requests to avoid rate limiting
+        if (i < numImages - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+      } catch (error) {
+        console.error(`[Nano Banana] Error generating image ${i + 1}:`, error)
+        // Continue with other images even if one fails
       }
-
-      if (imageUrls.length === 0) {
-        console.error('[Nano Banana] No images found in response. Response structure:', JSON.stringify(data).substring(0, 500))
-        throw new Error('No images returned from Gemini API')
-      }
-
-      // Store the images with a job ID
-      const jobId = `nano-banana-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-      this.generatedImages.set(jobId, imageUrls)
-
-      console.log('[Nano Banana] Generated', imageUrls.length, 'image(s) with ID:', jobId)
-      return jobId
-    } catch (error) {
-      console.error('[Nano Banana] Error:', error)
-      throw error
     }
+
+    if (allImageUrls.length === 0) {
+      throw new Error('No images returned from Gemini API')
+    }
+
+    // Store the images with a job ID
+    const jobId = `nano-banana-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    this.generatedImages.set(jobId, allImageUrls)
+
+    console.log('[Nano Banana] Generated', allImageUrls.length, 'image(s) with ID:', jobId)
+    return jobId
   }
 
   async getGenerationStatus(jobId: string): Promise<{

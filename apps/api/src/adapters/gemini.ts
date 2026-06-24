@@ -28,84 +28,90 @@ class GeminiAdapter {
     }
 
     const prompt = this.buildPrompt(params.prompt, params.style, params.lighting, params.aspectRatio)
+    const numImages = params.numImages || 1
 
-    // Gemini Image Generation API payload
-    const payload = {
-      contents: [
-        {
-          parts: [
+    // Gemini API only generates 1 image per request, so we need to make multiple requests
+    const allImageUrls: string[] = []
+    console.log(`[Gemini] Generating ${numImages} image(s)`)
+
+    for (let i = 0; i < numImages; i++) {
+      try {
+        const payload = {
+          contents: [
             {
-              text: prompt,
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
             },
           ],
-        },
-      ],
-      generationConfig: {
-        responseModalities: ['TEXT', 'IMAGE'],
-        temperature: params.temperature ?? 0.7,
-      },
-    }
-
-    console.log('[Gemini] Sending image generation request')
-    console.log('[Gemini] Prompt:', prompt)
-
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${this.apiKey}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+          generationConfig: {
+            responseModalities: ['TEXT', 'IMAGE'],
+            temperature: params.temperature ?? 0.7,
           },
-          body: JSON.stringify(payload),
         }
-      )
 
-      console.log(`[Gemini] Response status: ${response.status}`)
+        console.log(`[Gemini] Sending image generation request ${i + 1}/${numImages}`)
 
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error(`[Gemini] Error response (${response.status}):`, errorText.substring(0, 300))
-        throw new Error(`Gemini API error: ${response.status}`)
-      }
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${this.apiKey}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          }
+        )
 
-      const data = await response.json() as any
-      console.log('[Gemini] Response received, processing...')
+        console.log(`[Gemini] Response status: ${response.status}`)
 
-      // Extract image from candidates[0].content.parts[].inlineData.data
-      let imageUrls: string[] = []
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error(`[Gemini] Error response (${response.status}):`, errorText.substring(0, 300))
+          throw new Error(`Gemini API error: ${response.status}`)
+        }
 
-      if (data.candidates && Array.isArray(data.candidates) && data.candidates.length > 0) {
-        const candidate = data.candidates[0]
-        if (candidate.content && candidate.content.parts) {
-          for (const part of candidate.content.parts) {
-            if (part.inlineData && part.inlineData.data) {
-              // Found base64 image data
-              const base64Data = part.inlineData.data
-              const mimeType = part.inlineData.mimeType || 'image/png'
-              const dataUrl = `data:${mimeType};base64,${base64Data}`
-              imageUrls.push(dataUrl)
-              console.log('[Gemini] Found image in inlineData')
+        const data = await response.json() as any
+
+        // Extract image from candidates[0].content.parts[].inlineData.data
+        if (data.candidates && Array.isArray(data.candidates) && data.candidates.length > 0) {
+          const candidate = data.candidates[0]
+          if (candidate.content && candidate.content.parts) {
+            for (const part of candidate.content.parts) {
+              if (part.inlineData && part.inlineData.data) {
+                // Found base64 image data
+                const base64Data = part.inlineData.data
+                const mimeType = part.inlineData.mimeType || 'image/png'
+                const dataUrl = `data:${mimeType};base64,${base64Data}`
+                allImageUrls.push(dataUrl)
+                console.log(`[Gemini] Found image ${i + 1}/${numImages} in inlineData`)
+              }
             }
           }
         }
+
+        // Small delay between requests to avoid rate limiting
+        if (i < numImages - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+      } catch (error) {
+        console.error(`[Gemini] Error generating image ${i + 1}:`, error)
+        // Continue with other images even if one fails
       }
-
-      if (imageUrls.length === 0) {
-        console.error('[Gemini] No images found in response. Response structure:', JSON.stringify(data).substring(0, 500))
-        throw new Error('No images returned from Gemini API')
-      }
-
-      // Store the images with a job ID
-      const jobId = `gemini-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-      this.generatedImages.set(jobId, imageUrls)
-
-      console.log('[Gemini] Generated', imageUrls.length, 'image(s) with ID:', jobId)
-      return jobId
-    } catch (error) {
-      console.error('[Gemini] Error:', error)
-      throw error
     }
+
+    if (allImageUrls.length === 0) {
+      throw new Error('No images returned from Gemini API')
+    }
+
+    // Store the images with a job ID
+    const jobId = `gemini-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    this.generatedImages.set(jobId, allImageUrls)
+
+    console.log('[Gemini] Generated', allImageUrls.length, 'image(s) with ID:', jobId)
+    return jobId
   }
 
   async getGenerationStatus(jobId: string): Promise<{
