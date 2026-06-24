@@ -140,6 +140,8 @@ export default function CreateImagePage() {
     }
 
     setIsGenerating(true)
+    setCurrentImageIndex(null)
+    setFullscreenImage(null)
     try {
       const response = await fetch('/api/ai-studio/generate/image', {
         method: 'POST',
