@@ -495,6 +495,11 @@ export default function CreateImagePage() {
                 return (
                   <div
                     key={actualIdx}
+                    onClick={() => {
+                      setCurrentImageIndex(actualIdx)
+                      setPrompt(item.prompt)
+                      setFullscreenImage(item.image)
+                    }}
                     className={`group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all ${
                       currentImageIndex === actualIdx ? 'ring-2 ring-blue-500' : ''
                     }`}
@@ -503,21 +508,16 @@ export default function CreateImagePage() {
                       src={item.image}
                       alt={`Generated ${actualIdx + 1}`}
                       fill
-                      className="object-cover cursor-pointer"
-                      onClick={() => {
-                        setCurrentImageIndex(actualIdx)
-                        setPrompt(item.prompt)
-                        setFullscreenImage(item.image)
-                      }}
+                      className="object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                      <button className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors">
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 pointer-events-none">
+                      <button className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors pointer-events-auto">
                         <Download className="w-4 h-4 text-gray-700" />
                       </button>
-                      <button className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors">
+                      <button className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors pointer-events-auto">
                         <Heart className="w-4 h-4 text-gray-700" />
                       </button>
-                      <button className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors">
+                      <button className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors pointer-events-auto">
                         <Trash2 className="w-4 h-4 text-gray-700" />
                       </button>
                     </div>
