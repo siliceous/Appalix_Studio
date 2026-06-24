@@ -118,7 +118,20 @@ export default function CreateImagePage() {
   // Save generation history to localStorage whenever it changes
   useEffect(() => {
     if (typeof window !== 'undefined' && generationHistory.length > 0) {
-      localStorage.setItem('imageGenerationHistory', JSON.stringify(generationHistory))
+      try {
+        // Keep only the last 50 images to avoid exceeding localStorage quota (5MB limit)
+        const recentHistory = generationHistory.slice(-50)
+        localStorage.setItem('imageGenerationHistory', JSON.stringify(recentHistory))
+      } catch (error) {
+        console.error('Failed to save to localStorage (quota exceeded):', error)
+        // If quota is exceeded, clear old images and keep only recent ones
+        try {
+          const recentHistory = generationHistory.slice(-20)
+          localStorage.setItem('imageGenerationHistory', JSON.stringify(recentHistory))
+        } catch (error2) {
+          console.error('Failed to save even reduced history:', error2)
+        }
+      }
     }
   }, [generationHistory])
 
