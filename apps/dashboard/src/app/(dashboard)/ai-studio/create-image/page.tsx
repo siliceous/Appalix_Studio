@@ -583,17 +583,17 @@ export default function CreateImagePage() {
       {/* Fullscreen Modal */}
       {fullscreenImage && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4"
           onClick={() => setFullscreenImage(null)}
         >
           <div
-            className="relative w-full h-full max-w-5xl max-h-[90vh] flex items-center justify-center"
+            className="relative w-screen h-screen max-w-6xl max-h-screen flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
             <img
               src={fullscreenImage}
               alt="Fullscreen"
-              className="max-w-full max-h-full object-contain rounded-lg"
+              className="max-w-[90vw] max-h-[80vh] w-auto h-auto object-contain"
             />
             <button
               onClick={() => setFullscreenImage(null)}
