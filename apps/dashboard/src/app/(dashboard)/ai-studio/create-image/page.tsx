@@ -445,7 +445,7 @@ export default function CreateImagePage() {
         {/* Center Panel - Canvas & Prompt */}
         <div className="flex-1 flex flex-col gap-4 overflow-hidden">
           {/* Canvas Preview - Show template in selected aspect ratio */}
-          <div className="flex-1 bg-white rounded-xl shadow-lg p-8 flex items-center justify-center overflow-hidden">
+          <div className="flex-1 bg-white rounded-xl shadow-lg p-8 flex items-center justify-center overflow-hidden" data-canvas>
             <div
               className={`relative bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-lg transition-shadow`}
               style={{
@@ -547,6 +547,19 @@ export default function CreateImagePage() {
                       }}
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 pointer-events-none">
+                      <button
+                        className="p-2 bg-blue-500 hover:bg-blue-600 rounded-full transition-colors pointer-events-auto text-white"
+                        title="Open in Canvas"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setCurrentImageIndex(actualIdx)
+                          setPrompt(item.prompt)
+                          // Scroll to canvas
+                          document.querySelector('[data-canvas]')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                        }}
+                      >
+                        <Sparkles className="w-4 h-4" />
+                      </button>
                       <button
                         className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors pointer-events-auto"
                         onClick={(e) => {
