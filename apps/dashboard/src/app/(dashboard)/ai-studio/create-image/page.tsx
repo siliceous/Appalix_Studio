@@ -103,7 +103,6 @@ export default function CreateImagePage() {
     }
 
     setIsGenerating(true)
-    setGeneratedImages([])
     try {
       const response = await fetch('/api/ai-studio/generate/image', {
         method: 'POST',
