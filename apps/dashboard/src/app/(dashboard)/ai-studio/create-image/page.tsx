@@ -532,6 +532,7 @@ export default function CreateImagePage() {
                   <div
                     key={actualIdx}
                     onClick={() => {
+                      console.log('Image clicked:', actualIdx, item.image)
                       setCurrentImageIndex(actualIdx)
                       setPrompt(item.prompt)
                       setFullscreenImage(item.image)
@@ -568,20 +569,17 @@ export default function CreateImagePage() {
       {/* Fullscreen Modal */}
       {fullscreenImage && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
           onClick={() => setFullscreenImage(null)}
-          onKeyDown={(e) => e.key === 'Escape' && setFullscreenImage(null)}
         >
           <div
-            className="relative max-w-5xl max-h-[90vh] w-full h-full flex items-center justify-center"
+            className="relative w-full h-full max-w-5xl max-h-[90vh] flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <Image
+            <img
               src={fullscreenImage}
               alt="Fullscreen"
-              fill
-              className="object-contain rounded-lg"
-              priority
+              className="max-w-full max-h-full object-contain rounded-lg"
             />
             <button
               onClick={() => setFullscreenImage(null)}
