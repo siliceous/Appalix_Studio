@@ -174,7 +174,7 @@ class NanoBananaAdapter {
         'Watercolor': 'watercolor painting, wet paint, flowing colors',
       }
       const styleDescription = styleMap[style] || ` in ${style} style`
-      fullPrompt += `, ${styleDescription}`
+      fullPrompt = `${styleDescription}. ${fullPrompt}`
     }
     if (lighting && lighting !== 'Daylight') {
       const lightingMap: Record<string, string> = {

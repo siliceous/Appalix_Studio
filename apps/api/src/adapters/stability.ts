@@ -45,10 +45,11 @@ class StabilityAdapter {
     }
 
     const dimensions = this.getAspectRatioDimensions(params.aspectRatio)
+    const prompt = this.buildPrompt(params.prompt, params.style, params.lighting)
 
     // Build FormData for multipart/form-data request
     const formData = new FormData()
-    formData.append('prompt', params.prompt)
+    formData.append('prompt', prompt)
     if (params.negativePrompt) {
       formData.append('negative_prompt', params.negativePrompt)
     }
@@ -56,7 +57,7 @@ class StabilityAdapter {
     formData.append('output_format', 'png')
     formData.append('model', params.modelId || 'sd3-large-turbo')
 
-    console.log('[Stability] Sending generation request with prompt:', params.prompt)
+    console.log('[Stability] Sending generation request with prompt:', prompt)
 
     const response = await fetch(`${this.baseUrl}/stable-image/generate/sd3`, {
       method: 'POST',
@@ -154,6 +155,45 @@ class StabilityAdapter {
         name: 'Gemini 3.1 Flash Image',
       },
     ]
+  }
+
+  private buildPrompt(userPrompt: string, style?: string, lighting?: string): string {
+    let fullPrompt = userPrompt
+
+    if (style && style !== 'Photorealistic') {
+      const styleMap: Record<string, string> = {
+        'Cinematic': 'cinematic composition, professional color grading, cinematic depth of field',
+        'Anime': 'anime style, hand-drawn, manga art, cel shading',
+        'Illustration': 'digital illustration, vector art, illustrated style',
+        'Oil Painting': 'oil painting, brush strokes, textured, renaissance style',
+        'Abstract': 'abstract art, surreal, modern art, expressionist',
+        'Watercolor': 'watercolor painting, wet paint, flowing colors, artistic',
+      }
+      const styleDescription = styleMap[style] || ` in ${style} style`
+      fullPrompt = `${styleDescription}. ${fullPrompt}`
+    }
+
+    if (lighting && lighting !== 'Daylight') {
+      const lightingMap: Record<string, string> = {
+        'Sunset': 'with golden hour sunset lighting, warm tones',
+        'Dramatic': 'with dramatic lighting, high contrast shadows',
+        'Studio': 'with studio lighting, professional setup',
+        'Neon': 'with neon lighting, cyberpunk aesthetic',
+        'Soft': 'with soft, diffused lighting, gentle shadows',
+      }
+
+      const lightingOptions = lighting.split(',').map(l => l.trim())
+      const lightingDescriptions = lightingOptions
+        .filter(l => l !== 'Daylight')
+        .map(l => lightingMap[l] || l)
+        .filter(Boolean)
+
+      if (lightingDescriptions.length > 0) {
+        fullPrompt += `, ${lightingDescriptions.join(', ')}`
+      }
+    }
+
+    return fullPrompt
   }
 
   private getAspectRatioDimensions(aspectRatio?: string): {

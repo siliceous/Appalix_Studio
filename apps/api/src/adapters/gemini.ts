@@ -160,7 +160,7 @@ class GeminiAdapter {
         'Watercolor': 'watercolor painting, wet paint, flowing colors, artistic',
       }
       const styleDescription = styleMap[style] || ` in ${style} style`
-      fullPrompt += `, ${styleDescription}`
+      fullPrompt = `${styleDescription}. ${fullPrompt}`
     }
 
     // Add lighting if specified (can be comma-separated for multiple)

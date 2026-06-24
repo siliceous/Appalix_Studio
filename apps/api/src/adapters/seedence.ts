@@ -149,9 +149,9 @@ class SeedenceAdapter {
 
     if (style && style !== 'Photorealistic') {
       if (style === 'Cinematic') {
-        fullPrompt += ', cinematic composition, professional color grading, cinematic depth of field'
+        fullPrompt = 'cinematic composition, professional color grading, cinematic depth of field. ' + fullPrompt
       } else {
-        fullPrompt += ` in ${style} style`
+        fullPrompt = `${style} style. ` + fullPrompt
       }
     }
 
