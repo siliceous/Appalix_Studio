@@ -372,29 +372,24 @@ export default function CreateImagePage() {
 
           if (statusData.status === 'completed') {
             if (statusData.imageUrls && statusData.imageUrls.length > 0) {
-              // Compress all images before storing
-              const compressedImages = await Promise.all(
-                statusData.imageUrls.map(async (img: string, idx: number) => {
-                  const compressedImg = await compressImage(img)
-                  return {
-                    id: `${generationId}-${idx}`,
-                    image: compressedImg,
-                    prompt,
-                    timestamp: Date.now(),
-                  }
-                })
-              )
+              // Add all new images to history
+              const newImages = statusData.imageUrls.map((img: string, idx: number) => ({
+                id: `${generationId}-${idx}`,
+                image: img,
+                prompt,
+                timestamp: Date.now(),
+              }))
 
-              console.log('Adding compressed images to history:', compressedImages)
+              console.log('Adding images to history:', newImages)
               setHistory(prev => {
-                const updated = [...prev, ...compressedImages]
+                const updated = [...prev, ...newImages]
                 console.log('Updated history length:', updated.length)
                 return updated
               })
 
               // Select the last generated image
-              setSelectedImage(compressedImages[compressedImages.length - 1])
-              console.log('Images received and compressed:', statusData.imageUrls.length)
+              setSelectedImage(newImages[newImages.length - 1])
+              console.log('Images received:', statusData.imageUrls.length)
             }
             isComplete = true
           } else if (statusData.status === 'failed') {
@@ -471,29 +466,6 @@ export default function CreateImagePage() {
     return enhanced
   }
 
-  const compressImage = (base64Image: string): Promise<string> => {
-    return new Promise((resolve) => {
-      const img = new Image()
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        // Reduce dimensions by 30% (to 70% of original)
-        canvas.width = img.width * 0.7
-        canvas.height = img.height * 0.7
-
-        const ctx = canvas.getContext('2d')
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-          // Convert to JPEG with 80% quality for better compression
-          const compressed = canvas.toDataURL('image/jpeg', 0.8)
-          resolve(compressed)
-        } else {
-          resolve(base64Image)
-        }
-      }
-      img.onerror = () => resolve(base64Image)
-      img.src = base64Image
-    })
-  }
 
   const handlePermanentlyDeleteImage = (imageId: string) => {
     // Permanently remove from history

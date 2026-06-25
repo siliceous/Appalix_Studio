@@ -55,10 +55,8 @@ export default function AIStudioLibrary() {
 
   const handleDownload = (imageId: string, imageData: string) => {
     const link = document.createElement('a')
-    // If it's a JPEG (compressed), save as .jpg, otherwise .png
-    const ext = imageData.includes('image/jpeg') ? 'jpg' : 'png'
     link.href = imageData
-    link.download = `appalix-image-${imageId}.${ext}`
+    link.download = `appalix-image-${imageId}.png`
     link.click()
   }
 
