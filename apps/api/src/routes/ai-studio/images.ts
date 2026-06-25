@@ -4,6 +4,7 @@ import { stability } from '../../adapters/stability.js'
 import { gemini } from '../../adapters/gemini.js'
 import { nanoBanana } from '../../adapters/nano-banana.js'
 import { seedence } from '../../adapters/seedence.js'
+import { imageOptimization } from '../../services/image-optimization.service.js'
 import { v4 as uuid } from 'uuid'
 
 interface ImageGenerationRequest {
@@ -285,25 +286,67 @@ export async function imageRoutes(app: FastifyInstance) {
 
         // Update database if complete
         if (status.status === 'COMPLETE' && status.imageUrls.length > 0) {
-          await supabase
-            .from('ai_image_generations')
-            .update({
-              status: 'completed',
-              output_url: status.imageUrls[0],
-              output_urls: JSON.stringify(status.imageUrls),
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', id)
+          console.log('[Image Generation] Generation complete, optimizing and storing images...')
 
-          return reply.send({
-            id: generation.id,
-            status: 'completed',
-            outputUrl: status.imageUrls[0],
-            imageUrls: status.imageUrls,
-            type: 'image',
-            createdAt: generation.created_at,
-            estimatedCredits: generation.quantity * 10,
-          })
+          try {
+            // Optimize images: Convert to WebP and upload to Supabase Storage
+            const optimizedImages = await imageOptimization.optimizeAndStoreMultiple(
+              status.imageUrls,
+              workspaceId,
+              id
+            )
+
+            console.log(`[Image Generation] Optimized ${optimizedImages.length} images`)
+
+            // Get signed URLs for frontend display
+            const signedUrls = optimizedImages.map(img => img.url)
+
+            // Store metadata in database (not the actual image data)
+            await supabase
+              .from('ai_image_generations')
+              .update({
+                status: 'completed',
+                output_url: signedUrls[0], // First image URL
+                output_urls: JSON.stringify(signedUrls), // All image URLs
+                storage_keys: JSON.stringify(optimizedImages.map(img => ({ key: img.storageKey, size: img.sizeBytes }))),
+                image_format: 'webp',
+                compressed_size_bytes: optimizedImages.reduce((sum, img) => sum + img.sizeBytes, 0),
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', id)
+
+            return reply.send({
+              id: generation.id,
+              status: 'completed',
+              outputUrl: signedUrls[0],
+              imageUrls: signedUrls,
+              type: 'image',
+              createdAt: generation.created_at,
+              estimatedCredits: generation.quantity * 10,
+            })
+          } catch (optimizationError) {
+            console.error('[Image Generation] Optimization failed:', optimizationError)
+            // Fallback: Store original images (less efficient but still works)
+            await supabase
+              .from('ai_image_generations')
+              .update({
+                status: 'completed',
+                output_url: status.imageUrls[0],
+                output_urls: JSON.stringify(status.imageUrls),
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', id)
+
+            return reply.send({
+              id: generation.id,
+              status: 'completed',
+              outputUrl: status.imageUrls[0],
+              imageUrls: status.imageUrls,
+              type: 'image',
+              createdAt: generation.created_at,
+              estimatedCredits: generation.quantity * 10,
+            })
+          }
         }
 
         if (status.status === 'FAILED') {

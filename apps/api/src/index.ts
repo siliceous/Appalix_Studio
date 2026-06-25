@@ -6,6 +6,7 @@ import multipart from '@fastify/multipart'
 import { fileURLToPath } from 'url'
 import path from 'path'
 import { config } from './config.js'
+import { initializeStorage } from './lib/storage-init.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 import { slackRoutes }       from './routes/webhooks/slack.js'
@@ -222,6 +223,9 @@ async function listenWithRetry() {
 try {
   await listenWithRetry()
   console.log(`\n🚀  API server running on http://0.0.0.0:${port}`)
+
+  // Initialize storage buckets
+  await initializeStorage()
 
   // ── Gemini Live WebSocket gateway ──────────────────────────────────────
   // Fastify v5 doesn't use @fastify/websocket here — we hook the raw Node
