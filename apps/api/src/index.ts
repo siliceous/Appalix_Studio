@@ -44,10 +44,10 @@ import { handleTelnyxCallWs }                       from './live/telnyx-call-han
 import { resendWebhookRoutes }                      from './routes/webhooks/resend.js'
 import { emailCampaignRoutes }                      from './routes/email/campaigns.js'
 import { startAutomationScheduler }                 from './modules/automations/automationScheduler.js'
-import { videoRoutes }                             from './routes/videos.js'
-import { klingWebhookRoutes }                      from './routes/webhooks/kling.js'
+// import { videoRoutes }                             from './routes/videos.js'
+// import { klingWebhookRoutes }                      from './routes/webhooks/kling.js'
 // import { startVideoJobPolling }                    from './modules/video-generation/job-poller.js'
-import { geminiVoiceRoutes }                       from './routes/gemini-voice.js'
+// import { geminiVoiceRoutes }                       from './routes/gemini-voice.js'
 // import { talkingActorsRoutes }                     from './routes/talking-actors.js'
 import { imageRoutes }                             from './routes/ai-studio/images.js'
 import { cleanupRoutes }                           from './routes/ai-studio/cleanup.js'
@@ -141,7 +141,7 @@ await server.register(smsRoutes,              { prefix: '/webhooks' })
 await server.register(telnyxMessagingRoutes,  { prefix: '/webhooks' })
 await server.register(telnyxVoiceRoutes,      { prefix: '/webhooks' })
 await server.register(resendWebhookRoutes,    { prefix: '/webhooks' })
-await server.register(klingWebhookRoutes,     { prefix: '/webhooks' })
+// await server.register(klingWebhookRoutes,     { prefix: '/webhooks' })
 await server.register(telnyxSmsRoutes,        { prefix: '/telnyx' })
 await server.register(shopifyOAuthRoutes)
 
@@ -173,10 +173,10 @@ await server.register(complianceRoutes)
 await server.register(emailCampaignRoutes, { prefix: '/email' })
 
 // Video generation — text-to-video, image-to-video (Pro+ feature)
-await server.register(videoRoutes, { prefix: '/videos' })
+// await server.register(videoRoutes, { prefix: '/videos' })
 
 // Gemini voice integration — link voices to talking actors with lip-sync
-await server.register(geminiVoiceRoutes, { prefix: '/gemini-voice' })
+// await server.register(geminiVoiceRoutes, { prefix: '/gemini-voice' })
 
 // Talking actors management — upload and manage custom actors
 // await server.register(talkingActorsRoutes, { prefix: '/talking-actors' })
