@@ -275,17 +275,30 @@ export default function CreateImagePage() {
     if (typeof window !== 'undefined' && history.length > 0) {
       try {
         // Keep only last 10 images to avoid quota issues
-        // Store only IDs and metadata, not full base64 images
+        // Store full images with metadata
         const recentHistory = history.slice(-10).map(img => ({
           id: img.id,
+          image: img.image,
           prompt: img.prompt,
           timestamp: img.timestamp,
           deletedAt: img.deletedAt,
-          // Don't store the base64 image data in localStorage
         }))
         localStorage.setItem('imageGenerationHistory', JSON.stringify(recentHistory))
       } catch (error) {
         console.error('Failed to save to localStorage:', error)
+        // If quota exceeded, try with fewer images
+        try {
+          const fewerImages = history.slice(-5).map(img => ({
+            id: img.id,
+            image: img.image,
+            prompt: img.prompt,
+            timestamp: img.timestamp,
+            deletedAt: img.deletedAt,
+          }))
+          localStorage.setItem('imageGenerationHistory', JSON.stringify(fewerImages))
+        } catch (err) {
+          console.error('Failed to save even with fewer images:', err)
+        }
       }
     }
   }, [history])

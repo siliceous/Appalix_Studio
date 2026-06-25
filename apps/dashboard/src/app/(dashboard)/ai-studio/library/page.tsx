@@ -25,11 +25,13 @@ export default function AIStudioLibrary() {
       const savedHistory = localStorage.getItem('imageGenerationHistory')
       if (savedHistory) {
         const parsed = JSON.parse(savedHistory)
-        // Ensure all images have IDs
-        const historyWithIds = parsed.map((img: any, idx: number) => ({
-          ...img,
-          id: img.id || `legacy-${img.timestamp || idx}`,
-        }))
+        // Ensure all images have IDs and valid image data
+        const historyWithIds = parsed
+          .filter((img: any) => img && img.image && typeof img.image === 'string' && img.image.length > 0)
+          .map((img: any, idx: number) => ({
+            ...img,
+            id: img.id || `legacy-${img.timestamp || idx}`,
+          }))
         // Filter out deleted images
         const activeImages = historyWithIds.filter((img: any) => !img.deletedAt)
         // Sort by timestamp, newest first
@@ -39,6 +41,8 @@ export default function AIStudioLibrary() {
       setLoading(false)
     } catch (error) {
       console.error('Error loading images from localStorage:', error)
+      // Clear corrupted data
+      localStorage.removeItem('imageGenerationHistory')
       setLoading(false)
     }
   }, [])
