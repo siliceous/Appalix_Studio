@@ -110,6 +110,7 @@ export default function CreateImagePage() {
   const [credits, setCredits] = useState(100)
   const [workspaceId, setWorkspaceId] = useState<string>('')
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null)
+  const [fullscreenImageData, setFullscreenImageData] = useState<GeneratedImage | null>(null)
   const [showTrash, setShowTrash] = useState(false)
 
   // Load initial data
@@ -649,7 +650,10 @@ export default function CreateImagePage() {
                     className={`group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all ${
                       selectedImage?.id === image.id ? 'ring-2 ring-blue-500' : ''
                     }`}
-                    onClick={() => handleReusePrompt(image)}
+                    onClick={() => {
+                      setFullscreenImageData(image)
+                      setFullscreenImage(image.image)
+                    }}
                   >
                     <img
                       src={image.image}
@@ -696,23 +700,65 @@ export default function CreateImagePage() {
         </div>
       </div>
 
-      {/* Fullscreen Modal */}
-      {fullscreenImage && (
+      {/* Fullscreen Modal with Actions */}
+      {fullscreenImage && fullscreenImageData && (
         <div
           className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4"
-          onClick={() => setFullscreenImage(null)}
+          onClick={() => {
+            setFullscreenImage(null)
+            setFullscreenImageData(null)
+          }}
         >
           <div
-            className="relative w-screen h-screen max-w-6xl max-h-screen flex items-center justify-center"
+            className="relative w-screen h-screen max-w-6xl max-h-screen flex flex-col items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
             <img
               src={fullscreenImage}
               alt="Fullscreen"
-              className="max-w-[90vw] max-h-[80vh] w-auto h-auto object-contain"
+              className="max-w-[90vw] max-h-[70vh] w-auto h-auto object-contain"
             />
+
+            {/* Action Buttons */}
+            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-4">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleReusePrompt(fullscreenImageData)
+                  setFullscreenImage(null)
+                  setFullscreenImageData(null)
+                }}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-lg"
+              >
+                Open in Canvas
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleSaveImage(fullscreenImageData)
+                }}
+                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors shadow-lg"
+              >
+                Save to Project
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleDeleteImage(fullscreenImageData.id)
+                  setFullscreenImage(null)
+                  setFullscreenImageData(null)
+                }}
+                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors shadow-lg"
+              >
+                Delete to Trash
+              </button>
+            </div>
+
             <button
-              onClick={() => setFullscreenImage(null)}
+              onClick={() => {
+                setFullscreenImage(null)
+                setFullscreenImageData(null)
+              }}
               className="absolute top-4 right-4 p-3 bg-white rounded-full hover:bg-gray-200 transition-colors shadow-lg"
               title="Close (Esc)"
             >
