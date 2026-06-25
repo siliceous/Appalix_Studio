@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Sparkles, Download, Trash2, Heart, Loader, X, Copy } from 'lucide-react'
+import { ArrowLeft, Sparkles, Download, Trash2, Heart, Loader, X, Copy, Edit } from 'lucide-react'
 
 const QUALITY_PRESETS = [
   { id: 'fast', label: 'Fast' },
@@ -625,7 +625,7 @@ export default function CreateImagePage() {
         <div className="flex-1 flex flex-col gap-4 overflow-hidden">
           {/* Canvas Preview */}
           <div
-            className="flex-1 bg-white rounded-xl shadow-lg p-8 flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-xl transition-shadow"
+            className="flex-1 bg-white rounded-xl shadow-lg p-8 flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-xl transition-shadow relative group"
             onClick={() => {
               if (selectedImage) {
                 setFullscreenImageData(selectedImage)
@@ -640,11 +640,29 @@ export default function CreateImagePage() {
                 <p className="text-sm text-gray-600">Generating image...</p>
               </div>
             ) : selectedImage ? (
-              <img
-                src={selectedImage.image}
-                alt="Generated"
-                className="max-w-full max-h-full w-auto h-auto object-contain"
-              />
+              <>
+                <img
+                  src={selectedImage.image}
+                  alt="Generated"
+                  className="max-w-full max-h-full w-auto h-auto object-contain"
+                />
+                {/* Edit Button Overlay */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setPrompt(selectedImage.prompt)
+                      // Scroll to prompt input
+                      const textarea = document.querySelector('textarea')
+                      textarea?.focus()
+                    }}
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-lg flex items-center gap-2"
+                  >
+                    <Edit className="w-5 h-5" />
+                    Edit & Regenerate
+                  </button>
+                </div>
+              </>
             ) : (
               <div className="text-center">
                 <Sparkles className="w-16 h-16 mx-auto mb-4 opacity-30 text-gray-400" />
