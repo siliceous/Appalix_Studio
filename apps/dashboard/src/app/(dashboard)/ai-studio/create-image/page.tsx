@@ -629,6 +629,12 @@ export default function CreateImagePage() {
             <ArrowLeft className="w-5 h-5 text-gray-700" />
           </button>
           <h1 className="text-lg font-semibold text-gray-900">Create Image</h1>
+          {/* Debug: Show stored images count */}
+          {typeof window !== 'undefined' && (
+            <div className="text-xs text-gray-500 ml-4 px-2 py-1 bg-gray-100 rounded">
+              Stored: {history.length} images
+            </div>
+          )}
         </div>
         <div className="text-sm text-gray-600">
           Credits: <span className="font-semibold text-gray-900">{credits}</span>
