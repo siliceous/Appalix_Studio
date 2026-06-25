@@ -290,6 +290,15 @@ export default function CreateImagePage() {
     }
   }, [history])
 
+  // Auto-scroll library to top when new images are added
+  useEffect(() => {
+    const libraryContainer = document.querySelector('[data-library-container]') as HTMLElement
+    if (libraryContainer) {
+      // Scroll to top to show newest images
+      libraryContainer.scrollTop = 0
+    }
+  }, [history])
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -907,7 +916,7 @@ export default function CreateImagePage() {
             </p>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 grid grid-cols-2 gap-2 auto-rows-max">
+          <div className="flex-1 overflow-y-auto p-3 grid grid-cols-2 gap-2 auto-rows-max" data-library-container>
             {showTrash ? (
               // Trash view
               history.filter(img => img.deletedAt).length === 0 ? (
