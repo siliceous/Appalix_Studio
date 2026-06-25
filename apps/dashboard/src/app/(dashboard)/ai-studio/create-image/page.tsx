@@ -84,6 +84,7 @@ interface GeneratedImage {
   image: string
   prompt: string
   timestamp: number
+  deletedAt?: number
 }
 
 export default function CreateImagePage() {
@@ -109,6 +110,7 @@ export default function CreateImagePage() {
   const [credits, setCredits] = useState(100)
   const [workspaceId, setWorkspaceId] = useState<string>('')
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null)
+  const [showTrash, setShowTrash] = useState(false)
 
   // Load initial data
   useEffect(() => {
@@ -276,10 +278,29 @@ export default function CreateImagePage() {
   }
 
   const handleDeleteImage = (imageId: string) => {
-    setHistory(prev => prev.filter(img => img.id !== imageId))
+    // Soft delete: mark with deletedAt timestamp
+    setHistory(prev =>
+      prev.map(img =>
+        img.id === imageId ? { ...img, deletedAt: Date.now() } : img
+      )
+    )
     if (selectedImage?.id === imageId) {
       setSelectedImage(null)
     }
+  }
+
+  const handleRestoreImage = (imageId: string) => {
+    // Remove deletedAt to restore
+    setHistory(prev =>
+      prev.map(img =>
+        img.id === imageId ? { ...img, deletedAt: undefined } : img
+      )
+    )
+  }
+
+  const handlePermanentlyDeleteImage = (imageId: string) => {
+    // Permanently remove from history
+    setHistory(prev => prev.filter(img => img.id !== imageId))
   }
 
   const handleDownloadImage = (image: GeneratedImage) => {
@@ -549,63 +570,127 @@ export default function CreateImagePage() {
         {/* Right Panel - History */}
         <div className="w-72 flex flex-col bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="px-4 py-3 bg-gray-100 border-b border-gray-200">
-            <h2 className="text-sm font-semibold text-gray-900">Generated Images</h2>
-            <p className="text-xs text-gray-600 mt-1">{history.length} image{history.length !== 1 ? 's' : ''}</p>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-900">Generated Images</h2>
+              {history.some(img => img.deletedAt) && (
+                <button
+                  onClick={() => setShowTrash(!showTrash)}
+                  className="text-xs text-gray-600 hover:text-gray-900 font-medium"
+                >
+                  {showTrash ? '← Back' : 'Trash'}
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-gray-600 mt-1">
+              {showTrash
+                ? `${history.filter(img => img.deletedAt).length} deleted`
+                : `${history.filter(img => !img.deletedAt).length} image${history.filter(img => !img.deletedAt).length !== 1 ? 's' : ''}`}
+            </p>
           </div>
 
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            {history.length === 0 ? (
-              <div key="empty" className="flex items-center justify-center h-32 text-gray-500 text-sm">
-                No images yet
-              </div>
-            ) : (
-              [...history].reverse().map((image, idx) => (
-                <div
-                  key={`image-${image.id || image.timestamp}-${idx}`}
-                  className={`group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all ${
-                    selectedImage?.id === image.id ? 'ring-2 ring-blue-500' : ''
-                  }`}
-                  onClick={() => handleReusePrompt(image)}
-                >
-                  <img
-                    src={image.image}
-                    alt="Generated"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
-                    <button
-                      className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDownloadImage(image)
-                      }}
-                      title="Download"
-                    >
-                      <Download className="w-4 h-4 text-gray-700" />
-                    </button>
-                    <button
-                      className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleSaveImage(image)
-                      }}
-                      title="Save"
-                    >
-                      <Heart className="w-4 h-4 text-gray-700" />
-                    </button>
-                    <button
-                      className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteImage(image.id)
-                      }}
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4 text-gray-700" />
-                    </button>
-                  </div>
+            {showTrash ? (
+              // Trash view
+              history.filter(img => img.deletedAt).length === 0 ? (
+                <div key="empty-trash" className="flex items-center justify-center h-32 text-gray-500 text-sm">
+                  Trash is empty
                 </div>
-              ))
+              ) : (
+                [...history].reverse().map((image, idx) => (
+                  !image.deletedAt ? null : (
+                    <div
+                      key={`image-${image.id || image.timestamp}-${idx}`}
+                      className="group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all opacity-60 hover:opacity-100"
+                    >
+                      <img
+                        src={image.image}
+                        alt="Deleted"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                        <button
+                          className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleRestoreImage(image.id)
+                            setShowTrash(false)
+                          }}
+                          title="Restore"
+                        >
+                          <X className="w-4 h-4 text-gray-700" />
+                        </button>
+                        <button
+                          className="p-2 bg-red-500 hover:bg-red-600 rounded-full text-white transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handlePermanentlyDeleteImage(image.id)
+                          }}
+                          title="Permanently Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )
+                ))
+              )
+            ) : (
+              // Active images view
+              history.filter(img => !img.deletedAt).length === 0 ? (
+                <div key="empty" className="flex items-center justify-center h-32 text-gray-500 text-sm">
+                  No images yet
+                </div>
+              ) : (
+                [...history].reverse().map((image, idx) => (
+                  !image.deletedAt ? null : undefined
+                )).filter(Boolean).reverse().map((image: any, idx: number) => (
+                  <div
+                    key={`image-${image.id || image.timestamp}-${idx}`}
+                    className={`group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all ${
+                      selectedImage?.id === image.id ? 'ring-2 ring-blue-500' : ''
+                    }`}
+                    onClick={() => handleReusePrompt(image)}
+                  >
+                    <img
+                      src={image.image}
+                      alt="Generated"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                      <button
+                        className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDownloadImage(image)
+                        }}
+                        title="Download"
+                      >
+                        <Download className="w-4 h-4 text-gray-700" />
+                      </button>
+                      <button
+                        className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleSaveImage(image)
+                        }}
+                        title="Save"
+                      >
+                        <Heart className="w-4 h-4 text-gray-700" />
+                      </button>
+                      <button
+                        className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteImage(image.id)
+                        }}
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4 text-gray-700" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )
             )}
           </div>
         </div>
