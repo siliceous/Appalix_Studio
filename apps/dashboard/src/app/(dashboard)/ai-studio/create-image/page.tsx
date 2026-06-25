@@ -90,35 +90,88 @@ const BODY_TYPES = [
   { id: 'chubby', label: 'Chubby', phrase: 'naturally chubby woman with a round face and soft features' },
   { id: 'plussize', label: 'Plus-Size', phrase: 'plus-size woman, confident and beautiful' },
   { id: 'size16', label: 'Size 16', phrase: 'realistic size 16 body' },
-  // Age & Appearance
   { id: 'mature', label: 'Mature', phrase: 'average Australian woman in her late 40s' },
   { id: 'milf', label: 'MILF', phrase: 'gorgeous mature woman in her 40s with a youthful appearance' },
   { id: 'older', label: 'Older Woman', phrase: 'beautiful woman in her 50s with elegant mature features' },
   { id: 'young', label: 'Young Woman', phrase: 'young woman in her 20s with youthful, fresh features' },
-  // Muscle & Athletic
   { id: 'athletic', label: 'Athletic', phrase: 'athletic woman with defined muscles and toned physique' },
   { id: 'muscular', label: 'Muscular', phrase: 'muscular woman with visible muscle definition' },
   { id: 'fit', label: 'Fit', phrase: 'fit and healthy woman with a lean, toned body' },
-  // Specific Features
   { id: 'bigboobs', label: 'Big Breasts', phrase: 'woman with large, natural-looking breasts' },
   { id: 'bigbutt', label: 'Big Butt', phrase: 'woman with a full, round butt and thick thighs' },
   { id: 'thickthighs', label: 'Thick Thighs', phrase: 'woman with thick, muscular thighs and full hips' },
   { id: 'softbelly', label: 'Soft Belly', phrase: 'woman with a soft, round belly and natural curves' },
   { id: 'tallwoman', label: 'Tall', phrase: 'tall, statuesque woman with long legs' },
   { id: 'petite', label: 'Petite', phrase: 'petite woman with a delicate, small frame' },
-  // Ethnicity & Heritage
-  { id: 'caucasian', label: 'Caucasian', phrase: 'Caucasian woman with fair skin' },
+]
+
+const ETHNICITIES = [
+  { id: 'none', label: 'Any Ethnicity', phrase: '' },
+  { id: 'caucasian', label: 'Caucasian / European', phrase: 'Caucasian woman with fair, pale skin' },
+  { id: 'scandinavian', label: 'Scandinavian', phrase: 'Scandinavian woman with fair skin, blonde hair' },
+  { id: 'irish', label: 'Irish / Celtic', phrase: 'Irish woman with pale skin, red or auburn hair' },
+  { id: 'french', label: 'French', phrase: 'French woman with elegant European features' },
+  { id: 'italian', label: 'Italian', phrase: 'Italian woman with olive skin and Mediterranean features' },
+  { id: 'spanish', label: 'Spanish', phrase: 'Spanish woman with olive skin and warm features' },
+  { id: 'greek', label: 'Greek', phrase: 'Greek woman with Mediterranean features and olive skin' },
+  { id: 'eastern_european', label: 'Eastern European', phrase: 'Eastern European woman with high cheekbones and strong features' },
+  { id: 'slavic', label: 'Slavic / Russian', phrase: 'Slavic woman with fair skin and striking features' },
   { id: 'african', label: 'African', phrase: 'African woman with rich dark skin and natural beauty' },
-  { id: 'latina', label: 'Latina', phrase: 'Latina woman with warm, sun-kissed skin and natural curves' },
-  { id: 'asian', label: 'Asian', phrase: 'Asian woman with delicate features and natural beauty' },
-  { id: 'indian', label: 'Indian', phrase: 'Indian woman with warm brown skin and exotic features' },
+  { id: 'jamaican', label: 'Caribbean / Jamaican', phrase: 'Caribbean woman with warm brown skin and natural beauty' },
+  { id: 'afroamerican', label: 'Afro-American', phrase: 'Afro-American woman with rich dark skin and natural hair' },
+  { id: 'latina', label: 'Latina / Hispanic', phrase: 'Latina woman with warm, sun-kissed skin and natural curves' },
+  { id: 'mexican', label: 'Mexican', phrase: 'Mexican woman with warm brown skin and beautiful features' },
+  { id: 'brazilian', label: 'Brazilian', phrase: 'Brazilian woman with tan skin and exotic beauty' },
+  { id: 'colombian', label: 'Colombian', phrase: 'Colombian woman with warm caramel skin and curves' },
+  { id: 'asian', label: 'East Asian', phrase: 'East Asian woman with delicate features and natural beauty' },
+  { id: 'chinese', label: 'Chinese', phrase: 'Chinese woman with elegant Asian features' },
+  { id: 'japanese', label: 'Japanese', phrase: 'Japanese woman with fair skin and delicate features' },
+  { id: 'korean', label: 'Korean', phrase: 'Korean woman with fair skin and modern beauty standards' },
+  { id: 'vietnamese', label: 'Vietnamese', phrase: 'Vietnamese woman with warm skin tone and delicate features' },
+  { id: 'thai', label: 'Thai', phrase: 'Thai woman with warm tan skin and exotic features' },
+  { id: 'philippine', label: 'Filipino / Philippine', phrase: 'Filipino woman with warm brown skin and beautiful features' },
+  { id: 'indonesian', label: 'Indonesian', phrase: 'Indonesian woman with warm tan skin and exotic beauty' },
+  { id: 'indian', label: 'Indian', phrase: 'Indian woman with warm brown skin and striking features' },
+  { id: 'pakistani', label: 'Pakistani', phrase: 'Pakistani woman with olive to brown skin and beautiful features' },
+  { id: 'bangladeshi', label: 'Bangladeshi', phrase: 'Bangladeshi woman with warm brown skin and delicate features' },
+  { id: 'srilankn', label: 'Sri Lankan', phrase: 'Sri Lankan woman with warm brown skin and exotic beauty' },
   { id: 'middleeast', label: 'Middle Eastern', phrase: 'Middle Eastern woman with olive skin and striking features' },
-  // Hair & Features
+  { id: 'arab', label: 'Arab', phrase: 'Arab woman with olive skin and dark expressive eyes' },
+  { id: 'persian', label: 'Persian / Iranian', phrase: 'Persian woman with olive skin and elegant features' },
+  { id: 'turkish', label: 'Turkish', phrase: 'Turkish woman with olive skin and Mediterranean beauty' },
+  { id: 'lebanese', label: 'Lebanese', phrase: 'Lebanese woman with warm skin and Mediterranean features' },
+  { id: 'jewish', label: 'Jewish / Israeli', phrase: 'Jewish woman with diverse features and dark eyes' },
+  { id: 'russian', label: 'Russian / Ukrainian', phrase: 'Russian woman with fair skin and striking Slavic features' },
+  { id: 'mixed', label: 'Mixed Race', phrase: 'mixed race woman with diverse, beautiful features' },
+]
+
+const HAIR_TYPES = [
+  { id: 'none', label: 'Any Hair', phrase: '' },
+  // Length
   { id: 'longhair', label: 'Long Hair', phrase: 'woman with long, flowing hair' },
+  { id: 'mediumhair', label: 'Medium Hair', phrase: 'woman with shoulder-length hair' },
   { id: 'shorthair', label: 'Short Hair', phrase: 'woman with stylish short hair' },
+  // Texture
+  { id: 'straighthair', label: 'Straight Hair', phrase: 'woman with long straight hair' },
   { id: 'curlyhair', label: 'Curly Hair', phrase: 'woman with thick, curly hair' },
-  { id: 'tattoos', label: 'Tattooed', phrase: 'woman with visible tattoos and body art' },
-  { id: 'pierced', label: 'Pierced', phrase: 'woman with multiple piercings' },
+  { id: 'wavyhair', label: 'Wavy Hair', phrase: 'woman with long wavy hair' },
+  { id: 'frizzy', label: 'Frizzy Hair', phrase: 'woman with voluminous, frizzy natural hair' },
+  // Color
+  { id: 'blonde', label: 'Blonde Hair', phrase: 'woman with blonde hair' },
+  { id: 'brunette', label: 'Brunette Hair', phrase: 'woman with brunette, dark brown hair' },
+  { id: 'blackhair', label: 'Black Hair', phrase: 'woman with long black hair' },
+  { id: 'redhair', label: 'Red Hair', phrase: 'woman with beautiful red hair' },
+  { id: 'brownhair', label: 'Brown Hair', phrase: 'woman with rich brown hair' },
+  // Style
+  { id: 'braids', label: 'Braids', phrase: 'woman with braided hair' },
+  { id: 'afro', label: 'Afro', phrase: 'woman with a full, natural afro' },
+  { id: 'cornrows', label: 'Cornrows', phrase: 'woman with cornrow braids' },
+  { id: 'updohair', label: 'Updo', phrase: 'woman with her hair in an elegant updo' },
+  { id: 'buns', label: 'Buns', phrase: 'woman with her hair in buns' },
+  // Accessories
+  { id: 'tattoos', label: 'Tattoos', phrase: 'woman with visible tattoos and body art' },
+  { id: 'pierced', label: 'Piercings', phrase: 'woman with multiple piercings' },
+  { id: 'makeup', label: 'Bold Makeup', phrase: 'woman with bold, glamorous makeup' },
 ]
 
 interface GeneratedImage {
@@ -144,6 +197,8 @@ export default function CreateImagePage() {
   const [aspectRatio, setAspectRatio] = useState('9:16')
   const [quantity, setQuantity] = useState(1)
   const [bodyType, setBodyType] = useState('none')
+  const [ethnicity, setEthnicity] = useState('none')
+  const [hairType, setHairType] = useState('none')
 
   // State management
   const [prompt, setPrompt] = useState('')
@@ -387,8 +442,17 @@ export default function CreateImagePage() {
   const getEnhancedPrompt = () => {
     let enhanced = prompt
     const bodyTypeData = BODY_TYPES.find(bt => bt.id === bodyType)
+    const ethnicityData = ETHNICITIES.find(et => et.id === ethnicity)
+    const hairTypeData = HAIR_TYPES.find(ht => ht.id === hairType)
+
     if (bodyTypeData && bodyTypeData.phrase) {
       enhanced = `${enhanced}, ${bodyTypeData.phrase}`
+    }
+    if (ethnicityData && ethnicityData.phrase) {
+      enhanced = `${enhanced}, ${ethnicityData.phrase}`
+    }
+    if (hairTypeData && hairTypeData.phrase) {
+      enhanced = `${enhanced}, ${hairTypeData.phrase}`
     }
     return enhanced
   }
@@ -693,8 +757,54 @@ export default function CreateImagePage() {
                 ))}
               </select>
               {bodyType !== 'none' && (
-                <p className="text-xs text-gray-500 mt-2 italic">
+                <p className="text-xs text-gray-500 mt-1 italic">
                   {BODY_TYPES.find(bt => bt.id === bodyType)?.phrase}
+                </p>
+              )}
+            </div>
+
+            {/* Ethnicity */}
+            <div>
+              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
+                Ethnicity
+              </label>
+              <select
+                value={ethnicity}
+                onChange={(e) => setEthnicity(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {ETHNICITIES.map((et) => (
+                  <option key={et.id} value={et.id}>
+                    {et.label}
+                  </option>
+                ))}
+              </select>
+              {ethnicity !== 'none' && (
+                <p className="text-xs text-gray-500 mt-1 italic">
+                  {ETHNICITIES.find(et => et.id === ethnicity)?.phrase}
+                </p>
+              )}
+            </div>
+
+            {/* Hair Type */}
+            <div>
+              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
+                Hair Type
+              </label>
+              <select
+                value={hairType}
+                onChange={(e) => setHairType(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {HAIR_TYPES.map((ht) => (
+                  <option key={ht.id} value={ht.id}>
+                    {ht.label}
+                  </option>
+                ))}
+              </select>
+              {hairType !== 'none' && (
+                <p className="text-xs text-gray-500 mt-1 italic">
+                  {HAIR_TYPES.find(ht => ht.id === hairType)?.phrase}
                 </p>
               )}
             </div>
