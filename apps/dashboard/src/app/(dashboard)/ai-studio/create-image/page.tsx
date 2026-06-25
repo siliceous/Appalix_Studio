@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Sparkles, Download, Trash2, Heart, Loader } from 'lucide-react'
-import Image from 'next/image'
+import { ArrowLeft, Sparkles, Download, Trash2, Heart, Loader, X, Copy } from 'lucide-react'
 
 const QUALITY_PRESETS = [
   { id: 'fast', label: 'Fast' },
@@ -80,9 +79,17 @@ const aspectRatioLabels: Record<string, string> = {
   '1:1': '1:1',
 }
 
+interface GeneratedImage {
+  id: string
+  image: string
+  prompt: string
+  timestamp: number
+}
+
 export default function CreateImagePage() {
   const router = useRouter()
 
+  // Generator settings
   const [model, setModel] = useState('nano-banana-pro')
   const [models, setModels] = useState<any[]>([])
   const [loadingModels, setLoadingModels] = useState(true)
@@ -94,35 +101,31 @@ export default function CreateImagePage() {
   const [aspectRatio, setAspectRatio] = useState('9:16')
   const [quantity, setQuantity] = useState(1)
 
+  // State management
   const [prompt, setPrompt] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
-  const [generatedImages, setGeneratedImages] = useState<string[]>([])
+  const [history, setHistory] = useState<GeneratedImage[]>([])
+  const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null)
   const [credits, setCredits] = useState(100)
   const [workspaceId, setWorkspaceId] = useState<string>('')
-  const [generationHistory, setGenerationHistory] = useState<Array<{ image: string; prompt: string }>>([])
-  const [currentImageIndex, setCurrentImageIndex] = useState<number | null>(null)
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null)
 
+  // Load initial data
   useEffect(() => {
-    // Get workspace ID from localStorage
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
     setWorkspaceId(wId)
 
-    // Load generation history from localStorage
+    // Load history from localStorage
     const savedHistory = typeof window !== 'undefined' ? localStorage.getItem('imageGenerationHistory') : null
     if (savedHistory) {
       try {
         const parsed = JSON.parse(savedHistory)
-        setGenerationHistory(parsed)
-        // Update generatedImages count
+        setHistory(parsed)
         if (parsed.length > 0) {
-          setGeneratedImages(parsed.map((item: any) => item.image))
-          // Set the latest image (last one in the array) as the current one
-          setCurrentImageIndex(parsed.length - 1)
-          setPrompt(parsed[parsed.length - 1].prompt)
+          setSelectedImage(parsed[parsed.length - 1])
         }
       } catch (error) {
-        console.error('Failed to load generation history:', error)
+        console.error('Failed to load history:', error)
       }
     }
 
@@ -149,27 +152,19 @@ export default function CreateImagePage() {
     fetchModels()
   }, [])
 
-  // Save generation history to localStorage whenever it changes
+  // Save history to localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined' && generationHistory.length > 0) {
+    if (typeof window !== 'undefined' && history.length > 0) {
       try {
-        // Keep only the last 50 images to avoid exceeding localStorage quota (5MB limit)
-        const recentHistory = generationHistory.slice(-50)
+        const recentHistory = history.slice(-50)
         localStorage.setItem('imageGenerationHistory', JSON.stringify(recentHistory))
       } catch (error) {
-        console.error('Failed to save to localStorage (quota exceeded):', error)
-        // If quota is exceeded, clear old images and keep only recent ones
-        try {
-          const recentHistory = generationHistory.slice(-20)
-          localStorage.setItem('imageGenerationHistory', JSON.stringify(recentHistory))
-        } catch (error2) {
-          console.error('Failed to save even reduced history:', error2)
-        }
+        console.error('Failed to save to localStorage:', error)
       }
     }
-  }, [generationHistory])
+  }, [history])
 
-  // Handle Escape key to close fullscreen modal
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && fullscreenImage) {
@@ -182,13 +177,15 @@ export default function CreateImagePage() {
 
   const handleGenerate = async () => {
     if (!prompt.trim() || !workspaceId) {
-      console.log('Missing prompt or workspace:', { prompt: !!prompt.trim(), workspaceId })
+      console.log('Missing prompt or workspace')
       return
     }
 
+    // Clear canvas and show loading state
     setIsGenerating(true)
-    setCurrentImageIndex(null)
+    setSelectedImage(null)
     setFullscreenImage(null)
+
     try {
       const response = await fetch('/api/ai-studio/generate/image', {
         method: 'POST',
@@ -210,22 +207,19 @@ export default function CreateImagePage() {
       })
 
       const data = await response.json()
-      console.log('Generation response:', data)
-
       if (data.error) {
         console.error('Generation error:', data.error)
         setIsGenerating(false)
         return
       }
 
-      // Generation is async - we have an ID to poll
       const generationId = data.id
       console.log('Generation started:', generationId)
 
       // Poll for completion
       let isComplete = false
       let attempts = 0
-      const maxAttempts = 120 // 2 minutes with 1 second intervals
+      const maxAttempts = 120
 
       while (!isComplete && attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 1000))
@@ -239,15 +233,21 @@ export default function CreateImagePage() {
           })
 
           const statusData = await statusResponse.json()
-          console.log(`Poll attempt ${attempts}:`, statusData.status)
 
           if (statusData.status === 'completed') {
             if (statusData.imageUrls && statusData.imageUrls.length > 0) {
-              const newImages = [...generatedImages, ...statusData.imageUrls]
-              setGeneratedImages(newImages)
-              // Store generation history with prompt
-              const newHistory = statusData.imageUrls.map((img: string) => ({ image: img, prompt }))
-              setGenerationHistory([...generationHistory, ...newHistory])
+              // Add all new images to history
+              const newImages = statusData.imageUrls.map((img: string, idx: number) => ({
+                id: `${generationId}-${idx}`,
+                image: img,
+                prompt,
+                timestamp: Date.now(),
+              }))
+
+              setHistory(prev => [...prev, ...newImages])
+
+              // Select the last generated image
+              setSelectedImage(newImages[newImages.length - 1])
               console.log('Images received:', statusData.imageUrls.length)
             }
             isComplete = true
@@ -261,7 +261,7 @@ export default function CreateImagePage() {
       }
 
       if (!isComplete) {
-        console.log('Generation timeout after', attempts, 'attempts')
+        console.log('Generation timeout')
       }
     } catch (error) {
       console.error('Generation failed:', error)
@@ -270,18 +270,28 @@ export default function CreateImagePage() {
     }
   }
 
-  const getCanvasClass = () => {
-    switch (aspectRatio) {
-      case '16:9':
-        return 'aspect-video'
-      case '9:16':
-        return 'aspect-[9/16]'
-      case '3:4':
-        return 'aspect-[3/4]'
-      case '1:1':
-      default:
-        return 'aspect-square'
+  const handleDeleteImage = (imageId: string) => {
+    setHistory(prev => prev.filter(img => img.id !== imageId))
+    if (selectedImage?.id === imageId) {
+      setSelectedImage(null)
     }
+  }
+
+  const handleDownloadImage = (image: GeneratedImage) => {
+    const link = document.createElement('a')
+    link.href = image.image
+    link.download = `appalix-image-${image.id}.png`
+    link.click()
+  }
+
+  const handleSaveImage = (image: GeneratedImage) => {
+    // TODO: Implement save to project functionality
+    console.log('Save image:', image.id)
+  }
+
+  const handleReusePrompt = (image: GeneratedImage) => {
+    setPrompt(image.prompt)
+    setSelectedImage(image)
   }
 
   return (
@@ -306,45 +316,45 @@ export default function CreateImagePage() {
       <div className="flex-1 flex gap-4 p-4 overflow-hidden">
         {/* Left Panel - Controls */}
         <div className="w-72 overflow-y-auto">
-          <div className="flex-1 overflow-hidden px-4 py-4 space-y-2.5 flex flex-col text-sm">
-            {/* Model Selector Card */}
-            <div className="bg-gray-100 border border-gray-300 rounded-lg p-3 hover:border-gray-400 transition-colors">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-semibold text-black uppercase tracking-widest">Model</label>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">Pro</span>
-              </div>
+          <div className="px-4 py-4 space-y-2.5 flex flex-col text-sm">
+            {/* Model Selector */}
+            <div className="bg-gray-100 border border-gray-300 rounded-lg p-3">
+              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
+                Model
+              </label>
               {loadingModels ? (
-                <div className="w-full px-2 py-2 rounded-lg border border-gray-300 bg-white text-gray-600 text-xs font-medium">
-                  Loading models...
+                <div className="px-2 py-2 rounded-lg border border-gray-300 bg-white text-gray-600 text-xs">
+                  Loading...
                 </div>
               ) : (
                 <select
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
-                  className="w-full px-2 py-2 rounded-lg border border-gray-300 bg-white text-black text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer font-medium"
+                  className="w-full px-2 py-2 rounded-lg border border-gray-300 bg-white text-black text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
                   {models.map((m) => (
-                    <option key={m.id} value={m.id} className="bg-white text-black">
+                    <option key={m.id} value={m.id}>
                       {m.name}
                     </option>
                   ))}
                 </select>
               )}
-              <p className="text-xs text-gray-600 mt-1.5">Powered by Leonardo AI</p>
             </div>
 
             {/* Quality Preset */}
             <div>
-              <label className="block text-xs font-semibold text-black uppercase tracking-widest mb-2">Quality</label>
+              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
+                Quality
+              </label>
               <div className="grid grid-cols-3 gap-2">
                 {QUALITY_PRESETS.map((preset) => (
                   <button
                     key={preset.id}
                     onClick={() => setQualityPreset(preset.id)}
-                    className={`py-2.5 px-2.5 rounded-lg text-xs font-bold transition-all duration-200 border ${
+                    className={`py-2 px-2 rounded-lg text-xs font-bold transition-all border shadow-md ${
                       qualityPreset === preset.id
-                        ? 'bg-blue-600 text-white border-blue-700 shadow-lg shadow-blue-600/40 hover:shadow-blue-600/50'
-                        : 'bg-white text-gray-700 border-gray-200 shadow-md hover:shadow-lg hover:border-gray-300'
+                        ? 'bg-blue-600 text-white border-blue-700 shadow-lg'
+                        : 'bg-white text-gray-700 border-gray-200 hover:shadow-lg'
                     }`}
                   >
                     {preset.label}
@@ -353,9 +363,9 @@ export default function CreateImagePage() {
               </div>
             </div>
 
-            {/* Resolution Selector */}
+            {/* Resolution */}
             <div>
-              <label className="block text-xs font-semibold text-black uppercase tracking-widest mb-2">
+              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
                 Resolution
               </label>
               <div className="grid grid-cols-4 gap-1.5">
@@ -363,10 +373,10 @@ export default function CreateImagePage() {
                   <button
                     key={res.id}
                     onClick={() => setResolution(res.id)}
-                    className={`py-1.5 px-1 rounded-lg text-center transition-all duration-200 border shadow-md text-xs font-semibold ${
+                    className={`py-1.5 px-1 rounded-lg text-xs font-semibold transition-all border shadow-md ${
                       resolution === res.id
-                        ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-600/40'
-                        : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 hover:shadow-lg'
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-gray-700 border-gray-200 hover:shadow-lg'
                     }`}
                   >
                     {res.label}
@@ -375,52 +385,47 @@ export default function CreateImagePage() {
               </div>
             </div>
 
-            {/* Creativity Slider */}
+            {/* Creativity */}
             <div>
-              <label className="block text-xs font-semibold text-black uppercase tracking-widest mb-2">
-                Creativity: <span className="text-blue-600 text-xs">{temperature.toFixed(1)}</span>
+              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
+                Creativity: <span className="text-blue-600">{temperature.toFixed(1)}</span>
               </label>
-              <div className="relative pt-1">
-                <input
-                  type="range"
-                  min="0"
-                  max="2"
-                  step="0.1"
-                  value={temperature}
-                  onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                  className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                  style={{
-                    background: `linear-gradient(to right, #2563eb 0%, #2563eb ${(temperature / 2) * 100}%, #d1d5db ${(temperature / 2) * 100}%, #d1d5db 100%)`
-                  }}
-                />
-              </div>
+              <input
+                type="range"
+                min="0"
+                max="2"
+                step="0.1"
+                value={temperature}
+                onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                className="w-full h-2 bg-gray-300 rounded-lg accent-blue-600"
+              />
               <div className="flex justify-between text-xs text-gray-600 mt-1.5">
                 <span>Consistent</span>
                 <span>Creative</span>
               </div>
             </div>
 
-            {/* Style Selector */}
+            {/* Style */}
             <div>
-              <label className="block text-xs font-semibold text-black uppercase tracking-widest mb-2">
+              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
                 Style
               </label>
               <select
                 value={style}
                 onChange={(e) => setStyle(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-black text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer shadow-md hover:shadow-lg transition-all"
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-black text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-md"
               >
                 {STYLES.map((s) => (
-                  <option key={s} value={s} className="bg-white text-black">
+                  <option key={s} value={s}>
                     {s}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Lighting Effects */}
+            {/* Lighting */}
             <div>
-              <label className="block text-xs font-semibold text-black uppercase tracking-widest mb-2">
+              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
                 Lighting
               </label>
               <div className="grid grid-cols-3 gap-1.5">
@@ -434,10 +439,10 @@ export default function CreateImagePage() {
                           : [...prev, light.label]
                       )
                     }}
-                    className={`py-2 px-2 rounded-lg text-center transition-all duration-200 border text-xs font-semibold shadow-md ${
+                    className={`py-2 px-2 rounded-lg text-xs font-semibold transition-all border shadow-md ${
                       lighting.includes(light.label)
-                        ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-600/40'
-                        : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:shadow-lg'
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-gray-700 border-gray-200 hover:shadow-lg'
                     }`}
                   >
                     {light.label}
@@ -446,9 +451,9 @@ export default function CreateImagePage() {
               </div>
             </div>
 
-            {/* Size (Aspect Ratio) */}
+            {/* Size */}
             <div>
-              <label className="block text-xs font-semibold text-black uppercase tracking-widest mb-2">
+              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
                 Size
               </label>
               <div className="grid grid-cols-4 gap-1.5">
@@ -456,10 +461,10 @@ export default function CreateImagePage() {
                   <button
                     key={ar}
                     onClick={() => setAspectRatio(ar)}
-                    className={`py-1.5 px-1 rounded-lg text-xs font-bold transition-all duration-200 border shadow-md ${
+                    className={`py-1.5 px-1 rounded-lg text-xs font-bold transition-all border shadow-md ${
                       aspectRatio === ar
-                        ? 'bg-blue-600 text-white border-blue-700 shadow-lg shadow-blue-600/40'
-                        : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:shadow-lg'
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-gray-700 border-gray-200 hover:shadow-lg'
                     }`}
                   >
                     {aspectRatioLabels[ar]}
@@ -468,175 +473,144 @@ export default function CreateImagePage() {
               </div>
             </div>
 
-            {/* Qty */}
+            {/* Quantity */}
             <div>
-              <label className="block text-xs font-semibold text-black uppercase tracking-widest mb-2">
+              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
                 Qty: <span className="text-blue-600">{quantity}</span>
               </label>
-              <div className="relative pt-1">
-                <input
-                  type="range"
-                  min="1"
-                  max="12"
-                  step="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value))}
-                  className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                  style={{
-                    background: `linear-gradient(to right, #2563eb 0%, #2563eb ${((quantity - 1) / 11) * 100}%, #d1d5db ${((quantity - 1) / 11) * 100}%, #d1d5db 100%)`
-                  }}
-                />
-              </div>
+              <input
+                type="range"
+                min="1"
+                max="12"
+                step="1"
+                value={quantity}
+                onChange={(e) => setQuantity(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-300 rounded-lg accent-blue-600"
+              />
             </div>
           </div>
         </div>
 
-        {/* Center Panel - Canvas & Prompt */}
+        {/* Center Panel - Canvas */}
         <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-          {/* Canvas Preview - Show template in selected aspect ratio */}
-          <div className="flex-1 bg-white rounded-xl shadow-lg p-8 flex items-center justify-center overflow-hidden" data-canvas>
-            <div
-              className={`relative bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-lg transition-shadow`}
-              style={{
-                width: aspectRatio === '16:9' ? '100%' : aspectRatio === '9:16' ? '60%' : aspectRatio === '3:4' ? '70%' : '80%',
-                aspectRatio: aspectRatio === '16:9' ? '16/9' : aspectRatio === '9:16' ? '9/16' : aspectRatio === '3:4' ? '3/4' : '1/1',
-              }}
-            >
-              {currentImageIndex !== null && generationHistory[currentImageIndex] ? (
-                <Image
-                  src={generationHistory[currentImageIndex].image}
-                  alt="Generated"
-                  fill
-                  className="object-cover rounded-lg"
-                />
-              ) : generatedImages.length > 0 ? (
-                <Image
-                  src={generatedImages[generatedImages.length - 1]}
-                  alt="Generated"
-                  fill
-                  className="object-cover rounded-lg"
-                />
-              ) : isGenerating ? (
-                <div className="text-center">
-                  <Loader className="w-12 h-12 mx-auto mb-2 animate-spin text-gray-400" />
-                  <p className="text-sm text-gray-500">Generating...</p>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <Sparkles className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm text-gray-500">{aspectRatioLabels[aspectRatio]}</p>
-                </div>
-              )}
-            </div>
+          {/* Canvas Preview */}
+          <div
+            className="flex-1 bg-white rounded-xl shadow-lg p-8 flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-xl transition-shadow"
+            onClick={() => selectedImage && setFullscreenImage(selectedImage.image)}
+            data-canvas
+          >
+            {isGenerating ? (
+              <div className="text-center">
+                <Loader className="w-16 h-16 mx-auto mb-4 animate-spin text-blue-600" />
+                <p className="text-sm text-gray-600">Generating image...</p>
+              </div>
+            ) : selectedImage ? (
+              <img
+                src={selectedImage.image}
+                alt="Generated"
+                className="max-w-full max-h-full w-auto h-auto object-contain"
+              />
+            ) : (
+              <div className="text-center">
+                <Sparkles className="w-16 h-16 mx-auto mb-4 opacity-30 text-gray-400" />
+                <p className="text-sm text-gray-500">{aspectRatioLabels[aspectRatio]}</p>
+              </div>
+            )}
           </div>
 
           {/* Prompt Bar */}
-          <div className="bg-white rounded-xl shadow-2xl p-4 border border-gray-300">
-            <div className="relative">
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Describe what you want to create..."
-                rows={3}
-                maxLength={2000}
-                className="w-full px-4 py-3 pr-16 text-black placeholder-gray-500 bg-white border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              />
+          <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-300">
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Describe what you want to create..."
+              rows={3}
+              maxLength={2000}
+              className="w-full px-4 py-3 pr-16 text-black placeholder-gray-500 bg-white border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            />
+            <div className="flex justify-between items-center mt-2">
               <button
                 onClick={handleGenerate}
                 disabled={!prompt.trim() || isGenerating || credits < quantity}
-                className="absolute bottom-2 right-2 px-4 py-2 bg-black text-white text-xs font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors"
+                className="px-6 py-2 bg-black text-white text-sm font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors"
               >
-                {isGenerating ? '...' : '→'}
+                {isGenerating ? 'Generating...' : 'Generate'}
               </button>
-            </div>
-            <div className="flex justify-end mt-2">
-              <span className="text-xs text-gray-500">
-                {prompt.length}/2000
-              </span>
+              <span className="text-xs text-gray-500">{prompt.length}/2000</span>
             </div>
           </div>
         </div>
 
-        {/* Right Panel - Gallery */}
+        {/* Right Panel - History */}
         <div className="w-72 flex flex-col bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="px-4 py-3 bg-gray-100 border-b border-gray-200">
-            <h2 className="text-sm font-semibold text-gray-900">
-              Generated Images
-            </h2>
-            <p className="text-xs text-gray-600 mt-1">
-              {generatedImages.length} image{generatedImages.length !== 1 ? 's' : ''}
-            </p>
+            <h2 className="text-sm font-semibold text-gray-900">Generated Images</h2>
+            <p className="text-xs text-gray-600 mt-1">{history.length} image{history.length !== 1 ? 's' : ''}</p>
           </div>
 
-          {/* Image Grid */}
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            {generatedImages.length === 0 ? (
+            {history.length === 0 ? (
               <div className="flex items-center justify-center h-32 text-gray-500 text-sm">
                 No images yet
               </div>
             ) : (
-              [...generationHistory].reverse().map((item, idx) => {
-                const actualIdx = generationHistory.length - 1 - idx
-                return (
-                  <div
-                    key={actualIdx}
-                    className={`group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all ${
-                      currentImageIndex === actualIdx ? 'ring-2 ring-blue-500' : ''
-                    }`}
-                  >
-                    <img
-                      src={item.image}
-                      alt={`Generated ${actualIdx + 1}`}
-                      className="w-full h-full object-cover cursor-pointer"
-                      onClick={() => {
-                        console.log('Image clicked:', actualIdx, item.image)
-                        setCurrentImageIndex(actualIdx)
-                        setPrompt(item.prompt)
-                        setFullscreenImage(item.image)
+              [...history].reverse().map((image) => (
+                <div
+                  key={image.id}
+                  className={`group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all ${
+                    selectedImage?.id === image.id ? 'ring-2 ring-blue-500' : ''
+                  }`}
+                >
+                  <img
+                    src={image.image}
+                    alt="Generated"
+                    className="w-full h-full object-cover"
+                    onClick={() => setSelectedImage(image)}
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                    <button
+                      className="p-2 bg-blue-500 hover:bg-blue-600 rounded-full text-white transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleReusePrompt(image)
                       }}
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 pointer-events-none">
-                      <button
-                        className="p-2 bg-blue-500 hover:bg-blue-600 rounded-full transition-colors pointer-events-auto text-white"
-                        title="Open in Canvas"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setCurrentImageIndex(actualIdx)
-                          setPrompt(item.prompt)
-                          // Scroll to canvas
-                          document.querySelector('[data-canvas]')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                        }}
-                      >
-                        <Sparkles className="w-4 h-4" />
-                      </button>
-                      <button
-                        className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors pointer-events-auto"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                        }}
-                      >
-                        <Download className="w-4 h-4 text-gray-700" />
-                      </button>
-                      <button
-                        className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors pointer-events-auto"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                        }}
-                      >
-                        <Heart className="w-4 h-4 text-gray-700" />
-                      </button>
-                      <button
-                        className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors pointer-events-auto"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4 text-gray-700" />
-                      </button>
-                    </div>
+                      title="Reuse Prompt"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                    <button
+                      className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDownloadImage(image)
+                      }}
+                      title="Download"
+                    >
+                      <Download className="w-4 h-4 text-gray-700" />
+                    </button>
+                    <button
+                      className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleSaveImage(image)
+                      }}
+                      title="Save"
+                    >
+                      <Heart className="w-4 h-4 text-gray-700" />
+                    </button>
+                    <button
+                      className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteImage(image.id)
+                      }}
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-700" />
+                    </button>
                   </div>
-                )
-              })
+                </div>
+              ))
             )}
           </div>
         </div>
@@ -662,68 +636,8 @@ export default function CreateImagePage() {
               className="absolute top-4 right-4 p-3 bg-white rounded-full hover:bg-gray-200 transition-colors shadow-lg"
               title="Close (Esc)"
             >
-              <span className="text-gray-700 text-2xl font-light">×</span>
+              <X className="w-6 h-6 text-gray-700" />
             </button>
-
-            {/* Variant Options */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/80 text-white px-6 py-4 rounded-lg flex gap-3 items-center shadow-xl backdrop-blur-sm">
-              <span className="text-sm font-medium">Create Variants:</span>
-              <button
-                onClick={() => {
-                  setStyle('Cinematic')
-                  setFullscreenImage(null)
-                  setTimeout(() => handleGenerate(), 100)
-                }}
-                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded text-xs font-medium transition-colors"
-              >
-                Cinematic
-              </button>
-              <button
-                onClick={() => {
-                  setStyle('Anime')
-                  setFullscreenImage(null)
-                  setTimeout(() => handleGenerate(), 100)
-                }}
-                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 rounded text-xs font-medium transition-colors"
-              >
-                Anime
-              </button>
-              <button
-                onClick={() => {
-                  setStyle('Illustration')
-                  setFullscreenImage(null)
-                  setTimeout(() => handleGenerate(), 100)
-                }}
-                className="px-3 py-1.5 bg-pink-600 hover:bg-pink-700 rounded text-xs font-medium transition-colors"
-              >
-                Illustration
-              </button>
-              <button
-                onClick={() => {
-                  setQualityPreset('quality')
-                  setFullscreenImage(null)
-                  setTimeout(() => handleGenerate(), 100)
-                }}
-                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 rounded text-xs font-medium transition-colors"
-              >
-                High Quality
-              </button>
-              <button
-                onClick={() => {
-                  setTemperature(Math.random() * 2)
-                  setFullscreenImage(null)
-                  setTimeout(() => handleGenerate(), 100)
-                }}
-                className="px-3 py-1.5 bg-green-600 hover:bg-green-700 rounded text-xs font-medium transition-colors"
-              >
-                Different Vibe
-              </button>
-              <div className="text-xs text-gray-300 ml-2">or edit prompt below</div>
-            </div>
-
-            <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 text-gray-300 text-xs">
-              Press ESC to close
-            </div>
           </div>
         </div>
       )}
