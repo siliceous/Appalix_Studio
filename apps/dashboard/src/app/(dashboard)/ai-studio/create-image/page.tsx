@@ -550,13 +550,13 @@ export default function CreateImagePage() {
 
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
             {history.length === 0 ? (
-              <div className="flex items-center justify-center h-32 text-gray-500 text-sm">
+              <div key="empty" className="flex items-center justify-center h-32 text-gray-500 text-sm">
                 No images yet
               </div>
             ) : (
-              [...history].reverse().map((image) => (
+              [...history].reverse().map((image, idx) => (
                 <div
-                  key={image.id}
+                  key={`image-${image.id}`}
                   className={`group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all ${
                     selectedImage?.id === image.id ? 'ring-2 ring-blue-500' : ''
                   }`}
