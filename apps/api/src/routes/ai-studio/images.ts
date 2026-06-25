@@ -106,56 +106,76 @@ export async function imageRoutes(app: FastifyInstance) {
       try {
         if (isGeminiModel) {
           console.log('[Image Generation] Calling Gemini for generation:', generationId)
-          jobId = await gemini.generateImage({
-            prompt,
-            negativePrompt,
-            style,
-            lighting,
-            aspectRatio,
-            temperature,
-            numImages: quantity,
-            modelId: model,
-          })
-          console.log('[Image Generation] Gemini job created:', jobId)
+          try {
+            jobId = await gemini.generateImage({
+              prompt,
+              negativePrompt,
+              style,
+              lighting,
+              aspectRatio,
+              temperature,
+              numImages: quantity,
+              modelId: model,
+            })
+            console.log('[Image Generation] Gemini job created:', jobId)
+          } catch (geminiError) {
+            console.error('[Image Generation] Gemini error details:', geminiError instanceof Error ? geminiError.message : geminiError)
+            throw geminiError
+          }
         } else if (isNanoBananaModel) {
           console.log('[Image Generation] Calling Nano Banana for generation:', generationId)
-          jobId = await nanoBanana.generateImage({
-            prompt,
-            negativePrompt,
-            style,
-            lighting,
-            aspectRatio,
-            temperature,
-            numImages: quantity,
-            modelId: model,
-          })
-          console.log('[Image Generation] Nano Banana job created:', jobId)
+          try {
+            jobId = await nanoBanana.generateImage({
+              prompt,
+              negativePrompt,
+              style,
+              lighting,
+              aspectRatio,
+              temperature,
+              numImages: quantity,
+              modelId: model,
+            })
+            console.log('[Image Generation] Nano Banana job created:', jobId)
+          } catch (nbError) {
+            console.error('[Image Generation] Nano Banana error details:', nbError instanceof Error ? nbError.message : nbError)
+            throw nbError
+          }
         } else if (isSeedenceModel) {
           console.log('[Image Generation] Calling Seedence for generation:', generationId)
-          jobId = await seedence.generateImage({
-            prompt,
-            negativePrompt,
-            style,
-            lighting,
-            aspectRatio,
-            temperature,
-            numImages: quantity,
-            modelId: model,
-          })
-          console.log('[Image Generation] Seedence job created:', jobId)
+          try {
+            jobId = await seedence.generateImage({
+              prompt,
+              negativePrompt,
+              style,
+              lighting,
+              aspectRatio,
+              temperature,
+              numImages: quantity,
+              modelId: model,
+            })
+            console.log('[Image Generation] Seedence job created:', jobId)
+          } catch (seedError) {
+            console.error('[Image Generation] Seedence error details:', seedError instanceof Error ? seedError.message : seedError)
+            throw seedError
+          }
         } else {
           console.log('[Image Generation] Calling Stability AI for generation:', generationId)
-          jobId = await stability.generateImage({
-            prompt,
-            negativePrompt,
-            style,
-            lighting,
-            aspectRatio,
-            temperature,
-            numImages: quantity,
-            modelId: model || 'sd3.5-large-turbo',
-          })
-          console.log('[Image Generation] Stability AI job created:', jobId)
+          try {
+            jobId = await stability.generateImage({
+              prompt,
+              negativePrompt,
+              style,
+              lighting,
+              aspectRatio,
+              temperature,
+              numImages: quantity,
+              modelId: model || 'sd3.5-large-turbo',
+            })
+            console.log('[Image Generation] Stability AI job created:', jobId)
+          } catch (stabError) {
+            console.error('[Image Generation] Stability error details:', stabError instanceof Error ? stabError.message : stabError)
+            throw stabError
+          }
         }
 
         // Update generation record with job ID

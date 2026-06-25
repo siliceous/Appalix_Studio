@@ -33,6 +33,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Backend returned invalid JSON' }, { status: 500 })
     }
 
+    console.log('[Frontend Proxy] Generation response:', {
+      id: data.id,
+      status: data.status,
+      hasImageUrls: !!data.imageUrls,
+      type: data.type,
+    })
     return NextResponse.json(data, { status: response.status })
   } catch (error) {
     console.error('API proxy error:', error)

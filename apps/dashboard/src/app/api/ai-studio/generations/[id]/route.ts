@@ -32,6 +32,13 @@ export async function GET(
     }
 
     const data = await response.json()
+    console.log('[Frontend Proxy] Generation status response:', {
+      id: data.id,
+      status: data.status,
+      hasImageUrls: !!data.imageUrls,
+      imageUrlsLength: data.imageUrls?.length || 0,
+      firstImageLength: data.imageUrls?.[0]?.length || 0,
+    })
     return NextResponse.json(data)
   } catch (error) {
     console.error('API proxy error:', error)
