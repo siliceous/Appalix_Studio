@@ -400,7 +400,7 @@ export async function imageRoutes(app: FastifyInstance) {
       // Fetch all completed image generations
       const { data: generations, error } = await supabase
         .from('ai_image_generations')
-        .select('id, prompt, created_at, output_url, output_urls, status, quantity')
+        .select('id, prompt, created_at, output_url, output_urls, status, quantity, aspect_ratio')
         .eq('workspace_id', workspaceId)
         .eq('status', 'completed')
         .order('created_at', { ascending: false })

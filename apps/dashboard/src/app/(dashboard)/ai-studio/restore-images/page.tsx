@@ -9,6 +9,7 @@ interface RestoredImage {
   image: string
   prompt: string
   timestamp: number
+  aspectRatio?: string
 }
 
 export default function RestoreImagesPage() {
@@ -66,6 +67,7 @@ export default function RestoreImagesPage() {
               image: imageUrl,
               prompt: img.prompt || 'Generated image',
               timestamp: new Date(img.created_at).getTime(),
+              aspectRatio: img.aspect_ratio || '1:1', // Store aspect ratio from database
             }
           })
 
