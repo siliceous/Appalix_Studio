@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Download, Trash2, Copy, Search, Loader } from 'lucide-react'
+import { ArrowLeft, Download, Trash2, Copy, Search, Loader, Maximize2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import Masonry from 'react-masonry-css'
+import './masonry.css'
 
 interface GeneratedImage {
   id: string
@@ -10,6 +12,7 @@ interface GeneratedImage {
   prompt: string
   timestamp: number
   deletedAt?: number
+  aspectRatio?: string
 }
 
 export default function AIStudioLibrary() {
@@ -73,6 +76,24 @@ export default function AIStudioLibrary() {
     localStorage.setItem('imageGenerationHistory', JSON.stringify(remaining))
   }
 
+  const getAspectRatioPadding = (ratio?: string): string => {
+    if (!ratio) return 'aspect-square' // Default 1:1
+
+    switch (ratio) {
+      case '16:9':
+        return 'aspect-video' // 16:9
+      case '9:16':
+        return 'aspect-[9/16]' // 9:16
+      case '3:4':
+        return 'aspect-[3/4]' // 3:4
+      case '4:3':
+        return 'aspect-[4/3]' // 4:3
+      case '1:1':
+      default:
+        return 'aspect-square' // 1:1
+    }
+  }
+
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Header */}
@@ -128,20 +149,32 @@ export default function AIStudioLibrary() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <Masonry
+            breakpointCols={{
+              default: 4,
+              1536: 4,
+              1280: 3,
+              1024: 3,
+              768: 2,
+              640: 2,
+            }}
+            className="masonry-grid"
+            columnClassName="masonry-grid-column"
+          >
             {filteredImages.map((image) => (
               <div
                 key={image.id}
-                className="group relative rounded-lg overflow-hidden border border-gray-300 hover:shadow-lg transition-all duration-300 bg-gray-100 aspect-square"
+                className="group relative rounded-lg overflow-hidden border border-gray-300 hover:shadow-lg transition-all duration-300 bg-gray-100 break-inside-avoid"
               >
-                <img
-                  src={image.image}
-                  alt={image.prompt}
-                  className="w-full h-full object-cover"
-                />
+                <div className={`relative w-full ${getAspectRatioPadding(image.aspectRatio)}`}>
+                  <img
+                    src={image.image}
+                    alt={image.prompt}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
 
-                {/* Hover Overlay */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors duration-300 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 p-3">
+                  {/* Hover Overlay */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors duration-300 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 p-3">
                   <div className="space-y-2 w-full">
                     {/* Prompt Preview */}
                     <p className="text-white text-xs text-center line-clamp-2 mb-3">
@@ -182,13 +215,14 @@ export default function AIStudioLibrary() {
                   </div>
                 </div>
 
-                {/* Created Date */}
-                <div className="absolute bottom-2 left-2 text-xs text-white bg-black/50 px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                  {new Date(image.timestamp).toLocaleDateString()}
+                  {/* Created Date */}
+                  <div className="absolute bottom-2 left-2 text-xs text-white bg-black/50 px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                    {new Date(image.timestamp).toLocaleDateString()}
+                  </div>
                 </div>
               </div>
             ))}
-          </div>
+          </Masonry>
         )}
       </div>
     </div>

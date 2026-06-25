@@ -381,12 +381,13 @@ export default function CreateImagePage() {
               firstImageSize: statusData.imageUrls?.[0]?.length || 0,
             }))
             if (statusData.imageUrls && statusData.imageUrls.length > 0) {
-              // Add all new images to history
+              // Add all new images to history with aspect ratio
               const newImages = statusData.imageUrls.map((img: string, idx: number) => ({
                 id: `${generationId}-${idx}`,
                 image: img,
                 prompt: getEnhancedPrompt(),
                 timestamp: Date.now(),
+                aspectRatio: aspectRatio, // Store the aspect ratio
               }))
 
               console.log('Adding images to history:', newImages.length, 'images')
