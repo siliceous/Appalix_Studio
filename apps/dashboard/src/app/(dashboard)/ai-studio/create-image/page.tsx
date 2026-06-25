@@ -695,7 +695,7 @@ export default function CreateImagePage() {
         </div>
 
         {/* Right Panel - History */}
-        <div className="w-72 flex flex-col bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="w-96 flex flex-col bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="px-4 py-3 bg-gray-100 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-gray-900">Generated Images</h2>
@@ -713,7 +713,7 @@ export default function CreateImagePage() {
             </p>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          <div className="flex-1 overflow-y-auto p-3 grid grid-cols-2 gap-2">
             {showTrash ? (
               // Trash view
               history.filter(img => img.deletedAt).length === 0 ? (
@@ -725,7 +725,7 @@ export default function CreateImagePage() {
                   !image.deletedAt ? null : (
                     <div
                       key={`image-${image.id || image.timestamp}-${idx}`}
-                      className="group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all opacity-60 hover:opacity-100"
+                      className="group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all opacity-60 hover:opacity-100 col-span-1"
                     >
                       <img
                         src={image.image}
@@ -769,8 +769,8 @@ export default function CreateImagePage() {
                 [...history].filter(img => !img.deletedAt).reverse().map((image, idx) => (
                   <div
                     key={`image-${image.id || image.timestamp}-${idx}`}
-                    className={`group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all ${
-                      selectedImage?.id === image.id ? 'ring-2 ring-blue-500' : ''
+                    className={`group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all col-span-1 ${
+                      selectedImage?.id === image.id ? 'ring-2 ring-blue-500 ring-offset-1' : ''
                     }`}
                     onClick={() => {
                       setSelectedImage(image)
