@@ -82,12 +82,43 @@ const aspectRatioLabels: Record<string, string> = {
 
 const BODY_TYPES = [
   { id: 'none', label: 'None', phrase: '' },
+  // Curvy & Full-Figured
   { id: 'busty', label: 'Busty', phrase: 'naturally full-figured woman with a soft, healthy build' },
-  { id: 'mature', label: 'Mature', phrase: 'average Australian woman in her late 40s' },
-  { id: 'size16', label: 'Size 16', phrase: 'realistic size 16 body' },
-  { id: 'chubby', label: 'Chubby', phrase: 'naturally chubby woman' },
-  { id: 'plussize', label: 'Plus-Size', phrase: 'plus-size woman' },
   { id: 'curvy', label: 'Curvy', phrase: 'fuller hips, thicker arms, soft stomach' },
+  { id: 'hourglass', label: 'Hourglass', phrase: 'woman with an hourglass figure, defined waist, full curves' },
+  { id: 'pear', label: 'Pear Shape', phrase: 'woman with a pear-shaped body, fuller hips and thighs' },
+  { id: 'chubby', label: 'Chubby', phrase: 'naturally chubby woman with a round face and soft features' },
+  { id: 'plussize', label: 'Plus-Size', phrase: 'plus-size woman, confident and beautiful' },
+  { id: 'size16', label: 'Size 16', phrase: 'realistic size 16 body' },
+  // Age & Appearance
+  { id: 'mature', label: 'Mature', phrase: 'average Australian woman in her late 40s' },
+  { id: 'milf', label: 'MILF', phrase: 'gorgeous mature woman in her 40s with a youthful appearance' },
+  { id: 'older', label: 'Older Woman', phrase: 'beautiful woman in her 50s with elegant mature features' },
+  { id: 'young', label: 'Young Woman', phrase: 'young woman in her 20s with youthful, fresh features' },
+  // Muscle & Athletic
+  { id: 'athletic', label: 'Athletic', phrase: 'athletic woman with defined muscles and toned physique' },
+  { id: 'muscular', label: 'Muscular', phrase: 'muscular woman with visible muscle definition' },
+  { id: 'fit', label: 'Fit', phrase: 'fit and healthy woman with a lean, toned body' },
+  // Specific Features
+  { id: 'bigboobs', label: 'Big Breasts', phrase: 'woman with large, natural-looking breasts' },
+  { id: 'bigbutt', label: 'Big Butt', phrase: 'woman with a full, round butt and thick thighs' },
+  { id: 'thickthighs', label: 'Thick Thighs', phrase: 'woman with thick, muscular thighs and full hips' },
+  { id: 'softbelly', label: 'Soft Belly', phrase: 'woman with a soft, round belly and natural curves' },
+  { id: 'tallwoman', label: 'Tall', phrase: 'tall, statuesque woman with long legs' },
+  { id: 'petite', label: 'Petite', phrase: 'petite woman with a delicate, small frame' },
+  // Ethnicity & Heritage
+  { id: 'caucasian', label: 'Caucasian', phrase: 'Caucasian woman with fair skin' },
+  { id: 'african', label: 'African', phrase: 'African woman with rich dark skin and natural beauty' },
+  { id: 'latina', label: 'Latina', phrase: 'Latina woman with warm, sun-kissed skin and natural curves' },
+  { id: 'asian', label: 'Asian', phrase: 'Asian woman with delicate features and natural beauty' },
+  { id: 'indian', label: 'Indian', phrase: 'Indian woman with warm brown skin and exotic features' },
+  { id: 'middleeast', label: 'Middle Eastern', phrase: 'Middle Eastern woman with olive skin and striking features' },
+  // Hair & Features
+  { id: 'longhair', label: 'Long Hair', phrase: 'woman with long, flowing hair' },
+  { id: 'shorthair', label: 'Short Hair', phrase: 'woman with stylish short hair' },
+  { id: 'curlyhair', label: 'Curly Hair', phrase: 'woman with thick, curly hair' },
+  { id: 'tattoos', label: 'Tattooed', phrase: 'woman with visible tattoos and body art' },
+  { id: 'pierced', label: 'Pierced', phrase: 'woman with multiple piercings' },
 ]
 
 interface GeneratedImage {
