@@ -11,6 +11,13 @@ const QUALITY_PRESETS = [
 ]
 
 
+const RESOLUTIONS = [
+  { id: '720', label: '720p', multiplier: 0.5, description: 'HD' },
+  { id: '1080', label: '1080p', multiplier: 1.0, description: 'Full HD' },
+  { id: '2k', label: '2K', multiplier: 2.0, description: '2K' },
+  { id: '4k', label: '4K', multiplier: 4.0, description: '4K Ultra' },
+]
+
 const STYLES = [
   'Photorealistic',
   'Cinematic',
@@ -89,6 +96,7 @@ export default function CreateImagePage() {
   const [models, setModels] = useState<any[]>([])
   const [loadingModels, setLoadingModels] = useState(true)
   const [qualityPreset, setQualityPreset] = useState('balanced')
+  const [resolution, setResolution] = useState('1080')
   const [temperature, setTemperature] = useState(1.0)
   const [style, setStyle] = useState('Photorealistic')
   const [lighting, setLighting] = useState<string[]>(['Daylight'])
@@ -218,6 +226,7 @@ export default function CreateImagePage() {
           prompt,
           model,
           qualityPreset,
+          resolution,
           temperature,
           style,
           lighting: lighting.join(','),
@@ -314,6 +323,17 @@ export default function CreateImagePage() {
         img.id === imageId ? { ...img, deletedAt: undefined } : img
       )
     )
+  }
+
+  const getResolutionMultiplier = (res: string) => {
+    const resData = RESOLUTIONS.find(r => r.id === res)
+    return resData?.multiplier || 1.0
+  }
+
+  const calculateCost = () => {
+    const baseCredits = 10
+    const resolutionMultiplier = getResolutionMultiplier(resolution)
+    return Math.ceil(baseCredits * resolutionMultiplier * quantity)
   }
 
   const handlePermanentlyDeleteImage = (imageId: string) => {
@@ -472,6 +492,29 @@ export default function CreateImagePage() {
               </div>
             </div>
 
+            {/* Resolution */}
+            <div>
+              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
+                Resolution
+              </label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {RESOLUTIONS.map((res) => (
+                  <button
+                    key={res.id}
+                    onClick={() => setResolution(res.id)}
+                    className={`py-2 px-1 rounded-lg text-xs font-semibold transition-all border shadow-md ${
+                      resolution === res.id
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-gray-700 border-gray-200 hover:shadow-lg'
+                    }`}
+                    title={res.description}
+                  >
+                    {res.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Creativity */}
             <div>
               <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
@@ -623,10 +666,10 @@ export default function CreateImagePage() {
             <div className="flex justify-between items-center mt-2">
               <button
                 onClick={handleGenerate}
-                disabled={!prompt.trim() || isGenerating || credits < quantity}
+                disabled={!prompt.trim() || isGenerating || credits < calculateCost()}
                 className="px-6 py-2 bg-black text-white text-sm font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors"
               >
-                {isGenerating ? 'Generating...' : 'Generate'}
+                {isGenerating ? 'Generating...' : `Generate (${calculateCost()} credits)`}
               </button>
               <span className="text-xs text-gray-500">{prompt.length}/2000</span>
             </div>

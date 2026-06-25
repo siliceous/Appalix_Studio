@@ -16,7 +16,7 @@ interface ImageGenerationRequest {
   quantity: number
   referenceImage?: string
   temperature?: number
-  resolution?: string
+  resolution?: string // 720, 1080, 2k, 4k
 }
 
 export async function imageRoutes(app: FastifyInstance) {

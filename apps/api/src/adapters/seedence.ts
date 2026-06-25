@@ -9,6 +9,7 @@ export interface SeedenceGenerationParams {
   numImages: number
   modelId?: string
   temperature?: number
+  resolution?: string
 }
 
 class SeedenceAdapter {
@@ -28,7 +29,7 @@ class SeedenceAdapter {
       throw new Error('Seedence API key not configured')
     }
 
-    const prompt = this.buildPrompt(params.prompt, params.style, params.lighting)
+    const prompt = this.buildPrompt(params.prompt, params.style, params.lighting, params.resolution)
 
     const payload = {
       prompt: prompt,
@@ -144,8 +145,22 @@ class SeedenceAdapter {
     ]
   }
 
-  private buildPrompt(userPrompt: string, style?: string, lighting?: string): string {
+  private buildPrompt(userPrompt: string, style?: string, lighting?: string, resolution?: string): string {
     let fullPrompt = userPrompt
+
+    // Add resolution quality hint
+    if (resolution) {
+      const resolutionMap: Record<string, string> = {
+        '720': 'high quality 720p resolution',
+        '1080': 'high quality 1080p full HD resolution',
+        '2k': 'high quality 2K resolution',
+        '4k': 'ultra high quality 4K resolution',
+      }
+      const resHint = resolutionMap[resolution] || ''
+      if (resHint) {
+        fullPrompt = `${resHint}, ${fullPrompt}`
+      }
+    }
 
     if (style && style !== 'Photorealistic') {
       const styleMap: Record<string, string> = {

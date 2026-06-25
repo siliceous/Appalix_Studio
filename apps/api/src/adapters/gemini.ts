@@ -9,6 +9,7 @@ export interface GeminiGenerationParams {
   numImages: number
   modelId?: string
   temperature?: number
+  resolution?: string
 }
 
 class GeminiAdapter {
@@ -27,7 +28,7 @@ class GeminiAdapter {
       throw new Error('Gemini API key not configured')
     }
 
-    const prompt = this.buildPrompt(params.prompt, params.style, params.lighting, params.aspectRatio)
+    const prompt = this.buildPrompt(params.prompt, params.style, params.lighting, params.aspectRatio, params.resolution)
     const numImages = params.numImages || 1
 
     // Gemini API only generates 1 image per request, so we need to make multiple requests
@@ -152,8 +153,22 @@ class GeminiAdapter {
     ]
   }
 
-  private buildPrompt(userPrompt: string, style?: string, lighting?: string, aspectRatio?: string): string {
+  private buildPrompt(userPrompt: string, style?: string, lighting?: string, aspectRatio?: string, resolution?: string): string {
     let fullPrompt = userPrompt
+
+    // Add resolution quality hint
+    if (resolution) {
+      const resolutionMap: Record<string, string> = {
+        '720': 'high quality 720p resolution',
+        '1080': 'high quality 1080p full HD resolution',
+        '2k': 'high quality 2K resolution',
+        '4k': 'ultra high quality 4K resolution',
+      }
+      const resHint = resolutionMap[resolution] || ''
+      if (resHint) {
+        fullPrompt = `${resHint}, ${fullPrompt}`
+      }
+    }
 
     // Add style if specified
     if (style && style !== 'Photorealistic') {
