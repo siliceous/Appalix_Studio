@@ -158,63 +158,7 @@ export async function imageRoutes(app: FastifyInstance) {
           console.log('[Image Generation] Stability AI job created:', jobId)
         }
 
-        // For immediate adapters, check if we already have images
-        // Otherwise, store job ID for polling
-        const immediateResults = await (async () => {
-          if (isGeminiModel || isNanoBananaModel || isSeedenceModel) {
-            // These adapters return immediately with images
-            // Check the status right away
-            try {
-              if (isGeminiModel) {
-                const status = await gemini.getGenerationStatus(jobId)
-                if (status.status === 'COMPLETE' && status.imageUrls.length > 0) {
-                  return status.imageUrls
-                }
-              } else if (isNanoBananaModel) {
-                const status = await nanoBanana.getGenerationStatus(jobId)
-                if (status.status === 'COMPLETE' && status.imageUrls.length > 0) {
-                  return status.imageUrls
-                }
-              } else if (isSeedenceModel) {
-                const status = await seedence.getGenerationStatus(jobId)
-                if (status.status === 'COMPLETE' && status.imageUrls.length > 0) {
-                  return status.imageUrls
-                }
-              }
-            } catch (err) {
-              console.error('[Image Generation] Error checking immediate results:', err)
-            }
-          }
-          return null
-        })()
-
-        // If we got immediate results, save them now
-        if (immediateResults && immediateResults.length > 0) {
-          await supabase
-            .from('ai_image_generations')
-            .update({
-              status: 'completed',
-              output_url: immediateResults[0],
-              output_urls: JSON.stringify(immediateResults),
-              provider_job_id: jobId,
-              provider: provider,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', generationId)
-
-          return reply.send({
-            id: generationId,
-            status: 'completed',
-            outputUrl: immediateResults[0],
-            imageUrls: immediateResults,
-            type: 'image',
-            createdAt: new Date().toISOString(),
-            estimatedCredits: 10 * quantity,
-            aspectRatio: aspectRatio,
-          })
-        }
-
-        // Otherwise, store job ID for polling
+        // Update generation record with job ID
         await supabase
           .from('ai_image_generations')
           .update({
