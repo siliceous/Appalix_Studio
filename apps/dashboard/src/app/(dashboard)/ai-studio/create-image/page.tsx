@@ -10,12 +10,6 @@ const QUALITY_PRESETS = [
   { id: 'quality', label: 'Quality' },
 ]
 
-const RESOLUTIONS = [
-  { id: '720', label: '720' },
-  { id: '1080', label: '1080' },
-  { id: '2k', label: '2K' },
-  { id: '4k', label: '4K' },
-]
 
 const STYLES = [
   'Photorealistic',
@@ -95,7 +89,6 @@ export default function CreateImagePage() {
   const [models, setModels] = useState<any[]>([])
   const [loadingModels, setLoadingModels] = useState(true)
   const [qualityPreset, setQualityPreset] = useState('balanced')
-  const [resolution, setResolution] = useState('1080')
   const [temperature, setTemperature] = useState(1.0)
   const [style, setStyle] = useState('Photorealistic')
   const [lighting, setLighting] = useState<string[]>(['Daylight'])
@@ -225,7 +218,6 @@ export default function CreateImagePage() {
           prompt,
           model,
           qualityPreset,
-          resolution,
           temperature,
           style,
           lighting: lighting.join(','),
@@ -475,28 +467,6 @@ export default function CreateImagePage() {
                     }`}
                   >
                     {preset.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Resolution */}
-            <div>
-              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
-                Resolution
-              </label>
-              <div className="grid grid-cols-4 gap-1.5">
-                {RESOLUTIONS.map((res) => (
-                  <button
-                    key={res.id}
-                    onClick={() => setResolution(res.id)}
-                    className={`py-1.5 px-1 rounded-lg text-xs font-semibold transition-all border shadow-md ${
-                      resolution === res.id
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-gray-700 border-gray-200 hover:shadow-lg'
-                    }`}
-                  >
-                    {res.label}
                   </button>
                 ))}
               </div>
