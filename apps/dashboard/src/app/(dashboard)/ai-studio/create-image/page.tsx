@@ -112,6 +112,12 @@ export default function CreateImagePage() {
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null)
   const [fullscreenImageData, setFullscreenImageData] = useState<GeneratedImage | null>(null)
   const [showTrash, setShowTrash] = useState(false)
+  const [showSaveDialog, setShowSaveDialog] = useState(false)
+  const [projects, setProjects] = useState<any[]>([])
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('')
+  const [newProjectName, setNewProjectName] = useState('')
+  const [isSavingProject, setIsSavingProject] = useState(false)
+  const [imageToSave, setImageToSave] = useState<GeneratedImage | null>(null)
 
   // Load initial data
   useEffect(() => {
@@ -158,6 +164,20 @@ export default function CreateImagePage() {
     }
 
     fetchModels()
+
+    // Load projects
+    const fetchProjects = async () => {
+      try {
+        const response = await fetch('/api/projects')
+        if (!response.ok) throw new Error('Failed to fetch')
+        const data = await response.json()
+        setProjects(data.projects || [])
+      } catch (error) {
+        console.error('Failed to fetch projects:', error)
+      }
+    }
+
+    fetchProjects()
   }, [])
 
   // Save history to localStorage
@@ -312,8 +332,73 @@ export default function CreateImagePage() {
   }
 
   const handleSaveImage = (image: GeneratedImage) => {
-    // TODO: Implement save to project functionality
-    console.log('Save image:', image.id)
+    setImageToSave(image)
+    setShowSaveDialog(true)
+    setSelectedProjectId(projects.length > 0 ? projects[0].id : '')
+  }
+
+  const handleSaveToProject = async () => {
+    if (!imageToSave || !workspaceId) return
+
+    setIsSavingProject(true)
+    try {
+      let projectId = selectedProjectId
+      let projectName = newProjectName
+
+      // Create new project if needed
+      if (newProjectName.trim()) {
+        const createResponse = await fetch('/api/projects', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-workspace-id': workspaceId,
+          },
+          body: JSON.stringify({
+            name: newProjectName,
+            description: `Generated images collection`,
+          }),
+        })
+
+        if (!createResponse.ok) throw new Error('Failed to create project')
+        const newProject = await createResponse.json()
+        projectId = newProject.id
+        projectName = newProject.name
+
+        // Add to projects list
+        setProjects([...projects, newProject])
+        setNewProjectName('')
+      }
+
+      // Save image to project as a document/file
+      if (projectId) {
+        const saveResponse = await fetch(`/api/projects/${projectId}/images`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-workspace-id': workspaceId,
+          },
+          body: JSON.stringify({
+            imageId: imageToSave.id,
+            image: imageToSave.image,
+            prompt: imageToSave.prompt,
+            timestamp: imageToSave.timestamp,
+          }),
+        })
+
+        if (!saveResponse.ok) throw new Error('Failed to save image')
+
+        // Show success feedback
+        console.log('Image saved to project successfully')
+        setShowSaveDialog(false)
+        setImageToSave(null)
+        setSelectedProjectId('')
+      }
+    } catch (error) {
+      console.error('Failed to save image:', error)
+      alert('Failed to save image to project. Please try again.')
+    } finally {
+      setIsSavingProject(false)
+    }
   }
 
   const handleReusePrompt = (image: GeneratedImage) => {
@@ -762,6 +847,81 @@ export default function CreateImagePage() {
             >
               <X className="w-6 h-6 text-gray-700" />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Save to Project Dialog */}
+      {showSaveDialog && imageToSave && (
+        <div
+          className="fixed inset-0 z-[9998] bg-black/50 flex items-center justify-center p-4"
+          onClick={() => setShowSaveDialog(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Save to Project</h2>
+
+            <div className="space-y-4">
+              {/* Select Existing Project */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Project
+                </label>
+                <select
+                  value={selectedProjectId}
+                  onChange={(e) => {
+                    setSelectedProjectId(e.target.value)
+                    setNewProjectName('')
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Choose a project...</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Or Create New Project */}
+              <div className="border-t pt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Or Create New Project
+                </label>
+                <input
+                  type="text"
+                  placeholder="Project name..."
+                  value={newProjectName}
+                  onChange={(e) => {
+                    setNewProjectName(e.target.value)
+                    setSelectedProjectId('')
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t">
+                <button
+                  onClick={() => setShowSaveDialog(false)}
+                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium transition-colors"
+                  disabled={isSavingProject}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveToProject}
+                  disabled={isSavingProject || (!selectedProjectId && !newProjectName.trim())}
+                  className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isSavingProject && <Loader className="w-4 h-4 animate-spin" />}
+                  {isSavingProject ? 'Saving...' : 'Save Image'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
