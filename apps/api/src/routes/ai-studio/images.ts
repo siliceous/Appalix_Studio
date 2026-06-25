@@ -344,4 +344,37 @@ export async function imageRoutes(app: FastifyInstance) {
       return reply.status(500).send({ error: 'Internal server error' })
     }
   })
+
+  // Get all completed images for a workspace
+  app.get('/all-images', async (request, reply) => {
+    try {
+      const workspaceId = request.headers['x-workspace-id'] as string
+
+      if (!workspaceId) {
+        return reply.status(400).send({ error: 'Missing workspace ID' })
+      }
+
+      // Fetch all completed image generations
+      const { data: generations, error } = await supabase
+        .from('ai_image_generations')
+        .select('id, prompt, created_at, output_url, output_urls, status, quantity')
+        .eq('workspace_id', workspaceId)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false })
+        .limit(100)
+
+      if (error) {
+        console.error('[Image Generation] DB error:', error)
+        return reply.status(500).send({ error: 'Failed to fetch images' })
+      }
+
+      return reply.send({
+        images: generations || [],
+        total: generations?.length || 0,
+      })
+    } catch (error) {
+      console.error('[Image Generation] All images endpoint error:', error)
+      return reply.status(500).send({ error: 'Internal server error' })
+    }
+  })
 }
