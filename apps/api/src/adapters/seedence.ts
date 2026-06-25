@@ -148,11 +148,50 @@ class SeedenceAdapter {
     let fullPrompt = userPrompt
 
     if (style && style !== 'Photorealistic') {
-      if (style === 'Cinematic') {
-        fullPrompt = 'cinematic composition, professional color grading, cinematic depth of field. ' + fullPrompt
-      } else {
-        fullPrompt = `${style} style. ` + fullPrompt
+      const styleMap: Record<string, string> = {
+        'Cinematic': 'cinematic composition, professional color grading, cinematic depth of field',
+        'Anime': 'anime style, hand-drawn, manga art, cel shading',
+        'Illustration': 'digital illustration, vector art, illustrated style',
+        'Oil Painting': 'oil painting, brush strokes, textured, renaissance style',
+        'Abstract': 'abstract art, surreal, modern art, expressionist',
+        'Watercolor': 'watercolor painting, wet paint, flowing colors, artistic',
+        '3D': '3D render, 3D modeling, volumetric lighting, octane render',
+        'Digital Painting': 'digital painting, brushwork, digital art, paint texture',
+        'Sketch': 'pencil sketch, line drawing, charcoal sketch, detailed linework',
+        'Comic Book': 'comic book art, comic style, speech bubbles, bold outlines',
+        'Game Art': 'video game art, game engine graphics, stylized game',
+        'Pixel Art': 'pixel art, 8-bit, retro pixel, pixelated',
+        'Low Poly': 'low poly art, geometric shapes, faceted 3D',
+        'Isometric': 'isometric view, isometric art, isometric perspective',
+        'Cartoon': 'cartoon style, animated, cel animation',
+        'Storybook': 'storybook illustration, children\'s book art, whimsical',
+        'Gothic': 'gothic style, dark gothic, gothic architecture',
+        'Cyberpunk': 'cyberpunk aesthetic, neon lights, futuristic',
+        'Steampunk': 'steampunk style, Victorian machinery, brass gears',
+        'Art Deco': 'art deco style, geometric patterns, luxury, 1920s',
+        'Retro': 'retro style, vintage aesthetic, nostalgic, 70s',
+        'Vintage': 'vintage photograph, aged film, antique, faded',
+        'Renaissance': 'renaissance art, classical painting, renaissance master',
+        'Baroque': 'baroque art, ornate, dramatic lighting, rich colors',
+        'Impressionist': 'impressionist painting, impressionism, brushstroke, light',
+        'Surreal': 'surreal art, surrealism, dreamlike, impossible geometry',
+        'Minimalist': 'minimalist art, simple forms, minimalism, clean',
+        'Street Art': 'street art, mural art, graffiti style, urban',
+        'Graffiti': 'graffiti art, spray paint, street graffiti, tagging',
+        'Marble Sculpture': 'marble sculpture, classical sculpture, carved marble',
+        'Paper Cut': 'paper cut art, paper sculpture, layered paper',
+        'Mosaic': 'mosaic art, tile mosaic, mosaic pattern',
+        'Stained Glass': 'stained glass art, stained glass window, colored glass',
+        'Neon': 'neon art, neon glow, glowing neon signs',
+        'Holographic': 'holographic art, iridescent, hologram effect',
+        'Glamour': 'glamour photography, luxury, high fashion, elegant',
+        'Fashion': 'fashion illustration, designer fashion, haute couture',
+        'Anatomical': 'anatomical drawing, medical illustration, scientific',
+        'Blueprint': 'blueprint style, technical blueprint, engineering',
+        'Technical Drawing': 'technical drawing, architectural drawing, CAD style',
       }
+      const styleDescription = styleMap[style] || ` in ${style} style`
+      fullPrompt = `${styleDescription}. ${fullPrompt}`
     }
 
     if (lighting && lighting !== 'Daylight') {
