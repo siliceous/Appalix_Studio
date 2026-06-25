@@ -417,20 +417,21 @@ export default function CreateImagePage() {
               console.log('First image size:', newImages[0]?.image?.length || 0, 'bytes')
 
               setHistory(prev => {
+                console.log('Previous history length:', prev.length)
                 const updated = [...prev, ...newImages]
-                console.log('Updated history length:', updated.length)
+                console.log('Updated history length after append:', updated.length)
                 console.log('Storing to localStorage...')
 
                 // Immediately save to localStorage
                 try {
-                  const recentHistory = updated.slice(-10)
-                  const jsonStr = JSON.stringify(recentHistory)
+                  // Save ALL images, not just last 10
+                  const jsonStr = JSON.stringify(updated)
                   const sizeKB = (jsonStr.length / 1024).toFixed(2)
 
                   console.log('Attempting to save to localStorage...')
-                  console.log('- Items:', recentHistory.length)
+                  console.log('- Items to save:', updated.length)
                   console.log('- Size:', sizeKB, 'KB')
-                  console.log('- URL length of first image:', recentHistory[0]?.image?.length || 0)
+                  console.log('- URL length of first image:', updated[0]?.image?.length || 0)
 
                   localStorage.setItem('imageGenerationHistory', jsonStr)
                   console.log('✅ Successfully saved to localStorage')
