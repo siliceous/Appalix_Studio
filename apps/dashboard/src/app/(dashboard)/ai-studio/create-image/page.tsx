@@ -228,17 +228,27 @@ export default function CreateImagePage() {
     const fetchModels = async () => {
       try {
         const response = await fetch('/api/ai-studio/models/image')
-        if (!response.ok) throw new Error('Failed to fetch')
+        if (!response.ok) {
+          console.warn('Models fetch failed with status:', response.status)
+          throw new Error(`Failed to fetch models: ${response.status}`)
+        }
         const data = await response.json()
-        if (data.models) {
+        if (data.models && Array.isArray(data.models)) {
           setModels(data.models)
+        } else {
+          throw new Error('Invalid models response')
         }
       } catch (error) {
-        console.error('Failed to fetch models:', error)
+        console.error('Failed to fetch models, using defaults:', error)
+        // Use default models as fallback
         setModels([
+          { id: 'gemini-3.1-flash-image', name: 'Gemini 3.1 Flash Image' },
+          { id: 'nano-banana-pro', name: 'Nano Banana Pro' },
+          { id: 'nano-banana-2', name: 'Nano Banana 2' },
           { id: 'nano-banana', name: 'Nano Banana' },
-          { id: 'nano-banana-2', name: 'Banana 2' },
-          { id: 'nano-banana-pro', name: 'Banana Pro' },
+          { id: 'sd3.5-large-turbo', name: 'Stable Diffusion 3.5 Turbo' },
+          { id: 'sd3.5-large', name: 'Stable Diffusion 3.5 Large' },
+          { id: 'sd3.5-medium', name: 'Stable Diffusion 3.5 Medium' },
         ])
       } finally {
         setLoadingModels(false)
