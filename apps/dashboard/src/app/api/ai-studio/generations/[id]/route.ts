@@ -28,10 +28,20 @@ export async function GET(
 
     if (!response.ok) {
       console.error('[Proxy] Backend error:', response.status)
+      const text = await response.text()
+      console.error('[Proxy] Response text preview:', text.substring(0, 200))
       return NextResponse.json({ error: 'Failed to fetch generation status' }, { status: response.status })
     }
 
-    const data = await response.json()
+    const text = await response.text()
+    let data
+    try {
+      data = JSON.parse(text)
+    } catch (parseErr) {
+      console.error('[Proxy] Failed to parse JSON response:', parseErr)
+      console.error('[Proxy] Response preview:', text.substring(0, 200))
+      return NextResponse.json({ error: 'Invalid response from backend' }, { status: 500 })
+    }
     console.log('[Frontend Proxy] Generation status response:', {
       id: data.id,
       status: data.status,
