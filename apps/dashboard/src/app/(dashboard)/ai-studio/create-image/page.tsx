@@ -164,11 +164,19 @@ export default function CreateImagePage() {
     }
 
     fetchModels()
+  }, [])
 
-    // Load projects
+  // Load projects after workspace ID is available
+  useEffect(() => {
+    if (!workspaceId) return
+
     const fetchProjects = async () => {
       try {
-        const response = await fetch('/api/projects')
+        const response = await fetch('/api/projects', {
+          headers: {
+            'x-workspace-id': workspaceId,
+          },
+        })
         if (!response.ok) throw new Error('Failed to fetch')
         const data = await response.json()
         setProjects(data.projects || [])
@@ -178,7 +186,7 @@ export default function CreateImagePage() {
     }
 
     fetchProjects()
-  }, [])
+  }, [workspaceId])
 
   // Save history to localStorage
   useEffect(() => {
