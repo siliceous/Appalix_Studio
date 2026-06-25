@@ -352,16 +352,17 @@ export default function CreateImagePage() {
           console.log('Status response:', statusData)
 
           if (statusData.status === 'completed') {
+            console.log('Completion detected. statusData:', statusData)
             if (statusData.imageUrls && statusData.imageUrls.length > 0) {
               // Add all new images to history
               const newImages = statusData.imageUrls.map((img: string, idx: number) => ({
                 id: `${generationId}-${idx}`,
                 image: img,
-                prompt,
+                prompt: getEnhancedPrompt(),
                 timestamp: Date.now(),
               }))
 
-              console.log('Adding images to history:', newImages)
+              console.log('Adding images to history:', newImages.length, 'images')
               console.log('First image size:', newImages[0]?.image?.length || 0, 'bytes')
 
               setHistory(prev => {
@@ -372,8 +373,9 @@ export default function CreateImagePage() {
                 // Immediately save to localStorage
                 try {
                   const recentHistory = updated.slice(-10)
-                  localStorage.setItem('imageGenerationHistory', JSON.stringify(recentHistory))
-                  console.log('Successfully saved to localStorage')
+                  const jsonStr = JSON.stringify(recentHistory)
+                  localStorage.setItem('imageGenerationHistory', jsonStr)
+                  console.log('Successfully saved to localStorage. Stored size:', jsonStr.length, 'bytes')
                 } catch (err) {
                   console.error('localStorage save error:', err)
                 }
@@ -383,7 +385,9 @@ export default function CreateImagePage() {
 
               // Select the last generated image
               setSelectedImage(newImages[newImages.length - 1])
-              console.log('Images received:', statusData.imageUrls.length)
+              console.log('Images received and processed:', statusData.imageUrls.length)
+            } else {
+              console.warn('Completed but no imageUrls found. statusData:', statusData)
             }
             isComplete = true
           } else if (statusData.status === 'failed') {
