@@ -80,6 +80,16 @@ const aspectRatioLabels: Record<string, string> = {
   '1:1': '1:1',
 }
 
+const BODY_TYPES = [
+  { id: 'none', label: 'None', phrase: '' },
+  { id: 'busty', label: 'Busty', phrase: 'naturally full-figured woman with a soft, healthy build' },
+  { id: 'mature', label: 'Mature', phrase: 'average Australian woman in her late 40s' },
+  { id: 'size16', label: 'Size 16', phrase: 'realistic size 16 body' },
+  { id: 'chubby', label: 'Chubby', phrase: 'naturally chubby woman' },
+  { id: 'plussize', label: 'Plus-Size', phrase: 'plus-size woman' },
+  { id: 'curvy', label: 'Curvy', phrase: 'fuller hips, thicker arms, soft stomach' },
+]
+
 interface GeneratedImage {
   id: string
   image: string
@@ -102,6 +112,7 @@ export default function CreateImagePage() {
   const [lighting, setLighting] = useState<string[]>(['Daylight'])
   const [aspectRatio, setAspectRatio] = useState('9:16')
   const [quantity, setQuantity] = useState(1)
+  const [bodyType, setBodyType] = useState('none')
 
   // State management
   const [prompt, setPrompt] = useState('')
@@ -223,7 +234,7 @@ export default function CreateImagePage() {
           'x-workspace-id': workspaceId,
         },
         body: JSON.stringify({
-          prompt,
+          prompt: getEnhancedPrompt(),
           model,
           qualityPreset,
           resolution,
@@ -340,6 +351,15 @@ export default function CreateImagePage() {
     const baseCredits = 10
     const resolutionMultiplier = getResolutionMultiplier(resolution)
     return Math.ceil(baseCredits * resolutionMultiplier * quantity)
+  }
+
+  const getEnhancedPrompt = () => {
+    let enhanced = prompt
+    const bodyTypeData = BODY_TYPES.find(bt => bt.id === bodyType)
+    if (bodyTypeData && bodyTypeData.phrase) {
+      enhanced = `${enhanced}, ${bodyTypeData.phrase}`
+    }
+    return enhanced
   }
 
   const handlePermanentlyDeleteImage = (imageId: string) => {
@@ -623,6 +643,29 @@ export default function CreateImagePage() {
                 onChange={(e) => setQuantity(parseInt(e.target.value))}
                 className="w-full h-2 bg-gray-300 rounded-lg accent-blue-600"
               />
+            </div>
+
+            {/* Body Type */}
+            <div>
+              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
+                Body Type
+              </label>
+              <select
+                value={bodyType}
+                onChange={(e) => setBodyType(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {BODY_TYPES.map((bt) => (
+                  <option key={bt.id} value={bt.id}>
+                    {bt.label}
+                  </option>
+                ))}
+              </select>
+              {bodyType !== 'none' && (
+                <p className="text-xs text-gray-500 mt-2 italic">
+                  {BODY_TYPES.find(bt => bt.id === bodyType)?.phrase}
+                </p>
+              )}
             </div>
           </div>
         </div>
