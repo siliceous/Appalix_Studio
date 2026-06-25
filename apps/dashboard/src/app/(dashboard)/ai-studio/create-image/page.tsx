@@ -342,17 +342,33 @@ export default function CreateImagePage() {
         attempts++
 
         try {
+          console.log(`[Polling] Attempt ${attempts}/${maxAttempts} for generation ${generationId}`)
           const statusResponse = await fetch(`/api/ai-studio/generations/${generationId}`, {
             headers: {
               'x-workspace-id': workspaceId,
             },
           })
 
+          if (!statusResponse.ok) {
+            console.error('[Polling] Status response not OK:', statusResponse.status)
+            continue
+          }
+
           const statusData = await statusResponse.json()
-          console.log('Status response:', statusData)
+          console.log('[Polling] Status response:', {
+            status: statusData.status,
+            hasImageUrls: !!statusData.imageUrls,
+            imageUrlsLength: statusData.imageUrls?.length || 0,
+            outputUrl: statusData.outputUrl?.substring(0, 50),
+          })
 
           if (statusData.status === 'completed') {
-            console.log('Completion detected. statusData:', statusData)
+            console.log('[Polling] Completion detected. Full statusData:', JSON.stringify({
+              status: statusData.status,
+              hasImageUrls: !!statusData.imageUrls,
+              imageUrlsCount: statusData.imageUrls?.length || 0,
+              firstImageSize: statusData.imageUrls?.[0]?.length || 0,
+            }))
             if (statusData.imageUrls && statusData.imageUrls.length > 0) {
               // Add all new images to history
               const newImages = statusData.imageUrls.map((img: string, idx: number) => ({
