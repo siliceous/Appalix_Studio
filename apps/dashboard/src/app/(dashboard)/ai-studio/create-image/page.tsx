@@ -713,7 +713,7 @@ export default function CreateImagePage() {
             </p>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 grid grid-cols-2 gap-2">
+          <div className="flex-1 overflow-y-auto p-3 grid grid-cols-2 gap-2 auto-rows-max">
             {showTrash ? (
               // Trash view
               history.filter(img => img.deletedAt).length === 0 ? (
