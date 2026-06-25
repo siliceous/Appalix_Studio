@@ -124,24 +124,8 @@ export default function CreateImagePage() {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
     setWorkspaceId(wId)
 
-    // Load history from localStorage
-    const savedHistory = typeof window !== 'undefined' ? localStorage.getItem('imageGenerationHistory') : null
-    if (savedHistory) {
-      try {
-        const parsed = JSON.parse(savedHistory)
-        // Ensure all images have IDs
-        const historyWithIds = parsed.map((img: any, idx: number) => ({
-          ...img,
-          id: img.id || `legacy-${img.timestamp || idx}`,
-        }))
-        setHistory(historyWithIds)
-        if (historyWithIds.length > 0) {
-          setSelectedImage(historyWithIds[historyWithIds.length - 1])
-        }
-      } catch (error) {
-        console.error('Failed to load history:', error)
-      }
-    }
+    // Images are kept in memory during this session
+    // localStorage is only used for persistence of metadata, not image data
 
     const fetchModels = async () => {
       try {
@@ -192,7 +176,15 @@ export default function CreateImagePage() {
   useEffect(() => {
     if (typeof window !== 'undefined' && history.length > 0) {
       try {
-        const recentHistory = history.slice(-50)
+        // Keep only last 10 images to avoid quota issues
+        // Store only IDs and metadata, not full base64 images
+        const recentHistory = history.slice(-10).map(img => ({
+          id: img.id,
+          prompt: img.prompt,
+          timestamp: img.timestamp,
+          deletedAt: img.deletedAt,
+          // Don't store the base64 image data in localStorage
+        }))
         localStorage.setItem('imageGenerationHistory', JSON.stringify(recentHistory))
       } catch (error) {
         console.error('Failed to save to localStorage:', error)
