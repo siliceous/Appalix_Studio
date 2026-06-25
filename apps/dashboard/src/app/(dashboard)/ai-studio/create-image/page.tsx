@@ -270,38 +270,6 @@ export default function CreateImagePage() {
     fetchProjects()
   }, [workspaceId])
 
-  // Save history to localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined' && history.length > 0) {
-      try {
-        // Keep only last 10 images to avoid quota issues
-        // Store full images with metadata
-        const recentHistory = history.slice(-10).map(img => ({
-          id: img.id,
-          image: img.image,
-          prompt: img.prompt,
-          timestamp: img.timestamp,
-          deletedAt: img.deletedAt,
-        }))
-        localStorage.setItem('imageGenerationHistory', JSON.stringify(recentHistory))
-      } catch (error) {
-        console.error('Failed to save to localStorage:', error)
-        // If quota exceeded, try with fewer images
-        try {
-          const fewerImages = history.slice(-5).map(img => ({
-            id: img.id,
-            image: img.image,
-            prompt: img.prompt,
-            timestamp: img.timestamp,
-            deletedAt: img.deletedAt,
-          }))
-          localStorage.setItem('imageGenerationHistory', JSON.stringify(fewerImages))
-        } catch (err) {
-          console.error('Failed to save even with fewer images:', err)
-        }
-      }
-    }
-  }, [history])
 
   // Auto-scroll library to top when new images are added
   useEffect(() => {
@@ -394,9 +362,22 @@ export default function CreateImagePage() {
               }))
 
               console.log('Adding images to history:', newImages)
+              console.log('First image size:', newImages[0]?.image?.length || 0, 'bytes')
+
               setHistory(prev => {
                 const updated = [...prev, ...newImages]
                 console.log('Updated history length:', updated.length)
+                console.log('Storing to localStorage...')
+
+                // Immediately save to localStorage
+                try {
+                  const recentHistory = updated.slice(-10)
+                  localStorage.setItem('imageGenerationHistory', JSON.stringify(recentHistory))
+                  console.log('Successfully saved to localStorage')
+                } catch (err) {
+                  console.error('localStorage save error:', err)
+                }
+
                 return updated
               })
 
