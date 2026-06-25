@@ -630,10 +630,6 @@ export default function CreateImagePage() {
             <ArrowLeft className="w-5 h-5 text-gray-700" />
           </button>
           <h1 className="text-lg font-semibold text-gray-900">Create Image</h1>
-          {/* Debug: Show stored images count */}
-          <div className="text-xs text-gray-500 ml-4 px-2 py-1 bg-gray-100 rounded">
-            Stored: {history.length} images
-          </div>
         </div>
         <div className="text-sm text-gray-600">
           Credits: <span className="font-semibold text-gray-900">{credits}</span>
@@ -953,15 +949,39 @@ export default function CreateImagePage() {
               maxLength={2000}
               className="w-full px-4 py-3 pr-16 text-black placeholder-gray-500 bg-white border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             />
-            <div className="flex justify-between items-center mt-2">
-              <button
-                onClick={handleGenerate}
-                disabled={!prompt.trim() || isGenerating || credits < calculateCost()}
-                className="px-6 py-2 bg-black text-white text-sm font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors"
-              >
-                {isGenerating ? 'Generating...' : `Generate (${calculateCost()} credits)`}
-              </button>
-              <span className="text-xs text-gray-500">{prompt.length}/2000</span>
+            <div className="flex justify-between items-center gap-2 mt-2">
+              <div className="flex gap-2 flex-1">
+                <button
+                  onClick={handleGenerate}
+                  disabled={!prompt.trim() || isGenerating || credits < calculateCost()}
+                  className="px-6 py-2 bg-black text-white text-sm font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors"
+                >
+                  {isGenerating ? 'Generating...' : `Generate (${calculateCost()} credits)`}
+                </button>
+
+                {/* Action buttons - appear when image is selected */}
+                {selectedImage && (
+                  <>
+                    <button
+                      onClick={() => handleDownloadImage(selectedImage)}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded transition-colors flex items-center gap-2"
+                      title="Download image"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download
+                    </button>
+                    <button
+                      onClick={() => handleSaveImage(selectedImage)}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded transition-colors flex items-center gap-2"
+                      title="Save to project"
+                    >
+                      <Heart className="w-4 h-4" />
+                      Save
+                    </button>
+                  </>
+                )}
+              </div>
+              <span className="text-xs text-gray-500 whitespace-nowrap">{prompt.length}/2000</span>
             </div>
           </div>
         </div>
