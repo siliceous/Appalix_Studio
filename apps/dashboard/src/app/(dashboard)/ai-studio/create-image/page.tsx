@@ -297,6 +297,17 @@ export default function CreateImagePage() {
       return
     }
 
+    // Expose state to window for debugging
+    if (typeof window !== 'undefined') {
+      (window as any).lastGenerationDebug = {
+        prompt,
+        model,
+        workspaceId,
+        quantity,
+        timestamp: new Date().toISOString(),
+      }
+    }
+
     // Clear canvas and show loading state
     setIsGenerating(true)
     setSelectedImage(null)
