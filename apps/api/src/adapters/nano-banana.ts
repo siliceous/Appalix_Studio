@@ -28,7 +28,9 @@ class NanoBananaAdapter {
       throw new Error('Gemini API key not configured')
     }
 
-    const prompt = this.buildPrompt(params.prompt, params.style, params.lighting, params.resolution)
+    const aspectRatioPrompt = this.buildAspectRatioPrompt(params.aspectRatio)
+    const basePrompt = this.buildPrompt(params.prompt, params.style, params.lighting, params.resolution)
+    const prompt = aspectRatioPrompt ? `${aspectRatioPrompt}. ${basePrompt}` : basePrompt
     const modelId = params.modelId || 'nano-banana'
     const numImages = params.numImages || 1
 
@@ -253,7 +255,21 @@ class NanoBananaAdapter {
         fullPrompt += `, ${lightingDescriptions.join(', ')}`
       }
     }
+
     return fullPrompt
+  }
+
+  private buildAspectRatioPrompt(aspectRatio?: string): string {
+    if (aspectRatio === '16:9') {
+      return 'wide landscape format, 16:9 horizontal orientation'
+    } else if (aspectRatio === '9:16') {
+      return 'tall portrait format, 9:16 vertical orientation, taller than wide'
+    } else if (aspectRatio === '4:5') {
+      return 'portrait orientation, 4:5 aspect ratio, taller than wide'
+    } else if (aspectRatio === '1:1') {
+      return 'square composition, 1:1 aspect ratio'
+    }
+    return ''
   }
 }
 

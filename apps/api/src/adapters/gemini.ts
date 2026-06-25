@@ -240,15 +240,15 @@ class GeminiAdapter {
       }
     }
 
-    // Add aspect ratio guidance
+    // Add aspect ratio guidance - be explicit
     if (aspectRatio === '16:9') {
-      fullPrompt += ', landscape orientation (16:9 aspect ratio)'
+      fullPrompt = `wide landscape format, 16:9 horizontal orientation. ${fullPrompt}`
     } else if (aspectRatio === '9:16') {
-      fullPrompt += ', portrait orientation (9:16 aspect ratio)'
+      fullPrompt = `tall portrait format, 9:16 vertical orientation, taller than wide. ${fullPrompt}`
     } else if (aspectRatio === '4:5') {
-      fullPrompt += ', portrait orientation (4:5 aspect ratio)'
+      fullPrompt = `portrait orientation, 4:5 aspect ratio, taller than wide. ${fullPrompt}`
     } else if (aspectRatio === '1:1') {
-      fullPrompt += ', square composition (1:1 aspect ratio)'
+      fullPrompt = `square composition, 1:1 aspect ratio. ${fullPrompt}`
     }
 
     return fullPrompt

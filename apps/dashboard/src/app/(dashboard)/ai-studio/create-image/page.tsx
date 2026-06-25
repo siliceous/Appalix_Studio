@@ -702,10 +702,10 @@ export default function CreateImagePage() {
               </div>
             </div>
 
-            {/* Size */}
+            {/* Size / Aspect Ratio */}
             <div>
               <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
-                Size
+                Aspect Ratio
               </label>
               <div className="grid grid-cols-4 gap-1.5">
                 {ASPECT_RATIOS.map((ar) => (
@@ -717,11 +717,15 @@ export default function CreateImagePage() {
                         ? 'bg-blue-600 text-white border-blue-600'
                         : 'bg-white text-gray-700 border-gray-200 hover:shadow-lg'
                     }`}
+                    title={ar === '16:9' ? 'Landscape' : ar === '9:16' ? 'Portrait' : ar === '1:1' ? 'Square' : 'Portrait'}
                   >
                     {aspectRatioLabels[ar]}
                   </button>
                 ))}
               </div>
+              <p className="text-xs text-gray-500 mt-2">
+                ⚠️ AI models often ignore aspect ratio. Use prompt keywords like "portrait", "landscape" for better results.
+              </p>
             </div>
 
             {/* Quantity */}
