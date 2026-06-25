@@ -613,7 +613,12 @@ export default function CreateImagePage() {
           {/* Canvas Preview */}
           <div
             className="flex-1 bg-white rounded-xl shadow-lg p-8 flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-xl transition-shadow"
-            onClick={() => selectedImage && setFullscreenImage(selectedImage.image)}
+            onClick={() => {
+              if (selectedImage) {
+                setFullscreenImageData(selectedImage)
+                setFullscreenImage(selectedImage.image)
+              }
+            }}
             data-canvas
           >
             {isGenerating ? (
@@ -737,8 +742,7 @@ export default function CreateImagePage() {
                       selectedImage?.id === image.id ? 'ring-2 ring-blue-500' : ''
                     }`}
                     onClick={() => {
-                      setFullscreenImageData(image)
-                      setFullscreenImage(image.image)
+                      setSelectedImage(image)
                     }}
                   >
                     <img
