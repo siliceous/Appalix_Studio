@@ -222,8 +222,21 @@ export default function CreateImagePage() {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
     setWorkspaceId(wId)
 
-    // Images are kept in memory during this session
-    // localStorage is only used for persistence of metadata, not image data
+    // Load existing images from localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const savedHistory = localStorage.getItem('imageGenerationHistory')
+        if (savedHistory) {
+          const parsed = JSON.parse(savedHistory)
+          if (Array.isArray(parsed)) {
+            setHistory(parsed)
+            console.log('[Load] Loaded', parsed.length, 'images from localStorage')
+          }
+        }
+      } catch (error) {
+        console.error('[Load] Error loading history from localStorage:', error)
+      }
+    }
 
     const fetchModels = async () => {
       try {
