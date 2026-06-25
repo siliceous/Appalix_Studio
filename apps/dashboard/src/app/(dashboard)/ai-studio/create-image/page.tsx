@@ -262,6 +262,7 @@ export default function CreateImagePage() {
           })
 
           const statusData = await statusResponse.json()
+          console.log('Status response:', statusData)
 
           if (statusData.status === 'completed') {
             if (statusData.imageUrls && statusData.imageUrls.length > 0) {
@@ -273,7 +274,12 @@ export default function CreateImagePage() {
                 timestamp: Date.now(),
               }))
 
-              setHistory(prev => [...prev, ...newImages])
+              console.log('Adding images to history:', newImages)
+              setHistory(prev => {
+                const updated = [...prev, ...newImages]
+                console.log('Updated history length:', updated.length)
+                return updated
+              })
 
               // Select the last generated image
               setSelectedImage(newImages[newImages.length - 1])
