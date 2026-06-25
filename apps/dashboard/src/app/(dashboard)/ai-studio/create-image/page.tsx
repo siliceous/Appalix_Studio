@@ -120,9 +120,14 @@ export default function CreateImagePage() {
     if (savedHistory) {
       try {
         const parsed = JSON.parse(savedHistory)
-        setHistory(parsed)
-        if (parsed.length > 0) {
-          setSelectedImage(parsed[parsed.length - 1])
+        // Ensure all images have IDs
+        const historyWithIds = parsed.map((img: any, idx: number) => ({
+          ...img,
+          id: img.id || `legacy-${img.timestamp || idx}`,
+        }))
+        setHistory(historyWithIds)
+        if (historyWithIds.length > 0) {
+          setSelectedImage(historyWithIds[historyWithIds.length - 1])
         }
       } catch (error) {
         console.error('Failed to load history:', error)
@@ -556,7 +561,7 @@ export default function CreateImagePage() {
             ) : (
               [...history].reverse().map((image, idx) => (
                 <div
-                  key={`image-${image.id}`}
+                  key={`image-${image.id || image.timestamp}-${idx}`}
                   className={`group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all ${
                     selectedImage?.id === image.id ? 'ring-2 ring-blue-500' : ''
                   }`}
