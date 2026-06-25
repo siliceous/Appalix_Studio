@@ -412,10 +412,24 @@ export default function CreateImagePage() {
                 try {
                   const recentHistory = updated.slice(-10)
                   const jsonStr = JSON.stringify(recentHistory)
+                  const sizeKB = (jsonStr.length / 1024).toFixed(2)
+
+                  console.log('Attempting to save to localStorage...')
+                  console.log('- Items:', recentHistory.length)
+                  console.log('- Size:', sizeKB, 'KB')
+                  console.log('- URL length of first image:', recentHistory[0]?.image?.length || 0)
+
                   localStorage.setItem('imageGenerationHistory', jsonStr)
-                  console.log('Successfully saved to localStorage. Stored size:', jsonStr.length, 'bytes')
+                  console.log('✅ Successfully saved to localStorage')
+
+                  // Verify it was saved
+                  const verified = localStorage.getItem('imageGenerationHistory')
+                  console.log('✅ Verified in localStorage:', verified?.length || 0, 'bytes')
                 } catch (err) {
-                  console.error('localStorage save error:', err)
+                  console.error('❌ localStorage save error:', err)
+                  if (err instanceof Error && err.message.includes('QuotaExceededError')) {
+                    console.error('localStorage is full! Try clearing old data or reducing history size')
+                  }
                 }
 
                 return updated
