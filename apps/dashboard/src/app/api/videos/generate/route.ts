@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { workspace_id, prompt, video_type, quality_mode, duration_seconds, aspect_ratio } = body
+    const { workspace_id, prompt, video_type, quality_mode, duration_seconds, aspect_ratio, source_image_url } = body
 
     const response = await fetch(`${process.env.API_URL || 'http://localhost:3001'}/videos/generate`, {
       method: 'POST',
@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
         quality_mode,
         duration_seconds,
         aspect_ratio,
+        source_image_url,
       }),
     })
 
