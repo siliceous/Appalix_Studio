@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Download, Trash2, Search, Loader, Filter, X, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { Download, Trash2, Search, Loader, Loader2, X, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import Masonry from 'react-masonry-css'
 import './library/masonry.css'
 
@@ -179,124 +179,137 @@ export default function AIStudio() {
   }, [fullscreenImage, fullscreenImageIndex, filteredImages])
 
   return (
-    <div className="-m-8 flex flex-col h-screen overflow-hidden bg-black">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between px-6 py-4 bg-black border-b border-gray-800">
-        <div className="flex gap-3 items-center">
-          <button onClick={() => router.push('/dashboard/ai-studio/create-image')} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors">
-            Create Image
-          </button>
-          <button onClick={() => router.push('/dashboard/ai-studio/create-video')} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm font-medium transition-colors">
-            Create Video
-          </button>
-          <button onClick={() => router.push('/dashboard/ai-studio/product-ads')} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium transition-colors">
-            Product Ads
-          </button>
-          <button onClick={() => router.push('/dashboard/ai-studio/talking-ad')} className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded text-sm font-medium transition-colors">
-            Talking Ads
-          </button>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="px-3 py-1 bg-gray-900 border border-gray-700 rounded text-sm text-white font-medium">
-            {credits} Credits
-          </div>
+    <div className="-m-8 flex flex-col h-screen overflow-hidden bg-[#141c2b]">
+      {/* Top Buttons Bar */}
+      <div className="px-4 ml-3 mr-4 flex items-center gap-2 min-h-[52px] pb-2 pt-3 shrink-0">
+        <button
+          onClick={() => router.push('/dashboard/ai-studio/create-image')}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-transparent text-white hover:bg-white/10 transition-colors whitespace-nowrap"
+        >
+          Create Image
+        </button>
+        <button
+          onClick={() => router.push('/dashboard/ai-studio/create-video')}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-transparent text-white hover:bg-white/10 transition-colors whitespace-nowrap"
+        >
+          Create Video
+        </button>
+        <button
+          onClick={() => router.push('/dashboard/ai-studio/product-ads')}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-transparent text-white hover:bg-white/10 transition-colors whitespace-nowrap"
+        >
+          Product Ads
+        </button>
+        <button
+          onClick={() => router.push('/dashboard/ai-studio/talking-ad')}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-transparent text-white hover:bg-white/10 transition-colors whitespace-nowrap"
+        >
+          Talking Ads
+        </button>
+        <div className="flex-1" />
+        <div className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-white/20 text-white bg-white/5">
+          {credits} Credits
         </div>
       </div>
+
+      {/* Divider */}
+      <div className="mx-4 h-px bg-white/10" />
 
       {/* Search & Filters Bar */}
-      <div className="px-6 py-3 bg-black border-b border-gray-800 space-y-3">
-        <div className="flex gap-4 items-center">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
-            <input
-              type="text"
-              placeholder="Search assets..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded border border-gray-700 bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            />
-          </div>
-          <span className="text-sm text-gray-400 whitespace-nowrap">
-            {filteredImages.length} assets
-          </span>
+      <nav className="px-4 ml-3 mr-4 border-b border-white/10 bg-[#141c2b] rounded-b-2xl shadow-lg flex items-center shrink-0 gap-x-3 min-h-[52px] pb-2 pt-2">
+        <div className="flex-1 flex items-center gap-2 min-w-0">
+          <Search className="w-4 h-4 text-gray-400 shrink-0" />
+          <input
+            type="text"
+            placeholder="Search assets..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-white/20 text-sm"
+          />
+          <span className="text-xs text-gray-400 shrink-0">{filteredImages.length}</span>
         </div>
 
-        <div className="flex gap-3 items-center flex-wrap">
-          <select
-            value={selectedProjectId || ''}
-            onChange={(e) => setSelectedProjectId(e.target.value || null)}
-            className="px-3 py-2 rounded border border-gray-700 bg-gray-900 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Projects</option>
-            {projects.map((proj) => (
-              <option key={proj.id} value={proj.id}>{proj.name}</option>
-            ))}
-          </select>
+        {/* Divider */}
+        <div className="w-px h-5 bg-white/15 shrink-0" />
+
+        <select
+          value={selectedProjectId || ''}
+          onChange={(e) => setSelectedProjectId(e.target.value || null)}
+          className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-white/20 shrink-0"
+        >
+          <option value="">Projects</option>
+          {projects.map((proj) => (
+            <option key={proj.id} value={proj.id}>{proj.name}</option>
+          ))}
+        </select>
+
+        <button
+          onClick={() => setShowCreateProjectDialog(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-white/10 text-white hover:bg-white/10 transition-colors shrink-0"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Add New
+        </button>
+
+        <select
+          value={selectedMediaType || ''}
+          onChange={(e) => setSelectedMediaType(e.target.value || null)}
+          className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-white/20 shrink-0"
+        >
+          <option value="">All Media</option>
+          <option value="image">Image</option>
+          <option value="video">Video</option>
+        </select>
+
+        <select
+          value={selectedGender || ''}
+          onChange={(e) => setSelectedGender(e.target.value || null)}
+          className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-white/20 shrink-0"
+        >
+          <option value="">All Genders</option>
+          <option value="man">Man</option>
+          <option value="woman">Woman</option>
+          <option value="neutral">Neutral</option>
+        </select>
+
+        <select
+          value={selectedDateRange || ''}
+          onChange={(e) => setSelectedDateRange(e.target.value || null)}
+          className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-white/20 shrink-0"
+        >
+          <option value="">All Times</option>
+          <option value="today">Today</option>
+          <option value="week">Week</option>
+          <option value="month">Month</option>
+          <option value="year">Year</option>
+        </select>
+
+        {(selectedProjectId || selectedMediaType || selectedGender || selectedDateRange) && (
           <button
-            onClick={() => setShowCreateProjectDialog(true)}
-            className="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded text-sm font-medium transition-colors flex items-center gap-1 border border-gray-700"
-            title="Create new project"
+            onClick={() => {
+              setSelectedProjectId(null)
+              setSelectedMediaType(null)
+              setSelectedGender(null)
+              setSelectedDateRange(null)
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-white/10 text-white hover:bg-white/10 transition-colors shrink-0"
           >
-            <Plus className="w-4 h-4" />
-            Add New
+            Clear
           </button>
-          <select
-            value={selectedMediaType || ''}
-            onChange={(e) => setSelectedMediaType(e.target.value || null)}
-            className="px-3 py-2 rounded border border-gray-700 bg-gray-900 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All Media</option>
-            <option value="image">Image</option>
-            <option value="video">Video</option>
-          </select>
-          <select
-            value={selectedGender || ''}
-            onChange={(e) => setSelectedGender(e.target.value || null)}
-            className="px-3 py-2 rounded border border-gray-700 bg-gray-900 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All Genders</option>
-            <option value="man">Man</option>
-            <option value="woman">Woman</option>
-            <option value="neutral">Neutral</option>
-          </select>
-          <select
-            value={selectedDateRange || ''}
-            onChange={(e) => setSelectedDateRange(e.target.value || null)}
-            className="px-3 py-2 rounded border border-gray-700 bg-gray-900 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All Times</option>
-            <option value="today">Today</option>
-            <option value="week">Week</option>
-            <option value="month">Month</option>
-            <option value="year">Year</option>
-          </select>
-          {(selectedProjectId || selectedMediaType || selectedGender || selectedDateRange) && (
-            <button
-              onClick={() => {
-                setSelectedProjectId(null)
-                setSelectedMediaType(null)
-                setSelectedGender(null)
-                setSelectedDateRange(null)
-              }}
-              className="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded text-sm font-medium transition-colors border border-gray-700"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-      </div>
+        )}
+      </nav>
 
       {/* Asset Library Grid */}
       <div className="flex-1 overflow-auto p-6">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <Loader className="w-8 h-8 animate-spin text-gray-500" />
+            <Loader2 className="w-8 h-8 animate-spin text-white/40" />
           </div>
         ) : filteredImages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <p className="text-gray-300 font-medium mb-2">No assets yet</p>
-              <p className="text-gray-500 text-sm">{searchQuery ? 'Try adjusting your search' : 'Create your first image'}</p>
+              <p className="text-white/70 font-medium mb-2">No assets yet</p>
+              <p className="text-white/50 text-sm">{searchQuery ? 'Try adjusting your search' : 'Create your first image'}</p>
             </div>
           </div>
         ) : (
@@ -308,7 +321,7 @@ export default function AIStudio() {
             {filteredImages.map((image, idx) => (
               <div
                 key={image.id}
-                className={`relative rounded-lg overflow-hidden border border-gray-700 hover:border-gray-600 hover:shadow-lg transition-all duration-300 bg-gray-900 break-inside-avoid cursor-pointer ${getAspectRatioPadding(image.aspectRatio)}`}
+                className={`relative rounded-lg overflow-hidden border border-white/10 hover:border-white/20 hover:shadow-lg transition-all duration-300 bg-white/5 break-inside-avoid cursor-pointer ${getAspectRatioPadding(image.aspectRatio)}`}
                 onClick={() => {
                   setFullscreenImage(image)
                   setFullscreenImageIndex(idx)
@@ -316,7 +329,7 @@ export default function AIStudio() {
               >
                 <img src={image.image} alt={image.prompt} className="absolute inset-0 w-full h-full object-cover" />
                 {image.projectName && (
-                  <div className="absolute top-2 left-2 bg-blue-600/90 px-2 py-1 rounded text-xs font-medium text-white">
+                  <div className="absolute top-2 left-2 bg-white/20 backdrop-blur-sm px-2 py-1 rounded text-xs font-medium text-white">
                     {image.projectName}
                   </div>
                 )}
@@ -329,12 +342,12 @@ export default function AIStudio() {
       {/* Fullscreen Modal */}
       {fullscreenImage && (
         <div className="fixed inset-0 bg-black/95 z-50 flex flex-col">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-            <div className="text-sm text-gray-400">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+            <div className="text-sm text-white/60">
               {fullscreenImageIndex + 1} of {filteredImages.length}
             </div>
-            <button onClick={() => setFullscreenImage(null)} className="p-2 hover:bg-gray-900 rounded-lg transition-colors">
-              <X className="w-5 h-5 text-gray-400" />
+            <button onClick={() => setFullscreenImage(null)} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+              <X className="w-5 h-5 text-white/60" />
             </button>
           </div>
           <div className="flex-1 flex items-center justify-center overflow-auto p-6 relative">
@@ -345,7 +358,7 @@ export default function AIStudio() {
                   setFullscreenImageIndex(newIdx)
                   setFullscreenImage(filteredImages[newIdx])
                 }}
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 bg-gray-800 hover:bg-gray-700 rounded-full transition-colors z-10"
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
               >
                 <ChevronLeft className="w-6 h-6 text-white" />
               </button>
@@ -360,22 +373,22 @@ export default function AIStudio() {
                   setFullscreenImageIndex(newIdx)
                   setFullscreenImage(filteredImages[newIdx])
                 }}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 bg-gray-800 hover:bg-gray-700 rounded-full transition-colors z-10"
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
               >
                 <ChevronRight className="w-6 h-6 text-white" />
               </button>
             )}
           </div>
-          <div className="border-t border-gray-800 px-6 py-4 space-y-4">
+          <div className="border-t border-white/10 px-6 py-4 space-y-4">
             <div>
-              <p className="text-xs text-gray-500 mb-1">Prompt</p>
-              <p className="text-gray-300 text-sm">{fullscreenImage.prompt}</p>
+              <p className="text-xs text-white/40 mb-1">Prompt</p>
+              <p className="text-white/80 text-sm">{fullscreenImage.prompt}</p>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => { handleDownload(fullscreenImage.id, fullscreenImage.image); setFullscreenImage(null) }} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded text-sm font-medium transition-colors flex items-center gap-2 border border-gray-700">
+              <button onClick={() => { handleDownload(fullscreenImage.id, fullscreenImage.image); setFullscreenImage(null) }} className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded text-sm font-medium transition-colors flex items-center gap-2 border border-white/10">
                 <Download className="w-4 h-4" /> Download
               </button>
-              <button onClick={() => { handleDelete(fullscreenImage.id); setFullscreenImage(null) }} className="px-4 py-2 bg-red-900/30 hover:bg-red-900/50 text-red-400 rounded text-sm font-medium transition-colors flex items-center gap-2 border border-red-800">
+              <button onClick={() => { handleDelete(fullscreenImage.id); setFullscreenImage(null) }} className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded text-sm font-medium transition-colors flex items-center gap-2 border border-red-500/20">
                 <Trash2 className="w-4 h-4" /> Delete
               </button>
             </div>
@@ -386,22 +399,22 @@ export default function AIStudio() {
       {/* Create Project Dialog */}
       {showCreateProjectDialog && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-950 rounded border border-gray-800 max-w-md w-full p-6 space-y-4">
+          <div className="bg-[#1e2535] rounded-2xl border border-white/12 max-w-md w-full p-6 space-y-4">
             <h2 className="text-lg font-bold text-white">New Project</h2>
             <input
               type="text"
               placeholder="Project name..."
               value={createProjectName}
               onChange={(e) => setCreateProjectName(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-700 rounded bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-4 py-2 border border-white/10 rounded-lg bg-white/5 text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-white/20 text-sm"
               onKeyPress={(e) => { if (e.key === 'Enter') handleCreateProject() }}
             />
             <div className="flex gap-2 justify-end">
-              <button onClick={() => { setShowCreateProjectDialog(false); setCreateProjectName('') }} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-sm font-medium transition-colors border border-gray-700">
+              <button onClick={() => { setShowCreateProjectDialog(false); setCreateProjectName('') }} className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-medium transition-colors border border-white/10">
                 Cancel
               </button>
-              <button onClick={handleCreateProject} disabled={!createProjectName.trim() || isCreatingProject} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white rounded text-sm font-medium transition-colors flex items-center gap-2">
-                {isCreatingProject ? <><Loader className="w-4 h-4 animate-spin" /> Creating</> : <><Plus className="w-4 h-4" /> Create</>}
+              <button onClick={handleCreateProject} disabled={!createProjectName.trim() || isCreatingProject} className="px-4 py-2 bg-white/20 hover:bg-white/30 disabled:bg-white/5 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 border border-white/20">
+                {isCreatingProject ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating</> : <><Plus className="w-4 h-4" /> Create</>}
               </button>
             </div>
           </div>
