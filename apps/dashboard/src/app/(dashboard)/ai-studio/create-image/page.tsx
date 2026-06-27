@@ -243,20 +243,18 @@ export default function CreateImagePage() {
     const fetchModels = async () => {
       try {
         const response = await fetch('/api/ai-studio/models/image')
-        if (!response.ok) {
-          console.warn('Models fetch failed with status:', response.status)
-          throw new Error(`Failed to fetch models: ${response.status}`)
-        }
-        const data = await response.json()
-        if (data.models && Array.isArray(data.models)) {
-          setModels(data.models)
-        } else {
-          throw new Error('Invalid models response')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.models && Array.isArray(data.models)) {
+            setModels(data.models)
+            return
+          }
         }
       } catch (error) {
-        console.error('Failed to fetch models, using defaults:', error)
-        // Use default models as fallback
-        setModels([
+        // Silent fail - will use defaults
+      }
+      // Use default models as fallback
+      setModels([
           { id: 'gemini-3.1-flash-image', name: 'Gemini 3.1 Flash Image' },
           { id: 'nano-banana-pro', name: 'Nano Banana Pro' },
           { id: 'nano-banana-2', name: 'Nano Banana 2' },
