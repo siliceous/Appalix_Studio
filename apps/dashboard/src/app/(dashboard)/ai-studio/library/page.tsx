@@ -85,6 +85,13 @@ export default function AIStudioLibrary() {
     fetchProjects()
   }, [workspaceId])
 
+  // Filter images by search and project
+  const filteredImages = images.filter((img) => {
+    const matchesSearch = img.prompt.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesProject = !selectedProjectId || img.projectId === selectedProjectId
+    return matchesSearch && matchesProject
+  })
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -110,13 +117,6 @@ export default function AIStudioLibrary() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [fullscreenImage, fullscreenImageIndex, filteredImages])
-
-  // Filter images by search and project
-  const filteredImages = images.filter((img) => {
-    const matchesSearch = img.prompt.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesProject = !selectedProjectId || img.projectId === selectedProjectId
-    return matchesSearch && matchesProject
-  })
 
   const handleCopyUrl = (imageId: string, imageData: string) => {
     navigator.clipboard.writeText(imageData)
