@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Download, Trash2, Copy, Search, Loader, Filter, X, Edit2, Send, FolderPlus, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Download, Trash2, Copy, Search, Loader, Filter, X, Edit2, Send, FolderPlus, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Masonry from 'react-masonry-css'
 import './masonry.css'
@@ -35,6 +35,12 @@ export default function AIStudioLibrary() {
   const [fullscreenImageIndex, setFullscreenImageIndex] = useState(0)
   const [newProjectName, setNewProjectName] = useState('')
   const [isSavingProject, setIsSavingProject] = useState(false)
+  const [showCreateProjectDialog, setShowCreateProjectDialog] = useState(false)
+  const [createProjectName, setCreateProjectName] = useState('')
+  const [isCreatingProject, setIsCreatingProject] = useState(false)
+  const [selectedMediaType, setSelectedMediaType] = useState<string | null>(null)
+  const [selectedGender, setSelectedGender] = useState<string | null>(null)
+  const [selectedDateRange, setSelectedDateRange] = useState<string | null>(null)
 
   useEffect(() => {
     // Load workspace ID
@@ -89,7 +95,31 @@ export default function AIStudioLibrary() {
   const filteredImages = images.filter((img) => {
     const matchesSearch = img.prompt.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesProject = !selectedProjectId || img.projectId === selectedProjectId
-    return matchesSearch && matchesProject
+
+    // Gender filter - search in prompt
+    const matchesGender = !selectedGender ||
+      (selectedGender === 'man' && (img.prompt.toLowerCase().includes('man') || img.prompt.toLowerCase().includes('male') || img.prompt.toLowerCase().includes('boy'))) ||
+      (selectedGender === 'woman' && (img.prompt.toLowerCase().includes('woman') || img.prompt.toLowerCase().includes('female') || img.prompt.toLowerCase().includes('girl'))) ||
+      (selectedGender === 'neutral' && !img.prompt.toLowerCase().includes('man') && !img.prompt.toLowerCase().includes('woman'))
+
+    // Media type filter - always image since these are generated images
+    const matchesMediaType = !selectedMediaType || selectedMediaType === 'image'
+
+    // Date filter
+    let matchesDate = true
+    if (selectedDateRange) {
+      const now = Date.now()
+      const imgTime = img.timestamp
+      const diffMs = now - imgTime
+      const diffDays = diffMs / (1000 * 60 * 60 * 24)
+
+      if (selectedDateRange === 'today') matchesDate = diffDays < 1
+      else if (selectedDateRange === 'week') matchesDate = diffDays < 7
+      else if (selectedDateRange === 'month') matchesDate = diffDays < 30
+      else if (selectedDateRange === 'year') matchesDate = diffDays < 365
+    }
+
+    return matchesSearch && matchesProject && matchesGender && matchesMediaType && matchesDate
   })
 
   // Keyboard navigation
@@ -140,6 +170,36 @@ export default function AIStudioLibrary() {
     localStorage.setItem('imageGenerationHistory', JSON.stringify(remaining))
   }
 
+  const handleCreateProject = async () => {
+    if (!createProjectName.trim() || !workspaceId) return
+
+    setIsCreatingProject(true)
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-workspace-id': workspaceId,
+        },
+        body: JSON.stringify({
+          name: createProjectName,
+          description: 'Created from library',
+        }),
+      })
+
+      if (response.ok) {
+        const newProject = await response.json()
+        setProjects([...projects, newProject])
+        setCreateProjectName('')
+        setShowCreateProjectDialog(false)
+      }
+    } catch (error) {
+      console.error('Error creating project:', error)
+    } finally {
+      setIsCreatingProject(false)
+    }
+  }
+
   const getAspectRatioPadding = (ratio?: string): string => {
     if (!ratio) return 'aspect-square' // Default 1:1
 
@@ -174,7 +234,8 @@ export default function AIStudioLibrary() {
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="border-b border-gray-300 px-6 py-4 bg-white">
+      <div className="border-b border-gray-300 px-6 py-4 bg-white space-y-3">
+        {/* Search Bar */}
         <div className="flex gap-4 items-center flex-wrap">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-3 w-4 h-4 text-gray-500" />
@@ -186,38 +247,97 @@ export default function AIStudioLibrary() {
               className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 bg-gray-50 text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-
-          {/* Project Filter */}
-          {projects.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-600" />
-              <select
-                value={selectedProjectId || ''}
-                onChange={(e) => setSelectedProjectId(e.target.value || null)}
-                className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Projects</option>
-                {projects.map((proj) => (
-                  <option key={proj.id} value={proj.id}>
-                    {proj.name}
-                  </option>
-                ))}
-              </select>
-              {selectedProjectId && (
-                <button
-                  onClick={() => setSelectedProjectId(null)}
-                  className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700"
-                  title="Clear filter"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          )}
-
           <span className="text-sm text-gray-600 whitespace-nowrap">
             {filteredImages.length} image{filteredImages.length !== 1 ? 's' : ''}
           </span>
+        </div>
+
+        {/* Filter Options */}
+        <div className="flex gap-3 items-center flex-wrap">
+          {/* Projects */}
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-gray-600" />
+            <select
+              value={selectedProjectId || ''}
+              onChange={(e) => setSelectedProjectId(e.target.value || null)}
+              className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Projects</option>
+              {projects.map((proj) => (
+                <option key={proj.id} value={proj.id}>
+                  {proj.name}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => setShowCreateProjectDialog(true)}
+              className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
+              title="Create new project"
+            >
+              <Plus className="w-4 h-4" />
+              New
+            </button>
+            {selectedProjectId && (
+              <button
+                onClick={() => setSelectedProjectId(null)}
+                className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700"
+                title="Clear project filter"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Media Type Filter */}
+          <select
+            value={selectedMediaType || ''}
+            onChange={(e) => setSelectedMediaType(e.target.value || null)}
+            className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All Media</option>
+            <option value="image">Image</option>
+            <option value="video">Video</option>
+          </select>
+
+          {/* Gender Filter */}
+          <select
+            value={selectedGender || ''}
+            onChange={(e) => setSelectedGender(e.target.value || null)}
+            className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All Genders</option>
+            <option value="man">Man</option>
+            <option value="woman">Woman</option>
+            <option value="neutral">Neutral</option>
+          </select>
+
+          {/* Date Filter */}
+          <select
+            value={selectedDateRange || ''}
+            onChange={(e) => setSelectedDateRange(e.target.value || null)}
+            className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All Time</option>
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+            <option value="year">This Year</option>
+          </select>
+
+          {/* Clear Filters */}
+          {(selectedProjectId || selectedMediaType || selectedGender || selectedDateRange) && (
+            <button
+              onClick={() => {
+                setSelectedProjectId(null)
+                setSelectedMediaType(null)
+                setSelectedGender(null)
+                setSelectedDateRange(null)
+              }}
+              className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg text-sm font-medium transition-colors"
+            >
+              Clear All Filters
+            </button>
+          )}
         </div>
       </div>
 
@@ -399,6 +519,57 @@ export default function AIStudioLibrary() {
               >
                 <Trash2 className="w-4 h-4" />
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Project Dialog */}
+      {showCreateProjectDialog && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 space-y-4">
+            <h2 className="text-xl font-bold text-gray-900">Create New Project</h2>
+
+            <input
+              type="text"
+              placeholder="Project name..."
+              value={createProjectName}
+              onChange={(e) => setCreateProjectName(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleCreateProject()
+                }
+              }}
+            />
+
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => {
+                  setShowCreateProjectDialog(false)
+                  setCreateProjectName('')
+                }}
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateProject}
+                disabled={!createProjectName.trim() || isCreatingProject}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+              >
+                {isCreatingProject ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    Create
+                  </>
+                )}
               </button>
             </div>
           </div>
