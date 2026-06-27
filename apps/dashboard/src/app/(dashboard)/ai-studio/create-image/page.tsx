@@ -247,14 +247,15 @@ export default function CreateImagePage() {
           const data = await response.json()
           if (data.models && Array.isArray(data.models)) {
             setModels(data.models)
-            return
+          } else {
+            throw new Error('Invalid response')
           }
+        } else {
+          throw new Error('API error')
         }
       } catch (error) {
-        // Silent fail - will use defaults
-      }
-      // Use default models as fallback
-      setModels([
+        // Use default models as fallback
+        setModels([
           { id: 'gemini-3.1-flash-image', name: 'Gemini 3.1 Flash Image' },
           { id: 'nano-banana-pro', name: 'Nano Banana Pro' },
           { id: 'nano-banana-2', name: 'Nano Banana 2' },
