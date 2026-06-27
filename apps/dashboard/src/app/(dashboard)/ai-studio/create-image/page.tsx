@@ -1194,36 +1194,14 @@ export default function CreateImagePage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Save to Project</h2>
 
             <div className="space-y-4">
-              {/* Select Existing Project */}
+              {/* Option 1: Create New Project */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Project
-                </label>
-                <select
-                  value={selectedProjectId}
-                  onChange={(e) => {
-                    setSelectedProjectId(e.target.value)
-                    setNewProjectName('')
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Choose a project...</option>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Or Create New Project */}
-              <div className="border-t pt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Or Create New Project
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  📁 Create New Project
                 </label>
                 <input
                   type="text"
-                  placeholder="Project name..."
+                  placeholder="Enter project name..."
                   value={newProjectName}
                   onChange={(e) => {
                     setNewProjectName(e.target.value)
@@ -1231,7 +1209,42 @@ export default function CreateImagePage() {
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                <p className="text-xs text-gray-500 mt-1">Create a new folder to organize your images</p>
               </div>
+
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-600 font-medium">or</span>
+                </div>
+              </div>
+
+              {/* Option 2: Choose Existing Project */}
+              {projects.length > 0 && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    📂 Choose Existing Project
+                  </label>
+                  <select
+                    value={selectedProjectId}
+                    onChange={(e) => {
+                      setSelectedProjectId(e.target.value)
+                      setNewProjectName('')
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select a project...</option>
+                    {projects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4 border-t">
