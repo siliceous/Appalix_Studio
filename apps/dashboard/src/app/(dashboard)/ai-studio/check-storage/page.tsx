@@ -70,7 +70,7 @@ export default function CheckStoragePage() {
           <h3 className="font-semibold text-blue-900 mb-2">Next Steps:</h3>
           <ul className="space-y-2 text-sm text-blue-800">
             <li>• If count = 0: Images aren't being saved to localStorage</li>
-            <li>• If count > 0: Images are saved, but library page can't load them</li>
+            <li>• If count &gt; 0: Images are saved, but library page can't load them</li>
             <li>• Go to <a href="/dashboard/ai-studio/library" className="underline font-semibold">/library</a> to see if images appear</li>
             <li>• Go to <a href="/dashboard/ai-studio/create-image" className="underline font-semibold">/create-image</a> to generate more</li>
           </ul>
