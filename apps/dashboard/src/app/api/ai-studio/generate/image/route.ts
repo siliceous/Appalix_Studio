@@ -23,7 +23,10 @@ export async function POST(request: NextRequest) {
       })
     } catch (fetchError) {
       console.error('[Proxy] Failed to connect to backend:', fetchError)
-      return NextResponse.json({ error: 'Failed to connect to backend server' }, { status: 503 })
+      return NextResponse.json({
+        error: 'Backend server not running. Start it with: cd apps/api && npm run dev',
+        details: 'Cannot reach http://localhost:3001'
+      }, { status: 503 })
     }
 
     const responseText = await response.text()
