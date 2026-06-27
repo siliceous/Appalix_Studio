@@ -202,6 +202,7 @@ export default function CreateImagePage() {
 
   // State management
   const [prompt, setPrompt] = useState('')
+  const [originalPrompt, setOriginalPrompt] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [history, setHistory] = useState<GeneratedImage[]>([])
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null)
@@ -334,6 +335,7 @@ export default function CreateImagePage() {
     // Clear canvas and show loading state
     setIsGenerating(true)
     setSelectedImage(null)
+    setOriginalPrompt('')
     setFullscreenImage(null)
 
     try {
@@ -450,7 +452,9 @@ export default function CreateImagePage() {
               })
 
               // Select the last generated image
-              setSelectedImage(newImages[newImages.length - 1])
+              const lastImage = newImages[newImages.length - 1]
+              setSelectedImage(lastImage)
+              setOriginalPrompt(prompt)
               console.log('Images received and processed:', statusData.imageUrls.length)
             } else {
               console.warn('Completed but no imageUrls found. statusData:', statusData)
@@ -908,29 +912,15 @@ export default function CreateImagePage() {
                 <p className="text-sm text-gray-600">Generating image...</p>
               </div>
             ) : selectedImage ? (
-              <>
-                <img
-                  src={selectedImage.image}
-                  alt="Generated"
-                  className="max-w-full max-h-full w-auto h-auto object-contain"
-                />
-                {/* Edit Button Overlay */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setPrompt(selectedImage.prompt)
-                      // Scroll to prompt input
-                      const textarea = document.querySelector('textarea')
-                      textarea?.focus()
-                    }}
-                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-lg flex items-center gap-2"
-                  >
-                    <Edit className="w-5 h-5" />
-                    Edit & Regenerate
-                  </button>
-                </div>
-              </>
+              <img
+                src={selectedImage.image}
+                alt="Generated"
+                className="max-w-full max-h-full w-auto h-auto object-contain cursor-pointer"
+                onClick={() => {
+                  setFullscreenImage(selectedImage.image)
+                  setFullscreenImageData(selectedImage)
+                }}
+              />
             ) : (
               <div className="text-center">
                 <Sparkles className="w-16 h-16 mx-auto mb-4 opacity-30 text-gray-400" />
@@ -956,7 +946,7 @@ export default function CreateImagePage() {
                   disabled={!prompt.trim() || isGenerating || credits < calculateCost()}
                   className="px-6 py-2 bg-black text-white text-sm font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors"
                 >
-                  {isGenerating ? 'Generating...' : `Generate (${calculateCost()} credits)`}
+                  {isGenerating ? 'Generating...' : `${selectedImage && prompt === originalPrompt ? 'Regenerate' : 'Generate'} (${calculateCost()} credits)`}
                 </button>
 
                 {/* Action buttons - appear when image is selected */}
