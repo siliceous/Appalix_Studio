@@ -183,25 +183,25 @@ export default function AIStudio() {
       {/* Top Buttons Bar */}
       <div className="px-4 ml-3 mr-4 flex items-center gap-2 min-h-[52px] pb-2 pt-3 shrink-0">
         <button
-          onClick={() => router.push('/dashboard/ai-studio/create-image')}
+          onClick={() => router.push('/ai-studio/create-image')}
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-transparent text-white hover:bg-white/10 transition-colors whitespace-nowrap"
         >
           Create Image
         </button>
         <button
-          onClick={() => router.push('/dashboard/ai-studio/create-video')}
+          onClick={() => router.push('/ai-studio/create-video')}
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-transparent text-white hover:bg-white/10 transition-colors whitespace-nowrap"
         >
           Create Video
         </button>
         <button
-          onClick={() => router.push('/dashboard/ai-studio/product-ads')}
+          onClick={() => router.push('/ai-studio/product-ads')}
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-transparent text-white hover:bg-white/10 transition-colors whitespace-nowrap"
         >
           Product Ads
         </button>
         <button
-          onClick={() => router.push('/dashboard/ai-studio/talking-ad')}
+          onClick={() => router.push('/ai-studio/talking-ad')}
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-transparent text-white hover:bg-white/10 transition-colors whitespace-nowrap"
         >
           Talking Ads
