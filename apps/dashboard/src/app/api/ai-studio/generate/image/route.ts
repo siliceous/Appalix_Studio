@@ -11,18 +11,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing workspace ID' }, { status: 400 })
     }
 
-    const response = await fetch(`${API_URL}/api/ai-studio/generate/image`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-workspace-id': workspaceId,
-      },
-      body: JSON.stringify(body),
-    })
+    let response
+    try {
+      response = await fetch(`${API_URL}/api/ai-studio/generate/image`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-workspace-id': workspaceId,
+        },
+        body: JSON.stringify(body),
+      })
+    } catch (fetchError) {
+      console.error('[Proxy] Failed to connect to backend:', fetchError)
+      return NextResponse.json({ error: 'Failed to connect to backend server' }, { status: 503 })
+    }
 
     const responseText = await response.text()
     console.log('[Proxy] Backend response status:', response.status)
-    console.log('[Proxy] Backend response text preview:', responseText.substring(0, 200))
+    console.log('[Proxy] Backend response text preview:', responseText.substring(0, 500))
+
+    if (!response.ok) {
+      console.error('[Proxy] Backend error response:', responseText)
+      return NextResponse.json(
+        { error: `Backend error: ${response.status}`, details: responseText },
+        { status: response.status }
+      )
+    }
 
     let data
     try {
@@ -39,7 +53,7 @@ export async function POST(request: NextRequest) {
       hasImageUrls: !!data.imageUrls,
       type: data.type,
     })
-    return NextResponse.json(data, { status: response.status })
+    return NextResponse.json(data, { status: 200 })
   } catch (error) {
     console.error('API proxy error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
