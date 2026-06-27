@@ -230,23 +230,21 @@ export default function AIStudioLibrary() {
             {filteredImages.map((image) => (
               <div
                 key={image.id}
-                className="relative rounded-lg overflow-hidden border border-gray-300 hover:shadow-lg transition-all duration-300 bg-gray-100 break-inside-avoid cursor-pointer"
+                className={`relative rounded-lg overflow-hidden border border-gray-300 hover:shadow-lg transition-all duration-300 bg-gray-100 break-inside-avoid cursor-pointer ${getAspectRatioPadding(image.aspectRatio)}`}
                 onClick={() => setFullscreenImage(image)}
               >
-                <div className={`relative w-full ${getAspectRatioPadding(image.aspectRatio)}`}>
-                  <img
-                    src={image.image}
-                    alt={image.prompt}
-                    className="w-full h-full object-cover"
-                  />
+                <img
+                  src={image.image}
+                  alt={image.prompt}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
 
-                  {/* Project Badge */}
-                  {image.projectName && (
-                    <div className="absolute top-2 left-2 bg-blue-600/90 px-2 py-1 rounded text-xs font-medium text-white">
-                      {image.projectName}
-                    </div>
-                  )}
-                </div>
+                {/* Project Badge */}
+                {image.projectName && (
+                  <div className="absolute top-2 left-2 bg-blue-600/90 px-2 py-1 rounded text-xs font-medium text-white">
+                    {image.projectName}
+                  </div>
+                )}
               </div>
             ))}
           </Masonry>
