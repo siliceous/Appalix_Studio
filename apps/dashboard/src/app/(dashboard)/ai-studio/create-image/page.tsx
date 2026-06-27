@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Sparkles, Download, Trash2, Heart, Loader, X, Copy, Edit } from 'lucide-react'
+import { ArrowLeft, Sparkles, Download, Trash2, Heart, Loader, X, Copy, Edit, ChevronLeft, ChevronRight } from 'lucide-react'
 
 const QUALITY_PRESETS = [
   { id: 'fast', label: 'Fast' },
@@ -210,6 +210,7 @@ export default function CreateImagePage() {
   const [workspaceId, setWorkspaceId] = useState<string>('')
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null)
   const [fullscreenImageData, setFullscreenImageData] = useState<GeneratedImage | null>(null)
+  const [fullscreenImageIndex, setFullscreenImageIndex] = useState(0)
   const [showTrash, setShowTrash] = useState(false)
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [projects, setProjects] = useState<any[]>([])
@@ -919,6 +920,8 @@ export default function CreateImagePage() {
                 onClick={() => {
                   setFullscreenImage(selectedImage.image)
                   setFullscreenImageData(selectedImage)
+                  const idx = history.findIndex(img => img.id === selectedImage.id)
+                  setFullscreenImageIndex(Math.max(0, idx))
                 }}
               />
             ) : (
@@ -1116,11 +1119,50 @@ export default function CreateImagePage() {
             className="relative w-screen h-screen max-w-6xl max-h-screen flex flex-col items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Previous Button */}
+            {fullscreenImageIndex > 0 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  const newIdx = fullscreenImageIndex - 1
+                  setFullscreenImageIndex(newIdx)
+                  setFullscreenImageData(history[newIdx] || null)
+                  setFullscreenImage(history[newIdx]?.image || null)
+                }}
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full transition-colors z-10"
+                title="Previous image"
+              >
+                <ChevronLeft className="w-6 h-6 text-white" />
+              </button>
+            )}
+
             <img
               src={fullscreenImage}
               alt="Fullscreen"
               className="max-w-[90vw] max-h-[70vh] w-auto h-auto object-contain"
             />
+
+            {/* Next Button */}
+            {fullscreenImageIndex < history.length - 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  const newIdx = fullscreenImageIndex + 1
+                  setFullscreenImageIndex(newIdx)
+                  setFullscreenImageData(history[newIdx] || null)
+                  setFullscreenImage(history[newIdx]?.image || null)
+                }}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full transition-colors z-10"
+                title="Next image"
+              >
+                <ChevronRight className="w-6 h-6 text-white" />
+              </button>
+            )}
+
+            {/* Image Counter */}
+            <div className="absolute top-4 right-4 bg-black/60 px-3 py-1 rounded-full text-white text-sm">
+              {fullscreenImageIndex + 1} / {history.length}
+            </div>
 
             {/* Action Buttons */}
             <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-4">

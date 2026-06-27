@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Download, Trash2, Copy, Search, Loader, Filter, X, Edit2, Send, FolderPlus } from 'lucide-react'
+import { ArrowLeft, Download, Trash2, Copy, Search, Loader, Filter, X, Edit2, Send, FolderPlus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Masonry from 'react-masonry-css'
 import './masonry.css'
@@ -32,6 +32,7 @@ export default function AIStudioLibrary() {
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [workspaceId, setWorkspaceId] = useState('')
   const [fullscreenImage, setFullscreenImage] = useState<GeneratedImage | null>(null)
+  const [fullscreenImageIndex, setFullscreenImageIndex] = useState(0)
   const [newProjectName, setNewProjectName] = useState('')
   const [isSavingProject, setIsSavingProject] = useState(false)
 
@@ -227,11 +228,14 @@ export default function AIStudioLibrary() {
             className="masonry-grid"
             columnClassName="masonry-grid-column"
           >
-            {filteredImages.map((image) => (
+            {filteredImages.map((image, idx) => (
               <div
                 key={image.id}
                 className={`relative rounded-lg overflow-hidden border border-gray-300 hover:shadow-lg transition-all duration-300 bg-gray-100 break-inside-avoid cursor-pointer ${getAspectRatioPadding(image.aspectRatio)}`}
-                onClick={() => setFullscreenImage(image)}
+                onClick={() => {
+                  setFullscreenImage(image)
+                  setFullscreenImageIndex(idx)
+                }}
               >
                 <img
                   src={image.image}
@@ -265,14 +269,49 @@ export default function AIStudioLibrary() {
             </button>
           </div>
 
-          {/* Image Container */}
-          <div className="flex-1 flex items-center justify-center overflow-auto p-6">
+          {/* Image Container with Navigation */}
+          <div className="flex-1 flex items-center justify-center overflow-auto p-6 relative">
+            {/* Previous Button */}
+            {fullscreenImageIndex > 0 && (
+              <button
+                onClick={() => {
+                  const newIdx = fullscreenImageIndex - 1
+                  setFullscreenImageIndex(newIdx)
+                  setFullscreenImage(filteredImages[newIdx])
+                }}
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors z-10"
+                title="Previous image"
+              >
+                <ChevronLeft className="w-6 h-6 text-white" />
+              </button>
+            )}
+
             <div className="max-w-4xl max-h-full flex items-center justify-center">
               <img
                 src={fullscreenImage.image}
                 alt={fullscreenImage.prompt}
                 className="max-w-full max-h-full object-contain rounded-lg"
               />
+            </div>
+
+            {/* Next Button */}
+            {fullscreenImageIndex < filteredImages.length - 1 && (
+              <button
+                onClick={() => {
+                  const newIdx = fullscreenImageIndex + 1
+                  setFullscreenImageIndex(newIdx)
+                  setFullscreenImage(filteredImages[newIdx])
+                }}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors z-10"
+                title="Next image"
+              >
+                <ChevronRight className="w-6 h-6 text-white" />
+              </button>
+            )}
+
+            {/* Image Counter */}
+            <div className="absolute top-4 right-4 bg-black/60 px-3 py-1 rounded-full text-white text-sm">
+              {fullscreenImageIndex + 1} / {filteredImages.length}
             </div>
           </div>
 
