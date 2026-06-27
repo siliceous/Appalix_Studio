@@ -85,6 +85,32 @@ export default function AIStudioLibrary() {
     fetchProjects()
   }, [workspaceId])
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!fullscreenImage) return
+
+      if (e.key === 'Escape') {
+        setFullscreenImage(null)
+      } else if (e.key === 'ArrowLeft') {
+        if (fullscreenImageIndex > 0) {
+          const newIdx = fullscreenImageIndex - 1
+          setFullscreenImageIndex(newIdx)
+          setFullscreenImage(filteredImages[newIdx])
+        }
+      } else if (e.key === 'ArrowRight') {
+        if (fullscreenImageIndex < filteredImages.length - 1) {
+          const newIdx = fullscreenImageIndex + 1
+          setFullscreenImageIndex(newIdx)
+          setFullscreenImage(filteredImages[newIdx])
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [fullscreenImage, fullscreenImageIndex, filteredImages])
+
   // Filter images by search and project
   const filteredImages = images.filter((img) => {
     const matchesSearch = img.prompt.toLowerCase().includes(searchQuery.toLowerCase())

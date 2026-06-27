@@ -308,13 +308,30 @@ export default function CreateImagePage() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && fullscreenImage) {
+      if (!fullscreenImage) return
+
+      if (e.key === 'Escape') {
         setFullscreenImage(null)
+        setFullscreenImageData(null)
+      } else if (e.key === 'ArrowLeft') {
+        if (fullscreenImageIndex > 0) {
+          const newIdx = fullscreenImageIndex - 1
+          setFullscreenImageIndex(newIdx)
+          setFullscreenImageData(history[newIdx] || null)
+          setFullscreenImage(history[newIdx]?.image || null)
+        }
+      } else if (e.key === 'ArrowRight') {
+        if (fullscreenImageIndex < history.length - 1) {
+          const newIdx = fullscreenImageIndex + 1
+          setFullscreenImageIndex(newIdx)
+          setFullscreenImageData(history[newIdx] || null)
+          setFullscreenImage(history[newIdx]?.image || null)
+        }
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [fullscreenImage])
+  }, [fullscreenImage, fullscreenImageIndex, history])
 
   const handleGenerate = async () => {
     if (!prompt.trim() || !workspaceId) {
