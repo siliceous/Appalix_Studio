@@ -24,55 +24,32 @@ class NanoBananaAdapter {
   }
 
   async generateImage(params: NanoBananaGenerationParams): Promise<string> {
-    if (!this.apiKey) {
-      throw new Error('Gemini API key not configured')
+    // Use Stability AI instead of Gemini
+    const stabilityApiKey = config.STABILITY_API_KEY
+    if (!stabilityApiKey) {
+      throw new Error('Stability API key not configured')
     }
 
-    const aspectRatioPrompt = this.buildAspectRatioPrompt(params.aspectRatio)
-    const basePrompt = this.buildPrompt(params.prompt, params.style, params.lighting, params.resolution)
-    const prompt = aspectRatioPrompt ? `${aspectRatioPrompt}. ${basePrompt}` : basePrompt
-    const modelId = params.modelId || 'nano-banana'
+    const prompt = this.buildPrompt(params.prompt, params.style, params.lighting, params.resolution)
     const numImages = params.numImages || 1
 
-    // Map Nano Banana models to Gemini endpoints
-    let geminiModel = 'gemini-2.5-flash-image' // Default for nano-banana
-    if (modelId === 'nano-banana-2') {
-      geminiModel = 'gemini-3.1-flash-image'
-    } else if (modelId === 'nano-banana-pro') {
-      geminiModel = 'gemini-3-pro-image'
-    }
-
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${this.apiKey}`
     const allImageUrls: string[] = []
-
-    console.log(`[Nano Banana] Generating ${numImages} image(s)`)
-    console.log('[Nano Banana] Model:', modelId, '-> Gemini:', geminiModel)
+    console.log(`[Nano Banana] Generating ${numImages} image(s) using Stability AI`)
 
     for (let i = 0; i < numImages; i++) {
       try {
-        // Gemini API payload format
         const payload = {
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            responseModalities: ['TEXT', 'IMAGE'],
-            temperature: params.temperature ?? 0.7,
-          },
+          prompt: prompt,
+          aspect_ratio: params.aspectRatio || '1:1',
+          output_format: 'png',
         }
 
-        console.log(`[Nano Banana] Sending request ${i + 1}/${numImages}`)
-        console.log('[Nano Banana] Prompt:', prompt)
+        console.log(`[Nano Banana] Sending request ${i + 1}/${numImages} to Stability AI`)
 
-        const response = await fetch(endpoint, {
+        const response = await fetch('https://api.stability.ai/v2beta/image-to-image/core', {
           method: 'POST',
           headers: {
+            'Authorization': `Bearer ${stabilityApiKey}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(payload),
@@ -83,43 +60,28 @@ class NanoBananaAdapter {
         if (!response.ok) {
           const errorText = await response.text()
           console.error(`[Nano Banana] Error response: ${errorText.substring(0, 300)}`)
-          throw new Error(`Gemini API error: ${response.status}`)
+          throw new Error(`Stability API error: ${response.status}`)
         }
 
         const data = await response.json() as any
-
-        // Extract image from candidates[0].content.parts[].inlineData.data
-        if (data.candidates && Array.isArray(data.candidates) && data.candidates.length > 0) {
-          const candidate = data.candidates[0]
-          if (candidate.content && candidate.content.parts) {
-            for (const part of candidate.content.parts) {
-              if (part.inlineData && part.inlineData.data) {
-                // Found base64 image data
-                const base64Data = part.inlineData.data
-                const mimeType = part.inlineData.mimeType || 'image/png'
-                const dataUrl = `data:${mimeType};base64,${base64Data}`
-                allImageUrls.push(dataUrl)
-                console.log(`[Nano Banana] Found image ${i + 1}/${numImages}`)
-              }
-            }
-          }
+        if (data.image) {
+          const dataUrl = `data:image/png;base64,${data.image}`
+          allImageUrls.push(dataUrl)
+          console.log(`[Nano Banana] Generated image ${i + 1}/${numImages}`)
         }
 
-        // Small delay between requests to avoid rate limiting
         if (i < numImages - 1) {
           await new Promise(resolve => setTimeout(resolve, 500))
         }
       } catch (error) {
         console.error(`[Nano Banana] Error generating image ${i + 1}:`, error)
-        // Continue with other images even if one fails
       }
     }
 
     if (allImageUrls.length === 0) {
-      throw new Error('No images returned from Gemini API')
+      throw new Error('No images returned from Stability API')
     }
 
-    // Store the images with a job ID
     const jobId = `nano-banana-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     this.generatedImages.set(jobId, allImageUrls)
 
