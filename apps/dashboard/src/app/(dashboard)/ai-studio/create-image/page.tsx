@@ -756,7 +756,7 @@ export default function CreateImagePage() {
           {/* Settings Content Scrollable Area */}
           <div className="flex-1 min-h-0 overflow-y-auto px-4 py-2 pr-2 pb-4 space-y-1.5 flex flex-col text-sm">
             {/* Model Selector */}
-            <div className="bg-gray-100 border border-gray-300 rounded-lg p-3">
+            <div>
               <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
                 Model
               </label>
