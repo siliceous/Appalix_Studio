@@ -972,19 +972,11 @@ export default function CreateImagePage() {
             </div>
 
             {/* Body Type */}
-            <div className="border border-gray-300 rounded-lg overflow-hidden">
-              <button
-                onClick={() => setBodyTypeExpanded(!bodyTypeExpanded)}
-                className="w-full flex items-center justify-between px-3 py-2 bg-gray-100 hover:bg-gray-200 transition-colors"
-              >
-                <label className="text-xs font-semibold text-black uppercase tracking-widest cursor-pointer">
-                  Body Type
-                </label>
-                <ChevronDown className={`w-4 h-4 text-black transition-transform ${bodyTypeExpanded ? 'rotate-180' : ''}`} />
-              </button>
-
-              {bodyTypeExpanded && (
-                <div className="px-3 py-3 bg-white space-y-3">
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-black uppercase tracking-widest block">
+                Body Type
+              </label>
+              <div className="space-y-3">
                   {/* Body Type */}
                   <div>
                     <label className="text-xs font-semibold text-black uppercase tracking-widest mb-1 block">Body Type</label>
@@ -1047,8 +1039,7 @@ export default function CreateImagePage() {
                       </p>
                     )}
                   </div>
-                </div>
-              )}
+              </div>
             </div>
 
             {/* Camera Settings */}
