@@ -157,6 +157,11 @@ class StabilityAdapter {
         id: 'gemini-3.1-flash-image',
         name: 'Gemini 3.1 Flash Image',
       },
+      // Seedence
+      {
+        id: 'seedence-2',
+        name: 'Seedence 2',
+      },
     ]
   }
 
