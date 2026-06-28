@@ -1143,6 +1143,7 @@ export default function CreateImagePage() {
                       ))}
                     </select>
                   </div>
+                </div>
               )}
             </div>
 
