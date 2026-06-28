@@ -270,8 +270,6 @@ export default function CreateImagePage() {
   const [ethnicity, setEthnicity] = useState('none')
   const [hairType, setHairType] = useState('none')
   const [shotType, setShotType] = useState('none')
-  const [bodyTypeExpanded, setBodyTypeExpanded] = useState(true)
-  const [cameraExpanded, setCameraExpanded] = useState(false)
   const [lens, setLens] = useState('none')
   const [aperture, setAperture] = useState('none')
   const [shutterSpeed, setShutterSpeed] = useState('none')
@@ -987,26 +985,7 @@ export default function CreateImagePage() {
             </div>
 
             {/* Body Type */}
-            <div className="border border-gray-300 rounded-lg overflow-hidden">
-              <button
-                onClick={() => setBodyTypeExpanded(!bodyTypeExpanded)}
-                className="w-full flex items-center justify-between px-3 py-2 bg-gray-100 hover:bg-gray-200 transition-colors"
-              >
-                <label className="text-xs font-semibold text-black uppercase tracking-widest cursor-pointer">
-                  Body Type
-                </label>
-                <svg
-                  className={`w-4 h-4 text-black transition-transform ${bodyTypeExpanded ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                </svg>
-              </button>
-
-              {bodyTypeExpanded && (
-                <div className="px-3 py-3 bg-white space-y-3">
+            <div className="px-3 py-3 bg-white space-y-3 border border-gray-300 rounded-lg">
                   {/* Body Type */}
                   <div>
                     <label className="text-xs font-semibold text-black uppercase tracking-widest mb-1 block">Body Type</label>
@@ -1069,31 +1048,10 @@ export default function CreateImagePage() {
                       </p>
                     )}
                   </div>
-                </div>
-              )}
             </div>
 
             {/* Camera Settings */}
-            <div className="border border-gray-300 rounded-lg overflow-hidden">
-              <button
-                onClick={() => setCameraExpanded(!cameraExpanded)}
-                className="w-full flex items-center justify-between px-3 py-2 bg-gray-100 hover:bg-gray-200 transition-colors"
-              >
-                <label className="text-xs font-semibold text-black uppercase tracking-widest cursor-pointer">
-                  Camera Settings
-                </label>
-                <svg
-                  className={`w-4 h-4 text-black transition-transform ${cameraExpanded ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                </svg>
-              </button>
-
-              {cameraExpanded && (
-                <div className="px-3 py-3 space-y-3 bg-white">
+            <div className="px-3 py-3 space-y-3 bg-white border border-gray-300 rounded-lg">
                   {/* Lens */}
                   <div>
                     <label className="text-xs font-semibold text-black mb-1 block">Lens</label>
@@ -1157,8 +1115,6 @@ export default function CreateImagePage() {
                       ))}
                     </select>
                   </div>
-                </div>
-              )}
             </div>
 
           </div>
