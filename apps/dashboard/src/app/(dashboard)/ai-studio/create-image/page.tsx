@@ -270,7 +270,7 @@ export default function CreateImagePage() {
   const [ethnicity, setEthnicity] = useState('none')
   const [hairType, setHairType] = useState('none')
   const [shotType, setShotType] = useState('none')
-  const [bodyTypeExpanded, setBodyTypeExpanded] = useState(true)
+  const [bodyTypeExpanded, setBodyTypeExpanded] = useState(false)
   const [cameraExpanded, setCameraExpanded] = useState(false)
   const [lens, setLens] = useState('none')
   const [aperture, setAperture] = useState('none')
