@@ -749,13 +749,12 @@ export default function CreateImagePage() {
       {/* Main Layout */}
       <div className="flex-1 flex gap-4 px-4 py-0 pb-4 overflow-hidden">
         {/* Left Panel - Controls */}
-        <div className="w-96 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden">
+        <div className="w-96 flex flex-col rounded-2xl shadow-lg bg-white">
           <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center flex-shrink-0">
             <h2 className="text-sm font-semibold">Settings</h2>
           </div>
-          <div className="flex-1 min-h-0 overflow-hidden">
-            {/* Settings Content Scrollable Area */}
-            <div className="h-full overflow-y-auto px-4 py-3 pb-8 space-y-2 flex flex-col text-sm">
+          {/* Settings Content Scrollable Area */}
+          <div className="flex-1 overflow-y-auto px-4 py-3 pb-8 space-y-2 flex flex-col text-sm">
             {/* Model Selector */}
             <div className="bg-gray-100 border border-gray-300 rounded-lg p-3">
               <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
@@ -1147,7 +1146,6 @@ export default function CreateImagePage() {
                   </div>
                 </div>
               )}
-            </div>
             </div>
           </div>
         </div>
