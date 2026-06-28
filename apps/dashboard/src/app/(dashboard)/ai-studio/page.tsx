@@ -182,7 +182,7 @@ export default function AIStudio() {
       <SageToolbar pageKey="email" />
 
       <div className="flex flex-1 overflow-hidden">
-        <div className="flex-1 overflow-y-auto bg-[#f5f4f1] flex flex-col">
+        <div className="flex-1 overflow-hidden bg-[#f5f4f1] flex flex-col">
           <div className="px-4 ml-3 mr-4 pt-5 pb-0 shrink-0">
             <div className="mb-5">
               <h1 className="text-xl font-bold text-gray-900">AI Studio</h1>
@@ -197,9 +197,10 @@ export default function AIStudio() {
               <div className="flex-1" />
               <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-white/10 border border-white/20">{credits} Credits</div>
             </nav>
+          </div>
 
+          <div className="flex-1 overflow-hidden flex flex-col px-4 ml-3 mr-4 pb-4">
             <div className="bg-[#141c2b] rounded-t-xl border border-white/10 border-b-0 shadow-lg p-4 shrink-0">
-
               <div className="flex flex-wrap gap-3 items-center">
                 <div className="relative flex-1 min-w-[180px]">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
