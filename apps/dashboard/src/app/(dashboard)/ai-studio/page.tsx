@@ -178,7 +178,7 @@ export default function AIStudio() {
   }, [fullscreenImage, fullscreenImageIndex, filteredImages])
 
   return (
-    <div className="-m-8 flex flex-col h-screen overflow-hidden">
+    <div className="-m-8 flex flex-col h-screen overflow-hidden" suppressHydrationWarning>
       <SageToolbar pageKey="email" />
 
       <div className="flex flex-1 overflow-hidden">
