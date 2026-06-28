@@ -747,13 +747,13 @@ export default function CreateImagePage() {
     <div className="flex flex-col h-screen bg-gray-100">
 
       {/* Main Layout */}
-      <div className="flex-1 flex gap-4 px-4 py-0 pb-4 overflow-hidden">
+      <div className="flex-1 flex gap-4 px-4 py-0 pb-4 overflow-hidden h-full">
         {/* Left Panel - Controls */}
-        <div className="w-72 flex flex-col overflow-hidden rounded-2xl shadow-lg bg-white h-full">
-          <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center shrink-0">
+        <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden">
+          <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center flex-shrink-0">
             <h2 className="text-sm font-semibold">Settings</h2>
           </div>
-          <div className="px-4 py-3 pb-8 space-y-2 flex flex-col text-sm overflow-y-auto flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto px-4 py-3 pb-8 space-y-2 flex flex-col text-sm min-h-0">
             {/* Model Selector */}
             <div className="bg-gray-100 border border-gray-300 rounded-lg p-3">
               <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
