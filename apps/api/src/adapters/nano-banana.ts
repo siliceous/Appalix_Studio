@@ -24,32 +24,30 @@ class NanoBananaAdapter {
   }
 
   async generateImage(params: NanoBananaGenerationParams): Promise<string> {
-    // Use Stability AI instead of Gemini
-    const stabilityApiKey = config.STABILITY_API_KEY
-    if (!stabilityApiKey) {
-      throw new Error('Stability API key not configured')
+    if (!this.apiKey) {
+      throw new Error('Nano Banana API key not configured')
     }
 
     const prompt = this.buildPrompt(params.prompt, params.style, params.lighting, params.resolution)
     const numImages = params.numImages || 1
-
     const allImageUrls: string[] = []
-    console.log(`[Nano Banana] Generating ${numImages} image(s) using Stability AI`)
+
+    console.log(`[Nano Banana] Generating ${numImages} image(s)`)
 
     for (let i = 0; i < numImages; i++) {
       try {
         const payload = {
           prompt: prompt,
-          aspect_ratio: params.aspectRatio || '1:1',
-          output_format: 'png',
+          num_inference_steps: 30,
+          guidance_scale: 7.5,
         }
 
-        console.log(`[Nano Banana] Sending request ${i + 1}/${numImages} to Stability AI`)
+        console.log(`[Nano Banana] Sending request ${i + 1}/${numImages}`)
 
-        const response = await fetch('https://api.stability.ai/v2beta/image-to-image/core', {
+        const response = await fetch('https://api.nanobang.ai/generate', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${stabilityApiKey}`,
+            'Authorization': `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(payload),
@@ -60,14 +58,16 @@ class NanoBananaAdapter {
         if (!response.ok) {
           const errorText = await response.text()
           console.error(`[Nano Banana] Error response: ${errorText.substring(0, 300)}`)
-          throw new Error(`Stability API error: ${response.status}`)
+          throw new Error(`Nano Banana API error: ${response.status}`)
         }
 
         const data = await response.json() as any
-        if (data.image) {
-          const dataUrl = `data:image/png;base64,${data.image}`
-          allImageUrls.push(dataUrl)
-          console.log(`[Nano Banana] Generated image ${i + 1}/${numImages}`)
+        if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+          for (const imageBase64 of data.images) {
+            const dataUrl = `data:image/png;base64,${imageBase64}`
+            allImageUrls.push(dataUrl)
+          }
+          console.log(`[Nano Banana] Generated ${data.images.length} image(s)`)
         }
 
         if (i < numImages - 1) {
@@ -79,7 +79,7 @@ class NanoBananaAdapter {
     }
 
     if (allImageUrls.length === 0) {
-      throw new Error('No images returned from Stability API')
+      throw new Error('No images returned from Nano Banana API')
     }
 
     const jobId = `nano-banana-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
