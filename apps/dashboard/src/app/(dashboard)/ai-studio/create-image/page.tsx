@@ -1265,7 +1265,7 @@ export default function CreateImagePage() {
 
         {/* Right Panel - History */}
         <div className="w-64 flex flex-col rounded-t-2xl shadow-lg bg-white overflow-hidden">
-          <div className="px-4 py-3 bg-black text-white rounded-t-2xl space-y-2">
+          <div className="px-4 py-3 bg-black text-white rounded-t-2xl">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold">Generated Images</h2>
               <button
@@ -1275,19 +1275,21 @@ export default function CreateImagePage() {
                 {showTrash ? '← Back' : 'Trash'}
               </button>
             </div>
+          </div>
+          <div className="px-4 py-3 bg-white border-b border-gray-200 space-y-2">
             <select
               value={selectedProjectId}
               onChange={(e) => setSelectedProjectId(e.target.value)}
-              className="w-full px-2 py-1.5 rounded-lg border border-white/20 bg-white/10 text-white text-xs focus:outline-none focus:ring-1 focus:ring-white/50"
+              className="w-full px-2 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option value="" className="bg-gray-900 text-white">Select folder...</option>
+              <option value="">Select folder...</option>
               {projects.map((project) => (
-                <option key={project.id} value={project.id} className="bg-gray-900 text-white">
+                <option key={project.id} value={project.id}>
                   {project.name}
                 </option>
               ))}
             </select>
-            <p className="text-xs text-gray-300">
+            <p className="text-xs text-gray-600">
               {showTrash
                 ? `${history.filter(img => img.deletedAt).length} deleted`
                 : `${history.filter(img => !img.deletedAt).length} image${history.filter(img => !img.deletedAt).length !== 1 ? 's' : ''}`}
