@@ -750,19 +750,8 @@ export default function CreateImagePage() {
       <div className="flex-1 flex gap-4 p-4 overflow-hidden">
         {/* Left Panel - Controls */}
         <div className="w-72 flex flex-col overflow-hidden rounded-t-2xl shadow-lg bg-white">
-          <div className="bg-black text-white px-4 py-3 rounded-t-2xl flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => router.back()}
-                className="p-1 hover:bg-white/10 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4 text-white" />
-              </button>
-              <h2 className="text-sm font-semibold">Settings</h2>
-            </div>
-            <div className="text-xs text-gray-300">
-              {credits} Credits
-            </div>
+          <div className="bg-black text-white px-4 py-3 rounded-t-2xl">
+            <h2 className="text-sm font-semibold">Settings</h2>
           </div>
           <div className="px-4 py-4 space-y-2.5 flex flex-col text-sm overflow-y-auto">
             {/* Model Selector */}
@@ -1177,8 +1166,17 @@ export default function CreateImagePage() {
 
         {/* Center Panel - Canvas */}
         <div className="flex-1 flex flex-col overflow-hidden rounded-t-2xl shadow-lg bg-white">
-          <div className="bg-black text-white px-4 py-3 rounded-t-2xl">
-            <h2 className="text-sm font-semibold text-center">Create Image</h2>
+          <div className="bg-black text-white px-4 py-3 rounded-t-2xl flex items-center justify-between">
+            <button
+              onClick={() => router.back()}
+              className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4 text-white" />
+            </button>
+            <h2 className="text-sm font-semibold flex-1 text-center">Create Image</h2>
+            <div className="text-xs font-semibold text-white">
+              {credits} Credits
+            </div>
           </div>
           <div className="flex-1 flex flex-col gap-4 overflow-hidden p-4">
           {/* Canvas Preview */}
