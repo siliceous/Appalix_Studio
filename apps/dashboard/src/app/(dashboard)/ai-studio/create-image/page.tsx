@@ -744,7 +744,7 @@ export default function CreateImagePage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
+    <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
 
       {/* Main Layout */}
       <div className="flex-1 flex gap-4 px-4 py-0 pb-4 overflow-hidden">
