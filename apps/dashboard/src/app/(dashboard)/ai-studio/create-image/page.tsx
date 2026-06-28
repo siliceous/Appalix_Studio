@@ -753,7 +753,7 @@ export default function CreateImagePage() {
           <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center">
             <h2 className="text-sm font-semibold">Settings</h2>
           </div>
-          <div className="px-4 py-3 pb-8 space-y-2 flex flex-col text-sm overflow-y-auto flex-1">
+          <div className="px-4 py-3 pb-8 space-y-2 flex flex-col text-sm overflow-y-scroll flex-1">
             {/* Model Selector */}
             <div className="bg-gray-100 border border-gray-300 rounded-lg p-3">
               <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
