@@ -1264,7 +1264,7 @@ export default function CreateImagePage() {
         </div>
 
         {/* Right Panel - History */}
-        <div className="w-96 flex flex-col rounded-t-2xl shadow-lg bg-white overflow-hidden">
+        <div className="w-64 flex flex-col rounded-t-2xl shadow-lg bg-white overflow-hidden">
           <div className="px-4 py-3 bg-black text-white rounded-t-2xl">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold">Generated Images</h2>
@@ -1282,7 +1282,7 @@ export default function CreateImagePage() {
             </p>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 grid grid-cols-2 gap-2 auto-rows-max" data-library-container>
+          <div className="flex-1 overflow-y-auto p-3 grid grid-cols-1 gap-2 auto-rows-max" data-library-container>
             {showTrash ? (
               // Trash view
               history.filter(img => img.deletedAt).length === 0 ? (
