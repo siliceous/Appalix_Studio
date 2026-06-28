@@ -255,12 +255,12 @@ export default function AIStudio() {
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-[2px]">
                     {filteredImages.map((image, idx) => (
                       <button
                         key={image.id}
                         onClick={() => { setFullscreenImage(image); setFullscreenImageIndex(idx) }}
-                        className={`relative rounded-lg overflow-hidden border-2 transition-all aspect-square ${
+                        className={`relative rounded-lg overflow-hidden border-2 transition-all break-inside-avoid mb-[2px] block w-full ${
                           image.id === fullscreenImage?.id
                             ? 'border-blue-500 shadow-lg shadow-blue-500/50'
                             : 'border-gray-200 hover:border-gray-300'
