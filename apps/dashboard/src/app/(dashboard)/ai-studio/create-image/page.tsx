@@ -1052,73 +1052,73 @@ export default function CreateImagePage() {
             </div>
 
             {/* Camera Settings */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <label className="text-xs font-semibold text-black uppercase tracking-widest block">
                 Camera Settings
               </label>
-                  {/* Lens */}
-                  <div>
-                    <label className="text-xs font-semibold text-black mb-1 block">Lens</label>
-                    <select
-                      value={lens}
-                      onChange={(e) => setLens(e.target.value)}
-                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {LENSES.map((l) => (
-                        <option key={l.id} value={l.id}>
-                          {l.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              {/* Lens */}
+              <div>
+                <label className="text-xs font-semibold text-black mb-1 block">Lens</label>
+                <select
+                  value={lens}
+                  onChange={(e) => setLens(e.target.value)}
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {LENSES.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                  {/* Aperture */}
-                  <div>
-                    <label className="text-xs font-semibold text-black mb-1 block">Aperture</label>
-                    <select
-                      value={aperture}
-                      onChange={(e) => setAperture(e.target.value)}
-                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {APERTURES.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              {/* Aperture */}
+              <div>
+                <label className="text-xs font-semibold text-black mb-1 block">Aperture</label>
+                <select
+                  value={aperture}
+                  onChange={(e) => setAperture(e.target.value)}
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {APERTURES.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                  {/* Shutter Speed */}
-                  <div>
-                    <label className="text-xs font-semibold text-black mb-1 block">Shutter Speed</label>
-                    <select
-                      value={shutterSpeed}
-                      onChange={(e) => setShutterSpeed(e.target.value)}
-                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {SHUTTER_SPEEDS.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              {/* Shutter Speed */}
+              <div>
+                <label className="text-xs font-semibold text-black mb-1 block">Shutter Speed</label>
+                <select
+                  value={shutterSpeed}
+                  onChange={(e) => setShutterSpeed(e.target.value)}
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {SHUTTER_SPEEDS.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                  {/* ISO */}
-                  <div>
-                    <label className="text-xs font-semibold text-black mb-1 block">ISO</label>
-                    <select
-                      value={iso}
-                      onChange={(e) => setIso(e.target.value)}
-                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {ISO_SETTINGS.map((i) => (
-                        <option key={i.id} value={i.id}>
-                          {i.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              {/* ISO */}
+              <div>
+                <label className="text-xs font-semibold text-black mb-1 block">ISO</label>
+                <select
+                  value={iso}
+                  onChange={(e) => setIso(e.target.value)}
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {ISO_SETTINGS.map((i) => (
+                    <option key={i.id} value={i.id}>
+                      {i.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </div>
