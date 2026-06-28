@@ -936,22 +936,6 @@ export default function CreateImagePage() {
               </div>
             </div>
 
-            {/* Quantity */}
-            <div>
-              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
-                Qty: <span className="text-blue-600">{quantity}</span>
-              </label>
-              <input
-                type="range"
-                min="1"
-                max="12"
-                step="1"
-                value={quantity}
-                onChange={(e) => setQuantity(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-300 rounded-lg accent-blue-600"
-              />
-            </div>
-
             {/* Gender */}
             <div>
               <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
