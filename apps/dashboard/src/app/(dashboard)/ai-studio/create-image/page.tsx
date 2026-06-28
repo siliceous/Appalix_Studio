@@ -1062,6 +1062,7 @@ export default function CreateImagePage() {
                       </p>
                     )}
                   </div>
+                </div>
               )}
             </div>
 
