@@ -747,9 +747,9 @@ export default function CreateImagePage() {
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
 
       {/* Main Layout */}
-      <div className="flex-1 flex gap-2 px-2 py-0 pb-2 overflow-hidden">
+      <div className="flex-1 flex gap-3 px-3 py-0 pb-3 overflow-hidden">
         {/* Left Panel - Controls */}
-        <div className="w-64 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden">
+        <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden">
           <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center flex-shrink-0">
             <h2 className="text-sm font-semibold">Settings</h2>
           </div>
