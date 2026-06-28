@@ -750,7 +750,7 @@ export default function CreateImagePage() {
       <div className="flex-1 flex gap-4 px-4 py-0 pb-4 overflow-hidden">
         {/* Left Panel - Controls */}
         <div className="w-72 flex flex-col overflow-hidden rounded-t-2xl shadow-lg bg-white">
-          <div className="bg-black text-white px-4 py-3 rounded-t-2xl">
+          <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center">
             <h2 className="text-sm font-semibold">Settings</h2>
           </div>
           <div className="px-4 py-4 space-y-2.5 flex flex-col text-sm overflow-y-auto flex-1">
@@ -1166,7 +1166,7 @@ export default function CreateImagePage() {
 
         {/* Center Panel - Canvas */}
         <div className="flex-1 flex flex-col overflow-hidden rounded-t-2xl shadow-lg bg-white">
-          <div className="bg-black text-white px-4 py-3 rounded-t-2xl flex items-center justify-between">
+          <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center justify-between">
             <button
               onClick={() => router.back()}
               className="p-1 hover:bg-white/10 rounded-lg transition-colors"
@@ -1265,8 +1265,8 @@ export default function CreateImagePage() {
 
         {/* Right Panel - History */}
         <div className="w-64 flex flex-col rounded-t-2xl shadow-lg bg-white overflow-hidden">
-          <div className="px-4 py-3 bg-black text-white rounded-t-2xl">
-            <div className="flex items-center justify-between">
+          <div className="px-4 py-3 bg-black text-white rounded-t-2xl h-12 flex items-center justify-between">
+            <div className="flex items-center justify-between w-full">
               <h2 className="text-sm font-semibold">Generated Images</h2>
               <button
                 onClick={() => setShowTrash(!showTrash)}
