@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Download, Trash2, Search, Loader, Loader2, X, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
-import Masonry from 'react-masonry-css'
-import './library/masonry.css'
+import { Download, Trash2, Search, Loader2, X, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 
 interface GeneratedImage {
   id: string
@@ -179,243 +178,144 @@ export default function AIStudio() {
   }, [fullscreenImage, fullscreenImageIndex, filteredImages])
 
   return (
-    <div className="-m-8 flex flex-col h-screen overflow-hidden bg-[#141c2b]">
-      {/* Top Buttons Bar */}
-      <div className="px-4 ml-3 mr-4 flex items-center gap-2 min-h-[52px] pb-2 pt-3 shrink-0">
-        <button
-          onClick={() => router.push('/ai-studio/create-image')}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-transparent text-white hover:bg-white/10 transition-colors whitespace-nowrap"
-        >
-          Create Image
-        </button>
-        <button
-          onClick={() => router.push('/ai-studio/create-video')}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-transparent text-white hover:bg-white/10 transition-colors whitespace-nowrap"
-        >
-          Create Video
-        </button>
-        <button
-          onClick={() => router.push('/ai-studio/product-ads')}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-transparent text-white hover:bg-white/10 transition-colors whitespace-nowrap"
-        >
-          Product Ads
-        </button>
-        <button
-          onClick={() => router.push('/ai-studio/talking-ad')}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-transparent text-white hover:bg-white/10 transition-colors whitespace-nowrap"
-        >
-          Talking Ads
-        </button>
-        <div className="flex-1" />
-        <div className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-white/20 text-white bg-white/5">
-          {credits} Credits
-        </div>
-      </div>
+    <div className="-m-8 flex flex-col h-screen overflow-hidden">
+      <SageToolbar pageKey="email" />
 
-      {/* Divider */}
-      <div className="mx-4 h-px bg-white/10" />
-
-      {/* Search & Filters Bar */}
-      <nav className="px-4 ml-3 mr-4 border-b border-white/10 bg-[#141c2b] rounded-b-2xl shadow-lg flex items-center shrink-0 gap-x-3 min-h-[52px] pb-2 pt-2">
-        <div className="flex-1 flex items-center gap-2 min-w-0">
-          <Search className="w-4 h-4 text-gray-400 shrink-0" />
-          <input
-            type="text"
-            placeholder="Search assets..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-white/20 text-sm"
-          />
-          <span className="text-xs text-gray-400 shrink-0">{filteredImages.length}</span>
-        </div>
-
-        {/* Divider */}
-        <div className="w-px h-5 bg-white/15 shrink-0" />
-
-        <select
-          value={selectedProjectId || ''}
-          onChange={(e) => setSelectedProjectId(e.target.value || null)}
-          className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-white/20 shrink-0"
-        >
-          <option value="">Projects</option>
-          {projects.map((proj) => (
-            <option key={proj.id} value={proj.id}>{proj.name}</option>
-          ))}
-        </select>
-
-        <button
-          onClick={() => setShowCreateProjectDialog(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-white/10 text-white hover:bg-white/10 transition-colors shrink-0"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Add New
-        </button>
-
-        <select
-          value={selectedMediaType || ''}
-          onChange={(e) => setSelectedMediaType(e.target.value || null)}
-          className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-white/20 shrink-0"
-        >
-          <option value="">All Media</option>
-          <option value="image">Image</option>
-          <option value="video">Video</option>
-        </select>
-
-        <select
-          value={selectedGender || ''}
-          onChange={(e) => setSelectedGender(e.target.value || null)}
-          className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-white/20 shrink-0"
-        >
-          <option value="">All Genders</option>
-          <option value="man">Man</option>
-          <option value="woman">Woman</option>
-          <option value="neutral">Neutral</option>
-        </select>
-
-        <select
-          value={selectedDateRange || ''}
-          onChange={(e) => setSelectedDateRange(e.target.value || null)}
-          className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-white/20 shrink-0"
-        >
-          <option value="">All Times</option>
-          <option value="today">Today</option>
-          <option value="week">Week</option>
-          <option value="month">Month</option>
-          <option value="year">Year</option>
-        </select>
-
-        {(selectedProjectId || selectedMediaType || selectedGender || selectedDateRange) && (
-          <button
-            onClick={() => {
-              setSelectedProjectId(null)
-              setSelectedMediaType(null)
-              setSelectedGender(null)
-              setSelectedDateRange(null)
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl border border-white/10 text-white hover:bg-white/10 transition-colors shrink-0"
-          >
-            Clear
-          </button>
-        )}
-      </nav>
-
-      {/* Asset Library Grid */}
-      <div className="flex-1 overflow-auto p-6">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <Loader2 className="w-8 h-8 animate-spin text-white/40" />
-          </div>
-        ) : filteredImages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <p className="text-white/70 font-medium mb-2">No assets yet</p>
-              <p className="text-white/50 text-sm">{searchQuery ? 'Try adjusting your search' : 'Create your first image'}</p>
+      <div className="flex flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto bg-[#f5f4f1] flex flex-col">
+          <div className="px-4 ml-3 mr-4 pt-5 pb-0 shrink-0">
+            <div className="mb-5">
+              <h1 className="text-xl font-bold text-gray-900">AI Studio</h1>
+              <p className="text-gray-500 text-sm mt-0.5">Create, manage, and explore your AI-generated images and videos</p>
             </div>
-          </div>
-        ) : (
-          <Masonry
-            breakpointCols={{ default: 4, 1536: 4, 1280: 3, 1024: 3, 768: 2, 640: 2 }}
-            className="masonry-grid"
-            columnClassName="masonry-grid-column"
-          >
-            {filteredImages.map((image, idx) => (
-              <div
-                key={image.id}
-                className={`relative rounded-lg overflow-hidden border border-white/10 hover:border-white/20 hover:shadow-lg transition-all duration-300 bg-white/5 break-inside-avoid cursor-pointer ${getAspectRatioPadding(image.aspectRatio)}`}
-                onClick={() => {
-                  setFullscreenImage(image)
-                  setFullscreenImageIndex(idx)
-                }}
-              >
-                <img src={image.image} alt={image.prompt} className="absolute inset-0 w-full h-full object-cover" />
-                {image.projectName && (
-                  <div className="absolute top-2 left-2 bg-white/20 backdrop-blur-sm px-2 py-1 rounded text-xs font-medium text-white">
-                    {image.projectName}
+
+            <nav className="mb-5 border border-white/10 bg-[#141c2b] rounded-xl shadow-lg flex items-center shrink-0 gap-x-2 min-h-[52px] p-4">
+              <button onClick={() => router.push('/ai-studio/create-image')} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white hover:bg-white/10 transition-colors">Create Image</button>
+              <button onClick={() => router.push('/ai-studio/create-video')} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white hover:bg-white/10 transition-colors">Create Video</button>
+              <button onClick={() => router.push('/ai-studio/product-ads')} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white hover:bg-white/10 transition-colors">Product Ads</button>
+              <button onClick={() => router.push('/ai-studio/talking-ad')} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white hover:bg-white/10 transition-colors">Talking Ads</button>
+              <div className="flex-1" />
+              <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-white/10 border border-white/20">{credits} Credits</div>
+            </nav>
+
+            <div className="bg-[#141c2b] rounded-t-xl border border-white/10 border-b-0 shadow-lg p-4 shrink-0">
+
+              <div className="flex flex-wrap gap-3 items-center">
+                <div className="relative flex-1 min-w-[180px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  <input type="text" placeholder="Search…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-8 pr-3 py-2 text-sm border border-white/20 rounded-lg !bg-[#f5f4f1] !text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40" />
+                </div>
+                <div className="relative">
+                  <select value={selectedProjectId || ''} onChange={(e) => setSelectedProjectId(e.target.value || null)} className="appearance-none pl-3 pr-7 py-2 text-sm border border-white/20 rounded-lg bg-white/5 text-white focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer">
+                    <option value="">Projects</option>
+                    {projects.map((proj) => <option key={proj.id} value={proj.id}>{proj.name}</option>)}
+                  </select>
+                </div>
+                <button onClick={() => setShowCreateProjectDialog(true)} className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-white/10 text-white hover:bg-white/10 transition-colors"><Plus className="w-4 h-4" />Add New</button>
+                <div className="relative">
+                  <select value={selectedMediaType || ''} onChange={(e) => setSelectedMediaType(e.target.value || null)} className="appearance-none pl-3 pr-7 py-2 text-sm border border-white/20 rounded-lg bg-white/5 text-white focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer">
+                    <option value="">All Media</option>
+                    <option value="image">Image</option>
+                    <option value="video">Video</option>
+                  </select>
+                </div>
+                <div className="relative">
+                  <select value={selectedGender || ''} onChange={(e) => setSelectedGender(e.target.value || null)} className="appearance-none pl-3 pr-7 py-2 text-sm border border-white/20 rounded-lg bg-white/5 text-white focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer">
+                    <option value="">All Genders</option>
+                    <option value="man">Man</option>
+                    <option value="woman">Woman</option>
+                    <option value="neutral">Neutral</option>
+                  </select>
+                </div>
+                <div className="relative">
+                  <select value={selectedDateRange || ''} onChange={(e) => setSelectedDateRange(e.target.value || null)} className="appearance-none pl-3 pr-7 py-2 text-sm border border-white/20 rounded-lg bg-white/5 text-white focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40 cursor-pointer">
+                    <option value="">All Times</option>
+                    <option value="today">Today</option>
+                    <option value="week">Week</option>
+                    <option value="month">Month</option>
+                    <option value="year">Year</option>
+                  </select>
+                </div>
+                {(selectedProjectId || selectedMediaType || selectedGender || selectedDateRange) && <button onClick={() => { setSelectedProjectId(null); setSelectedMediaType(null); setSelectedGender(null); setSelectedDateRange(null) }} className="px-3 py-2 text-sm font-medium rounded-lg border border-white/10 text-white hover:bg-white/10 transition-colors">Clear</button>}
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-hidden bg-white rounded-b-xl border border-white/10 border-t-0 shadow-lg">
+              <div className="h-full overflow-y-auto p-6">
+                {loading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                  </div>
+                ) : filteredImages.length === 0 ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <p className="text-gray-400 font-medium">No assets found</p>
+                      <p className="text-gray-400 text-sm">Try adjusting your filters</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {filteredImages.map((image, idx) => (
+                      <button
+                        key={image.id}
+                        onClick={() => { setFullscreenImage(image); setFullscreenImageIndex(idx) }}
+                        className={`relative rounded-lg overflow-hidden border-2 transition-all aspect-square ${
+                          image.id === fullscreenImage?.id
+                            ? 'border-blue-500 shadow-lg shadow-blue-500/50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <img src={image.image} alt={image.prompt} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
-            ))}
-          </Masonry>
-        )}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Fullscreen Modal */}
       {fullscreenImage && (
-        <div className="fixed inset-0 bg-black/95 z-50 flex flex-col">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
-            <div className="text-sm text-white/60">
-              {fullscreenImageIndex + 1} of {filteredImages.length}
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-8 flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-500 font-medium">{fullscreenImageIndex + 1} of {filteredImages.length}</div>
+              <button onClick={() => setFullscreenImage(null)} className="p-1 hover:bg-gray-100 rounded transition-colors"><X className="w-5 h-5 text-gray-600" /></button>
             </div>
-            <button onClick={() => setFullscreenImage(null)} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-              <X className="w-5 h-5 text-white/60" />
-            </button>
-          </div>
-          <div className="flex-1 flex items-center justify-center overflow-auto p-6 relative">
-            {fullscreenImageIndex > 0 && (
-              <button
-                onClick={() => {
-                  const newIdx = fullscreenImageIndex - 1
-                  setFullscreenImageIndex(newIdx)
-                  setFullscreenImage(filteredImages[newIdx])
-                }}
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
-              >
-                <ChevronLeft className="w-6 h-6 text-white" />
-              </button>
-            )}
-            <div className="max-w-4xl max-h-full flex items-center justify-center">
-              <img src={fullscreenImage.image} alt={fullscreenImage.prompt} className="max-w-full max-h-full object-contain rounded" />
-            </div>
-            {fullscreenImageIndex < filteredImages.length - 1 && (
-              <button
-                onClick={() => {
-                  const newIdx = fullscreenImageIndex + 1
-                  setFullscreenImageIndex(newIdx)
-                  setFullscreenImage(filteredImages[newIdx])
-                }}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
-              >
-                <ChevronRight className="w-6 h-6 text-white" />
-              </button>
-            )}
-          </div>
-          <div className="border-t border-white/10 px-6 py-4 space-y-4">
-            <div>
-              <p className="text-xs text-white/40 mb-1">Prompt</p>
-              <p className="text-white/80 text-sm">{fullscreenImage.prompt}</p>
-            </div>
-            <div className="flex gap-3">
-              <button onClick={() => { handleDownload(fullscreenImage.id, fullscreenImage.image); setFullscreenImage(null) }} className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded text-sm font-medium transition-colors flex items-center gap-2 border border-white/10">
-                <Download className="w-4 h-4" /> Download
-              </button>
-              <button onClick={() => { handleDelete(fullscreenImage.id); setFullscreenImage(null) }} className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded text-sm font-medium transition-colors flex items-center gap-2 border border-red-500/20">
-                <Trash2 className="w-4 h-4" /> Delete
-              </button>
+
+            <div className="flex gap-6">
+              <div className="flex-1 flex items-center justify-center min-h-[400px]">
+                <div className="relative">
+                  <img src={fullscreenImage.image} alt={fullscreenImage.prompt} className="max-h-[500px] w-auto object-contain rounded-lg" />
+                  {fullscreenImageIndex > 0 && <button onClick={() => { const newIdx = fullscreenImageIndex - 1; setFullscreenImageIndex(newIdx); setFullscreenImage(filteredImages[newIdx]) }} className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-14 p-2 bg-white rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110"><ChevronLeft className="w-6 h-6 text-gray-800" /></button>}
+                  {fullscreenImageIndex < filteredImages.length - 1 && <button onClick={() => { const newIdx = fullscreenImageIndex + 1; setFullscreenImageIndex(newIdx); setFullscreenImage(filteredImages[newIdx]) }} className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-14 p-2 bg-white rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110"><ChevronRight className="w-6 h-6 text-gray-800" /></button>}
+                </div>
+              </div>
+
+              <div className="w-80 flex flex-col gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 mb-2 uppercase font-semibold">Prompt</p>
+                  <p className="text-gray-700 text-sm break-words bg-gray-50 rounded-lg p-3 border border-gray-200 min-h-32 max-h-40 overflow-y-auto">{fullscreenImage?.prompt && fullscreenImage.prompt.trim().length > 0 ? fullscreenImage.prompt : '(No prompt saved for this image)'}</p>
+                </div>
+                <div className="flex flex-col gap-2 pt-4 border-t">
+                  <button onClick={() => handleDownload(fullscreenImage.id, fullscreenImage.image)} className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><Download className="w-4 h-4" /> Download</button>
+                  <button onClick={() => { handleDelete(fullscreenImage.id); setFullscreenImage(null) }} className="w-full px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 border border-red-200"><Trash2 className="w-4 h-4" /> Delete</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Create Project Dialog */}
       {showCreateProjectDialog && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-[#1e2535] rounded-2xl border border-white/12 max-w-md w-full p-6 space-y-4">
-            <h2 className="text-lg font-bold text-white">New Project</h2>
-            <input
-              type="text"
-              placeholder="Project name..."
-              value={createProjectName}
-              onChange={(e) => setCreateProjectName(e.target.value)}
-              className="w-full px-4 py-2 border border-white/10 rounded-lg bg-white/5 text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-white/20 text-sm"
-              onKeyPress={(e) => { if (e.key === 'Enter') handleCreateProject() }}
-            />
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => { setShowCreateProjectDialog(false); setCreateProjectName('') }} className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-medium transition-colors border border-white/10">
-                Cancel
-              </button>
-              <button onClick={handleCreateProject} disabled={!createProjectName.trim() || isCreatingProject} className="px-4 py-2 bg-white/20 hover:bg-white/30 disabled:bg-white/5 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 border border-white/20">
-                {isCreatingProject ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating</> : <><Plus className="w-4 h-4" /> Create</>}
-              </button>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
+            <h2 className="text-lg font-bold text-gray-900">New Project</h2>
+            <input type="text" placeholder="Project name..." value={createProjectName} onChange={(e) => setCreateProjectName(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" onKeyPress={(e) => { if (e.key === 'Enter') handleCreateProject() }} />
+            <div className="flex gap-2 justify-end pt-4 border-t">
+              <button onClick={() => { setShowCreateProjectDialog(false); setCreateProjectName('') }} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors">Cancel</button>
+              <button onClick={handleCreateProject} disabled={!createProjectName.trim() || isCreatingProject} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">{isCreatingProject ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating</> : <><Plus className="w-4 h-4" /> Create</>}</button>
             </div>
           </div>
         </div>
