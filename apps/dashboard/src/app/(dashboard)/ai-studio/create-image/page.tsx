@@ -754,7 +754,7 @@ export default function CreateImagePage() {
             <h2 className="text-sm font-semibold">Settings</h2>
           </div>
           {/* Settings Content Scrollable Area */}
-          <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 pb-8 space-y-2 flex flex-col text-sm">
+          <div className="flex-1 min-h-0 overflow-y-scroll px-4 py-3 pb-8 space-y-2 flex flex-col text-sm">
             {/* Model Selector */}
             <div className="bg-gray-100 border border-gray-300 rounded-lg p-3">
               <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
