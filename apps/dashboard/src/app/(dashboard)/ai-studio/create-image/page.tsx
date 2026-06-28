@@ -1052,19 +1052,10 @@ export default function CreateImagePage() {
             </div>
 
             {/* Camera Settings */}
-            <div className="border border-gray-300 rounded-lg overflow-hidden">
-              <button
-                onClick={() => setCameraExpanded(!cameraExpanded)}
-                className="w-full flex items-center justify-between px-3 py-2 bg-gray-100 hover:bg-gray-200 transition-colors"
-              >
-                <label className="text-xs font-semibold text-black uppercase tracking-widest cursor-pointer">
-                  Camera Settings
-                </label>
-                <ChevronDown className={`w-4 h-4 text-black transition-transform ${cameraExpanded ? 'rotate-180' : ''}`} />
-              </button>
-
-              {cameraExpanded && (
-                <div className="px-3 py-3 space-y-3 bg-white">
+            <div className="space-y-3">
+              <label className="text-xs font-semibold text-black uppercase tracking-widest block">
+                Camera Settings
+              </label>
                   {/* Lens */}
                   <div>
                     <label className="text-xs font-semibold text-black mb-1 block">Lens</label>
@@ -1128,8 +1119,6 @@ export default function CreateImagePage() {
                       ))}
                     </select>
                   </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
