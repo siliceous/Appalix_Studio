@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Sparkles, Download, Trash2, Heart, Loader, X, Copy, Edit, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Sparkles, Download, Trash2, Heart, Loader, X, Copy, Edit, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 
 const QUALITY_PRESETS = [
   { id: 'fast', label: 'Fast' },
@@ -277,6 +277,8 @@ export default function CreateImagePage() {
 
   // State management
   const [prompt, setPrompt] = useState('')
+  const [bodyTypeExpanded, setBodyTypeExpanded] = useState(true)
+  const [cameraExpanded, setCameraExpanded] = useState(true)
   const [originalPrompt, setOriginalPrompt] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [history, setHistory] = useState<GeneratedImage[]>([])
@@ -985,7 +987,19 @@ export default function CreateImagePage() {
             </div>
 
             {/* Body Type */}
-            <div className="px-3 py-3 bg-white space-y-3 border border-gray-300 rounded-lg">
+            <div className="border border-gray-300 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setBodyTypeExpanded(!bodyTypeExpanded)}
+                className="w-full flex items-center justify-between px-3 py-2 bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                <label className="text-xs font-semibold text-black uppercase tracking-widest cursor-pointer">
+                  Body Type
+                </label>
+                <ChevronDown className={`w-4 h-4 text-black transition-transform ${bodyTypeExpanded ? 'rotate-180' : ''}`} />
+              </button>
+
+              {bodyTypeExpanded && (
+                <div className="px-3 py-3 bg-white space-y-3">
                   {/* Body Type */}
                   <div>
                     <label className="text-xs font-semibold text-black uppercase tracking-widest mb-1 block">Body Type</label>
@@ -1048,10 +1062,23 @@ export default function CreateImagePage() {
                       </p>
                     )}
                   </div>
+              )}
             </div>
 
             {/* Camera Settings */}
-            <div className="px-3 py-3 space-y-3 bg-white border border-gray-300 rounded-lg">
+            <div className="border border-gray-300 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setCameraExpanded(!cameraExpanded)}
+                className="w-full flex items-center justify-between px-3 py-2 bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                <label className="text-xs font-semibold text-black uppercase tracking-widest cursor-pointer">
+                  Camera Settings
+                </label>
+                <ChevronDown className={`w-4 h-4 text-black transition-transform ${cameraExpanded ? 'rotate-180' : ''}`} />
+              </button>
+
+              {cameraExpanded && (
+                <div className="px-3 py-3 space-y-3 bg-white">
                   {/* Lens */}
                   <div>
                     <label className="text-xs font-semibold text-black mb-1 block">Lens</label>
@@ -1115,6 +1142,7 @@ export default function CreateImagePage() {
                       ))}
                     </select>
                   </div>
+              )}
             </div>
 
           </div>
