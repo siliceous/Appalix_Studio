@@ -183,7 +183,7 @@ export default function AIStudio() {
 
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 overflow-hidden bg-[#f5f4f1] flex flex-col">
-          <div className="px-4 ml-3 mr-4 pt-5 pb-0 shrink-0">
+          <div className="px-4 ml-3 mr-4 pt-8 pb-0 shrink-0">
             <div className="mb-5">
               <h1 className="text-xl font-bold text-gray-900">AI Studio</h1>
               <p className="text-gray-500 text-sm mt-0.5">Create, manage, and explore your AI-generated images and videos</p>
