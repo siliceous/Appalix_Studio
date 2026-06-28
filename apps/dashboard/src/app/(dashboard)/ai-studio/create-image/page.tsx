@@ -71,38 +71,66 @@ const LIGHTING_OPTIONS = [
   { id: 'soft', label: 'Soft' },
 ]
 
-const ASPECT_RATIOS = ['16:9', '9:16', '3:4', '1:1']
+const ASPECT_RATIOS = ['16:9', '9:16', '3:4', '1:1', '21:9', '4:3', '2:3']
 
 const aspectRatioLabels: Record<string, string> = {
   '16:9': '16:9',
   '9:16': '9:16',
   '3:4': '3:4',
   '1:1': '1:1',
+  '21:9': '21:9',
+  '4:3': '4:3',
+  '2:3': '2:3',
 }
 
-const BODY_TYPES = [
+const SHOT_TYPES = [
   { id: 'none', label: 'None', phrase: '' },
-  // Curvy & Full-Figured
-  { id: 'busty', label: 'Busty', phrase: 'naturally full-figured woman with a soft, healthy build' },
-  { id: 'curvy', label: 'Curvy', phrase: 'fuller hips, thicker arms, soft stomach' },
-  { id: 'hourglass', label: 'Hourglass', phrase: 'woman with an hourglass figure, defined waist, full curves' },
+  { id: 'headshot', label: 'Headshot', phrase: 'headshot, tight framing on face' },
+  { id: 'closeup', label: 'Close-up', phrase: 'close-up shot, detailed' },
+  { id: 'bust', label: 'Bust Shot', phrase: 'bust shot, shoulders and head' },
+  { id: 'waist', label: 'Waist Shot', phrase: 'waist up shot, torso visible' },
+  { id: 'full_body', label: 'Full Body', phrase: 'full body shot, entire person visible' },
+  { id: 'wide_shot', label: 'Wide Shot', phrase: 'wide shot, lots of background' },
+  { id: 'environmental', label: 'Environmental', phrase: 'environmental portrait, subject in setting' },
+]
+
+const FEMALE_BODY_TYPES = [
+  { id: 'none', label: 'None', phrase: '' },
+  { id: 'busty', label: 'Busty', phrase: 'woman with large, prominent breasts, full bust, voluptuous upper body' },
+  { id: 'curvy', label: 'Curvy', phrase: 'woman with curves, full hips, thicker thighs, defined waist, soft stomach' },
+  { id: 'hourglass', label: 'Hourglass', phrase: 'woman with an hourglass figure, defined waist, large breasts, full curves' },
   { id: 'pear', label: 'Pear Shape', phrase: 'woman with a pear-shaped body, fuller hips and thighs' },
   { id: 'chubby', label: 'Chubby', phrase: 'naturally chubby woman with a round face and soft features' },
   { id: 'plussize', label: 'Plus-Size', phrase: 'plus-size woman, confident and beautiful' },
   { id: 'size16', label: 'Size 16', phrase: 'realistic size 16 body' },
   { id: 'mature', label: 'Mature', phrase: 'average Australian woman in her late 40s' },
-  { id: 'milf', label: 'MILF', phrase: 'gorgeous mature woman in her 40s with a youthful appearance' },
   { id: 'older', label: 'Older Woman', phrase: 'beautiful woman in her 50s with elegant mature features' },
   { id: 'young', label: 'Young Woman', phrase: 'young woman in her 20s with youthful, fresh features' },
   { id: 'athletic', label: 'Athletic', phrase: 'athletic woman with defined muscles and toned physique' },
   { id: 'muscular', label: 'Muscular', phrase: 'muscular woman with visible muscle definition' },
   { id: 'fit', label: 'Fit', phrase: 'fit and healthy woman with a lean, toned body' },
-  { id: 'bigboobs', label: 'Big Breasts', phrase: 'woman with large, natural-looking breasts' },
   { id: 'bigbutt', label: 'Big Butt', phrase: 'woman with a full, round butt and thick thighs' },
   { id: 'thickthighs', label: 'Thick Thighs', phrase: 'woman with thick, muscular thighs and full hips' },
   { id: 'softbelly', label: 'Soft Belly', phrase: 'woman with a soft, round belly and natural curves' },
   { id: 'tallwoman', label: 'Tall', phrase: 'tall, statuesque woman with long legs' },
   { id: 'petite', label: 'Petite', phrase: 'petite woman with a delicate, small frame' },
+]
+
+const MALE_BODY_TYPES = [
+  { id: 'none', label: 'None', phrase: '' },
+  { id: 'muscular-male', label: 'Muscular', phrase: 'man with defined muscles, muscular build, visible muscle definition' },
+  { id: 'athletic-male', label: 'Athletic', phrase: 'athletic man with toned, lean physique and strong build' },
+  { id: 'fit-male', label: 'Fit', phrase: 'fit man with a lean, healthy, well-maintained body' },
+  { id: 'lean', label: 'Lean', phrase: 'lean man with a slim, defined physique' },
+  { id: 'bulky', label: 'Bulky', phrase: 'bulky man with large, powerful muscles and broad shoulders' },
+  { id: 'chubby-male', label: 'Chubby', phrase: 'chubby man with a round face and soft features' },
+  { id: 'stocky', label: 'Stocky', phrase: 'stocky man with a solid, compact build' },
+  { id: 'average-male', label: 'Average Build', phrase: 'man with an average, everyday build' },
+  { id: 'tall-man', label: 'Tall', phrase: 'tall man with a tall, lean frame and long limbs' },
+  { id: 'short-man', label: 'Short', phrase: 'short man with a compact, proportional build' },
+  { id: 'mature-male', label: 'Mature', phrase: 'mature man in his late 40s with distinguished features' },
+  { id: 'older-man', label: 'Older Man', phrase: 'handsome older man in his 50s with dignified mature features' },
+  { id: 'young-man', label: 'Young Man', phrase: 'young man in his 20s with youthful, fresh features' },
 ]
 
 const ETHNICITIES = [
@@ -174,6 +202,47 @@ const HAIR_TYPES = [
   { id: 'makeup', label: 'Bold Makeup', phrase: 'woman with bold, glamorous makeup' },
 ]
 
+const LENSES = [
+  { id: 'none', label: 'None', phrase: '' },
+  { id: '50mm', label: '50mm', phrase: '50mm lens' },
+  { id: '85mm', label: '85mm', phrase: '85mm lens' },
+  { id: '35mm', label: '35mm', phrase: '35mm lens' },
+  { id: '24mm', label: '24mm', phrase: '24mm lens' },
+  { id: '135mm', label: '135mm', phrase: '135mm lens' },
+  { id: 'macro', label: 'Macro', phrase: 'macro lens' },
+]
+
+const APERTURES = [
+  { id: 'none', label: 'None', phrase: '' },
+  { id: 'f1.4', label: 'f/1.4', phrase: 'f/1.4 aperture, extremely shallow depth of field' },
+  { id: 'f1.8', label: 'f/1.8', phrase: 'f/1.8 aperture, shallow depth of field' },
+  { id: 'f2.8', label: 'f/2.8', phrase: 'f/2.8 aperture, creamy bokeh' },
+  { id: 'f4', label: 'f/4', phrase: 'f/4 aperture, soft background' },
+  { id: 'f5.6', label: 'f/5.6', phrase: 'f/5.6 aperture, balanced depth' },
+  { id: 'f8', label: 'f/8', phrase: 'f/8 aperture, sharp throughout' },
+  { id: 'f11', label: 'f/11', phrase: 'f/11 aperture, everything in focus' },
+]
+
+const SHUTTER_SPEEDS = [
+  { id: 'none', label: 'None', phrase: '' },
+  { id: '1/1000', label: '1/1000s', phrase: '1/1000 shutter speed, fast action freeze' },
+  { id: '1/500', label: '1/500s', phrase: '1/500 shutter speed, crisp motion' },
+  { id: '1/250', label: '1/250s', phrase: '1/250 shutter speed, sharp' },
+  { id: '1/125', label: '1/125s', phrase: '1/125 shutter speed, standard portrait' },
+  { id: '1/60', label: '1/60s', phrase: '1/60 shutter speed, normal speed' },
+  { id: '1/30', label: '1/30s', phrase: '1/30 shutter speed, slow' },
+]
+
+const ISO_SETTINGS = [
+  { id: 'none', label: 'None', phrase: '' },
+  { id: 'iso100', label: 'ISO 100', phrase: 'ISO 100, clean image' },
+  { id: 'iso200', label: 'ISO 200', phrase: 'ISO 200, clean and bright' },
+  { id: 'iso400', label: 'ISO 400', phrase: 'ISO 400, good lighting' },
+  { id: 'iso800', label: 'ISO 800', phrase: 'ISO 800, moderate lighting' },
+  { id: 'iso1600', label: 'ISO 1600', phrase: 'ISO 1600, low light conditions' },
+  { id: 'iso3200', label: 'ISO 3200', phrase: 'ISO 3200, very low light' },
+]
+
 interface GeneratedImage {
   id: string
   image: string
@@ -196,9 +265,17 @@ export default function CreateImagePage() {
   const [lighting, setLighting] = useState<string[]>(['Daylight'])
   const [aspectRatio, setAspectRatio] = useState('9:16')
   const [quantity, setQuantity] = useState(1)
+  const [gender, setGender] = useState<'female' | 'male'>('female')
   const [bodyType, setBodyType] = useState('none')
   const [ethnicity, setEthnicity] = useState('none')
   const [hairType, setHairType] = useState('none')
+  const [shotType, setShotType] = useState('none')
+  const [bodyTypeExpanded, setBodyTypeExpanded] = useState(true)
+  const [cameraExpanded, setCameraExpanded] = useState(false)
+  const [lens, setLens] = useState('none')
+  const [aperture, setAperture] = useState('none')
+  const [shutterSpeed, setShutterSpeed] = useState('none')
+  const [iso, setIso] = useState('none')
 
   // State management
   const [prompt, setPrompt] = useState('')
@@ -218,6 +295,8 @@ export default function CreateImagePage() {
   const [newProjectName, setNewProjectName] = useState('')
   const [isSavingProject, setIsSavingProject] = useState(false)
   const [imageToSave, setImageToSave] = useState<GeneratedImage | null>(null)
+  const [storageError, setStorageError] = useState<string | null>(null)
+  const [showStorageModal, setShowStorageModal] = useState(false)
 
   // Load initial data
   useEffect(() => {
@@ -254,7 +333,6 @@ export default function CreateImagePage() {
           throw new Error('API error')
         }
       } catch (error) {
-        // Use default models as fallback
         setModels([
           { id: 'gemini-3.1-flash-image', name: 'Gemini 3.1 Flash Image' },
           { id: 'nano-banana-pro', name: 'Nano Banana Pro' },
@@ -378,6 +456,11 @@ export default function CreateImagePage() {
       const data = await response.json()
       if (data.error) {
         console.error('Generation error:', data.error)
+        // Check if it's a storage quota error
+        if (data.error.includes('Storage limit reached') || response.status === 507) {
+          setStorageError(data.error)
+          setShowStorageModal(true)
+        }
         setIsGenerating(false)
         return
       }
@@ -535,9 +618,15 @@ export default function CreateImagePage() {
 
   const getEnhancedPrompt = () => {
     let enhanced = prompt
-    const bodyTypeData = BODY_TYPES.find(bt => bt.id === bodyType)
+    const bodyTypesArray = gender === 'male' ? MALE_BODY_TYPES : FEMALE_BODY_TYPES
+    const bodyTypeData = bodyTypesArray.find(bt => bt.id === bodyType)
     const ethnicityData = ETHNICITIES.find(et => et.id === ethnicity)
     const hairTypeData = HAIR_TYPES.find(ht => ht.id === hairType)
+    const shotTypeData = SHOT_TYPES.find(st => st.id === shotType)
+    const lensData = LENSES.find(l => l.id === lens)
+    const apertureData = APERTURES.find(a => a.id === aperture)
+    const shutterSpeedData = SHUTTER_SPEEDS.find(s => s.id === shutterSpeed)
+    const isoData = ISO_SETTINGS.find(i => i.id === iso)
 
     if (bodyTypeData && bodyTypeData.phrase) {
       enhanced = `${enhanced}, ${bodyTypeData.phrase}`
@@ -547,6 +636,21 @@ export default function CreateImagePage() {
     }
     if (hairTypeData && hairTypeData.phrase) {
       enhanced = `${enhanced}, ${hairTypeData.phrase}`
+    }
+    if (shotTypeData && shotTypeData.phrase) {
+      enhanced = `${enhanced}, ${shotTypeData.phrase}`
+    }
+    if (lensData && lensData.phrase) {
+      enhanced = `${enhanced}, ${lensData.phrase}`
+    }
+    if (apertureData && apertureData.phrase) {
+      enhanced = `${enhanced}, ${apertureData.phrase}`
+    }
+    if (shutterSpeedData && shutterSpeedData.phrase) {
+      enhanced = `${enhanced}, ${shutterSpeedData.phrase}`
+    }
+    if (isoData && isoData.phrase) {
+      enhanced = `${enhanced}, ${isoData.phrase}`
     }
     return enhanced
   }
@@ -640,7 +744,7 @@ export default function CreateImagePage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-gray-100">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
         <div className="flex items-center gap-3">
@@ -660,8 +764,11 @@ export default function CreateImagePage() {
       {/* Main Layout */}
       <div className="flex-1 flex gap-4 p-4 overflow-hidden">
         {/* Left Panel - Controls */}
-        <div className="w-72 overflow-y-auto">
-          <div className="px-4 py-4 space-y-2.5 flex flex-col text-sm">
+        <div className="w-72 flex flex-col overflow-hidden rounded-t-2xl shadow-lg bg-white">
+          <div className="bg-black text-white px-4 py-3 rounded-t-2xl">
+            <h2 className="text-sm font-semibold">Settings</h2>
+          </div>
+          <div className="px-4 py-4 space-y-2.5 flex flex-col text-sm overflow-y-auto">
             {/* Model Selector */}
             <div className="bg-gray-100 border border-gray-300 rounded-lg p-3">
               <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
@@ -797,6 +904,29 @@ export default function CreateImagePage() {
               </div>
             </div>
 
+            {/* Shot Type */}
+            <div>
+              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
+                Shot Type
+              </label>
+              <select
+                value={shotType}
+                onChange={(e) => setShotType(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {SHOT_TYPES.map((st) => (
+                  <option key={st.id} value={st.id}>
+                    {st.label}
+                  </option>
+                ))}
+              </select>
+              {shotType !== 'none' && (
+                <p className="text-xs text-gray-500 mt-1 italic">
+                  {SHOT_TYPES.find(st => st.id === shotType)?.phrase}
+                </p>
+              )}
+            </div>
+
             {/* Size / Aspect Ratio */}
             <div>
               <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
@@ -818,9 +948,6 @@ export default function CreateImagePage() {
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-gray-500 mt-2">
-                ⚠️ AI models often ignore aspect ratio. Use prompt keywords like "portrait", "landscape" for better results.
-              </p>
             </div>
 
             {/* Quantity */}
@@ -839,82 +966,228 @@ export default function CreateImagePage() {
               />
             </div>
 
+            {/* Gender */}
+            <div>
+              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
+                Gender
+              </label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setGender('female')
+                    setBodyType('none')
+                  }}
+                  className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    gender === 'female'
+                      ? 'bg-blue-600 text-white border border-blue-600'
+                      : 'bg-white text-black border border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  Female
+                </button>
+                <button
+                  onClick={() => {
+                    setGender('male')
+                    setBodyType('none')
+                  }}
+                  className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    gender === 'male'
+                      ? 'bg-blue-600 text-white border border-blue-600'
+                      : 'bg-white text-black border border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  Male
+                </button>
+              </div>
+            </div>
+
             {/* Body Type */}
-            <div>
-              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
-                Body Type
-              </label>
-              <select
-                value={bodyType}
-                onChange={(e) => setBodyType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <div className="border border-gray-300 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setBodyTypeExpanded(!bodyTypeExpanded)}
+                className="w-full flex items-center justify-between px-3 py-2 bg-gray-100 hover:bg-gray-200 transition-colors"
               >
-                {BODY_TYPES.map((bt) => (
-                  <option key={bt.id} value={bt.id}>
-                    {bt.label}
-                  </option>
-                ))}
-              </select>
-              {bodyType !== 'none' && (
-                <p className="text-xs text-gray-500 mt-1 italic">
-                  {BODY_TYPES.find(bt => bt.id === bodyType)?.phrase}
-                </p>
+                <label className="text-xs font-semibold text-black uppercase tracking-widest cursor-pointer">
+                  Body Type
+                </label>
+                <svg
+                  className={`w-4 h-4 text-black transition-transform ${bodyTypeExpanded ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              </button>
+
+              {bodyTypeExpanded && (
+                <div className="px-3 py-3 bg-white space-y-3">
+                  {/* Body Type */}
+                  <div>
+                    <label className="text-xs font-semibold text-black uppercase tracking-widest mb-1 block">Body Type</label>
+                    <select
+                      value={bodyType}
+                      onChange={(e) => setBodyType(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {(gender === 'male' ? MALE_BODY_TYPES : FEMALE_BODY_TYPES).map((bt) => (
+                        <option key={bt.id} value={bt.id}>
+                          {bt.label}
+                        </option>
+                      ))}
+                    </select>
+                    {bodyType !== 'none' && (
+                      <p className="text-xs text-gray-500 mt-1 italic">
+                        {(gender === 'male' ? MALE_BODY_TYPES : FEMALE_BODY_TYPES).find(bt => bt.id === bodyType)?.phrase}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Ethnicity */}
+                  <div>
+                    <label className="text-xs font-semibold text-black uppercase tracking-widest mb-1 block">Ethnicity</label>
+                    <select
+                      value={ethnicity}
+                      onChange={(e) => setEthnicity(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {ETHNICITIES.map((et) => (
+                        <option key={et.id} value={et.id}>
+                          {et.label}
+                        </option>
+                      ))}
+                    </select>
+                    {ethnicity !== 'none' && (
+                      <p className="text-xs text-gray-500 mt-1 italic">
+                        {ETHNICITIES.find(et => et.id === ethnicity)?.phrase}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Hair Type */}
+                  <div>
+                    <label className="text-xs font-semibold text-black uppercase tracking-widest mb-1 block">Hair Type</label>
+                    <select
+                      value={hairType}
+                      onChange={(e) => setHairType(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {HAIR_TYPES.map((ht) => (
+                        <option key={ht.id} value={ht.id}>
+                          {ht.label}
+                        </option>
+                      ))}
+                    </select>
+                    {hairType !== 'none' && (
+                      <p className="text-xs text-gray-500 mt-1 italic">
+                        {HAIR_TYPES.find(ht => ht.id === hairType)?.phrase}
+                      </p>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
 
-            {/* Ethnicity */}
-            <div>
-              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
-                Ethnicity
-              </label>
-              <select
-                value={ethnicity}
-                onChange={(e) => setEthnicity(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+            {/* Camera Settings */}
+            <div className="border border-gray-300 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setCameraExpanded(!cameraExpanded)}
+                className="w-full flex items-center justify-between px-3 py-2 bg-gray-100 hover:bg-gray-200 transition-colors"
               >
-                {ETHNICITIES.map((et) => (
-                  <option key={et.id} value={et.id}>
-                    {et.label}
-                  </option>
-                ))}
-              </select>
-              {ethnicity !== 'none' && (
-                <p className="text-xs text-gray-500 mt-1 italic">
-                  {ETHNICITIES.find(et => et.id === ethnicity)?.phrase}
-                </p>
+                <label className="text-xs font-semibold text-black uppercase tracking-widest cursor-pointer">
+                  Camera Settings
+                </label>
+                <svg
+                  className={`w-4 h-4 text-black transition-transform ${cameraExpanded ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              </button>
+
+              {cameraExpanded && (
+                <div className="px-3 py-3 space-y-3 bg-white">
+                  {/* Lens */}
+                  <div>
+                    <label className="text-xs font-semibold text-black mb-1 block">Lens</label>
+                    <select
+                      value={lens}
+                      onChange={(e) => setLens(e.target.value)}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {LENSES.map((l) => (
+                        <option key={l.id} value={l.id}>
+                          {l.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Aperture */}
+                  <div>
+                    <label className="text-xs font-semibold text-black mb-1 block">Aperture</label>
+                    <select
+                      value={aperture}
+                      onChange={(e) => setAperture(e.target.value)}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {APERTURES.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Shutter Speed */}
+                  <div>
+                    <label className="text-xs font-semibold text-black mb-1 block">Shutter Speed</label>
+                    <select
+                      value={shutterSpeed}
+                      onChange={(e) => setShutterSpeed(e.target.value)}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {SHUTTER_SPEEDS.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* ISO */}
+                  <div>
+                    <label className="text-xs font-semibold text-black mb-1 block">ISO</label>
+                    <select
+                      value={iso}
+                      onChange={(e) => setIso(e.target.value)}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {ISO_SETTINGS.map((i) => (
+                        <option key={i.id} value={i.id}>
+                          {i.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               )}
             </div>
 
-            {/* Hair Type */}
-            <div>
-              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
-                Hair Type
-              </label>
-              <select
-                value={hairType}
-                onChange={(e) => setHairType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {HAIR_TYPES.map((ht) => (
-                  <option key={ht.id} value={ht.id}>
-                    {ht.label}
-                  </option>
-                ))}
-              </select>
-              {hairType !== 'none' && (
-                <p className="text-xs text-gray-500 mt-1 italic">
-                  {HAIR_TYPES.find(ht => ht.id === hairType)?.phrase}
-                </p>
-              )}
-            </div>
           </div>
         </div>
 
         {/* Center Panel - Canvas */}
-        <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden rounded-t-2xl shadow-lg bg-white">
+          <div className="bg-black text-white px-4 py-3 rounded-t-2xl">
+            <h2 className="text-sm font-semibold text-center">Create Image</h2>
+          </div>
+          <div className="flex-1 flex flex-col gap-4 overflow-hidden p-4">
           {/* Canvas Preview */}
           <div
-            className="flex-1 bg-white rounded-xl shadow-lg p-8 flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-xl transition-shadow relative group"
+            className="flex-1 bg-gray-50 rounded-lg p-8 flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-lg transition-shadow relative group"
             onClick={() => {
               if (selectedImage) {
                 setFullscreenImageData(selectedImage)
@@ -949,7 +1222,7 @@ export default function CreateImagePage() {
           </div>
 
           {/* Prompt Bar */}
-          <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-300">
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -993,21 +1266,22 @@ export default function CreateImagePage() {
               <span className="text-xs text-gray-500 whitespace-nowrap">{prompt.length}/2000</span>
             </div>
           </div>
+          </div>
         </div>
 
         {/* Right Panel - History */}
-        <div className="w-96 flex flex-col bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="px-4 py-3 bg-gray-100 border-b border-gray-200">
+        <div className="w-96 flex flex-col rounded-t-2xl shadow-lg bg-white overflow-hidden">
+          <div className="px-4 py-3 bg-black text-white rounded-t-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-900">Generated Images</h2>
+              <h2 className="text-sm font-semibold">Generated Images</h2>
               <button
                 onClick={() => setShowTrash(!showTrash)}
-                className="text-xs text-gray-600 hover:text-gray-900 font-medium"
+                className="text-xs text-white hover:text-gray-200 font-medium"
               >
                 {showTrash ? '← Back' : 'Trash'}
               </button>
             </div>
-            <p className="text-xs text-gray-600 mt-1">
+            <p className="text-xs text-gray-300 mt-1">
               {showTrash
                 ? `${history.filter(img => img.deletedAt).length} deleted`
                 : `${history.filter(img => !img.deletedAt).length} image${history.filter(img => !img.deletedAt).length !== 1 ? 's' : ''}`}
@@ -1312,6 +1586,37 @@ export default function CreateImagePage() {
                   {isSavingProject ? 'Saving...' : 'Save Image'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Storage Quota Exceeded Modal */}
+      {showStorageModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 p-8">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="mt-4 text-lg font-bold text-center text-gray-900">Storage Limit Reached</h3>
+            <p className="mt-3 text-sm text-gray-600 text-center">
+              {storageError || 'You have reached your storage limit. Upgrade your plan or purchase extra storage to continue.'}
+            </p>
+            <div className="mt-6 flex flex-col gap-3">
+              <button
+                onClick={() => router.push('/dashboard/settings/billing')}
+                className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+              >
+                Upgrade Plan or Add Storage
+              </button>
+              <button
+                onClick={() => setShowStorageModal(false)}
+                className="w-full px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
