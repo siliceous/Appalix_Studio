@@ -37,21 +37,33 @@ class NanoBananaAdapter {
     for (let i = 0; i < numImages; i++) {
       try {
         const payload = {
-          prompt: prompt,
-          num_inference_steps: 30,
-          guidance_scale: 7.5,
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            responseModalities: ['TEXT', 'IMAGE'],
+            temperature: params.temperature ?? 0.7,
+          },
         }
 
-        console.log(`[Nano Banana] Sending request ${i + 1}/${numImages}`)
+        console.log(`[Nano Banana] Sending Gemini request ${i + 1}/${numImages}`)
 
-        const response = await fetch('https://api.nanobang.ai/generate', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        })
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${this.apiKey}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          }
+        )
 
         console.log(`[Nano Banana] Response status: ${response.status}`)
 
@@ -62,12 +74,22 @@ class NanoBananaAdapter {
         }
 
         const data = await response.json() as any
-        if (data.images && Array.isArray(data.images) && data.images.length > 0) {
-          for (const imageBase64 of data.images) {
-            const dataUrl = `data:image/png;base64,${imageBase64}`
-            allImageUrls.push(dataUrl)
+
+        // Extract image from candidates[0].content.parts[].inlineData.data
+        if (data.candidates && Array.isArray(data.candidates) && data.candidates.length > 0) {
+          const candidate = data.candidates[0]
+          if (candidate.content && candidate.content.parts) {
+            for (const part of candidate.content.parts) {
+              if (part.inlineData && part.inlineData.data) {
+                // Found base64 image data
+                const base64Data = part.inlineData.data
+                const mimeType = part.inlineData.mimeType || 'image/png'
+                const dataUrl = `data:${mimeType};base64,${base64Data}`
+                allImageUrls.push(dataUrl)
+                console.log(`[Nano Banana] Found image ${i + 1}/${numImages}`)
+              }
+            }
           }
-          console.log(`[Nano Banana] Generated ${data.images.length} image(s)`)
         }
 
         if (i < numImages - 1) {
