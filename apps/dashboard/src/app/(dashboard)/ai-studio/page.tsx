@@ -304,7 +304,7 @@ export default function AIStudio() {
               onMouseUp={() => setIsDragging(false)}
               onMouseLeave={() => setIsDragging(false)}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '100%', minHeight: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', minWidth: `${100 * imageZoom}%`, minHeight: `${100 * imageZoom}%` }}>
                 <img src={fullscreenImage.image} alt={fullscreenImage.prompt} style={{ transform: `scale(${imageZoom})`, transformOrigin: 'center' }} className="h-auto w-auto object-contain transition-transform pointer-events-none" />
               </div>
             </div>
