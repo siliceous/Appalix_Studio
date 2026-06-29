@@ -268,7 +268,7 @@ export default function CreateImagePage() {
   const [gender, setGender] = useState<'female' | 'male'>('female')
   const [bodyType, setBodyType] = useState('none')
   const [ethnicity, setEthnicity] = useState('none')
-  const [hairType, setHairType] = useState('none')
+  const [hairTypes, setHairTypes] = useState<string[]>([])
   const [shotType, setShotType] = useState('none')
   const [lens, setLens] = useState('none')
   const [aperture, setAperture] = useState('none')
@@ -625,7 +625,6 @@ export default function CreateImagePage() {
     const bodyTypesArray = gender === 'male' ? MALE_BODY_TYPES : FEMALE_BODY_TYPES
     const bodyTypeData = bodyTypesArray.find(bt => bt.id === bodyType)
     const ethnicityData = ETHNICITIES.find(et => et.id === ethnicity)
-    const hairTypeData = HAIR_TYPES.find(ht => ht.id === hairType)
     const shotTypeData = SHOT_TYPES.find(st => st.id === shotType)
     const lensData = LENSES.find(l => l.id === lens)
     const apertureData = APERTURES.find(a => a.id === aperture)
@@ -638,8 +637,14 @@ export default function CreateImagePage() {
     if (ethnicityData && ethnicityData.phrase) {
       enhanced = `${enhanced}, ${ethnicityData.phrase}`
     }
-    if (hairTypeData && hairTypeData.phrase) {
-      enhanced = `${enhanced}, ${hairTypeData.phrase}`
+    if (hairTypes.length > 0) {
+      const hairPhrases = hairTypes
+        .map(id => HAIR_TYPES.find(ht => ht.id === id))
+        .filter(ht => ht && ht.phrase)
+        .map(ht => ht!.phrase)
+      if (hairPhrases.length > 0) {
+        enhanced = `${enhanced}, ${hairPhrases.join(', ')}`
+      }
     }
     if (shotTypeData && shotTypeData.phrase) {
       enhanced = `${enhanced}, ${shotTypeData.phrase}`
@@ -1023,23 +1028,39 @@ export default function CreateImagePage() {
                     )}
                   </div>
 
-                  {/* Hair Type */}
+                  {/* Hair Type - Multiple Selection */}
                   <div>
-                    <label className="text-xs font-semibold text-black uppercase tracking-widest mb-1 block">Hair Type</label>
-                    <select
-                      value={hairType}
-                      onChange={(e) => setHairType(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {HAIR_TYPES.map((ht) => (
-                        <option key={ht.id} value={ht.id}>
+                    <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">Hair Type (up to 3)</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {HAIR_TYPES.filter(ht => ht.id !== 'none').map((ht) => (
+                        <button
+                          key={ht.id}
+                          onClick={() => {
+                            if (hairTypes.includes(ht.id)) {
+                              setHairTypes(hairTypes.filter(id => id !== ht.id))
+                            } else if (hairTypes.length < 3) {
+                              setHairTypes([...hairTypes, ht.id])
+                            }
+                          }}
+                          disabled={!hairTypes.includes(ht.id) && hairTypes.length >= 3}
+                          className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition-all border ${
+                            hairTypes.includes(ht.id)
+                              ? 'bg-blue-600 text-white border-blue-700 shadow-md'
+                              : hairTypes.length >= 3
+                              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                              : 'bg-white text-gray-700 border-gray-200 hover:shadow-md'
+                          }`}
+                        >
                           {ht.label}
-                        </option>
+                        </button>
                       ))}
-                    </select>
-                    {hairType !== 'none' && (
-                      <p className="text-xs text-gray-500 mt-1 italic">
-                        {HAIR_TYPES.find(ht => ht.id === hairType)?.phrase}
+                    </div>
+                    {hairTypes.length > 0 && (
+                      <p className="text-xs text-gray-500 mt-2 italic">
+                        {hairTypes
+                          .map(id => HAIR_TYPES.find(ht => ht.id === id)?.phrase)
+                          .filter(Boolean)
+                          .join(', ')}
                       </p>
                     )}
                   </div>
