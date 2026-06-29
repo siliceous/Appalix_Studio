@@ -20,9 +20,9 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
    */
   server.get<{ Params: { workspaceId: string } }>(
     '/workspace/:workspaceId',
-    async (req: FastifyRequest, reply: FastifyReply) => {
+    async (req: FastifyRequest<{ Params: { workspaceId: string } }>, reply: FastifyReply) => {
       try {
-        const { workspaceId } = req.params
+        const { workspaceId } = req.params as any
 
         const { data: actors, error } = await supabase
           .from('talking_actors')
@@ -50,9 +50,9 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
    */
   server.get<{ Params: { actorId: string } }>(
     '/:actorId',
-    async (req: FastifyRequest, reply: FastifyReply) => {
+    async (req: FastifyRequest<{ Params: { actorId: string } }>, reply: FastifyReply) => {
       try {
-        const { actorId } = req.params
+        const { actorId } = req.params as any
 
         const { data: actor, error } = await supabase
           .from('talking_actors')
@@ -79,9 +79,9 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
    */
   server.post<{ Body: { workspaceId: string; actorName: string; uploadType: 'image' | 'video' } }>(
     '/upload',
-    async (req: FastifyRequest, reply: FastifyReply) => {
+    async (req: FastifyRequest<{ Body: { workspaceId: string; actorName: string; uploadType: 'image' | 'video' } }>, reply: FastifyReply) => {
       try {
-        const data = await req.file()
+        const data = await (req.file() as any)
 
         if (!data) {
           return reply.status(400).send({
@@ -90,9 +90,9 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
         }
 
         const { fields } = data
-        const workspaceId = fields.workspaceId?.value as string
-        const actorName = fields.actorName?.value as string
-        const uploadType = fields.uploadType?.value as 'image' | 'video'
+        const workspaceId = (fields as any).workspaceId?.value as string
+        const actorName = (fields as any).actorName?.value as string
+        const uploadType = (fields as any).uploadType?.value as 'image' | 'video'
 
         if (!workspaceId || !actorName || !uploadType) {
           return reply.status(400).send({

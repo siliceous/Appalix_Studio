@@ -1,53 +1,41 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../../lib/supabase.js';
 import { ProviderFactory } from './provider-factory.js';
 import { GenerateVideoRequest, VideoGenerationResponse, VideoProvider } from './types.js';
 import { walletService } from '../../services/wallet-service.js';
 
-let supabase: ReturnType<typeof createClient> | null = null;
-
-function getSupabase() {
-  if (!supabase) {
-    supabase = createClient(
-      process.env.SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-    );
-  }
-  return supabase;
-}
-
 async function checkStorageQuota(workspaceId: string, estimatedNewSizeBytes: number): Promise<{ allowed: boolean; error?: string }> {
   try {
-    const { data: workspace } = await getSupabase()
+    const { data: workspace } = await (supabase
       .from('workspaces')
       .select('storage_limit_bytes, extra_storage_gb')
       .eq('id', workspaceId)
-      .single();
+      .single() as any);
 
-    if (!workspace || workspace.storage_limit_bytes === null) {
+    if (!workspace || (workspace as any).storage_limit_bytes === null) {
       // Enterprise (unlimited) or workspace not found
       return { allowed: true };
     }
 
-    const limitBytes = workspace.storage_limit_bytes + (workspace.extra_storage_gb ?? 0) * 10 * 1024 * 1024 * 1024;
+    const limitBytes = (workspace as any).storage_limit_bytes + ((workspace as any).extra_storage_gb ?? 0) * 10 * 1024 * 1024 * 1024;
 
     // Sum storage used by all images and videos in workspace
-    const { data: imageUsage } = await getSupabase()
+    const { data: imageUsage } = await (supabase
       .from('ai_image_generations')
       .select('compressed_size_bytes')
       .eq('workspace_id', workspaceId)
-      .eq('status', 'completed');
+      .eq('status', 'completed') as any);
 
-    const { data: videoUsage } = await getSupabase()
+    const { data: videoUsage } = await (supabase
       .from('ai_video_generations')
       .select('file_size_bytes')
       .eq('workspace_id', workspaceId)
-      .in('status', ['completed', 'ready']);
+      .in('status', ['completed', 'ready']) as any);
 
-    const { data: sourceUsage } = await getSupabase()
+    const { data: sourceUsage } = await (supabase
       .from('sources')
       .select('file_size_bytes')
       .eq('workspace_id', workspaceId)
-      .not('file_size_bytes', 'is', null);
+      .not('file_size_bytes', 'is', null) as any);
 
     const usedBytes =
       (imageUsage ?? []).reduce((sum: number, row: any) => sum + (row.compressed_size_bytes ?? 0), 0) +
@@ -79,18 +67,18 @@ export class VideoGenerationService {
     const { workspace_id, prompt, video_type, user_id, quality_mode, duration_seconds, ...rest } = params;
 
     // Validate workspace access
-    const { data: workspace, error: workspaceError } = await getSupabase()
+    const { data: workspace, error: workspaceError } = await (supabase
       .from('workspaces')
       .select('id, plan')
       .eq('id', workspace_id)
-      .single();
+      .single() as any);
 
     if (workspaceError || !workspace) {
       throw new Error('Workspace not found');
     }
 
     // Check if video generation is available for this plan (Pro+ only)
-    if (!this.isPlanAllowed(workspace.plan)) {
+    if (!this.isPlanAllowed((workspace as any).plan)) {
       throw new Error('Video generation is only available for Pro+ plans');
     }
 
@@ -157,22 +145,22 @@ export class VideoGenerationService {
     const videoId = video.id;
 
     // Create generation job
-    const { data: job, error: jobError } = await supabase
+    const { data: job, error: jobError } = await (supabase
       .from('video_generation_jobs')
       .insert({
         video_id: videoId,
         workspace_id,
         provider,
         status: 'pending',
-      })
+      } as any)
       .select('id')
-      .single();
+      .single() as any);
 
     if (jobError || !job) {
       throw new Error('Failed to create generation job');
     }
 
-    const jobId = job.id;
+    const jobId = (job as any).id;
 
     // Submit to provider
     try {
@@ -182,19 +170,19 @@ export class VideoGenerationService {
       });
 
       // Update job with provider job ID
-      await supabase
+      await (supabase
         .from('video_generation_jobs')
         .update({
           provider_job_id: result.provider_job_id,
           status: 'submitted',
-        })
-        .eq('id', jobId);
+        } as any)
+        .eq('id', jobId) as any);
 
       // Update video with generating status
-      await supabase
+      await (supabase
         .from('video_generations')
-        .update({ status: 'generating' })
-        .eq('id', videoId);
+        .update({ status: 'generating' } as any)
+        .eq('id', videoId) as any);
 
       // Deduct estimated cost from wallet immediately (optimistic billing)
       // If generation fails, cost will be refunded
@@ -220,17 +208,17 @@ export class VideoGenerationService {
       };
     } catch (error) {
       // Mark job as failed
-      await supabase
+      await (supabase
         .from('video_generation_jobs')
         .update({
           status: 'failed',
           error_message: error instanceof Error ? error.message : 'Unknown error',
-        })
+        } as any)
         .eq('id', jobId);
 
       await supabase
         .from('video_generations')
-        .update({ status: 'failed' })
+        .update({ status: 'failed' } as any)
         .eq('id', videoId);
 
       throw error;
@@ -293,7 +281,7 @@ export class VideoGenerationService {
   async deleteVideo(videoId: string, workspaceId: string) {
     const { error } = await supabase
       .from('video_generations')
-      .update({ deleted_at: new Date().toISOString() })
+      .update({ deleted_at: new Date().toISOString() } as any)
       .eq('id', videoId)
       .eq('workspace_id', workspaceId);
 
@@ -349,7 +337,7 @@ export class VideoGenerationService {
           progress_percent: 100,
           completed_at: new Date().toISOString(),
           webhook_received_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', jobId);
 
       await supabase
@@ -359,7 +347,7 @@ export class VideoGenerationService {
           output_url: status.output_url,
           actual_cost_usd: job.video_generations.estimated_cost_usd,
           video_duration_seconds: status.duration_seconds || job.video_generations.duration_seconds,
-        })
+        } as any)
         .eq('id', job.video_id);
 
       // Cost was already deducted when job was created
@@ -379,12 +367,12 @@ export class VideoGenerationService {
           status: 'failed',
           error_message: status.error_message,
           completed_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', jobId);
 
       await supabase
         .from('video_generations')
-        .update({ status: 'failed' })
+        .update({ status: 'failed' } as any)
         .eq('id', job.video_id);
 
       console.log(`Video ${job.video_id} failed. Cost refunded: $${job.video_generations.estimated_cost_usd}`);
@@ -396,7 +384,7 @@ export class VideoGenerationService {
           progress_percent: status.progress_percent || 50,
           last_polled_at: new Date().toISOString(),
           next_poll_at: new Date(Date.now() + 30000).toISOString(), // Poll again in 30s
-        })
+        } as any)
         .eq('id', jobId);
     }
 

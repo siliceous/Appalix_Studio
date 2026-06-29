@@ -44,7 +44,7 @@ export async function telnyxSmsRoutes(fastify: FastifyInstance) {
       // Compliance + opt-out gatekeeper
       const gate = await checkSendAllowed({ workspaceId, fromE164: from, toE164: to })
       if (!gate.allowed) {
-        return reply.code(422).send({ error: gate.reason, code: gate.code })
+        return reply.code(422).send({ error: (gate as any).reason, code: (gate as any).code })
       }
 
       // Send via Telnyx

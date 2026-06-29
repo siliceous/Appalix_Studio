@@ -181,8 +181,8 @@ export class GeminiVoiceService {
         .update({
           lip_sync_strength: Math.max(0, Math.min(1, lipSyncStrength)),
         } as any)
-        .eq('talking_actor_id', actorId) as any)
-        .eq('gemini_voice_id', voiceId)
+        .eq('talking_actor_id', actorId)
+        .eq('gemini_voice_id', voiceId) as any)
 
       if (error) throw error
     } catch (error) {
@@ -272,9 +272,8 @@ export class GeminiVoiceService {
     try {
       const { data, error } = await (this.supabase
         .from('gemini_voices')
-        .select('language_code')
-        .eq('is_active', true)
-        .isDistinct() as any)
+        .select('language_code', { distinct: true })
+        .eq('is_active', true) as any)
 
       if (error) throw error
       return (data || [])
