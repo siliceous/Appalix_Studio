@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { Loader2, Plus, Download, Trash2, Film, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Loader2, Plus, Download, Trash2, Film, X, ArrowLeft } from 'lucide-react'
 
 const QUALITY_MODES = [
   { value: 'fast', label: 'Fast', description: '720p - 6 credits/sec', creditsPerSecond: 6 },
@@ -13,6 +14,7 @@ const DURATIONS = [5, 10, 15, 20, 30]
 const ASPECT_RATIOS = ['9:16', '16:9', '1:1', '4:3']
 
 export default function CreateVideoPage() {
+  const router = useRouter()
   const [prompt, setPrompt] = useState('')
   const [qualityMode, setQualityMode] = useState<'fast' | 'pro_cinematic' | 'ultra_realistic'>('fast')
   const [duration, setDuration] = useState(15)
@@ -69,6 +71,21 @@ export default function CreateVideoPage() {
     }
   }
 
+  const handleDeleteVideo = async (videoId: string) => {
+    if (!confirm('Delete this video?')) return
+    try {
+      const response = await fetch(`/api/videos/${videoId}`, {
+        method: 'DELETE',
+        headers: { 'x-workspace-id': workspaceId },
+      })
+      if (response.ok) {
+        setVideos(videos.filter(v => v.id !== videoId))
+      }
+    } catch (error) {
+      console.error('Error deleting video:', error)
+    }
+  }
+
   const handleGenerate = async () => {
     if (!prompt.trim() || !workspaceId) {
       alert('Please enter a prompt')
@@ -110,6 +127,21 @@ export default function CreateVideoPage() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
+      {/* Header with Back Button and Credits */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-sm font-medium">Back</span>
+        </button>
+        <div className="text-right">
+          <p className="text-xs text-gray-500">Available Credits</p>
+          <p className="text-lg font-semibold text-gray-900">{credits}</p>
+        </div>
+      </div>
+
       <div className="flex-1 flex gap-3 px-3 py-0 pb-3 overflow-hidden relative">
         {/* Left Panel - Settings */}
         <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden">
@@ -337,8 +369,11 @@ export default function CreateVideoPage() {
                         <button className="p-1.5 hover:bg-gray-100 rounded transition-colors">
                           <Download className="w-3 h-3 text-gray-600" />
                         </button>
-                        <button className="p-1.5 hover:bg-gray-100 rounded transition-colors">
-                          <Trash2 className="w-3 h-3 text-gray-600" />
+                        <button
+                          onClick={() => handleDeleteVideo(video.id)}
+                          className="p-1.5 hover:bg-red-50 rounded transition-colors"
+                        >
+                          <Trash2 className="w-3 h-3 text-red-600" />
                         </button>
                       </div>
                     </div>
