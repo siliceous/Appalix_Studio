@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Download, Trash2, Search, Loader2, X, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { Download, Trash2, Search, Loader2, X, ChevronLeft, ChevronRight, Plus, ZoomIn, ZoomOut } from 'lucide-react'
 import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 
 interface GeneratedImage {
@@ -38,6 +38,7 @@ export default function AIStudio() {
   const [selectedGender, setSelectedGender] = useState<string | null>(null)
   const [selectedDateRange, setSelectedDateRange] = useState<string | null>(null)
   const [credits, setCredits] = useState(0)
+  const [imageZoom, setImageZoom] = useState(1)
 
   useEffect(() => {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
@@ -282,15 +283,21 @@ export default function AIStudio() {
           <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-8 flex flex-col gap-6">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-500 font-medium">{fullscreenImageIndex + 1} of {filteredImages.length}</div>
-              <button onClick={() => setFullscreenImage(null)} className="p-1 hover:bg-gray-100 rounded transition-colors"><X className="w-5 h-5 text-gray-600" /></button>
+              <button onClick={() => { setFullscreenImage(null); setImageZoom(1) }} className="p-1 hover:bg-gray-100 rounded transition-colors"><X className="w-5 h-5 text-gray-600" /></button>
             </div>
 
             <div className="flex gap-6">
-              <div className="flex-1 flex items-center justify-center min-h-[400px]">
-                <div className="relative">
-                  <img src={fullscreenImage.image} alt={fullscreenImage.prompt} className="max-h-[500px] w-auto object-contain rounded-lg" />
-                  {fullscreenImageIndex > 0 && <button onClick={() => { const newIdx = fullscreenImageIndex - 1; setFullscreenImageIndex(newIdx); setFullscreenImage(filteredImages[newIdx]) }} className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-14 p-2 bg-white rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110"><ChevronLeft className="w-6 h-6 text-gray-800" /></button>}
-                  {fullscreenImageIndex < filteredImages.length - 1 && <button onClick={() => { const newIdx = fullscreenImageIndex + 1; setFullscreenImageIndex(newIdx); setFullscreenImage(filteredImages[newIdx]) }} className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-14 p-2 bg-white rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110"><ChevronRight className="w-6 h-6 text-gray-800" /></button>}
+              <div className="flex-1 flex flex-col items-center justify-center min-h-[400px]">
+                <div className="flex gap-2 mb-4">
+                  <button onClick={() => setImageZoom(Math.max(0.5, imageZoom - 0.2))} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors" title="Zoom out"><ZoomOut className="w-4 h-4 text-gray-700" /></button>
+                  <div className="px-3 py-2 bg-gray-100 rounded-lg text-sm text-gray-700 font-medium min-w-16 text-center">{Math.round(imageZoom * 100)}%</div>
+                  <button onClick={() => setImageZoom(Math.min(3, imageZoom + 0.2))} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors" title="Zoom in"><ZoomIn className="w-4 h-4 text-gray-700" /></button>
+                  <button onClick={() => setImageZoom(1)} className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700 font-medium transition-colors">Reset</button>
+                </div>
+                <div className="relative overflow-auto max-h-[500px] max-w-[600px]">
+                  <img src={fullscreenImage.image} alt={fullscreenImage.prompt} style={{ transform: `scale(${imageZoom})`, transformOrigin: 'center' }} className="w-auto h-auto object-contain rounded-lg transition-transform" />
+                  {fullscreenImageIndex > 0 && <button onClick={() => { const newIdx = fullscreenImageIndex - 1; setFullscreenImageIndex(newIdx); setFullscreenImage(filteredImages[newIdx]); setImageZoom(1) }} className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-14 p-2 bg-white rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110"><ChevronLeft className="w-6 h-6 text-gray-800" /></button>}
+                  {fullscreenImageIndex < filteredImages.length - 1 && <button onClick={() => { const newIdx = fullscreenImageIndex + 1; setFullscreenImageIndex(newIdx); setFullscreenImage(filteredImages[newIdx]); setImageZoom(1) }} className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-14 p-2 bg-white rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110"><ChevronRight className="w-6 h-6 text-gray-800" /></button>}
                 </div>
               </div>
 
@@ -301,7 +308,7 @@ export default function AIStudio() {
                 </div>
                 <div className="flex flex-col gap-2 pt-4 border-t">
                   <button onClick={() => handleDownload(fullscreenImage.id, fullscreenImage.image)} className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><Download className="w-4 h-4" /> Download</button>
-                  <button onClick={() => { handleDelete(fullscreenImage.id); setFullscreenImage(null) }} className="w-full px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 border border-red-200"><Trash2 className="w-4 h-4" /> Delete</button>
+                  <button onClick={() => { handleDelete(fullscreenImage.id); setFullscreenImage(null); setImageZoom(1) }} className="w-full px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 border border-red-200"><Trash2 className="w-4 h-4" /> Delete</button>
                 </div>
               </div>
             </div>
