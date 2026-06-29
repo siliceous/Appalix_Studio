@@ -214,12 +214,12 @@ export class VideoGenerationService {
           status: 'failed',
           error_message: error instanceof Error ? error.message : 'Unknown error',
         } as any)
-        .eq('id', jobId);
+        .eq('id', jobId) as any);
 
-      await supabase
+      await (supabase
         .from('video_generations')
         .update({ status: 'failed' } as any)
-        .eq('id', videoId);
+        .eq('id', videoId) as any);
 
       throw error;
     }
@@ -330,7 +330,7 @@ export class VideoGenerationService {
       //   .upload(`${job.workspace_id}/${job.video_id}.mp4`, videoBuffer);
 
       // Update job and video with completion data
-      await supabase
+      await (supabase
         .from('video_generation_jobs')
         .update({
           status: 'completed',
@@ -338,9 +338,9 @@ export class VideoGenerationService {
           completed_at: new Date().toISOString(),
           webhook_received_at: new Date().toISOString(),
         } as any)
-        .eq('id', jobId);
+        .eq('id', jobId) as any);
 
-      await supabase
+      await (supabase
         .from('video_generations')
         .update({
           status: 'ready',
@@ -348,7 +348,7 @@ export class VideoGenerationService {
           actual_cost_usd: job.video_generations.estimated_cost_usd,
           video_duration_seconds: status.duration_seconds || job.video_generations.duration_seconds,
         } as any)
-        .eq('id', job.video_id);
+        .eq('id', job.video_id) as any);
 
       // Cost was already deducted when job was created
       console.log(`Video ${job.video_id} completed. Cost deducted: $${job.video_generations.estimated_cost_usd}`);
@@ -361,31 +361,31 @@ export class VideoGenerationService {
         { video_id: job.video_id, error: status.error_message }
       );
 
-      await supabase
+      await (supabase
         .from('video_generation_jobs')
         .update({
           status: 'failed',
           error_message: status.error_message,
           completed_at: new Date().toISOString(),
         } as any)
-        .eq('id', jobId);
+        .eq('id', jobId) as any);
 
-      await supabase
+      await (supabase
         .from('video_generations')
         .update({ status: 'failed' } as any)
-        .eq('id', job.video_id);
+        .eq('id', job.video_id) as any);
 
       console.log(`Video ${job.video_id} failed. Cost refunded: $${job.video_generations.estimated_cost_usd}`);
     } else {
       // Still processing, update progress and next poll time
-      await supabase
+      await (supabase
         .from('video_generation_jobs')
         .update({
           progress_percent: status.progress_percent || 50,
           last_polled_at: new Date().toISOString(),
           next_poll_at: new Date(Date.now() + 30000).toISOString(), // Poll again in 30s
         } as any)
-        .eq('id', jobId);
+        .eq('id', jobId) as any);
     }
 
     return job;
