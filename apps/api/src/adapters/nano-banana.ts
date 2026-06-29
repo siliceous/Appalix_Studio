@@ -13,101 +13,96 @@ export interface NanoBananaGenerationParams {
 }
 
 class NanoBananaAdapter {
-  private apiKey: string
+  private seedenceApiKey: string
+  private baseUrl = 'https://api.seedance2.ai'
   private generatedImages: Map<string, string[]> = new Map()
 
   constructor() {
-    this.apiKey = config.GEMINI_API_KEY || ''
-    if (!this.apiKey) {
-      console.warn('[Nano Banana] API key not configured. Image generation will fail.')
+    this.seedenceApiKey = config.SEEDENCE_API_KEY || ''
+    if (!this.seedenceApiKey) {
+      console.warn('[Nano Banana] Seedence API key not configured. Image generation will fail.')
     }
   }
 
   async generateImage(params: NanoBananaGenerationParams): Promise<string> {
-    if (!this.apiKey) {
+    if (!this.seedenceApiKey) {
       throw new Error('Nano Banana API key not configured')
     }
 
-    const prompt = this.buildPrompt(params.prompt, params.style, params.lighting, params.resolution)
+    const aspectRatioPrompt = this.buildAspectRatioPrompt(params.aspectRatio)
+    const basePrompt = this.buildPrompt(params.prompt, params.style, params.lighting, params.resolution)
+    const prompt = aspectRatioPrompt ? `${aspectRatioPrompt}. ${basePrompt}` : basePrompt
     const numImages = params.numImages || 1
-    const allImageUrls: string[] = []
 
-    console.log(`[Nano Banana] Generating ${numImages} image(s) using Gemini`)
+    const payload = {
+      prompt: prompt,
+      negative_prompt: params.negativePrompt || '',
+      number_of_images: numImages,
+      aspect_ratio: params.aspectRatio || '1:1',
+    }
 
-    for (let i = 0; i < numImages; i++) {
-      try {
-        const payload = {
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            responseModalities: ['TEXT', 'IMAGE'],
-            temperature: params.temperature ?? 0.7,
-          },
-        }
+    console.log('[Nano Banana] Sending generation request to Seedence:', {
+      prompt: params.prompt,
+      aspectRatio: params.aspectRatio,
+      numImages,
+    })
 
-        console.log(`[Nano Banana] Sending Gemini request ${i + 1}/${numImages}`)
+    const response = await fetch(`${this.baseUrl}/api/generate`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.seedenceApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
 
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${this.apiKey}`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-          }
-        )
+    const responseText = await response.text()
+    console.log(`[Nano Banana] Response status: ${response.status}`)
 
-        console.log(`[Nano Banana] Response status: ${response.status}`)
+    if (!response.ok) {
+      console.error(`[Nano Banana] Error response: ${responseText.substring(0, 200)}`)
+      throw new Error(`Nano Banana API error: ${response.status} - ${responseText.substring(0, 100)}`)
+    }
 
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error(`[Nano Banana] Error response: ${errorText.substring(0, 300)}`)
-          throw new Error(`Nano Banana API error: ${response.status}`)
-        }
+    const data = JSON.parse(responseText) as any
 
-        const data = await response.json() as any
+    // Extract image data from response
+    let imageUrls: string[] = []
 
-        // Extract image from candidates[0].content.parts[].inlineData.data
-        if (data.candidates && Array.isArray(data.candidates) && data.candidates.length > 0) {
-          const candidate = data.candidates[0]
-          if (candidate.content && candidate.content.parts) {
-            for (const part of candidate.content.parts) {
-              if (part.inlineData && part.inlineData.data) {
-                // Found base64 image data
-                const base64Data = part.inlineData.data
-                const mimeType = part.inlineData.mimeType || 'image/png'
-                const dataUrl = `data:${mimeType};base64,${base64Data}`
-                allImageUrls.push(dataUrl)
-                console.log(`[Nano Banana] Found image ${i + 1}/${numImages}`)
-              }
-            }
-          }
-        }
+    // Handle direct image URLs
+    if (data.images && Array.isArray(data.images)) {
+      imageUrls = data.images.map((img: any) => {
+        if (typeof img === 'string') return img
+        if (img.url) return img.url
+        if (img.data) return `data:image/png;base64,${img.data}`
+        return null
+      }).filter((url: string | null) => url !== null)
+    }
 
-        if (i < numImages - 1) {
-          await new Promise(resolve => setTimeout(resolve, 500))
-        }
-      } catch (error) {
-        console.error(`[Nano Banana] Error generating image ${i + 1}:`, error)
+    // Handle base64 encoded images
+    if (data.base64 && Array.isArray(data.base64)) {
+      const base64Urls = data.base64.map((b64: string) => `data:image/png;base64,${b64}`)
+      imageUrls = [...imageUrls, ...base64Urls]
+    }
+
+    // Handle single image response
+    if (data.image && typeof data.image === 'string') {
+      if (data.image.startsWith('data:')) {
+        imageUrls.push(data.image)
+      } else {
+        imageUrls.push(`data:image/png;base64,${data.image}`)
       }
     }
 
-    if (allImageUrls.length === 0) {
+    if (imageUrls.length === 0) {
+      console.error('[Nano Banana] No images found in response:', JSON.stringify(data).substring(0, 200))
       throw new Error('No images returned from Nano Banana API')
     }
 
     const jobId = `nano-banana-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    this.generatedImages.set(jobId, allImageUrls)
+    this.generatedImages.set(jobId, imageUrls)
 
-    console.log('[Nano Banana] Generated', allImageUrls.length, 'image(s) with ID:', jobId)
+    console.log('[Nano Banana] Generated', imageUrls.length, 'image(s) with ID:', jobId)
     return jobId
   }
 
