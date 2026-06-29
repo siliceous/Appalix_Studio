@@ -13,96 +13,87 @@ export interface NanoBananaGenerationParams {
 }
 
 class NanoBananaAdapter {
-  private seedenceApiKey: string
-  private baseUrl = 'https://api.seedance2.ai'
+  private stabilityApiKey: string
+  private baseUrl = 'https://api.stability.ai/v2beta'
   private generatedImages: Map<string, string[]> = new Map()
 
   constructor() {
-    this.seedenceApiKey = config.SEEDENCE_API_KEY || ''
-    if (!this.seedenceApiKey) {
-      console.warn('[Nano Banana] Seedence API key not configured. Image generation will fail.')
+    this.stabilityApiKey = config.STABILITY_API_KEY || ''
+    if (!this.stabilityApiKey) {
+      console.warn('[Nano Banana] Stability API key not configured. Image generation will fail.')
     }
   }
 
   async generateImage(params: NanoBananaGenerationParams): Promise<string> {
-    if (!this.seedenceApiKey) {
+    if (!this.stabilityApiKey) {
       throw new Error('Nano Banana API key not configured')
     }
 
+    const dimensions = this.getAspectRatioDimensions(params.aspectRatio)
     const aspectRatioPrompt = this.buildAspectRatioPrompt(params.aspectRatio)
     const basePrompt = this.buildPrompt(params.prompt, params.style, params.lighting, params.resolution)
     const prompt = aspectRatioPrompt ? `${aspectRatioPrompt}. ${basePrompt}` : basePrompt
     const numImages = params.numImages || 1
 
-    const payload = {
-      prompt: prompt,
-      negative_prompt: params.negativePrompt || '',
-      number_of_images: numImages,
-      aspect_ratio: params.aspectRatio || '1:1',
-    }
+    const allImageUrls: string[] = []
 
-    console.log('[Nano Banana] Sending generation request to Seedence:', {
+    console.log('[Nano Banana] Sending generation request to Stability:', {
       prompt: params.prompt,
       aspectRatio: params.aspectRatio,
       numImages,
     })
 
-    const response = await fetch(`${this.baseUrl}/api/generate`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.seedenceApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    })
+    for (let i = 0; i < numImages; i++) {
+      try {
+        const formData = new FormData()
+        formData.append('prompt', prompt)
+        if (params.negativePrompt) {
+          formData.append('negative_prompt', params.negativePrompt)
+        }
+        formData.append('aspect_ratio', params.aspectRatio || '1:1')
+        formData.append('output_format', 'png')
+        formData.append('model', 'sd3.5-large')
 
-    const responseText = await response.text()
-    console.log(`[Nano Banana] Response status: ${response.status}`)
+        const response = await fetch(`${this.baseUrl}/stable-image/generate/sd3`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.stabilityApiKey}`,
+            'Accept': 'image/*',
+          },
+          body: formData as any,
+        })
 
-    if (!response.ok) {
-      console.error(`[Nano Banana] Error response: ${responseText.substring(0, 200)}`)
-      throw new Error(`Nano Banana API error: ${response.status} - ${responseText.substring(0, 100)}`)
-    }
+        console.log(`[Nano Banana] Response status: ${response.status}`)
 
-    const data = JSON.parse(responseText) as any
+        if (!response.ok) {
+          const responseText = await response.text()
+          console.error(`[Nano Banana] Error response: ${responseText.substring(0, 200)}`)
+          throw new Error(`Stability API error: ${response.status}`)
+        }
 
-    // Extract image data from response
-    let imageUrls: string[] = []
+        const buffer = await response.arrayBuffer()
+        const base64 = Buffer.from(buffer).toString('base64')
+        const dataUrl = `data:image/png;base64,${base64}`
+        allImageUrls.push(dataUrl)
+        console.log(`[Nano Banana] Generated image ${i + 1}/${numImages}`)
 
-    // Handle direct image URLs
-    if (data.images && Array.isArray(data.images)) {
-      imageUrls = data.images.map((img: any) => {
-        if (typeof img === 'string') return img
-        if (img.url) return img.url
-        if (img.data) return `data:image/png;base64,${img.data}`
-        return null
-      }).filter((url: string | null) => url !== null)
-    }
-
-    // Handle base64 encoded images
-    if (data.base64 && Array.isArray(data.base64)) {
-      const base64Urls = data.base64.map((b64: string) => `data:image/png;base64,${b64}`)
-      imageUrls = [...imageUrls, ...base64Urls]
-    }
-
-    // Handle single image response
-    if (data.image && typeof data.image === 'string') {
-      if (data.image.startsWith('data:')) {
-        imageUrls.push(data.image)
-      } else {
-        imageUrls.push(`data:image/png;base64,${data.image}`)
+        if (i < numImages - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+      } catch (error) {
+        console.error(`[Nano Banana] Error generating image ${i + 1}:`, error)
+        throw error
       }
     }
 
-    if (imageUrls.length === 0) {
-      console.error('[Nano Banana] No images found in response:', JSON.stringify(data).substring(0, 200))
+    if (allImageUrls.length === 0) {
       throw new Error('No images returned from Nano Banana API')
     }
 
     const jobId = `nano-banana-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    this.generatedImages.set(jobId, imageUrls)
+    this.generatedImages.set(jobId, allImageUrls)
 
-    console.log('[Nano Banana] Generated', imageUrls.length, 'image(s) with ID:', jobId)
+    console.log('[Nano Banana] Generated', allImageUrls.length, 'image(s) with ID:', jobId)
     return jobId
   }
 
@@ -249,6 +240,20 @@ class NanoBananaAdapter {
       return 'square composition, 1:1 aspect ratio'
     }
     return ''
+  }
+
+  private getAspectRatioDimensions(aspectRatio?: string): {
+    width: number
+    height: number
+  } {
+    const dimensions: Record<string, { width: number; height: number }> = {
+      '1:1': { width: 512, height: 512 },
+      '4:5': { width: 512, height: 640 },
+      '16:9': { width: 896, height: 504 },
+      '9:16': { width: 504, height: 896 },
+    }
+
+    return dimensions[aspectRatio || '1:1'] || dimensions['1:1']
   }
 }
 
