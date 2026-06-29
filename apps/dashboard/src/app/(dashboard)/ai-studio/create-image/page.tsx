@@ -266,7 +266,7 @@ export default function CreateImagePage() {
   const [aspectRatio, setAspectRatio] = useState('9:16')
   const [quantity, setQuantity] = useState(1)
   const [gender, setGender] = useState<'female' | 'male'>('female')
-  const [bodyType, setBodyType] = useState('none')
+  const [bodyTypes, setBodyTypes] = useState<string[]>([])
   const [ethnicity, setEthnicity] = useState('none')
   const [hairTypes, setHairTypes] = useState<string[]>([])
   const [shotType, setShotType] = useState('none')
@@ -623,7 +623,6 @@ export default function CreateImagePage() {
   const getEnhancedPrompt = () => {
     let enhanced = prompt
     const bodyTypesArray = gender === 'male' ? MALE_BODY_TYPES : FEMALE_BODY_TYPES
-    const bodyTypeData = bodyTypesArray.find(bt => bt.id === bodyType)
     const ethnicityData = ETHNICITIES.find(et => et.id === ethnicity)
     const shotTypeData = SHOT_TYPES.find(st => st.id === shotType)
     const lensData = LENSES.find(l => l.id === lens)
@@ -631,8 +630,14 @@ export default function CreateImagePage() {
     const shutterSpeedData = SHUTTER_SPEEDS.find(s => s.id === shutterSpeed)
     const isoData = ISO_SETTINGS.find(i => i.id === iso)
 
-    if (bodyTypeData && bodyTypeData.phrase) {
-      enhanced = `${enhanced}, ${bodyTypeData.phrase}`
+    if (bodyTypes.length > 0) {
+      const bodyPhrases = bodyTypes
+        .map(id => bodyTypesArray.find(bt => bt.id === id))
+        .filter(bt => bt && bt.phrase)
+        .map(bt => bt!.phrase)
+      if (bodyPhrases.length > 0) {
+        enhanced = `${enhanced}, ${bodyPhrases.join(', ')}`
+      }
     }
     if (ethnicityData && ethnicityData.phrase) {
       enhanced = `${enhanced}, ${ethnicityData.phrase}`
@@ -986,23 +991,39 @@ export default function CreateImagePage() {
                 Body Type
               </label>
               <div className="space-y-3">
-                  {/* Body Type */}
+                  {/* Body Type - Multiple Selection */}
                   <div>
-                    <label className="text-xs font-semibold text-black uppercase tracking-widest mb-1 block">Body Type</label>
-                    <select
-                      value={bodyType}
-                      onChange={(e) => setBodyType(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {(gender === 'male' ? MALE_BODY_TYPES : FEMALE_BODY_TYPES).map((bt) => (
-                        <option key={bt.id} value={bt.id}>
+                    <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">Body Type (up to 3)</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(gender === 'male' ? MALE_BODY_TYPES : FEMALE_BODY_TYPES).filter(bt => bt.id !== 'none').map((bt) => (
+                        <button
+                          key={bt.id}
+                          onClick={() => {
+                            if (bodyTypes.includes(bt.id)) {
+                              setBodyTypes(bodyTypes.filter(id => id !== bt.id))
+                            } else if (bodyTypes.length < 3) {
+                              setBodyTypes([...bodyTypes, bt.id])
+                            }
+                          }}
+                          disabled={!bodyTypes.includes(bt.id) && bodyTypes.length >= 3}
+                          className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition-all border ${
+                            bodyTypes.includes(bt.id)
+                              ? 'bg-blue-600 text-white border-blue-700 shadow-md'
+                              : bodyTypes.length >= 3
+                              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                              : 'bg-white text-gray-700 border-gray-200 hover:shadow-md'
+                          }`}
+                        >
                           {bt.label}
-                        </option>
+                        </button>
                       ))}
-                    </select>
-                    {bodyType !== 'none' && (
-                      <p className="text-xs text-gray-500 mt-1 italic">
-                        {(gender === 'male' ? MALE_BODY_TYPES : FEMALE_BODY_TYPES).find(bt => bt.id === bodyType)?.phrase}
+                    </div>
+                    {bodyTypes.length > 0 && (
+                      <p className="text-xs text-gray-500 mt-2 italic">
+                        {bodyTypes
+                          .map(id => (gender === 'male' ? MALE_BODY_TYPES : FEMALE_BODY_TYPES).find(bt => bt.id === id)?.phrase)
+                          .filter(Boolean)
+                          .join(', ')}
                       </p>
                     )}
                   </div>
