@@ -27,6 +27,7 @@ export default function CreateVideoPage() {
   const [endImage, setEndImage] = useState<string | null>(null)
   const [showStartImageModal, setShowStartImageModal] = useState(false)
   const [showEndImageModal, setShowEndImageModal] = useState(false)
+  const [showTrash, setShowTrash] = useState(false)
   const startImageInputRef = useRef<HTMLInputElement>(null)
   const endImageInputRef = useRef<HTMLInputElement>(null)
 
@@ -336,12 +337,23 @@ export default function CreateVideoPage() {
 
         {/* Right Panel - Generated Videos */}
         <div className="w-80 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden">
-          <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center flex-shrink-0">
+          <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center justify-between flex-shrink-0">
             <h2 className="text-sm font-semibold">Generated Videos</h2>
+            <button
+              onClick={() => setShowTrash(!showTrash)}
+              className="text-xs text-white hover:text-gray-200 font-medium"
+            >
+              {showTrash ? '← Back' : 'Trash'}
+            </button>
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2">
-            {videos.length === 0 ? (
+            {showTrash ? (
+              <div className="text-center text-gray-400 py-8">
+                <Trash2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-xs">Trash is empty</p>
+              </div>
+            ) : videos.length === 0 ? (
               <div className="text-center text-gray-400 py-8">
                 <Film className="w-8 h-8 mx-auto mb-2 opacity-50" />
                 <p className="text-xs">No videos yet</p>
