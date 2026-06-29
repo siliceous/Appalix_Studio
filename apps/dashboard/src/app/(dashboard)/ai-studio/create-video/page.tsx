@@ -196,31 +196,30 @@ export default function CreateVideoPage() {
             )}
           </div>
 
-          {/* Floating Prompt Bar */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-[calc(100%-32px)] max-w-2xl">
-            <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-4 flex gap-3 items-end">
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Describe the video you want to create..."
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-sm bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none max-h-24"
-                rows={2}
-              />
-              <button
-                onClick={handleGenerate}
-                disabled={isGenerating || !prompt.trim()}
-                className="px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 flex-shrink-0 h-fit"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  </>
-                ) : (
-                  <>
-                    <Film className="w-4 h-4" />
-                  </>
-                )}
-              </button>
+          {/* Prompt Bar */}
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex flex-col gap-2">
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Describe what you want to create..."
+              rows={6}
+              maxLength={2000}
+              className="w-full px-4 py-3 text-black placeholder-gray-500 bg-white border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            />
+            <div className="flex justify-between items-center gap-2">
+              <div className="flex gap-2 flex-1">
+                {/* Placeholder for future action buttons */}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">{prompt.length}/2000</span>
+                <button
+                  onClick={handleGenerate}
+                  disabled={!prompt.trim() || isGenerating}
+                  className="px-4 py-2 bg-black text-white text-sm font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors whitespace-nowrap"
+                >
+                  {isGenerating ? 'Generating...' : 'Generate'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
