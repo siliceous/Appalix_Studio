@@ -100,16 +100,16 @@ export class GeminiVoiceService {
     lipSyncStrength: number = 0.8
   ): Promise<TalkingActorVoiceLink> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await (this.supabase
         .from('talking_actor_voice_links')
         .insert({
           workspace_id: workspaceId,
           talking_actor_id: talkingActorId,
           gemini_voice_id: geminiVoiceId,
           lip_sync_strength: Math.max(0, Math.min(1, lipSyncStrength)), // Clamp 0-1
-        })
+        } as any)
         .select()
-        .single()
+        .single() as any)
 
       if (error) throw error
       return (data || {}) as TalkingActorVoiceLink
@@ -153,13 +153,13 @@ export class GeminiVoiceService {
    */
   async getVoiceActors(voiceId: string): Promise<string[]> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await (this.supabase
         .from('talking_actor_voice_links')
         .select('talking_actor_id')
-        .eq('gemini_voice_id', voiceId)
+        .eq('gemini_voice_id', voiceId) as any)
 
       if (error) throw error
-      return (data || []).map(row => row.talking_actor_id)
+      return (data || []).map((row: any) => row.talking_actor_id)
     } catch (error) {
       throw new Error(
         `Failed to get voice actors: ${error}`
@@ -176,12 +176,12 @@ export class GeminiVoiceService {
     lipSyncStrength: number
   ): Promise<void> {
     try {
-      const { error } = await this.supabase
+      const { error } = await (this.supabase
         .from('talking_actor_voice_links')
         .update({
           lip_sync_strength: Math.max(0, Math.min(1, lipSyncStrength)),
-        })
-        .eq('talking_actor_id', actorId)
+        } as any)
+        .eq('talking_actor_id', actorId) as any)
         .eq('gemini_voice_id', voiceId)
 
       if (error) throw error
@@ -238,7 +238,7 @@ export class GeminiVoiceService {
 
       if (linkError) throw linkError
 
-      const lipSyncStrength = linkData?.lip_sync_strength || 0.8
+      const lipSyncStrength = (linkData as any)?.lip_sync_strength || 0.8
 
       // TODO: Call your existing Gemini speech synthesis API
       // This should return:
@@ -270,15 +270,15 @@ export class GeminiVoiceService {
    */
   async getAvailableLanguages(): Promise<string[]> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await (this.supabase
         .from('gemini_voices')
         .select('language_code')
         .eq('is_active', true)
-        .distinct()
+        .isDistinct() as any)
 
       if (error) throw error
       return (data || [])
-        .map(row => row.language_code)
+        .map((row: any) => row.language_code)
         .filter(Boolean)
     } catch (error) {
       throw new Error(

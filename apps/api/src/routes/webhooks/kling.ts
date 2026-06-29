@@ -1,19 +1,7 @@
 import { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import { VideoGenerationService } from '../../modules/video-generation/video-generation.service.js';
 import { walletService } from '../../services/wallet-service.js';
-import { createClient } from '@supabase/supabase-js';
-
-let supabase: ReturnType<typeof createClient> | null = null;
-
-function getSupabase() {
-  if (!supabase) {
-    supabase = createClient(
-      process.env.SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-    );
-  }
-  return supabase;
-}
+import { supabase } from '../../lib/supabase.js';
 
 interface KlingWebhookPayload {
   task_id: string;
@@ -50,11 +38,11 @@ export async function klingWebhookRoutes(app: FastifyInstance) {
         }
 
         // Find the job by provider_job_id
-        const { data: job, error: jobError } = await getSupabase()
+        const { data: job, error: jobError } = await supabase
           .from('video_generation_jobs')
           .select('*')
           .eq('provider_job_id', task_id)
-          .single();
+          .single() as any;
 
         if (jobError || !job) {
           console.error('Kling webhook: Job not found for task_id:', task_id);
@@ -75,15 +63,15 @@ export async function klingWebhookRoutes(app: FastifyInstance) {
               webhook_received: true,
               webhook_received_at: new Date().toISOString(),
               completed_at: new Date().toISOString(),
-            })
-            .eq('id', job.id);
+            } as any)
+            .eq('id', (job as any).id);
 
           // Update video
           const { data: video, error: videoError } = await supabase
             .from('video_generations')
             .select('estimated_cost_usd')
-            .eq('id', job.video_id)
-            .single();
+            .eq('id', (job as any).video_id)
+            .single() as any;
 
           if (!videoError && video) {
             await supabase
@@ -91,10 +79,10 @@ export async function klingWebhookRoutes(app: FastifyInstance) {
               .update({
                 status: 'ready',
                 output_url: videoUrl,
-                actual_cost_usd: video.estimated_cost_usd,
+                actual_cost_usd: (video as any).estimated_cost_usd,
                 video_duration_seconds: duration,
-              })
-              .eq('id', job.video_id);
+              } as any)
+              .eq('id', (job as any).video_id);
 
             // Cost was already deducted when generation started
             console.log(`Kling webhook: Video ${job.video_id} ready. Cost: $${video.estimated_cost_usd}`);
@@ -114,10 +102,10 @@ export async function klingWebhookRoutes(app: FastifyInstance) {
           // Refund the cost since generation failed
           if (video) {
             await walletService.refundBalance(
-              job.workspace_id,
-              video.estimated_cost_usd,
+              (job as any).workspace_id,
+              (video as any).estimated_cost_usd,
               `Refund: Kling generation failed - ${errorMessage}`,
-              { video_id: job.video_id, task_id }
+              { video_id: (job as any).video_id, task_id }
             );
           }
 
@@ -130,14 +118,14 @@ export async function klingWebhookRoutes(app: FastifyInstance) {
               webhook_received: true,
               webhook_received_at: new Date().toISOString(),
               completed_at: new Date().toISOString(),
-            })
-            .eq('id', job.id);
+            } as any)
+            .eq('id', (job as any).id);
 
           // Update video
           await supabase
             .from('video_generations')
-            .update({ status: 'failed' })
-            .eq('id', job.video_id);
+            .update({ status: 'failed' } as any)
+            .eq('id', (job as any).video_id);
 
           console.error('Kling webhook: Generation failed for task_id:', task_id, 'Error:', errorMessage);
           if (video) {

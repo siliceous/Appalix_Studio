@@ -1,16 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-let supabase: ReturnType<typeof createClient> | null = null;
-
-function getSupabase() {
-  if (!supabase) {
-    supabase = createClient(
-      process.env.SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-    );
-  }
-  return supabase;
-}
+import { supabase } from '../lib/supabase.js';
 
 export interface WalletTransaction {
   workspace_id: string;
@@ -33,11 +21,11 @@ export class WalletService {
   ): Promise<boolean> {
     try {
       // Get current balance
-      const { data: wallet, error: walletError } = await getSupabase()
+      const { data: wallet, error: walletError } = await (supabase
         .from('wallet_accounts')
         .select('balance')
         .eq('workspace_id', workspace_id)
-        .single();
+        .single() as any);
 
       if (walletError || !wallet) {
         console.error('Wallet not found:', workspace_id);
@@ -45,16 +33,16 @@ export class WalletService {
       }
 
       // Check if sufficient balance
-      if (wallet.balance < amount_usd) {
-        console.error(`Insufficient balance. Need $${amount_usd}, have $${wallet.balance}`);
+      if ((wallet as any).balance < amount_usd) {
+        console.error(`Insufficient balance. Need $${amount_usd}, have $${(wallet as any).balance}`);
         return false;
       }
 
       // Deduct from wallet (using RPC for atomicity)
-      const { error: deductError } = await getSupabase().rpc('wallet_deduct', {
+      const { error: deductError } = await (supabase.rpc('wallet_deduct', {
         p_workspace_id: workspace_id,
         p_amount: amount_usd,
-      });
+      }) as any);
 
       if (deductError) {
         console.error('Wallet deduction error:', deductError);
@@ -62,7 +50,7 @@ export class WalletService {
       }
 
       // Record transaction
-      const { error: transactionError } = await getSupabase()
+      const { error: transactionError } = await (supabase
         .from('wallet_transactions')
         .insert({
           workspace_id,
@@ -70,7 +58,7 @@ export class WalletService {
           transaction_type,
           description,
           metadata: metadata || {},
-        });
+        } as any) as any);
 
       if (transactionError) {
         console.error('Transaction recording error:', transactionError);
@@ -95,10 +83,10 @@ export class WalletService {
   ): Promise<boolean> {
     try {
       // Add to wallet using RPC
-      const { error: creditError } = await getSupabase().rpc('wallet_credit', {
+      const { error: creditError } = await (supabase.rpc('wallet_credit', {
         p_workspace_id: workspace_id,
         p_amount: amount_usd,
-      });
+      }) as any);
 
       if (creditError) {
         console.error('Wallet refund error:', creditError);
@@ -106,7 +94,7 @@ export class WalletService {
       }
 
       // Record transaction
-      const { error: transactionError } = await getSupabase()
+      const { error: transactionError } = await (supabase
         .from('wallet_transactions')
         .insert({
           workspace_id,
@@ -114,7 +102,7 @@ export class WalletService {
           transaction_type: 'refund',
           description,
           metadata: metadata || {},
-        });
+        } as any) as any);
 
       if (transactionError) {
         console.error('Refund transaction recording error:', transactionError);
@@ -133,17 +121,17 @@ export class WalletService {
    */
   async getBalance(workspace_id: string): Promise<number | null> {
     try {
-      const { data: wallet, error } = await getSupabase()
+      const { data: wallet, error } = await (supabase
         .from('wallet_accounts')
         .select('balance')
         .eq('workspace_id', workspace_id)
-        .single();
+        .single() as any);
 
       if (error || !wallet) {
         return null;
       }
 
-      return wallet.balance;
+      return (wallet as any).balance;
     } catch (error) {
       console.error('Get balance error:', error);
       return null;

@@ -15,6 +15,62 @@ function getSupabase() {
   return supabase;
 }
 
+async function checkStorageQuota(workspaceId: string, estimatedNewSizeBytes: number): Promise<{ allowed: boolean; error?: string }> {
+  try {
+    const { data: workspace } = await getSupabase()
+      .from('workspaces')
+      .select('storage_limit_bytes, extra_storage_gb')
+      .eq('id', workspaceId)
+      .single();
+
+    if (!workspace || workspace.storage_limit_bytes === null) {
+      // Enterprise (unlimited) or workspace not found
+      return { allowed: true };
+    }
+
+    const limitBytes = workspace.storage_limit_bytes + (workspace.extra_storage_gb ?? 0) * 10 * 1024 * 1024 * 1024;
+
+    // Sum storage used by all images and videos in workspace
+    const { data: imageUsage } = await getSupabase()
+      .from('ai_image_generations')
+      .select('compressed_size_bytes')
+      .eq('workspace_id', workspaceId)
+      .eq('status', 'completed');
+
+    const { data: videoUsage } = await getSupabase()
+      .from('ai_video_generations')
+      .select('file_size_bytes')
+      .eq('workspace_id', workspaceId)
+      .in('status', ['completed', 'ready']);
+
+    const { data: sourceUsage } = await getSupabase()
+      .from('sources')
+      .select('file_size_bytes')
+      .eq('workspace_id', workspaceId)
+      .not('file_size_bytes', 'is', null);
+
+    const usedBytes =
+      (imageUsage ?? []).reduce((sum: number, row: any) => sum + (row.compressed_size_bytes ?? 0), 0) +
+      (videoUsage ?? []).reduce((sum: number, row: any) => sum + (row.file_size_bytes ?? 0), 0) +
+      (sourceUsage ?? []).reduce((sum: number, row: any) => sum + (row.file_size_bytes ?? 0), 0);
+
+    if (usedBytes + estimatedNewSizeBytes > limitBytes) {
+      const limitGb = (limitBytes / (1024 ** 3)).toFixed(0);
+      const usedMb = (usedBytes / (1024 ** 2)).toFixed(1);
+      return {
+        allowed: false,
+        error: `Storage limit reached (${usedMb} MB used of ${limitGb} GB). Purchase extra storage in Settings → Upgrade.`,
+      };
+    }
+
+    return { allowed: true };
+  } catch (err) {
+    console.error('[Storage Quota] Error checking quota:', err);
+    // On error, allow generation but log it
+    return { allowed: true };
+  }
+}
+
 export class VideoGenerationService {
   /**
    * Submit a new video generation request
@@ -36,6 +92,13 @@ export class VideoGenerationService {
     // Check if video generation is available for this plan (Pro+ only)
     if (!this.isPlanAllowed(workspace.plan)) {
       throw new Error('Video generation is only available for Pro+ plans');
+    }
+
+    // Estimate storage needed (average 50MB per video, conservative estimate)
+    const estimatedSizePerVideo = 50 * 1024 * 1024;
+    const quotaCheck = await checkStorageQuota(workspace_id, estimatedSizePerVideo);
+    if (!quotaCheck.allowed) {
+      throw new Error(quotaCheck.error);
     }
 
     // Get provider config (default to Kling for MVP)
