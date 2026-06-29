@@ -150,11 +150,36 @@ export default function AIStudio() {
     }
   }
 
-  const handleDownload = (imageId: string, imageData: string) => {
-    const link = document.createElement('a')
-    link.href = imageData
-    link.download = `appalix-image-${imageId}.png`
-    link.click()
+  const handleDownload = async (imageId: string, imageData: string) => {
+    try {
+      // If it's a data URL, download directly
+      if (imageData.startsWith('data:')) {
+        const link = document.createElement('a')
+        link.href = imageData
+        link.download = `appalix-image-${imageId}.png`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        return
+      }
+
+      // For Supabase URLs, fetch and convert to blob
+      const response = await fetch(imageData)
+      if (!response.ok) throw new Error('Failed to fetch image')
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `appalix-image-${imageId}.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Download failed:', error)
+      alert('Failed to download image')
+    }
   }
 
   const handleDelete = (imageId: string) => {
@@ -352,7 +377,7 @@ export default function AIStudio() {
             </div>
 
             <div className="flex flex-col gap-2 pt-4 border-t border-gray-700 flex-shrink-0">
-              <button onClick={() => handleDownload(fullscreenImage.id, fullscreenImage.image)} className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><Download className="w-4 h-4" /> Download</button>
+              <button onClick={() => handleDownload(fullscreenImage.id, fullscreenImage.image)} className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50" disabled={loading}><Download className="w-4 h-4" /> Download</button>
               <button onClick={() => router.push('/ai-studio/image-to-video')} className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><ImagePlay className="w-4 h-4" /> Open in Canvas</button>
               <button onClick={() => { handleDelete(fullscreenImage.id); setFullscreenImage(null); setImageZoom(1) }} className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><Trash2 className="w-4 h-4" /> Delete</button>
             </div>
