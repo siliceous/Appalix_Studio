@@ -46,11 +46,28 @@ export default function AIStudio() {
   useEffect(() => {
     if (imageContainerRef.current && imageZoom > 1) {
       const container = imageContainerRef.current
-      // Center the scroll on the image
-      const scrollLeft = (container.scrollWidth - container.clientWidth) / 2
-      const scrollTop = (container.scrollHeight - container.clientHeight) / 2
-      container.scrollLeft = scrollLeft
-      container.scrollTop = scrollTop
+      // Find the image element
+      const img = container.querySelector('img')
+      if (!img) return
+
+      // Get the original image dimensions (assume square for now)
+      const imageSize = img.naturalWidth || img.offsetWidth
+
+      // Calculate the scaled image size
+      const scaledSize = imageSize * imageZoom
+
+      // Center point should be the middle of the original image
+      // scrollLeft = (scaledSize - viewportWidth) / 2
+      const scrollLeft = (scaledSize - container.clientWidth) / 2
+      const scrollTop = (scaledSize - container.clientHeight) / 2
+
+      // Only set scroll if there's overflow
+      if (scrollLeft > 0) container.scrollLeft = scrollLeft
+      if (scrollTop > 0) container.scrollTop = scrollTop
+    } else if (imageContainerRef.current && imageZoom === 1) {
+      // Reset scroll position when zoomed out completely
+      imageContainerRef.current.scrollLeft = 0
+      imageContainerRef.current.scrollTop = 0
     }
   }, [imageZoom])
 
