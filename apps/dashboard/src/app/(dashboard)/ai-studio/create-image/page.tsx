@@ -959,7 +959,7 @@ export default function CreateImagePage() {
                 <button
                   onClick={() => {
                     setGender('female')
-                    setBodyType('none')
+                    setBodyTypes([])
                   }}
                   className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                     gender === 'female'
@@ -972,7 +972,7 @@ export default function CreateImagePage() {
                 <button
                   onClick={() => {
                     setGender('male')
-                    setBodyType('none')
+                    setBodyTypes([])
                   }}
                   className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                     gender === 'male'
