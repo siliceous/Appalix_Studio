@@ -133,7 +133,7 @@ export async function imageRoutes(app: FastifyInstance) {
       }
 
       // Create generation record
-      const { data: generation, error: insertError } = await supabase
+      const { data: generation, error: insertError } = await (supabase
         .from('ai_image_generations')
         .insert({
           workspace_id: workspaceId,
@@ -146,8 +146,8 @@ export async function imageRoutes(app: FastifyInstance) {
           status: 'queued',
           provider: 'leonardo',
           created_at: new Date().toISOString(),
-        })
-        .select()
+        } as any)
+        .select() as any)
 
       if (insertError || !generation || generation.length === 0) {
         console.error('[Image Generation] DB insert error:', insertError)
@@ -247,15 +247,15 @@ export async function imageRoutes(app: FastifyInstance) {
         }
 
         // Update generation record with job ID
-        await supabase
+        await (supabase
           .from('ai_image_generations')
           .update({
             provider_job_id: jobId,
             status: 'processing',
             provider: provider,
             updated_at: new Date().toISOString(),
-          })
-          .eq('id', generationId)
+          } as any)
+          .eq('id', generationId) as any)
 
         return reply.send({
           id: generationId,
@@ -269,7 +269,7 @@ export async function imageRoutes(app: FastifyInstance) {
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error)
         console.error('[Image Generation] Error:', errorMsg)
-        await supabase.from('ai_image_generations').update({ status: 'failed' }).eq('id', generationId)
+        await (supabase.from('ai_image_generations').update({ status: 'failed' } as any).eq('id', generationId) as any)
         return reply.status(500).send({ error: `Image generation failed: ${errorMsg}` })
       }
     } catch (error) {
