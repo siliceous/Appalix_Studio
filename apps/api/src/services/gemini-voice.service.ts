@@ -272,7 +272,7 @@ export class GeminiVoiceService {
     try {
       const { data, error } = await (this.supabase
         .from('gemini_voices')
-        .select('language_code', { distinct: true })
+        .select('language_code')
         .eq('is_active', true) as any)
 
       if (error) throw error

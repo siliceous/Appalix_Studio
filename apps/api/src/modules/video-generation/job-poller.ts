@@ -1,17 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../../lib/supabase.js';
 import { VideoGenerationService } from './video-generation.service.js';
-
-let supabase: ReturnType<typeof createClient> | null = null;
-
-function getSupabase() {
-  if (!supabase) {
-    supabase = createClient(
-      process.env.SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-    );
-  }
-  return supabase;
-}
 
 /**
  * Poll for pending video generation jobs
@@ -21,12 +9,12 @@ function getSupabase() {
 export async function pollPendingVideoJobs() {
   try {
     // Find jobs that are still processing and need polling
-    const { data: jobs, error } = await getSupabase()
+    const { data: jobs, error } = await (supabase
       .from('video_generation_jobs')
       .select('*')
       .in('status', ['pending', 'submitted', 'processing'])
       .lt('next_poll_at', new Date().toISOString())
-      .limit(10); // Process max 10 jobs per poll to avoid overload
+      .limit(10) as any); // Process max 10 jobs per poll to avoid overload
 
     if (error) {
       console.error('Error fetching pending video jobs:', error);
@@ -63,11 +51,11 @@ export async function cleanupStaleVideoJobs() {
   try {
     const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
 
-    const { data: staleJobs, error } = await getSupabase()
+    const { data: staleJobs, error } = await (supabase
       .from('video_generation_jobs')
       .select('*')
       .in('status', ['pending', 'submitted', 'processing'])
-      .lt('created_at', fourHoursAgo);
+      .lt('created_at', fourHoursAgo) as any);
 
     if (error) {
       console.error('Error fetching stale jobs:', error);
@@ -82,20 +70,20 @@ export async function cleanupStaleVideoJobs() {
 
     // Mark as failed
     for (const job of staleJobs) {
-      await getSupabase()
+      await (supabase
         .from('video_generation_jobs')
         .update({
           status: 'failed',
           error_message: 'Job timeout: Generation did not complete within 4 hours',
           completed_at: new Date().toISOString(),
-        })
-        .eq('id', job.id);
+        } as any)
+        .eq('id', job.id) as any);
 
       // Update video
-      await getSupabase()
+      await (supabase
         .from('video_generations')
-        .update({ status: 'failed' })
-        .eq('id', job.video_id);
+        .update({ status: 'failed' } as any)
+        .eq('id', job.video_id) as any);
     }
   } catch (error) {
     console.error('Fatal error in cleanupStaleVideoJobs:', error);

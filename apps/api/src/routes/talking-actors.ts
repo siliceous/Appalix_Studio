@@ -180,10 +180,13 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
   server.patch<{
     Params: { actorId: string }
     Body: { actorName?: string }
-  }>('/:actorId', async (req: FastifyRequest, reply: FastifyReply) => {
+  }>('/:actorId', async (req: FastifyRequest<{
+    Params: { actorId: string }
+    Body: { actorName?: string }
+  }>, reply: FastifyReply) => {
     try {
-      const { actorId } = req.params
-      const { actorName } = req.body
+      const { actorId } = req.params as { actorId: string }
+      const { actorName } = req.body as { actorName?: string }
 
       if (!actorName) {
         return reply.status(400).send({
@@ -219,9 +222,9 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
    */
   server.delete<{ Params: { actorId: string } }>(
     '/:actorId',
-    async (req: FastifyRequest, reply: FastifyReply) => {
+    async (req: FastifyRequest<{ Params: { actorId: string } }>, reply: FastifyReply) => {
       try {
-        const { actorId } = req.params
+        const { actorId } = req.params as { actorId: string }
 
         // Get actor to find file paths
         const { data: actor, error: fetchError } = await supabase
