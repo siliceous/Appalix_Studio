@@ -993,7 +993,7 @@ export default function CreateImagePage() {
               <div className="space-y-3">
                   {/* Body Type - Multiple Selection */}
                   <div>
-                    <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">Body Type (up to 3)</label>
+                    <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">Body Type (up to 2)</label>
                     <div className="grid grid-cols-2 gap-2">
                       {(gender === 'male' ? MALE_BODY_TYPES : FEMALE_BODY_TYPES).filter(bt => bt.id !== 'none').map((bt) => (
                         <button
@@ -1001,15 +1001,15 @@ export default function CreateImagePage() {
                           onClick={() => {
                             if (bodyTypes.includes(bt.id)) {
                               setBodyTypes(bodyTypes.filter(id => id !== bt.id))
-                            } else if (bodyTypes.length < 3) {
+                            } else if (bodyTypes.length < 2) {
                               setBodyTypes([...bodyTypes, bt.id])
                             }
                           }}
-                          disabled={!bodyTypes.includes(bt.id) && bodyTypes.length >= 3}
+                          disabled={!bodyTypes.includes(bt.id) && bodyTypes.length >= 2}
                           className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition-all border ${
                             bodyTypes.includes(bt.id)
                               ? 'bg-blue-600 text-white border-blue-700 shadow-md'
-                              : bodyTypes.length >= 3
+                              : bodyTypes.length >= 2
                               ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                               : 'bg-white text-gray-700 border-gray-200 hover:shadow-md'
                           }`}
@@ -1051,7 +1051,7 @@ export default function CreateImagePage() {
 
                   {/* Hair Type - Multiple Selection */}
                   <div>
-                    <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">Hair Type (up to 3)</label>
+                    <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">Hair Type (up to 2)</label>
                     <div className="grid grid-cols-2 gap-2">
                       {HAIR_TYPES.filter(ht => ht.id !== 'none').map((ht) => (
                         <button
@@ -1059,15 +1059,15 @@ export default function CreateImagePage() {
                           onClick={() => {
                             if (hairTypes.includes(ht.id)) {
                               setHairTypes(hairTypes.filter(id => id !== ht.id))
-                            } else if (hairTypes.length < 3) {
+                            } else if (hairTypes.length < 2) {
                               setHairTypes([...hairTypes, ht.id])
                             }
                           }}
-                          disabled={!hairTypes.includes(ht.id) && hairTypes.length >= 3}
+                          disabled={!hairTypes.includes(ht.id) && hairTypes.length >= 2}
                           className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition-all border ${
                             hairTypes.includes(ht.id)
                               ? 'bg-blue-600 text-white border-blue-700 shadow-md'
-                              : hairTypes.length >= 3
+                              : hairTypes.length >= 2
                               ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                               : 'bg-white text-gray-700 border-gray-200 hover:shadow-md'
                           }`}
