@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Loader2, Plus, Download, Trash2, Film } from 'lucide-react'
+import { useEffect, useState, useRef } from 'react'
+import { Loader2, Plus, Download, Trash2, Film, X } from 'lucide-react'
 
 const QUALITY_MODES = [
   { value: 'fast', label: 'Fast', description: '720p - 6 credits/sec', creditsPerSecond: 6 },
@@ -21,6 +21,12 @@ export default function CreateVideoPage() {
   const [workspaceId, setWorkspaceId] = useState('')
   const [videos, setVideos] = useState<any[]>([])
   const [credits, setCredits] = useState(0)
+  const [startImage, setStartImage] = useState<string | null>(null)
+  const [endImage, setEndImage] = useState<string | null>(null)
+  const [showStartImageModal, setShowStartImageModal] = useState(false)
+  const [showEndImageModal, setShowEndImageModal] = useState(false)
+  const startImageInputRef = useRef<HTMLInputElement>(null)
+  const endImageInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
@@ -45,6 +51,23 @@ export default function CreateVideoPage() {
   const creditsPerSecond = QUALITY_MODES.find(m => m.value === qualityMode)?.creditsPerSecond || 6
   const estimatedCredits = creditsPerSecond * duration
   const estimatedCost = (estimatedCredits * 0.08).toFixed(2)
+
+  const handleImageSelect = (type: 'start' | 'end', file: File) => {
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const imageData = e.target?.result as string
+        if (type === 'start') {
+          setStartImage(imageData)
+          setShowStartImageModal(false)
+        } else {
+          setEndImage(imageData)
+          setShowEndImageModal(false)
+        }
+      }
+      reader.readAsDataURL(file)
+    }
+  }
 
   const handleGenerate = async () => {
     if (!prompt.trim() || !workspaceId) {
@@ -95,6 +118,66 @@ export default function CreateVideoPage() {
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-scroll px-3 py-3 pr-2 pb-20 space-y-3 flex flex-col text-xs">
+            {/* Start and End Images - Side by Side */}
+            <div>
+              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">Key Frames</label>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <button
+                    onClick={() => setShowStartImageModal(true)}
+                    className="w-full h-16 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center text-gray-600 hover:text-blue-600"
+                  >
+                    {startImage ? (
+                      <div className="relative w-full h-full">
+                        <img src={startImage} alt="Start" className="w-full h-full object-cover rounded-md" />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setStartImage(null)
+                          }}
+                          className="absolute top-1 right-1 p-1 bg-black/50 hover:bg-black/70 rounded-full"
+                        >
+                          <X className="w-3 h-3 text-white" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <Film className="w-4 h-4 mx-auto mb-1" />
+                        <span className="text-xs font-medium">Start</span>
+                      </div>
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex-1">
+                  <button
+                    onClick={() => setShowEndImageModal(true)}
+                    className="w-full h-16 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-400 hover:bg-green-50 transition-all flex items-center justify-center text-gray-600 hover:text-green-600"
+                  >
+                    {endImage ? (
+                      <div className="relative w-full h-full">
+                        <img src={endImage} alt="End" className="w-full h-full object-cover rounded-md" />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setEndImage(null)
+                          }}
+                          className="absolute top-1 right-1 p-1 bg-black/50 hover:bg-black/70 rounded-full"
+                        >
+                          <X className="w-3 h-3 text-white" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <Film className="w-4 h-4 mx-auto mb-1" />
+                        <span className="text-xs font-medium">End</span>
+                      </div>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Quality Mode */}
             <div>
               <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">Quality</label>
@@ -266,6 +349,78 @@ export default function CreateVideoPage() {
           </div>
         </div>
       </div>
+
+      {/* Start Image Modal */}
+      {showStartImageModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-black">Select Start Image</h3>
+              <button
+                onClick={() => setShowStartImageModal(false)}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => startImageInputRef.current?.click()}
+                className="w-full py-3 px-4 border-2 border-dashed border-blue-300 rounded-lg hover:bg-blue-50 text-blue-600 font-medium transition-colors"
+              >
+                Upload Image
+              </button>
+              <input
+                ref={startImageInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleImageSelect('start', file)
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* End Image Modal */}
+      {showEndImageModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-black">Select End Image</h3>
+              <button
+                onClick={() => setShowEndImageModal(false)}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => endImageInputRef.current?.click()}
+                className="w-full py-3 px-4 border-2 border-dashed border-green-300 rounded-lg hover:bg-green-50 text-green-600 font-medium transition-colors"
+              >
+                Upload Image
+              </button>
+              <input
+                ref={endImageInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleImageSelect('end', file)
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
