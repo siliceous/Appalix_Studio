@@ -1192,14 +1192,6 @@ export default function CreateImagePage() {
 
           {/* Prompt Bar */}
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex flex-col gap-2">
-            <div className="flex justify-start gap-2">
-              <button
-                title="Add reference image"
-                className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center"
-              >
-                <span className="text-lg">+</span>
-              </button>
-            </div>
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -1234,6 +1226,12 @@ export default function CreateImagePage() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-500">{prompt.length}/2000</span>
+                <button
+                  title="Add reference image"
+                  className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center"
+                >
+                  <span className="text-lg">+</span>
+                </button>
                 <button
                   onClick={handleGenerate}
                   disabled={!prompt.trim() || isGenerating || credits < calculateCost()}
