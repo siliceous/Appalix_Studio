@@ -283,8 +283,27 @@ export default function AIStudio() {
 
       {fullscreenImage && (
         <div className="fixed inset-0 bg-black/90 z-50 flex" onClick={() => { setFullscreenImage(null); setImageZoom(1) }}>
-          <div className="flex-1 flex items-center justify-center overflow-hidden p-4 relative" ref={imageContainerRef} onWheel={(e) => { e.preventDefault(); setImageZoom(Math.max(0.5, Math.min(5, imageZoom - e.deltaY * 0.001))) }} onMouseDown={(e) => { setIsDragging(true); setDragStart({ x: e.clientX, y: e.clientY }); }} onMouseMove={(e) => { if (isDragging && imageContainerRef.current) { const deltaX = e.clientX - dragStart.x; const deltaY = e.clientY - dragStart.y; imageContainerRef.current.scrollLeft -= deltaX; imageContainerRef.current.scrollTop -= deltaY; setDragStart({ x: e.clientX, y: e.clientY }); } }} onMouseUp={() => setIsDragging(false)} onMouseLeave={() => setIsDragging(false)} onClick={(e) => e.stopPropagation()}>
-            <div className="overflow-auto w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing" style={{ userSelect: 'none' }}>
+          <div className="flex-1 flex items-center justify-center overflow-hidden p-4 relative" ref={imageContainerRef} onWheel={(e) => { e.preventDefault(); setImageZoom(Math.max(0.5, Math.min(5, imageZoom - e.deltaY * 0.001))) }} onClick={(e) => e.stopPropagation()}>
+            <div
+              className="overflow-auto w-full h-full flex items-center justify-center"
+              style={{ userSelect: 'none', cursor: isDragging ? 'grabbing' : 'grab' }}
+              onMouseDown={(e) => {
+                setIsDragging(true)
+                setDragStart({ x: e.clientX, y: e.clientY })
+              }}
+              onMouseMove={(e) => {
+                if (isDragging) {
+                  const deltaX = e.clientX - dragStart.x
+                  const deltaY = e.clientY - dragStart.y
+                  const container = e.currentTarget
+                  container.scrollLeft -= deltaX
+                  container.scrollTop -= deltaY
+                  setDragStart({ x: e.clientX, y: e.clientY })
+                }
+              }}
+              onMouseUp={() => setIsDragging(false)}
+              onMouseLeave={() => setIsDragging(false)}
+            >
               <img src={fullscreenImage.image} alt={fullscreenImage.prompt} style={{ transform: `scale(${imageZoom})`, transformOrigin: 'center' }} className="h-auto w-auto object-contain transition-transform pointer-events-none" />
             </div>
             {fullscreenImageIndex > 0 && <button onClick={(e) => { e.stopPropagation(); const newIdx = fullscreenImageIndex - 1; setFullscreenImageIndex(newIdx); setFullscreenImage(filteredImages[newIdx]); setImageZoom(1) }} className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full shadow-lg transition-all z-10"><ChevronLeft className="w-8 h-8 text-white" /></button>}
