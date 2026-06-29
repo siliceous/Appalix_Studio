@@ -292,19 +292,19 @@ export default function AIStudio() {
           </div>
 
           <div className="w-96 bg-black/95 border-l border-gray-700 p-6 flex flex-col gap-4 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-shrink-0">
               <div className="text-sm text-white font-medium">{fullscreenImageIndex + 1} of {filteredImages.length}</div>
               <button onClick={() => { setFullscreenImage(null); setImageZoom(1) }} className="p-2 hover:bg-gray-700 rounded-lg transition-colors"><X className="w-5 h-5 text-white" /></button>
             </div>
 
-            <div className="text-xs text-white bg-gray-900 rounded-lg p-2 border border-gray-700">Scroll image to zoom (50% - 500%) | Current: {Math.round(imageZoom * 100)}%</div>
+            <div className="text-xs text-white bg-gray-900 rounded-lg p-2 border border-gray-700 flex-shrink-0">Scroll image to zoom (50% - 500%) | Current: {Math.round(imageZoom * 100)}%</div>
 
-            <div className="flex flex-col gap-2">
-              <p className="text-xs text-white uppercase font-semibold">Prompt</p>
-              <p className="text-white text-sm break-words bg-gray-900 rounded-lg p-3 border border-gray-700 max-h-40 overflow-y-auto">{fullscreenImage?.prompt && fullscreenImage.prompt.trim().length > 0 ? fullscreenImage.prompt : '(No prompt saved for this image)'}</p>
+            <div className="flex flex-col gap-2 flex-1 min-h-0">
+              <p className="text-xs text-white uppercase font-semibold flex-shrink-0">Prompt</p>
+              <p className="text-white text-sm break-words bg-gray-900 rounded-lg p-3 border border-gray-700 overflow-y-auto flex-1">{fullscreenImage?.prompt && fullscreenImage.prompt.trim().length > 0 ? fullscreenImage.prompt : '(No prompt saved for this image)'}</p>
             </div>
 
-            <div className="flex flex-col gap-2 pt-4 border-t border-gray-700">
+            <div className="flex flex-col gap-2 pt-4 border-t border-gray-700 flex-shrink-0">
               <button onClick={() => handleDownload(fullscreenImage.id, fullscreenImage.image)} className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><Download className="w-4 h-4" /> Download</button>
               <button onClick={() => router.push('/ai-studio/image-to-video')} className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><ImagePlay className="w-4 h-4" /> Open in Canvas</button>
               <button onClick={() => { handleDelete(fullscreenImage.id); setFullscreenImage(null); setImageZoom(1) }} className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><Trash2 className="w-4 h-4" /> Delete</button>
