@@ -271,9 +271,10 @@ export default function CreateVideoPage() {
           <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center justify-between flex-shrink-0">
             <button
               onClick={() => router.back()}
-              className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+              className="flex items-center gap-1 px-2 hover:bg-white/10 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-4 h-4 text-white" />
+              <span className="text-xs font-medium text-white">Back</span>
             </button>
             <h2 className="text-sm font-semibold flex-1 text-center">Create Video</h2>
             <div className="text-xs font-semibold text-white">

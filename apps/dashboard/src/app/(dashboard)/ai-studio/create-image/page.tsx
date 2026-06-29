@@ -675,11 +675,37 @@ export default function CreateImagePage() {
     setHistory(prev => prev.filter(img => img.id !== imageId))
   }
 
-  const handleDownloadImage = (image: GeneratedImage) => {
-    const link = document.createElement('a')
-    link.href = image.image
-    link.download = `appalix-image-${image.id}.png`
-    link.click()
+  const handleDownloadImage = async (image: GeneratedImage | null) => {
+    if (!image) return
+    try {
+      // If it's a data URL, download directly
+      if (image.image.startsWith('data:')) {
+        const link = document.createElement('a')
+        link.href = image.image
+        link.download = `appalix-image-${image.id}.png`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        return
+      }
+
+      // For Supabase URLs, fetch and convert to blob
+      const response = await fetch(image.image)
+      if (!response.ok) throw new Error('Failed to fetch image')
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `appalix-image-${image.id}.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Download failed:', error)
+      alert('Failed to download image')
+    }
   }
 
   const handleSaveImage = (image: GeneratedImage) => {
@@ -1165,9 +1191,10 @@ export default function CreateImagePage() {
           <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center justify-between">
             <button
               onClick={() => router.back()}
-              className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+              className="flex items-center gap-1 px-2 hover:bg-white/10 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-4 h-4 text-white" />
+              <span className="text-xs font-medium text-white">Back</span>
             </button>
             <h2 className="text-sm font-semibold flex-1 text-center">Create Image</h2>
             <div className="text-xs font-semibold text-white">
@@ -1412,8 +1439,8 @@ export default function CreateImagePage() {
         <div className="fixed inset-0 bg-black/90 z-[9999] flex" onClick={() => { setFullscreenImage(null); setFullscreenImageData(null); setImageZoom(1) }}>
           <div className="flex-1 flex items-center justify-center overflow-hidden p-4 relative" ref={imageContainerRef} onWheel={(e) => { e.preventDefault(); setImageZoom(Math.max(0.5, Math.min(5, imageZoom - e.deltaY * 0.001))) }} onClick={(e) => e.stopPropagation()}>
             <div
-              className="overflow-auto w-full h-full flex items-center justify-center"
-              style={{ userSelect: 'none', cursor: isDragging ? 'grabbing' : 'grab' }}
+              className="overflow-auto"
+              style={{ userSelect: 'none', cursor: isDragging ? 'grabbing' : 'grab', width: '100%', height: '100%' }}
               onMouseDown={(e) => {
                 setIsDragging(true)
                 setDragStart({ x: e.clientX, y: e.clientY })
@@ -1431,7 +1458,9 @@ export default function CreateImagePage() {
               onMouseUp={() => setIsDragging(false)}
               onMouseLeave={() => setIsDragging(false)}
             >
-              <img src={fullscreenImage} alt="Fullscreen" style={{ transform: `scale(${imageZoom})`, transformOrigin: 'center' }} className="h-auto w-auto object-contain transition-transform pointer-events-none" />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '100%', minHeight: '100%' }}>
+                <img src={fullscreenImage} alt="Fullscreen" style={{ width: `${imageZoom * 100}%`, height: 'auto', flexShrink: 0 }} className="object-contain pointer-events-none" />
+              </div>
             </div>
             {fullscreenImageIndex > 0 && <button onClick={(e) => { e.stopPropagation(); const newIdx = fullscreenImageIndex - 1; setFullscreenImageIndex(newIdx); setFullscreenImageData(history[newIdx] || null); setFullscreenImage(history[newIdx]?.image || null); setImageZoom(1) }} className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full shadow-lg transition-all z-10"><ChevronLeft className="w-8 h-8 text-white" /></button>}
             {fullscreenImageIndex < history.length - 1 && <button onClick={(e) => { e.stopPropagation(); const newIdx = fullscreenImageIndex + 1; setFullscreenImageIndex(newIdx); setFullscreenImageData(history[newIdx] || null); setFullscreenImage(history[newIdx]?.image || null); setImageZoom(1) }} className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full shadow-lg transition-all z-10"><ChevronRight className="w-8 h-8 text-white" /></button>}
