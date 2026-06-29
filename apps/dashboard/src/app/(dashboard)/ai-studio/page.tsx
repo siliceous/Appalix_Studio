@@ -44,6 +44,17 @@ export default function AIStudio() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
 
   useEffect(() => {
+    if (imageContainerRef.current && imageZoom > 1) {
+      const container = imageContainerRef.current
+      // Center the scroll on the image
+      const scrollLeft = (container.scrollWidth - container.clientWidth) / 2
+      const scrollTop = (container.scrollHeight - container.clientHeight) / 2
+      container.scrollLeft = scrollLeft
+      container.scrollTop = scrollTop
+    }
+  }, [imageZoom])
+
+  useEffect(() => {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
     setWorkspaceId(wId)
 
