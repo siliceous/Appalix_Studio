@@ -297,7 +297,7 @@ export default function AIStudio() {
           <div className="flex-1 flex items-center justify-center overflow-hidden p-4 relative" ref={imageContainerRef} onWheel={(e) => { e.preventDefault(); setImageZoom(Math.max(0.5, Math.min(5, imageZoom - e.deltaY * 0.001))) }} onClick={(e) => e.stopPropagation()}>
             <div
               className="overflow-auto w-full h-full"
-              style={{ userSelect: 'none', cursor: isDragging ? 'grabbing' : 'grab', padding: '50vh 50vw' }}
+              style={{ userSelect: 'none', cursor: isDragging ? 'grabbing' : 'grab' }}
               onMouseDown={(e) => {
                 setIsDragging(true)
                 setDragStart({ x: e.clientX, y: e.clientY })
@@ -315,7 +315,7 @@ export default function AIStudio() {
               onMouseUp={() => setIsDragging(false)}
               onMouseLeave={() => setIsDragging(false)}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: `${Math.max(100, imageZoom * 100)}%`, height: `${Math.max(100, imageZoom * 100)}%` }}>
                 <img src={fullscreenImage.image} alt={fullscreenImage.prompt} style={{ transform: `scale(${imageZoom})`, transformOrigin: 'center' }} className="h-auto w-auto object-contain transition-transform pointer-events-none" />
               </div>
             </div>
