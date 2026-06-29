@@ -1192,21 +1192,12 @@ export default function CreateImagePage() {
 
           {/* Prompt Bar */}
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex flex-col gap-2">
-            <div className="flex justify-between items-center gap-2">
-              <div className="flex gap-2">
-                <button
-                  title="Add reference image"
-                  className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-semibold rounded-lg transition-colors flex items-center gap-2"
-                >
-                  <span className="text-lg">+</span>
-                </button>
-              </div>
+            <div className="flex justify-start gap-2">
               <button
-                onClick={handleGenerate}
-                disabled={!prompt.trim() || isGenerating || credits < calculateCost()}
-                className="px-4 py-2 bg-black text-white text-sm font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors whitespace-nowrap"
+                title="Add reference image"
+                className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center"
               >
-                {isGenerating ? 'Generating...' : `${selectedImage && prompt === originalPrompt ? 'Regenerate' : 'Generate'}`}
+                <span className="text-lg">+</span>
               </button>
             </div>
             <textarea
@@ -1241,7 +1232,16 @@ export default function CreateImagePage() {
                   </>
                 )}
               </div>
-              <span className="text-xs text-gray-500 whitespace-nowrap">{prompt.length}/2000</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">{prompt.length}/2000</span>
+                <button
+                  onClick={handleGenerate}
+                  disabled={!prompt.trim() || isGenerating || credits < calculateCost()}
+                  className="px-4 py-2 bg-black text-white text-sm font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors whitespace-nowrap"
+                >
+                  {isGenerating ? 'Generating...' : `${selectedImage && prompt === originalPrompt ? 'Regenerate' : 'Generate'}`}
+                </button>
+              </div>
             </div>
           </div>
           </div>
