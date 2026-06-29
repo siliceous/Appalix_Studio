@@ -87,7 +87,7 @@ export default function CreateVideoPage() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
-      <div className="flex-1 flex gap-3 px-3 py-0 pb-3 overflow-hidden">
+      <div className="flex-1 flex gap-3 px-3 py-0 pb-3 overflow-hidden relative">
         {/* Left Panel - Settings */}
         <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden">
           <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center flex-shrink-0">
@@ -95,21 +95,6 @@ export default function CreateVideoPage() {
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-scroll px-3 py-3 pr-2 pb-20 space-y-3 flex flex-col text-xs">
-            {/* Video Prompt */}
-            <div>
-              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">
-                Video Prompt
-              </label>
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Describe the video you want to create..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs bg-white text-black focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
-                rows={6}
-              />
-              <p className="text-xs text-gray-500 mt-1">{prompt.length}/500</p>
-            </div>
-
             {/* Quality Mode */}
             <div>
               <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">Quality</label>
@@ -178,30 +163,11 @@ export default function CreateVideoPage() {
               </p>
               <p className="text-xs text-gray-600 mt-2">Balance: {credits} credits</p>
             </div>
-
-            {/* Generate Button */}
-            <button
-              onClick={handleGenerate}
-              disabled={isGenerating || !prompt.trim()}
-              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 mt-auto"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Film className="w-4 h-4" />
-                  Generate Video
-                </>
-              )}
-            </button>
           </div>
         </div>
 
         {/* Middle - Canvas Preview */}
-        <div className="flex-1 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden">
+        <div className="flex-1 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden relative">
           <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center flex-shrink-0">
             <h2 className="text-sm font-semibold">Canvas</h2>
           </div>
@@ -228,6 +194,34 @@ export default function CreateVideoPage() {
                 <p className="text-sm">Enter a prompt to preview</p>
               </div>
             )}
+          </div>
+
+          {/* Floating Prompt Bar */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-[calc(100%-32px)] max-w-2xl">
+            <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-4 flex gap-3 items-end">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Describe the video you want to create..."
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-sm bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none max-h-24"
+                rows={2}
+              />
+              <button
+                onClick={handleGenerate}
+                disabled={isGenerating || !prompt.trim()}
+                className="px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 flex-shrink-0 h-fit"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  </>
+                ) : (
+                  <>
+                    <Film className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
