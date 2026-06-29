@@ -13,44 +13,102 @@ export interface NanoBananaGenerationParams {
 }
 
 class NanoBananaAdapter {
+  private apiKey: string
   private generatedImages: Map<string, string[]> = new Map()
 
   constructor() {
-    // Nano Banana is a placeholder - real image generation uses Stability AI
-    console.log('[Nano Banana] Adapter initialized (generates placeholder images)')
+    this.apiKey = process.env.GEMINI_API_KEY || ''
+    if (!this.apiKey) {
+      console.warn('[Nano Banana] Gemini API key not configured. Image generation will fail.')
+    }
+    console.log('[Nano Banana] Adapter initialized with Gemini API')
   }
 
   async generateImage(params: NanoBananaGenerationParams): Promise<string> {
+    if (!this.apiKey) {
+      throw new Error('Gemini API key not configured')
+    }
+
     const prompt = this.buildPrompt(params.prompt, params.style, params.lighting, params.resolution)
     const numImages = params.numImages || 1
     const allImageUrls: string[] = []
 
-    console.log('[Nano Banana] Sending generation request:', {
+    console.log('[Nano Banana] Sending generation request to Gemini:', {
       prompt: params.prompt,
       aspectRatio: params.aspectRatio,
       numImages,
     })
 
-    // Generate placeholder images (1x1 transparent PNG)
-    // In production, this should call a real image generation API
+    // Use Gemini 2.0 Flash for image generation
     for (let i = 0; i < numImages; i++) {
       try {
-        // Placeholder base64 PNG (1x1 transparent pixel)
-        const placeholderBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
-        const dataUrl = `data:image/png;base64,${placeholderBase64}`
-        allImageUrls.push(dataUrl)
-        console.log(`[Nano Banana] Generated placeholder image ${i + 1}/${numImages}`)
+        const payload = {
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: params.temperature ?? 0.7,
+          },
+        }
+
+        console.log(`[Nano Banana] Sending Gemini request ${i + 1}/${numImages}`)
+
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${this.apiKey}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          }
+        )
+
+        console.log(`[Nano Banana] Response status: ${response.status}`)
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error(`[Nano Banana] Error response: ${errorText.substring(0, 300)}`)
+          throw new Error(`Gemini API error: ${response.status}`)
+        }
+
+        const data = await response.json() as any
+
+        // Extract image from candidates[0].content.parts[].inlineData.data
+        if (data.candidates && Array.isArray(data.candidates) && data.candidates.length > 0) {
+          const candidate = data.candidates[0]
+          if (candidate.content && candidate.content.parts) {
+            for (const part of candidate.content.parts) {
+              if (part.inlineData && part.inlineData.data) {
+                // Found base64 image data
+                const base64Data = part.inlineData.data
+                const mimeType = part.inlineData.mimeType || 'image/png'
+                const dataUrl = `data:${mimeType};base64,${base64Data}`
+                allImageUrls.push(dataUrl)
+                console.log(`[Nano Banana] Found image ${i + 1}/${numImages}`)
+              }
+            }
+          }
+        }
 
         if (i < numImages - 1) {
-          await new Promise(resolve => setTimeout(resolve, 100))
+          await new Promise(resolve => setTimeout(resolve, 500))
         }
       } catch (error) {
         console.error(`[Nano Banana] Error generating image ${i + 1}:`, error)
+        throw error
       }
     }
 
     if (allImageUrls.length === 0) {
-      throw new Error('Failed to generate images')
+      throw new Error('No images returned from Gemini API')
     }
 
     // Store the images with a job ID
