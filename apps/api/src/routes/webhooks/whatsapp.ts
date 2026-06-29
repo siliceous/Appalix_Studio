@@ -27,13 +27,12 @@ export async function whatsappRoutes(fastify: FastifyInstance) {
   /** POST — incoming messages */
   fastify.post<{ Params: { integrationId: string } }>(
     '/whatsapp/:integrationId',
-    { config: { rawBody: true } },
     async (request, reply) => {
       const integration = await resolveIntegration(request.params.integrationId)
       if (!integration) return reply.status(404).send({ error: 'Integration not found' })
 
       const cfg     = integration.config as Record<string, string>
-      const rawBody = (request as never as { rawBody?: string }).rawBody ?? JSON.stringify(request.body)
+      const rawBody = JSON.stringify(request.body)
 
       if (!verifyWhatsAppSignature(rawBody, request.headers['x-hub-signature-256'] as string, cfg.app_secret)) {
         return reply.status(401).send({ error: 'Invalid signature' })

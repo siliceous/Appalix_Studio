@@ -182,7 +182,7 @@ export class GeminiVoiceService {
           lip_sync_strength: Math.max(0, Math.min(1, lipSyncStrength)),
         } as any)
         .eq('talking_actor_id', actorId)
-        .eq('gemini_voice_id', voiceId) as any)
+        .eq('gemini_voice_id', voiceId)) as any
 
       if (error) throw error
     } catch (error) {

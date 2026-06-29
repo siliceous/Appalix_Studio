@@ -15,11 +15,10 @@ export async function slackRoutes(fastify: FastifyInstance) {
    */
   fastify.post<{ Params: { integrationId: string } }>(
     '/slack/:integrationId',
-    { config: { rawBody: true } },
     async (request, reply) => {
       const { integrationId } = request.params
-      const rawBody  = (request as FastifyRequest & { rawBody?: string }).rawBody ?? JSON.stringify(request.body)
-      const body     = request.body as Record<string, unknown>
+      const body = request.body as Record<string, unknown>
+      const rawBody = JSON.stringify(body)
 
       // Handle url_verification challenge immediately
       if (body.type === 'url_verification') {
