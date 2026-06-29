@@ -14,7 +14,7 @@ export interface SeedenceGenerationParams {
 
 class SeedenceAdapter {
   private apiKey: string
-  private baseUrl = 'https://api.seedence.io'
+  private baseUrl = 'https://api.seedance2.ai'
   private generatedImages: Map<string, string[]> = new Map()
 
   constructor() {
