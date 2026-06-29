@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Sparkles, Download, Trash2, Heart, Loader, X, Copy, Edit, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Sparkles, Download, Trash2, Heart, Loader, X, Copy, Edit, ChevronLeft, ChevronRight, ChevronDown, ImagePlay } from 'lucide-react'
 
 const QUALITY_PRESETS = [
   { id: 'fast', label: 'Fast' },
@@ -297,6 +297,10 @@ export default function CreateImagePage() {
   const [imageToSave, setImageToSave] = useState<GeneratedImage | null>(null)
   const [storageError, setStorageError] = useState<string | null>(null)
   const [showStorageModal, setShowStorageModal] = useState(false)
+  const [imageZoom, setImageZoom] = useState(1)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const imageContainerRef = useRef<HTMLDivElement>(null)
 
   // Load initial data
   useEffect(() => {
@@ -1356,107 +1360,52 @@ export default function CreateImagePage() {
 
       {/* Fullscreen Modal with Actions */}
       {fullscreenImage && fullscreenImageData && (
-        <div
-          className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4"
-          onClick={() => {
-            setFullscreenImage(null)
-            setFullscreenImageData(null)
-          }}
-        >
-          <div
-            className="relative w-screen h-screen max-w-6xl max-h-screen flex flex-col items-center justify-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Previous Button */}
-            {fullscreenImageIndex > 0 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  const newIdx = fullscreenImageIndex - 1
-                  setFullscreenImageIndex(newIdx)
-                  setFullscreenImageData(history[newIdx] || null)
-                  setFullscreenImage(history[newIdx]?.image || null)
-                }}
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full transition-colors z-10"
-                title="Previous image"
-              >
-                <ChevronLeft className="w-6 h-6 text-white" />
-              </button>
-            )}
-
-            <img
-              src={fullscreenImage}
-              alt="Fullscreen"
-              className="max-w-[90vw] max-h-[70vh] w-auto h-auto object-contain"
-            />
-
-            {/* Next Button */}
-            {fullscreenImageIndex < history.length - 1 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  const newIdx = fullscreenImageIndex + 1
-                  setFullscreenImageIndex(newIdx)
-                  setFullscreenImageData(history[newIdx] || null)
-                  setFullscreenImage(history[newIdx]?.image || null)
-                }}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full transition-colors z-10"
-                title="Next image"
-              >
-                <ChevronRight className="w-6 h-6 text-white" />
-              </button>
-            )}
-
-            {/* Image Counter */}
-            <div className="absolute top-4 right-4 bg-black/60 px-3 py-1 rounded-full text-white text-sm">
-              {fullscreenImageIndex + 1} / {history.length}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-4">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleReusePrompt(fullscreenImageData)
-                  setFullscreenImage(null)
-                  setFullscreenImageData(null)
-                }}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-lg"
-              >
-                Open in Canvas
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleSaveImage(fullscreenImageData)
-                }}
-                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors shadow-lg"
-              >
-                Save to Project
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleDeleteImage(fullscreenImageData.id)
-                  setFullscreenImage(null)
-                  setFullscreenImageData(null)
-                }}
-                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors shadow-lg"
-              >
-                Delete to Trash
-              </button>
-            </div>
-
-            <button
-              onClick={() => {
-                setFullscreenImage(null)
-                setFullscreenImageData(null)
+        <div className="fixed inset-0 bg-black/90 z-[9999] flex" onClick={() => { setFullscreenImage(null); setFullscreenImageData(null); setImageZoom(1) }}>
+          <div className="flex-1 flex items-center justify-center overflow-hidden p-4 relative" ref={imageContainerRef} onWheel={(e) => { e.preventDefault(); setImageZoom(Math.max(0.5, Math.min(5, imageZoom - e.deltaY * 0.001))) }} onClick={(e) => e.stopPropagation()}>
+            <div
+              className="overflow-auto w-full h-full flex items-center justify-center"
+              style={{ userSelect: 'none', cursor: isDragging ? 'grabbing' : 'grab' }}
+              onMouseDown={(e) => {
+                setIsDragging(true)
+                setDragStart({ x: e.clientX, y: e.clientY })
               }}
-              className="absolute top-4 right-4 p-3 bg-white rounded-full hover:bg-gray-200 transition-colors shadow-lg"
-              title="Close (Esc)"
+              onMouseMove={(e) => {
+                if (isDragging) {
+                  const deltaX = e.clientX - dragStart.x
+                  const deltaY = e.clientY - dragStart.y
+                  const container = e.currentTarget
+                  container.scrollLeft -= deltaX
+                  container.scrollTop -= deltaY
+                  setDragStart({ x: e.clientX, y: e.clientY })
+                }
+              }}
+              onMouseUp={() => setIsDragging(false)}
+              onMouseLeave={() => setIsDragging(false)}
             >
-              <X className="w-6 h-6 text-gray-700" />
-            </button>
+              <img src={fullscreenImage} alt="Fullscreen" style={{ transform: `scale(${imageZoom})`, transformOrigin: 'center' }} className="h-auto w-auto object-contain transition-transform pointer-events-none" />
+            </div>
+            {fullscreenImageIndex > 0 && <button onClick={(e) => { e.stopPropagation(); const newIdx = fullscreenImageIndex - 1; setFullscreenImageIndex(newIdx); setFullscreenImageData(history[newIdx] || null); setFullscreenImage(history[newIdx]?.image || null); setImageZoom(1) }} className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full shadow-lg transition-all z-10"><ChevronLeft className="w-8 h-8 text-white" /></button>}
+            {fullscreenImageIndex < history.length - 1 && <button onClick={(e) => { e.stopPropagation(); const newIdx = fullscreenImageIndex + 1; setFullscreenImageIndex(newIdx); setFullscreenImageData(history[newIdx] || null); setFullscreenImage(history[newIdx]?.image || null); setImageZoom(1) }} className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full shadow-lg transition-all z-10"><ChevronRight className="w-8 h-8 text-white" /></button>}
+          </div>
+
+          <div className="w-96 bg-black/95 border-l border-gray-700 p-6 flex flex-col gap-4 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between flex-shrink-0">
+              <div className="text-sm text-white font-medium">{fullscreenImageIndex + 1} of {history.length}</div>
+              <button onClick={() => { setFullscreenImage(null); setFullscreenImageData(null); setImageZoom(1) }} className="p-2 hover:bg-gray-700 rounded-lg transition-colors"><X className="w-5 h-5 text-white" /></button>
+            </div>
+
+            <div className="text-xs text-white bg-gray-900 rounded-lg p-2 border border-gray-700 flex-shrink-0">Scroll image to zoom (50% - 500%) | Current: {Math.round(imageZoom * 100)}%</div>
+
+            <div className="flex flex-col gap-2 flex-1 min-h-0">
+              <p className="text-xs text-white uppercase font-semibold flex-shrink-0">Prompt</p>
+              <p className="text-white text-sm break-words bg-gray-900 rounded-lg p-3 border border-gray-700 overflow-y-auto flex-1">{fullscreenImageData?.prompt && fullscreenImageData.prompt.trim().length > 0 ? fullscreenImageData.prompt : '(No prompt saved for this image)'}</p>
+            </div>
+
+            <div className="flex flex-col gap-2 pt-4 border-t border-gray-700 flex-shrink-0">
+              <button onClick={(e) => { e.stopPropagation(); handleDownloadImage(fullscreenImageData) }} className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><Download className="w-4 h-4" /> Download</button>
+              <button onClick={(e) => { e.stopPropagation(); handleSaveImage(fullscreenImageData) }} className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><ImagePlay className="w-4 h-4" /> Save to Project</button>
+              <button onClick={(e) => { e.stopPropagation(); handleDeleteImage(fullscreenImageData.id); setFullscreenImage(null); setFullscreenImageData(null); setImageZoom(1) }} className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><Trash2 className="w-4 h-4" /> Delete</button>
+            </div>
           </div>
         </div>
       )}
