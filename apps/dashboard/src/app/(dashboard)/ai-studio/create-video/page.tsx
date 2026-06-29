@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Plus, Download, Trash2, Film, X } from 'lucide-react'
+import { Loader2, Plus, Download, Trash2, Film, X, ArrowLeft } from 'lucide-react'
 
 const QUALITY_MODES = [
   { value: 'fast', label: 'Fast', description: '720p - 6 credits/sec', creditsPerSecond: 6 },
@@ -127,25 +127,22 @@ export default function CreateVideoPage() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
-      {/* Navigation Bar */}
-      <nav className="mb-5 border border-white/10 bg-[#141c2b] rounded-xl shadow-lg flex items-center shrink-0 gap-x-2 min-h-[52px] p-4 m-4 ml-3 mr-4">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white hover:bg-white/10 transition-colors"
-        >
-          ← Back
-        </button>
-        <div className="flex-1" />
-        <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-white/10 border border-white/20">
-          {credits} Credits
-        </div>
-      </nav>
-
-      <div className="flex-1 flex gap-3 px-3 py-0 pb-3 overflow-hidden relative">
+      <div className="flex-1 flex gap-3 px-3 py-3 pb-3 overflow-hidden relative">
         {/* Left Panel - Settings */}
         <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden">
-          <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center flex-shrink-0">
-            <h2 className="text-sm font-semibold">Settings</h2>
+          <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center justify-between flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => router.back()}
+                className="p-1 hover:bg-white/10 rounded transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <h2 className="text-sm font-semibold">Settings</h2>
+            </div>
+            <div className="text-xs font-medium bg-white/10 px-2 py-1 rounded">
+              {credits} Credits
+            </div>
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-scroll px-3 py-3 pr-2 pb-20 space-y-3 flex flex-col text-xs">
