@@ -130,19 +130,8 @@ export default function CreateVideoPage() {
       <div className="flex-1 flex gap-3 px-3 py-3 pb-3 overflow-hidden relative">
         {/* Left Panel - Settings */}
         <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden">
-          <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center justify-between flex-shrink-0">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => router.back()}
-                className="p-1 hover:bg-white/10 rounded transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </button>
-              <h2 className="text-sm font-semibold">Settings</h2>
-            </div>
-            <div className="text-xs font-medium bg-white/10 px-2 py-1 rounded">
-              {credits} Credits
-            </div>
+          <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center flex-shrink-0">
+            <h2 className="text-sm font-semibold">Settings</h2>
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-scroll px-3 py-3 pr-2 pb-20 space-y-3 flex flex-col text-xs">
@@ -279,8 +268,17 @@ export default function CreateVideoPage() {
 
         {/* Middle - Canvas Preview */}
         <div className="flex-1 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden relative">
-          <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center flex-shrink-0">
-            <h2 className="text-sm font-semibold">Canvas</h2>
+          <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center justify-between flex-shrink-0">
+            <button
+              onClick={() => router.back()}
+              className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4 text-white" />
+            </button>
+            <h2 className="text-sm font-semibold flex-1 text-center">Create Video</h2>
+            <div className="text-xs font-semibold text-white">
+              {credits} Credits
+            </div>
           </div>
 
           <div className="flex-1 min-h-0 overflow-hidden p-6 flex items-center justify-center bg-gray-50">
