@@ -40,6 +40,8 @@ export default function AIStudio() {
   const [selectedDateRange, setSelectedDateRange] = useState<string | null>(null)
   const [credits, setCredits] = useState(0)
   const [imageZoom, setImageZoom] = useState(1)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
 
   useEffect(() => {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
@@ -281,9 +283,9 @@ export default function AIStudio() {
 
       {fullscreenImage && (
         <div className="fixed inset-0 bg-black/90 z-50 flex" onClick={() => { setFullscreenImage(null); setImageZoom(1) }}>
-          <div className="flex-1 flex items-center justify-center overflow-hidden p-4 relative" ref={imageContainerRef} onWheel={(e) => { e.preventDefault(); setImageZoom(Math.max(0.5, Math.min(5, imageZoom - e.deltaY * 0.001))) }} onClick={(e) => e.stopPropagation()}>
-            <div className="overflow-auto w-full h-full flex items-center justify-center">
-              <img src={fullscreenImage.image} alt={fullscreenImage.prompt} style={{ transform: `scale(${imageZoom})`, transformOrigin: 'center' }} className="h-auto w-auto object-contain transition-transform" />
+          <div className="flex-1 flex items-center justify-center overflow-hidden p-4 relative" ref={imageContainerRef} onWheel={(e) => { e.preventDefault(); setImageZoom(Math.max(0.5, Math.min(5, imageZoom - e.deltaY * 0.001))) }} onMouseDown={(e) => { setIsDragging(true); setDragStart({ x: e.clientX, y: e.clientY }); }} onMouseMove={(e) => { if (isDragging && imageContainerRef.current) { const deltaX = e.clientX - dragStart.x; const deltaY = e.clientY - dragStart.y; imageContainerRef.current.scrollLeft -= deltaX; imageContainerRef.current.scrollTop -= deltaY; setDragStart({ x: e.clientX, y: e.clientY }); } }} onMouseUp={() => setIsDragging(false)} onMouseLeave={() => setIsDragging(false)} onClick={(e) => e.stopPropagation()}>
+            <div className="overflow-auto w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing" style={{ userSelect: 'none' }}>
+              <img src={fullscreenImage.image} alt={fullscreenImage.prompt} style={{ transform: `scale(${imageZoom})`, transformOrigin: 'center' }} className="h-auto w-auto object-contain transition-transform pointer-events-none" />
             </div>
             {fullscreenImageIndex > 0 && <button onClick={(e) => { e.stopPropagation(); const newIdx = fullscreenImageIndex - 1; setFullscreenImageIndex(newIdx); setFullscreenImage(filteredImages[newIdx]); setImageZoom(1) }} className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full shadow-lg transition-all z-10"><ChevronLeft className="w-8 h-8 text-white" /></button>}
             {fullscreenImageIndex < filteredImages.length - 1 && <button onClick={(e) => { e.stopPropagation(); const newIdx = fullscreenImageIndex + 1; setFullscreenImageIndex(newIdx); setFullscreenImage(filteredImages[newIdx]); setImageZoom(1) }} className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full shadow-lg transition-all z-10"><ChevronRight className="w-8 h-8 text-white" /></button>}
@@ -291,15 +293,15 @@ export default function AIStudio() {
 
           <div className="w-96 bg-black/95 border-l border-gray-700 p-6 flex flex-col gap-4 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-400 font-medium">{fullscreenImageIndex + 1} of {filteredImages.length}</div>
-              <button onClick={() => { setFullscreenImage(null); setImageZoom(1) }} className="p-2 hover:bg-gray-700 rounded-lg transition-colors"><X className="w-5 h-5 text-gray-300" /></button>
+              <div className="text-sm text-white font-medium">{fullscreenImageIndex + 1} of {filteredImages.length}</div>
+              <button onClick={() => { setFullscreenImage(null); setImageZoom(1) }} className="p-2 hover:bg-gray-700 rounded-lg transition-colors"><X className="w-5 h-5 text-white" /></button>
             </div>
 
-            <div className="text-xs text-gray-500 bg-gray-900 rounded-lg p-2 border border-gray-700">Scroll image to zoom (50% - 500%) | Current: {Math.round(imageZoom * 100)}%</div>
+            <div className="text-xs text-white bg-gray-900 rounded-lg p-2 border border-gray-700">Scroll image to zoom (50% - 500%) | Current: {Math.round(imageZoom * 100)}%</div>
 
             <div className="flex flex-col gap-2">
-              <p className="text-xs text-gray-400 uppercase font-semibold">Prompt</p>
-              <p className="text-gray-300 text-sm break-words bg-gray-900 rounded-lg p-3 border border-gray-700 max-h-40 overflow-y-auto">{fullscreenImage?.prompt && fullscreenImage.prompt.trim().length > 0 ? fullscreenImage.prompt : '(No prompt saved for this image)'}</p>
+              <p className="text-xs text-white uppercase font-semibold">Prompt</p>
+              <p className="text-white text-sm break-words bg-gray-900 rounded-lg p-3 border border-gray-700 max-h-40 overflow-y-auto">{fullscreenImage?.prompt && fullscreenImage.prompt.trim().length > 0 ? fullscreenImage.prompt : '(No prompt saved for this image)'}</p>
             </div>
 
             <div className="flex flex-col gap-2 pt-4 border-t border-gray-700">
