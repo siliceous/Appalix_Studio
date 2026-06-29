@@ -43,33 +43,6 @@ export default function AIStudio() {
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
 
-  useEffect(() => {
-    if (imageContainerRef.current && imageZoom > 1) {
-      const container = imageContainerRef.current
-      // Find the image element
-      const img = container.querySelector('img')
-      if (!img) return
-
-      // Get the original image dimensions (assume square for now)
-      const imageSize = img.naturalWidth || img.offsetWidth
-
-      // Calculate the scaled image size
-      const scaledSize = imageSize * imageZoom
-
-      // Center point should be the middle of the original image
-      // scrollLeft = (scaledSize - viewportWidth) / 2
-      const scrollLeft = (scaledSize - container.clientWidth) / 2
-      const scrollTop = (scaledSize - container.clientHeight) / 2
-
-      // Only set scroll if there's overflow
-      if (scrollLeft > 0) container.scrollLeft = scrollLeft
-      if (scrollTop > 0) container.scrollTop = scrollTop
-    } else if (imageContainerRef.current && imageZoom === 1) {
-      // Reset scroll position when zoomed out completely
-      imageContainerRef.current.scrollLeft = 0
-      imageContainerRef.current.scrollTop = 0
-    }
-  }, [imageZoom])
 
   useEffect(() => {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
@@ -353,8 +326,8 @@ export default function AIStudio() {
         <div className="fixed inset-0 bg-black/90 z-50 flex" onClick={() => { setFullscreenImage(null); setImageZoom(1) }}>
           <div className="flex-1 flex items-center justify-center overflow-hidden p-4 relative" ref={imageContainerRef} onWheel={(e) => { e.preventDefault(); setImageZoom(Math.max(0.5, Math.min(5, imageZoom - e.deltaY * 0.001))) }} onClick={(e) => e.stopPropagation()}>
             <div
-              className="overflow-auto w-full h-full"
-              style={{ userSelect: 'none', cursor: isDragging ? 'grabbing' : 'grab' }}
+              className="overflow-auto"
+              style={{ userSelect: 'none', cursor: isDragging ? 'grabbing' : 'grab', width: '100%', height: '100%' }}
               onMouseDown={(e) => {
                 setIsDragging(true)
                 setDragStart({ x: e.clientX, y: e.clientY })
@@ -372,8 +345,8 @@ export default function AIStudio() {
               onMouseUp={() => setIsDragging(false)}
               onMouseLeave={() => setIsDragging(false)}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: `${Math.max(100, imageZoom * 100)}%`, height: `${Math.max(100, imageZoom * 100)}%` }}>
-                <img src={fullscreenImage.image} alt={fullscreenImage.prompt} style={{ transform: `scale(${imageZoom})`, transformOrigin: 'center' }} className="h-auto w-auto object-contain transition-transform pointer-events-none" />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '100%', minHeight: '100%' }}>
+                <img src={fullscreenImage.image} alt={fullscreenImage.prompt} style={{ width: `${imageZoom * 100}%`, height: 'auto', flexShrink: 0 }} className="object-contain pointer-events-none" />
               </div>
             </div>
             {fullscreenImageIndex > 0 && <button onClick={(e) => { e.stopPropagation(); const newIdx = fullscreenImageIndex - 1; setFullscreenImageIndex(newIdx); setFullscreenImage(filteredImages[newIdx]); setImageZoom(1) }} className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full shadow-lg transition-all z-10"><ChevronLeft className="w-8 h-8 text-white" /></button>}
