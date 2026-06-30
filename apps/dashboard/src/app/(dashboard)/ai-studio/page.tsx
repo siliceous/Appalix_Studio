@@ -268,7 +268,7 @@ export default function AIStudio() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-hidden bg-white rounded-b-xl border border-white/10 border-t-0 shadow-lg">
+            <div className="flex-1 overflow-hidden bg-slate-900 rounded-b-xl border border-white/10 border-t-0 shadow-lg">
               <div className="h-full overflow-y-auto p-6">
                 {loading ? (
                   <div className="flex items-center justify-center h-full">
@@ -277,7 +277,7 @@ export default function AIStudio() {
                 ) : filteredImages.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
-                      <p className="text-gray-400 font-medium">No assets found</p>
+                      <p className="text-gray-300 font-medium">No assets found</p>
                       <p className="text-gray-400 text-sm">Try adjusting your filters</p>
                     </div>
                   </div>
@@ -304,7 +304,7 @@ export default function AIStudio() {
                           className={`relative rounded-lg overflow-hidden border-2 transition-all block w-full ${
                             image.id === fullscreenImage?.id
                               ? 'border-blue-500 shadow-lg shadow-blue-500/50'
-                              : 'border-gray-200 hover:border-gray-300 shadow-md'
+                              : 'border-gray-600 hover:border-gray-500 shadow-md'
                           }`}
                         >
                           <img src={image.image} alt={image.prompt} className={`w-full h-full object-cover ${getAspectRatio(image.aspectRatio)}`} />
