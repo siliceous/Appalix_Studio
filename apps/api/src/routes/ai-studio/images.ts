@@ -467,7 +467,7 @@ export async function imageRoutes(app: FastifyInstance) {
       // Fetch all completed image generations
       const { data: generations, error } = await supabase
         .from('ai_image_generations')
-        .select('id, prompt, created_at, output_url, output_urls, status, quantity, aspect_ratio')
+        .select('id, prompt, created_at, output_url, output_urls, storage_keys, status, quantity, aspect_ratio')
         .eq('workspace_id', workspaceId)
         .eq('status', 'completed')
         .order('created_at', { ascending: false })
@@ -478,9 +478,32 @@ export async function imageRoutes(app: FastifyInstance) {
         return reply.status(500).send({ error: 'Failed to fetch images' })
       }
 
+      // Process images: filter out base64 data and regenerate signed URLs if needed
+      const processedImages = (generations || []).map((img: any) => {
+        // Check if output_url is a signed URL (starts with http) or base64 (starts with data:)
+        const isBase64 = img.output_url?.startsWith('data:')
+
+        if (isBase64) {
+          // For old base64 images, try to use output_urls if available
+          try {
+            const urls = img.output_urls ? JSON.parse(img.output_urls) : []
+            const validUrl = urls.find((u: string) => u && u.startsWith('http'))
+            if (validUrl) {
+              return { ...img, output_url: validUrl }
+            }
+          } catch (e) {
+            console.warn('[Image Generation] Failed to parse output_urls for image:', img.id)
+          }
+          // Skip images with only base64 data
+          return null
+        }
+
+        return img
+      }).filter(Boolean)
+
       return reply.send({
-        images: generations || [],
-        total: generations?.length || 0,
+        images: processedImages,
+        total: processedImages.length,
       })
     } catch (error) {
       console.error('[Image Generation] All images endpoint error:', error)
