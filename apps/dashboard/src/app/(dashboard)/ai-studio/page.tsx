@@ -48,86 +48,24 @@ export default function AIStudio() {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
     setWorkspaceId(wId)
 
-    const fetchImages = async () => {
-      try {
-        setLoading(true)
-        // Fetch from Supabase API
-        const response = await fetch('/api/ai-studio/all-images', {
-          headers: { 'x-workspace-id': wId }
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          const supabaseImages = (data.images || []).map((img: any) => ({
-            id: img.id,
-            image: img.output_url || img.output_urls?.[0] || '',
-            prompt: img.prompt || '',
-            timestamp: new Date(img.created_at).getTime(),
-            aspectRatio: img.aspect_ratio,
+    try {
+      const savedHistory = localStorage.getItem('imageGenerationHistory')
+      if (savedHistory) {
+        const parsed = JSON.parse(savedHistory)
+        const historyWithIds = parsed
+          .filter((img: any) => img && img.image && typeof img.image === 'string' && img.image.length > 0)
+          .map((img: any, idx: number) => ({
+            ...img,
+            id: img.id || `legacy-${img.timestamp || idx}`,
           }))
-
-          // Fall back to localStorage if Supabase is empty
-          if (supabaseImages.length === 0) {
-            const savedHistory = localStorage.getItem('imageGenerationHistory')
-            if (savedHistory) {
-              const parsed = JSON.parse(savedHistory)
-              const historyWithIds = parsed
-                .filter((img: any) => img && img.image && typeof img.image === 'string' && img.image.length > 0)
-                .map((img: any, idx: number) => ({
-                  ...img,
-                  id: img.id || `legacy-${img.timestamp || idx}`,
-                }))
-              const activeImages = historyWithIds.filter((img: any) => !img.deletedAt)
-              activeImages.sort((a: any, b: any) => b.timestamp - a.timestamp)
-              setImages(activeImages)
-            }
-          } else {
-            supabaseImages.sort((a: any, b: any) => b.timestamp - a.timestamp)
-            setImages(supabaseImages)
-          }
-        } else {
-          // Fall back to localStorage if API fails
-          const savedHistory = localStorage.getItem('imageGenerationHistory')
-          if (savedHistory) {
-            const parsed = JSON.parse(savedHistory)
-            const historyWithIds = parsed
-              .filter((img: any) => img && img.image && typeof img.image === 'string' && img.image.length > 0)
-              .map((img: any, idx: number) => ({
-                ...img,
-                id: img.id || `legacy-${img.timestamp || idx}`,
-              }))
-            const activeImages = historyWithIds.filter((img: any) => !img.deletedAt)
-            activeImages.sort((a: any, b: any) => b.timestamp - a.timestamp)
-            setImages(activeImages)
-          }
-        }
-      } catch (error) {
-        console.error('Error loading images:', error)
-        // Fall back to localStorage
-        try {
-          const savedHistory = localStorage.getItem('imageGenerationHistory')
-          if (savedHistory) {
-            const parsed = JSON.parse(savedHistory)
-            const historyWithIds = parsed
-              .filter((img: any) => img && img.image && typeof img.image === 'string' && img.image.length > 0)
-              .map((img: any, idx: number) => ({
-                ...img,
-                id: img.id || `legacy-${img.timestamp || idx}`,
-              }))
-            const activeImages = historyWithIds.filter((img: any) => !img.deletedAt)
-            activeImages.sort((a: any, b: any) => b.timestamp - a.timestamp)
-            setImages(activeImages)
-          }
-        } catch (e) {
-          console.error('Error loading localStorage:', e)
-        }
-      } finally {
-        setLoading(false)
+        const activeImages = historyWithIds.filter((img: any) => !img.deletedAt)
+        activeImages.sort((a: any, b: any) => b.timestamp - a.timestamp)
+        setImages(activeImages)
       }
-    }
-
-    if (wId) {
-      fetchImages()
+      setLoading(false)
+    } catch (error) {
+      console.error('Error loading images:', error)
+      setLoading(false)
     }
 
     const fetchCredits = async () => {

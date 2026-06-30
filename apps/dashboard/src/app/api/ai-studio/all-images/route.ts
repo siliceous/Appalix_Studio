@@ -19,7 +19,8 @@ export async function GET(request: NextRequest) {
     })
 
     if (!response.ok) {
-      console.error('[Proxy] Backend error:', response.status)
+      const errorText = await response.text()
+      console.error('[Proxy] Backend error:', response.status, errorText.substring(0, 300))
       return NextResponse.json({ error: 'Failed to fetch images' }, { status: response.status })
     }
 
