@@ -304,7 +304,7 @@ export default function AIStudio() {
                           className={`relative rounded-lg overflow-hidden border-2 transition-all block w-full ${
                             image.id === fullscreenImage?.id
                               ? 'border-blue-500 shadow-lg shadow-blue-500/50'
-                              : 'border-gray-200 hover:border-gray-300'
+                              : 'border-gray-200 hover:border-gray-300 shadow-md'
                           }`}
                         >
                           <img src={image.image} alt={image.prompt} className={`w-full h-full object-cover ${getAspectRatio(image.aspectRatio)}`} />

@@ -1222,7 +1222,7 @@ export default function CreateImagePage() {
               <img
                 src={selectedImage.image}
                 alt="Generated"
-                className="max-w-full max-h-full w-auto h-auto object-contain cursor-pointer"
+                className="max-w-full max-h-full w-auto h-auto object-contain cursor-pointer rounded-lg shadow-lg"
                 onClick={() => {
                   setFullscreenImage(selectedImage.image)
                   setFullscreenImageData(selectedImage)
