@@ -113,7 +113,7 @@ const FEMALE_BODY_TYPES = [
   { id: 'thickthighs', label: 'Thick Thighs', phrase: 'very heavy thick thighs, very heavy thick legs, very wide heavy hips, heavy lower body, visibly heavy, not athletic, not slim' },
   { id: 'softbelly', label: 'Soft Belly', phrase: 'heavy round belly, large round protruding belly, heavy stomach with sag, heavy waist, round heavy midsection, not slim, not athletic, realistic weight' },
   { id: 'tallwoman', label: 'Tall', phrase: 'very tall woman with very long legs, tall elongated frame, very tall build, long limbs, very tall stature, statuesque very tall' },
-  { id: 'petite', label: 'Petite', phrase: 'very petite short woman with very small delicate frame, very short height, very petite stature, very small proportional build' },
+  { id: 'petite', label: 'Petite', phrase: 'Petite woman with naturally short stature (approximately 152–158 cm / 5\'0"–5\'2"), compact frame, gently sloping narrow shoulders, soft rounded upper arms, smaller hands and feet, shorter limbs, fuller torso with naturally defined waist, generous bust proportional to frame, soft midsection, rounded hips, thick shapely thighs, curvy lower body, balanced weight distribution, healthy feminine physique, authentic human proportions, soft natural curves, short torso with fuller chest, rounded shoulders not broad, soft fuller upper arms, shorter legs with thick shapely thighs, rounded hips and gently curved waist, healthy average body composition, realistic proportions with no exaggerated features, authentic everyday body shape, photorealistic anatomy, not athletic, not fashion-model thin, natural Australian woman, warm approachable smile, commercial lifestyle photography realism' },
 ]
 
 const MALE_BODY_TYPES = [
