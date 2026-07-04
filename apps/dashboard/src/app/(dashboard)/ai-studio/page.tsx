@@ -260,6 +260,7 @@ export default function AIStudio() {
               <button onClick={() => router.push('/ai-studio/create-video')} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white hover:bg-white/10 transition-colors">Create Video</button>
               <button onClick={() => router.push('/ai-studio/product-ads')} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white hover:bg-white/10 transition-colors">Product Ads</button>
               <button onClick={() => router.push('/ai-studio/talking-ad')} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white hover:bg-white/10 transition-colors">Talking Ads</button>
+              <button onClick={() => imageContainerRef.current?.scrollIntoView({ behavior: 'smooth' })} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white hover:bg-white/10 transition-colors">Library</button>
               <div className="flex-1" />
               <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-white/10 border border-white/20">{credits} Credits</div>
             </nav>
