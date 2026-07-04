@@ -171,61 +171,48 @@ export async function imageRoutes(app: FastifyInstance) {
       }
 
       let jobId: string
+      let lastError: Error | null = null
+
       try {
         if (isGeminiModel) {
           console.log('[Image Generation] Calling Gemini for generation:', generationId)
-          try {
-            jobId = await gemini.generateImage({
-              prompt,
-              negativePrompt,
-              style,
-              lighting,
-              aspectRatio,
-              temperature,
-              numImages: quantity,
-              modelId: model,
-            })
-            console.log('[Image Generation] Gemini job created:', jobId)
-          } catch (geminiError) {
-            console.error('[Image Generation] Gemini error details:', geminiError instanceof Error ? geminiError.message : geminiError)
-            throw geminiError
-          }
+          jobId = await gemini.generateImage({
+            prompt,
+            negativePrompt,
+            style,
+            lighting,
+            aspectRatio,
+            temperature,
+            numImages: quantity,
+            modelId: model,
+          })
+          console.log('[Image Generation] Gemini job created:', jobId)
         } else if (isNanoBananaModel) {
           console.log('[Image Generation] Calling Nano Banana for generation:', generationId)
-          try {
-            jobId = await nanoBanana.generateImage({
-              prompt,
-              negativePrompt,
-              style,
-              lighting,
-              aspectRatio,
-              temperature,
-              numImages: quantity,
-              modelId: model,
-            })
-            console.log('[Image Generation] Nano Banana job created:', jobId)
-          } catch (nbError) {
-            console.error('[Image Generation] Nano Banana error details:', nbError instanceof Error ? nbError.message : nbError)
-            throw nbError
-          }
+          jobId = await nanoBanana.generateImage({
+            prompt,
+            negativePrompt,
+            style,
+            lighting,
+            aspectRatio,
+            temperature,
+            numImages: quantity,
+            modelId: model,
+          })
+          console.log('[Image Generation] Nano Banana job created:', jobId)
         } else if (isSeedenceModel) {
           console.log('[Image Generation] Calling Seedence for generation:', generationId)
-          try {
-            jobId = await seedence.generateImage({
-              prompt,
-              negativePrompt,
-              style,
-              lighting,
-              aspectRatio,
-              temperature,
-              numImages: quantity,
-              modelId: model,
-            })
-            console.log('[Image Generation] Seedence job created:', jobId)
-          } catch (seedError) {
-            console.error('[Image Generation] Seedence error details:', seedError instanceof Error ? seedError.message : seedError)
-            throw seedError
-          }
+          jobId = await seedence.generateImage({
+            prompt,
+            negativePrompt,
+            style,
+            lighting,
+            aspectRatio,
+            temperature,
+            numImages: quantity,
+            modelId: model,
+          })
+          console.log('[Image Generation] Seedence job created:', jobId)
         } else {
           console.log('[Image Generation] Calling Stability AI for generation:', generationId)
           try {
@@ -241,8 +228,30 @@ export async function imageRoutes(app: FastifyInstance) {
             })
             console.log('[Image Generation] Stability AI job created:', jobId)
           } catch (stabError) {
-            console.error('[Image Generation] Stability error details:', stabError instanceof Error ? stabError.message : stabError)
-            throw stabError
+            const errorMsg = stabError instanceof Error ? stabError.message : String(stabError)
+            // If Stability API rejects for content moderation (403), try Gemini fallback
+            if (errorMsg.includes('403') || errorMsg.includes('content moderation') || errorMsg.includes('flagged')) {
+              console.log('[Image Generation] Stability rejected (content moderation), trying Gemini fallback...')
+              lastError = stabError instanceof Error ? stabError : new Error(errorMsg)
+              try {
+                jobId = await gemini.generateImage({
+                  prompt,
+                  negativePrompt,
+                  style,
+                  lighting,
+                  aspectRatio,
+                  temperature,
+                  numImages: quantity,
+                  modelId: 'gemini-3.1-flash-image',
+                })
+                console.log('[Image Generation] Gemini fallback succeeded:', jobId)
+              } catch (geminiFallbackError) {
+                console.error('[Image Generation] Gemini fallback also failed:', geminiFallbackError instanceof Error ? geminiFallbackError.message : geminiFallbackError)
+                throw stabError // Throw original Stability error
+              }
+            } else {
+              throw stabError
+            }
           }
         }
 
