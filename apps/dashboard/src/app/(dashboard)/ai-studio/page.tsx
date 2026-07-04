@@ -51,8 +51,9 @@ export default function AIStudio() {
     const fetchImages = async () => {
       try {
         setLoading(true)
+        let allImages: GeneratedImage[] = []
 
-        // Try Supabase first
+        // Get Supabase images
         if (wId) {
           try {
             const response = await fetch('/api/ai-studio/all-images', {
@@ -69,32 +70,41 @@ export default function AIStudio() {
                 aspectRatio: img.aspect_ratio,
               })).filter((img: any) => img.image && !img.image.startsWith('data:'))
 
-              if (supabaseImages.length > 0) {
-                supabaseImages.sort((a: any, b: any) => b.timestamp - a.timestamp)
-                setImages(supabaseImages)
-                setLoading(false)
-                return
-              }
+              allImages = allImages.concat(supabaseImages)
             }
           } catch (e) {
             console.error('Error fetching from Supabase:', e)
           }
         }
 
-        // Fall back to localStorage
+        // Also load localStorage (for recently generated images not yet in Supabase)
         const savedHistory = localStorage.getItem('imageGenerationHistory')
         if (savedHistory) {
-          const parsed = JSON.parse(savedHistory)
-          const historyWithIds = parsed
-            .filter((img: any) => img && img.image && typeof img.image === 'string' && img.image.length > 0)
-            .map((img: any, idx: number) => ({
-              ...img,
-              id: img.id || `legacy-${img.timestamp || idx}`,
-            }))
-          const activeImages = historyWithIds.filter((img: any) => !img.deletedAt)
-          activeImages.sort((a: any, b: any) => b.timestamp - a.timestamp)
-          setImages(activeImages)
+          try {
+            const parsed = JSON.parse(savedHistory)
+            const historyWithIds = parsed
+              .filter((img: any) => img && img.image && typeof img.image === 'string' && img.image.length > 0)
+              .map((img: any, idx: number) => ({
+                ...img,
+                id: img.id || `legacy-${img.timestamp || idx}`,
+              }))
+            const activeImages = historyWithIds.filter((img: any) => !img.deletedAt)
+
+            // Merge: add localStorage images that aren't already in Supabase
+            const supabaseIds = new Set(allImages.map(img => img.id))
+            const newFromLocalStorage = activeImages.filter((img: any) => !supabaseIds.has(img.id))
+            allImages = allImages.concat(newFromLocalStorage)
+          } catch (e) {
+            console.error('Error loading localStorage:', e)
+          }
         }
+
+        // Sort all by timestamp (newest first)
+        if (allImages.length > 0) {
+          allImages.sort((a: any, b: any) => b.timestamp - a.timestamp)
+          setImages(allImages)
+        }
+
         setLoading(false)
       } catch (error) {
         console.error('Error loading images:', error)
